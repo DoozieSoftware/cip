@@ -1997,7 +1997,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docs/workflow.md`
 - **Acceptance criteria:** Each transition listed with event and required role.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-021 — README section for workflow
 - **Milestone:** M6
