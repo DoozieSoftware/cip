@@ -125,6 +125,18 @@ return [
             'handler' => NullHandler::class,
         ],
 
+        // Dedicated channel for outbound SMS messages. The LogSmsGateway
+        // (T-M2-012) writes the rendered message + recipient here so
+        // V1 environments and tests can inspect what would have been
+        // sent through the real provider.
+        'sms' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/sms.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'replace_placeholders' => true,
+        ],
+
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],

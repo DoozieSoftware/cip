@@ -509,7 +509,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Authentication/Services/OtpService.php`
 - **Acceptance criteria:** 6th request in an hour returns `RATE_LIMITED`; OTP stored as hash, not plaintext.
 - **Required tests:** `tests/Feature/Authentication/OtpRateLimitTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-012 — Implement SmsGateway interface and log driver
 - **Milestone:** M2

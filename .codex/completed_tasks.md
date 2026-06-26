@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 16:20 IST (after T-M2-010 done — M2 progress 9/30; total 31/410 = 7.6 %)
+* **Last updated:** 2026-06-26 16:35 IST (after T-M2-011 done — M2 progress 10/30; total 32/410 = 7.8 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 9    | 0           | 0       | 0        | 30 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 10   | 0           | 0       | 0        | 33 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **31** | **0**    | **0**   | **0**    | **7.6 %    |
+| **All** | **Total**                             | **410** | **32** | **0**    | **0**   | **0**    | **7.8 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -438,6 +438,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Acceptance criteria:** `php artisan db:seed` is idempotent on second run; expected roles exist.
 - **Required tests:** Pest `tests/Feature/Auth/RoleSeedTest.php` — 7/7 pass; full suite 81/81 (328 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** `citizen` deliberately has no baseline permissions — citizens use scope-based checks ("can submit a report about a department they own") rather than discrete permissions. `super_admin` receives the full set via `syncPermissions` of every seeded permission. `auditor` is verified to have no mutating verbs (no `.create`, `.update`, `.delete`, `.assign`, `.close`, etc.). The seeder is called from `DatabaseSeeder` so a fresh install bootstraps the role table in one step.
+
+
+### T-M2-011 — Implement OtpService with rate limiting
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 16:35 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(auth): complete T-M2-011 — OtpService with rate limiting` (sha: pending)
+- **Files touched:** `backend/app/Modules/Authentication/Services/OtpService.php` (new; `request(mobile, ip, ua)` issues a 6-digit OTP, bcrypt-hashes it, persists the Otp, and dispatches the plaintext via a Closure; per-mobile and per-IP cap of 5/hour enforced before issuance, throwing `ApiException(429)`; default OTP expiry 5 min via `config('cip.auth.otp_expiry_minutes')`; `verify(mobile, code)` consumes the OTP on success, increments the attempt counter on every call, locks the OTP after 5 wrong attempts; `setDispatcher(Closure)` swaps the default log dispatcher for tests and for the real SMS gateway), `backend/config/logging.php` (added `sms` channel — daily file at `storage/logs/sms.log`), `backend/tests/Feature/Authentication/OtpRateLimitTest.php` (new; 8 tests — issue + hash verification, 6th per-mobile request, 6th per-IP request, verify + consume + reject re-use, increment counter on wrong code, lock after 5 failed, configurable expiry, default log dispatcher).
+- **Acceptance criteria:** 6th request in an hour returns `RATE_LIMITED`; OTP stored as hash, not plaintext.
+- **Required tests:** Pest `tests/Feature/Authentication/OtpRateLimitTest.php` — 8/8 pass; full suite 89/89 (344 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** Dispatcher is a `Closure` for now, not the `SmsGatewayInterface` — T-M2-012 will introduce the contract and the service container binding. The OtpService accepts an optional Closure today, so T-M2-012 is purely additive: it will register a binding that resolves to a `LogSmsGateway` and `setDispatcher` will be replaced with constructor injection. This keeps the strict task order (T-M2-011 has no Spatie/Notifications dependency and can be verified in isolation).
 
 
 ## 4. In-Progress Tasks
