@@ -904,7 +904,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** `tests/Feature/Settings/FeatureFlagServiceTest.php`.
 - **Status:** Done
 
-### T-M3-014 — DepartmentRepository and DepartmentService
+### T-M3-014 — DepartmentRepository and DepartmentService [DONE 2026-06-27 — commit 983a300]
 - **Milestone:** M3
 - **Title:** DepartmentRepository and DepartmentService
 - **Description:** `DepartmentRepository` with search, paginate, and by-jurisdiction; `DepartmentService` for create/update/delete with audit emission.
@@ -914,7 +914,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Departments/Repositories/DepartmentRepository.php`, `backend/app/Modules/Departments/Services/DepartmentService.php`
 - **Acceptance criteria:** Service emits `DepartmentCreated`, `DepartmentUpdated`, `DepartmentDeleted` events.
 - **Required tests:** `tests/Feature/Departments/DepartmentServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-015 — GeographyRepository and GeographyService
 - **Milestone:** M3
