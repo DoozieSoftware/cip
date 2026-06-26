@@ -505,7 +505,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Status:** Done
 - **Completed at:** 2026-06-26 18:05 IST
 - **Agent / Committer:** Lead Solution Architect
-- **Commit:** `feat(auth): complete T-M2-016 — POST /api/v1/auth/logout endpoint` (sha: <pending>)
+- **Commit:** `feat(auth): complete T-M2-016 — POST /api/v1/auth/logout endpoint` (sha: 6f21a99e)
 - **Files touched:** `backend/app/Modules/Authentication/Http/Controllers/AuthController.php` (added `logout(Request)` — reads `$request->user()` and `$user->currentAccessToken()`, calls `AuthenticationService::logout(user, accessTokenId)`; PHPStan-safe typed id conversion), `backend/routes/api.php` (registered `POST api/v1/auth/logout` under the `auth:sanctum` middleware group), `backend/bootstrap/app.php` (added `AuthenticationException` render handler — returns 401 with the standard envelope and `code: UNAUTHORIZED`; fixes the bug where a missing/invalid/revoked bearer was being caught by the generic `Throwable` handler and returned as 500), `backend/tests/Feature/Authentication/LogoutEndpointTest.php` (new; 5 tests — 200 happy with `data.logged_out:true` envelope, second use of revoked token returns 401, active refresh token rejected post-logout, unauthenticated logout returns 401, every active refresh token for the user is revoked).
 - **Acceptance criteria:** Subsequent calls with the same access token return 401; refresh token also rejected; unauthenticated request returns 401 with the standard envelope.
 - **Required tests:** Pest `tests/Feature/Authentication/LogoutEndpointTest.php` — 5/5 pass; full suite 120/120 (468 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
