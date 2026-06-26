@@ -1271,7 +1271,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Policies/ReportPolicy.php`, `backend/app/Modules/Reports/Policies/LocationPolicy.php`
 - **Acceptance criteria:** Citizen A cannot read citizen B's report; moderator can.
 - **Required tests:** `tests/Feature/Reports/PolicyTest.php`.
-- **Status:** Done
+- **Status:** Not Started
 
 ### T-M4-020 — Implement IdempotencyKey middleware
 - **Milestone:** M4
@@ -1283,7 +1283,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Shared/Http/Middleware/IdempotencyKey.php`
 - **Acceptance criteria:** Replay within window returns identical body and status.
 - **Required tests:** `tests/Feature/Shared/IdempotencyKeyMiddlewareTest.php`.
-- **Status:** Done
+- **Status:** Not Started
 
 ### T-M4-021 — Implement SubmitReportRequest
 - **Milestone:** M4
@@ -1295,7 +1295,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Http/Requests/SubmitReportRequest.php`, `backend/app/Modules/Reports/Rules/LocationAccuracy.php`
 - **Acceptance criteria:** 422 with field-level errors on bad input; cross-field rule rejects missing GPS.
 - **Required tests:** `tests/Feature/Reports/SubmitReportRequestTest.php`.
-- **Status:** Done
+- **Status:** Not Started
 
 ### T-M4-022 — POST /api/v1/reports endpoint
 - **Milestone:** M4
