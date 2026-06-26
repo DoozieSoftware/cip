@@ -11,6 +11,7 @@ use App\Modules\Settings\Http\Controllers\Admin\AppConfigController;
 use App\Modules\Settings\Http\Controllers\Admin\SettingController;
 use App\Modules\Workflow\Http\Controllers\Admin\WorkflowAdminController;
 use App\Modules\Routing\Http\Controllers\Admin\RoutingAdminController;
+use App\Modules\Routing\Http\Controllers\Admin\ReassignController;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Route;
 
@@ -83,6 +84,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('routing-rules/{rule}', [RoutingAdminController::class, 'show'])->name('routing-rules.show');
         Route::put('routing-rules/{rule}', [RoutingAdminController::class, 'update'])->name('routing-rules.update');
         Route::delete('routing-rules/{rule}', [RoutingAdminController::class, 'destroy'])->name('routing-rules.destroy');
+
+        // Manual reassignment (T-M7-010)
+        Route::post('reports/{report}/reassign', ReassignController::class)->name('reports.reassign');
     });
 
     // T-M5-014 — public temporary-signed media serve (NOT under auth:sanctum;

@@ -28,6 +28,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $accepted_at
  * @property Carbon|null $completed_at
  * @property string|null $reassignment_reason
+ * @property Carbon|null $reassigned_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -44,7 +45,7 @@ class ReportAssignment extends Model
     protected $fillable = [
         'report_id', 'department_id', 'officer_id',
         'assigned_by', 'assigned_at', 'accepted_at',
-        'completed_at', 'reassignment_reason',
+        'completed_at', 'reassignment_reason', 'reassigned_at',
     ];
 
     /** @return array<string, string> */
