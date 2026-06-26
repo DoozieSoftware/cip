@@ -1,0 +1,93 @@
+openapi: 3.0.0
+info:
+  title: 'Civic Intelligence Platform API'
+  description: 'REST API for the Civic Intelligence Platform (M1 bootstrap).'
+  contact:
+    name: 'Civic Platform Engineering'
+    email: eng@cip.local
+  license:
+    name: Proprietary
+  version: 1.0.0
+servers:
+  -
+    url: 'http://localhost:8080'
+    description: 'Local docker-compose stack'
+  -
+    url: '{scheme}://{host}'
+    description: 'Configurable host'
+    variables:
+      scheme:
+        enum:
+          - http
+          - https
+        default: https
+      host:
+        default: api.cip.local
+paths:
+  /api/v1/health:
+    get:
+      tags:
+        - Health
+      summary: 'Liveness probe'
+      operationId: health.live
+      responses:
+        '200':
+          description: 'Service is alive'
+          content:
+            application/json:
+              schema:
+                required:
+                  - success
+                  - message
+                  - data
+                properties:
+                  success: { type: boolean, example: true }
+                  message: { type: string, example: 'Service is alive' }
+                  data: { required: [status, service, time], properties: { status: { type: string, example: ok }, service: { type: string, example: 'Civic Intelligence Platform' }, time: { type: string, format: date-time } }, type: object }
+                  meta: { type: object }
+                type: object
+  /api/v1/health/ready:
+    get:
+      tags:
+        - Health
+      summary: 'Readiness probe with per-component checks'
+      operationId: health.ready
+      responses:
+        '200':
+          description: 'All components ready'
+          content:
+            application/json:
+              schema:
+                required:
+                  - success
+                  - message
+                  - data
+                properties:
+                  success: { type: boolean, example: true }
+                  message: { type: string, example: 'All components ready' }
+                  data: { required: [status, checks], properties: { status: { type: string, enum: [ready, degraded] }, checks: { type: object, additionalProperties: { required: [ok, message], properties: { ok: { type: boolean }, message: { type: string } }, type: object } } }, type: object }
+                type: object
+        '503':
+          description: 'One or more components unhealthy'
+          content:
+            application/json:
+              schema:
+                required:
+                  - success
+                  - message
+                  - data
+                properties:
+                  success: { type: boolean, example: false }
+                  message: { type: string, example: 'One or more components unhealthy' }
+                type: object
+components:
+  securitySchemes:
+    sanctum:
+      type: http
+      description: 'Laravel Sanctum personal access token (M2).'
+      bearerFormat: 'Sanctum PAT'
+      scheme: bearer
+tags:
+  -
+    name: Health
+    description: 'Liveness and readiness probes.'

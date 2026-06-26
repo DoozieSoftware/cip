@@ -25,7 +25,8 @@
         "pestphp/pest": "^3.0",
         "pestphp/pest-plugin-laravel": "^3.0",
         "phpstan/phpstan": "^2.2",
-        "phpunit/phpunit": "^11.5.50"
+        "phpunit/phpunit": "^11.5.50",
+        "zircote/swagger-php": "^4"
     },
     "autoload": {
         "psr-4": {

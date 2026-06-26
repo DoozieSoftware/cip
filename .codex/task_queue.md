@@ -356,7 +356,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/config/l5-swagger.php`, `backend/storage/api-docs/openapi.yaml`
 - **Acceptance criteria:** `GET /api/documentation` returns 200 with the Swagger UI; `openapi.yaml` validates.
 - **Required tests:** `tests/Feature/OpenApiTest.php` asserts the JSON spec contains `/health`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M1-022 — Author CI workflow (lint, analyse, test, build)
 - **Milestone:** M1

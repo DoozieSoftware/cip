@@ -27,8 +27,6 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
      * Horizon is restricted to the local environment until M2 lands the
      * dedicated authorization rules. In non-local environments, only
      * super-admin users (or those with a cip.local email) can access it.
-     *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable|null  $user
      */
     protected function gate(?Authenticatable $user = null): void
     {
@@ -37,9 +35,10 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
         }
 
         Gate::define('viewHorizon', static function ($user = null): bool {
-            /** @var \Illuminate\Contracts\Auth\Authenticatable|null $auth */
+            /** @var Authenticatable|null $auth */
             $auth = $user;
             $email = is_object($auth) ? $auth->email ?? null : null;
+
             return is_string($email) && str_ends_with($email, '@cip.local');
         });
     }
