@@ -916,7 +916,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** `tests/Feature/Departments/DepartmentServiceTest.php`.
 - **Status:** Done
 
-### T-M3-015 — GeographyRepository and GeographyService
+### T-M3-015 — GeographyRepository and GeographyService [DONE 2026-06-27 — commit 9869758]
 - **Milestone:** M3
 - **Title:** GeographyRepository and GeographyService
 - **Description:** Repository with lookup helpers (`getStatesByCountry`, `getDistrictsByState`); Service enforces audit; uses `DTO`s for create/update.
@@ -926,7 +926,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Departments/Repositories/GeographyRepository.php`, `backend/app/Modules/Departments/Services/GeographyService.php`
 - **Acceptance criteria:** DTOs validated; helpers return paginated results.
 - **Required tests:** `tests/Feature/Geography/GeographyServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-016 — Department CRUD endpoints
 - **Milestone:** M3
