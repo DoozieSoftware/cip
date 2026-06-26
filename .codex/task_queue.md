@@ -667,7 +667,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** `tests/Unit/Users/UserResourceTest.php`.
 - **Status:** Done
 
-### T-M2-025 — Document auth API in OpenAPI
+### T-M2-025 — Document auth API in OpenAPI [DONE 2026-06-26 — commit 03757ab8]
 - **Milestone:** M2
 - **Title:** Document auth API in OpenAPI
 - **Description:** Author/extend `storage/api-docs/openapi.yaml` paths for `auth/send-otp`, `auth/verify-otp`, `auth/refresh`, `auth/logout`, `auth/me`; add request/response schemas.
@@ -677,7 +677,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/storage/api-docs/openapi.yaml`
 - **Acceptance criteria:** `GET /api/documentation` renders new endpoints; `swagger-cli validate` passes.
 - **Required tests:** `tests/Feature/OpenApiAuthTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-026 — Add docs/auth.md
 - **Milestone:** M2

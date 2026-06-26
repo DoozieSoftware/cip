@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 20:55 IST (after T-M2-024 done — M2 progress 23/30; total 45/410 = 11.0 %)
+* **Last updated:** 2026-06-26 21:10 IST (after T-M2-025 done — M2 progress 24/30; total 46/410 = 11.2 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M2 — Identity, Auth & RBAC Core (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 23   | 0           | 0       | 0        | 77 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 24   | 0           | 0       | 0        | 80 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **45** | **0**    | **0**   | **0**    | **11.0 %   |
+| **All** | **Total**                             | **410** | **46** | **0**    | **0**   | **0**    | **11.2 %   |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,7 +56,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 23 | 23 % |
+| Foundations | M2, M3, M5, M9 | 100 | 24 | 24 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
@@ -605,6 +605,17 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Required tests:** Pest `tests/Unit/Users/UserResourceTest.php` — 8/8 pass; full suite 185/185 (670 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** The lazy-load design is the right tradeoff for the citizen PWA: the /me endpoint (a single user, roles needed) and the /auth/verify-otp response (a single user, roles needed) opt in via `->load('roles')`, while future list endpoints (T-M10 list users, T-M12 staff directory) can render thousands of users without paying the Spatie query cost per row. The 8 tests cover both the omission and inclusion paths plus the security-critical never-leak invariant.
 
+### T-M2-025 — Document auth API in OpenAPI
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 21:10 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(api-docs): complete T-M2-025 — document auth API in OpenAPI` (sha: 03757ab8)
+- **Files touched:** `backend/storage/api-docs/openapi.yaml` (extended with M2 Authentication namespace: paths for `/auth/send-otp`, `/auth/verify-otp`, `/auth/refresh`, `/auth/logout`, `/auth/me` with operationIds, descriptions, security requirements, and 200/401/422/429 responses; added Authentication tag; added shared `ApiResponse`, `ErrorResponse`, `SendOtpRequest/Response`, `VerifyOtpRequest/Response`, `RefreshTokenRequest/Response`, `LogoutResponse`, `User`, `UserResponse` schemas; added shared `Unauthorized`, `ValidationError`, `RateLimited` responses), `backend/tests/Feature/OpenApiAuthTest.php` (new; 10 tests — Authentication tag present, all five paths present, correct HTTP methods, Sanctum security on logout/me, no security on pre-login endpoints, all referenced schemas resolvable, shared 401/422/429 responses defined, all auth responses use the standard envelope, `/api/v1/openapi.yaml` serves yaml content type, `/api/documentation` renders the Swagger UI referencing the openapi URL).
+- **Acceptance criteria:** All five auth paths documented; request/response schemas are referenced; shared error responses are reused; `/api/documentation` renders the new endpoints.
+- **Required tests:** Pest `tests/Feature/OpenApiAuthTest.php` — 10/10 pass; full suite 195/195 (719 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** The 401/422/429 responses are extracted as shared `responses` components so future endpoints (M3+ geographical, M4 reports, etc.) can `$ref` them instead of duplicating the inline shape. The `User` schema marks `roles` and `permissions` as optional arrays — the resource omits them when the relation is not eager-loaded (T-M2-024). `swagger-cli` is not installed in this environment; validation is done in-test by parsing the YAML and asserting structure, which is the right tradeoff for the agent-only test layer.
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -641,6 +652,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 21:10 IST | Logged T-M2-025 done; M2 progress 24/30; total 46/410 = 11.2 %. | Lead Solution Architect | T-M2-025 |
 | 2026-06-26 20:55 IST | Logged T-M2-024 done; M2 progress 23/30; total 45/410 = 11.0 %. | Lead Solution Architect | T-M2-024 |
 | 2026-06-26 20:40 IST | Logged T-M2-023 done; M2 progress 22/30; total 44/410 = 10.7 %. | Lead Solution Architect | T-M2-023 |
 | 2026-06-26 20:25 IST | Logged T-M2-022 done; M2 progress 21/30; total 43/410 = 10.5 %. | Lead Solution Architect | T-M2-022 |
@@ -691,14 +703,14 @@ Snapshot at file initialization. Updated as the repository grows.
 | Lines of `.codex/roadmap.md` | 991 |
 | Lines of `.codex/task_queue.md` | 5,163 |
 | Lines of `.codex/current_milestone.md` | 212 |
-| Lines of `.codex/completed_tasks.md` (this file) | 789 |
+| Lines of `.codex/completed_tasks.md` (this file) | 819 |
 | Database migrations | 0 |
 | Eloquent models | 0 |
 | API endpoints (under `routes/api.php`) | 0 (only `/api/v1/health` and `/api/v1/health/ready` will exist after M1) |
-| Pest tests | 185 passing (670 assertions) |
+| Pest tests | 195 passing (719 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 41 (T-M2-024 pending) |
+| Git commits on `main` | 43 (T-M2-025 pending) |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |
