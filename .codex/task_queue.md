@@ -1640,7 +1640,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Policies/MediaPolicy.php`
 - **Acceptance criteria:** Anonymous user gets 403.
 - **Required tests:** `tests/Feature/Media/MediaPolicyTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-018 — MinIO bucket init via docker entrypoint
 - **Milestone:** M5
