@@ -962,7 +962,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Settings/Http/Controllers/Admin/AppConfigController.php`, `backend/app/Modules/Settings/Http/Requests/StoreAppConfigRequest.php`, `backend/app/Modules/Settings/Http/Resources/AppConfigResource.php`, `backend/routes/api.php`
 - **Acceptance criteria:** Evaluate endpoint returns deterministic boolean.
 - **Required tests:** `tests/Feature/Settings/AppConfigCrudTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-019 — Seed India/Karnataka/Bangalore geography
 - **Milestone:** M3
