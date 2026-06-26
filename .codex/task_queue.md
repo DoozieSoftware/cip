@@ -2114,7 +2114,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Listeners/AiCompletedListener.php`
 - **Acceptance criteria:** End-to-end: AI completion → routing → assignment → status Assigned.
 - **Required tests:** `tests/Feature/Routing/RoutingFlowTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-008 — Routing fallback queue
 - **Milestone:** M7
