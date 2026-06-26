@@ -715,7 +715,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** `vendor/bin/pest tests/Feature/Authentication/RefreshRotationFeatureTest.php`.
 - **Status:** Done
 
-### T-M2-029 — Add Pest feature suite for RBAC denials
+### T-M2-029 — Add Pest feature suite for RBAC denials [DONE 2026-06-26 — commit 182527a8]
 - **Milestone:** M2
 - **Title:** Add Pest feature suite for RBAC denials
 - **Description:** Cover: a `citizen` cannot hit moderator/admin routes; a `super_admin` can; an `auditor` is read-only.
@@ -725,7 +725,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/Users/RbacDenialFeatureTest.php`
 - **Acceptance criteria:** 403s returned with envelope; allowed roles return 200.
 - **Required tests:** `vendor/bin/pest tests/Feature/Users/RbacDenialFeatureTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-030 — Wire M2 documentation into README
 - **Milestone:** M2
@@ -737,7 +737,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `README.md`
 - **Acceptance criteria:** README has a working anchor link to `docs/auth.md`.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** In Progress
 
 
 ---
