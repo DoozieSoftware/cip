@@ -1,7 +1,10 @@
 openapi: 3.0.0
 info:
   title: 'Civic Intelligence Platform API'
-  description: 'REST API for the Civic Intelligence Platform. M2 adds the Authentication namespace (citizen OTP login, JWT issuance, refresh rotation).'
+  description: |
+    REST API for the Civic Intelligence Platform.
+    - M2 adds the Authentication namespace (citizen OTP login, JWT issuance, refresh rotation).
+    - M3 adds the Super Admin master-data CRUD namespaces (departments, settings, feature flags) and the geography tree that every portal reads on cold start.
   contact:
     name: 'Civic Platform Engineering'
     email: eng@cip.local
@@ -338,7 +341,222 @@ components:
         - type: object
           properties:
             data: { $ref: '#/components/schemas/User' }
+    DepartmentStoreRequest:
+      type: object
+      required: [name, code]
+      properties:
+        name: { type: string, maxLength: 255 }
+        code: { type: string, maxLength: 32, description: 'Short uppercase code (e.g. BBMP).' }
+        parent_id: { type: string, format: uuid, nullable: true }
+        jurisdiction: { type: string, nullable: true, maxLength: 255 }
+        address: { type: string, nullable: true }
+        email: { type: string, format: email, nullable: true, maxLength: 255 }
+        phone: { type: string, nullable: true, maxLength: 32 }
+        working_hours: { type: object, additionalProperties: true, nullable: true, description: 'Per-weekday open/close time. Example: {"mon": ["09:00","17:30"]}.' }
+        holiday_calendar: { type: array, items: { type: string, format: date }, nullable: true }
+        default_workflow_id: { type: string, format: uuid, nullable: true }
+        default_sla_minutes: { type: integer, minimum: 1, maximum: 525600, nullable: true }
+        escalation_matrix:
+          type: array
+          nullable: true
+          items:
+            type: object
+            required: [after_minutes]
+            properties:
+              after_minutes: { type: integer, minimum: 1 }
+              escalate_to: { type: string }
+        active: { type: boolean, nullable: true }
+    DepartmentUpdateRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 255 }
+        code: { type: string, maxLength: 32 }
+        parent_id: { type: string, format: uuid, nullable: true }
+        jurisdiction: { type: string, nullable: true, maxLength: 255 }
+        address: { type: string, nullable: true }
+        email: { type: string, format: email, nullable: true, maxLength: 255 }
+        phone: { type: string, nullable: true, maxLength: 32 }
+        working_hours: { type: object, additionalProperties: true, nullable: true }
+        holiday_calendar: { type: array, items: { type: string, format: date }, nullable: true }
+        default_workflow_id: { type: string, format: uuid, nullable: true }
+        default_sla_minutes: { type: integer, minimum: 1, maximum: 525600, nullable: true }
+        escalation_matrix:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              after_minutes: { type: integer, minimum: 1 }
+              escalate_to: { type: string }
+        active: { type: boolean }
+    Department:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        code: { type: string }
+        parent_id: { type: string, format: uuid, nullable: true }
+        jurisdiction: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        email: { type: string, format: email, nullable: true }
+        phone: { type: string, nullable: true }
+        working_hours: { type: object, additionalProperties: true, nullable: true }
+        holiday_calendar: { type: array, items: { type: string, format: date }, nullable: true }
+        default_workflow_id: { type: string, format: uuid, nullable: true }
+        default_sla_minutes: { type: integer, nullable: true }
+        escalation_matrix: { type: array, items: { type: object }, nullable: true }
+        active: { type: boolean }
+        created_at: { type: string, format: date-time, nullable: true }
+        updated_at: { type: string, format: date-time, nullable: true }
+        deleted_at: { type: string, format: date-time, nullable: true }
+    DepartmentResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/Department' }
+    DepartmentListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/Department' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+    SettingStoreRequest:
+      type: object
+      required: [key, value, type]
+      properties:
+        key: { type: string, maxLength: 255, description: 'Dotted-path identifier (e.g. ai.vision.provider).' }
+        value: { description: 'JSON-decodable value. Strings, numbers, booleans, and arrays are accepted.' }
+        type: { type: string, enum: [string, int, integer, bool, boolean, json, datetime] }
+        description: { type: string, nullable: true, maxLength: 1000 }
+        is_public: { type: boolean, nullable: true, description: 'When true, the setting is returned by /api/v1/master-config without authentication.' }
+    SettingUpdateRequest:
+      type: object
+      properties:
+        value: {}
+        type: { type: string, enum: [string, int, integer, bool, boolean, json, datetime] }
+        description: { type: string, nullable: true, maxLength: 1000 }
+        is_public: { type: boolean }
+    Setting:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        key: { type: string }
+        value: {}
+        type: { type: string }
+        description: { type: string, nullable: true }
+        is_public: { type: boolean }
+        created_at: { type: string, format: date-time, nullable: true }
+        updated_at: { type: string, format: date-time, nullable: true }
+        deleted_at: { type: string, format: date-time, nullable: true }
+    SettingResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/Setting' }
+    SettingListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/Setting' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+    AppConfigStoreRequest:
+      type: object
+      required: [key]
+      properties:
+        key: { type: string, maxLength: 255 }
+        value: { nullable: true, description: 'Optional JSON payload returned when the flag is on.' }
+        enabled: { type: boolean, nullable: true, default: false }
+        rollout_percentage: { type: integer, minimum: 0, maximum: 100, nullable: true, default: 0 }
+        cohort:
+          type: array
+          nullable: true
+          description: 'Predicate list. ANY match short-circuits the flag to true.'
+          items:
+            type: object
+            additionalProperties: true
+        description: { type: string, nullable: true, maxLength: 1000 }
+    AppConfigUpdateRequest:
+      type: object
+      properties:
+        value: { nullable: true }
+        enabled: { type: boolean }
+        rollout_percentage: { type: integer, minimum: 0, maximum: 100 }
+        cohort:
+          type: array
+          nullable: true
+          items:
+            type: object
+            additionalProperties: true
+        description: { type: string, nullable: true, maxLength: 1000 }
+    AppConfig:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        key: { type: string }
+        value: { nullable: true }
+        enabled: { type: boolean }
+        rollout_percentage: { type: integer }
+        cohort:
+          type: array
+          nullable: true
+          items: { type: object, additionalProperties: true }
+        description: { type: string, nullable: true }
+        created_at: { type: string, format: date-time, nullable: true }
+        updated_at: { type: string, format: date-time, nullable: true }
+    AppConfigResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/AppConfig' }
+    AppConfigListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/AppConfig' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+    AppConfigEvaluateResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [key, enabled]
+              properties:
+                key: { type: string }
+                enabled: { type: boolean }
+                user_id: { type: string, format: uuid, nullable: true }
+                session_id: { type: string, nullable: true }
+    PaginationMeta:
+      type: object
+      properties:
+        total: { type: integer }
+        per_page: { type: integer }
+        current_page: { type: integer }
+        last_page: { type: integer }
   responses:
+    NotFound:
+      description: 'Resource not found.'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Forbidden:
+      description: 'Authenticated but the role is not permitted.'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
     ValidationError:
       description: 'Request body failed validation.'
       content:
@@ -358,6 +576,317 @@ components:
       content:
         application/json:
           schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /api/v1/admin/departments:
+    get:
+      tags: [Departments]
+      summary: 'List departments (paginated)'
+      operationId: admin.departments.index
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: jurisdiction
+          schema: { type: string }
+        - in: query
+          name: parent_id
+          schema: { type: string, format: uuid }
+        - in: query
+          name: active
+          schema: { type: boolean }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 25, maximum: 200 }
+      responses:
+        '200':
+          description: 'Paginated list of departments.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+    post:
+      tags: [Departments]
+      summary: 'Create a department'
+      operationId: admin.departments.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DepartmentStoreRequest' }
+      responses:
+        '201':
+          description: 'Department created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /api/v1/admin/departments/{department}:
+    parameters:
+      - in: path
+        name: department
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Departments]
+      summary: 'Show a department by id'
+      operationId: admin.departments.show
+      responses:
+        '200':
+          description: 'Department found.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    put:
+      tags: [Departments]
+      summary: 'Update a department (partial)'
+      operationId: admin.departments.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DepartmentUpdateRequest' }
+      responses:
+        '200':
+          description: 'Department updated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Departments]
+      summary: 'Soft-delete a department'
+      operationId: admin.departments.destroy
+      responses:
+        '200':
+          description: 'Department deleted.'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          deleted: { type: boolean, example: true }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/settings:
+    get:
+      tags: [Settings]
+      summary: 'List settings (paginated)'
+      operationId: admin.settings.index
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: public
+          schema: { type: boolean }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 25, maximum: 200 }
+      responses:
+        '200':
+          description: 'Paginated list of settings.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SettingListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Settings]
+      summary: 'Create a setting'
+      operationId: admin.settings.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SettingStoreRequest' }
+      responses:
+        '201':
+          description: 'Setting created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SettingResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/settings/{setting}:
+    parameters:
+      - in: path
+        name: setting
+        required: true
+        description: 'Setting key (e.g. ai.vision.provider).'
+        schema: { type: string }
+    get:
+      tags: [Settings]
+      summary: 'Show a setting by key'
+      operationId: admin.settings.show
+      responses:
+        '200':
+          description: 'Setting found.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SettingResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Settings]
+      summary: 'Update a setting (partial)'
+      operationId: admin.settings.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SettingUpdateRequest' }
+      responses:
+        '200':
+          description: 'Setting updated; cache invalidated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SettingResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Settings]
+      summary: 'Soft-delete a setting and clear its cache entry'
+      operationId: admin.settings.destroy
+      responses:
+        '200':
+          description: 'Setting deleted.'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          deleted: { type: boolean, example: true }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/app-configs:
+    get:
+      tags: ['Feature Flags']
+      summary: 'List feature flags (paginated)'
+      operationId: admin.app-configs.index
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: enabled
+          schema: { type: boolean }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 25, maximum: 200 }
+      responses:
+        '200':
+          description: 'Paginated list of feature flags.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppConfigListResponse' }
+    post:
+      tags: ['Feature Flags']
+      summary: 'Create a feature flag'
+      operationId: admin.app-configs.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AppConfigStoreRequest' }
+      responses:
+        '201':
+          description: 'Feature flag created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppConfigResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/app-configs/{app_config}/evaluate:
+    parameters:
+      - in: path
+        name: app_config
+        required: true
+        description: 'Feature flag key (e.g. ai.vision.enabled).'
+        schema: { type: string }
+      - in: query
+        name: user_id
+        schema: { type: string, format: uuid }
+      - in: query
+        name: session_id
+        schema: { type: string }
+    get:
+      tags: ['Feature Flags']
+      summary: 'Evaluate a feature flag for a user/session'
+      operationId: admin.app-configs.evaluate
+      responses:
+        '200':
+          description: 'Boolean evaluation result.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppConfigEvaluateResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/app-configs/{app_config}:
+    parameters:
+      - in: path
+        name: app_config
+        required: true
+        description: 'Feature flag key (e.g. ai.vision.enabled).'
+        schema: { type: string }
+    get:
+      tags: ['Feature Flags']
+      summary: 'Show a feature flag by key'
+      operationId: admin.app-configs.show
+      responses:
+        '200':
+          description: 'Feature flag found.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppConfigResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: ['Feature Flags']
+      summary: 'Update a feature flag (partial)'
+      operationId: admin.app-configs.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AppConfigUpdateRequest' }
+      responses:
+        '200':
+          description: 'Feature flag updated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppConfigResponse' }
+    delete:
+      tags: ['Feature Flags']
+      summary: 'Delete a feature flag'
+      operationId: admin.app-configs.destroy
+      responses:
+        '200':
+          description: 'Feature flag deleted.'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          deleted: { type: boolean, example: true }
+        '404': { $ref: '#/components/responses/NotFound' }
 tags:
   -
     name: Health
@@ -365,3 +894,12 @@ tags:
   -
     name: Authentication
     description: 'Citizen OTP login, JWT issuance, refresh rotation, logout, current-user.'
+  -
+    name: Departments
+    description: 'Super Admin CRUD for civic departments (BBMP, BTP, BWSSB, BESCOM, etc.).'
+  -
+    name: Settings
+    description: 'Super Admin CRUD for global key/value settings (ai.vision.provider, mail.driver, ...).'
+  -
+    name: 'Feature Flags'
+    description: 'Super Admin CRUD for app_configs (feature flags) and the deterministic evaluator.'
