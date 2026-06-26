@@ -1103,7 +1103,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_locations_table.php`
 - **Acceptance criteria:** Spatial index `idx_locations_geom` created via `DB::statement`.
 - **Required tests:** Migration + spatial index probe.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-006 — Create Location model
 - **Milestone:** M4
