@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: 'Civic Intelligence Platform API'
-  description: 'REST API for the Civic Intelligence Platform (M1 bootstrap).'
+  description: 'REST API for the Civic Intelligence Platform. M2 adds the Authentication namespace (citizen OTP login, JWT issuance, refresh rotation).'
   contact:
     name: 'Civic Platform Engineering'
     email: eng@cip.local
@@ -80,6 +80,137 @@ paths:
                   success: { type: boolean, example: false }
                   message: { type: string, example: 'One or more components unhealthy' }
                 type: object
+  /api/v1/auth/send-otp:
+    post:
+      tags:
+        - Authentication
+      summary: 'Request an OTP for citizen login'
+      description: |
+        Issues a 6-digit OTP to the supplied mobile number via the configured
+        SMS gateway. Per docs/11 §6 the platform stores only the bcrypt hash
+        of the code and applies a 5/hour per-(mobile+IP) budget. The plain
+        code is never returned by this endpoint.
+      operationId: auth.sendOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendOtpRequest'
+      responses:
+        '200':
+          description: 'OTP dispatched (or queued). The client should now collect the code from the citizen.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendOtpResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/auth/verify-otp:
+    post:
+      tags:
+        - Authentication
+      summary: 'Verify OTP and issue access + refresh tokens'
+      description: |
+        Verifies the 6-digit code against the latest unused OTP for the
+        mobile. On success issues a Sanctum personal access token and an
+        opaque refresh token. The refresh token is shown only once; the
+        caller MUST store it before making the next call.
+      operationId: auth.verifyOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOtpRequest'
+      responses:
+        '200':
+          description: 'Authentication successful; tokens returned.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyOtpResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: 'Rotate the refresh token and issue a new access token'
+      description: |
+        Consumes a one-time refresh token and returns a new access token
+        plus a new refresh token. The presented refresh token is marked
+        used and cannot be presented again. Replay attempts emit a
+        security event (REFRESH_TOKEN_REPLAY) and revoke the entire
+        session chain.
+      operationId: auth.refresh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: 'Tokens rotated successfully.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: 'Revoke the current access and refresh tokens'
+      description: |
+        Revokes the bearer access token and all refresh tokens for the
+        current session. Idempotent — a second call returns 401 because
+        the bearer token is no longer valid.
+      operationId: auth.logout
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          description: 'Logged out successfully.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: 'Return the current user'
+      description: |
+        Returns the authenticated user (mobile, roles, permissions).
+        Roles and permissions are included only when the caller
+        explicitly requested them via a pre-loaded relation; in the
+        default /me response both arrays are present.
+      operationId: auth.me
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          description: 'Current user returned.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
 components:
   securitySchemes:
     sanctum:
@@ -87,7 +218,150 @@ components:
       description: 'Laravel Sanctum personal access token (M2).'
       bearerFormat: 'Sanctum PAT'
       scheme: bearer
+  schemas:
+    ApiResponse:
+      type: object
+      description: 'Standard API envelope (docs/03 §20).'
+      required: [success, message, data, code, trace_id]
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+        data: { type: object, additionalProperties: true, nullable: true }
+        errors: { type: object, additionalProperties: true, nullable: true }
+        code: { type: string, description: 'Application-specific error code; null on success.' }
+        trace_id: { type: string, description: 'Request id used for cross-service correlation.' }
+        meta: { type: object, additionalProperties: true, nullable: true }
+    ErrorResponse:
+      type: object
+      required: [success, message, code, trace_id]
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string, example: 'Invalid OTP code.' }
+        code: { type: string, example: 'OTP_INVALID' }
+        trace_id: { type: string, example: '0HMM8M3N5G2F1:00000001' }
+        errors: { type: object, additionalProperties: true, nullable: true }
+    SendOtpRequest:
+      type: object
+      required: [mobile]
+      properties:
+        mobile: { type: string, description: '10-digit local or E.164 form.', example: '9876543210' }
+    SendOtpResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                otp_sent: { type: boolean, example: true }
+    VerifyOtpRequest:
+      type: object
+      required: [mobile, code]
+      properties:
+        mobile: { type: string, example: '9876543210' }
+        code: { type: string, description: '6-digit OTP delivered to the citizen.', example: '482913' }
+    VerifyOtpResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [token, refresh_token, refresh_expires_at, user]
+              properties:
+                token:
+                  type: object
+                  required: [access_token, type, expires_at]
+                  properties:
+                    access_token: { type: string, description: 'Sanctum PAT. Use as `Authorization: Bearer <access_token>`.' }
+                    type: { type: string, example: 'Bearer' }
+                    expires_at: { type: string, format: date-time, nullable: true }
+                refresh_token:
+                  type: string
+                  description: 'Opaque plaintext refresh token. Shown only once — store immediately.'
+                refresh_expires_at: { type: string, format: date-time }
+                user: { $ref: '#/components/schemas/User' }
+    RefreshTokenRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token: { type: string, minLength: 32, description: 'Opaque refresh token returned by /verify-otp or a previous /refresh.' }
+    RefreshTokenResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [token, refresh_token, refresh_expires_at]
+              properties:
+                token:
+                  type: object
+                  required: [access_token, type, expires_at]
+                  properties:
+                    access_token: { type: string }
+                    type: { type: string, example: 'Bearer' }
+                    expires_at: { type: string, format: date-time, nullable: true }
+                refresh_token: { type: string }
+                refresh_expires_at: { type: string, format: date-time }
+    LogoutResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                logged_out: { type: boolean, example: true }
+    User:
+      type: object
+      description: 'UserResource payload (docs/05 §3). Roles and permissions are populated when the relation was eager-loaded.'
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, nullable: true }
+        mobile: { type: string, example: '9876543210' }
+        email: { type: string, format: email, nullable: true }
+        anonymous_enabled: { type: boolean }
+        status: { type: string, enum: [active, suspended, disabled, pending] }
+        otp_verified_at: { type: string, format: date-time, nullable: true }
+        last_login_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time, nullable: true }
+        roles:
+          type: array
+          items: { type: string, example: 'citizen' }
+        permissions:
+          type: array
+          items: { type: string, example: 'reports.submit' }
+    UserResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/User' }
+  responses:
+    ValidationError:
+      description: 'Request body failed validation.'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Unauthorized:
+      description: 'Authentication required or invalid.'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    RateLimited:
+      description: 'Too many requests. Includes Retry-After header.'
+      headers:
+        Retry-After:
+          description: 'Seconds to wait before retrying.'
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
 tags:
   -
     name: Health
     description: 'Liveness and readiness probes.'
+  -
+    name: Authentication
+    description: 'Citizen OTP login, JWT issuance, refresh rotation, logout, current-user.'
