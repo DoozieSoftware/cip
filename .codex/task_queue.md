@@ -974,7 +974,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/seeders/GeographySeeder.php`
 - **Acceptance criteria:** Second run does not duplicate rows; counts match expected.
 - **Required tests:** `tests/Feature/Geography/GeographySeedTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-020 — Seed default departments
 - **Milestone:** M3
