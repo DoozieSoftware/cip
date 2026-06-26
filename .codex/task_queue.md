@@ -1616,7 +1616,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Support/MediaUrl.php`
 - **Acceptance criteria:** URL is verifiable by Laravel signed route middleware.
 - **Required tests:** `tests/Unit/Media/MediaUrlTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-016 — Chain-of-custody writer
 - **Milestone:** M5
