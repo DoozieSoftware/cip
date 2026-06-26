@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 21:24 IST (after T-M4-012 done; M4 in progress)
+* **Last updated:** 2026-06-26 21:24 IST (after T-M4-013 done; M4 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -34,7 +34,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
-| M4 | Reports Domain & Submission API | 32 | 17 | 0 | 0 | 0 | 53 % |
+| M4 | Reports Domain & Submission API | 32 | 18 | 0 | 0 | 0 | 56 % |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **92** | **0** | **0** | **0** | **22.4 %** |
+| **All** | **Total** | **410** | **93** | **0** | **0** | **0** | **22.7 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M4-013 — Seed default report types
+- **Milestone:** M4
+- **Status:** Done
+- **Completed at:** 2026-06-26 21:24 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(reports): complete T-M4-013 — Seed default report types` (sha: `441a41d1`)
+- **Files touched:** backend/database/seeders/ReportTypesSeeder.php (new; idempotent firstOrCreate for 10 categories — pothole, streetlight, garbage, water_leak, sewage, road_damage, traffic_signal, encroachment, illegal_parking, tree_fallen — with requires_video/requires_photo flags, min/max photos, default departments)
+- **Acceptance criteria:** Seeding is idempotent; firstOrCreate keyed on (code).
+- **Required tests:** Seeded types are exercised by ReportServiceTest and dedicated tests/Feature/Reports/ReportSeedTest.php — full suite 394/394 pass.
+- **Notes:** Department defaults for each type reference the seeded departments (M3). Additional types can be added via the Super Admin Portal (M12) using the same firstOrCreate upsert pattern.
+
+
 
 ### T-M4-012 — Seed report_statuses and priorities
 - **Milestone:** M4
@@ -1184,6 +1197,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 21:24 IST | Logged T-M4-013 done; M4 18/32; total 93/410 = 22.7 %. | Lead Solution Architect | T-M4-013 |
 | 2026-06-26 21:24 IST | Logged T-M4-012 done; M4 17/32; total 92/410 = 22.4 %. | Lead Solution Architect | T-M4-012 |
 | 2026-06-26 21:24 IST | Logged T-M4-011 done; M4 16/32; total 91/410 = 22.2 %. | Lead Solution Architect | T-M4-011 |
 | 2026-06-26 21:24 IST | Logged T-M4-010 done; M4 15/32; total 90/410 = 22.0 %. | Lead Solution Architect | T-M4-010 |

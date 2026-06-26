@@ -1199,7 +1199,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/seeders/ReportTypesSeeder.php`
 - **Acceptance criteria:** 10 report types present.
 - **Required tests:** Seed test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-014 — Implement DTOs for report create/submit
 - **Milestone:** M4
