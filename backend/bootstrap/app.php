@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Security\Http\Middleware\AuditMiddleware;
 use App\Modules\Shared\Exceptions\ApiException;
+use App\Modules\Media\Http\Middleware\MediaUploadLimit;
 use App\Modules\Shared\Http\Middleware\IdempotencyKey;
 use App\Modules\Shared\Http\Middleware\RequestId;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(RequestId::class);
         $middleware->append(IdempotencyKey::class);
+        $middleware->append(MediaUploadLimit::class);
         $middleware->append(AuditMiddleware::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
