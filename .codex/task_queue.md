@@ -1355,7 +1355,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Http/Controllers/Api/ReportsController.php`, `backend/app/Modules/Reports/Http/Resources/TimelineEntryResource.php`
 - **Acceptance criteria:** Returns status changes with actor, from, to, reason, timestamp.
 - **Required tests:** `tests/Feature/Reports/TimelineEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-027 — GET /api/v1/citizen/dashboard endpoint
 - **Milestone:** M4
