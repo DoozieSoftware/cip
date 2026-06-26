@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\HealthController;
 use App\Modules\Authentication\Http\Controllers\AuthController;
 use App\Modules\Departments\Http\Controllers\Admin\DepartmentController;
+use App\Modules\Settings\Http\Controllers\Admin\AppConfigController;
 use App\Modules\Settings\Http\Controllers\Admin\SettingController;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Route;
@@ -55,5 +56,13 @@ Route::prefix('v1')->group(function (): void {
         Route::get('settings/{setting}', [SettingController::class, 'show'])->name('settings.show');
         Route::put('settings/{setting}', [SettingController::class, 'update'])->name('settings.update');
         Route::delete('settings/{setting}', [SettingController::class, 'destroy'])->name('settings.destroy');
+
+        // Feature flag CRUD (T-M3-018)
+        Route::get('app-configs', [AppConfigController::class, 'index'])->name('app-configs.index');
+        Route::post('app-configs', [AppConfigController::class, 'store'])->name('app-configs.store');
+        Route::get('app-configs/{app_config}/evaluate', [AppConfigController::class, 'evaluate'])->name('app-configs.evaluate');
+        Route::get('app-configs/{app_config}', [AppConfigController::class, 'show'])->name('app-configs.show');
+        Route::put('app-configs/{app_config}', [AppConfigController::class, 'update'])->name('app-configs.update');
+        Route::delete('app-configs/{app_config}', [AppConfigController::class, 'destroy'])->name('app-configs.destroy');
     });
 });
