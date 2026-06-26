@@ -1592,7 +1592,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Http/Controllers/Api/MediaController.php`
 - **Acceptance criteria:** 201 first upload; 409 second upload; 422 on duration violation.
 - **Required tests:** `tests/Feature/Media/UploadVideoEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-014 — GET /api/v1/reports/{id}/media endpoint
 - **Milestone:** M5
