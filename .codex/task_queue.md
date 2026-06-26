@@ -1331,7 +1331,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Http/Controllers/Api/ReportsController.php`
 - **Acceptance criteria:** 200 for owner/staff; 403 for other citizens; 404 if missing.
 - **Required tests:** `tests/Feature/Reports/ShowReportEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-025 — GET /api/v1/reports search endpoint
 - **Milestone:** M4
