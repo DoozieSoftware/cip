@@ -49,6 +49,10 @@ enum ErrorCode: string
     // Idempotency middleware
     case IDEMPOTENCY_KEY_CONFLICT = 'IDEMPOTENCY_KEY_CONFLICT';
 
+    // Media module
+    case MEDIA_INVALID_MIME = 'MEDIA_INVALID_MIME';
+    case MEDIA_INVALID_SIGNATURE = 'MEDIA_INVALID_SIGNATURE';
+
     /**
      * @return array<int, string>
      */
