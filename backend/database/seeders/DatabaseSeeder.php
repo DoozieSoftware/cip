@@ -18,8 +18,10 @@ class DatabaseSeeder extends Seeder
      * The geography tree (India → Karnataka → Bengaluru + sample
      * wards) is seeded after the country row so the dependent
      * state / district / city / zone / ward upserts can find their
-     * parents. Countries other than India are not seeded here —
-     * the Super Admin Portal (M12) creates them on demand.
+     * parents. The four default departments (BBMP, BTP, BWSSB,
+     * BESCOM) are seeded last because they need the geography
+     * tree (their `jurisdiction` field matches on a geography
+     * attribute).
      */
     public function run(): void
     {
@@ -27,6 +29,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             CountriesSeeder::class,
             GeographySeeder::class,
+            DepartmentsSeeder::class,
         ]);
     }
 }
