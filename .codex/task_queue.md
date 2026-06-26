@@ -1271,7 +1271,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Policies/ReportPolicy.php`, `backend/app/Modules/Reports/Policies/LocationPolicy.php`
 - **Acceptance criteria:** Citizen A cannot read citizen B's report; moderator can.
 - **Required tests:** `tests/Feature/Reports/PolicyTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-020 — Implement IdempotencyKey middleware
 - **Milestone:** M4
