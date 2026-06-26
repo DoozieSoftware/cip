@@ -950,7 +950,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Settings/Http/Controllers/Admin/SettingController.php`, `backend/app/Modules/Settings/Http/Requests/StoreSettingRequest.php`, `backend/app/Modules/Settings/Http/Resources/SettingResource.php`, `backend/routes/api.php`
 - **Acceptance criteria:** Writes invalidate cache; reads return latest value.
 - **Required tests:** `tests/Feature/Settings/SettingCrudTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-018 — Feature flag CRUD endpoints
 - **Milestone:** M3
