@@ -1003,6 +1003,207 @@ components:
                         type: array
                         items: { $ref: '#/components/schemas/ReportStatusHistory' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/reports/{id}/photos:
+    post:
+      tags: [Media]
+      summary: 'Upload photo evidence for a report'
+      operationId: reports.photos.store
+      description: |
+        Accepts a multipart upload of one or more photo files (jpeg/png).
+        Per docs/05 §14 the per-type cap is 10 photos and 16 MB per file.
+        The bytes are scanned, persisted under `evidence/{report}/photo/{uuid}.{ext}`,
+        and three post-processing jobs (ComputeHashes, GenerateThumbnail, and the
+        chain-of-custody VIEW row on read) are dispatched on the `media` queue.
+      security:
+        - sanctum: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [photos]
+              properties:
+                photos:
+                  type: array
+                  items: { type: string, format: binary, description: 'A photo (image/jpeg or image/png).' }
+                  minItems: 1
+                  maxItems: 10
+      responses:
+        '201':
+          description: 'Photos uploaded'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          media:
+                            type: array
+                            items: { $ref: '#/components/schemas/Media' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422':
+          description: 'Validation / mime / size error'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/v1/reports/{id}/video:
+    post:
+      tags: [Media]
+      summary: 'Upload a single video evidence file for a report'
+      operationId: reports.video.store
+      description: |
+        Accepts a multipart upload of one mp4/quicktime video. The per-report
+        cap is 1 video (409 on conflict) and 100 MB / 3-300 s.
+        ExtractVideoMetadataJob is dispatched on the `media` queue.
+      security:
+        - sanctum: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [video]
+              properties:
+                video: { type: string, format: binary, description: 'The video file (video/mp4 or video/quicktime).' }
+                duration_seconds: { type: integer, minimum: 3, maximum: 300, description: 'Citizen-client-measured duration used as fallback when ffprobe is missing.' }
+                width: { type: integer, description: 'Optional upload-time width hint (for ffprobe-missing fallback).' }
+                height: { type: integer, description: 'Optional upload-time height hint.' }
+      responses:
+        '201':
+          description: 'Video uploaded'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          media: { $ref: '#/components/schemas/Media' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: 'A video is already attached to this report'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422':
+          description: 'Validation / mime / size / duration error'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/v1/reports/{id}/media:
+    get:
+      tags: [Media]
+      summary: 'List media attached to a report'
+      operationId: reports.media.index
+      description: |
+        Returns the media array for a report. Each entry carries a 15-minute
+        temporary signed URL (`signed_url`) for playback. Non-staff callers
+        see only the public fields; the storage path is hidden unless
+        `include_storage_path=1` is passed by a super_admin.
+        Reading this endpoint writes a `VIEW` row to the chain-of-custody
+        log (docs/11 §15) for every media the caller can see.
+      security:
+        - sanctum: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: include_storage_path, in: query, required: false, schema: { type: integer, enum: [0, 1] } }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          media:
+                            type: array
+                            items: { $ref: '#/components/schemas/MediaWithSignedUrl' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/reports/{id}/media/{media}/audit:
+    get:
+      tags: [Media]
+      summary: 'Staff-only chain-of-custody audit trail for one media row'
+      operationId: reports.media.audit
+      description: |
+        Returns the append-only access log (VIEW / DOWNLOAD / REPLACE / DELETE
+        / VIRUS_SCAN) for a single media row. Restricted to
+        moderator / department / super_admin / system per docs/11 §15.
+      security:
+        - sanctum: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: media, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          media_id: { type: string, format: uuid }
+                          audit:
+                            type: array
+                            items: { $ref: '#/components/schemas/MediaAccessLog' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/media/{media}/serve:
+    get:
+      tags: [Media]
+      summary: 'Stream a media file via its signed URL'
+      operationId: media.serve
+      description: |
+        Public route — the signed URL is the auth. Writes a `DOWNLOAD`
+        row to the chain-of-custody log on every successful read.
+        The signed URL expires (default 15 min) and a 403 is returned
+        for expired or tampered signatures.
+      parameters:
+        - { name: media, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: expires, in: query, required: true, schema: { type: integer, description: 'Unix timestamp; must be in the future.' } }
+        - { name: signature, in: query, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: 'Binary file (mime matches the Media row)'
+          content:
+            '*/*':
+              schema: { type: string, format: binary }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '410':
+          description: 'Media bytes missing on storage'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /api/v1/citizen/dashboard:
     get:
       tags: [Reports]
@@ -1068,6 +1269,62 @@ components:
                       data: { $ref: '#/components/schemas/Report' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+    Media:
+      type: object
+      description: 'A piece of evidence attached to a report (docs/04 §12).'
+      required: [id, type, mime, size, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string, enum: [PHOTO, VIDEO, DOCUMENT] }
+        mime: { type: string, example: 'image/jpeg' }
+        size: { type: integer, description: 'Bytes.' }
+        duration: { type: integer, nullable: true, description: 'Video duration in seconds (null for photo/document).' }
+        width: { type: integer, nullable: true }
+        height: { type: integer, nullable: true }
+        checksum: { type: string, description: 'sha256 of the bytes; populated by ComputeHashesJob.' }
+        captured_at: { type: string, format: date-time, nullable: true }
+        uploaded_at: { type: string, format: date-time }
+        uploaded_by: { type: string, format: uuid, nullable: true }
+        version: { type: integer, description: 'Replacement counter; 1 on first upload.' }
+        is_replaced: { type: boolean }
+        storage_path: { type: string, description: 'Relative path on the storage disk. Only exposed to super_admin with include_storage_path=1.' }
+        storage_disk: { type: string, description: 'Storage disk name. Only exposed to super_admin with include_storage_path=1.' }
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+    MediaWithSignedUrl:
+      allOf:
+        - $ref: '#/components/schemas/Media'
+        - type: object
+          properties:
+            signed_url: { type: string, description: 'Time-limited URL for /api/v1/media/{id}/serve.' }
+            signed_url_expires_at: { type: string, format: date-time }
+    MediaHash:
+      type: object
+      description: 'Per-media hash row (docs/04 §12).'
+      required: [media_id, sha256]
+      properties:
+        media_id: { type: string, format: uuid }
+        sha256: { type: string, description: '64-char hex digest of the bytes.' }
+        sha512: { type: string, nullable: true, description: '128-char hex digest.' }
+        perceptual_hash: { type: string, nullable: true, description: '16-char hex pHash (GD fallback).' }
+        video_fingerprint: { type: string, nullable: true, description: 'sha1 of the first 32 KiB (video only).' }
+    MediaAccessLog:
+      type: object
+      description: 'Append-only chain-of-custody row (docs/11 §15).'
+      required: [id, event, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        event: { type: string, enum: [VIEW, DOWNLOAD, REPLACE, DELETE, VIRUS_SCAN] }
+        actor_id: { type: string, format: uuid, nullable: true }
+        ip: { type: string, nullable: true }
+        user_agent: { type: string, nullable: true }
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+        created_at: { type: string, format: date-time }
 tags:
   -
     name: Health
@@ -1087,3 +1344,6 @@ tags:
   -
     name: Reports
     description: 'Citizen report submission + read-back; staff report search, read, and timeline.'
+  -
+    name: 'Media'
+    description: 'Photo / video / document evidence (M5). Upload, list, audit, and signed-URL playback. Chain-of-custody rows are written on every read.'
