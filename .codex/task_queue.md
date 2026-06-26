@@ -212,7 +212,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/package.json`, `frontend/tailwind.config.js`, `frontend/postcss.config.js`
 - **Acceptance criteria:** `npm run build` succeeds; `tailwind.config.js` content paths cover `src/**/*.{ts,tsx}`.
 - **Required tests:** `npm run build` exits 0.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M1-010 — Configure ESLint and Prettier
 - **Milestone:** M1
