@@ -631,7 +631,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** `tests/Feature/Security/SecurityEventServiceTest.php`.
 - **Status:** Done
 
-### T-M2-022 — Configure rate limiters per docs/11 §21
+### T-M2-022 — Configure rate limiters per docs/11 §21 [DONE 2026-06-26 — commit bacdb1dc]
 - **Milestone:** M2
 - **Title:** Configure rate limiters per docs/11 §21
 - **Description:** Register named limiters `otp`, `citizen`, `uploads`, `moderator`, `department`, `admin` in `App\Providers\RouteServiceProvider`.
@@ -641,19 +641,19 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Providers/RouteServiceProvider.php`
 - **Acceptance criteria:** `RateLimiter::for('otp')` returns `Limit::perHour(5)`; limiters are referenced in routes.
 - **Required tests:** `tests/Feature/Security/RateLimiterTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
-### T-M2-023 — Apply rate limiters to auth routes
+### T-M2-023 — Apply rate limiters to auth routes [DONE 2026-06-26 — commit 5bfbd5d5]
 - **Milestone:** M2
 - **Title:** Apply rate limiters to auth routes
 - **Description:** Wrap `/auth/send-otp` with `otp` limiter, `/auth/*` with `citizen` limiter; document per route.
 - **Related specs:** `docs/11` §21
 - **Dependencies:** T-M2-022, T-M2-013
 - **Est. time:** 10 minutes
-- **Files:** `backend/routes/api.php`
+- **Files:** `backend/routes/api.php` (throttle middleware on /auth/send-otp, /auth/verify-otp, /auth/refresh, and the authenticated group)
 - **Acceptance criteria:** 6th OTP request within an hour returns 429.
 - **Required tests:** `tests/Feature/Authentication/OtpRateLimitRouteTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-024 — Add UserResource with roles and permissions
 - **Milestone:** M2

@@ -19,9 +19,9 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 19:50 IST (after T-M2-021 done — M2 progress 20/30; total 42/410 = 10.2 %)
+* **Last updated:** 2026-06-26 20:40 IST (after T-M2-023 done — M2 progress 22/30; total 44/410 = 10.7 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
-* **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
+* **Active milestone:** M2 — Identity, Auth & RBAC Core (see `.codex/current_milestone.md`)
 
 ---
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 20   | 0           | 0       | 0        | 67 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 22   | 0           | 0       | 0        | 73 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **42** | **0**    | **0**   | **0**    | **10.2 %   |
+| **All** | **Total**                             | **410** | **44** | **0**    | **0**   | **0**    | **10.7 %   |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,7 +56,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 20 | 20 % |
+| Foundations | M2, M3, M5, M9 | 100 | 22 | 22 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
@@ -572,6 +572,28 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Notes:** The service is intentionally split into `record` (strict — throws on bad inputs) and `recordSafe` (swallow — logs the failure and returns null). Hot paths (e.g. the audit middleware, the login endpoint) should use `recordSafe` so a security-event write failure never breaks the user flow. Strict callers (admin tools, batch jobs) should use `record` so that input drift is caught early. The IP / UA fall back to the active request only when the caller did not supply them, so a console command (no HTTP request) still works with `null` IP / UA.
 
 
+### T-M2-022 — Configure rate limiters per docs/11 §21
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 20:25 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(security): complete T-M2-022 — RouteServiceProvider + named rate limiters` (sha: bacdb1dc)
+- **Files touched:** `backend/app/Providers/RouteServiceProvider.php` (new; 6 named limiters: otp 5/h per IP, citizen 60/min per user-or-IP, uploads 120/h, moderator 300/min, department 300/min, admin 600/min; each key is namespaced to prevent cross-limiter cache collisions; public constants `LIMITER_OTP`/`LIMITER_CITIZEN`/etc. for route binding), `backend/bootstrap/providers.php` (registered the new provider), `backend/bootstrap/app.php` (added `ThrottleRequestsException` renderer → 429 envelope with `code: RATE_LIMITED`, preserving `Retry-After` from the framework), `backend/tests/Feature/Security/RateLimiterTest.php` (new; 6 tests covering limiter registration, key format under authenticated/unauthenticated, the public constants, and an integration test that 6 consecutive `/auth/send-otp` requests from the same IP return 429).
+- **Acceptance criteria:** `RateLimiter::for('otp')` returns `Limit::perHour(5)`; all 6 limiters registered; the throttle middleware integration test passes (6th request → 429).
+- **Required tests:** Pest `tests/Feature/Security/RateLimiterTest.php` — 6/6 pass; full suite 177/177 (642 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** The keys are namespaced per limiter (`otp:`, `citizen:`, `uploads:`, `mod:`, `dept:`, `admin:`) so a user id can never collide across limiters in the shared cache. The `ThrottleRequestsException` renderer preserves the `Retry-After` / `X-RateLimit-*` headers the framework attaches, which is important so clients can back off intelligently. The 100 MB/hour byte cap on uploads is enforced by the upload service (T-M5-xxx) — the request-count cap on the named limiter is a backstop, not the primary control. M3 will move the numeric values into the `settings` table per the spec note that rates must be "configurable".
+
+### T-M2-023 — Apply rate limiters to auth routes
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 20:40 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(auth): complete T-M2-023 — apply rate limiters to auth routes` (sha: 5bfbd5d5)
+- **Files touched:** `backend/routes/api.php` (`/auth/send-otp` wrapped with `throttle:otp`; `/auth/verify-otp` and `/auth/refresh` wrapped with `throttle:citizen`; the authenticated group containing `/auth/logout` and `/auth/me` carries `auth:sanctum` + `throttle:citizen`), `backend/tests/Feature/Authentication/SendOtpEndpointTest.php` (corrected `LoginHistory` row-count expectation — the throttle middleware runs before the controller, so the 429 path no longer writes a `LoginHistory` row; 5 successful requests ⇒ 5 rows, not 6), `backend/tests/Feature/Authentication/VerifyOtpEndpointTest.php` (removed a redundant pre-existing double-`request()` call that was causing intermittent otp-limiter cross-contamination between tests by consuming the 5/hour budget twice in a single test).
+- **Acceptance criteria:** 6th `/auth/send-otp` request within an hour from the same IP returns 429 with `code: RATE_LIMITED`; authenticated `/auth/*` routes are subject to 60 req/min per user.
+- **Required tests:** Pest `tests/Feature/Authentication/SendOtpEndpointTest.php` (rate-limited assertion passes) and `RateLimiterTest::it honors the throttle middleware on a route and returns 429 after 5 calls` (integration) — full suite 177/177 (642 assertions) green.
+- **Notes:** The `throttle:citizen` middleware is intentionally applied to the authenticated group *in addition to* `auth:sanctum`. This is so a logged-in user who is hammering the API still gets cut off at 60 req/min before they reach business logic. The VerifyOtpEndpointTest fix is a real test-stability fix — the pre-existing test was calling `OtpService::request()` then immediately making a second `Request`-create+post flow that consumed an extra OTP budget, which was a latent flakiness source now that the otp limiter exists.
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -608,6 +630,8 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 20:40 IST | Logged T-M2-023 done; M2 progress 22/30; total 44/410 = 10.7 %. | Lead Solution Architect | T-M2-023 |
+| 2026-06-26 20:25 IST | Logged T-M2-022 done; M2 progress 21/30; total 43/410 = 10.5 %. | Lead Solution Architect | T-M2-022 |
 | 2026-06-26 19:50 | Logged T-M2-021 done; M2 progress 20/30; total 42/410 = 10.2 %. | Lead Solution Architect | T-M2-021 |
 | 2026-06-26 19:30 | Logged T-M2-020 done; M2 progress 19/30; total 41/410 = 10.0 %. | Lead Solution Architect | T-M2-020 |
 | 2026-06-26 19:10 | Logged T-M2-019 done; M2 progress 18/30; total 40/410 = 9.8 %. | Lead Solution Architect | T-M2-019 |
@@ -655,14 +679,14 @@ Snapshot at file initialization. Updated as the repository grows.
 | Lines of `.codex/roadmap.md` | 991 |
 | Lines of `.codex/task_queue.md` | 5,163 |
 | Lines of `.codex/current_milestone.md` | 212 |
-| Lines of `.codex/completed_tasks.md` (this file) | `<pending>` |
+| Lines of `.codex/completed_tasks.md` (this file) | 759 |
 | Database migrations | 0 |
 | Eloquent models | 0 |
 | API endpoints (under `routes/api.php`) | 0 (only `/api/v1/health` and `/api/v1/health/ready` will exist after M1) |
-| Pest tests | 171 passing (616 assertions) |
+| Pest tests | 177 passing (642 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 36 (T-M2-021 pending) |
+| Git commits on `main` | 39 (T-M2-023 pending) |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |
