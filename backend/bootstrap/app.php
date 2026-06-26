@@ -9,6 +9,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
@@ -79,6 +80,26 @@ return Application::configure(basePath: dirname(__DIR__))
             ];
 
             return response()->json($payload, 401);
+        });
+
+        // ThrottleRequestsException -> 429 with the standard envelope
+        // and the Retry-After header set from the exception. The
+        // named rate limiters in RouteServiceProvider (T-M2-022)
+        // are the source of these exceptions.
+        $exceptions->render(function (ThrottleRequestsException $e, Request $request) {
+            $traceId = (string) ($request->attributes->get('trace_id')
+                ?? $request->header('X-Request-Id')
+                ?? 'unknown');
+            $payload = [
+                'success' => false,
+                'message' => 'Too many requests. Please slow down.',
+                'errors' => (object) [],
+                'code' => 'RATE_LIMITED',
+                'trace_id' => $traceId,
+            ];
+            $headers = $e->getHeaders();
+
+            return response()->json($payload, 429, $headers);
         });
 
         // Any other Throwable under API requests → opaque 500 with trace_id.
