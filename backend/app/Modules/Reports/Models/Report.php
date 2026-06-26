@@ -184,4 +184,12 @@ class Report extends Model
     {
         return $this->hasMany(ReportStatusHistory::class, 'report_id');
     }
+
+    /**
+     * @return HasMany<ReportAssignment, $this>
+     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(ReportAssignment::class, 'report_id');
+    }
 }

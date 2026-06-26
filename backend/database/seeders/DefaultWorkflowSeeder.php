@@ -103,6 +103,7 @@ class DefaultWorkflowSeeder extends Seeder
             ['draft',             'submit',            'submitted',         null,         null],
             ['submitted',         'ai_complete',       'ai_processing',     'system',     30],
             ['ai_processing',     'moderator_review',  'pending_moderator', 'system',     30],
+            ['ai_processing',     'ai_auto_assign',    'assigned',          'system',     120],
             ['pending_moderator', 'assign',            'assigned',          'moderator',  120],
             ['assigned',          'accept',            'accepted',          'department', 240],
             ['accepted',          'start',             'in_progress',       'department', 1440],

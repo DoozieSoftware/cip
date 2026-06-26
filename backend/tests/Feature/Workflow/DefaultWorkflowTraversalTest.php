@@ -20,11 +20,11 @@ beforeEach(function (): void {
     $this->repo = new WorkflowRepository;
 });
 
-it('seeds the default civic workflow with 11 states and 13 transitions', function (): void {
+it('seeds the default civic workflow with 11 states and 14 transitions', function (): void {
     $graph = $this->repo->loadGraph('civic_default');
     expect($graph)->not->toBeNull();
     expect($graph['states'])->toHaveCount(11);
-    expect($graph['transitions'])->toHaveCount(13);
+    expect($graph['transitions'])->toHaveCount(14);
     expect(array_keys($graph['states']))->toContain('draft', 'submitted', 'closed', 'rejected');
 });
 
@@ -104,7 +104,7 @@ it('the seeder is idempotent (re-running does not duplicate states or transition
     $this->seed(DefaultWorkflowSeeder::class);
     $graph = $this->repo->loadGraph('civic_default');
     expect($graph['states'])->toHaveCount(11);
-    expect($graph['transitions'])->toHaveCount(13);
+    expect($graph['transitions'])->toHaveCount(14);
 });
 
 /**
