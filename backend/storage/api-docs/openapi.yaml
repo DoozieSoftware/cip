@@ -887,6 +887,187 @@ components:
                         properties:
                           deleted: { type: boolean, example: true }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/reports:
+    post:
+      tags: [Reports]
+      summary: 'Create and submit a citizen report'
+      operationId: reports.store
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitReportRequest'
+      responses:
+        '201':
+          description: 'Report submitted'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Report' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '409': { $ref: '#/components/responses/IdempotencyKeyConflict' }
+    get:
+      tags: [Reports]
+      summary: 'Staff report search'
+      operationId: reports.index
+      security:
+        - sanctum: []
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: department, in: query, schema: { type: string } }
+        - { name: ward, in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string } }
+        - { name: date_from, in: query, schema: { type: string, format: date-time } }
+        - { name: date_to, in: query, schema: { type: string, format: date-time } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: sort, in: query, schema: { type: string } }
+        - { name: dir, in: query, schema: { type: string, enum: [asc, desc] } }
+        - { name: per_page, in: query, schema: { type: integer, default: 25 } }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/reports/{id}:
+    get:
+      tags: [Reports]
+      summary: 'Staff report read'
+      operationId: reports.show
+      security:
+        - sanctum: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Report' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/reports/{id}/submit:
+    post:
+      tags: [Reports]
+      summary: 'Move a draft report to submitted'
+      operationId: reports.submit
+      security:
+        - sanctum: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Report' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/reports/{id}/timeline:
+    get:
+      tags: [Reports]
+      summary: 'Staff report status timeline'
+      operationId: reports.timeline
+      security:
+        - sanctum: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/ReportStatusHistory' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/citizen/dashboard:
+    get:
+      tags: [Reports]
+      summary: 'Citizen dashboard counts'
+      operationId: reports.citizen.dashboard
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          total: { type: integer, example: 12 }
+                          open: { type: integer, example: 4 }
+                          resolved: { type: integer, example: 7 }
+                          rejected: { type: integer, example: 1 }
+  /api/v1/citizen/reports:
+    get:
+      tags: [Reports]
+      summary: 'List the authenticated citizen reports'
+      operationId: reports.citizen.index
+      security:
+        - sanctum: []
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: date_from, in: query, schema: { type: string, format: date-time } }
+        - { name: date_to, in: query, schema: { type: string, format: date-time } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: per_page, in: query, schema: { type: integer, default: 25 } }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedResponse' }
+  /api/v1/citizen/reports/{id}:
+    get:
+      tags: [Reports]
+      summary: 'Citizen report detail (owner or staff)'
+      operationId: reports.citizen.show
+      security:
+        - sanctum: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Report' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 tags:
   -
     name: Health
@@ -903,3 +1084,6 @@ tags:
   -
     name: 'Feature Flags'
     description: 'Super Admin CRUD for app_configs (feature flags) and the deterministic evaluator.'
+  -
+    name: Reports
+    description: 'Citizen report submission + read-back; staff report search, read, and timeline.'
