@@ -1712,7 +1712,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/storage/api-docs/openapi.yaml`
 - **Acceptance criteria:** `swagger-cli validate` passes.
 - **Required tests:** `tests/Feature/OpenApiMediaTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-024 — Author docs/media.md
 - **Milestone:** M5
