@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 21:23 IST (after T-M4-007 done; M4 in progress)
+* **Last updated:** 2026-06-26 21:23 IST (after T-M4-008 done; M4 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -34,7 +34,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
-| M4 | Reports Domain & Submission API | 32 | 12 | 0 | 0 | 0 | 38 % |
+| M4 | Reports Domain & Submission API | 32 | 13 | 0 | 0 | 0 | 41 % |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **87** | **0** | **0** | **0** | **21.2 %** |
+| **All** | **Total** | **410** | **88** | **0** | **0** | **0** | **21.5 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M4-008 — Create Report model and factory
+- **Milestone:** M4
+- **Status:** Done
+- **Completed at:** 2026-06-26 21:23 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(reports): complete T-M4-008 — Create Report model and factory` (sha: `2007f029`)
+- **Files touched:** backend/app/Modules/Reports/Models/Report.php (new; HasUuids + SoftDeletes, fillable, casts, booted() generates CIV-YYYY-NNNNNN tracking numbers, citizen/reportType/status/priority/location BelongsTo, statusHistory HasMany), backend/app/Modules/Reports/Models/ReportStatusHistory.php (new; HasUuids, fillable, casts, report BelongsTo), backend/database/factories/Modules/Reports/Models/ReportFactory.php (new), backend/database/factories/Modules/Reports/Models/ReportStatusHistoryFactory.php (new)
+- **Acceptance criteria:** Report and ReportStatusHistory can be persisted from a factory; the tracking number generator is the safety net for V1 single-node deployments (T-M4-xxx backlog reserves a distributed sequence for production).
+- **Required tests:** Used by tests/Feature/Reports/ReportServiceTest.php — full suite 394/394 pass.
+- **Notes:** ReportStatusHistory is append-only via the booted() guard in T-M4-009's migration; Report::nextTrackingNumber() is the in-app generator (production deployment will swap in a distributed sequence).
+
+
 
 ### T-M4-007 — Create reports migration
 - **Milestone:** M4
@@ -1119,6 +1132,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 21:23 IST | Logged T-M4-008 done; M4 13/32; total 88/410 = 21.5 %. | Lead Solution Architect | T-M4-008 |
 | 2026-06-26 21:23 IST | Logged T-M4-007 done; M4 12/32; total 87/410 = 21.2 %. | Lead Solution Architect | T-M4-007 |
 | 2026-06-26 21:23 IST | Logged T-M4-006 done; M4 11/32; total 86/410 = 21.0 %. | Lead Solution Architect | T-M4-006 |
 | 2026-06-26 21:22 IST | Logged T-M4-005 done; M4 10/32; total 85/410 = 20.7 %. | Lead Solution Architect | T-M4-005 |

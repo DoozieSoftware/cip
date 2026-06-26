@@ -1139,7 +1139,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Models/Report.php`, `backend/database/factories/ReportFactory.php`
 - **Acceptance criteria:** `Report::factory()->create()` produces a unique tracking number.
 - **Required tests:** `tests/Unit/Reports/ReportModelTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-009 — Create report_status_history migration
 - **Milestone:** M4
