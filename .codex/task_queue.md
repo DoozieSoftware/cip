@@ -1937,7 +1937,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Workflow/Jobs/CheckSlaBreaches.php`
 - **Acceptance criteria:** Reports past SLA raise event; non-breaching reports are skipped.
 - **Required tests:** `tests/Feature/Workflow/CheckSlaBreachesTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-016 — WorkflowFeatureTest (every transition)
 - **Milestone:** M6
