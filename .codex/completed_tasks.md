@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 13:55 IST (after M1 milestone complete — T-M1-001..T-M1-022)
+* **Last updated:** 2026-06-26 14:15 IST (after T-M2-002 done — M2 progress 1/30; total 23/410 = 5.6 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 0    | 0           | 0       | 0        | 0 %        |
+| M2  | Identity, Auth & RBAC Core               | 30    | 1    | 0           | 0       | 0        | 3 %        |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **22** | **0**    | **0**   | **0**    | **5.4 %    |
+| **All** | **Total**                             | **410** | **23** | **0**    | **0**   | **0**    | **5.6 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -331,6 +331,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 ---
+
+### T-M2-002 — Create User Eloquent model with HasRoles
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 14:15 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(users): complete T-M2-002 — User Eloquent model with HasRoles` (sha: pending)
+- **Files touched:** `backend/app/Modules/Users/Models/User.php` (new; extends `Authenticatable`; `use HasApiTokens, HasFactory, HasRoles, HasUuids, Notifiable, SoftDeletes`; `@use HasFactory<UserFactory>` PHPDoc; uuid PK; `fillable` includes `name/mobile/email/password/anonymous_enabled/status`; `hidden` covers `password/remember_token/two_factor_secret/two_factor_recovery_codes`; `casts` for `otp_verified_at/two_factor_confirmed_at/last_login_at/anonymous_enabled/password`; `isActive()` and `recordLogin()` helpers; NO module relations — those land in T-M2-005/006/008/009/020 per D-009), `backend/config/auth.php` (provider model swap `App\Models\User` → `App\Modules\Users\Models\User`), `backend/tests/Unit/Users/UserModelTest.php` (new; 5 tests covering uuid PK, table, fillable/hidden/casts, isActive, recordLogin).
+- **Acceptance criteria:** Model boots; UUID PK; Sanctum + Spatie traits wired; `isActive()` reflects status + soft-deleted; `recordLogin()` updates `last_login_at` + `last_login_ip`; `config/auth.php` provider points at the new module model.
+- **Required tests:** Pest `tests/Unit/Users/UserModelTest.php` — 5/5 pass; full suite 23/23 (97 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** PHPDoc `@use HasFactory<UserFactory>` was added to silence the `missingType.generics` PHPStan error (the bare `use HasFactory;` was incomplete). The factory at `database/factories/UserFactory.php` still points at `App\Models\User`; T-M2-003 will retarget it to `App\Modules\Users\Models\User` and add the citizen/moderator/departmentOfficer/superAdmin states.
+
 
 ## 4. In-Progress Tasks
 
