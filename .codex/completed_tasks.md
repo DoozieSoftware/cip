@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 21:43 IST (after T-M4-019 done; M4 in progress)
+* **Last updated:** 2026-06-26 22:02 IST (after T-M4-020 done; M4 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -34,7 +34,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
-| M4 | Reports Domain & Submission API | 32 | 19 | 0 | 0 | 0 | 59 % |
+| M4 | Reports Domain & Submission API | 32 | 20 | 0 | 0 | 0 | 62 % |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **94** | **0** | **0** | **0** | **22.9 %** |
+| **All** | **Total** | **410** | **95** | **0** | **0** | **0** | **23.2 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M4-020 — Implement IdempotencyKey middleware
+- **Milestone:** M4
+- **Status:** Done
+- **Completed at:** 2026-06-26 22:02 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(reports): complete T-M4-020 — Implement IdempotencyKey middleware` (sha: `d232534632ac1349c2c9e42168a53ab0acfb6edc`)
+- **Files touched:** backend/app/Modules/Shared/Http/Middleware/IdempotencyKey.php (new; reads Idempotency-Key header, replays stored response on matching replay, returns 409 IDEMPOTENCY_KEY_CONFLICT on hash mismatch, persists only 2xx responses), backend/app/Modules/Reports/Models/IdempotencyKey.php (new; HasUuids model with route, request_hash, response_status, response_body), backend/database/factories/Modules/Reports/Models/IdempotencyKeyFactory.php (new), backend/tests/Feature/Shared/IdempotencyKeyMiddlewareTest.php (new; 3 Pest feature tests covering pass-through, replay, and 409 conflict), backend/bootstrap/app.php (modified; appends IdempotencyKey to the global API stack)
+- **Acceptance criteria:** Replay within window returns identical body and status; same key with a different payload returns 409 IDEMPOTENCY_KEY_CONFLICT; no key supplied is a transparent pass-through.
+- **Required tests:** tests/Feature/Shared/IdempotencyKeyMiddlewareTest.php — 3 Pest feature tests (4 assertions) pass; full suite 402/402 (1454 assertions) green serially; Pint --test clean.
+- **Notes:** The middleware is intentionally global so it can be applied without per-route wiring; it self-disables on GET/HEAD/OPTIONS and on requests that don't supply the Idempotency-Key header. The (key, user_id) unique index handles concurrent inserts via the QueryException catch.
+
+
 
 ### T-M4-019 — Implement ReportPolicy and LocationPolicy
 - **Milestone:** M4
@@ -1210,6 +1223,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 22:02 IST | Logged T-M4-020 done; M4 20/32; total 95/410 = 23.2 %. | Lead Solution Architect | T-M4-020 |
 | 2026-06-26 21:43 IST | Logged T-M4-019 done; M4 19/32; total 94/410 = 22.9 %. | Lead Solution Architect | T-M4-019 |
 | 2026-06-26 21:24 IST | Logged T-M4-013 done; M4 18/32; total 93/410 = 22.7 %. | Lead Solution Architect | T-M4-013 |
 | 2026-06-26 21:24 IST | Logged T-M4-012 done; M4 17/32; total 92/410 = 22.4 %. | Lead Solution Architect | T-M4-012 |

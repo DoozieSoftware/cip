@@ -1283,7 +1283,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Shared/Http/Middleware/IdempotencyKey.php`
 - **Acceptance criteria:** Replay within window returns identical body and status.
 - **Required tests:** `tests/Feature/Shared/IdempotencyKeyMiddlewareTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-021 — Implement SubmitReportRequest
 - **Milestone:** M4
