@@ -565,7 +565,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Status:** Done
 - **Completed at:** 2026-06-26 19:50 IST
 - **Agent / Committer:** Lead Solution Architect
-- **Commit:** `feat(security): complete T-M2-021 — SecurityEventService` (sha: <pending>)
+- **Commit:** `feat(security): complete T-M2-021 — SecurityEventService` (sha: 8511b42d)
 - **Files touched:** `backend/app/Modules/Security/Services/SecurityEventService.php` (new; `record(event, severity, metadata, user, ip, userAgent)`; `info` / `warning` / `critical` convenience wrappers; `recordSafe` fail-open wrapper for hot paths; severity allow-list guard (422 INVALID_SEVERITY); event-name non-empty + ≤64 char guard (422 INVALID_EVENT); IP / UA fall back to the active request when not supplied; never throws to the caller when wrapped in `recordSafe`), `backend/tests/Feature/Security/SecurityEventServiceTest.php` (new; 12 tests — info-with-user, critical-without-user, empty-metadata-null-coercion, null-metadata, severity allow-list, empty-event reject, >64-char reject, model immutability update/delete, recordSafe swallow, recordSafe success, request IP/UA fallback).
 - **Acceptance criteria:** `record` persists a row; severity is constrained; event names are non-empty + ≤64 chars; the model layer still rejects update/delete (immutability test).
 - **Required tests:** Pest `tests/Feature/Security/SecurityEventServiceTest.php` — 12/12 pass; full suite 171/171 (616 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
