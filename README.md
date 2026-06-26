@@ -73,6 +73,37 @@ Full schemas and request/response examples are in the OpenAPI spec rendered at [
 - `docs/05` §5 (Authentication APIs) and `docs/11` §6–10, §21, §28–29 (Security & Anti-Fraud) — authoritative spec
 - `backend/app/Modules/Authentication/` — implementation
 
+
+## M4 — Reports domain
+
+The M4 Reports namespace is the citizen-facing write path and the
+staff-facing read path for the `reports` table. It is fully
+documented under the **Reports** tag in the OpenAPI spec
+([`/api/documentation`](./backend/storage/api-docs/openapi.yaml)) and
+in [`docs/reports.md`](./docs/reports.md).
+
+| Method | Path                                       | Audience            | Notes                       |
+| ------ | ------------------------------------------ | ------------------- | --------------------------- |
+| POST   | `/api/v1/reports`                          | Citizen             | Create + submit in one step |
+| POST   | `/api/v1/reports/{id}/submit`              | Citizen / Staff     | 2-step submit of a draft    |
+| GET    | `/api/v1/reports`                          | Moderator / Staff   | Paginated staff search      |
+| GET    | `/api/v1/reports/{id}`                     | Moderator / Staff   | Single report read          |
+| GET    | `/api/v1/reports/{id}/timeline`            | Moderator / Staff   | Status transition history   |
+| GET    | `/api/v1/citizen/dashboard`                | Citizen             | Aggregate counts            |
+| GET    | `/api/v1/citizen/reports`                  | Citizen             | Own reports (paginated)     |
+| GET    | `/api/v1/citizen/reports/{id}`             | Citizen / Staff     | Own report detail           |
+
+The mutating endpoints honour the `Idempotency-Key` header. A replay
+with the same `(key, user_id, request_hash)` returns the stored
+response; a key reuse with a different payload returns 409
+`IDEMPOTENCY_KEY_CONFLICT`. The tracking number scheme is
+`CIV-YYYY-NNNNNN` and the in-app generator resets at year boundaries
+(production deployment will swap in a distributed sequence).
+
+Authorization is centralised in `ReportPolicy` and `LocationPolicy`
+(extends `BasePolicy`). The standard error codes for the reports
+module live in `App\Modules\Shared\Enums\ErrorCode`.
+
 ## Development
 
 ```bash
