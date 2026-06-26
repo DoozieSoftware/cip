@@ -389,7 +389,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_users_table.php`
 - **Acceptance criteria:** Table created with uuid PK, unique indexes on `mobile` and `email`, soft-delete column.
 - **Required tests:** `php artisan migrate:fresh` succeeds; `tests/Feature/Auth/UsersTableTest.php` checks columns.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-002 — Create User Eloquent model with HasRoles
 - **Milestone:** M2
