@@ -497,7 +497,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/seeders/RolesAndPermissionsSeeder.php`, `backend/database/seeders/DatabaseSeeder.php`
 - **Acceptance criteria:** `php artisan db:seed` is idempotent on second run; expected roles exist.
 - **Required tests:** `tests/Feature/Auth/RoleSeedTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-011 — Implement OtpService with rate limiting
 - **Milestone:** M2

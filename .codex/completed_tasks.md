@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 16:05 IST (after T-M2-009 done — M2 progress 8/30; total 30/410 = 7.3 %)
+* **Last updated:** 2026-06-26 16:20 IST (after T-M2-010 done — M2 progress 9/30; total 31/410 = 7.6 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 8    | 0           | 0       | 0        | 27 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 9    | 0           | 0       | 0        | 30 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **30** | **0**    | **0**   | **0**    | **7.3 %    |
+| **All** | **Total**                             | **410** | **31** | **0**    | **0**   | **0**    | **7.6 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -426,6 +426,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Acceptance criteria:** Insert works; `update` and `delete` (incl. forceDelete) raise `ModelImmutableException`.
 - **Required tests:** Pest `tests/Unit/Security/SecurityEventTest.php` — 8/8 pass; full suite 74/74 (264 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** The model is the canonical enforcement point. The database does not get a `BEFORE UPDATE` trigger in V1 — relying on the Eloquent override is fine because every code path goes through Eloquent, and `SecurityEventService` (T-M2-021) will be the single entry point. A trigger can be added in M15 (security hardening) if we want belt-and-braces.
+
+
+### T-M2-010 — Seed default roles and permissions
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 16:20 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(rbac): complete T-M2-010 — RolesAndPermissionsSeeder` (sha: pending)
+- **Files touched:** `backend/database/seeders/RolesAndPermissionsSeeder.php` (new; 7 roles — citizen/moderator/department_officer/department_admin/super_admin/system/auditor; 12 permission categories per docs/09 §9 — reports/media/users/departments/analytics/settings/ai/workflow/notifications/security/audit/integrations; 50+ permissions; idempotent via firstOrCreate + syncPermissions; `cache()->forget('spatie.permission.cache')` before re-seeding), `backend/database/seeders/DatabaseSeeder.php` (updated — calls `RolesAndPermissionsSeeder`), `backend/tests/Feature/Auth/RoleSeedTest.php` (new; 7 tests — all 7 roles present, super_admin has every permission, citizen has none, moderator matches the expected set, auditor is read-only, idempotency, 12 categories).
+- **Acceptance criteria:** `php artisan db:seed` is idempotent on second run; expected roles exist.
+- **Required tests:** Pest `tests/Feature/Auth/RoleSeedTest.php` — 7/7 pass; full suite 81/81 (328 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** `citizen` deliberately has no baseline permissions — citizens use scope-based checks ("can submit a report about a department they own") rather than discrete permissions. `super_admin` receives the full set via `syncPermissions` of every seeded permission. `auditor` is verified to have no mutating verbs (no `.create`, `.update`, `.delete`, `.assign`, `.close`, etc.). The seeder is called from `DatabaseSeeder` so a fresh install bootstraps the role table in one step.
 
 
 ## 4. In-Progress Tasks
