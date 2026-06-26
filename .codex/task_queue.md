@@ -1805,7 +1805,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Workflow/Models/WorkflowDefinition.php`, `backend/app/Modules/Workflow/Models/WorkflowState.php`, `backend/app/Modules/Workflow/Models/WorkflowTransition.php`
 - **Acceptance criteria:** Relationships return collections.
 - **Required tests:** Model test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-005 — WorkflowDecision value object
 - **Milestone:** M6
