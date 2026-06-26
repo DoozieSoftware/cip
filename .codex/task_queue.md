@@ -1343,7 +1343,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Http/Controllers/Api/ReportsController.php`
 - **Acceptance criteria:** Filters compose; pagination meta correct.
 - **Required tests:** `tests/Feature/Reports/SearchReportsEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-026 — GET /api/v1/reports/{id}/timeline endpoint
 - **Milestone:** M4
