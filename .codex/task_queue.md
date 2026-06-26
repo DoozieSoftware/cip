@@ -1889,7 +1889,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/seeders/DefaultWorkflowSeeder.php`
 - **Acceptance criteria:** A report can traverse every state using `WorkflowEngine::apply`.
 - **Required tests:** `tests/Feature/Workflow/DefaultWorkflowTraversalTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-012 — Wire report submission to workflow
 - **Milestone:** M6
