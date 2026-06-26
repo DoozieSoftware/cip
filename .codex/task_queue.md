@@ -224,7 +224,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/eslint.config.js`, `frontend/prettier.config.js`, `frontend/.prettierignore`
 - **Acceptance criteria:** `npm run lint` exits 0; `npm run format` is idempotent.
 - **Required tests:** `npm run lint` exits 0.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M1-011 — Author Docker Compose base services
 - **Milestone:** M1

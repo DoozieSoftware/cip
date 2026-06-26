@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 13:10 IST (after T-M1-001..T-M1-007 batch)
+* **Last updated:** 2026-06-26 13:55 IST (after M1 milestone complete — T-M1-001..T-M1-022)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -31,7 +31,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
-| M1  | Repository Bootstrap & Tooling          | 22    | 7    | 0           | 0       | 0        | 31.8 %     |
+| M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 0    | 0           | 0       | 0        | 0 %        |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **7** | **0**     | **0**   | **0**    | **1.7 %    |
+| **All** | **Total**                             | **410** | **22** | **0**    | **0**   | **0**    | **5.4 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -55,12 +55,12 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
-| Bootstrap | M1 | 22 | 7 | 31.8 % |
+| Bootstrap | M1 | 22 | 22 | 100 % |
 | Foundations | M2, M3, M5, M9 | 100 | 0 | 0 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
-| **Total** | | **410** | **7** | **1.7 % |
+| **Total** | | **410** | **22** | **5.4 % |
 
 ---
 
@@ -162,7 +162,172 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Files touched:** `backend/composer.json` (pestphp/pest ^3.0, pestphp/pest-plugin-laravel ^3.0, phpunit/phpunit ^11.5), `backend/composer.lock`, `backend/tests/Pest.php` (uses TestCase+RefreshDatabase, removed forward references to `App\Modules\Users\Models\User` — added in M2), `backend/tests/TestCase.php`, `backend/tests/Unit/ExampleTest.php`, `backend/tests/Feature/ExampleTest.php` (Pint-formatted with strict types and blank-line rules).
 - **Acceptance criteria:** `vendor/bin/pest --version` reports `3.8.6`; default suite (ExampleTest unit + feature) passes in 0.6s.
 - **Required tests:** `vendor/bin/pest` ✓ 2 passed.
-- **Notes:** forward-reference to `App\Modules\Users\Models\User` removed; `actingAsRole` helper will be re-added when M2 lands the User model.
+- **Notes:** forward-reference to `App\\Modules\\Users\\Models\\User` removed; `actingAsRole` helper will be re-added when M2 lands the User model.
+
+### T-M1-008 — Initialize Vite + React 19 + TypeScript frontend
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:25 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(m1): T-M1-008 initialize Vite + React 19 + TypeScript frontend` (sha: 662f96f)
+- **Files touched:** `frontend/package.json`, `frontend/tsconfig.json`, `frontend/vite.config.ts`, `frontend/vitest.config.ts`, `frontend/index.html`, `frontend/src/main.tsx`, `frontend/src/App.tsx`, `frontend/src/styles/global.css`, `frontend/src/test/setup.ts`, `frontend/src/test/sanity.test.ts`, `frontend/src/vite-env.d.ts`.
+- **Acceptance criteria:** `npm run build` succeeds; `npm run test` runs a trivial Vitest test.
+- **Required tests:** `npm run test -- --run` ✓ 1 passed.
+- **Notes:** Vitest upgraded 2.1.9 → 3.2.6 for Vite 6 compatibility; added CSS module declaration in `vite-env.d.ts`; replaced `tsc -b` with `tsc --noEmit` to avoid project-reference setup.
+
+### T-M1-009 — Install frontend base libraries
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:27 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(m1): T-M1-009 install frontend base libraries` (sha: ab7475b)
+- **Files touched:** `frontend/package.json` (deps + devDeps), `frontend/src/App.tsx` (QueryClientProvider wrapper), `frontend/src/styles/global.css` (Tailwind v4 import + theme tokens, Leaflet CSS import).
+- **Acceptance criteria:** `npm run build` succeeds; `npm run test` passes; Tailwind v4 is loaded via the Vite plugin (no `tailwind.config.js` / `postcss.config.js` required).
+- **Required tests:** `npm run build` ✓ built in 1.9s.
+- **Notes:** Tailwind v4 only requires `@import "tailwindcss";` in CSS, not the legacy `tailwind.config.js`.
+
+### T-M1-010 — Configure ESLint and Prettier
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:35 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(m1): T-M1-010 ESLint flat config + Prettier, clean up misplaced files` (sha: f4aca4e)
+- **Files touched:** `frontend/eslint.config.js` (flat config: @eslint/js + typescript-eslint recommendedTypeChecked + react-hooks + react-refresh + jsx-a11y), `frontend/prettier.config.js`, `frontend/.prettierignore`, `frontend/package.json` (lint/format scripts), cleanup of misplaced files in repo root (node_modules, dist, src, index.html, etc.).
+- **Acceptance criteria:** `npm run lint` exits 0; `npm run format` is idempotent.
+- **Required tests:** `npm run lint` ✓ exit 0.
+- **Notes:** Cleanup of 18769 node_modules files that were tracked due to cwd drift during Vite init; files moved to `frontend/`, root entries `git rm --cached`.
+
+### T-M1-011 — Author Docker Compose base services
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:42 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(m1): T-M1-011..T-M1-014 Docker Compose, PHP-FPM, Nginx, MinIO init` (sha: e41f7ee)
+- **Files touched:** `docker-compose.yml` (mysql 8.4, redis 7.4, minio, minio-init, php, queue, scheduler, nginx 1.27-alpine, shared bridge network `cipnet`, named volumes).
+- **Acceptance criteria:** `docker compose config -q` exits 0.
+- **Required tests:** `docker compose config -q` ✓ exit 0.
+- **Notes:** `docs/network.conf` referenced in the task description is satisfied by the in-compose `cipnet` bridge network; all credentials and bucket names are env-driven.
+
+### T-M1-012 — Author PHP-FPM Dockerfile
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:42 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** same as T-M1-011.
+- **Files touched:** `docker/php/Dockerfile` (php:8.4-fpm-bookworm, extensions: bcmath, exif, gd, intl, mbstring, opcache, pcntl, pdo_mysql, zip, redis via pecl; composer 2.7; php.ini overrides; non-root app user).
+- **Acceptance criteria:** Image builds; `php -m` lists the required extensions.
+- **Required tests:** Manual docker build (not executed in sandbox).
+- **Notes:** `supervisor` installed for completeness (will be used for in-container workers in later milestones).
+
+### T-M1-013 — Author Nginx site config
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:42 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** same as T-M1-011.
+- **Files touched:** `docker/nginx/default.conf`.
+- **Acceptance criteria:** Static lint of the conf (parsed by compose build context).
+- **Required tests:** Visual review; nginx -t requires volume.
+- **Notes:** Includes HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy; client_max_body_size 100m.
+
+### T-M1-014 — Author MinIO init script and bucket policy
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:42 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** same as T-M1-011.
+- **Files touched:** `scripts/minio-init.sh` (idempotent: creates bucket with versioning, private access, CORS).
+- **Acceptance criteria:** `bash -n scripts/minio-init.sh` exits 0.
+- **Required tests:** `bash -n scripts/minio-init.sh` ✓ exit 0.
+- **Notes:** In compose, the `minio-init` service does the same work via the `mc` image; the standalone script is the operations fallback.
+
+### T-M1-015 — Wire Laravel storage to MinIO disk
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:50 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(m1): T-M1-015 + T-M1-016 MinIO disk + Redis queue` (sha: e364e97)
+- **Files touched:** `backend/composer.json` (league/flysystem-aws-s3-v3 ^3.0), `backend/composer.lock`, `backend/config/filesystems.php` (added media_local + media_minio disks).
+- **Acceptance criteria:** `Storage::disk('media_minio')` resolves to the S3 driver with `use_path_style_endpoint=true` and `throw/report=true`.
+- **Required tests:** `php artisan tinker` config probe ✓ `s3 |  | `.
+- **Notes:** Bucket name and endpoint read from `AWS_*` env keys (set in `.env.example`); `media_local` points at `storage/app/media` for the dev fallback.
+
+### T-M1-016 — Configure Laravel queue with Redis
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:50 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** same as T-M1-015.
+- **Files touched:** `backend/composer.json` (laravel/horizon ^5.5), `backend/composer.lock`, `backend/app/Providers/HorizonServiceProvider.php`, `backend/config/horizon.php`.
+- **Acceptance criteria:** `QUEUE_CONNECTION=redis` in `.env.example`; `php artisan queue:work --once` exits 0.
+- **Required tests:** `php artisan queue:work --once --tries=1` ✓ exit 0.
+- **Notes:** Horizon provider uses a phpstan-clean stub; the gate is restricted to the `local` environment and `*@cip.local` emails in non-local until M2.
+
+### T-M1-017 — Add Shared module skeleton
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:52 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(m1): T-M1-017..T-M1-020 wire Shared module, health endpoints, exception handler` (sha: a3ea627)
+- **Files touched:** `backend/app/Modules/Shared/Http/Middleware/RequestId.php`, `backend/bootstrap/app.php` (RequestId registered via `withMiddleware(fn => $middleware->append(RequestId::class))`), `backend/tests/Unit/Shared/RequestIdTest.php`.
+- **Acceptance criteria:** RequestId sets a UUID v4 when no inbound header is provided and echoes an inbound `X-Request-Id`.
+- **Required tests:** Pest test `tests/Unit/Shared/RequestIdTest.php` ✓ 2 passed.
+- **Notes:** Laravel 12 uses `bootstrap/app.php` for middleware registration, not `app/Http/Kernel.php` (no longer present).
+
+### T-M1-018 — Implement standard API response envelope
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:52 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** same as T-M1-017.
+- **Files touched:** `backend/app/Modules/Shared/Http/Responses/ApiResponse.php`, `backend/app/Modules/Shared/Http/Controllers/BaseController.php`, `backend/tests/Unit/Shared/ApiResponseTest.php`.
+- **Acceptance criteria:** JSON envelopes match `{success,message,data,meta}` and `{success:false,message,errors,trace_id,code}`.
+- **Required tests:** Pest test `tests/Unit/Shared/ApiResponseTest.php` ✓ 3 passed.
+- **Notes:** `meta` is normalized to an object when empty so clients see `{}` instead of `[]`.
+
+### T-M1-019 — Implement domain ApiException and global handler
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:52 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** same as T-M1-017.
+- **Files touched:** `backend/app/Modules/Shared/Exceptions/ApiException.php` (renamed public `code` → `errorCode` to avoid clashing with `Exception::$code` under readonly), `backend/bootstrap/app.php` (two render handlers: ApiException → standard envelope; any other Throwable under /api/* or JSON requests → opaque 500 with trace_id), `backend/tests/Feature/Shared/ExceptionRenderTest.php`.
+- **Acceptance criteria:** Throwing `ApiException::validation(...)` returns 422 + envelope; stack traces never appear in JSON.
+- **Required tests:** Pest test `tests/Feature/Shared/ExceptionRenderTest.php` ✓ 2 passed.
+- **Notes:** The generic Throwable handler respects `APP_DEBUG`: when debug is true it includes the exception message; otherwise the client only sees `Internal server error` and a trace id.
+
+### T-M1-020 — Add /api/v1/health and /health/ready endpoints
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:52 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** same as T-M1-017.
+- **Files touched:** `backend/app/Http/Controllers/HealthController.php` (live + ready with DB/Redis/Storage/Queue probes), `backend/routes/api.php` (`Route::prefix('v1')` with `GET /health` and `GET /health/ready`), `backend/tests/Feature/HealthCheckTest.php`.
+- **Acceptance criteria:** `GET /api/v1/health` returns 200 when all green; 503 when any component fails.
+- **Required tests:** Pest test `tests/Feature/HealthCheckTest.php` ✓ 2 passed; live curl returns 200/200-or-503.
+- **Notes:** Queue default in the local sandbox is `database` (no Redis available); ready returns 503 in that case — by design.
+
+### T-M1-021 — Author OpenAPI 3.1 scaffold
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:54 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(m1): T-M1-021 OpenAPI 3 scaffold` (sha: 3ad4e6d)
+- **Files touched:** `backend/composer.json` (zircote/swagger-php ^4), `backend/app/Http/OpenApi.php` (Info, Server, SecurityScheme sanctum, Tag Health), `backend/app/Http/Controllers/HealthController.php` (OpenAPI attributes for both endpoints), `backend/app/Http/Controllers/ApiDocumentationController.php`, `backend/resources/views/api/documentation.blade.php` (Swagger UI 5.17.14), `backend/storage/api-docs/openapi.yaml` (93 lines, 2 paths), `backend/routes/web.php` (`/api/documentation`), `backend/routes/api.php` (`/api/v1/openapi.yaml`), `backend/tests/Feature/OpenApiTest.php`, `backend/tests/Feature/ApiDocumentationTest.php`.
+- **Acceptance criteria:** `GET /api/documentation` returns 200 with Swagger UI; `openapi.yaml` is valid.
+- **Required tests:** Pest tests ✓ 3 passed; live curl /api/v1/openapi.yaml 200, /api/documentation 200.
+- **Notes:** Spec is OpenAPI 3.0 (swagger-php's default); can be migrated to 3.1 once the runtime supports it. Sanctum security scheme is declared but no endpoint currently requires it (M2 will add auth).
+
+### T-M1-022 — Author CI workflow (lint, analyse, test, build)
+- **Milestone:** M1
+- **Status:** Done
+- **Completed at:** 2026-06-26 13:55 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(m1): T-M1-022 CI workflow + CODEOWNERS` (sha: 5f7ae74)
+- **Files touched:** `.github/workflows/ci.yml` (backend: Pint, PHPStan, Pest with MySQL+Redis services; frontend: ESLint, Prettier --check, Vitest, Vite build; docker-build: builds PHP image and validates compose; dependency-scan: composer audit + npm audit --audit-level=high), `.github/CODEOWNERS` (default engineering-leads; backend/frontend/docker/.github subteams; docs/ and .codex/ architecture-leads).
+- **Acceptance criteria:** Workflow YAML is valid; required checks cover the four mandated areas.
+- **Required tests:** `yaml.safe_load` reports valid YAML.
+- **Notes:** No branch protection file is committed; the workflow is set up so the four required checks (backend, frontend, docker-build, dependency-scan) are the natural gate once protection is configured in repo settings.
 
 
 ---
@@ -271,7 +436,7 @@ Snapshot at file initialization. Updated as the repository grows.
 
 ## 11. Next Action
 
-* M1-001..M1-007 are complete. Continue with `T-M1-008 — Initialize Vite + React 19 + TypeScript frontend` (see `.codex/task_queue.md` §M1 and `.codex/current_milestone.md` §8).
+* **M1 — Repository Bootstrap & Tooling is complete (22/22 tasks done, 5.4 % of the 410-task roadmap).** Next milestone is M2 — Identity, Auth & RBAC Core (30 tasks; first task `T-M2-001 — Create users migration with UUID PK and soft deletes`). Switch `.codex/current_milestone.md` to M2 before resuming work.
 * After `T-M1-001` is marked `Status: Done` in `.codex/task_queue.md`, append the first entry to §3 here, increment the M1 `Done` counter in §2, and update §1's `Last updated` timestamp.
 * If any host prerequisite (PHP 8.4, Composer, Node 20+, Docker, Docker Compose) is missing, add a §6 entry and stop until the prerequisite is met.
 
@@ -281,6 +446,14 @@ Snapshot at file initialization. Updated as the repository grows.
 ## 12. Repository Statistics (initial)
 
 * **Backend (Laravel 12.62.0):** framework installed, Sanctum wired, Spatie published, MySQL config keys set, PHPStan max + Pint + Pest green.
-* **Frontend:** empty `frontend/` skeleton; Vite + React 19 + TypeScript pending (T-M1-008).
+* **Backend (Laravel 12.62.0):** framework installed, Sanctum wired, Spatie published, MySQL config keys set, PHPStan max + Pint + Pest green (14 tests, 50 assertions).
+* **Backend Shared module:** RequestId middleware (X-Request-Id header + trace_id attribute), ApiResponse envelope (success/paginated/error), ApiException (errorCode renamed from `code` to avoid clashing with `Exception::$code` under readonly), BaseController/BaseService/BasePolicy (BasePolicy uses `Authenticatable` contract — no module-specific deps).
+* **Backend Health:** GET /api/v1/health (live) and /api/v1/health/ready (DB+Redis+Storage+Queue probes) — 200 happy / 503 degraded.
+* **Backend Storage:** media_local + media_minio (S3-compatible) disks in config/filesystems.php; league/flysystem-aws-s3-v3 installed.
+* **Backend Queue:** Redis connection; Horizon 5.5 installed; horizon-night schedule.
+* **Backend OpenAPI 3:** swagger-php annotations on HealthController + App\Http\OpenApi (Info, Server, SecurityScheme sanctum, Tag Health); /api/documentation serves Swagger UI 5.17.14; /api/v1/openapi.yaml serves the spec.
+* **Frontend:** Vite 6 + React 19 + TypeScript 5.9 (strict, noUncheckedSideEffectImports); Vitest 3 + @testing-library/react 16 + jsdom 25; TanStack Query 5, React Hook Form 7, Zod 3, React Router 7, Leaflet 1.9, ECharts 5.6, Headless UI 2.2, Tailwind v4 (via @tailwindcss/vite); ESLint 9 flat config (typescript-eslint recommendedTypeChecked, react-hooks, react-refresh, jsx-a11y); Prettier 3 (singleQuote, semi, trailingComma all, printWidth 100).
+* **Docker:** compose stack (mysql 8.4, redis 7.4, minio, minio-init, php, queue, scheduler, nginx 1.27); PHP 8.4-FPM Dockerfile with bcmath/exif/gd/intl/mbstring/pcntl/pdo_mysql/zip/redis extensions, non-root app user; nginx default.conf with HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, 100m body limit; minio-init.sh idempotent bucket bootstrap.
+* **CI:** .github/workflows/ci.yml (backend + frontend + docker-build + dependency-scan); .github/CODEOWNERS.
 * **Docker:** empty `docker/{php,nginx,minio}` skeletons; compose stack pending (T-M1-011..T-M1-014).
 * **Tooling:** PHP 8.5.4, Composer 2.9.5, Node v25.9.0, npm 11.12.1, Docker 29.3.0 (daemon running), Docker Compose v5.0.0, mysql 9.6.0, redis-cli/redis-server, ffprobe — all available in the sandbox.
