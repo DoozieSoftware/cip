@@ -1628,7 +1628,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Services/ChainOfCustodyWriter.php`, `backend/app/Modules/Media/Models/MediaAccessLog.php`, `backend/database/migrations/*_create_media_access_logs_table.php`
 - **Acceptance criteria:** Read endpoint is denied for non-staff; access log row present.
 - **Required tests:** `tests/Feature/Media/ChainOfCustodyTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-017 — MediaPolicy
 - **Milestone:** M5

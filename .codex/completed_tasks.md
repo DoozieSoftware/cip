@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 01:05 IST (after T-M5-015 done; M5 in progress)
+* **Last updated:** 2026-06-27 01:25 IST (after T-M5-016 done; M5 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M5 — Media Pipeline & Evidence Integrity (see `.codex/current_milestone.md`; M4 closed 32/32 = 100 %)
 
@@ -35,7 +35,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
 | M4 | Reports Domain & Submission API | 32 | 32 | 0 | 0 | 0 | 100 % |
-| M5 | Media Pipeline & Evidence Integrity | 26 | 15 | 0 | 0 | 0 | 58 % |
+| M5 | Media Pipeline & Evidence Integrity | 26 | 16 | 0 | 0 | 0 | 62 % |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
 | M8  | AI Vision Pipeline & Provider Abstraction | 30  | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **122** | **0** | **0** | **0** | **29.8 %** |
+| **All** | **Total** | **410** | **123** | **0** | **0** | **0** | **30.0 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M5-016 — Chain-of-custody writer
+- **Milestone:** M5
+- **Status:** Done
+- **Completed at:** 2026-06-27 01:25 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(media): complete T-M5-016 — Chain-of-custody writer` (sha: `75090145`)
+- **Files touched:** backend/app/Modules/Media/Models/MediaAccessLog.php (new); backend/app/Modules/Media/Services/ChainOfCustodyWriter.php (new); backend/app/Modules/Media/Http/Controllers/Api/MediaController.php (modified); backend/database/migrations/2026_06_27_060200_create_media_access_logs_table.php (new); backend/database/factories/Modules/Media/Models/MediaAccessLogFactory.php (new); backend/routes/api.php (+1 route); backend/tests/Feature/Media/ChainOfCustodyTest.php (new)
+- **Acceptance criteria:** Read endpoint is denied for non-staff; access log row present.
+- **Required tests:** Pest 505/505 passed (1712 assertions); 7 new ChainOfCustodyTest tests, 0 regressions
+- **Notes:** Immutability via timestamps=false (no updated_at column); chain-of-custody default metadata captures capture_time, upload_time, uploader, hash, storage_path.
+
+
 
 ### T-M5-015 — Media signed-URL helper
 - **Milestone:** M5
@@ -1577,6 +1590,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-27 01:25 IST | Logged T-M5-016 done; M5 16/26; total 123/410 = 30.0 %. | Lead Solution Architect | T-M5-016 |
 | 2026-06-27 01:05 IST | Logged T-M5-015 done; M5 15/26; total 122/410 = 29.8 %. | Lead Solution Architect | T-M5-015 |
 | 2026-06-27 00:55 IST | Logged T-M5-014 done; M5 14/26; total 121/410 = 29.5 %. | Lead Solution Architect | T-M5-014 |
 | 2026-06-27 00:40 IST | Logged T-M5-013 done; M5 13/26; total 120/410 = 29.3 %. | Lead Solution Architect | T-M5-013 |
