@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Modules\Security\Http\Middleware\AuditMiddleware;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Middleware\RequestId;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -13,6 +14,7 @@ use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -60,6 +62,44 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return response()->json($payload, $e->httpStatus);
+        });
+
+        // AccessDeniedHttpException (Symfony) and AuthorizationException
+        // (Laravel) both map to 403 with the standard envelope and the
+        // FORBIDDEN error code. The Symfony wrapper is what the
+        // framework actually returns when Gate::authorize() fails.
+        $exceptions->render(function (AccessDeniedHttpException $e, Request $request) {
+            $traceId = (string) ($request->attributes->get('trace_id')
+                ?? $request->header('X-Request-Id')
+                ?? 'unknown');
+            $payload = [
+                'success' => false,
+                'message' => $e->getMessage() !== '' ? $e->getMessage() : 'This action is unauthorized.',
+                'errors' => (object) [],
+                'code' => 'FORBIDDEN',
+                'trace_id' => $traceId,
+            ];
+
+            return response()->json($payload, 403);
+        });
+
+        // AuthorizationException -> 403 with the standard envelope
+        // and the FORBIDDEN error code. Thrown by Gate::authorize()
+        // and the Authorization middleware when a user lacks the
+        // required role / permission.
+        $exceptions->render(function (AuthorizationException $e, Request $request) {
+            $traceId = (string) ($request->attributes->get('trace_id')
+                ?? $request->header('X-Request-Id')
+                ?? 'unknown');
+            $payload = [
+                'success' => false,
+                'message' => $e->getMessage() !== '' ? $e->getMessage() : 'This action is unauthorized.',
+                'errors' => (object) [],
+                'code' => 'FORBIDDEN',
+                'trace_id' => $traceId,
+            ];
+
+            return response()->json($payload, 403);
         });
 
         // AuthenticationException -> 401 with the standard envelope.
