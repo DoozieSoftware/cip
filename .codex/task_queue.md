@@ -1484,7 +1484,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Services/MimeValidator.php`
 - **Acceptance criteria:** A renamed `.php` is rejected; a real JPEG passes.
 - **Required tests:** `tests/Unit/Media/MimeValidatorTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-005 — Implement HashService
 - **Milestone:** M5
