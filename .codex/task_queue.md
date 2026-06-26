@@ -2054,7 +2054,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Routing/Models/RoutingRule.php`
 - **Acceptance criteria:** `$rule->destinationDepartment` returns Department.
 - **Required tests:** Model test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-003 — RoutingCondition DSL parser
 - **Milestone:** M7
