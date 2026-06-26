@@ -533,7 +533,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Authentication/Http/Controllers/AuthController.php`, `backend/app/Modules/Authentication/Http/Requests/SendOtpRequest.php`
 - **Acceptance criteria:** 200 on success; 429 on rate limit; OTP never returned in response.
 - **Required tests:** `tests/Feature/Authentication/SendOtpEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-014 — POST /api/v1/auth/verify-otp endpoint
 - **Milestone:** M2

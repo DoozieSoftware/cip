@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 16:50 IST (after T-M2-012 done — M2 progress 11/30; total 33/410 = 8.0 %)
+* **Last updated:** 2026-06-26 17:05 IST (after T-M2-013 done — M2 progress 12/30; total 34/410 = 8.3 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 11   | 0           | 0       | 0        | 37 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 12   | 0           | 0       | 0        | 40 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **33** | **0**    | **0**   | **0**    | **8.0 %    |
+| **All** | **Total**                             | **410** | **34** | **0**    | **0**   | **0**    | **8.3 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -462,6 +462,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Acceptance criteria:** `LogSmsGateway` writes to `sms.log` channel; swappable via service container.
 - **Required tests:** Pest `tests/Unit/Notifications/LogSmsGatewayTest.php` — 6/6 pass; full suite 95/95 (353 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** Provider selection is via `config('cip.notifications.sms_driver')` (env-driven: `SMS_DRIVER=log` in `.env`). The OtpService (T-M2-011) is intentionally untouched in this task — it still uses a Closure dispatcher. T-M2-013 (POST /api/v1/auth/send-otp) is the task that will refactor OtpService to depend on the SmsGatewayInterface and bind it via the container. The single Closure-based dispatcher in OtpService and the singleton-bound SmsGatewayInterface coexist cleanly until that task.
+
+
+### T-M2-013 — POST /api/v1/auth/send-otp endpoint
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 17:05 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(auth): complete T-M2-013 — POST /api/v1/auth/send-otp endpoint` (sha: pending)
+- **Files touched:** `backend/app/Modules/Authentication/Http/Requests/SendOtpRequest.php` (new; `mobile` field required, regex-validated for E.164 or 10-digit; `mobile()` method normalises to 10 digits by stripping a leading country code if the result would be >10), `backend/app/Modules/Authentication/Http/Controllers/AuthController.php` (new; `sendOtp(SendOtpRequest)` calls `OtpService::request`, returns `{otp_sent: true}`, records a `LoginHistory` row for both success and rate-limited paths, never returns the plaintext code), `backend/routes/api.php` (registered `POST api/v1/auth/send-otp`), `backend/bootstrap/app.php` (added `ValidationException` renderer → 422 with the standard envelope), `backend/tests/Feature/Authentication/SendOtpEndpointTest.php` (new; 6 tests — happy path, 422 on bad mobile, E.164 → 10-digit normalisation, 429 after 5/hour, LoginHistory row on every attempt, OTP never appears in the response body).
+- **Acceptance criteria:** 200 on success; 429 on rate limit; OTP never returned in response.
+- **Required tests:** Pest `tests/Feature/Authentication/SendOtpEndpointTest.php` — 6/6 pass; full suite 101/101 (384 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** The `ValidationException` handler in `bootstrap/app.php` was missing before this task — the existing `Throwable` handler was turning 422-class validation failures into 500s. The new handler renders the validation error map as `errors` and uses `code: VALIDATION_FAILED` per the docs/03 §20 envelope contract. The OtpService is bound to a no-op dispatcher in the test (`$this->app->bind(OtpService::class, ...)`) so the `sms` log channel stays clean during the test run.
 
 
 ## 4. In-Progress Tasks
