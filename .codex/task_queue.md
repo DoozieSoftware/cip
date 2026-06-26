@@ -2021,7 +2021,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Console/Kernel.php`
 - **Acceptance criteria:** `php artisan schedule:list` shows the job.
 - **Required tests:** `tests/Feature/Workflow/SchedulerRegistrationTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 
 ---
