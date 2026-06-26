@@ -1010,7 +1010,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docs/master-data.md`
 - **Acceptance criteria:** Each operation has a step-by-step example.
 - **Required tests:** Manual review.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-023 — Update OpenAPI for admin geography/settings/flags
 - **Milestone:** M3
