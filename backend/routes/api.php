@@ -68,6 +68,11 @@ Route::prefix('v1')->group(function (): void {
         Route::delete('app-configs/{app_config}', [AppConfigController::class, 'destroy'])->name('app-configs.destroy');
     });
 
+    // T-M5-014 — public temporary-signed media serve (NOT under auth:sanctum;
+    // the signed URL is the auth). The `signed` middleware
+    // rejects expired or tampered signatures with 403.
+    Route::get('media/{media}/serve', [MediaController::class, 'serve'])->middleware('signed')->name('api.v1.media.serve');
+
     // Citizen PWA — report submission and read-back (M4)
     Route::middleware(['auth:sanctum', 'throttle:'.RouteServiceProvider::LIMITER_CITIZEN])->group(function (): void {
         // T-M4-022 — POST /api/v1/reports
@@ -76,6 +81,8 @@ Route::prefix('v1')->group(function (): void {
         Route::post('reports/{id}/photos', [MediaController::class, 'uploadPhotos'])->name('api.v1.reports.photos.store');
         // T-M5-013 — POST /api/v1/reports/{id}/video
         Route::post('reports/{id}/video', [MediaController::class, 'uploadVideo'])->name('api.v1.reports.video.store');
+        // T-M5-014 — GET /api/v1/reports/{id}/media
+        Route::get('reports/{id}/media', [MediaController::class, 'index'])->name('api.v1.reports.media.index');
         // T-M4-023 — POST /api/v1/reports/{id}/submit
         Route::post('reports/{id}/submit', [ReportsController::class, 'submit'])->name('api.v1.reports.submit');
         // T-M4-027 — GET /api/v1/citizen/dashboard
