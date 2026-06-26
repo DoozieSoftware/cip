@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\HealthController;
 use App\Modules\Authentication\Http\Controllers\AuthController;
+use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -19,13 +20,17 @@ Route::prefix('v1')->group(function (): void {
         return response()->file($path, ['Content-Type' => 'application/yaml']);
     })->name('api.v1.openapi');
 
-    // Auth (M2)
-    Route::post('auth/send-otp', [AuthController::class, 'sendOtp'])->name('api.v1.auth.send-otp');
-    Route::post('auth/verify-otp', [AuthController::class, 'verifyOtp'])->name('api.v1.auth.verify-otp');
-    Route::post('auth/refresh', [AuthController::class, 'refresh'])->name('api.v1.auth.refresh');
+    // Auth (M2) — rate limited per docs/11 §21.
+    Route::middleware('throttle:'.RouteServiceProvider::LIMITER_OTP)
+        ->post('auth/send-otp', [AuthController::class, 'sendOtp'])
+        ->name('api.v1.auth.send-otp');
+    Route::middleware('throttle:'.RouteServiceProvider::LIMITER_CITIZEN)->group(function (): void {
+        Route::post('auth/verify-otp', [AuthController::class, 'verifyOtp'])->name('api.v1.auth.verify-otp');
+        Route::post('auth/refresh', [AuthController::class, 'refresh'])->name('api.v1.auth.refresh');
+    });
 
     // Authenticated routes
-    Route::middleware('auth:sanctum')->group(function (): void {
+    Route::middleware(['auth:sanctum', 'throttle:'.RouteServiceProvider::LIMITER_CITIZEN])->group(function (): void {
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
         Route::get('auth/me', [AuthController::class, 'me'])->name('api.v1.auth.me');
     });

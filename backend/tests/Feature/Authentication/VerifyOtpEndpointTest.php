@@ -33,11 +33,9 @@ beforeEach(function (): void {
 });
 
 it('returns 200 with token, refresh_token, and user on a valid verify', function (): void {
-    $this->otpService->request('9876543210', '10.0.0.1', 'Pest/Test');
-    $otp = Otp::query()->latest('created_at')->first();
-    // The plain is bcrypt-hashed — recompute it via password_verify on
-    // a known plaintext. We test the verify path with a fresh
-    // request and a captured code via the closure.
+    // Bind a captured-closure OtpService and issue exactly one OTP
+    // for the test. The plain code is the only OTP in the table
+    // when the endpoint runs, so OtpService::verify resolves it.
     $captured = null;
     $service = new OtpService(static function (string $mobile, string $message) use (&$captured): void {
         $captured = $message;
