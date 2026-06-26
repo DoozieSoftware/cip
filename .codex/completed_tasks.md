@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 01:35 IST (after T-M5-017 done; M5 in progress)
+* **Last updated:** 2026-06-27 01:45 IST (after T-M5-018 done; M5 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M5 — Media Pipeline & Evidence Integrity (see `.codex/current_milestone.md`; M4 closed 32/32 = 100 %)
 
@@ -35,7 +35,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
 | M4 | Reports Domain & Submission API | 32 | 32 | 0 | 0 | 0 | 100 % |
-| M5 | Media Pipeline & Evidence Integrity | 26 | 17 | 0 | 0 | 0 | 65 % |
+| M5 | Media Pipeline & Evidence Integrity | 26 | 18 | 0 | 0 | 0 | 69 % |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
 | M8  | AI Vision Pipeline & Provider Abstraction | 30  | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **124** | **0** | **0** | **0** | **30.2 %** |
+| **All** | **Total** | **410** | **125** | **0** | **0** | **0** | **30.5 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M5-018 — MinIO bucket init via docker entrypoint
+- **Milestone:** M5
+- **Status:** Done
+- **Completed at:** 2026-06-27 01:45 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(media): complete T-M5-018 — MinIO bucket init via docker entrypoint` (sha: `8c659679`)
+- **Files touched:** docker/minio/entrypoint.sh (new); backend/tests/Feature/Media/MinIoEntryPointTest.php (new)
+- **Acceptance criteria:** bash -n passes; script logs bucket creation.
+- **Required tests:** Pest 516/516 passed (1731 assertions); 3 new MinIoEntryPointTest tests, 0 regressions
+- **Notes:** Idempotent: safe to re-run on container restart. MINIO_OBJECT_LOCK_DAYS=0 skips the retention step.
+
+
 
 ### T-M5-017 — MediaPolicy
 - **Milestone:** M5
@@ -1603,6 +1616,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-27 01:45 IST | Logged T-M5-018 done; M5 18/26; total 125/410 = 30.5 %. | Lead Solution Architect | T-M5-018 |
 | 2026-06-27 01:35 IST | Logged T-M5-017 done; M5 17/26; total 124/410 = 30.2 %. | Lead Solution Architect | T-M5-017 |
 | 2026-06-27 01:25 IST | Logged T-M5-016 done; M5 16/26; total 123/410 = 30.0 %. | Lead Solution Architect | T-M5-016 |
 | 2026-06-27 01:05 IST | Logged T-M5-015 done; M5 15/26; total 122/410 = 29.8 %. | Lead Solution Architect | T-M5-015 |

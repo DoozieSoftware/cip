@@ -1652,7 +1652,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docker/minio/entrypoint.sh`
 - **Acceptance criteria:** `bash -n` passes; script logs bucket creation.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-019 — Media upload limit middleware
 - **Milestone:** M5
