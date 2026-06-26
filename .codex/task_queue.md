@@ -1724,7 +1724,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docs/media.md`
 - **Acceptance criteria:** Doc links to OpenAPI; security section present.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-025 — README update for media
 - **Milestone:** M5
@@ -1736,7 +1736,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `README.md`
 - **Acceptance criteria:** Section includes MinIO init script reference.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-026 — Pin media package versions
 - **Milestone:** M5
@@ -1748,7 +1748,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/composer.json`
 - **Acceptance criteria:** `composer install` succeeds in CI.
 - **Required tests:** `composer install --no-interaction`.
-- **Status:** Not Started
+- **Status:** Done
 
 
 ---
