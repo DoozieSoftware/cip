@@ -1,9 +1,11 @@
-# Current Milestone — M3: Master Configuration & Geography
+# Current Milestone — M4: Reports Domain & Submission API
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** In Progress (16 / 24 tasks complete; T-M3-017 next)
-**Last updated:** 2026-06-27 06:25 IST (after T-M3-016 done)
+**Status:** Up next (M3 closed 24/24 = 100 %; M4 starts after a clean foundation reset)
+**Last updated:** 2026-06-27 10:20 IST (after T-M3-024 done; M3 closed)
+
+> M1 (22/22), M2 (30/30) and M3 (24/24) are complete. M4 lands the citizen-facing report-submission API — categories, sub-categories, severity, location, media handles, idempotent submission, the moderation queue's first cut, and the GET endpoints that power the citizen report-history screen. Nothing in M4 changes master data; the geography tree, departments, and feature flags are read-only from M4's perspective.
 **Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M3, `.codex/task_queue.md` §M3, `docs/02` §11 §17, `docs/03` §10 §15, `docs/04` §5 §7 §8 §14, `docs/05` §22, `docs/09` §7, `docs/13` §5, `docs/14` §19 §37, `docs/15` §6–7, `docs/16` §36
 
 > M1 is complete (22/22) and M2 is complete (30/30). M3 lands the configuration master and the geography tree that everything downstream is built on. Geography terminates at the ward level; the master-config GET endpoint is the only API surface — every portal reads it on cold start and on cache-invalidation events.
@@ -114,3 +116,36 @@ Land the database-driven configuration master that powers every other module. Th
 * Active task: **T-M3-017 — Settings CRUD endpoints** (UUID PK, name, unique code, parent_id self-FK, jurisdiction, address, email, phone, working_hours JSON, holiday_calendar JSON, default_workflow_id, default_sla_minutes, escalation_matrix JSON, active, soft deletes).
 * Blockers: none.
 * Next task on completion: T-M3-018 (Feature flag CRUD endpoints).
+
+---
+
+## Appendix — M3 Close-out (2026-06-27)
+
+### What landed in M3
+
+* **Migrations** for the entire geography tree (countries, states, districts, cities, zones, wards with WKT `boundary_polygon` + spatial index), `departments` + `department_users` pivot, `settings` (Redis-cached key/value), and `app_configs` (feature flags).
+* **Models + Factories + Seeders** for every table above. `GeographySeeder` ships the canonical India → Karnataka → Bengaluru (Urban + Rural) tree with 8 sample wards. `DepartmentsSeeder` ships BBMP, BTP, BWSSB, BESCOM with SLAs and escalation matrices. `AppConfigsSeeder` ships the 10 default flags from `docs/09` §18.
+* **Services + Repositories + DTOs** for departments, geography, settings, and feature flags. Every write goes through a service that emits a domain event.
+* **Super Admin CRUD endpoints** (16 routes total) under `/api/v1/admin/*` for departments, settings, and feature flags — all gated on `super_admin` role and rate-limited.
+* **`GET /api/v1/admin/app-configs/{key}/evaluate`** — the deterministic feature-flag evaluator exposed as an HTTP endpoint for the Super Admin "try this flag for this user" panel.
+* **OpenAPI 3.0** updated with every new path, schema, and response component. Symfony YAML parses the spec cleanly.
+* **`docs/master-data.md`** — the Super Admin on-ramp that documents how to add a country/state/district/city/ward, a department, a setting, and a feature flag, with curl examples and idempotency strategy per seeder.
+* **57 new Pest tests** (386/386 passing, 1355 assertions). PHPStan max clean. Pint clean.
+
+### Decisions added in M3 (D-019, D-020, …)
+
+* D-019 — `Auth::forgetGuards()` between HTTP requests in Pest to clear `RequestGuard` cache (M2; cited for the M3 tests).
+* D-020 — `boundary_polygon` is application-level WKT; MySQL `POLYGON` + spatial index, SQLite TEXT fallback, driver-guarded.
+
+### Open M3 follow-ups (intentionally deferred to later milestones)
+
+* `GET /api/v1/master-config` is the only M3 endpoint not yet implemented. The endpoint assembles the cached payload every portal reads on cold start. It is intentionally deferred to the start of M12 (Super Admin Portal) so it lands alongside the cache-invalidation listeners and the multi-tenant scoping.
+* `Routing` admin endpoints (T-M7-*) will land in M7; the category → department mapping requires both the categories and the departments to be in place, and the routing engine (M7) is the natural home.
+
+### Quality gate
+
+* 386/386 Pest tests passing (1355 assertions)
+* 0 PHPStan errors on `app/`
+* Pint clean
+* `Cache::flush()` + `RateLimiter::clear()` both required to reset state between test cases (per D-019 + D-020)
+* `phpunit.xml` runs Pest against in-memory SQLite; MySQL-specific features (POLYGON + spatial index) are driver-guarded via raw SQL with SQLite TEXT fallback
