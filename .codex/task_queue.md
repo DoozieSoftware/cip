@@ -236,7 +236,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docker-compose.yml`, `docker/network.conf`
 - **Acceptance criteria:** `docker compose config` validates; all services are declared with explicit image tags.
 - **Required tests:** `docker compose config -q` exits 0.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M1-012 — Author PHP-FPM Dockerfile
 - **Milestone:** M1
@@ -248,7 +248,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docker/php/Dockerfile`
 - **Acceptance criteria:** `docker build docker/php` succeeds; `php -m` lists the required extensions.
 - **Required tests:** Manual docker build.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M1-013 — Author Nginx site config
 - **Milestone:** M1
@@ -260,7 +260,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docker/nginx/default.conf`
 - **Acceptance criteria:** `nginx -t` would pass (assumes volume).
 - **Required tests:** Static lint of the conf.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M1-014 — Author MinIO init script and bucket policy
 - **Milestone:** M1
@@ -272,7 +272,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `scripts/minio-init.sh`
 - **Acceptance criteria:** Script is executable; bucket name and policy are documented inline.
 - **Required tests:** `bash -n scripts/minio-init.sh` exits 0.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M1-015 — Wire Laravel storage to MinIO disk
 - **Milestone:** M1
