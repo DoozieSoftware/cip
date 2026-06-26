@@ -24,6 +24,7 @@ use Illuminate\Http\Request;
  *  - POST /api/v1/auth/refresh    (T-M2-015)
  *  - POST /api/v1/auth/logout     (T-M2-016)
  *  - GET  /api/v1/auth/me         (T-M2-017)
+
  *
  * Per docs/05 §5 and docs/11 §6-7. No business logic lives here — all
  * flows go through the relevant service.
@@ -138,6 +139,20 @@ class AuthController extends BaseController
         $this->auth->logout($user, $accessTokenIdString);
 
         return $this->respond(['logged_out' => true]);
+    }
+
+    /**
+     * GET /api/v1/auth/me
+     */
+    public function me(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user === null) {
+            return $this->respondError('Unauthenticated.', 401, 'UNAUTHORIZED');
+        }
+
+        return $this->respond((new UserResource($user))->toArray($request));
     }
 
     private function recordAttempt(string $mobile, ?string $ip, ?string $userAgent, bool $success, ?string $reason): void

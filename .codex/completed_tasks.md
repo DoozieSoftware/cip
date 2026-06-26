@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 18:05 IST (after T-M2-016 done — M2 progress 15/30; total 37/410 = 9.0 %)
+* **Last updated:** 2026-06-26 18:25 IST (after T-M2-017 done — M2 progress 16/30; total 38/410 = 9.3 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 15   | 0           | 0       | 0        | 50 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 16   | 0           | 0       | 0        | 53 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **37** | **0**    | **0**   | **0**    | **9.0 %    |
+| **All** | **Total**                             | **410** | **38** | **0**    | **0**   | **0**    | **9.3 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,11 +56,11 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 15 | 15 % |
+| Foundations | M2, M3, M5, M9 | 100 | 16 | 16 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
-| **Total** | | **410** | **37** | **9.0 % |
+| **Total** | | **410** | **38** | **9.3 % |
 
 ---
 
@@ -512,6 +512,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Notes:** Two real bugs surfaced and were fixed as part of this task. (1) The `auth:sanctum` middleware throws `AuthenticationException` when the bearer is missing, invalid, or revoked, but no `render` handler was registered for it, so the generic `Throwable` handler caught it and returned 500. The new `AuthenticationException` handler in `bootstrap/app.php` returns 401 with `code: UNAUTHORIZED` and the standard envelope. (2) `Illuminate\Auth\RequestGuard` (the guard instance backing the `sanctum` driver) caches its resolved user in `$this->user` and is itself cached on the `AuthManager` singleton. In production this is fine — each HTTP request gets a fresh `RequestGuard`. In tests, however, the same `RequestGuard` instance is reused across `$this->postJson()` calls within one test method, so the cached user survives the first logout. The fix in the test is to call `Auth::forgetGuards()` between calls; this is documented in the test as an inline comment so the next maintainer understands the test-only artifact. The `AuthenticationService::logout()` method is idempotent and always revokes every active refresh token for the user, not just the one associated with the current PAT — this implements the "forced-logout guarantee" required by `docs/11` §6.
 
 
+### T-M2-017 — GET /api/v1/auth/me endpoint
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 18:25 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(auth): complete T-M2-017 — GET /api/v1/auth/me endpoint` (sha: <pending>)
+- **Files touched:** `backend/app/Modules/Authentication/Http/Controllers/AuthController.php` (added `me(Request)` — resolves the authenticated user via `$request->user()` and returns the `UserResource` array; mirrors the manual `respondError` 401 path that the `AuthenticationException` handler now also covers), `backend/routes/api.php` (registered `GET api/v1/auth/me` inside the `auth:sanctum` group), `backend/tests/Feature/Authentication/MeEndpointTest.php` (new; 6 tests — happy 200 with envelope + structure, citizen role present, empty permissions array, never exposes password/2FA/remember_token, 401 without bearer, 401 with revoked bearer).
+- **Acceptance criteria:** Response contains `id`, `mobile`, `roles`, `permissions`; sensitive fields never leaked; missing/revoked bearer → 401 with the standard envelope.
+- **Required tests:** Pest `tests/Feature/Authentication/MeEndpointTest.php` — 6/6 pass; full suite 126/126 (500 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** The `UserResource` from T-M2-014 already exposes `roles` and `permissions` (Spatie-backed), so this task is mostly the controller method + route registration + the test contract. The controller keeps an explicit `if ($user === null) return respondError(...)` short-circuit even though `auth:sanctum` would have already thrown — it makes the failure mode obvious to readers and keeps the controller self-contained (no implicit dependency on the middleware ordering). `UserResource` is intentionally minimal in this task; richer permission/role grouping is deferred to a later RBAC task.
+
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -548,6 +560,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 18:25 | Logged T-M2-017 done; M2 progress 16/30; total 38/410 = 9.3 %. | Lead Solution Architect | T-M2-017 |
 | 2026-06-26 18:05 | Logged T-M2-016 done; M2 progress 15/30; total 37/410 = 9.0 %. Added D-018 (AuthenticationException handler in bootstrap/app.php) and D-019 (test-side Auth::forgetGuards() to clear RequestGuard cache between requests). | Lead Solution Architect | T-M2-016 |
 | 2026-06-26 12:42 | Initialized `.codex/completed_tasks.md`; logged 0/410 tasks; no completed, in-progress, blocked, or deferred tasks. | Lead Solution Architect | — |
 | 2026-06-26 12:08 | Generated `.codex/roadmap.md` (16 milestones, ~30 engineer-weeks). | Lead Solution Architect | — |
@@ -594,10 +607,10 @@ Snapshot at file initialization. Updated as the repository grows.
 | Database migrations | 0 |
 | Eloquent models | 0 |
 | API endpoints (under `routes/api.php`) | 0 (only `/api/v1/health` and `/api/v1/health/ready` will exist after M1) |
-| Pest tests | 120 passing (468 assertions) |
+| Pest tests | 126 passing (500 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 26 (T-M2-016 pending) |
+| Git commits on `main` | 28 (T-M2-017 pending) |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |

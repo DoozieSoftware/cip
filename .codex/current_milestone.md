@@ -2,8 +2,8 @@
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** In Progress (15 / 30 tasks complete)
-**Last updated:** 2026-06-26 18:05 IST (after T-M2-016 done)
+**Status:** In Progress (16 / 30 tasks complete)
+**Last updated:** 2026-06-26 18:25 IST (after T-M2-017 done)
 **Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M2, `.codex/task_queue.md` §M2, `docs/02` §4 §11 §17, `docs/03` §13–14 §19, `docs/05` §5, `docs/11` §6–9 §19 §21 §22 §28–29, `docs/14` §19 §37, `docs/15` §6–7
 
 > M1 is complete (22/22). M2 picks up where M1 left off and lands a production-grade identity layer: citizens authenticate via OTP, staff via username + password (2FA-ready), and Spatie Permission powers RBAC. JWT lifecycle with refresh-token rotation, audit logging on every mutating request, and rate limiters from `docs/11` §21 are all in scope.
@@ -93,6 +93,6 @@ Build a production-grade identity layer that supports three user personas with d
 
 ## 8. Implementation Status
 
-* Active task: **T-M2-017 — GET /api/v1/auth/me endpoint** (next: returns the authenticated user via `UserResource`).
+* Active task: **T-M2-018 — DeviceFingerprintService** (next: `fromRequest(Request): array` returning `{user_agent, screen, timezone, language, canvas, webgl, ip}`; tolerates missing fields).
 * Blockers: none.
 * Next task on completion: T-M2-002 (User model).

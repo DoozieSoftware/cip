@@ -27,5 +27,6 @@ Route::prefix('v1')->group(function (): void {
     // Authenticated routes
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
+        Route::get('auth/me', [AuthController::class, 'me'])->name('api.v1.auth.me');
     });
 });

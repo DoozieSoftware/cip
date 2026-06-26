@@ -578,10 +578,10 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Related specs:** `docs/05` §5; `docs/11` §9
 - **Dependencies:** T-M2-014
 - **Est. time:** 15 minutes
-- **Files:** `backend/app/Modules/Authentication/Http/Controllers/AuthController.php`, `backend/app/Modules/Users/Http/Resources/UserResource.php`
-- **Acceptance criteria:** Response contains `id`, `mobile`, `roles`, `permissions`.
+- **Files:** `backend/app/Modules/Authentication/Http/Controllers/AuthController.php`, `backend/routes/api.php`, `backend/tests/Feature/Authentication/MeEndpointTest.php`
+- **Acceptance criteria:** Response contains `id`, `mobile`, `roles`, `permissions`; password and 2FA fields are never exposed; unauthenticated and revoked-bearer requests return 401 with the standard envelope.
 - **Required tests:** `tests/Feature/Authentication/MeEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-018 — Implement device fingerprinting service
 - **Milestone:** M2
