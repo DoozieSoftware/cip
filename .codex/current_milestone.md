@@ -2,8 +2,8 @@
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** In Progress (22 / 30 tasks complete)
-**Last updated:** 2026-06-26 20:40 IST (after T-M2-023 done)
+**Status:** In Progress (23 / 30 tasks complete)
+**Last updated:** 2026-06-26 20:55 IST (after T-M2-024 done)
 **Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M2, `.codex/task_queue.md` §M2, `docs/02` §4 §11 §17, `docs/03` §13–14 §19, `docs/05` §5, `docs/11` §6–9 §19 §21 §22 §28–29, `docs/14` §19 §37, `docs/15` §6–7
 
 > M1 is complete (22/22). M2 picks up where M1 left off and lands a production-grade identity layer: citizens authenticate via OTP, staff via username + password (2FA-ready), and Spatie Permission powers RBAC. JWT lifecycle with refresh-token rotation, audit logging on every mutating request, and rate limiters from `docs/11` §21 are all in scope.
@@ -93,6 +93,6 @@ Build a production-grade identity layer that supports three user personas with d
 
 ## 8. Implementation Status
 
-* Active task: **T-M2-024 — Add UserResource with roles and permissions** (next: extend `backend/app/Modules/Users/Http/Resources/UserResource.php` with roles/permissions, add unit test `tests/Unit/Users/UserResourceTest.php`).
+* Active task: **T-M2-025 — Document auth API in OpenAPI** (next: author/extend `backend/storage/api-docs/openapi.yaml` paths for `auth/send-otp`, `auth/verify-otp`, `auth/refresh`, `auth/logout`, `auth/me`; add request/response schemas).
 * Blockers: none.
 * Next task on completion: T-M2-002 (User model).

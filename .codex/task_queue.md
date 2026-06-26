@@ -655,7 +655,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** `tests/Feature/Authentication/OtpRateLimitRouteTest.php`.
 - **Status:** Done
 
-### T-M2-024 — Add UserResource with roles and permissions
+### T-M2-024 — Add UserResource with roles and permissions [DONE 2026-06-26 — commit e1c5c7da]
 - **Milestone:** M2
 - **Title:** Add UserResource with roles and permissions
 - **Description:** `UserResource` exposes only safe fields; `roles` and `permissions` arrays are loaded lazily.
@@ -665,7 +665,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Users/Http/Resources/UserResource.php`
 - **Acceptance criteria:** Resource never leaks password hash or OTP.
 - **Required tests:** `tests/Unit/Users/UserResourceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-025 — Document auth API in OpenAPI
 - **Milestone:** M2
