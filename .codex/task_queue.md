@@ -1793,7 +1793,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_workflow_transitions_table.php`
 - **Acceptance criteria:** FKs and indexes created; `(from_state_id, event, priority)` index present.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-004 — Workflow models
 - **Milestone:** M6
