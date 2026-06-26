@@ -368,7 +368,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `.github/workflows/ci.yml`
 - **Acceptance criteria:** Workflow YAML is valid; required checks block merge via branch protection.
 - **Required tests:** Actionlint or `yamllint`.
-- **Status:** Not Started
+- **Status:** Done
 
 
 ---

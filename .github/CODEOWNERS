@@ -1,0 +1,13 @@
+# Default code owners for /.
+# @format: <pattern> <owner>
+
+*                       @civic-platform/engineering-leads
+
+/backend/               @civic-platform/backend-leads
+/frontend/              @civic-platform/frontend-leads
+/docker/                @civic-platform/devops-leads
+/.github/               @civic-platform/devops-leads
+/docs/                  @civic-platform/architecture-leads
+/.codex/                @civic-platform/architecture-leads
+/AGENTS.md              @civic-platform/architecture-leads
+/README.md              @civic-platform/architecture-leads

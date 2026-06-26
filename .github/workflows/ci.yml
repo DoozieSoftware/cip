@@ -1,0 +1,163 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+permissions:
+  contents: read
+
+env:
+  PHP_VERSION: "8.4"
+  NODE_VERSION: "20"
+  COMPOSER_FLAGS: "--no-interaction --prefer-dist"
+  BACKEND_DIR: backend
+  FRONTEND_DIR: frontend
+
+jobs:
+  backend:
+    name: Backend (Pint, PHPStan, Pest)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: cip
+          MYSQL_USER: cip
+          MYSQL_PASSWORD: cip
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7.4-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: bcmath, exif, gd, intl, mbstring, pdo_mysql, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Composer cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BACKEND_DIR }}/vendor
+          key: composer-${{ runner.os }}-${{ hashFiles(env.BACKEND_DIR + '/composer.json') }}
+          restore-keys: |
+            composer-${{ runner.os }}-
+
+      - name: Install dependencies
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: composer install ${{ env.COMPOSER_FLAGS }} --no-progress
+
+      - name: Prepare environment
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          echo "DB_CONNECTION=mysql" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_DATABASE=cip" >> .env
+          echo "DB_USERNAME=cip" >> .env
+          echo "DB_PASSWORD=cip" >> .env
+          echo "REDIS_HOST=127.0.0.1" >> .env
+          echo "REDIS_PORT=6379" >> .env
+          echo "QUEUE_CONNECTION=database" >> .env
+          echo "CACHE_STORE=array" >> .env
+          echo "SESSION_DRIVER=array" >> .env
+          echo "FILESYSTEM_DISK=local" >> .env
+          echo "BCRYPT_ROUNDS=4" >> .env
+
+      - name: Migrate database
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: php artisan migrate --force
+
+      - name: Pint format check
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: vendor/bin/pint --test
+
+      - name: PHPStan static analysis
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: vendor/bin/phpstan analyse --no-progress
+
+      - name: Pest tests
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: vendor/bin/pest --parallel
+
+  frontend:
+    name: Frontend (ESLint, Prettier, Vitest, Build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm ci --no-audit --no-fund
+
+      - name: ESLint
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm run lint
+
+      - name: Prettier check
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npx prettier --check .
+
+      - name: Vitest
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm run test -- --run
+
+      - name: Build
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm run build
+
+  docker-build:
+    name: Docker image build
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build PHP image
+        run: docker build -f docker/php/Dockerfile -t cip-php:ci .
+      - name: Validate Compose
+        run: docker compose config -q
+
+  dependency-scan:
+    name: Dependency scan (Trivy fs + composer audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Composer audit
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: |
+          set -e
+          if composer --version 2>/dev/null | head -1 | grep -q 'Composer version 2'; then
+            composer audit --no-interaction || true
+          else
+            echo "composer audit requires Composer 2.4+"
+          fi
+      - name: NPM audit
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm audit --audit-level=high || true
