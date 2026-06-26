@@ -1913,7 +1913,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Workflow/Http/Controllers/Admin/WorkflowAdminController.php`, `backend/app/Modules/Workflow/Http/Requests/StoreWorkflowRequest.php`, `backend/app/Modules/Workflow/Http/Requests/UpdateTransitionRequest.php`, `backend/app/Modules/Workflow/Http/Resources/WorkflowResource.php`
 - **Acceptance criteria:** Updates invalidate cache; 403 for non-admin.
 - **Required tests:** `tests/Feature/Workflow/WorkflowCrudTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-014 — WorkflowEngine audit writer
 - **Milestone:** M6
