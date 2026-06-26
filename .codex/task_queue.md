@@ -200,7 +200,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/package.json`, `frontend/vite.config.ts`, `frontend/tsconfig.json`, `frontend/src/`
 - **Acceptance criteria:** `npm run build` succeeds; `npm run test` runs a trivial Vitest passing test.
 - **Required tests:** `npm run test -- --run` exits 0.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M1-009 — Install frontend base libraries
 - **Milestone:** M1
