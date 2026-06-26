@@ -1496,7 +1496,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Services/HashService.php`
 - **Acceptance criteria:** Same file produces identical hashes.
 - **Required tests:** `tests/Unit/Media/HashServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-006 — Implement VirusScanService interface and LogScanner
 - **Milestone:** M5
