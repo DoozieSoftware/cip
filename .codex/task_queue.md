@@ -691,7 +691,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** Manual review checklist.
 - **Status:** Done
 
-### T-M2-027 — Add Pest feature suite for OTP throttle
+### T-M2-027 — Add Pest feature suite for OTP throttle [DONE 2026-06-26 — commit 4074f0d5]
 - **Milestone:** M2
 - **Title:** Add Pest feature suite for OTP throttle
 - **Description:** Cover: 5 successful requests, 6th returns 429, IP-based throttling, error code envelope.
@@ -701,7 +701,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/Authentication/OtpThrottleFeatureTest.php`
 - **Acceptance criteria:** Suite passes; rate limits reset by `Cache::flush()` between tests.
 - **Required tests:** `vendor/bin/pest tests/Feature/Authentication/OtpThrottleFeatureTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-028 — Add Pest feature suite for refresh rotation
 - **Milestone:** M2

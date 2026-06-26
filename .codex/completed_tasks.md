@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 21:25 IST (after T-M2-026 done — M2 progress 25/30; total 47/410 = 11.5 %)
+* **Last updated:** 2026-06-26 22:00 IST (after T-M2-027 done — M2 progress 26/30; total 48/410 = 11.7 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M2 — Identity, Auth & RBAC Core (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 25   | 0           | 0       | 0        | 83 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 26   | 0           | 0       | 0        | 87 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **47** | **0**    | **0**   | **0**    | **11.5 %   |
+| **All** | **Total**                             | **410** | **48** | **0**    | **0**   | **0**    | **11.7 %   |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,7 +56,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 25 | 25 % |
+| Foundations | M2, M3, M5, M9 | 100 | 26 | 26 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
@@ -627,6 +627,17 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Required tests:** Manual review checklist (12 items). No automated tests for this task by design — the doc is the deliverable.
 - **Notes:** This is a reference doc, not a spec — it never overrides `docs/05` or `docs/11`. The cross-references section points readers back to the authoritative spec sections. The `docs/` folder otherwise contains the immutable specifications (01-16), so this file is the only engineering on-ramp in the tree and is named explicitly to avoid colliding with the numbered spec set.
 
+### T-M2-027 — Add Pest feature suite for OTP throttle
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 22:00 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(auth): complete T-M2-027 — Pest feature suite for OTP throttle` (sha: 4074f0d5)
+- **Files touched:** `backend/tests/Feature/Authentication/OtpThrottleFeatureTest.php` (new; 8 tests — 5 successful requests with distinct mobiles, 6th returns 429 RATE_LIMITED, standard envelope on 429, Retry-After header preserved, IP-based throttling, middleware order (malformed body from throttled IP returns 429 not 422), counterpart test (malformed body from fresh IP returns 422), Cache::flush() + RateLimiter::clear() resets the limiter so a fresh IP succeeds).
+- **Acceptance criteria:** Suite passes; rate limits reset by `Cache::flush()` between tests.
+- **Required tests:** Pest `tests/Feature/Authentication/OtpThrottleFeatureTest.php` — 8/8 pass; full suite 203/203 (786 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** The Laravel-throttle middleware runs BEFORE the FormRequest validator, so a malformed body from a throttled IP returns 429 RATE_LIMITED, not 422. The test suite covers both orderings explicitly. The middleware hashes the rate-limit key (md5 of `limiterName.key`), so `RateLimiter::clear()` must be paired with `Cache::flush()` to fully reset the bucket — the test verifies both.
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -663,6 +674,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 22:00 IST | Logged T-M2-027 done; M2 progress 26/30; total 48/410 = 11.7 %. | Lead Solution Architect | T-M2-027 |
 | 2026-06-26 21:25 IST | Logged T-M2-026 done; M2 progress 25/30; total 47/410 = 11.5 %. | Lead Solution Architect | T-M2-026 |
 | 2026-06-26 21:10 IST | Logged T-M2-025 done; M2 progress 24/30; total 46/410 = 11.2 %. | Lead Solution Architect | T-M2-025 |
 | 2026-06-26 20:55 IST | Logged T-M2-024 done; M2 progress 23/30; total 45/410 = 11.0 %. | Lead Solution Architect | T-M2-024 |
@@ -715,14 +727,14 @@ Snapshot at file initialization. Updated as the repository grows.
 | Lines of `.codex/roadmap.md` | 991 |
 | Lines of `.codex/task_queue.md` | 5,163 |
 | Lines of `.codex/current_milestone.md` | 212 |
-| Lines of `.codex/completed_tasks.md` (this file) | 845 |
+| Lines of `.codex/completed_tasks.md` (this file) | 875 |
 | Database migrations | 0 |
 | Eloquent models | 0 |
 | API endpoints (under `routes/api.php`) | 0 (only `/api/v1/health` and `/api/v1/health/ready` will exist after M1) |
-| Pest tests | 195 passing (719 assertions) |
+| Pest tests | 203 passing (786 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 45 (T-M2-026 pending) |
+| Git commits on `main` | 47 (T-M2-027 pending) |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |
