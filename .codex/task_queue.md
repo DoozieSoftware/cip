@@ -449,7 +449,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_refresh_tokens_table.php`
 - **Acceptance criteria:** Migration roundtrips; FK enforced.
 - **Required tests:** Migration + FK test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-007 — Create RefreshToken model and rotation service
 - **Milestone:** M2

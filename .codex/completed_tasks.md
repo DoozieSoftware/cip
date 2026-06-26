@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 15:15 IST (after T-M2-005 done — M2 progress 4/30; total 26/410 = 6.3 %)
+* **Last updated:** 2026-06-26 15:25 IST (after T-M2-006 done — M2 progress 5/30; total 27/410 = 6.6 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 4    | 0           | 0       | 0        | 13 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 5    | 0           | 0       | 0        | 17 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **26** | **0**    | **0**   | **0**    | **6.3 %    |
+| **All** | **Total**                             | **410** | **27** | **0**    | **0**   | **0**    | **6.6 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -378,6 +378,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Acceptance criteria:** Model methods return correct booleans for fixtures; `Otp::query()->create(...)` round-trips; `latestFor` returns the newest record first.
 - **Required tests:** Pest `tests/Unit/Authentication/OtpModelTest.php` — 9/9 pass; full suite 47/47 (175 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** No relation to the User model is declared here — per D-009, the auth flow (T-M2-014) joins the otp row to a user by `mobile` and creates a User on first contact (per docs/11 §6, citizens authenticate by mobile, not email).
+
+
+### T-M2-006 — Create refresh_tokens migration
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 15:25 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(auth): complete T-M2-006 — refresh_tokens table migration` (sha: pending)
+- **Files touched:** `backend/database/migrations/2026_06_26_150000_create_refresh_tokens_table.php` (new; uuid PK; user_id FK→users cascade; parent_id self-FK null-on-delete; token_hash, expires_at, revoked_at, ip, user_agent; composite index on (user_id, expires_at) + standalone index on expires_at; InnoDB / utf8mb4 on MySQL), `backend/tests/Feature/Database/RefreshTokensTableTest.php` (new; 6 tests — columns, no updated_at/deleted_at, index presence, FK roundtrip, force-delete cascade, parent_id rotation chain).
+- **Acceptance criteria:** Migration roundtrips; FK from user_id to users(id) enforced with cascade; parent_id self-FK enforces the rotation chain.
+- **Required tests:** Pest `tests/Feature/Database/RefreshTokensTableTest.php` — 6/6 pass; full suite 53/53 (196 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** The User model uses SoftDeletes, so a plain `delete()` is a soft delete and the cascade never fires. The test uses `forceDelete()` to validate the FK cascade on a hard delete. Refresh tokens are immutable records (no `updated_at`/`deleted_at`).
 
 
 ## 4. In-Progress Tasks
