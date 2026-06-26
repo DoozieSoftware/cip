@@ -457,7 +457,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Status:** Done
 - **Completed at:** 2026-06-26 16:50 IST
 - **Agent / Committer:** Lead Solution Architect
-- **Commit:** `feat(notifications): complete T-M2-012 — SmsGatewayInterface + LogSmsGateway` (sha: pending)
+- **Commit:** `feat(notifications): complete T-M2-012 — SmsGatewayInterface + LogSmsGateway` (sha: 8a57a224)
 - **Files touched:** `backend/app/Modules/Notifications/Contracts/SmsGatewayInterface.php` (new; single `send(mobile, message)` method; PHPDoc states retry/log/audit invariants per docs/03 §17), `backend/app/Modules/Notifications/Drivers/LogSmsGateway.php` (new; implements the contract; writes to a configurable log channel; defaults to `sms`), `backend/app/Modules/Notifications/Providers/NotificationsServiceProvider.php` (new; singleton binding `SmsGatewayInterface` → driver selected by `config('cip.notifications.sms_driver')`; falls back to `LogSmsGateway` for unknown names; `DRIVERS` map is the registry — only `log` in V1), `backend/bootstrap/providers.php` (registers `NotificationsServiceProvider`), `backend/tests/Unit/Notifications/LogSmsGatewayTest.php` (new; 6 tests — interface implementation, default log channel, custom channel via ctor, singleton binding, fallback for unknown driver, config-driven selection).
 - **Acceptance criteria:** `LogSmsGateway` writes to `sms.log` channel; swappable via service container.
 - **Required tests:** Pest `tests/Unit/Notifications/LogSmsGatewayTest.php` — 6/6 pass; full suite 95/95 (353 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
