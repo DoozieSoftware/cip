@@ -1079,7 +1079,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_report_statuses_table.php`, `backend/app/Modules/Reports/Models/ReportStatus.php`
 - **Acceptance criteria:** All 11 lifecycle codes can be inserted.
 - **Required tests:** Migration + seed test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-004 — Create report_priorities migration and model
 - **Milestone:** M4
