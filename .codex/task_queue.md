@@ -928,7 +928,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** `tests/Feature/Geography/GeographyServiceTest.php`.
 - **Status:** Done
 
-### T-M3-016 — Department CRUD endpoints
+### T-M3-016 — Department CRUD endpoints [DONE 2026-06-27 — commit 95409e5]
 - **Milestone:** M3
 - **Title:** Department CRUD endpoints
 - **Description:** `GET/POST/PUT/DELETE /api/v1/admin/departments`; uses Form Requests; `DepartmentResource`; gates via `super_admin` role.
@@ -938,7 +938,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Departments/Http/Controllers/Admin/DepartmentController.php`, `backend/app/Modules/Departments/Http/Requests/StoreDepartmentRequest.php`, `backend/app/Modules/Departments/Http/Requests/UpdateDepartmentRequest.php`, `backend/app/Modules/Departments/Http/Resources/DepartmentResource.php`, `backend/routes/api.php`
 - **Acceptance criteria:** All 5 endpoints respond; audit row per write; 403 for non-admin.
 - **Required tests:** `tests/Feature/Departments/DepartmentCrudTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-017 — Settings CRUD endpoints
 - **Milestone:** M3

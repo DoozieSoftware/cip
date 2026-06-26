@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 05:40 IST (after T-M3-015 done; M3 15/24; total 66/410 = 16.1 %)
+* **Last updated:** 2026-06-27 06:25 IST (after T-M3-016 done; M3 16/24; total 67/410 = 16.3 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -33,7 +33,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
-| M3  | Master Configuration & Geography         | 24    | 15   | 0           | 0       | 0        | 63 %       |
+| M3  | Master Configuration & Geography         | 24    | 16   | 0           | 0       | 0        | 67 %       |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **66** | **0**    | **0**   | **0**    | **16.1 %   |
+| **All** | **Total**                             | **410** | **67** | **0**    | **0**   | **0**    | **16.3 %   |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,7 +56,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 45 | 45 % |
+| Foundations | M2, M3, M5, M9 | 100 | 46 | 46 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
@@ -827,6 +827,16 @@ M2 (Identity, Auth & RBAC Core) is complete. 30/30 tasks done. The next mileston
 - **Acceptance criteria:** DTOs validated; helpers return paginated results; one upsert endpoint for all six levels.
 - **Required tests:** Pest `tests/Feature/Geography/GeographyServiceTest.php` — 9/9 pass; full suite 319/319 (1114 assertions) green; PHPStan clean (app/); Pint clean.
 
+### T-M3-016 — Department CRUD endpoints
+- **Milestone:** M3
+- **Status:** Done
+- **Completed at:** 2026-06-27 06:25 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(departments): complete T-M3-016 — Department CRUD endpoints` (sha: 95409e5)
+- **Files touched:** `backend/app/Modules/Departments/Http/Resources/DepartmentResource.php` (new), `backend/app/Modules/Departments/Http/Requests/StoreDepartmentRequest.php` (new), `backend/app/Modules/Departments/Http/Requests/UpdateDepartmentRequest.php` (new), `backend/app/Modules/Departments/Http/Controllers/Admin/DepartmentController.php` (new), `backend/routes/api.php` (added super_admin group with five Department routes), `backend/tests/Feature/Departments/DepartmentCrudTest.php` (new; 10 tests).
+- **Acceptance criteria:** All 5 endpoints respond; audit row per write; 403 for non-admin.
+- **Required tests:** Pest `tests/Feature/Departments/DepartmentCrudTest.php` — 10/10 pass; full suite 329/329 (1138 assertions) green; PHPStan clean (app/); Pint clean.
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -863,6 +873,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-27 06:25 IST | Logged T-M3-016 done; M3 16/24; total 67/410 = 16.3 %. | Lead Solution Architect | T-M3-016 |
 | 2026-06-27 05:40 IST | Logged T-M3-015 done; M3 15/24; total 66/410 = 16.1 %. | Lead Solution Architect | T-M3-015 |
 | 2026-06-27 05:00 IST | Logged T-M3-014 done; M3 14/24; total 65/410 = 15.9 %. | Lead Solution Architect | T-M3-014 |
 | 2026-06-27 04:25 IST | Logged T-M3-013 done; M3 13/24; total 64/410 = 15.6 %. | Lead Solution Architect | T-M3-013 |
@@ -942,7 +953,7 @@ Snapshot at file initialization. Updated as the repository grows.
 | Pest tests | 221 passing (850 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 82 |
+| Git commits on `main` | 84 |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |

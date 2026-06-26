@@ -2,8 +2,8 @@
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** In Progress (15 / 24 tasks complete; T-M3-016 next)
-**Last updated:** 2026-06-27 05:40 IST (after T-M3-015 done)
+**Status:** In Progress (16 / 24 tasks complete; T-M3-017 next)
+**Last updated:** 2026-06-27 06:25 IST (after T-M3-016 done)
 **Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M3, `.codex/task_queue.md` §M3, `docs/02` §11 §17, `docs/03` §10 §15, `docs/04` §5 §7 §8 §14, `docs/05` §22, `docs/09` §7, `docs/13` §5, `docs/14` §19 §37, `docs/15` §6–7, `docs/16` §36
 
 > M1 is complete (22/22) and M2 is complete (30/30). M3 lands the configuration master and the geography tree that everything downstream is built on. Geography terminates at the ward level; the master-config GET endpoint is the only API surface — every portal reads it on cold start and on cache-invalidation events.
@@ -110,6 +110,7 @@ Land the database-driven configuration master that powers every other module. Th
 * **T-M3-013** FeatureFlagService (three-rule evaluation: enabled, cohort, deterministic SHA-256 rollout bucket) — **Done** (commit see git log).
 * **T-M3-014** DepartmentRepository + DepartmentService (CRUD with audit event emission: DepartmentCreated/Updated/Deleted) — **Done** (commit `983a300`).
 * **T-M3-015** GeographyRepository + GeographyService (paginated tree lookups + DTO-based upsert for all 6 levels) — **Done** (commit `9869758`).
-* Active task: **T-M3-016 — Department CRUD endpoints** (UUID PK, name, unique code, parent_id self-FK, jurisdiction, address, email, phone, working_hours JSON, holiday_calendar JSON, default_workflow_id, default_sla_minutes, escalation_matrix JSON, active, soft deletes).
+* **T-M3-016** Department CRUD endpoints (5 routes, super_admin gate, Form Requests + DepartmentResource) — **Done** (commit `95409e5`).
+* Active task: **T-M3-017 — Settings CRUD endpoints** (UUID PK, name, unique code, parent_id self-FK, jurisdiction, address, email, phone, working_hours JSON, holiday_calendar JSON, default_workflow_id, default_sla_minutes, escalation_matrix JSON, active, soft deletes).
 * Blockers: none.
-* Next task on completion: T-M3-017 (Settings CRUD endpoints).
+* Next task on completion: T-M3-018 (Feature flag CRUD endpoints).
