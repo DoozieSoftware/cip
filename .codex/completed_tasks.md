@@ -433,7 +433,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Status:** Done
 - **Completed at:** 2026-06-26 16:20 IST
 - **Agent / Committer:** Lead Solution Architect
-- **Commit:** `feat(rbac): complete T-M2-010 — RolesAndPermissionsSeeder` (sha: pending)
+- **Commit:** `feat(rbac): complete T-M2-010 — RolesAndPermissionsSeeder` (sha: 68eb5290)
 - **Files touched:** `backend/database/seeders/RolesAndPermissionsSeeder.php` (new; 7 roles — citizen/moderator/department_officer/department_admin/super_admin/system/auditor; 12 permission categories per docs/09 §9 — reports/media/users/departments/analytics/settings/ai/workflow/notifications/security/audit/integrations; 50+ permissions; idempotent via firstOrCreate + syncPermissions; `cache()->forget('spatie.permission.cache')` before re-seeding), `backend/database/seeders/DatabaseSeeder.php` (updated — calls `RolesAndPermissionsSeeder`), `backend/tests/Feature/Auth/RoleSeedTest.php` (new; 7 tests — all 7 roles present, super_admin has every permission, citizen has none, moderator matches the expected set, auditor is read-only, idempotency, 12 categories).
 - **Acceptance criteria:** `php artisan db:seed` is idempotent on second run; expected roles exist.
 - **Required tests:** Pest `tests/Feature/Auth/RoleSeedTest.php` — 7/7 pass; full suite 81/81 (328 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
