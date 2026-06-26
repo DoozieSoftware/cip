@@ -66,9 +66,9 @@ class AuditMiddleware
         if (! $this->isMutating($request)) {
             /** @var Response $response */
             /** @var Response $response */
-        /** @var Response $response */
-        /** @var Response $response */
-        $response = $next($request);
+            /** @var Response $response */
+            /** @var Response $response */
+            $response = $next($request);
 
             return $response;
         }
