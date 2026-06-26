@@ -7,7 +7,6 @@ namespace App\Modules\Workflow\Services;
 use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
-use App\Modules\Reports\Models\ReportStatusHistory;
 use App\Modules\Users\Models\User;
 use App\Modules\Workflow\Exceptions\InvalidTransitionException;
 use App\Modules\Workflow\Models\WorkflowDefinition;
@@ -15,7 +14,6 @@ use App\Modules\Workflow\Models\WorkflowState;
 use App\Modules\Workflow\Models\WorkflowTransition;
 use App\Modules\Workflow\ValueObjects\WorkflowDecision;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -154,20 +152,9 @@ class WorkflowEngine
                 $report->save();
             }
 
-            ReportStatusHistory::query()->create([
-                'id' => (string) Str::uuid(),
-                'report_id' => $report->id,
-                'from_status_id' => $fromStateId,
-                'to_status_id' => $toStatus?->id ?? $toState->id,
-                'actor_id' => $actor?->id,
-                'reason' => 'workflow.transition:'.$decision->matchedTransitionId,
-                'metadata' => [
-                    'transition_id' => $decision->matchedTransitionId,
-                    'sla_minutes' => $decision->slaMinutes,
-                    'notify_before_minutes' => $decision->notifyBeforeMinutes,
-                ],
-            ]);
-
+            // The WriteStatusHistory listener (M4) is auto-wired
+            // and appends a status-history row when this event
+            // fires. Do not write twice.
             ReportStatusChanged::dispatch(
                 reportId: $report->id,
                 fromStatusId: $fromStateId,
