@@ -2222,7 +2222,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `README.md`
 - **Acceptance criteria:** Section has anchor link.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-017 — RoutingRepository cache
 - **Milestone:** M7
