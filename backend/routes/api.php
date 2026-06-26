@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\HealthController;
 use App\Modules\Authentication\Http\Controllers\AuthController;
 use App\Modules\Departments\Http\Controllers\Admin\DepartmentController;
+use App\Modules\Reports\Http\Controllers\Api\ReportsController;
 use App\Modules\Settings\Http\Controllers\Admin\AppConfigController;
 use App\Modules\Settings\Http\Controllers\Admin\SettingController;
 use App\Providers\RouteServiceProvider;
@@ -64,5 +65,29 @@ Route::prefix('v1')->group(function (): void {
         Route::get('app-configs/{app_config}', [AppConfigController::class, 'show'])->name('app-configs.show');
         Route::put('app-configs/{app_config}', [AppConfigController::class, 'update'])->name('app-configs.update');
         Route::delete('app-configs/{app_config}', [AppConfigController::class, 'destroy'])->name('app-configs.destroy');
+    });
+
+    // Citizen PWA — report submission and read-back (M4)
+    Route::middleware(['auth:sanctum', 'throttle:'.RouteServiceProvider::LIMITER_CITIZEN])->group(function (): void {
+        // T-M4-022 — POST /api/v1/reports
+        Route::post('reports', [ReportsController::class, 'store'])->name('api.v1.reports.store');
+        // T-M4-027 — GET /api/v1/citizen/dashboard
+        Route::get('citizen/dashboard', [ReportsController::class, 'citizenDashboard'])->name('api.v1.citizen.dashboard');
+        // T-M4-028 — GET /api/v1/citizen/reports and /{id}
+        Route::get('citizen/reports', [ReportsController::class, 'citizenIndex'])->name('api.v1.citizen.reports.index');
+        Route::get('citizen/reports/{id}', [ReportsController::class, 'citizenShow'])->name('api.v1.citizen.reports.show');
+    });
+
+    // Staff (moderator / super_admin) — report search and timeline (M4)
+    Route::middleware([
+        'auth:sanctum',
+        'throttle:'.RouteServiceProvider::LIMITER_MODERATOR,
+    ])->group(function (): void {
+        // T-M4-025 — GET /api/v1/reports (staff search)
+        Route::get('reports', [ReportsController::class, 'index'])->name('api.v1.reports.index');
+        // T-M4-024 — GET /api/v1/reports/{id}
+        Route::get('reports/{id}', [ReportsController::class, 'show'])->name('api.v1.reports.show');
+        // T-M4-026 — GET /api/v1/reports/{id}/timeline
+        Route::get('reports/{id}/timeline', [ReportsController::class, 'timeline'])->name('api.v1.reports.timeline');
     });
 });
