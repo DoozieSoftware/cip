@@ -115,6 +115,42 @@ class ReportRepository
     }
 
     /**
+     * Dashboard counts for a citizen: total reports, open (not
+     * closed/rejected), resolved, plus the distinct notifiable
+     * statuses. Anonymous reports are excluded.
+     *
+     * @return array<string, int>
+     */
+    public function citizenDashboardCounts(string $citizenId): array
+    {
+        $q = Report::query()->where('citizen_id', $citizenId);
+        $total = (int) (clone $q)->count();
+
+        $openStatusIds = ReportStatus::query()
+            ->whereIn('code', ['submitted', 'ai_processing', 'ai_completed', 'under_review', 'assigned', 'in_progress'])
+            ->pluck('id')
+            ->all();
+
+        $resolvedStatusIds = ReportStatus::query()
+            ->whereIn('code', ['resolved', 'closed'])
+            ->pluck('id')
+            ->all();
+
+        $open = $openStatusIds === [] ? 0 : (int) (clone $q)->whereIn('current_status_id', $openStatusIds)->count();
+        $resolved = $resolvedStatusIds === [] ? 0 : (int) (clone $q)->whereIn('current_status_id', $resolvedStatusIds)->count();
+        $rejected = (int) (clone $q)->whereHas('status', static function ($qq): void {
+            $qq->where('code', 'rejected');
+        })->count();
+
+        return [
+            'total' => $total,
+            'open' => $open,
+            'resolved' => $resolved,
+            'rejected' => $rejected,
+        ];
+    }
+
+    /**
      * @param  array<string, mixed>  $filters
      * @return Builder<Report>
      */
