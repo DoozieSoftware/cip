@@ -1415,7 +1415,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/Reports/CitizenSubmissionFlowTest.php`
 - **Acceptance criteria:** All cases green; ≥ 90% line coverage on `Reports/`.
 - **Required tests:** `vendor/bin/pest tests/Feature/Reports/CitizenSubmissionFlowTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-032 — Update README for M4
 - **Milestone:** M4
