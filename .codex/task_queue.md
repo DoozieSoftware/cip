@@ -1865,7 +1865,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Workflow/Services/WorkflowEngine.php`
 - **Acceptance criteria:** `apply` is transactional; on failure no state changes.
 - **Required tests:** `tests/Feature/Workflow/WorkflowApplyTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-010 — WorkflowRepository with cache
 - **Milestone:** M6
