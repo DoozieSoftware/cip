@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 22:55 IST (after T-M5-005 done; M5 in progress)
+* **Last updated:** 2026-06-26 23:05 IST (after T-M5-006 done; M5 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M5 — Media Pipeline & Evidence Integrity (see `.codex/current_milestone.md`; M4 closed 32/32 = 100 %)
 
@@ -35,7 +35,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
 | M4 | Reports Domain & Submission API | 32 | 32 | 0 | 0 | 0 | 100 % |
-| M5 | Media Pipeline & Evidence Integrity | 26 | 5 | 0 | 0 | 0 | 19 % |
+| M5 | Media Pipeline & Evidence Integrity | 26 | 6 | 0 | 0 | 0 | 23 % |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
 | M8  | AI Vision Pipeline & Provider Abstraction | 30  | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **112** | **0** | **0** | **0** | **27.3 %** |
+| **All** | **Total** | **410** | **113** | **0** | **0** | **0** | **27.6 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M5-006 — Implement VirusScanService interface and LogScanner
+- **Milestone:** M5
+- **Status:** Done
+- **Completed at:** 2026-06-26 23:05 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(media): complete T-M5-006 — VirusScanService + LogScanner + ClamAvScanner` (sha: `b6ca9e5b`)
+- **Files touched:** backend/app/Modules/Media/Contracts/VirusScanServiceInterface.php (new); backend/app/Modules/Media/Services/LogScanner.php (new); backend/app/Modules/Media/Services/ClamAvScanner.php (new); backend/app/Modules/Media/Providers/MediaServiceProvider.php (new); backend/config/cip.php (new); backend/bootstrap/providers.php (modified); backend/tests/Unit/Media/LogScannerTest.php (new)
+- **Acceptance criteria:** LogScanner returns true and writes to log; service container binds to LogScanner by default.
+- **Required tests:** Pest 443/443 passed (1558 assertions); 6 new LogScannerTest tests, 0 regressions
+- **Notes:** ClamAvScanner stub shells out to clamscan (exit 0=CLEAN, 1=INFECTED, >=2=throw). config/cip.php added to centralize CIP_* env vars.
+
+
 
 ### T-M5-005 — Implement HashService
 - **Milestone:** M5
@@ -1447,6 +1460,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 23:05 IST | Logged T-M5-006 done; M5 6/26; total 113/410 = 27.6 %. | Lead Solution Architect | T-M5-006 |
 | 2026-06-26 22:55 IST | Logged T-M5-005 done; M5 5/26; total 112/410 = 27.3 %. | Lead Solution Architect | T-M5-005 |
 | 2026-06-26 22:45 IST | Logged T-M5-004 done; M5 4/26; total 111/410 = 27.1 %. | Lead Solution Architect | T-M5-004 |
 | 2026-06-26 22:35 IST | Logged T-M5-003 done; M5 3/26; total 110/410 = 26.8 %. | Lead Solution Architect | T-M5-003 |

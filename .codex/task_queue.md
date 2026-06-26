@@ -1508,7 +1508,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Contracts/VirusScanServiceInterface.php`, `backend/app/Modules/Media/Services/LogScanner.php`, `backend/app/Modules/Media/Services/ClamAvScanner.php`
 - **Acceptance criteria:** `LogScanner` returns true and writes to log; service container binds to `LogScanner` by default.
 - **Required tests:** `tests/Unit/Media/LogScannerTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-007 — Implement ThumbnailService
 - **Milestone:** M5
