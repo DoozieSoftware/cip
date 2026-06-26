@@ -1877,7 +1877,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Workflow/Repositories/WorkflowRepository.php`
 - **Acceptance criteria:** Cache hit on second call; invalidation on definition update.
 - **Required tests:** `tests/Feature/Workflow/WorkflowRepositoryTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-011 — Seed default civic report workflow
 - **Milestone:** M6
