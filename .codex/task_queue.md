@@ -2150,7 +2150,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Routing/Http/Controllers/Admin/ReassignController.php`
 - **Acceptance criteria:** Old assignment marked `reassigned_at`; new one active.
 - **Required tests:** `tests/Feature/Routing/ReassignTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-011 — Seed Bangalore sample routing rules
 - **Milestone:** M7
