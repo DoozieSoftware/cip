@@ -1067,7 +1067,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Models/ReportType.php`, `backend/database/factories/ReportTypeFactory.php`
 - **Acceptance criteria:** `ReportType::factory()->create()` succeeds.
 - **Required tests:** `tests/Unit/Reports/ReportTypeModelTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-003 — Create report_statuses migration and model
 - **Milestone:** M4
