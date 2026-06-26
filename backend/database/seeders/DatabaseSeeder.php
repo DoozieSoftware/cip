@@ -33,6 +33,8 @@ class DatabaseSeeder extends Seeder
             GeographySeeder::class,
             DepartmentsSeeder::class,
             AppConfigsSeeder::class,
+            ReportStatusesSeeder::class,
+            DefaultWorkflowSeeder::class,
         ]);
     }
 }
