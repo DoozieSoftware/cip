@@ -1175,7 +1175,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_idempotency_keys_table.php`
 - **Acceptance criteria:** Unique key constraint enforced.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-012 — Seed report_statuses and priorities
 - **Milestone:** M4
