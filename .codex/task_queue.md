@@ -2186,7 +2186,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Unit/Routing/RoutingConditionFullTest.php`
 - **Acceptance criteria:** ≥ 30 cases pass.
 - **Required tests:** `vendor/bin/pest tests/Unit/Routing/RoutingConditionFullTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-014 — Update OpenAPI for routing admin
 - **Milestone:** M7
