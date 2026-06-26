@@ -1472,7 +1472,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Models/Media.php`, `backend/app/Modules/Media/Models/MediaHash.php`
 - **Acceptance criteria:** `$media->hashes` returns the relationship.
 - **Required tests:** Model test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-004 — Implement MimeValidator
 - **Milestone:** M5
