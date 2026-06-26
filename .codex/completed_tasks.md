@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 15:00 IST (after T-M2-004 done — M2 progress 3/30; total 25/410 = 6.1 %)
+* **Last updated:** 2026-06-26 15:15 IST (after T-M2-005 done — M2 progress 4/30; total 26/410 = 6.3 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 3    | 0           | 0       | 0        | 10 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 4    | 0           | 0       | 0        | 13 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **25** | **0**    | **0**   | **0**    | **6.1 %    |
+| **All** | **Total**                             | **410** | **26** | **0**    | **0**   | **0**    | **6.3 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -366,6 +366,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Acceptance criteria:** Table created with composite index on `mobile` + `expires_at` and a standalone index on `expires_at`; the `id` column is a string/uuid PK; `mobile` and `code_hash` are NOT NULL; rows roundtrip cleanly.
 - **Required tests:** Pest `tests/Feature/Database/OtpsTableTest.php` — 6/6 pass; full suite 38/38 (148 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** OTPs are immutable records (no `updated_at`/`deleted_at`). The rate-limit query (`SELECT COUNT(*) WHERE mobile=? AND created_at >= ?`) uses the composite (mobile, expires_at) index. The MySQL engine/charset statement is guarded so sqlite test runs (D-010) are unaffected.
+
+
+### T-M2-005 — Create Otp Eloquent model
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 15:15 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(auth): complete T-M2-005 — Otp Eloquent model` (sha: pending)
+- **Files touched:** `backend/app/Modules/Authentication/Models/Otp.php` (new; uses HasUuids; `timestamps = false` because otps are immutable; fillable = mobile/code_hash/expires_at/consumed_at/attempts/ip/user_agent/created_at; casts for datetime + int; helpers: `isExpired()` / `isConsumed()` / `isUsable()` (expired || consumed || attempts >= 5) / `incrementAttempts()` / `markConsumed()`; `scopeLatestFor(mobile)` returns Builder<Otp> ordered by created_at desc), `backend/tests/Unit/Authentication/OtpModelTest.php` (new; 9 tests — uuid PK, casts, isExpired past/future, isConsumed, isUsable, incrementAttempts persistence, markConsumed persistence, latestFor scope).
+- **Acceptance criteria:** Model methods return correct booleans for fixtures; `Otp::query()->create(...)` round-trips; `latestFor` returns the newest record first.
+- **Required tests:** Pest `tests/Unit/Authentication/OtpModelTest.php` — 9/9 pass; full suite 47/47 (175 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** No relation to the User model is declared here — per D-009, the auth flow (T-M2-014) joins the otp row to a user by `mobile` and creates a User on first contact (per docs/11 §6, citizens authenticate by mobile, not email).
 
 
 ## 4. In-Progress Tasks

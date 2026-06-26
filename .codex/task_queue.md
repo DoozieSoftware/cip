@@ -437,7 +437,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Authentication/Models/Otp.php`
 - **Acceptance criteria:** Model methods return correct booleans for seeded fixtures.
 - **Required tests:** `tests/Unit/Authentication/OtpModelTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-006 — Create refresh_tokens migration
 - **Milestone:** M2
