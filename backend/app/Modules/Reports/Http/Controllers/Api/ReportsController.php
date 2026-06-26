@@ -9,6 +9,7 @@ use App\Modules\Reports\Http\Requests\SubmitReportRequest;
 use App\Modules\Reports\Http\Resources\ReportResource;
 use App\Modules\Reports\Http\Resources\ReportStatusHistoryResource;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Reports\Repositories\ReportRepository;
 use App\Modules\Reports\Services\ReportService;
 use App\Modules\Shared\Exceptions\ApiException;
@@ -66,6 +67,59 @@ class ReportsController extends BaseController
             (new ReportResource($report->fresh()->load(['location', 'status', 'priority', 'reportType'])))->toArray($request),
             'Report submitted.',
             201,
+        );
+    }
+
+    /**
+     * POST /api/v1/reports/{id}/submit
+     */
+    public function submit(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+        $report = $this->repository->findById($id);
+
+        if ($report === null) {
+            throw ApiException::notFound('Report');
+        }
+
+        $isOwner = ! $report->is_anonymous
+            && $report->citizen_id !== null
+            && (string) $report->citizen_id === (string) $user->id;
+        $isStaff = $user->hasAnyRole(['moderator', 'department', 'super_admin', 'system']);
+
+        if (! $isOwner && ! $isStaff) {
+            throw ApiException::forbidden('You cannot submit this report.');
+        }
+
+        $submittedStatusId = ReportStatus::query()
+            ->where('code', 'submitted')
+            ->value('id');
+        $draftStatusId = ReportStatus::query()
+            ->where('code', 'draft')
+            ->value('id');
+
+        if (! is_string($submittedStatusId) || $submittedStatusId === '') {
+            throw new ApiException('MISSING_REFERENCE_DATA', "Status 'submitted' is not seeded.", 500);
+        }
+
+        if ((string) $report->current_status_id === $submittedStatusId) {
+            return $this->respond(
+                (new ReportResource($report->load(['location', 'status', 'priority', 'reportType'])))->toArray($request),
+                'Report already submitted.',
+            );
+        }
+
+        if (is_string($draftStatusId) && $draftStatusId !== '' && (string) $report->current_status_id !== $draftStatusId) {
+            throw new ApiException('INVALID_STATUS', 'Only draft reports can be submitted.', 422);
+        }
+
+        $report = $this->service->transitionTo($report, $submittedStatusId, (string) $user->id, 'Citizen submitted.', ['source' => 'citizen_submit_endpoint']);
+        $report->submitted_at = now();
+        $report->save();
+
+        return $this->respond(
+            (new ReportResource($report->fresh()->load(['location', 'status', 'priority', 'reportType'])))->toArray($request),
+            'Report submitted.',
         );
     }
 

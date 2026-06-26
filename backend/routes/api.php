@@ -71,6 +71,8 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:sanctum', 'throttle:'.RouteServiceProvider::LIMITER_CITIZEN])->group(function (): void {
         // T-M4-022 — POST /api/v1/reports
         Route::post('reports', [ReportsController::class, 'store'])->name('api.v1.reports.store');
+        // T-M4-023 — POST /api/v1/reports/{id}/submit
+        Route::post('reports/{id}/submit', [ReportsController::class, 'submit'])->name('api.v1.reports.submit');
         // T-M4-027 — GET /api/v1/citizen/dashboard
         Route::get('citizen/dashboard', [ReportsController::class, 'citizenDashboard'])->name('api.v1.citizen.dashboard');
         // T-M4-028 — GET /api/v1/citizen/reports and /{id}
