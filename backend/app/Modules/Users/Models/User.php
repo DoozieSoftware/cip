@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Users\Models;
 
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -39,9 +38,10 @@ class User extends Authenticatable
     use HasApiTokens;
 
     /**
-     * @use HasFactory<UserFactory>
+     * @use HasFactory<\Database\Factories\Modules\Users\Models\UserFactory>
      */
     use HasFactory;
+
     use HasRoles;
     use HasUuids;
     use Notifiable;

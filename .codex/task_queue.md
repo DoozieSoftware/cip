@@ -410,10 +410,10 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Related specs:** `docs/04` §6; `docs/15` §6
 - **Dependencies:** T-M2-002
 - **Est. time:** 10 minutes
-- **Files:** `backend/database/factories/UserFactory.php`
+- **Files:** `backend/database/factories/Modules/Users/Models/UserFactory.php`
 - **Acceptance criteria:** `User::factory()->citizen()->create()` returns a verified citizen.
 - **Required tests:** `tests/Feature/Auth/UserFactoryTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-004 — Create otps migration
 - **Milestone:** M2
