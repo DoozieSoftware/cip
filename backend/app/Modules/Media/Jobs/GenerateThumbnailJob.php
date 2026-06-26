@@ -40,7 +40,10 @@ class GenerateThumbnailJob implements ShouldQueue
 
     public int $backoff = 30;
 
-    public function __construct(public readonly string $mediaId) {}
+    public function __construct(public readonly string $mediaId)
+    {
+        $this->onQueue('media');
+    }
 
     public function handle(ThumbnailService $thumbnails): void
     {

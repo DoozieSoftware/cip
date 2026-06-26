@@ -43,7 +43,10 @@ class ComputeHashesJob implements ShouldQueue
 
     public int $backoff = 30;
 
-    public function __construct(public readonly string $mediaId) {}
+    public function __construct(public readonly string $mediaId)
+    {
+        $this->onQueue('media');
+    }
 
     public function handle(HashService $hashes): void
     {

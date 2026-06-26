@@ -52,7 +52,9 @@ class ExtractVideoMetadataJob implements ShouldQueue
     public function __construct(
         public readonly string $mediaId,
         private readonly string $ffprobeBinary = 'ffprobe',
-    ) {}
+    ) {
+        $this->onQueue('media');
+    }
 
     public function handle(): void
     {

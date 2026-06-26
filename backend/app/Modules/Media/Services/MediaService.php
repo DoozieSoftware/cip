@@ -78,9 +78,13 @@ class MediaService
         return $this->upload($reportId, $file, $uploaderId, 'PHOTO');
     }
 
-    public function uploadVideo(string $reportId, UploadedFile $file, string $uploaderId): Media
-    {
-        return $this->upload($reportId, $file, $uploaderId, 'VIDEO');
+    public function uploadVideo(
+        string $reportId,
+        UploadedFile $file,
+        string $uploaderId,
+        ?array $hints = null,
+    ): Media {
+        return $this->upload($reportId, $file, $uploaderId, 'VIDEO', $hints);
     }
 
     public function uploadDocument(string $reportId, UploadedFile $file, string $uploaderId): Media
@@ -92,7 +96,7 @@ class MediaService
      * The core upload pipeline. Validates, scans, writes, and
      * dispatches the post-processing jobs.
      */
-    private function upload(string $reportId, UploadedFile $file, string $uploaderId, string $type): Media
+    private function upload(string $reportId, UploadedFile $file, string $uploaderId, string $type, ?array $hints = null): Media
     {
         $this->mimeValidator->validate($file, $type);
 
@@ -111,7 +115,7 @@ class MediaService
             );
         }
 
-        $media = $this->persist($reportId, $file, $uploaderId, $type);
+        $media = $this->persist($reportId, $file, $uploaderId, $type, $hints);
 
         // Dispatch the post-processing jobs.
         ComputeHashesJob::dispatch($media->id);
@@ -127,7 +131,7 @@ class MediaService
         return $media;
     }
 
-    private function persist(string $reportId, UploadedFile $file, string $uploaderId, string $type): Media
+    private function persist(string $reportId, UploadedFile $file, string $uploaderId, string $type, ?array $hints = null): Media
     {
         $id = (string) Str::uuid();
         $ext = strtolower((string) $file->getClientOriginalExtension());
@@ -179,7 +183,7 @@ class MediaService
             'captured_at' => null,
             'uploaded_at' => now(),
             'uploaded_by' => $uploaderId,
-            'metadata' => null,
+            'metadata' => $hints !== null && $hints !== [] ? ['upload' => $hints] : null,
             'version' => 1,
             'is_replaced' => false,
         ]);
@@ -214,6 +218,7 @@ class MediaService
                     ['existing' => $existing],
                 );
             }
+
             throw new ApiException(
                 ErrorCode::VALIDATION_FAILED->value,
                 "Maximum {$limit} {$type} per report reached; upload rejected.",

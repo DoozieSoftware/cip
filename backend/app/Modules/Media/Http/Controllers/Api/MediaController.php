@@ -77,7 +77,27 @@ class MediaController extends BaseController
             $this->service->assertVideoDurationWindow((int) $duration);
         }
 
-        $created = $this->service->uploadVideo($reportId, $file, $userId);
+        // Hint to the post-processing job: if ffprobe is
+        // missing in this environment, ExtractVideoMetadataJob
+        // can fall back to the duration/width/height the
+        // citizen's client captured at upload time.
+        $hints = null;
+
+        if (is_numeric($duration)) {
+            $hints = ['duration' => (int) $duration];
+            $w = $request->input('width');
+            $h = $request->input('height');
+
+            if (is_numeric($w)) {
+                $hints['width'] = (int) $w;
+            }
+
+            if (is_numeric($h)) {
+                $hints['height'] = (int) $h;
+            }
+        }
+
+        $created = $this->service->uploadVideo($reportId, $file, $userId, $hints);
 
         return $this->respond(
             ['media' => new MediaResource($created)],
