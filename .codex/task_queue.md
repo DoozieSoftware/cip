@@ -1688,7 +1688,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/Media/MediaFailureTest.php`
 - **Acceptance criteria:** All cases pass with correct error codes.
 - **Required tests:** `vendor/bin/pest tests/Feature/Media/MediaFailureTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-022 — MediaJobTest (queue behavior)
 - **Milestone:** M5
