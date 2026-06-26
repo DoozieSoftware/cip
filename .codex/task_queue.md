@@ -1901,7 +1901,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Services/ReportService.php`
 - **Acceptance criteria:** `submit` now sets state to `Submitted` via the engine; history row written.
 - **Required tests:** `tests/Feature/Reports/SubmissionUsesWorkflowTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-013 — /api/v1/admin/workflows CRUD
 - **Milestone:** M6
