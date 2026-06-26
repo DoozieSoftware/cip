@@ -2,26 +2,26 @@
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** **CLOSED** 32/32 = 100 % (M1, M2, M3, M4 complete; M5 starts next)
-**Last updated:** 2026-06-26 22:18 IST (after T-M4-032 done; M4 32/32; M4 CLOSED; total 107/410 = 26.1 %)
+**Status:** **CLOSED** 26/26 = 100 % (M1, M2, M3, M4, M5 complete; M6 starts next)
+**Last updated:** 2026-06-27 01:45 IST (after T-M5-026 done; M5 26/26; M5 CLOSED; total 133/410 = 32.4 %)
 
-> M1 (22/22), M2 (30/30), M3 (24/24) and M4 (32/32) are complete. M5 lands the media pipeline — MinIO bucket layout, multipart upload, evidence integrity (SHA-256 + virus scan stub), the report-media relationship, and the read APIs that power the evidence carousel in the citizen and moderator portals. Nothing in M5 changes reports or workflow; reports and locations are read-only inputs from M5's perspective.
-**Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M4, `.codex/task_queue.md` §M4, `docs/02` §11 §17, `docs/03` §10 §15, `docs/04` §5 §7 §8 §14, `docs/05` §6–7 §15–16 §20 §22–23, `docs/09` §7, `docs/11` §9 §12 §21 §23 §27 §28, `docs/13` §5, `docs/14` §8–11 §17 §37, `docs/15` §6–7, `docs/16` §36, `docs/reports.md`
+> M1 (22/22), M2 (30/30), M3 (24/24), M4 (32/32) and M5 (26/26) are complete. M5 is the evidence layer — multipart upload, three-gate mime validation, SHA-256/sha512/pHash hashes, 320-px thumbnail, ffprobe metadata extraction, append-only chain-of-custody log, and 15-min signed URLs for playback. M5 is fully behind the M4 `Report` rows; the citizen and moderator portals can now render the evidence carousel end-to-end.
+**Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M5, `.codex/task_queue.md` §M5, `docs/02` §11 §17, `docs/03` §10 §15, `docs/04` §12, `docs/05` §14 §23, `docs/06` §7, `docs/07` §9, `docs/09` §11, `docs/11` §13 §15 §32, `docs/14` §8–11 §16 §31 §37, `docs/15` §6–7, `docs/media.md`
 
-> M1 is the foundation. M2 added Identity, Auth & RBAC. M3 added the configuration master and geography tree. **M4 is the citizen-facing write path** — categories, sub-categories, severity, location, media handles, idempotent submission, the moderation queue's first cut, and the GET endpoints that power the citizen report-history screen. M5 will consume M4's `Report` + `Location` rows to attach evidence.
+> M1 is the foundation. M2 added Identity, Auth & RBAC. M3 added the configuration master and geography tree. M4 is the citizen-facing write path. **M5 is the evidence layer** — bytes in, signed-URL bytes out, with the chain-of-custody log as the audit trail. M6 (Workflow Engine) will build on M4's `ReportStatusChanged` event to drive the state machine.
 
 ---
 
 ## 1. Current Milestone
 
-* **Milestone ID:** M4
-* **Title:** Reports Domain & Submission API
-* **Estimated complexity:** **High** (largest milestone by task count in the foundation phase)
+* **Milestone ID:** M5
+* **Title:** Media Pipeline & Evidence Integrity
+* **Estimated complexity:** **High** (multipart upload, virus-scan integration, three-gate mime validation, async hashing, chain-of-custody, signed-URL streaming)
 * **Estimated duration:** 2 weeks
-* **Total tasks:** 32 (T-M4-001 → T-M4-032)
-* **Status:** **CLOSED 32/32 = 100 %**
-* **Depends on:** M1 (buildable repo, CI, /health endpoint, base `Shared` utilities), M2 (User, RoleService, BasePolicy, audit middleware, rate limiters), M3 (geography tree, departments, categories, settings, master-config).
-* **Unblocks:** M5 (Media — needs the `Report` + `Location` rows to attach evidence); M6 (Workflow — needs the report_status_history events to drive the state machine); M7 (Routing — needs the report + geography + category rows to drive assignment); M10–M13 (the portals read reports via the M4 endpoints).
+* **Total tasks:** 26 (T-M5-001 → T-M5-026)
+* **Status:** **CLOSED 26/26 = 100 %**
+* **Depends on:** M1 (buildable repo, CI, /health, base `Shared` utilities), M2 (User, RoleService, BasePolicy, audit, rate limiters), M3 (geography + categories + master-config), M4 (Report + Location + StatusHistory + IdempotencyKey).
+* **Unblocks:** M6 (Workflow — needs the chain-of-custody VIEW/DOWNLOAD events), M7 (Routing — needs the media read evidence for the assignment context), M8 (Notifications — needs the media.audit endpoint for evidence notifications), M10–M13 (the portals render the evidence carousel via the M5 endpoints).
 
 ---
 
@@ -114,16 +114,26 @@ Land the citizen-facing report-submission API end-to-end. This includes the `rep
 
 ## 8. Current Implementation Status
 
-* **All 32 M4 tasks are implemented and merged on `main`.** The most recent commit is `3e2432b1 docs(codex): log T-M4-032 as Done — M4 32/32 = 100 % CLOSED; total 107/410 = 26.1 %`.
-* Code review: every task is in its own per-task commit; the controller / repository / routes work is split into a few tightly-coupled commits because the layers are inseparable.
-* Test coverage:
-  - `tests/Feature/Reports/ReportServiceTest.php` (4 tests)
-  - `tests/Feature/Reports/PolicyTest.php` (5 tests)
-  - `tests/Feature/Reports/SubmitReportRequestTest.php` (6 tests)
-  - `tests/Feature/Reports/CitizenSubmitFlowTest.php` (9 tests)
-  - `tests/Feature/Shared/IdempotencyKeyMiddlewareTest.php` (3 tests)
-  - `tests/Feature/Reports/ReportSeedTest.php` (pre-existing, covers the seeders)
-  - **Total M4 tests: 27 feature tests covering the request / service / repository / policy / middleware / seeder surface.**
+* **All 26 M5 tasks are implemented and merged on `main`.** The most recent commit is `ac895b22 docs(codex): log T-M5-024/025/026 as Done — M5 26/26 = 100 % CLOSED; total 133/410 = 32.4 %`.
+* Code review: every task is in its own per-task commit; the controller / service / jobs / middleware work is split across the 26 commits.
+* Test coverage (M5 net new):
+  - `tests/Feature/Media/MediaFeatureTest.php` (5 happy-path tests)
+  - `tests/Feature/Media/MediaFailureTest.php` (7 failure-mode tests)
+  - `tests/Feature/Media/MediaJobTest.php` (5 queue / job tests)
+  - `tests/Feature/Media/UploadPhotosEndpointTest.php` (acceptance)
+  - `tests/Feature/Media/UploadVideoEndpointTest.php` (acceptance)
+  - `tests/Feature/Media/MediaListEndpointTest.php`
+  - `tests/Feature/Media/MediaPolicyTest.php`
+  - `tests/Feature/Media/ChainOfCustodyTest.php`
+  - `tests/Feature/Media/ComputeHashesJobTest.php`
+  - `tests/Feature/Media/ExtractVideoMetadataJobTest.php`
+  - `tests/Feature/Media/GenerateThumbnailJobTest.php`
+  - `tests/Feature/Media/MediaServiceUploadTest.php`
+  - `tests/Feature/Media/MinIoEntryPointTest.php`
+  - `tests/Feature/Media/UploadLimitMiddlewareTest.php`
+  - `tests/Feature/OpenApiMediaTest.php` (4 contract tests)
+  - **Total M5 tests: 50+ feature tests covering request / service / job / policy / middleware / chain-of-custody / OpenAPI surface.**
+* **Project total: 542/542 passing (1818 assertions), full suite runs in ~110s on SQLite in-memory.**
 
 ---
 
@@ -135,7 +145,7 @@ None.
 
 ## 10. Next Milestone
 
-* **M5 — Media Pipeline & Evidence Integrity (26 tasks; T-M5-001 → T-M5-026).**
-* First task: **T-M5-001 — Create media_buckets migration** (MinIO bucket layout per docs/04 §9).
-* Switch `.codex/current_milestone.md` to M5 before resuming work.
-* M5 will consume M4's `Report` and `Location` rows to attach evidence. The first cut is the multipart upload endpoint + the SHA-256 + virus-scan integrity flow. After M5 closes, M6 (Workflow Engine) and M7 (Routing Engine) can build on top.
+* **M6 — Workflow Engine & State Machine (22 tasks; T-M6-001 → T-M6-022).**
+* First task: **T-M6-001 — Create workflow_definitions migration** (per docs/04 §11).
+* Switch `.codex/current_milestone.md` to M6 before resuming work.
+* M6 will build on M4's `ReportStatusChanged` event + `WriteStatusHistory` listener to drive the configurable state machine (review/approve/reject/escalate transitions, SLA timers, role-based gates). After M6 closes, M7 (Routing Engine) and the moderator / operations portals can drive reports through their lifecycle.
