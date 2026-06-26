@@ -2078,7 +2078,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Routing/Services/RoutingEngine.php`, `backend/app/Modules/Routing/ValueObjects/RoutingDecision.php`
 - **Acceptance criteria:** Determinism test: same input → same decision.
 - **Required tests:** `tests/Unit/Routing/RoutingEngineTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-005 — AssignmentService
 - **Milestone:** M7
