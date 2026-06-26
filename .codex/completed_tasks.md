@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 18:25 IST (after T-M2-017 done — M2 progress 16/30; total 38/410 = 9.3 %)
+* **Last updated:** 2026-06-26 18:50 IST (after T-M2-018 done — M2 progress 17/30; total 39/410 = 9.5 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 16   | 0           | 0       | 0        | 53 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 17   | 0           | 0       | 0        | 57 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **38** | **0**    | **0**   | **0**    | **9.3 %    |
+| **All** | **Total**                             | **410** | **39** | **0**    | **0**   | **0**    | **9.5 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,11 +56,11 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 16 | 16 % |
+| Foundations | M2, M3, M5, M9 | 100 | 17 | 17 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
-| **Total** | | **410** | **38** | **9.3 % |
+| **Total** | | **410** | **39** | **9.5 % |
 
 ---
 
@@ -524,6 +524,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Notes:** The `UserResource` from T-M2-014 already exposes `roles` and `permissions` (Spatie-backed), so this task is mostly the controller method + route registration + the test contract. The controller keeps an explicit `if ($user === null) return respondError(...)` short-circuit even though `auth:sanctum` would have already thrown — it makes the failure mode obvious to readers and keeps the controller self-contained (no implicit dependency on the middleware ordering). `UserResource` is intentionally minimal in this task; richer permission/role grouping is deferred to a later RBAC task.
 
 
+### T-M2-018 — Implement device fingerprinting service
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 18:50 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(security): complete T-M2-018 — DeviceFingerprintService` (sha: <pending>)
+- **Files touched:** `backend/app/Modules/Security/Services/DeviceFingerprintService.php` (new; `fromRequest(Request): array` returns `{user_agent, screen, timezone, language, canvas, webgl, ip, hash}`; reads canvas/webgl/screen/timezone from dedicated `X-` headers, language from `X-Language` or falls back to `Accept-Language`; `hash(array): string` is a stable SHA-256 over the concatenation of the non-null components; `BaseService` subclass so the audit/logging helpers are available even though the service is stateless), `backend/tests/Unit/Security/DeviceFingerprintServiceTest.php` (new; 8 tests — bare request, UA + IP, X- headers, Accept-Language fallback, stable hash, hash changes on any component, blank-string normalisation, completely empty request).
+- **Acceptance criteria:** Returns a stable SHA-256 hash for the same input; never throws on missing fields; canvas/webgl/screen/timezone all readable from the documented headers.
+- **Required tests:** Pest `tests/Unit/Security/DeviceFingerprintServiceTest.php` — 8/8 pass; full suite 134/134 (533 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** The `docs/11` §10 list (Browser, OS, Screen, Timezone, Language, User Agent, Canvas, WebGL) is partially derivable server-side (UA → OS+Browser) and partially client-supplied (Canvas, WebGL, Screen, Timezone, explicit Language). Per the task description the service only carries what the server can read: UA + IP from the standard Request API, the rest from headers. The service also returns a `hash` field so callers do not have to re-implement the algorithm — the canonical hashing uses null-as-NUL-byte substitution so that "absent" and "present-but-blank" do not collide. The audit middleware (T-M2-020) is the first consumer and will call `fromRequest()` on every mutating request.
+
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -560,6 +572,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 18:50 | Logged T-M2-018 done; M2 progress 17/30; total 39/410 = 9.5 %. | Lead Solution Architect | T-M2-018 |
 | 2026-06-26 18:25 | Logged T-M2-017 done; M2 progress 16/30; total 38/410 = 9.3 %. | Lead Solution Architect | T-M2-017 |
 | 2026-06-26 18:05 | Logged T-M2-016 done; M2 progress 15/30; total 37/410 = 9.0 %. Added D-018 (AuthenticationException handler in bootstrap/app.php) and D-019 (test-side Auth::forgetGuards() to clear RequestGuard cache between requests). | Lead Solution Architect | T-M2-016 |
 | 2026-06-26 12:42 | Initialized `.codex/completed_tasks.md`; logged 0/410 tasks; no completed, in-progress, blocked, or deferred tasks. | Lead Solution Architect | — |
@@ -607,10 +620,10 @@ Snapshot at file initialization. Updated as the repository grows.
 | Database migrations | 0 |
 | Eloquent models | 0 |
 | API endpoints (under `routes/api.php`) | 0 (only `/api/v1/health` and `/api/v1/health/ready` will exist after M1) |
-| Pest tests | 126 passing (500 assertions) |
+| Pest tests | 134 passing (533 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 28 (T-M2-017 pending) |
+| Git commits on `main` | 30 (T-M2-018 pending) |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |

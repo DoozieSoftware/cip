@@ -593,7 +593,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Security/Services/DeviceFingerprintService.php`
 - **Acceptance criteria:** Service returns a stable hash for the same input; missing fields do not throw.
 - **Required tests:** `tests/Unit/Security/DeviceFingerprintServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-019 — Implement BasePolicy and RoleService
 - **Milestone:** M2
