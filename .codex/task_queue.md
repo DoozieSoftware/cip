@@ -1853,7 +1853,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Workflow/Services/WorkflowEngine.php`
 - **Acceptance criteria:** Decision determinism verified with seeded data.
 - **Required tests:** `tests/Unit/Workflow/WorkflowEngineTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-009 — WorkflowEngine.apply
 - **Milestone:** M6
