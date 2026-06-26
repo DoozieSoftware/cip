@@ -7,6 +7,7 @@ namespace App\Modules\Workflow\Services;
 use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
+use App\Modules\Security\Models\AuditLog;
 use App\Modules\Users\Models\User;
 use App\Modules\Workflow\Exceptions\InvalidTransitionException;
 use App\Modules\Workflow\Models\WorkflowDefinition;
@@ -167,6 +168,33 @@ class WorkflowEngine
                     'notify_before_minutes' => $decision->notifyBeforeMinutes,
                 ],
             );
+
+            // Audit log: docs/03 sec 19 + docs/11 sec 28 require
+            // every state-changing write to leave an append-only
+            // audit trail keyed on (entity, entity_id, action).
+            // request_id is read from the container so background
+            // jobs (no request) get a null rather than crashing.
+            $request = request();
+            $requestId = $request?->attributes->get('trace_id');
+
+            AuditLog::query()->create([
+                'user_id' => $actor?->id,
+                'entity' => 'reports',
+                'entity_id' => $report->id,
+                'action' => 'workflow.transition',
+                'before' => [
+                    'current_status_id' => $fromStateId,
+                    'workflow_id' => $report->workflow_id,
+                ],
+                'after' => [
+                    'current_status_id' => $toStatus?->id ?? $toState->id,
+                    'workflow_id' => $report->workflow_id,
+                ],
+                'ip' => $request?->ip(),
+                'device_fingerprint' => null,
+                'request_id' => is_string($requestId) ? $requestId : null,
+                'created_at' => now(),
+            ]);
         });
 
         return $report->refresh();
