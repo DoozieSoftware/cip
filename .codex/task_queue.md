@@ -1520,7 +1520,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Services/ThumbnailService.php`
 - **Acceptance criteria:** Output JPEG is ≤ 50KB; throws on non-image.
 - **Required tests:** `tests/Unit/Media/ThumbnailServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-008 — GenerateThumbnailJob
 - **Milestone:** M5
