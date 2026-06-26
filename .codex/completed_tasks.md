@@ -517,7 +517,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Status:** Done
 - **Completed at:** 2026-06-26 18:25 IST
 - **Agent / Committer:** Lead Solution Architect
-- **Commit:** `feat(auth): complete T-M2-017 — GET /api/v1/auth/me endpoint` (sha: <pending>)
+- **Commit:** `feat(auth): complete T-M2-017 — GET /api/v1/auth/me endpoint` (sha: b378664c)
 - **Files touched:** `backend/app/Modules/Authentication/Http/Controllers/AuthController.php` (added `me(Request)` — resolves the authenticated user via `$request->user()` and returns the `UserResource` array; mirrors the manual `respondError` 401 path that the `AuthenticationException` handler now also covers), `backend/routes/api.php` (registered `GET api/v1/auth/me` inside the `auth:sanctum` group), `backend/tests/Feature/Authentication/MeEndpointTest.php` (new; 6 tests — happy 200 with envelope + structure, citizen role present, empty permissions array, never exposes password/2FA/remember_token, 401 without bearer, 401 with revoked bearer).
 - **Acceptance criteria:** Response contains `id`, `mobile`, `roles`, `permissions`; sensitive fields never leaked; missing/revoked bearer → 401 with the standard envelope.
 - **Required tests:** Pest `tests/Feature/Authentication/MeEndpointTest.php` — 6/6 pass; full suite 126/126 (500 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
