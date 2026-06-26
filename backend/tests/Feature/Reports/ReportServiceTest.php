@@ -13,6 +13,7 @@ use App\Modules\Reports\Models\ReportType;
 use App\Modules\Reports\Services\ReportService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
+use Database\Seeders\DefaultWorkflowSeeder;
 use Database\Seeders\ReportPrioritiesSeeder;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
@@ -24,6 +25,7 @@ beforeEach(function (): void {
     (new ReportStatusesSeeder)->run();
     (new ReportPrioritiesSeeder)->run();
     (new ReportTypesSeeder)->run();
+    (new DefaultWorkflowSeeder)->run();
 });
 
 it('createDraft persists a draft report and assigns a unique tracking number', function (): void {

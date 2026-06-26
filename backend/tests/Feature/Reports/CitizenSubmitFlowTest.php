@@ -8,6 +8,7 @@ use App\Modules\Reports\Models\ReportPriority;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Reports\Models\ReportType;
 use App\Modules\Users\Models\User;
+use Database\Seeders\DefaultWorkflowSeeder;
 use Database\Seeders\ReportPrioritiesSeeder;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
@@ -23,6 +24,7 @@ beforeEach(function (): void {
     (new ReportStatusesSeeder)->run();
     (new ReportPrioritiesSeeder)->run();
     (new ReportTypesSeeder)->run();
+    (new DefaultWorkflowSeeder)->run();
     // Reset rate-limiter buckets between tests so the citizen 60/min
     // cap does not bleed across tests.
     RateLimiter::clear('citizen:'.request()?->ip() ?? '127.0.0.1');

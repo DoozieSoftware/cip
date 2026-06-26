@@ -13,6 +13,9 @@ use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Reports\Models\ReportType;
 use App\Modules\Reports\Repositories\ReportRepository;
 use App\Modules\Shared\Exceptions\ApiException;
+use App\Modules\Users\Models\User;
+use App\Modules\Workflow\Repositories\WorkflowRepository;
+use App\Modules\Workflow\Services\WorkflowEngine;
 
 /**
  * ReportService per docs/03 §16 and docs/14 §8.
@@ -35,6 +38,8 @@ class ReportService
     public function __construct(
         private readonly ReportRepository $repository,
         private readonly LocationService $locationService,
+        private readonly WorkflowEngine $workflowEngine,
+        private readonly WorkflowRepository $workflowRepository,
     ) {}
 
     public function createDraft(CreateReportDto $dto): Report
@@ -91,8 +96,11 @@ class ReportService
         $location = $this->locationService->createFromSubmission($dto);
 
         $draftStatusId = $this->resolveStatusId('draft');
-        $submittedStatusId = $this->resolveStatusId('submitted');
         $priorityId = $dto->priorityId ?? $this->defaultPriorityId();
+
+        // Anchor the report to the default civic workflow so the
+        // M6 engine can drive it through the lifecycle.
+        $workflow = $this->workflowRepository->findActiveByCode('civic_default');
 
         $report = $this->repository->create([
             'citizen_id' => $dto->isAnonymous ? null : $dto->citizenId,
@@ -100,14 +108,24 @@ class ReportService
             'current_status_id' => $draftStatusId,
             'priority_id' => $priorityId,
             'location_id' => $location->id,
+            'workflow_id' => $workflow?->id,
             'title' => $dto->title,
             'description' => $dto->description,
             'is_anonymous' => $dto->isAnonymous,
         ]);
 
-        $report = $this->transitionTo($report, $submittedStatusId, $dto->citizenId, 'Citizen submitted.', [
-            'source' => 'citizen_mobile',
-        ]);
+        // Drive the citizen's submit through the workflow
+        // engine so the audit + event chain stays consistent
+        // with every other transition.
+        $actor = $dto->isAnonymous
+            ? null
+            : User::query()->find($dto->citizenId);
+        $decision = $this->workflowEngine->evaluate($report, 'submit', $actor);
+
+        if ($decision->allowed) {
+            $report = $this->workflowEngine->apply($report, $decision, $actor);
+        }
+
         $report->submitted_at = now();
         $report->save();
 

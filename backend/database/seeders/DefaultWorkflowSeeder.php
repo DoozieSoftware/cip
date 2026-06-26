@@ -100,7 +100,7 @@ class DefaultWorkflowSeeder extends Seeder
     {
         $t = [
             // from             event              to                    role          sla
-            ['draft',             'submit',            'submitted',         'citizen',    null],
+            ['draft',             'submit',            'submitted',         null,         null],
             ['submitted',         'ai_complete',       'ai_processing',     'system',     30],
             ['ai_processing',     'moderator_review',  'pending_moderator', 'system',     30],
             ['pending_moderator', 'assign',            'assigned',          'moderator',  120],
