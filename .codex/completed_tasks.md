@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 14:45 IST (after T-M2-003 done — M2 progress 2/30; total 24/410 = 5.9 %)
+* **Last updated:** 2026-06-26 15:00 IST (after T-M2-004 done — M2 progress 3/30; total 25/410 = 6.1 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 2    | 0           | 0       | 0        | 7 %        |
+| M2  | Identity, Auth & RBAC Core               | 30    | 3    | 0           | 0       | 0        | 10 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **24** | **0**    | **0**   | **0**    | **5.9 %    |
+| **All** | **Total**                             | **410** | **25** | **0**    | **0**   | **0**    | **6.1 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -354,6 +354,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Acceptance criteria:** `User::factory()->citizen()->create()` returns an OTP-verified citizen with no email; `User::factory()->moderator()->create()` returns an email+password staff user; `User::factory()->count(10)->create()` never violates the unique mobile index.
 - **Required tests:** Pest `tests/Feature/Auth/UserFactoryTest.php` — 9/9 pass; full suite 32/32 (126 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** Factory had to be relocated from `database/factories/UserFactory.php` to `database/factories/Modules/Users/Models/UserFactory.php` because Laravel's `Factory::resolveFactoryName()` mirrors the model's namespace. The original `App\Models\User` PHPDoc on the default Laravel user model was updated to point at the new factory location as well. A `protected $model = ...` is declared explicitly because the default model-name resolver does not handle the multi-segment `Modules\...` namespace correctly.
+
+
+### T-M2-004 — Create otps migration
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 15:00 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(auth): complete T-M2-004 — otps table migration` (sha: pending)
+- **Files touched:** `backend/database/migrations/2026_06_26_144500_create_otps_table.php` (new; uuid PK; mobile indexed; code_hash, expires_at, consumed_at, attempts, ip, user_agent; created_at only — no updated_at/deleted_at; composite index on (mobile, expires_at) + standalone index on expires_at; MySQL InnoDB / utf8mb4), `backend/tests/Feature/Database/OtpsTableTest.php` (new; 6 tests — columns, uuid PK, no updated_at/deleted_at, index presence, row roundtrip, NOT NULL enforcement on mobile).
+- **Acceptance criteria:** Table created with composite index on `mobile` + `expires_at` and a standalone index on `expires_at`; the `id` column is a string/uuid PK; `mobile` and `code_hash` are NOT NULL; rows roundtrip cleanly.
+- **Required tests:** Pest `tests/Feature/Database/OtpsTableTest.php` — 6/6 pass; full suite 38/38 (148 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** OTPs are immutable records (no `updated_at`/`deleted_at`). The rate-limit query (`SELECT COUNT(*) WHERE mobile=? AND created_at >= ?`) uses the composite (mobile, expires_at) index. The MySQL engine/charset statement is guarded so sqlite test runs (D-010) are unaffected.
 
 
 ## 4. In-Progress Tasks

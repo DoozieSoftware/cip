@@ -425,7 +425,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_otps_table.php`
 - **Acceptance criteria:** Table created with index on `mobile`, `expires_at`.
 - **Required tests:** Migration roundtrip test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-005 — Create Otp Eloquent model
 - **Milestone:** M2
