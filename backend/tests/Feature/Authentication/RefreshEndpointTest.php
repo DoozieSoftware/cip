@@ -68,7 +68,7 @@ it('rejects a second use of the same refresh token (rotation invariant)', functi
 
     $second = $this->postJson('/api/v1/auth/refresh', ['refresh_token' => $old]);
     $second->assertStatus(401)
-        ->assertJsonPath('code', 'UNAUTHORIZED');
+        ->assertJsonPath('code', 'REFRESH_TOKEN_REPLAY');
 });
 
 it('rejects an unknown refresh token with 401', function (): void {

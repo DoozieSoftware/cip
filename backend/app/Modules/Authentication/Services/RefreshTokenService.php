@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Authentication\Services;
 
 use App\Modules\Authentication\Models\RefreshToken;
+use App\Modules\Security\Services\SecurityEventService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Services\BaseService;
 use App\Modules\Users\Models\User;
@@ -31,8 +32,9 @@ class RefreshTokenService extends BaseService
      */
     private int $ttlDays;
 
-    public function __construct()
-    {
+    public function __construct(
+        private readonly SecurityEventService $securityEvents,
+    ) {
         $rawConfig = config('cip.auth.refresh_ttl_days', 14);
         $this->ttlDays = is_numeric($rawConfig) ? (int) $rawConfig : 14;
     }
@@ -81,18 +83,30 @@ class RefreshTokenService extends BaseService
         $current = $this->findByPlaintext($plaintext);
 
         if ($current === null) {
-            throw ApiException::unauthorized('Refresh token not recognised.');
+            throw new ApiException(
+                'REFRESH_TOKEN_INVALID',
+                'Refresh token not recognised.',
+                401,
+            );
         }
 
         if ($current->isExpired()) {
-            throw ApiException::unauthorized('Refresh token has expired.');
+            throw new ApiException(
+                'REFRESH_TOKEN_EXPIRED',
+                'Refresh token has expired.',
+                401,
+            );
         }
 
         if ($current->isRevoked()) {
             // Reuse of a revoked token = treat as theft.
             $this->revokeChain($current);
 
-            throw ApiException::unauthorized('Refresh token reuse detected; session terminated.');
+            throw new ApiException(
+                'REFRESH_TOKEN_REPLAY',
+                'Refresh token reuse detected; session terminated.',
+                401,
+            );
         }
 
         $user = $current->user;
@@ -181,7 +195,9 @@ class RefreshTokenService extends BaseService
     /**
      * Revoke every token in the rotation chain rooted at $token.
      * Triggered when a revoked parent is presented — by definition
-     * that's token theft and the entire chain must die.
+     * that's token theft and the entire chain must die. We also
+     * emit a REFRESH_TOKEN_REPLAY security event so security can
+     * alert on it.
      */
     private function revokeChain(RefreshToken $token): void
     {
@@ -192,6 +208,18 @@ class RefreshTokenService extends BaseService
             $child->markRevoked();
             $cursor = $child;
         }
+
+        $this->securityEvents->recordSafe(
+            event: 'REFRESH_TOKEN_REPLAY',
+            severity: 'critical',
+            metadata: [
+                'user_id' => $token->user_id,
+                'token_id' => $token->id,
+                'ip' => $token->ip,
+                'user_agent' => $token->user_agent,
+            ],
+            user: $token->user,
+        );
     }
 
     /**

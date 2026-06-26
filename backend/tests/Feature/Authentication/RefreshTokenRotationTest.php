@@ -17,7 +17,7 @@ use App\Modules\Users\Models\User;
  */
 it('issues a refresh token with a 14-day expiry and a hash (never plaintext)', function (): void {
     $user = User::factory()->citizen()->create();
-    $service = new RefreshTokenService;
+    $service = app(RefreshTokenService::class);
 
     $issued = $service->issue($user, '10.0.0.1', 'Pest/Test');
 
@@ -32,7 +32,7 @@ it('issues a refresh token with a 14-day expiry and a hash (never plaintext)', f
 
 it('rotates a refresh token: parent revoked, child issued with parent_id', function (): void {
     $user = User::factory()->citizen()->create();
-    $service = new RefreshTokenService;
+    $service = app(RefreshTokenService::class);
 
     $first = $service->issue($user);
     $rotated = $service->rotate($first['plain']);
@@ -48,7 +48,7 @@ it('rotates a refresh token: parent revoked, child issued with parent_id', funct
 
 it('rejects rotation of a revoked parent — entire chain is killed', function (): void {
     $user = User::factory()->citizen()->create();
-    $service = new RefreshTokenService;
+    $service = app(RefreshTokenService::class);
 
     $first = $service->issue($user);
     $rotated = $service->rotate($first['plain']);
@@ -58,13 +58,13 @@ it('rejects rotation of a revoked parent — entire chain is killed', function (
 })->throws(ApiException::class);
 
 it('rejects rotation of an unknown token', function (): void {
-    $service = new RefreshTokenService;
+    $service = app(RefreshTokenService::class);
     $service->rotate('not-a-real-token');
 })->throws(ApiException::class);
 
 it('rejects rotation of an expired parent', function (): void {
     $user = User::factory()->citizen()->create();
-    $service = new RefreshTokenService;
+    $service = app(RefreshTokenService::class);
 
     $first = $service->issue($user);
     // backdate the expiry into the past
@@ -75,7 +75,7 @@ it('rejects rotation of an expired parent', function (): void {
 
 it('revoke() marks a single token revoked and is idempotent', function (): void {
     $user = User::factory()->citizen()->create();
-    $service = new RefreshTokenService;
+    $service = app(RefreshTokenService::class);
 
     $issued = $service->issue($user);
     expect($service->revoke($issued['plain']))->toBeTrue();
@@ -85,7 +85,7 @@ it('revoke() marks a single token revoked and is idempotent', function (): void 
 
 it('revokeAllForUser() revokes every active token for the user', function (): void {
     $user = User::factory()->citizen()->create();
-    $service = new RefreshTokenService;
+    $service = app(RefreshTokenService::class);
 
     $a = $service->issue($user);
     $b = $service->issue($user);
@@ -101,7 +101,7 @@ it('revokeAllForUser() revokes every active token for the user', function (): vo
 
 it('the active() scope returns only non-revoked, non-expired tokens', function (): void {
     $user = User::factory()->citizen()->create();
-    $service = new RefreshTokenService;
+    $service = app(RefreshTokenService::class);
 
     $a = $service->issue($user);
     $b = $service->issue($user);
