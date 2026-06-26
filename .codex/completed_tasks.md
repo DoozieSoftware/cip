@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 22:00 IST (after T-M2-027 done — M2 progress 26/30; total 48/410 = 11.7 %)
+* **Last updated:** 2026-06-26 22:30 IST (after T-M2-028 done — M2 progress 27/30; total 49/410 = 12.0 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M2 — Identity, Auth & RBAC Core (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 26   | 0           | 0       | 0        | 87 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 27   | 0           | 0       | 0        | 90 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **48** | **0**    | **0**   | **0**    | **11.7 %   |
+| **All** | **Total**                             | **410** | **49** | **0**    | **0**   | **0**    | **12.0 %   |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,7 +56,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 26 | 26 % |
+| Foundations | M2, M3, M5, M9 | 100 | 27 | 27 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
@@ -638,6 +638,17 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Required tests:** Pest `tests/Feature/Authentication/OtpThrottleFeatureTest.php` — 8/8 pass; full suite 203/203 (786 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** The Laravel-throttle middleware runs BEFORE the FormRequest validator, so a malformed body from a throttled IP returns 429 RATE_LIMITED, not 422. The test suite covers both orderings explicitly. The middleware hashes the rate-limit key (md5 of `limiterName.key`), so `RateLimiter::clear()` must be paired with `Cache::flush()` to fully reset the bucket — the test verifies both.
 
+### T-M2-028 — Add Pest feature suite for refresh rotation
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 22:30 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(auth): complete T-M2-028 — Pest feature suite for refresh rotation` (sha: a906933b)
+- **Files touched:** `backend/tests/Feature/Authentication/RefreshRotationFeatureTest.php` (new; 8 tests — issue, rotate, replay rejected, REFRESH_TOKEN_REPLAY security event on replay, entire chain killed on replay, unknown token, malformed body, fresh access token per rotation), `backend/app/Modules/Authentication/Services/RefreshTokenService.php` (now takes `SecurityEventService` via DI; `revokeChain()` emits a `REFRESH_TOKEN_REPLAY` security event with severity `critical` and token_id/user_id/ip/user_agent metadata; tightened error codes: UNKNOWN → REFRESH_TOKEN_INVALID, EXPIRED → REFRESH_TOKEN_EXPIRED, REPLAY → REFRESH_TOKEN_REPLAY), `backend/tests/Feature/Authentication/RefreshTokenRotationTest.php` (switch to `app(RefreshTokenService::class)` so DI can inject SecurityEventService), `backend/tests/Feature/Authentication/RefreshEndpointTest.php` (update replay-case assertion to new `REFRESH_TOKEN_REPLAY` code).
+- **Acceptance criteria:** All cases green; security event row present.
+- **Required tests:** Pest `tests/Feature/Authentication/RefreshRotationFeatureTest.php` — 8/8 pass; full suite 211/211 (825 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** The security event emission was the missing production-side change for this task — `RefreshTokenService` previously revoked the chain on replay but emitted no event, leaving security dashboards blind to token theft. The new code emits a `critical`-severity event with the chain root token id and the IP / user agent captured at issue time, so dashboards and SIEM integrations can alert. Specific error codes (REFRESH_TOKEN_INVALID / EXPIRED / REPLAY) replace the previous generic `UNAUTHORIZED` so callers can branch without parsing the human-readable message.
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -674,6 +685,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 22:30 IST | Logged T-M2-028 done; M2 progress 27/30; total 49/410 = 12.0 %. | Lead Solution Architect | T-M2-028 |
 | 2026-06-26 22:00 IST | Logged T-M2-027 done; M2 progress 26/30; total 48/410 = 11.7 %. | Lead Solution Architect | T-M2-027 |
 | 2026-06-26 21:25 IST | Logged T-M2-026 done; M2 progress 25/30; total 47/410 = 11.5 %. | Lead Solution Architect | T-M2-026 |
 | 2026-06-26 21:10 IST | Logged T-M2-025 done; M2 progress 24/30; total 46/410 = 11.2 %. | Lead Solution Architect | T-M2-025 |
@@ -727,14 +739,14 @@ Snapshot at file initialization. Updated as the repository grows.
 | Lines of `.codex/roadmap.md` | 991 |
 | Lines of `.codex/task_queue.md` | 5,163 |
 | Lines of `.codex/current_milestone.md` | 212 |
-| Lines of `.codex/completed_tasks.md` (this file) | 875 |
+| Lines of `.codex/completed_tasks.md` (this file) | 905 |
 | Database migrations | 0 |
 | Eloquent models | 0 |
 | API endpoints (under `routes/api.php`) | 0 (only `/api/v1/health` and `/api/v1/health/ready` will exist after M1) |
-| Pest tests | 203 passing (786 assertions) |
+| Pest tests | 211 passing (825 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 47 (T-M2-027 pending) |
+| Git commits on `main` | 49 (T-M2-028 pending) |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |

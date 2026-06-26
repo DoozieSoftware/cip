@@ -703,7 +703,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** `vendor/bin/pest tests/Feature/Authentication/OtpThrottleFeatureTest.php`.
 - **Status:** Done
 
-### T-M2-028 — Add Pest feature suite for refresh rotation
+### T-M2-028 — Add Pest feature suite for refresh rotation [DONE 2026-06-26 — commit a906933b]
 - **Milestone:** M2
 - **Title:** Add Pest feature suite for refresh rotation
 - **Description:** Cover: issue, rotate, old token rejected, second use of old token logs security event.
@@ -713,7 +713,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/Authentication/RefreshRotationFeatureTest.php`
 - **Acceptance criteria:** All cases green; security event row present.
 - **Required tests:** `vendor/bin/pest tests/Feature/Authentication/RefreshRotationFeatureTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-029 — Add Pest feature suite for RBAC denials
 - **Milestone:** M2
