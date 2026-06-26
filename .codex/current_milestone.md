@@ -2,8 +2,8 @@
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** In Progress (10 / 24 tasks complete; T-M3-011 next)
-**Last updated:** 2026-06-27 02:55 IST (after T-M3-010 done)
+**Status:** In Progress (11 / 24 tasks complete; T-M3-012 next)
+**Last updated:** 2026-06-27 03:25 IST (after T-M3-011 done)
 **Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M3, `.codex/task_queue.md` §M3, `docs/02` §11 §17, `docs/03` §10 §15, `docs/04` §5 §7 §8 §14, `docs/05` §22, `docs/09` §7, `docs/13` §5, `docs/14` §19 §37, `docs/15` §6–7, `docs/16` §36
 
 > M1 is complete (22/22) and M2 is complete (30/30). M3 lands the configuration master and the geography tree that everything downstream is built on. Geography terminates at the ward level; the master-config GET endpoint is the only API surface — every portal reads it on cold start and on cache-invalidation events.
@@ -105,6 +105,7 @@ Land the database-driven configuration master that powers every other module. Th
 * **T-M3-008** Department model (HasUuids + SoftDeletes, belongsTo parent (self) + hasMany children (self); M:N users relation deferred to T-M3-009 per D-009) — **Done** (commit `31d77ee`).
 * **T-M3-009** department_users pivot migration (UUID PK, user_id FK → users cascadeOnDelete, department_id FK → departments restrictOnDelete, is_manager, assigned_at, unique (user_id, department_id)) — **Done** (commit `7f312bb`).
 * **T-M3-010** settings migration + Setting model (key/value JSON, type, is_public, soft deletes, static get/set + type coercion) — **Done** (commit `6a87d45`).
-* Active task: **T-M3-011 — Create app_configs migration and model (feature flags)** (UUID PK, name, unique code, parent_id self-FK, jurisdiction, address, email, phone, working_hours JSON, holiday_calendar JSON, default_workflow_id, default_sla_minutes, escalation_matrix JSON, active, soft deletes).
+* **T-M3-011** app_configs migration + AppConfig model (feature flags: enabled master switch, rollout_percentage 0-100, cohort JSON predicates) — **Done** (commit `b8b460a`).
+* Active task: **T-M3-012 — Implement SettingsService with cache invalidation** (UUID PK, name, unique code, parent_id self-FK, jurisdiction, address, email, phone, working_hours JSON, holiday_calendar JSON, default_workflow_id, default_sla_minutes, escalation_matrix JSON, active, soft deletes).
 * Blockers: none.
-* Next task on completion: T-M3-012 (SettingsService with cache invalidation).
+* Next task on completion: T-M3-013 (FeatureFlagService).

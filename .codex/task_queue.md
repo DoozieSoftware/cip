@@ -868,7 +868,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** `tests/Feature/Settings/SettingModelTest.php`.
 - **Status:** Done
 
-### T-M3-011 — Create app_configs migration and model (feature flags)
+### T-M3-011 — Create app_configs migration and model (feature flags) [DONE 2026-06-27 — commit b8b460a]
 - **Milestone:** M3
 - **Title:** Create app_configs migration and model (feature flags)
 - **Description:** Table `app_configs`: `id`, `key` (unique), `value` JSON, `enabled` bool, `rollout_percentage` (0-100), `cohort` JSON, `description`, `timestamps`.
@@ -878,7 +878,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_app_configs_table.php`, `backend/app/Modules/Settings/Models/AppConfig.php`
 - **Acceptance criteria:** Insert with rollout 0-100 works; cohort filter is JSON.
 - **Required tests:** Model test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-012 — Implement SettingsService with cache invalidation
 - **Milestone:** M3
