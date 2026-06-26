@@ -1769,7 +1769,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_workflow_definitions_table.php`
 - **Acceptance criteria:** Migration roundtrips; soft delete column present.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-002 — Create workflow_states migration
 - **Milestone:** M6
