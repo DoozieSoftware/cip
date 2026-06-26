@@ -557,7 +557,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Authentication/Http/Controllers/AuthController.php`
 - **Acceptance criteria:** Old refresh token rejected on second use; new pair returned.
 - **Required tests:** `tests/Feature/Authentication/RefreshEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-016 — POST /api/v1/auth/logout endpoint
 - **Milestone:** M2

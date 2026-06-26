@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Authentication\Http\Controllers;
 
+use App\Modules\Authentication\Http\Requests\RefreshTokenRequest;
 use App\Modules\Authentication\Http\Requests\SendOtpRequest;
 use App\Modules\Authentication\Http\Requests\VerifyOtpRequest;
 use App\Modules\Authentication\Models\LoginHistory;
@@ -89,6 +90,32 @@ class AuthController extends BaseController
             'refresh_token' => $result['refresh']['plain'],
             'refresh_expires_at' => $result['refresh']['expires_at']->toIso8601String(),
             'user' => (new UserResource($result['user']))->toArray($request),
+        ]);
+    }
+
+    /**
+     * POST /api/v1/auth/refresh
+     */
+    public function refresh(RefreshTokenRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->auth->refresh(
+                $request->refreshToken(),
+                $request->ip(),
+                $request->userAgent(),
+            );
+        } catch (ApiException $e) {
+            return $this->respondError($e->getMessage(), $e->httpStatus, $e->errorCode);
+        }
+
+        return $this->respond([
+            'token' => [
+                'access_token' => $result['access_token'],
+                'type' => 'Bearer',
+                'expires_at' => $result['token']->accessToken->expires_at?->toIso8601String(),
+            ],
+            'refresh_token' => $result['refresh']['plain'],
+            'refresh_expires_at' => $result['refresh']['expires_at']->toIso8601String(),
         ]);
     }
 

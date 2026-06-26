@@ -11,6 +11,7 @@ use App\Modules\Authentication\Models\RefreshToken;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Services\BaseService;
 use App\Modules\Users\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\NewAccessToken;
@@ -93,6 +94,34 @@ class AuthenticationService extends BaseService
             'token' => $token,
             'access_token' => $token->plainTextToken,
             'refresh' => $refresh,
+            'user' => $user,
+        ];
+    }
+
+    /**
+     * Rotate a refresh token and issue a new Sanctum PAT. The old
+     * refresh token is revoked as part of the rotation (see
+     * RefreshTokenService::rotate). Reuse of a revoked parent is
+     * detected and the entire chain is killed.
+     *
+     * @return array{token: NewAccessToken, access_token: string, refresh: array{token: RefreshToken, plain: string, expires_at: CarbonInterface}, user: User}
+     *
+     * @throws ApiException 401 on bad / expired / reused token
+     */
+    public function refresh(string $plainRefreshToken, ?string $ip = null, ?string $userAgent = null): array
+    {
+        $rotated = $this->refreshTokens->rotate($plainRefreshToken, $ip, $userAgent);
+        $user = $rotated['user'];
+
+        $token = $user->createToken(
+            name: 'refresh',
+            abilities: ['*'],
+        );
+
+        return [
+            'token' => $token,
+            'access_token' => $token->plainTextToken,
+            'refresh' => $rotated,
             'user' => $user,
         ];
     }

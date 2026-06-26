@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 17:25 IST (after T-M2-014 done — M2 progress 13/30; total 35/410 = 8.5 %)
+* **Last updated:** 2026-06-26 17:40 IST (after T-M2-015 done — M2 progress 14/30; total 36/410 = 8.8 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 13   | 0           | 0       | 0        | 43 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 14   | 0           | 0       | 0        | 47 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **35** | **0**    | **0**   | **0**    | **8.5 %    |
+| **All** | **Total**                             | **410** | **36** | **0**    | **0**   | **0**    | **8.8 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -486,6 +486,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Acceptance criteria:** Success returns `{token, refresh_token, user}`; failure returns 401 with typed error; login_history row written.
 - **Required tests:** Pest `tests/Feature/Authentication/VerifyOtpEndpointTest.php` — 8/8 pass; full suite 109/109 (433 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** The verify endpoint accepts E.164 or 10-digit and normalises to 10 digits the same way `send-otp` does. The `citizen` role is assigned on first contact and is idempotent (`hasRole()` guard). The `UserResource` is intentionally minimal in this task; T-M2-024 will keep it as-is and may add granular permission/role helpers. The 401 on bad code does NOT increment the OTP attempt counter beyond what `OtpService::verify` already does — that path is the canonical lock-out mechanism.
+
+
+### T-M2-015 — POST /api/v1/auth/refresh endpoint
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 17:40 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(auth): complete T-M2-015 — POST /api/v1/auth/refresh endpoint` (sha: pending)
+- **Files touched:** `backend/app/Modules/Authentication/Http/Requests/RefreshTokenRequest.php` (new; refresh_token string, min 32 chars), `backend/app/Modules/Authentication/Services/AuthenticationService.php` (added `refresh(plain, ip, ua)` — calls `RefreshTokenService::rotate`, issues a new Sanctum PAT, returns the rotated pair), `backend/app/Modules/Authentication/Http/Controllers/AuthController.php` (added `refresh(RefreshTokenRequest)`), `backend/routes/api.php` (registered `POST api/v1/auth/refresh`), `backend/tests/Feature/Authentication/RefreshEndpointTest.php` (new; 6 tests — happy path, second-use rejected (rotation invariant), unknown token, malformed body, row rotation with parent_id, fresh Sanctum PAT).
+- **Acceptance criteria:** Old refresh token rejected on second use; new pair returned.
+- **Required tests:** Pest `tests/Feature/Authentication/RefreshEndpointTest.php` — 6/6 pass; full suite 115/115 (458 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** The rotation invariant is enforced by `RefreshTokenService::rotate` (T-M2-007) — when a revoked parent is presented, the entire chain is killed. The test verifies the *behaviour* end-to-end via the HTTP endpoint, not just the service. The `obtainRefreshToken` helper walks the full verify-otp flow to produce a real refresh token, so the refresh tests are not synthetic.
 
 
 ## 4. In-Progress Tasks
