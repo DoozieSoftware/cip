@@ -1580,7 +1580,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Http/Controllers/Api/MediaController.php`, `backend/app/Modules/Media/Http/Resources/MediaResource.php`
 - **Acceptance criteria:** 201 + media array on success; 422 on size/type cap.
 - **Required tests:** `tests/Feature/Media/UploadPhotosEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-013 — POST /api/v1/reports/{id}/video endpoint
 - **Milestone:** M5
