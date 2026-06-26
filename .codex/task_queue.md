@@ -485,7 +485,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_security_events_table.php`, `backend/app/Modules/Security/Models/SecurityEvent.php`
 - **Acceptance criteria:** Insert works; `update` and `delete` raise `ModelImmutableException`.
 - **Required tests:** `tests/Unit/Security/SecurityEventTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-010 — Seed default roles and permissions
 - **Milestone:** M2

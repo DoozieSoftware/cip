@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 15:50 IST (after T-M2-008 done — M2 progress 7/30; total 29/410 = 7.1 %)
+* **Last updated:** 2026-06-26 16:05 IST (after T-M2-009 done — M2 progress 8/30; total 30/410 = 7.3 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 7    | 0           | 0       | 0        | 23 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 8    | 0           | 0       | 0        | 27 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **29** | **0**    | **0**   | **0**    | **7.1 %    |
+| **All** | **Total**                             | **410** | **30** | **0**    | **0**   | **0**    | **7.3 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -414,6 +414,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Acceptance criteria:** Table created; model write/read works; failure rows accepted with null user_id; the `user()` relation resolves when user_id is set.
 - **Required tests:** Pest `tests/Feature/Authentication/LoginHistoryTest.php` — 5/5 pass; full suite 66/66 (244 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** `user_id` is nullable and uses `nullOnDelete` (not cascade) because login-history rows are audit records and must survive user deletion. The failure_reason column is short (64 chars) on purpose — we store a constant code (e.g. `invalid_code`, `expired_code`, `rate_limited`) rather than free text.
+
+
+### T-M2-009 — Create security_events migration and model
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 16:05 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(security): complete T-M2-009 — security_events table + immutable model` (sha: pending)
+- **Files touched:** `backend/database/migrations/2026_06_26_155000_create_security_events_table.php` (new; uuid PK; user_id FK→users nullOnDelete; event (64 chars), severity (16 chars, default `info`), metadata (JSON), ip, user_agent, created_at only; indexes on event/severity/user_id/created_at; InnoDB / utf8mb4 on MySQL), `backend/app/Modules/Security/Models/SecurityEvent.php` (new; uses HasUuids; `timestamps = false`; severity constants (info/warning/critical) + ALLOWED_SEVERITIES; **overrides `save()` to block updates** on existing rows, **overrides `delete()` to throw**; metadata → array cast; BelongsTo<User, SecurityEvent> `user()`), `backend/app/Modules/Shared/Exceptions/ModelImmutableException.php` (new; RuntimeException with `updateAttempted()` and `deleteAttempted()` static factories), `backend/app/Modules/Users/Models/User.php` (added `securityEvents(): HasMany<SecurityEvent, $this>` relation per D-009), `backend/tests/Unit/Security/SecurityEventTest.php` (new; 8 tests — uuid PK, casts, severity constants, insert works, save() throws on existing, delete() throws, forceDelete() throws, user() relation).
+- **Acceptance criteria:** Insert works; `update` and `delete` (incl. forceDelete) raise `ModelImmutableException`.
+- **Required tests:** Pest `tests/Unit/Security/SecurityEventTest.php` — 8/8 pass; full suite 74/74 (264 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** The model is the canonical enforcement point. The database does not get a `BEFORE UPDATE` trigger in V1 — relying on the Eloquent override is fine because every code path goes through Eloquent, and `SecurityEventService` (T-M2-021) will be the single entry point. A trigger can be added in M15 (security hardening) if we want belt-and-braces.
 
 
 ## 4. In-Progress Tasks

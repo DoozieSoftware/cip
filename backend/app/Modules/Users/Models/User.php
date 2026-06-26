@@ -6,6 +6,7 @@ namespace App\Modules\Users\Models;
 
 use App\Modules\Authentication\Models\LoginHistory;
 use App\Modules\Authentication\Models\RefreshToken;
+use App\Modules\Security\Models\SecurityEvent;
 use Database\Factories\Modules\Users\Models\UserFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -107,6 +108,16 @@ class User extends Authenticatable
     public function loginHistories(): HasMany
     {
         return $this->hasMany(LoginHistory::class, 'user_id');
+    }
+
+    /**
+     * Security events for this user (per docs/11 §29).
+     *
+     * @return HasMany<SecurityEvent, $this>
+     */
+    public function securityEvents(): HasMany
+    {
+        return $this->hasMany(SecurityEvent::class, 'user_id');
     }
 
     /**
