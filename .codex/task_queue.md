@@ -2090,7 +2090,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Routing/Services/AssignmentService.php`
 - **Acceptance criteria:** Round-robin assignment deterministically cycles.
 - **Required tests:** `tests/Feature/Routing/AssignmentServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-006 — ReportAssigned event
 - **Milestone:** M7
