@@ -8,6 +8,7 @@ use App\Modules\AI\Events\AiCompleted;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Routing\Services\AssignmentService;
 use App\Modules\Routing\Services\RoutingEngine;
+use App\Modules\Routing\Services\RoutingFallbackService;
 use App\Modules\Shared\Services\SystemUserService;
 use App\Modules\Workflow\Services\WorkflowEngine;
 use Illuminate\Support\Facades\Log;
@@ -18,18 +19,26 @@ use Illuminate\Support\Facades\Log;
  * `AiCompleted` event.
  *
  *   ai_completed
- *      ├─ routing succeeded -> AssignmentService::assign
- *      │                       -> WorkflowEngine 'ai_auto_assign'
- *      │                          (ai_processing -> assigned)
- *      └─ routing missed    -> WorkflowEngine 'moderator_review'
- *                              (ai_processing -> pending_moderator)
+ *      ├─ routing rule matched   -> AssignmentService::assign
+ *      │                            -> WorkflowEngine 'ai_auto_assign'
+ *      │                               (ai_processing -> assigned)
+ *      ├─ no rule matched + config
+ *      │   present                 -> AssignmentService::assign via
+ *      │                            RoutingFallbackService
+ *      │                            -> WorkflowEngine 'ai_auto_assign'
+ *      └─ no rule matched + no
+ *          fallback config         -> throws ROUTING_FALLBACK_MISSING
+ *                                    (the operator / Super Admin
+ *                                    must configure the fallback
+ *                                    before the platform can
+ *                                    process un-routed reports)
  *
  * The listener is idempotent: it will not re-route a
  * report that already has an active assignment. The
  * "actor" for the workflow transition is the platform's
  * shared system user; the system user carries both
  * `system` and `moderator` Spatie roles so it satisfies
- * the role gates on the new `ai_auto_assign` transition
+ * the role gates on the `ai_auto_assign` transition
  * (system) and the existing `moderator_review` transition
  * (system).
  */
@@ -40,6 +49,7 @@ class AiCompletedListener
         private readonly AssignmentService $assignments,
         private readonly WorkflowEngine $workflow,
         private readonly SystemUserService $system,
+        private readonly RoutingFallbackService $fallback,
     ) {}
 
     public function handle(AiCompleted $event): void
@@ -65,21 +75,16 @@ class AiCompletedListener
         $systemActor = $this->system->user();
         $decision = $this->engine->resolve($report);
 
-        if ($decision !== null) {
-            $this->assignments->assign($report, $decision, $systemActor, reason: 'ai_auto_routing');
-
-            $wfDecision = $this->workflow->evaluate($report, 'ai_auto_assign', $systemActor);
-
-            if ($wfDecision->allowed) {
-                $this->workflow->apply($report, $wfDecision, $systemActor);
-            }
-
-            return;
+        if ($decision === null) {
+            // No routing rule matched; fall back to the
+            // configured default department (typically a
+            // Super Admin moderation queue).
+            $decision = $this->fallback->decisionFor($report);
         }
 
-        // No routing rule matched. Drop the report into
-        // the Super Admin moderation queue.
-        $wfDecision = $this->workflow->evaluate($report, 'moderator_review', $systemActor);
+        $this->assignments->assign($report, $decision, $systemActor, reason: 'ai_auto_routing');
+
+        $wfDecision = $this->workflow->evaluate($report, 'ai_auto_assign', $systemActor);
 
         if ($wfDecision->allowed) {
             $this->workflow->apply($report, $wfDecision, $systemActor);

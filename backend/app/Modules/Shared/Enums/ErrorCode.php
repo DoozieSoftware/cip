@@ -54,6 +54,9 @@ enum ErrorCode: string
     case MEDIA_INVALID_SIGNATURE = 'MEDIA_INVALID_SIGNATURE';
     case VIDEO_ALREADY_PRESENT = 'VIDEO_ALREADY_PRESENT';
 
+    // Routing module
+    case ROUTING_FALLBACK_MISSING = 'ROUTING_FALLBACK_MISSING';
+
     /**
      * @return array<int, string>
      */

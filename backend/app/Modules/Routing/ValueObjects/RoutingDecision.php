@@ -14,15 +14,20 @@ use App\Modules\Users\Models\User;
  * the routing decision (which department / officer / priority
  * / SLA to assign) and the matched rule that produced it.
  *
+ * `matchedRule` is `null` when the decision was produced
+ * by `RoutingFallbackService` (no active rule matched; the
+ * configured default destination was used instead).
+ *
  * Construction is via the static `fromRule()` factory so
  * every field is derived from the same `RoutingRule` row;
  * downstream code never has to remember which fields are
- * optional.
+ * optional. `fromFallback()` is the matching factory for
+ * the no-rule path.
  */
 final class RoutingDecision
 {
     public function __construct(
-        public readonly RoutingRule $matchedRule,
+        public readonly ?RoutingRule $matchedRule,
         public readonly Department $destinationDepartment,
         public readonly ?User $defaultOfficer,
         public readonly ReportPriority $defaultPriority,
@@ -48,6 +53,21 @@ final class RoutingDecision
             defaultOfficer: $rule->defaultOfficer,
             defaultPriority: $pri,
             defaultSlaMinutes: (int) $rule->default_sla_minutes,
+        );
+    }
+
+    public static function fromFallback(
+        Department $department,
+        ?User $officer,
+        ReportPriority $priority,
+        int $slaMinutes,
+    ): self {
+        return new self(
+            matchedRule: null,
+            destinationDepartment: $department,
+            defaultOfficer: $officer,
+            defaultPriority: $priority,
+            defaultSlaMinutes: $slaMinutes,
         );
     }
 }

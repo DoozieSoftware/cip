@@ -12,6 +12,9 @@ use App\Modules\Reports\Models\ReportPriority;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Reports\Models\ReportType;
 use App\Modules\Routing\Models\RoutingRule;
+use App\Modules\Routing\Services\RoutingFallbackService;
+use App\Modules\Settings\Models\AppConfig;
+use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
 use App\Modules\Workflow\Models\WorkflowDefinition;
 use Database\Seeders\DefaultWorkflowSeeder;
@@ -92,20 +95,51 @@ it('routes and assigns a report when a matching rule is found', function (): voi
     Event::assertDispatched(ReportStatusChanged::class, fn (ReportStatusChanged $e): bool => $e->toStatusId === $status?->id);
 });
 
-it('falls back to pending_moderator when no rule matches', function (): void {
-    // No routing rules at all -> no decision -> moderator_review.
+it('falls back to the configured default department when no rule matches', function (): void {
+    AppConfig::query()->create([
+        'key' => RoutingFallbackService::APP_CONFIG_KEY,
+        'value' => ['department_id' => $this->dept->id],
+        'enabled' => true,
+        'rollout_percentage' => 100,
+        'cohort' => null,
+        'description' => 'Routing fallback for tests',
+    ]);
+
+    // No routing rules at all -> no decision -> fallback.
     AiCompleted::dispatch(
         reportId: $this->report->id,
         aiLabel: 'unknown',
     );
 
     $fresh = $this->report->fresh();
-    expect(ReportAssignment::query()->where('report_id', $this->report->id)->count())->toBe(0);
+    expect(ReportAssignment::query()->where('report_id', $this->report->id)->count())->toBe(1);
+    expect($fresh->department_id)->toBe($this->dept->id);
 
     $status = ReportStatus::query()->find($fresh->current_status_id);
-    expect($status?->code)->toBe('pending_moderator');
+    expect($status?->code)->toBe('assigned');
 
-    Event::assertDispatched(ReportStatusChanged::class);
+    Event::assertDispatched(ReportAssigned::class, fn (ReportAssigned $e): bool => $e->departmentId === $this->dept->id);
+});
+
+it('throws ROUTING_FALLBACK_MISSING when no rule matches and the fallback is not configured', function (): void {
+    // The AppConfig row is intentionally absent.
+
+    try {
+        AiCompleted::dispatch(
+            reportId: $this->report->id,
+            aiLabel: 'unknown',
+        );
+        $this->fail('Expected ROUTING_FALLBACK_MISSING exception.');
+    } catch (ApiException $e) {
+        expect($e->errorCode)->toBe('ROUTING_FALLBACK_MISSING')
+            ->and($e->httpStatus)->toBe(503);
+    }
+
+    // No assignment row, no status change.
+    expect(ReportAssignment::query()->where('report_id', $this->report->id)->count())->toBe(0);
+    $fresh = $this->report->fresh();
+    $status = ReportStatus::query()->find($fresh->current_status_id);
+    expect($status?->code)->toBe('ai_processing');
 });
 
 it('is idempotent: re-dispatching AiCompleted does not create a second assignment', function (): void {

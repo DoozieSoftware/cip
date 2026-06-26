@@ -59,4 +59,9 @@ class ApiException extends RuntimeException
     {
         return new self('INTERNAL_ERROR', $message, 500, [], $previous);
     }
+
+    public static function routingFallbackMissing(string $message = 'Routing fallback is not configured. Set app_configs.routing_default_department_id.'): self
+    {
+        return new self('ROUTING_FALLBACK_MISSING', $message, 503);
+    }
 }
