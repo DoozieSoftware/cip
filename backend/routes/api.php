@@ -10,6 +10,7 @@ use App\Modules\Reports\Http\Controllers\Api\ReportsController;
 use App\Modules\Settings\Http\Controllers\Admin\AppConfigController;
 use App\Modules\Settings\Http\Controllers\Admin\SettingController;
 use App\Modules\Workflow\Http\Controllers\Admin\WorkflowAdminController;
+use App\Modules\Routing\Http\Controllers\Admin\RoutingAdminController;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Route;
 
@@ -74,6 +75,14 @@ Route::prefix('v1')->group(function (): void {
         Route::get('workflows/{workflow}', [WorkflowAdminController::class, 'show'])->name('workflows.show');
         Route::put('workflows/{workflow}', [WorkflowAdminController::class, 'update'])->name('workflows.update');
         Route::delete('workflows/{workflow}', [WorkflowAdminController::class, 'destroy'])->name('workflows.destroy');
+
+        // Routing rules CRUD (T-M7-009)
+        Route::get('routing-rules', [RoutingAdminController::class, 'index'])->name('routing-rules.index');
+        Route::post('routing-rules', [RoutingAdminController::class, 'store'])->name('routing-rules.store');
+        Route::post('routing-rules/reorder', [RoutingAdminController::class, 'reorder'])->name('routing-rules.reorder');
+        Route::get('routing-rules/{rule}', [RoutingAdminController::class, 'show'])->name('routing-rules.show');
+        Route::put('routing-rules/{rule}', [RoutingAdminController::class, 'update'])->name('routing-rules.update');
+        Route::delete('routing-rules/{rule}', [RoutingAdminController::class, 'destroy'])->name('routing-rules.destroy');
     });
 
     // T-M5-014 — public temporary-signed media serve (NOT under auth:sanctum;
