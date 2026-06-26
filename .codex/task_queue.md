@@ -1427,7 +1427,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `README.md`
 - **Acceptance criteria:** Section links to `docs/reports.md`.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 
 ---
