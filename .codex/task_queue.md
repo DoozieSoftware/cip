@@ -1961,7 +1961,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/Workflow/RoleEnforcementTest.php`
 - **Acceptance criteria:** All denials return `UnauthorizedTransitionException` mapped to 403.
 - **Required tests:** `vendor/bin/pest tests/Feature/Workflow/RoleEnforcementTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-018 — WorkflowConditionTest
 - **Milestone:** M6
