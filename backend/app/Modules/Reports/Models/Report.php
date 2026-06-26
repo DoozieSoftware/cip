@@ -37,6 +37,7 @@ use Illuminate\Support\Carbon;
  * @property string $title
  * @property string $description
  * @property float|null $ai_confidence
+ * @property string|null $ai_label
  * @property float|null $fraud_score
  * @property float|null $duplicate_score
  * @property bool $is_anonymous
@@ -72,6 +73,7 @@ class Report extends Model
         'title',
         'description',
         'ai_confidence',
+        'ai_label',
         'fraud_score',
         'duplicate_score',
         'is_anonymous',
