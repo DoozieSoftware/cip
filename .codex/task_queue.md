@@ -2009,7 +2009,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `README.md`
 - **Acceptance criteria:** ASCII diagram renders in markdown preview.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-022 — Wire CheckSlaBreaches into scheduler
 - **Milestone:** M6
