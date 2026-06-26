@@ -1403,7 +1403,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/storage/api-docs/openapi.yaml`, `docs/reports.md`
 - **Acceptance criteria:** `swagger-cli validate` passes; `docs/reports.md` covers happy + error paths.
 - **Required tests:** `tests/Feature/OpenApiReportsTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-031 — Add Pest suite for citizen submission flow
 - **Milestone:** M4
