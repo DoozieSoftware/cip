@@ -2,9 +2,11 @@
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** Not Started
-**Last updated:** 2026-06-26
+**Status:** Done (22 / 22 tasks complete)
+**Last updated:** 2026-06-26 13:55 IST
 **Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M1, `.codex/task_queue.md` §M1, `docs/01`–`docs/16`
+
+> **M1 is complete.** All 22 tasks (T-M1-001..T-M1-022) are marked `Status: Done` in `.codex/task_queue.md` and the full log lives in `.codex/completed_tasks.md` §3. The next milestone is **M2 — Identity, Auth & RBAC Core** (30 tasks). The implementing agent should switch to the M2 section of `.codex/task_queue.md` before resuming work.
 
 ---
 
@@ -210,3 +212,17 @@ M2 will:
 * Wire audit middleware and device fingerprinting to the Shared base classes shipped in M1.
 
 M2 is **blocked** from starting until M1's exit criteria are all green.
+
+
+---
+
+## 12. M1 → M2 Handoff Notes
+
+* **Sandbox baseline is green:** `php artisan --version` → 12.62.0; `npm run build` → built in 1.9s; `vendor/bin/pest` → 14 passed (50 assertions); `vendor/bin/phpstan analyse app/` → No errors; `vendor/bin/pint --test` → passed; `docker compose config -q` → exit 0; `npm run lint` → exit 0.
+* **MySQL 8.4 is the target** (AGENTS.md + docs/16 §3). Sandbox currently runs sqlite for speed; flip `DB_CONNECTION` to `mysql` and start the compose stack to get the real engine. D-001 (MySQL not Postgres, despite docs/03 §24) is in effect.
+* **Vite 6 + Vitest 3** must be paired — Vitest 2.1 ships with Vite 5 and breaks the type chain.
+* **Laravel 12** does not have `app/Http/Kernel.php` or `app/Console/Kernel.php`. Middleware, exception rendering, and routing are configured in `bootstrap/app.php`.
+* **`App\Modules\Shared` already provides** the envelope (success/paginated/error), the request-id middleware, the global exception handler, and the base controller/service/policy. M2 should extend these — not fork them.
+* **M2 user model prerequisite:** the only forward reference to a not-yet-existing class was the `App\Modules\Users\Models\User` (M2 territory). It is no longer referenced — `BasePolicy` uses the framework `Authenticatable` contract; `tests/Pest.php` no longer defines `actingAsRole()`.
+* **OpenAPI spec lives at** `backend/storage/api-docs/openapi.yaml` and is regenerated from PHP attributes via `vendor/bin/openapi app -o storage/api-docs/openapi.yaml`. M2 should extend the spec in lockstep with the auth endpoints.
+* **Spec pointer recap for M2:** `docs/02` §4, §11, §17; `docs/03` §13–14, §19; `docs/05` §5; `docs/11` §6–9, §19, §21, §22; `docs/14` §19. First M2 task: `T-M2-001 — Create users migration with UUID PK and soft deletes` (depends on `T-M1-002`).
