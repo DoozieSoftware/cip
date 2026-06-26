@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Media\Support;
 
 use App\Modules\Media\Models\Media;
+use Illuminate\Filesystem\AwsS3V3Adapter;
+use Illuminate\Filesystem\LocalFilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
@@ -15,24 +17,28 @@ use Illuminate\Support\Facades\URL;
  * Two backends are supported:
  *
  *  1. Storage::temporaryUrl(\$disk, \$path, \$ttl)
- *     The native Laravel/S3/MinIO presigned-URL API. Used in
- *     production when the storage disk implements
- *     `Illuminate\Filesystem\FilesystemAdapter::temporaryUrl`
- *     (the league/flysystem-s3-v3 + MinIO bridge do). The
- *     presigned URL is signed by the storage driver and can
- *     be verified by issuing a HEAD/GET against the storage
- *     endpoint directly.
+ *     The native S3 / MinIO presigned-URL API. Used in
+ *     production when the storage driver is AWS S3 (the same
+ *     adapter is used for MinIO and Cloudflare R2). The
+ *     presigned URL is signed by the storage driver and is
+ *     verified by the storage endpoint itself — the app does
+ *     not need to be in the request path.
  *
  *  2. URL::temporarySignedRoute(api.v1.media.serve, \$ttl, ...)
  *     The Laravel-side fallback. The route streams the file
- *     from the configured disk through the app. Used in dev
- *     and in tests where Storage::temporaryUrl is not
- *     implemented.
+ *     from the configured disk through the app. Used for the
+ *     local disk in dev and tests, and as a defensive
+ *     fallback for any disk whose native temporaryUrl is
+ *     misconfigured.
  *
- * The helper picks the best backend based on what the disk
- * supports and is unit-testable: the returned URL must
- * verify against Laravel signed-route middleware so callers
- * can rely on a single contract.
+ * The local filesystem's `temporaryUrl` always points at a
+ * `storage.{disk}` route that the framework only registers
+ * when `php artisan storage:link` has been run. Our app
+ * deliberately does not expose that route — the media bytes
+ * are sensitive (chain-of-custody §15) and must be served
+ * through the signed `api.v1.media.serve` route which
+ * records a DOWNLOAD row. So we force the local disk to use
+ * the Laravel-side signed route.
  */
 class MediaUrl
 {
@@ -43,15 +49,21 @@ class MediaUrl
         $expiresAt = now()->addMinutes($ttlMinutes);
 
         $disk = Storage::disk($media->storage_disk);
+        $adapter = $disk->getAdapter();
 
-        if (method_exists($disk, 'temporaryUrl')) {
-            try {
-                return $disk->temporaryUrl($media->storage_path, $expiresAt);
-            } catch (\Throwable) {
-                // fall through to the Laravel-side signed route
-            }
+        // Only the AWS S3 adapter (covers S3 / MinIO / R2)
+        // gives a real presigned URL that the storage layer
+        // verifies. Everything else uses the Laravel-side
+        // signed route.
+        if ($adapter instanceof AwsS3V3Adapter
+            && method_exists($disk, 'temporaryUrl')) {
+            return $disk->temporaryUrl($media->storage_path, $expiresAt);
         }
 
+        // Local + everything-else fallback: signed route to
+        // our controller. (Defensive: LocalFilesystemAdapter
+        // implements temporaryUrl, but its output points at
+        // a non-existent `storage.local` route.)
         return URL::temporarySignedRoute(
             'api.v1.media.serve',
             $expiresAt,
