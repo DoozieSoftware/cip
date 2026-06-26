@@ -1829,7 +1829,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Workflow/Services/ConditionEvaluator.php`
 - **Acceptance criteria:** Each operator unit-tested.
 - **Required tests:** `tests/Unit/Workflow/ConditionEvaluatorTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-007 — TransitionGuard service
 - **Milestone:** M6
