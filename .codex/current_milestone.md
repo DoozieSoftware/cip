@@ -2,8 +2,8 @@
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** In Progress (8 / 24 tasks complete; T-M3-009 next)
-**Last updated:** 2026-06-27 02:00 IST (after T-M3-008 done)
+**Status:** In Progress (9 / 24 tasks complete; T-M3-010 next)
+**Last updated:** 2026-06-27 02:25 IST (after T-M3-009 done)
 **Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M3, `.codex/task_queue.md` §M3, `docs/02` §11 §17, `docs/03` §10 §15, `docs/04` §5 §7 §8 §14, `docs/05` §22, `docs/09` §7, `docs/13` §5, `docs/14` §19 §37, `docs/15` §6–7, `docs/16` §36
 
 > M1 is complete (22/22) and M2 is complete (30/30). M3 lands the configuration master and the geography tree that everything downstream is built on. Geography terminates at the ward level; the master-config GET endpoint is the only API surface — every portal reads it on cold start and on cache-invalidation events.
@@ -103,6 +103,7 @@ Land the database-driven configuration master that powers every other module. Th
 * **T-M3-006** Wards with `boundary_polygon` (POLYGON + spatial index, driver-guarded) — **Done** (commit `a8efb9e`).
 * **T-M3-007** Departments (UUID PK, name, unique code, parent_id self-FK with nullOnDelete, jurisdiction, address, email, phone, working_hours JSON, holiday_calendar JSON, default_workflow_id, default_sla_minutes default 2880, escalation_matrix JSON, active, soft deletes) — **Done** (commit `61e3818`).
 * **T-M3-008** Department model (HasUuids + SoftDeletes, belongsTo parent (self) + hasMany children (self); M:N users relation deferred to T-M3-009 per D-009) — **Done** (commit `31d77ee`).
-* Active task: **T-M3-009 — Create department_users pivot migration** (UUID PK, name, unique code, parent_id self-FK, jurisdiction, address, email, phone, working_hours JSON, holiday_calendar JSON, default_workflow_id, default_sla_minutes, escalation_matrix JSON, active, soft deletes).
+* **T-M3-009** department_users pivot migration (UUID PK, user_id FK → users cascadeOnDelete, department_id FK → departments restrictOnDelete, is_manager, assigned_at, unique (user_id, department_id)) — **Done** (commit `7f312bb`).
+* Active task: **T-M3-010 — Create settings migration and model** (UUID PK, name, unique code, parent_id self-FK, jurisdiction, address, email, phone, working_hours JSON, holiday_calendar JSON, default_workflow_id, default_sla_minutes, escalation_matrix JSON, active, soft deletes).
 * Blockers: none.
-* Next task on completion: T-M3-010 (settings migration and model).
+* Next task on completion: T-M3-011 (app_configs migration and model — feature flags).

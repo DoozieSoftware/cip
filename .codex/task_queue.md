@@ -844,7 +844,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** `tests/Unit/Departments/DepartmentModelTest.php`.
 - **Status:** Done
 
-### T-M3-009 — Create department_users pivot migration
+### T-M3-009 — Create department_users pivot migration [DONE 2026-06-27 — commit 7f312bb]
 - **Milestone:** M3
 - **Title:** Create department_users pivot migration
 - **Description:** Table `department_users`: `id`, `user_id` UUID FK, `department_id` UUID FK, `is_manager` bool, `assigned_at`, `timestamps`; unique `(user_id, department_id)`.
@@ -854,7 +854,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_department_users_table.php`
 - **Acceptance criteria:** Migration roundtrips; unique constraint enforced.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-010 — Create settings migration and model
 - **Milestone:** M3
