@@ -2174,7 +2174,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/Routing/RoutingDeterminismTest.php`
 - **Acceptance criteria:** 50 calls return identical decisions.
 - **Required tests:** `vendor/bin/pest tests/Feature/Routing/RoutingDeterminismTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-013 — RoutingConditionFullTest
 - **Milestone:** M7
