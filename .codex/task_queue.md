@@ -1532,7 +1532,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Jobs/GenerateThumbnailJob.php`
 - **Acceptance criteria:** Job dispatches via `Bus::fake` and asserts the call.
 - **Required tests:** `tests/Feature/Media/GenerateThumbnailJobTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-009 — ComputeHashesJob
 - **Milestone:** M5
