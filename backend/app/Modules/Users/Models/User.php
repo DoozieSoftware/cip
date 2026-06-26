@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Users\Models;
 
+use App\Modules\Authentication\Models\RefreshToken;
+use Database\Factories\Modules\Users\Models\UserFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -27,7 +30,7 @@ use Spatie\Permission\Traits\HasRoles;
  *
  * Module relations (refreshTokens, loginHistories, securityEvents,
  * otps, auditLogs) are added by the tasks that own the related models:
- * - T-M2-006/007 refresh tokens
+ * - T-M2-006/007 refresh tokens (relation added in T-M2-007)
  * - T-M2-008 login histories
  * - T-M2-009/021 security events
  * - T-M2-005 otps
@@ -38,7 +41,7 @@ class User extends Authenticatable
     use HasApiTokens;
 
     /**
-     * @use HasFactory<\Database\Factories\Modules\Users\Models\UserFactory>
+     * @use HasFactory<UserFactory>
      */
     use HasFactory;
 
@@ -83,6 +86,16 @@ class User extends Authenticatable
             'anonymous_enabled' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Refresh tokens issued for this user (per docs/11 §7).
+     *
+     * @return HasMany<RefreshToken, $this>
+     */
+    public function refreshTokens(): HasMany
+    {
+        return $this->hasMany(RefreshToken::class, 'user_id');
     }
 
     /**

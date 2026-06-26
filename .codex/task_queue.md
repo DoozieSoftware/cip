@@ -461,7 +461,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Authentication/Models/RefreshToken.php`, `backend/app/Modules/Authentication/Services/RefreshTokenService.php`
 - **Acceptance criteria:** Calling `rotate()` marks the parent revoked and returns a new token; old token cannot be used.
 - **Required tests:** `tests/Feature/Authentication/RefreshTokenRotationTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-008 — Create login_histories migration and model
 - **Milestone:** M2

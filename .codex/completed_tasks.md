@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 15:25 IST (after T-M2-006 done — M2 progress 5/30; total 27/410 = 6.6 %)
+* **Last updated:** 2026-06-26 15:40 IST (after T-M2-007 done — M2 progress 6/30; total 28/410 = 6.8 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 5    | 0           | 0       | 0        | 17 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 6    | 0           | 0       | 0        | 20 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **27** | **0**    | **0**   | **0**    | **6.6 %    |
+| **All** | **Total**                             | **410** | **28** | **0**    | **0**   | **0**    | **6.8 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -390,6 +390,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Acceptance criteria:** Migration roundtrips; FK from user_id to users(id) enforced with cascade; parent_id self-FK enforces the rotation chain.
 - **Required tests:** Pest `tests/Feature/Database/RefreshTokensTableTest.php` — 6/6 pass; full suite 53/53 (196 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** The User model uses SoftDeletes, so a plain `delete()` is a soft delete and the cascade never fires. The test uses `forceDelete()` to validate the FK cascade on a hard delete. Refresh tokens are immutable records (no `updated_at`/`deleted_at`).
+
+
+### T-M2-007 — Create RefreshToken model and rotation service
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 15:40 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(auth): complete T-M2-007 — RefreshToken model + rotation service` (sha: pending)
+- **Files touched:** `backend/app/Modules/Authentication/Models/RefreshToken.php` (new; uses HasUuids; `timestamps = false`; uuid PK; user_id FK; parent_id self-FK; token_hash bcrypt; expires_at + revoked_at; `user()` BelongsTo<User>, `parent()` BelongsTo<RefreshToken>; helpers `isRevoked()` / `isExpired()` / `isUsable()` / `markRevoked()`; `scopeActive()` for non-revoked non-expired), `backend/app/Modules/Authentication/Services/RefreshTokenService.php` (new; `issue()` returns `{token, plain, expires_at}` with 14-day TTL by default; `rotate(plaintext)` revokes the parent and returns a child with `parent_id` set; reuse of a revoked parent triggers `revokeChain()` and throws `ApiException::unauthorized('refresh_token_reuse_detected')` — every descendant in the chain is revoked; `revoke(plaintext)` is idempotent; `revokeAllForUser(user)` is the forced-logout primitive; 64-char URL-safe opaque plaintext via `Str::random(64)`; bcrypt-hashed; `findByPlaintext()` walks non-revoked/non-expired rows and `password_verify`s — constant-time), `backend/app/Modules/Users/Models/User.php` (added `refreshTokens(): HasMany<RefreshToken, $this>` relation per D-009), `backend/tests/Feature/Authentication/RefreshTokenRotationTest.php` (new; 8 tests — issue, rotate, reuse-detect, unknown token, expired parent, revoke idempotent, revokeAllForUser, active scope).
+- **Acceptance criteria:** Calling `rotate()` marks the parent revoked and returns a new token; old token cannot be used; reuse of a revoked parent is detected and the chain is killed.
+- **Required tests:** Pest `tests/Feature/Authentication/RefreshTokenRotationTest.php` — 8/8 pass; full suite 61/61 (220 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** Plaintext is returned exactly once at issue/rotate time and is never persisted. `findByPlaintext()` is O(n) over non-revoked+non-expired rows; this is acceptable for V1 (citizens rarely have more than a handful of active sessions). V2 should add an indexed `token_lookup_id` column for O(1) lookup if traffic warrants. The BelongsTo template order (`<TRelated, TDeclaring>`) tripped PHPStan and was resolved by declaring the type locally inside the method body — this is the canonical fix for `$this`-based relation generics.
 
 
 ## 4. In-Progress Tasks
