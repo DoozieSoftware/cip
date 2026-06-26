@@ -1556,7 +1556,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Jobs/ExtractVideoMetadataJob.php`
 - **Acceptance criteria:** With a stubbed `ffprobe`, the job writes 320×240 / 4s metadata.
 - **Required tests:** `tests/Feature/Media/ExtractVideoMetadataJobTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-011 — MediaService.upload
 - **Milestone:** M5
