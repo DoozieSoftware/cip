@@ -1448,7 +1448,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_media_table.php`
 - **Acceptance criteria:** All FKs and unique on `storage_path` enforced.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-002 — Create media_hashes migration
 - **Milestone:** M5
