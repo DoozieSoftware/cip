@@ -679,7 +679,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** `tests/Feature/OpenApiAuthTest.php`.
 - **Status:** Done
 
-### T-M2-026 — Add docs/auth.md
+### T-M2-026 — Add docs/auth.md [DONE 2026-06-26 — commit 4c2dd809]
 - **Milestone:** M2
 - **Title:** Add docs/auth.md
 - **Description:** Author `docs/auth.md` covering OTP flow, JWT, refresh rotation, audit, rate limits, and security events; cross-link OpenAPI.
@@ -689,7 +689,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docs/auth.md`
 - **Acceptance criteria:** Document explains the happy path, error codes, and rotation.
 - **Required tests:** Manual review checklist.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-027 — Add Pest feature suite for OTP throttle
 - **Milestone:** M2

@@ -2,8 +2,8 @@
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** In Progress (24 / 30 tasks complete)
-**Last updated:** 2026-06-26 21:10 IST (after T-M2-025 done)
+**Status:** In Progress (25 / 30 tasks complete)
+**Last updated:** 2026-06-26 21:25 IST (after T-M2-026 done)
 **Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M2, `.codex/task_queue.md` §M2, `docs/02` §4 §11 §17, `docs/03` §13–14 §19, `docs/05` §5, `docs/11` §6–9 §19 §21 §22 §28–29, `docs/14` §19 §37, `docs/15` §6–7
 
 > M1 is complete (22/22). M2 picks up where M1 left off and lands a production-grade identity layer: citizens authenticate via OTP, staff via username + password (2FA-ready), and Spatie Permission powers RBAC. JWT lifecycle with refresh-token rotation, audit logging on every mutating request, and rate limiters from `docs/11` §21 are all in scope.
@@ -93,6 +93,6 @@ Build a production-grade identity layer that supports three user personas with d
 
 ## 8. Implementation Status
 
-* Active task: **T-M2-026 — Add docs/auth.md** (next: author `docs/auth.md` covering OTP flow, JWT, refresh rotation, audit, rate limits, and security events; cross-link OpenAPI).
+* Active task: **T-M2-027 — Add Pest feature suite for OTP throttle** (next: cover 5 successful requests, 6th returns 429, IP-based throttling, error code envelope in `backend/tests/Feature/Authentication/OtpThrottleFeatureTest.php`).
 * Blockers: none.
 * Next task on completion: T-M2-002 (User model).
