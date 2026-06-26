@@ -1604,7 +1604,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Http/Controllers/Api/MediaController.php`
 - **Acceptance criteria:** Signed URL works within TTL; expired URL returns 403.
 - **Required tests:** `tests/Feature/Media/MediaListEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-015 — Media signed-URL helper
 - **Milestone:** M5
