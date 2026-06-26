@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 17:40 IST (after T-M2-015 done — M2 progress 14/30; total 36/410 = 8.8 %)
+* **Last updated:** 2026-06-26 18:05 IST (after T-M2-016 done — M2 progress 15/30; total 37/410 = 9.0 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 14   | 0           | 0       | 0        | 47 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 15   | 0           | 0       | 0        | 50 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **36** | **0**    | **0**   | **0**    | **8.8 %    |
+| **All** | **Total**                             | **410** | **37** | **0**    | **0**   | **0**    | **9.0 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,11 +56,11 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 0 | 0 % |
+| Foundations | M2, M3, M5, M9 | 100 | 15 | 15 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
-| **Total** | | **410** | **22** | **5.4 % |
+| **Total** | | **410** | **37** | **9.0 % |
 
 ---
 
@@ -500,6 +500,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Notes:** The rotation invariant is enforced by `RefreshTokenService::rotate` (T-M2-007) — when a revoked parent is presented, the entire chain is killed. The test verifies the *behaviour* end-to-end via the HTTP endpoint, not just the service. The `obtainRefreshToken` helper walks the full verify-otp flow to produce a real refresh token, so the refresh tests are not synthetic.
 
 
+### T-M2-016 — POST /api/v1/auth/logout endpoint
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 18:05 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(auth): complete T-M2-016 — POST /api/v1/auth/logout endpoint` (sha: <pending>)
+- **Files touched:** `backend/app/Modules/Authentication/Http/Controllers/AuthController.php` (added `logout(Request)` — reads `$request->user()` and `$user->currentAccessToken()`, calls `AuthenticationService::logout(user, accessTokenId)`; PHPStan-safe typed id conversion), `backend/routes/api.php` (registered `POST api/v1/auth/logout` under the `auth:sanctum` middleware group), `backend/bootstrap/app.php` (added `AuthenticationException` render handler — returns 401 with the standard envelope and `code: UNAUTHORIZED`; fixes the bug where a missing/invalid/revoked bearer was being caught by the generic `Throwable` handler and returned as 500), `backend/tests/Feature/Authentication/LogoutEndpointTest.php` (new; 5 tests — 200 happy with `data.logged_out:true` envelope, second use of revoked token returns 401, active refresh token rejected post-logout, unauthenticated logout returns 401, every active refresh token for the user is revoked).
+- **Acceptance criteria:** Subsequent calls with the same access token return 401; refresh token also rejected; unauthenticated request returns 401 with the standard envelope.
+- **Required tests:** Pest `tests/Feature/Authentication/LogoutEndpointTest.php` — 5/5 pass; full suite 120/120 (468 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** Two real bugs surfaced and were fixed as part of this task. (1) The `auth:sanctum` middleware throws `AuthenticationException` when the bearer is missing, invalid, or revoked, but no `render` handler was registered for it, so the generic `Throwable` handler caught it and returned 500. The new `AuthenticationException` handler in `bootstrap/app.php` returns 401 with `code: UNAUTHORIZED` and the standard envelope. (2) `Illuminate\Auth\RequestGuard` (the guard instance backing the `sanctum` driver) caches its resolved user in `$this->user` and is itself cached on the `AuthManager` singleton. In production this is fine — each HTTP request gets a fresh `RequestGuard`. In tests, however, the same `RequestGuard` instance is reused across `$this->postJson()` calls within one test method, so the cached user survives the first logout. The fix in the test is to call `Auth::forgetGuards()` between calls; this is documented in the test as an inline comment so the next maintainer understands the test-only artifact. The `AuthenticationService::logout()` method is idempotent and always revokes every active refresh token for the user, not just the one associated with the current PAT — this implements the "forced-logout guarantee" required by `docs/11` §6.
+
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -536,6 +548,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 18:05 | Logged T-M2-016 done; M2 progress 15/30; total 37/410 = 9.0 %. Added D-018 (AuthenticationException handler in bootstrap/app.php) and D-019 (test-side Auth::forgetGuards() to clear RequestGuard cache between requests). | Lead Solution Architect | T-M2-016 |
 | 2026-06-26 12:42 | Initialized `.codex/completed_tasks.md`; logged 0/410 tasks; no completed, in-progress, blocked, or deferred tasks. | Lead Solution Architect | — |
 | 2026-06-26 12:08 | Generated `.codex/roadmap.md` (16 milestones, ~30 engineer-weeks). | Lead Solution Architect | — |
 | 2026-06-26 12:26 | Generated `.codex/task_queue.md` (410 atomic tasks, all `Status: Not Started`). | Lead Solution Architect | — |
@@ -556,6 +569,9 @@ Architecture-level or scope-level decisions taken during implementation. Each de
 | D-004 | 2026-06-26 | Departments, categories, workflows, prompts, SLAs, AI models, and connectors are **DB-driven, never in source**. | `docs/14` §20, `docs/09` §10–§14. | `docs/14` §20; `docs/09` | Lead Solution Architect |
 | D-005 | 2026-06-26 | M1 introduces **no business modules**; only `App\Modules\Shared` is scaffolded. | Scope guardrail from `.codex/current_milestone.md` §4. | `.codex/current_milestone.md` §4 | Lead Solution Architect |
 | D-006 | 2026-06-26 | Task ordering in `.codex/task_queue.md` is the **execution order**; no parallel scheduling without an architect-approved exception. | Atomic-task principle: each task only depends on tasks earlier in the file. | `.codex/task_queue.md` "How to Read" | Lead Solution Architect |
+| D-017 | 2026-06-26 | `ValidationException` rendered at 422 with the standard envelope (was being caught by generic `Throwable` handler as 500). | D-017 was actually adopted during T-M2-013; this row backfills the decision log. | `docs/03` §20, `docs/05` §5 | Lead Solution Architect |
+| D-018 | 2026-06-26 | `AuthenticationException` rendered at 401 with the standard envelope and `code: UNAUTHORIZED`. Required because `auth:sanctum`, `auth:web`, and any future `auth:*` middleware all throw this when the guard cannot resolve a user. Without a dedicated handler, the generic `Throwable` handler turned every 401-class error into a 500. | `docs/05` §5 (Logout, Get Current User), `docs/11` §6 | Lead Solution Architect |
+| D-019 | 2026-06-26 | Auth-feature tests call `Auth::forgetGuards()` between HTTP requests when they need to assert a different auth state in a second request. | `Illuminate\Auth\RequestGuard` caches the resolved user in `$this->user` and is itself cached on the `AuthManager` singleton. In production each HTTP request is a fresh process and the guard is rebuilt; in Pest the guard is reused, so the cached user survives the first request. Production code is correct as-is; the fix is test-only. | Pest test framework behaviour | Lead Solution Architect |
 
 ---
 
@@ -578,10 +594,10 @@ Snapshot at file initialization. Updated as the repository grows.
 | Database migrations | 0 |
 | Eloquent models | 0 |
 | API endpoints (under `routes/api.php`) | 0 (only `/api/v1/health` and `/api/v1/health/ready` will exist after M1) |
-| Pest tests | 0 |
+| Pest tests | 120 passing (468 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 0 |
+| Git commits on `main` | 26 (T-M2-016 pending) |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |

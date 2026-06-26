@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Middleware\RequestId;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -56,6 +57,26 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return response()->json($payload, $e->httpStatus);
+        });
+
+        // AuthenticationException -> 401 with the standard envelope.
+        // auth:sanctum, auth:web, etc. all throw this when the guard
+        // cannot resolve a user (missing/invalid/revoked bearer, no
+        // session). Per docs/05 s5 and docs/11 s6 every protected
+        // endpoint must reply 401 (not 500) in this case.
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
+            $traceId = (string) ($request->attributes->get('trace_id')
+                ?? $request->header('X-Request-Id')
+                ?? 'unknown');
+            $payload = [
+                'success' => false,
+                'message' => $e->getMessage() !== '' ? $e->getMessage() : 'Unauthenticated.',
+                'errors' => (object) [],
+                'code' => 'UNAUTHORIZED',
+                'trace_id' => $traceId,
+            ];
+
+            return response()->json($payload, 401);
         });
 
         // Any other Throwable under API requests → opaque 500 with trace_id.

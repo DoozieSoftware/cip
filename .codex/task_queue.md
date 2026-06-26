@@ -566,10 +566,10 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Related specs:** `docs/05` §5; `docs/11` §6
 - **Dependencies:** T-M2-014
 - **Est. time:** 15 minutes
-- **Files:** `backend/app/Modules/Authentication/Http/Controllers/AuthController.php`
-- **Acceptance criteria:** Subsequent calls with the same access token return 401; refresh token also rejected.
+- **Files:** `backend/app/Modules/Authentication/Http/Controllers/AuthController.php`, `backend/bootstrap/app.php`, `backend/tests/Feature/Authentication/LogoutEndpointTest.php`
+- **Acceptance criteria:** Subsequent calls with the same access token return 401; refresh token also rejected; unauthenticated calls return 401 with the standard error envelope.
 - **Required tests:** `tests/Feature/Authentication/LogoutEndpointTest.php`.
-- **Status:** In Progress
+- **Status:** Done
 
 ### T-M2-017 — GET /api/v1/auth/me endpoint
 - **Milestone:** M2

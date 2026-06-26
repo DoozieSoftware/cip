@@ -14,6 +14,7 @@ use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Controllers\BaseController;
 use App\Modules\Users\Http\Resources\UserResource;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * Auth-facing endpoints.
@@ -117,6 +118,26 @@ class AuthController extends BaseController
             'refresh_token' => $result['refresh']['plain'],
             'refresh_expires_at' => $result['refresh']['expires_at']->toIso8601String(),
         ]);
+    }
+
+    /**
+     * POST /api/v1/auth/logout
+     */
+    public function logout(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user === null) {
+            return $this->respondError('Unauthenticated.', 401, 'UNAUTHORIZED');
+        }
+
+        $accessToken = $user->currentAccessToken();
+        $accessTokenId = $accessToken->getKey();
+        $accessTokenIdString = is_string($accessTokenId) || is_int($accessTokenId) ? (string) $accessTokenId : null;
+
+        $this->auth->logout($user, $accessTokenIdString);
+
+        return $this->respond(['logged_out' => true]);
     }
 
     private function recordAttempt(string $mobile, ?string $ip, ?string $userAgent, bool $success, ?string $reason): void

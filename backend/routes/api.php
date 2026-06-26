@@ -23,4 +23,9 @@ Route::prefix('v1')->group(function (): void {
     Route::post('auth/send-otp', [AuthController::class, 'sendOtp'])->name('api.v1.auth.send-otp');
     Route::post('auth/verify-otp', [AuthController::class, 'verifyOtp'])->name('api.v1.auth.verify-otp');
     Route::post('auth/refresh', [AuthController::class, 'refresh'])->name('api.v1.auth.refresh');
+
+    // Authenticated routes
+    Route::middleware('auth:sanctum')->group(function (): void {
+        Route::post('auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
+    });
 });
