@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 21:22 IST (after T-M4-005 done; M4 in progress)
+* **Last updated:** 2026-06-26 21:23 IST (after T-M4-006 done; M4 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -34,7 +34,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
-| M4 | Reports Domain & Submission API | 32 | 10 | 0 | 0 | 0 | 31 % |
+| M4 | Reports Domain & Submission API | 32 | 11 | 0 | 0 | 0 | 34 % |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **85** | **0** | **0** | **0** | **20.7 %** |
+| **All** | **Total** | **410** | **86** | **0** | **0** | **0** | **21.0 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M4-006 — Create Location model
+- **Milestone:** M4
+- **Status:** Done
+- **Completed at:** 2026-06-26 21:23 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(reports): complete T-M4-006 — Create Location model` (sha: `504593c3`)
+- **Files touched:** backend/app/Modules/Reports/Models/Location.php (new; HasUuids + HasFactory, fillable, casts, ward BelongsTo, district BelongsTo)
+- **Acceptance criteria:** Model can be persisted from a factory; the casts and fillable match the migration.
+- **Required tests:** Used by tests/Feature/Reports/ReportServiceTest.php via the service path — full suite 394/394 pass.
+- **Notes:** BelongsTo short names (Ward, District) and Carbon import were Pint-applied later in the T-M4-017 commit.
+
+
 
 ### T-M4-005 — Create locations migration with POINT geometry
 - **Milestone:** M4
@@ -1093,6 +1106,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 21:23 IST | Logged T-M4-006 done; M4 11/32; total 86/410 = 21.0 %. | Lead Solution Architect | T-M4-006 |
 | 2026-06-26 21:22 IST | Logged T-M4-005 done; M4 10/32; total 85/410 = 20.7 %. | Lead Solution Architect | T-M4-005 |
 | 2026-06-26 21:22 IST | Logged T-M4-004 done; M4 9/32; total 84/410 = 20.5 %. | Lead Solution Architect | T-M4-004 |
 | 2026-06-26 21:22 IST | Logged T-M4-003 done; M4 8/32; total 83/410 = 20.2 %. | Lead Solution Architect | T-M4-003 |

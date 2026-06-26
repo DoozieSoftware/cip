@@ -1115,7 +1115,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Models/Location.php`
 - **Acceptance criteria:** `$location->ward` returns the related model.
 - **Required tests:** Model test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-007 — Create reports migration
 - **Milestone:** M4
