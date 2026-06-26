@@ -104,6 +104,96 @@ Authorization is centralised in `ReportPolicy` and `LocationPolicy`
 (extends `BasePolicy`). The standard error codes for the reports
 module live in `App\Modules\Shared\Enums\ErrorCode`.
 
+## M6 — Workflow engine
+
+The M6 Workflow engine is the state machine that drives every
+civic report through its 11-state lifecycle. It is fully
+documented under the **Workflows** tag in the OpenAPI spec
+([`/api/documentation`](./backend/storage/api-docs/openapi.yaml))
+and in [`docs/workflow.md`](./docs/workflow.md).
+
+### Default lifecycle
+
+```
+        draft
+          |
+          | submit (any actor)
+          v
+       submitted
+          |
+          | ai_complete (system, SLA 30m)
+          v
+    ai_processing
+          |
+          | moderator_review (system, SLA 30m)
+          v
+   pending_moderator -------+
+          | assign (moderator, SLA 2h)      |
+          | reject (moderator)               |
+          v                                  v
+      assigned                          rejected
+          | accept (department, SLA 4h)
+          | reject (department)
+          v
+      accepted
+          | start (department, SLA 24h)
+          | reject (department)
+          v
+    in_progress
+          | resolve (department, SLA 72h)
+          | reject (department)
+          v
+      resolved
+          | verify (moderator, SLA 24h)
+          v
+      verified
+          | close (moderator, SLA 72h)
+          v
+       closed
+```
+
+### Admin surface
+
+| Method | Path                                | Notes                                |
+| ------ | ----------------------------------- | ------------------------------------ |
+| GET    | `/api/v1/admin/workflows`           | List definitions (paginated)         |
+| POST   | `/api/v1/admin/workflows`           | Create a definition + optional graph |
+| GET    | `/api/v1/admin/workflows/{workflow}`| Single definition with full graph    |
+| PUT    | `/api/v1/admin/workflows/{workflow}`| Update; invalidates the read cache   |
+| DELETE | `/api/v1/admin/workflows/{workflow}`| Soft-delete; `civic_default` is locked |
+
+### Engine contract
+
+`WorkflowEngine::evaluate(Report, event, actor): WorkflowDecision`
+returns a positive or negative `WorkflowDecision` for the
+highest-priority matching transition. The decision is
+deterministic for a given
+`(definition_id, from_state_code, event, actor)` tuple.
+
+`WorkflowEngine::apply(Report, decision, actor): Report` runs
+inside a single DB transaction: it updates `current_status_id`,
+dispatches `ReportStatusChanged` (the M4 `WriteStatusHistory`
+listener appends the `report_status_history` row — no double
+write), and inserts an `audit_logs` row keyed on
+`(entity=reports, action=workflow.transition)`.
+
+### SLA timer
+
+`CheckSlaBreaches` is a scheduled queued job (every 5 minutes,
+wired in `routes/console.php`) that streams every report with
+a workflow, computes `elapsed_minutes` against the outgoing
+transitions' `sla_minutes`, and dispatches `SlaBreached` for
+each overdue transition. Downstream M9 notifications consume
+the event to push alerts to the assigned role / department.
+
+### Cache invalidation
+
+`WorkflowRepository` caches `findActiveByCode` / `findById` for
+1 hour. Every `WorkflowAdminService` write calls
+`WorkflowRepository::invalidate($code)` (and the new code on a
+code change) so a Super Admin publish takes effect on the
+next request without a deploy.
+
 ## M5 — Media & Evidence
 
 The M5 Media namespace is the evidence layer for the platform:
