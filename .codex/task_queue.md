@@ -727,7 +727,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** `vendor/bin/pest tests/Feature/Users/RbacDenialFeatureTest.php`.
 - **Status:** Done
 
-### T-M2-030 — Wire M2 documentation into README
+### T-M2-030 — Wire M2 documentation into README [DONE 2026-06-26 — commit b41379fa]
 - **Milestone:** M2
 - **Title:** Wire M2 documentation into README
 - **Description:** Add an "Authentication" section to `README.md` that links to `docs/auth.md`, OpenAPI, and explains seeded roles.
@@ -737,7 +737,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `README.md`
 - **Acceptance criteria:** README has a working anchor link to `docs/auth.md`.
 - **Required tests:** Manual.
-- **Status:** In Progress
+- **Status:** Done
 
 
 ---
@@ -758,7 +758,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_countries_table.php`, `backend/app/Modules/Departments/Models/Country.php`
 - **Acceptance criteria:** `Country::create([...])` succeeds; seeder inserts "India" idempotently.
 - **Required tests:** Migration + model test.
-- **Status:** Not Started
+- **Status:** In Progress
 
 ### T-M3-002 — Create states migration and model
 - **Milestone:** M3

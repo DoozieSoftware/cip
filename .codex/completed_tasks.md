@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 22:50 IST (after T-M2-029 done — M2 progress 28/30; total 50/410 = 12.2 %)
+* **Last updated:** 2026-06-26 23:05 IST (after T-M2-030 done — M2 progress 30/30 = 100 %; total 51/410 = 12.4 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M2 — Identity, Auth & RBAC Core (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 28   | 0           | 0       | 0        | 93 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **50** | **0**    | **0**   | **0**    | **12.2 %   |
+| **All** | **Total**                             | **410** | **51** | **0**    | **0**   | **0**    | **12.4 %   |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,7 +56,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 28 | 28 % |
+| Foundations | M2, M3, M5, M9 | 100 | 30 | 30 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
@@ -660,6 +660,21 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Required tests:** Pest `tests/Feature/Users/RbacDenialFeatureTest.php` — 10/10 pass; full suite 221/221 (850 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** The test uses synthetic Gate definitions that mirror the BasePolicy::before() contract — suspended / disabled / pending / trashed users are always denied, then the per-ability role check is applied. The real ReportPolicy / UserPolicy / AuditLogPolicy land in M10 / M11 / M12; until then the synthetic gates hold the contract and the test will continue to pass. The 403 renderer is itself a real production-side gap (previously 500 on every Gate::authorize failure) and is required by the M2 happy path.
 
+### T-M2-030 — Wire M2 documentation into README
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 23:05 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(docs): complete T-M2-030 — wire M2 documentation into README` (sha: b41379fa)
+- **Files touched:** `README.md` (added an "Authentication" section between Architecture and Development — seeded roles table, /api/v1/auth/* endpoint table, cross-links to docs/auth.md, the OpenAPI spec, and the relevant docs/05 + docs/11 sections).
+- **Acceptance criteria:** README has a working link to docs/auth.md.
+- **Required tests:** Manual review.
+- **Notes:** The link to docs/auth.md is a plain `./docs/auth.md` path so it works in both GitHub rendering and any local preview. The link to the OpenAPI spec points at the canonical YAML in backend/storage/api-docs/openapi.yaml; the live UI is at /api/documentation. The seeded-roles table is the same list docs/auth.md uses, kept in sync.
+
+## 2.1 M2 milestone closed
+
+M2 (Identity, Auth & RBAC Core) is complete. 30/30 tasks done. The next milestone per the roadmap is M3 (Master Configuration & Geography, 24 tasks).
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -696,6 +711,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 23:05 IST | Logged T-M2-030 done; M2 closed (30/30 = 100 %); total 51/410 = 12.4 %. M3 starts next. | Lead Solution Architect | T-M2-030 |
 | 2026-06-26 22:50 IST | Logged T-M2-029 done; M2 progress 28/30; total 50/410 = 12.2 %. | Lead Solution Architect | T-M2-029 |
 | 2026-06-26 22:30 IST | Logged T-M2-028 done; M2 progress 27/30; total 49/410 = 12.0 %. | Lead Solution Architect | T-M2-028 |
 | 2026-06-26 22:00 IST | Logged T-M2-027 done; M2 progress 26/30; total 48/410 = 11.7 %. | Lead Solution Architect | T-M2-027 |
@@ -751,14 +767,14 @@ Snapshot at file initialization. Updated as the repository grows.
 | Lines of `.codex/roadmap.md` | 991 |
 | Lines of `.codex/task_queue.md` | 5,163 |
 | Lines of `.codex/current_milestone.md` | 212 |
-| Lines of `.codex/completed_tasks.md` (this file) | 935 |
+| Lines of `.codex/completed_tasks.md` (this file) | 965 |
 | Database migrations | 0 |
 | Eloquent models | 0 |
 | API endpoints (under `routes/api.php`) | 0 (only `/api/v1/health` and `/api/v1/health/ready` will exist after M1) |
 | Pest tests | 221 passing (850 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 51 (T-M2-029 pending) |
+| Git commits on `main` | 53 (T-M2-030 pending) |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |
