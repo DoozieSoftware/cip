@@ -7,6 +7,7 @@ namespace App\Modules\Users\Models;
 use App\Modules\Authentication\Models\LoginHistory;
 use App\Modules\Authentication\Models\RefreshToken;
 use App\Modules\Security\Models\SecurityEvent;
+use Carbon\CarbonInterface;
 use Database\Factories\Modules\Users\Models\UserFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -37,6 +38,23 @@ use Spatie\Permission\Traits\HasRoles;
  * - T-M2-009/021 security events
  * - T-M2-005 otps
  * - T-M2-020 audit logs
+ *
+ * @property string $id
+ * @property string|null $name
+ * @property string $mobile
+ * @property string|null $email
+ * @property string|null $password
+ * @property CarbonInterface|null $otp_verified_at
+ * @property CarbonInterface|null $last_login_at
+ * @property string|null $last_login_ip
+ * @property string|null $two_factor_secret
+ * @property string|null $two_factor_recovery_codes
+ * @property CarbonInterface|null $two_factor_confirmed_at
+ * @property string $status
+ * @property bool $anonymous_enabled
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
+ * @property CarbonInterface|null $deleted_at
  */
 class User extends Authenticatable
 {

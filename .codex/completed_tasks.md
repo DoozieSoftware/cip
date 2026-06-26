@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 17:05 IST (after T-M2-013 done — M2 progress 12/30; total 34/410 = 8.3 %)
+* **Last updated:** 2026-06-26 17:25 IST (after T-M2-014 done — M2 progress 13/30; total 35/410 = 8.5 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 12   | 0           | 0       | 0        | 40 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 13   | 0           | 0       | 0        | 43 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **34** | **0**    | **0**   | **0**    | **8.3 %    |
+| **All** | **Total**                             | **410** | **35** | **0**    | **0**   | **0**    | **8.5 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -474,6 +474,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Acceptance criteria:** 200 on success; 429 on rate limit; OTP never returned in response.
 - **Required tests:** Pest `tests/Feature/Authentication/SendOtpEndpointTest.php` — 6/6 pass; full suite 101/101 (384 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** The `ValidationException` handler in `bootstrap/app.php` was missing before this task — the existing `Throwable` handler was turning 422-class validation failures into 500s. The new handler renders the validation error map as `errors` and uses `code: VALIDATION_FAILED` per the docs/03 §20 envelope contract. The OtpService is bound to a no-op dispatcher in the test (`$this->app->bind(OtpService::class, ...)`) so the `sms` log channel stays clean during the test run.
+
+
+### T-M2-014 — POST /api/v1/auth/verify-otp endpoint
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 17:25 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(auth): complete T-M2-014 — POST /api/v1/auth/verify-otp endpoint` (sha: pending)
+- **Files touched:** `backend/app/Modules/Authentication/Http/Requests/VerifyOtpRequest.php` (new; mobile + 6-digit code; same 10-digit normalisation as SendOtpRequest), `backend/app/Modules/Authentication/Events/UserAuthenticated.php` (new; per docs/03 §16 — emitted on every successful authentication; carries the user, the channel, and free-form context), `backend/app/Modules/Authentication/Services/AuthenticationService.php` (new; `verifyOtp()` does find-or-create user inside a transaction, sets `otp_verified_at`, records the login via `recordLogin`, assigns the `citizen` role on first contact, creates a Sanctum PAT (`createToken('citizen-otp', ['*'])`), issues a refresh token via `RefreshTokenService::issue`, writes a success `login_history` row, and dispatches `UserAuthenticated`; `logout()` revokes the current PAT and all refresh tokens), `backend/app/Modules/Authentication/Http/Controllers/AuthController.php` (added `verifyOtp(VerifyOtpRequest)`), `backend/app/Modules/Users/Http/Resources/UserResource.php` (new; safe fields only — id, name, mobile, email, anonymous_enabled, status, otp_verified_at, last_login_at, roles, permissions, created_at; never password / 2FA secret), `backend/app/Modules/Users/Models/User.php` (added full @property PHPDoc with Carbon-typed date properties so PHPStan accepts the cast and Carbon assignments), `backend/routes/api.php` (registered `POST api/v1/auth/verify-otp`), `backend/tests/Feature/Authentication/VerifyOtpEndpointTest.php` (new; 8 tests — happy path 200 + envelope shape, 401 on bad code + failure login_history, 422 on malformed body, first-contact upsert + citizen role, no duplicate on re-verify, Sanctum PAT + refresh token issued, success login_history row written, UserAuthenticated event dispatched).
+- **Acceptance criteria:** Success returns `{token, refresh_token, user}`; failure returns 401 with typed error; login_history row written.
+- **Required tests:** Pest `tests/Feature/Authentication/VerifyOtpEndpointTest.php` — 8/8 pass; full suite 109/109 (433 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** The verify endpoint accepts E.164 or 10-digit and normalises to 10 digits the same way `send-otp` does. The `citizen` role is assigned on first contact and is idempotent (`hasRole()` guard). The `UserResource` is intentionally minimal in this task; T-M2-024 will keep it as-is and may add granular permission/role helpers. The 401 on bad code does NOT increment the OTP attempt counter beyond what `OtpService::verify` already does — that path is the canonical lock-out mechanism.
 
 
 ## 4. In-Progress Tasks

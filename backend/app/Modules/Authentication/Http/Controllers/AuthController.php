@@ -5,37 +5,36 @@ declare(strict_types=1);
 namespace App\Modules\Authentication\Http\Controllers;
 
 use App\Modules\Authentication\Http\Requests\SendOtpRequest;
+use App\Modules\Authentication\Http\Requests\VerifyOtpRequest;
 use App\Modules\Authentication\Models\LoginHistory;
+use App\Modules\Authentication\Services\AuthenticationService;
 use App\Modules\Authentication\Services\OtpService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Controllers\BaseController;
+use App\Modules\Users\Http\Resources\UserResource;
 use Illuminate\Http\JsonResponse;
 
 /**
  * Auth-facing endpoints.
  *
- *  - POST /api/v1/auth/send-otp   (this milestone)
+ *  - POST /api/v1/auth/send-otp   (T-M2-013)
  *  - POST /api/v1/auth/verify-otp (T-M2-014)
  *  - POST /api/v1/auth/refresh    (T-M2-015)
  *  - POST /api/v1/auth/logout     (T-M2-016)
  *  - GET  /api/v1/auth/me         (T-M2-017)
  *
- * Per docs/05 §5 and docs/11 §6. No business logic lives here — all
+ * Per docs/05 §5 and docs/11 §6-7. No business logic lives here — all
  * flows go through the relevant service.
  */
 class AuthController extends BaseController
 {
     public function __construct(
         private readonly OtpService $otpService,
+        private readonly AuthenticationService $auth,
     ) {}
 
     /**
      * POST /api/v1/auth/send-otp
-     *
-     * Validates the mobile, calls OtpService::request, and returns
-     * `{ otp_sent: true }` on success. The plaintext OTP is NEVER
-     * returned in the response — it is delivered via the SMS gateway
-     * (or log channel in V1 / tests).
      */
     public function sendOtp(SendOtpRequest $request): JsonResponse
     {
@@ -54,6 +53,43 @@ class AuthController extends BaseController
         $this->recordAttempt($mobile, $ip, $userAgent, success: true, reason: null);
 
         return $this->respond(['otp_sent' => true]);
+    }
+
+    /**
+     * POST /api/v1/auth/verify-otp
+     *
+     * Returns the Sanctum access token (string), the refresh token
+     * (opaque plaintext — only chance to capture it), the user via
+     * UserResource, and the refresh expiry. The plaintext access
+     * token is `access_token` in the response so the client can
+     * stash it directly; the `token` key carries the NewAccessToken
+     * metadata for callers that want the id/expires_at.
+     */
+    public function verifyOtp(VerifyOtpRequest $request): JsonResponse
+    {
+        $mobile = $request->mobile();
+        $code = $request->code();
+        $ip = $request->ip();
+        $userAgent = $request->userAgent();
+
+        try {
+            $result = $this->auth->verifyOtp($mobile, $code, $ip, $userAgent);
+        } catch (ApiException $e) {
+            $this->recordAttempt($mobile, $ip, $userAgent, success: false, reason: $e->errorCode);
+
+            return $this->respondError($e->getMessage(), $e->httpStatus, $e->errorCode);
+        }
+
+        return $this->respond([
+            'token' => [
+                'access_token' => $result['access_token'],
+                'type' => 'Bearer',
+                'expires_at' => $result['token']->accessToken->expires_at?->toIso8601String(),
+            ],
+            'refresh_token' => $result['refresh']['plain'],
+            'refresh_expires_at' => $result['refresh']['expires_at']->toIso8601String(),
+            'user' => (new UserResource($result['user']))->toArray($request),
+        ]);
     }
 
     private function recordAttempt(string $mobile, ?string $ip, ?string $userAgent, bool $success, ?string $reason): void

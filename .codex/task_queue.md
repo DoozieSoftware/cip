@@ -545,7 +545,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Authentication/Http/Controllers/AuthController.php`, `backend/app/Modules/Authentication/Http/Requests/VerifyOtpRequest.php`
 - **Acceptance criteria:** Success returns `{token, refresh_token, user}`; failure returns 401 with typed error; login_history row written.
 - **Required tests:** `tests/Feature/Authentication/VerifyOtpEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-015 — POST /api/v1/auth/refresh endpoint
 - **Milestone:** M2
