@@ -521,7 +521,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Contracts/SmsGatewayInterface.php`, `backend/app/Modules/Notifications/Drivers/LogSmsGateway.php`
 - **Acceptance criteria:** `LogSmsGateway` writes to `sms.log` channel; swappable via service container.
 - **Required tests:** `tests/Unit/Notifications/LogSmsGatewayTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-013 — POST /api/v1/auth/send-otp endpoint
 - **Milestone:** M2

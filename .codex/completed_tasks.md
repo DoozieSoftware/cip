@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 16:35 IST (after T-M2-011 done — M2 progress 10/30; total 32/410 = 7.8 %)
+* **Last updated:** 2026-06-26 16:50 IST (after T-M2-012 done — M2 progress 11/30; total 33/410 = 8.0 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 10   | 0           | 0       | 0        | 33 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 11   | 0           | 0       | 0        | 37 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **32** | **0**    | **0**   | **0**    | **7.8 %    |
+| **All** | **Total**                             | **410** | **33** | **0**    | **0**   | **0**    | **8.0 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -450,6 +450,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Acceptance criteria:** 6th request in an hour returns `RATE_LIMITED`; OTP stored as hash, not plaintext.
 - **Required tests:** Pest `tests/Feature/Authentication/OtpRateLimitTest.php` — 8/8 pass; full suite 89/89 (344 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** Dispatcher is a `Closure` for now, not the `SmsGatewayInterface` — T-M2-012 will introduce the contract and the service container binding. The OtpService accepts an optional Closure today, so T-M2-012 is purely additive: it will register a binding that resolves to a `LogSmsGateway` and `setDispatcher` will be replaced with constructor injection. This keeps the strict task order (T-M2-011 has no Spatie/Notifications dependency and can be verified in isolation).
+
+
+### T-M2-012 — Implement SmsGateway interface and log driver
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 16:50 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(notifications): complete T-M2-012 — SmsGatewayInterface + LogSmsGateway` (sha: pending)
+- **Files touched:** `backend/app/Modules/Notifications/Contracts/SmsGatewayInterface.php` (new; single `send(mobile, message)` method; PHPDoc states retry/log/audit invariants per docs/03 §17), `backend/app/Modules/Notifications/Drivers/LogSmsGateway.php` (new; implements the contract; writes to a configurable log channel; defaults to `sms`), `backend/app/Modules/Notifications/Providers/NotificationsServiceProvider.php` (new; singleton binding `SmsGatewayInterface` → driver selected by `config('cip.notifications.sms_driver')`; falls back to `LogSmsGateway` for unknown names; `DRIVERS` map is the registry — only `log` in V1), `backend/bootstrap/providers.php` (registers `NotificationsServiceProvider`), `backend/tests/Unit/Notifications/LogSmsGatewayTest.php` (new; 6 tests — interface implementation, default log channel, custom channel via ctor, singleton binding, fallback for unknown driver, config-driven selection).
+- **Acceptance criteria:** `LogSmsGateway` writes to `sms.log` channel; swappable via service container.
+- **Required tests:** Pest `tests/Unit/Notifications/LogSmsGatewayTest.php` — 6/6 pass; full suite 95/95 (353 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** Provider selection is via `config('cip.notifications.sms_driver')` (env-driven: `SMS_DRIVER=log` in `.env`). The OtpService (T-M2-011) is intentionally untouched in this task — it still uses a Closure dispatcher. T-M2-013 (POST /api/v1/auth/send-otp) is the task that will refactor OtpService to depend on the SmsGatewayInterface and bind it via the container. The single Closure-based dispatcher in OtpService and the singleton-bound SmsGatewayInterface coexist cleanly until that task.
 
 
 ## 4. In-Progress Tasks
