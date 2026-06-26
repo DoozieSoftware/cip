@@ -104,7 +104,40 @@ Authorization is centralised in `ReportPolicy` and `LocationPolicy`
 (extends `BasePolicy`). The standard error codes for the reports
 module live in `App\Modules\Shared\Enums\ErrorCode`.
 
+## M5 — Media & Evidence
+
+The M5 Media namespace is the evidence layer for the platform:
+citizens upload photos / videos / documents when they file a
+report, those bytes are scanned, hashed, and persisted, and every
+read/write is recorded in an append-only chain-of-custody log. The
+full surface is documented under the **Media** tag in the OpenAPI
+spec ([`/api/documentation`](./backend/storage/api-docs/openapi.yaml))
+and in [`docs/media.md`](./docs/media.md).
+
+| Method | Path                                          | Audience            | Notes                                    |
+| ------ | --------------------------------------------- | ------------------- | ---------------------------------------- |
+| POST   | `/api/v1/reports/{id}/photos`                 | Citizen (owner)     | 1-10 photos, jpeg/png, <= 16 MB each     |
+| POST   | `/api/v1/reports/{id}/video`                  | Citizen (owner)     | 1 video, mp4/quicktime, <= 100 MB, 3-300 s |
+| GET    | `/api/v1/reports/{id}/media`                  | Citizen / Staff     | Media list with 15-min signed URL        |
+| GET    | `/api/v1/reports/{id}/media/{media}/audit`    | Staff               | Chain-of-custody log                     |
+| GET    | `/api/v1/media/{media}/serve`                 | Public              | Signed-URL stream; signed URL is the auth |
+
+Every upload passes three defence-in-depth gates (server-mime,
+client-mime-agreement, magic-byte signature sniff), is scanned
+(`LogScanner` in dev, `ClamAvScanner` in production via
+`CIP_MEDIA_SCANNER=clamav`), and is hashed + thumbnailed
+asynchronously on the `media` queue. All access is recorded in
+`media_access_logs` (append-only, no `updated_at`).
+
+### MinIO bucket
+
+The `cip-media` bucket is created at first boot by
+[`docker/minio/entrypoint.sh`](./docker/minio/entrypoint.sh). The
+script uses `mc` (MinIO client) and idempotently creates the
+bucket plus a 7-day lifecycle expiry on the `tmp/` prefix.
+
 ## Development
+
 
 ```bash
 # Backend tests
