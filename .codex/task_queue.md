@@ -1091,7 +1091,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_report_priorities_table.php`, `backend/app/Modules/Reports/Models/ReportPriority.php`
 - **Acceptance criteria:** Migration roundtrips.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-005 — Create locations migration with POINT geometry
 - **Milestone:** M4
