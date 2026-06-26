@@ -469,7 +469,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Status:** Done
 - **Completed at:** 2026-06-26 17:05 IST
 - **Agent / Committer:** Lead Solution Architect
-- **Commit:** `feat(auth): complete T-M2-013 — POST /api/v1/auth/send-otp endpoint` (sha: pending)
+- **Commit:** `feat(auth): complete T-M2-013 — POST /api/v1/auth/send-otp endpoint` (sha: dfbd6274)
 - **Files touched:** `backend/app/Modules/Authentication/Http/Requests/SendOtpRequest.php` (new; `mobile` field required, regex-validated for E.164 or 10-digit; `mobile()` method normalises to 10 digits by stripping a leading country code if the result would be >10), `backend/app/Modules/Authentication/Http/Controllers/AuthController.php` (new; `sendOtp(SendOtpRequest)` calls `OtpService::request`, returns `{otp_sent: true}`, records a `LoginHistory` row for both success and rate-limited paths, never returns the plaintext code), `backend/routes/api.php` (registered `POST api/v1/auth/send-otp`), `backend/bootstrap/app.php` (added `ValidationException` renderer → 422 with the standard envelope), `backend/tests/Feature/Authentication/SendOtpEndpointTest.php` (new; 6 tests — happy path, 422 on bad mobile, E.164 → 10-digit normalisation, 429 after 5/hour, LoginHistory row on every attempt, OTP never appears in the response body).
 - **Acceptance criteria:** 200 on success; 429 on rate limit; OTP never returned in response.
 - **Required tests:** Pest `tests/Feature/Authentication/SendOtpEndpointTest.php` — 6/6 pass; full suite 101/101 (384 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
