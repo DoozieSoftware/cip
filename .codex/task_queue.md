@@ -1187,7 +1187,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/seeders/ReportStatusesSeeder.php`, `backend/database/seeders/ReportPrioritiesSeeder.php`
 - **Acceptance criteria:** Seeders are idempotent; counts match.
 - **Required tests:** Seed test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-013 — Seed default report types
 - **Milestone:** M4
