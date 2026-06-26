@@ -214,6 +214,161 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /api/v1/admin/routing-rules:
+    get:
+      tags: [Routing]
+      summary: 'List routing rules (paginated)'
+      operationId: admin.routing-rules.index
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: active
+          schema: { type: boolean }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 25, maximum: 200 }
+      responses:
+        '200':
+          description: 'Paginated list of routing rules.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoutingRuleListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+    post:
+      tags: [Routing]
+      summary: 'Create a routing rule'
+      operationId: admin.routing-rules.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RoutingRuleStoreRequest' }
+      responses:
+        '201':
+          description: 'Routing rule created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoutingRuleResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/routing-rules/reorder:
+    post:
+      tags: [Routing]
+      summary: 'Reorder routing rules by sending the desired final order'
+      operationId: admin.routing-rules.reorder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RoutingRuleReorderRequest' }
+      responses:
+        '200':
+          description: 'Routing rules reordered.'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          reordered: { type: boolean, example: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/routing-rules/{rule}:
+    parameters:
+      - in: path
+        name: rule
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Routing]
+      summary: 'Show a routing rule'
+      operationId: admin.routing-rules.show
+      responses:
+        '200':
+          description: 'Routing rule found.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoutingRuleResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Routing]
+      summary: 'Update a routing rule'
+      operationId: admin.routing-rules.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RoutingRuleUpdateRequest' }
+      responses:
+        '200':
+          description: 'Routing rule updated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoutingRuleResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Routing]
+      summary: 'Soft-delete a routing rule'
+      operationId: admin.routing-rules.destroy
+      responses:
+        '200':
+          description: 'Routing rule soft-deleted.'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          deleted: { type: boolean, example: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/reports/{report}/reassign:
+    parameters:
+      - in: path
+        name: report
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Routing]
+      summary: 'Manually reassign a report to a new department / officer'
+      operationId: admin.reports.reassign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReassignReportRequest' }
+      responses:
+        '200':
+          description: 'Report reassigned.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReassignResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
 components:
   securitySchemes:
     sanctum:
@@ -1598,6 +1753,142 @@ components:
               type: array
               items: { $ref: '#/components/schemas/Workflow' }
             meta: { $ref: '#/components/schemas/PaginationMeta' }
+    RoutingRule:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: 'Pothole -> BBMP Ward 112' }
+        description: { type: string, nullable: true }
+        priority: { type: integer, example: 10, minimum: 0, maximum: 1000000 }
+        conditions:
+          $ref: '#/components/schemas/RoutingConditions'
+        destination_department_id: { type: string, format: uuid }
+        default_officer_id: { type: string, format: uuid, nullable: true }
+        default_priority_id: { type: string, format: uuid }
+        default_sla_minutes: { type: integer, minimum: 1, maximum: 525600 }
+        active: { type: boolean }
+        created_at: { type: string, format: date-time, nullable: true }
+        updated_at: { type: string, format: date-time, nullable: true }
+    RoutingConditions:
+      type: object
+      description: |
+        The M7 RoutingCondition DSL. Each top-level key is an
+        operator; multiple operators are AND-joined. A top-level
+        `or` key holds a list of sub-conditions, any of which
+        may match. An empty object matches every report.
+      additionalProperties: true
+      properties:
+        category_in:
+          type: array
+          items: { type: string }
+          description: 'Matches when the report type code is in the list.'
+        ward_in:
+          type: array
+          items: { type: string, format: uuid }
+          description: 'Matches when the location.ward_id is in the list.'
+        district_in:
+          type: array
+          items: { type: string, format: uuid }
+          description: 'Matches when the location.district_id is in the list.'
+        severity_in:
+          type: array
+          items: { type: string }
+          description: 'Matches when the priority code is in the list.'
+        keyword_match:
+          type: array
+          items: { type: string }
+          description: 'Case-insensitive substring match on title + description.'
+        time_of_day_between:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items: { type: string, example: '09:00' }
+          description: '[start, end] HH:MM 24h; wraps midnight.'
+        ai_label_in:
+          type: array
+          items: { type: string }
+          description: 'Matches when the report ai_label column is in the list.'
+        or:
+          type: array
+          items: { $ref: '#/components/schemas/RoutingConditions' }
+      example:
+        category_in: ['pothole', 'road_damage']
+        or:
+          - severity_in: ['high']
+          - ward_in: ['9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d']
+    RoutingRuleStoreRequest:
+      type: object
+      required: [name, destination_department_id, default_priority_id, default_sla_minutes]
+      properties:
+        name: { type: string, maxLength: 255 }
+        description: { type: string, nullable: true }
+        priority: { type: integer, minimum: 0, maximum: 1000000, default: 100 }
+        conditions: { $ref: '#/components/schemas/RoutingConditions' }
+        destination_department_id: { type: string, format: uuid }
+        default_officer_id: { type: string, format: uuid, nullable: true }
+        default_priority_id: { type: string, format: uuid }
+        default_sla_minutes: { type: integer, minimum: 1, maximum: 525600 }
+        active: { type: boolean, default: true }
+    RoutingRuleUpdateRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 255 }
+        description: { type: string, nullable: true }
+        priority: { type: integer, minimum: 0, maximum: 1000000 }
+        conditions: { $ref: '#/components/schemas/RoutingConditions' }
+        destination_department_id: { type: string, format: uuid }
+        default_officer_id: { type: string, format: uuid, nullable: true }
+        default_priority_id: { type: string, format: uuid }
+        default_sla_minutes: { type: integer, minimum: 1, maximum: 525600 }
+        active: { type: boolean }
+    RoutingRuleReorderRequest:
+      type: object
+      required: [order]
+      properties:
+        order:
+          type: array
+          minItems: 1
+          items: { type: string, format: uuid }
+          description: 'The desired final order, first = highest precedence.'
+    ReassignReportRequest:
+      type: object
+      required: [department_id, reason]
+      properties:
+        department_id: { type: string, format: uuid }
+        officer_id: { type: string, format: uuid, nullable: true }
+        priority_id: { type: string, format: uuid, nullable: true }
+        reason: { type: string, minLength: 3, maxLength: 500 }
+    Reassignment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        report_id: { type: string, format: uuid }
+        department_id: { type: string, format: uuid }
+        officer_id: { type: string, format: uuid, nullable: true }
+        assigned_by: { type: string, format: uuid, nullable: true }
+        assigned_at: { type: string, format: date-time, nullable: true }
+        reassignment_reason: { type: string, nullable: true }
+    RoutingRuleResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/RoutingRule' }
+    RoutingRuleListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/RoutingRule' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+    ReassignResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/Reassignment' }
 tags:
   -
     name: Health
@@ -1623,3 +1914,6 @@ tags:
   -
     name: 'Media'
     description: 'Photo / video / document evidence (M5). Upload, list, audit, and signed-URL playback. Chain-of-custody rows are written on every read.'
+  -
+    name: Routing
+    description: 'Super Admin routing rules CRUD + manual report reassignment (M7).'
