@@ -1,0 +1,15 @@
+parameters:
+    level: max
+    paths:
+        - app/
+        - config/
+        - database/factories/
+        - database/seeders/
+    excludePaths:
+        - app/Modules/Shared/Http/Middleware/RequestId.php
+    reportUnmatchedIgnoredErrors: false
+    treatPhpDocTypesAsCertain: false
+    parallel:
+        maximumNumberOfProcesses: 4
+includes:
+    - vendor/larastan/larastan/extension.neon

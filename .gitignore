@@ -1,0 +1,50 @@
+# Dependencies
+backend/vendor/
+frontend/node_modules/
+
+# Build outputs
+frontend/dist/
+backend/public/build/
+backend/public/hot/
+
+# Environment
+.env
+.env.local
+.env.*.local
+backend/.env
+!backend/.env.example
+
+# Logs
+backend/storage/logs/*
+!backend/storage/logs/.gitkeep
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/storage/framework/testing/*
+!backend/storage/framework/cache/.gitkeep
+!backend/storage/framework/sessions/.gitkeep
+!backend/storage/framework/views/.gitkeep
+!backend/storage/framework/testing/.gitkeep
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Testing
+backend/storage/app/report-backups/
+backend/.phpunit.result.cache
+backend/.phpunit.cache
+frontend/coverage/
+frontend/.nyc_output/
+playwright-report/
+test-results/
+
+# MinIO data (if mounted locally)
+docker/minio/data/
+
+# Docker
+.docker/
