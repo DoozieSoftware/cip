@@ -19,9 +19,9 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 22:18 IST (after T-M4-032 done; M4 in progress)
+* **Last updated:** 2026-06-26 22:18 IST (after T-M4-032 done; M4 32/32 CLOSED; total 107/410 = 26.1 %; M5 starts next)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
-* **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
+* **Active milestone:** M5 — Media Pipeline & Evidence Integrity (see `.codex/current_milestone.md`; M4 closed 32/32 = 100 %)
 
 ---
 
@@ -1342,6 +1342,9 @@ M2 (Identity, Auth & RBAC Core) is complete. 30/30 tasks done. The next mileston
 - **Acceptance criteria:** All 13 cases pass; the suite exercises both service-level rules and the HTTP `/api/v1/admin/app-configs/{key}/evaluate` endpoint.
 - **Required tests:** Pest `tests/Feature/Settings/FeatureFlagEvaluationTest.php` — 13/13 pass; full suite 386/386 (1355 assertions) green; PHPStan clean (app/); Pint clean.
 - **Milestone close:** **M3 — Master Configuration & Geography is now complete (24/24 = 100 %).** M4 — Reports Domain & Submission API is the next milestone.
+
+### Milestone close: **M4 — Reports Domain & Submission API is now complete (32/32 = 100 %).** M5 — Media Pipeline & Evidence Integrity (26 tasks; T-M5-001 → T-M5-026) is the next milestone. The first task is the MinIO bucket layout migration; the media pipeline consumes M4's `Report` + `Location` rows to attach evidence.
+
 
 ## 4. In-Progress Tasks
 
