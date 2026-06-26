@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Users\Models;
 
+use App\Modules\Authentication\Models\LoginHistory;
 use App\Modules\Authentication\Models\RefreshToken;
 use Database\Factories\Modules\Users\Models\UserFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -96,6 +97,16 @@ class User extends Authenticatable
     public function refreshTokens(): HasMany
     {
         return $this->hasMany(RefreshToken::class, 'user_id');
+    }
+
+    /**
+     * Login history for this user (per docs/11 §6, §28).
+     *
+     * @return HasMany<LoginHistory, $this>
+     */
+    public function loginHistories(): HasMany
+    {
+        return $this->hasMany(LoginHistory::class, 'user_id');
     }
 
     /**

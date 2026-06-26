@@ -473,7 +473,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_login_histories_table.php`, `backend/app/Modules/Authentication/Models/LoginHistory.php`
 - **Acceptance criteria:** Table created; model write/read works.
 - **Required tests:** Migration + model test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-009 — Create security_events migration and model
 - **Milestone:** M2

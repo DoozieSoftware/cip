@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 15:40 IST (after T-M2-007 done — M2 progress 6/30; total 28/410 = 6.8 %)
+* **Last updated:** 2026-06-26 15:50 IST (after T-M2-008 done — M2 progress 7/30; total 29/410 = 7.1 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 6    | 0           | 0       | 0        | 20 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 7    | 0           | 0       | 0        | 23 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **28** | **0**    | **0**   | **0**    | **6.8 %    |
+| **All** | **Total**                             | **410** | **29** | **0**    | **0**   | **0**    | **7.1 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -402,6 +402,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Acceptance criteria:** Calling `rotate()` marks the parent revoked and returns a new token; old token cannot be used; reuse of a revoked parent is detected and the chain is killed.
 - **Required tests:** Pest `tests/Feature/Authentication/RefreshTokenRotationTest.php` — 8/8 pass; full suite 61/61 (220 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
 - **Notes:** Plaintext is returned exactly once at issue/rotate time and is never persisted. `findByPlaintext()` is O(n) over non-revoked+non-expired rows; this is acceptable for V1 (citizens rarely have more than a handful of active sessions). V2 should add an indexed `token_lookup_id` column for O(1) lookup if traffic warrants. The BelongsTo template order (`<TRelated, TDeclaring>`) tripped PHPStan and was resolved by declaring the type locally inside the method body — this is the canonical fix for `$this`-based relation generics.
+
+
+### T-M2-008 — Create login_histories migration and model
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 15:50 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(auth): complete T-M2-008 — login_histories table + model` (sha: pending)
+- **Files touched:** `backend/database/migrations/2026_06_26_153000_create_login_histories_table.php` (new; uuid PK; user_id FK→users nullOnDelete (failure paths may target unregistered mobiles); mobile (NOT NULL); ip, user_agent, device_fingerprint; success boolean; failure_reason; login_at; composite index on (success, login_at) for stream queries), `backend/app/Modules/Authentication/Models/LoginHistory.php` (new; uses HasUuids; `timestamps = false`; BelongsTo<User, LoginHistory> `user()`; casts success → boolean, login_at → datetime), `backend/app/Modules/Users/Models/User.php` (added `loginHistories(): HasMany<LoginHistory, $this>` relation per D-009), `backend/tests/Feature/Authentication/LoginHistoryTest.php` (new; 5 tests — columns, no updated_at/deleted_at, success roundtrip + relation, failure without user, composite index).
+- **Acceptance criteria:** Table created; model write/read works; failure rows accepted with null user_id; the `user()` relation resolves when user_id is set.
+- **Required tests:** Pest `tests/Feature/Authentication/LoginHistoryTest.php` — 5/5 pass; full suite 66/66 (244 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** `user_id` is nullable and uses `nullOnDelete` (not cascade) because login-history rows are audit records and must survive user deletion. The failure_reason column is short (64 chars) on purpose — we store a constant code (e.g. `invalid_code`, `expired_code`, `rate_limited`) rather than free text.
 
 
 ## 4. In-Progress Tasks
