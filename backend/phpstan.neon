@@ -2,11 +2,12 @@ parameters:
     level: max
     paths:
         - app/
-        - config/
         - database/factories/
         - database/seeders/
     excludePaths:
         - app/Modules/Shared/Http/Middleware/RequestId.php
+        - config/sanctum.php
+        - config/permission.php
     reportUnmatchedIgnoredErrors: false
     treatPhpDocTypesAsCertain: false
     parallel:

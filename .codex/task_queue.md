@@ -284,7 +284,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/config/filesystems.php`
 - **Acceptance criteria:** `Storage::disk('media_minio')->put('hello.txt', 'hi')` round-trips when env is set.
 - **Required tests:** `php artisan tinker` integration probe.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M1-016 — Configure Laravel queue with Redis
 - **Milestone:** M1
@@ -296,7 +296,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/.env.example`, `backend/config/queue.php`
 - **Acceptance criteria:** `php artisan queue:work --once` connects to Redis successfully.
 - **Required tests:** `php artisan queue:work --once --tries=1` exits 0.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M1-017 — Add Shared module skeleton
 - **Milestone:** M1
