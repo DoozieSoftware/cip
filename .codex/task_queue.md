@@ -1664,7 +1664,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Http/Middleware/MediaUploadLimit.php`
 - **Acceptance criteria:** 101MB/hour total returns 413; counter resets hourly.
 - **Required tests:** `tests/Feature/Media/UploadLimitMiddlewareTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-020 — MediaFeatureTest (happy path)
 - **Milestone:** M5
