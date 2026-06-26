@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 21:24 IST (after T-M4-013 done; M4 in progress)
+* **Last updated:** 2026-06-26 21:43 IST (after T-M4-019 done; M4 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -34,7 +34,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
-| M4 | Reports Domain & Submission API | 32 | 18 | 0 | 0 | 0 | 56 % |
+| M4 | Reports Domain & Submission API | 32 | 19 | 0 | 0 | 0 | 59 % |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **93** | **0** | **0** | **0** | **22.7 %** |
+| **All** | **Total** | **410** | **94** | **0** | **0** | **0** | **22.9 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M4-019 — Implement ReportPolicy and LocationPolicy
+- **Milestone:** M4
+- **Status:** Done
+- **Completed at:** 2026-06-26 21:43 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(reports): complete T-M4-019 — Implement ReportPolicy and LocationPolicy` (sha: `71d69b7a`)
+- **Files touched:** backend/app/Modules/Reports/Policies/ReportPolicy.php (new; view/update/delete/review/assign/resolve/export abilities, extends BasePolicy, owner+staff ownership model), backend/app/Modules/Reports/Policies/LocationPolicy.php (new; view/update/delete abilities, derives ownership from the linked Report row), backend/tests/Feature/Reports/PolicyTest.php (new; 5 Pest feature tests covering cross-citizen ownership gate, moderator bypass, draft-only update, staff-only review/assign/delete, and LocationPolicy ownership derivation)
+- **Acceptance criteria:** Citizen A cannot read citizen B's report; moderator can; owner can update only their own draft; review/assign are moderator+ only; LocationPolicy follows the linked Report's ownership.
+- **Required tests:** tests/Feature/Reports/PolicyTest.php — 5 Pest feature tests (14 assertions) pass; full suite green after this commit; Pint --test clean.
+- **Notes:** Policies extend BasePolicy so super_admin/system bypass and suspended/disabled/pending denial are inherited — concrete methods only handle the per-ability rules.
+
+
 
 ### T-M4-013 — Seed default report types
 - **Milestone:** M4
@@ -1197,6 +1210,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 21:43 IST | Logged T-M4-019 done; M4 19/32; total 94/410 = 22.9 %. | Lead Solution Architect | T-M4-019 |
 | 2026-06-26 21:24 IST | Logged T-M4-013 done; M4 18/32; total 93/410 = 22.7 %. | Lead Solution Architect | T-M4-013 |
 | 2026-06-26 21:24 IST | Logged T-M4-012 done; M4 17/32; total 92/410 = 22.4 %. | Lead Solution Architect | T-M4-012 |
 | 2026-06-26 21:24 IST | Logged T-M4-011 done; M4 16/32; total 91/410 = 22.2 %. | Lead Solution Architect | T-M4-011 |
