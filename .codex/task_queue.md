@@ -2210,7 +2210,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docs/routing.md`
 - **Acceptance criteria:** Doc has a working example for each operator.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-016 — README section for routing
 - **Milestone:** M7

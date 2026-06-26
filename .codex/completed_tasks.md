@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 05:24 IST (after T-M7-014 done; M7 in progress)
+* **Last updated:** 2026-06-27 05:25 IST (after T-M7-015 done; M7 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M5 — Media Pipeline & Evidence Integrity (see `.codex/current_milestone.md`; M4 closed 32/32 = 100 %)
 
@@ -37,7 +37,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M4 | Reports Domain & Submission API | 32 | 32 | 0 | 0 | 0 | 100 % |
 | M5 | Media Pipeline & Evidence Integrity | 26 | 26 | 0 | 0 | 0 | 100 % |
 | M6 | Workflow Engine & State Machine | 22 | 22 | 0 | 0 | 0 | 100 % |
-| M7 | Routing Engine & Department Assignment | 18 | 14 | 0 | 0 | 0 | 78 % |
+| M7 | Routing Engine & Department Assignment | 18 | 15 | 0 | 0 | 0 | 83 % |
 | M8  | AI Vision Pipeline & Provider Abstraction | 30  | 0    | 0           | 0       | 0        | 0 %        |
 | M9  | Notification & Eventing Platform         | 20    | 0    | 0           | 0       | 0        | 0 %        |
 | M10 | Moderator Portal                         | 28    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **169** | **0** | **0** | **0** | **41.2 %** |
+| **All** | **Total** | **410** | **170** | **0** | **0** | **0** | **41.5 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M7-015 — Author docs/routing.md
+- **Milestone:** M7
+- **Status:** Done
+- **Completed at:** 2026-06-27 05:25 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `docs(routing): complete T-M7-015 — Author docs/routing.md` (sha: `0f6e9d506709a16309a5675278ce189f62088cc1`)
+- **Files touched:** docs/routing.md (new, 295 lines: DSL, ordering, fallback, assignment, reassignment, cache, audit, Bangalore samples, test inventory)
+- **Acceptance criteria:** Working example for each of the 7 operators + AND/OR + nested OR
+- **Required tests:** Manual verification (no test file required per task)
+- **Notes:** 
+
+
 
 ### T-M7-014 — Update OpenAPI for routing admin
 - **Milestone:** M7
@@ -2188,6 +2201,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-27 05:25 IST | Logged T-M7-015 done; M7 15/18; total 170/410 = 41.5 %. | Lead Solution Architect | T-M7-015 |
 | 2026-06-27 05:24 IST | Logged T-M7-014 done; M7 14/18; total 169/410 = 41.2 %. | Lead Solution Architect | T-M7-014 |
 | 2026-06-27 05:19 IST | Logged T-M7-013 done; M7 13/18; total 168/410 = 41.0 %. | Lead Solution Architect | T-M7-013 |
 | 2026-06-27 05:14 IST | Logged T-M7-012 done; M7 12/18; total 167/410 = 40.7 %. | Lead Solution Architect | T-M7-012 |
