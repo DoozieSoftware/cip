@@ -2,8 +2,8 @@
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** In Progress (6 / 24 tasks complete; T-M3-007 next)
-**Last updated:** 2026-06-27 01:05 IST (after T-M3-006 done)
+**Status:** In Progress (7 / 24 tasks complete; T-M3-008 next)
+**Last updated:** 2026-06-27 01:30 IST (after T-M3-007 done)
 **Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M3, `.codex/task_queue.md` §M3, `docs/02` §11 §17, `docs/03` §10 §15, `docs/04` §5 §7 §8 §14, `docs/05` §22, `docs/09` §7, `docs/13` §5, `docs/14` §19 §37, `docs/15` §6–7, `docs/16` §36
 
 > M1 is complete (22/22) and M2 is complete (30/30). M3 lands the configuration master and the geography tree that everything downstream is built on. Geography terminates at the ward level; the master-config GET endpoint is the only API surface — every portal reads it on cold start and on cache-invalidation events.
@@ -101,6 +101,7 @@ Land the database-driven configuration master that powers every other module. Th
 * **T-M3-004** Cities (district_id FK, code, name) — **Done** (commit `c6eba1`).
 * **T-M3-005** Zones (city_id FK, name, code) — **Done** (commit `dd2dd53`).
 * **T-M3-006** Wards with `boundary_polygon` (POLYGON + spatial index, driver-guarded) — **Done** (commit `a8efb9e`).
-* Active task: **T-M3-007 — Create departments migration** (UUID PK, name, unique code, parent_id self-FK, jurisdiction, address, email, phone, working_hours JSON, holiday_calendar JSON, default_workflow_id, default_sla_minutes, escalation_matrix JSON, active, soft deletes).
+* **T-M3-007** Departments (UUID PK, name, unique code, parent_id self-FK with nullOnDelete, jurisdiction, address, email, phone, working_hours JSON, holiday_calendar JSON, default_workflow_id, default_sla_minutes default 2880, escalation_matrix JSON, active, soft deletes) — **Done** (commit `61e3818`).
+* Active task: **T-M3-008 — Create Department model with soft deletes** (UUID PK, name, unique code, parent_id self-FK, jurisdiction, address, email, phone, working_hours JSON, holiday_calendar JSON, default_workflow_id, default_sla_minutes, escalation_matrix JSON, active, soft deletes).
 * Blockers: none.
-* Next task on completion: T-M3-008 (department_geography — many-to-many between departments and the geography tree).
+* Next task on completion: T-M3-009 (department_users pivot migration).

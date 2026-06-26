@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 01:05 IST (after T-M3-006 done; M3 6/24; total 57/410 = 13.9 %)
+* **Last updated:** 2026-06-27 01:30 IST (after T-M3-007 done; M3 7/24; total 58/410 = 14.1 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -33,7 +33,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
-| M3  | Master Configuration & Geography         | 24    | 6    | 0           | 0       | 0        | 25 %       |
+| M3  | Master Configuration & Geography         | 24    | 7    | 0           | 0       | 0        | 29 %       |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **57** | **0**    | **0**   | **0**    | **13.9 %   |
+| **All** | **Total**                             | **410** | **58** | **0**    | **0**   | **0**    | **14.1 %   |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,7 +56,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 36 | 36 % |
+| Foundations | M2, M3, M5, M9 | 100 | 37 | 37 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
@@ -737,6 +737,16 @@ M2 (Identity, Auth & RBAC Core) is complete. 30/30 tasks done. The next mileston
 - **Acceptance criteria:** Spatial index created on MySQL; raw SQL guarded by `DB::statement` and `getDriverName()`; SQLite gets a TEXT fallback column; insert roundtrips a polygon (WKT) on the test driver; soft delete hides the row from default queries.
 - **Required tests:** Pest `tests/Feature/Geography/WardPolygonTest.php` — 9/9 pass; full suite 252/252 (942 assertions) green; PHPStan clean (app/); Pint clean. (Pint applied the `blank_line_before_statement`, `class_definition`, `braces_position`, `fully_qualified_strict_types`, and `ordered_imports` fixers to the new files; non-T-M3-006 PHPStan noise in `StateFactory.php` + `RolesAndPermissionsSeeder.php` is pre-existing and out of scope for this task.)
 
+### T-M3-007 — Create departments migration
+- **Milestone:** M3
+- **Status:** Done
+- **Completed at:** 2026-06-27 01:30 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(departments): complete T-M3-007 — departments migration` (sha: 61e3818)
+- **Files touched:** `backend/database/migrations/2026_06_27_010000_create_departments_table.php` (new; UUID PK, name, unique code varchar(32), parent_id UUID self-FK → departments with nullOnDelete, jurisdiction, address, email, phone varchar(32), working_hours JSON, holiday_calendar JSON, default_workflow_id UUID (FK added in a follow-up migration when workflow_definitions lands in T-M3-014), default_sla_minutes unsigned int default 2880, escalation_matrix JSON, active bool, timestamps, softDeletes (deleted_at); MySQL InnoDB / utf8mb4 / collation pins), `backend/tests/Feature/Database/DepartmentsTableTest.php` (new; 5 tests using `DB::table` + `Str::uuid` so the test is independent of the `Department` model which lands in T-M3-008 — required columns, unique (code) enforced, parent_id FK rejects non-existent refs, nullOnDelete cascades parent deletion to children, deleted_at column exists and starts null).
+- **Acceptance criteria:** Self-FK works; soft delete column present; unique code enforced.
+- **Required tests:** Pest `tests/Feature/Database/DepartmentsTableTest.php` — 5/5 pass; full suite 257/257 (964 assertions) green; PHPStan clean (app/); Pint clean. Per D-009 the `Department` model and its `parent`/`children` relations ship in T-M3-008.
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -773,6 +783,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-27 01:30 IST | Logged T-M3-007 done; M3 7/24; total 58/410 = 14.1 %. | Lead Solution Architect | T-M3-007 |
 | 2026-06-27 01:05 IST | Logged T-M3-006 done; M3 6/24; total 57/410 = 13.9 %. | Lead Solution Architect | T-M3-006 |
 | 2026-06-27 00:40 IST | Logged T-M3-005 done (backfill; the code commit landed in a prior session before its docs entry). | Lead Solution Architect | T-M3-005 |
 | 2026-06-27 00:20 IST | Logged T-M3-004 done (backfill; the code commit landed in a prior session before its docs entry). | Lead Solution Architect | T-M3-004 |
@@ -843,7 +854,7 @@ Snapshot at file initialization. Updated as the repository grows.
 | Pest tests | 221 passing (850 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 64 |
+| Git commits on `main` | 66 |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |

@@ -820,7 +820,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** `tests/Feature/Geography/WardPolygonTest.php`.
 - **Status:** Done
 
-### T-M3-007 — Create departments migration
+### T-M3-007 — Create departments migration [DONE 2026-06-27 — commit 61e3818]
 - **Milestone:** M3
 - **Title:** Create departments migration
 - **Description:** Table `departments`: `id` UUID, `name`, `code` (unique), `parent_id` UUID nullable, `jurisdiction`, `address`, `email`, `phone`, `working_hours` JSON, `holiday_calendar` JSON, `default_workflow_id` UUID nullable, `default_sla_minutes`, `escalation_matrix` JSON, `active`, `timestamps`, `deleted_at`.
@@ -830,7 +830,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_departments_table.php`
 - **Acceptance criteria:** Self-FK works; soft delete column present.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-008 — Create Department model with soft deletes
 - **Milestone:** M3
