@@ -2102,7 +2102,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Events/ReportAssigned.php`
 - **Acceptance criteria:** Event dispatched and serializable.
 - **Required tests:** `tests/Feature/Reports/ReportAssignedEventTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-007 — Wire report to routing after AI complete
 - **Milestone:** M7
