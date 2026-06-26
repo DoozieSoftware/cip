@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\HealthController;
 use App\Modules\Authentication\Http\Controllers\AuthController;
 use App\Modules\Departments\Http\Controllers\Admin\DepartmentController;
+use App\Modules\Media\Http\Controllers\Api\MediaController;
 use App\Modules\Reports\Http\Controllers\Api\ReportsController;
 use App\Modules\Settings\Http\Controllers\Admin\AppConfigController;
 use App\Modules\Settings\Http\Controllers\Admin\SettingController;
@@ -71,6 +72,8 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:sanctum', 'throttle:'.RouteServiceProvider::LIMITER_CITIZEN])->group(function (): void {
         // T-M4-022 — POST /api/v1/reports
         Route::post('reports', [ReportsController::class, 'store'])->name('api.v1.reports.store');
+        // T-M5-012 — POST /api/v1/reports/{id}/photos
+        Route::post('reports/{id}/photos', [MediaController::class, 'uploadPhotos'])->name('api.v1.reports.photos.store');
         // T-M4-023 — POST /api/v1/reports/{id}/submit
         Route::post('reports/{id}/submit', [ReportsController::class, 'submit'])->name('api.v1.reports.submit');
         // T-M4-027 — GET /api/v1/citizen/dashboard
