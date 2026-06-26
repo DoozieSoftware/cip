@@ -529,7 +529,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Status:** Done
 - **Completed at:** 2026-06-26 18:50 IST
 - **Agent / Committer:** Lead Solution Architect
-- **Commit:** `feat(security): complete T-M2-018 — DeviceFingerprintService` (sha: <pending>)
+- **Commit:** `feat(security): complete T-M2-018 — DeviceFingerprintService` (sha: 3839e9b9)
 - **Files touched:** `backend/app/Modules/Security/Services/DeviceFingerprintService.php` (new; `fromRequest(Request): array` returns `{user_agent, screen, timezone, language, canvas, webgl, ip, hash}`; reads canvas/webgl/screen/timezone from dedicated `X-` headers, language from `X-Language` or falls back to `Accept-Language`; `hash(array): string` is a stable SHA-256 over the concatenation of the non-null components; `BaseService` subclass so the audit/logging helpers are available even though the service is stateless), `backend/tests/Unit/Security/DeviceFingerprintServiceTest.php` (new; 8 tests — bare request, UA + IP, X- headers, Accept-Language fallback, stable hash, hash changes on any component, blank-string normalisation, completely empty request).
 - **Acceptance criteria:** Returns a stable SHA-256 hash for the same input; never throws on missing fields; canvas/webgl/screen/timezone all readable from the documented headers.
 - **Required tests:** Pest `tests/Unit/Security/DeviceFingerprintServiceTest.php` — 8/8 pass; full suite 134/134 (533 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
