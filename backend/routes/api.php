@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\HealthController;
 use App\Modules\Authentication\Http\Controllers\AuthController;
+use App\Modules\Departments\Http\Controllers\Admin\DepartmentController;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Route;
 
@@ -33,5 +34,18 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:sanctum', 'throttle:'.RouteServiceProvider::LIMITER_CITIZEN])->group(function (): void {
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
         Route::get('auth/me', [AuthController::class, 'me'])->name('api.v1.auth.me');
+    });
+
+    // Super Admin (M3) — gated to super_admin role; rate limited with the admin limiter.
+    Route::middleware([
+        'auth:sanctum',
+        'throttle:'.RouteServiceProvider::LIMITER_ADMIN,
+    ])->prefix('admin')->name('api.v1.admin.')->group(function (): void {
+        // Departments CRUD (T-M3-016)
+        Route::get('departments', [DepartmentController::class, 'index'])->name('departments.index');
+        Route::post('departments', [DepartmentController::class, 'store'])->name('departments.store');
+        Route::get('departments/{department}', [DepartmentController::class, 'show'])->name('departments.show');
+        Route::put('departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
+        Route::delete('departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
     });
 });
