@@ -373,7 +373,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Status:** Done
 - **Completed at:** 2026-06-26 15:15 IST
 - **Agent / Committer:** Lead Solution Architect
-- **Commit:** `feat(auth): complete T-M2-005 — Otp Eloquent model` (sha: pending)
+- **Commit:** `feat(auth): complete T-M2-005 — Otp Eloquent model` (sha: fd41fac6)
 - **Files touched:** `backend/app/Modules/Authentication/Models/Otp.php` (new; uses HasUuids; `timestamps = false` because otps are immutable; fillable = mobile/code_hash/expires_at/consumed_at/attempts/ip/user_agent/created_at; casts for datetime + int; helpers: `isExpired()` / `isConsumed()` / `isUsable()` (expired || consumed || attempts >= 5) / `incrementAttempts()` / `markConsumed()`; `scopeLatestFor(mobile)` returns Builder<Otp> ordered by created_at desc), `backend/tests/Unit/Authentication/OtpModelTest.php` (new; 9 tests — uuid PK, casts, isExpired past/future, isConsumed, isUsable, incrementAttempts persistence, markConsumed persistence, latestFor scope).
 - **Acceptance criteria:** Model methods return correct booleans for fixtures; `Otp::query()->create(...)` round-trips; `latestFor` returns the newest record first.
 - **Required tests:** Pest `tests/Unit/Authentication/OtpModelTest.php` — 9/9 pass; full suite 47/47 (175 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
