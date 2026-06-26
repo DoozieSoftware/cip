@@ -1817,7 +1817,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Workflow/ValueObjects/WorkflowDecision.php`
 - **Acceptance criteria:** Constructor validates types.
 - **Required tests:** Unit test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-006 — ConditionEvaluator service
 - **Milestone:** M6
