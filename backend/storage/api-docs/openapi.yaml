@@ -887,6 +887,127 @@ components:
                         properties:
                           deleted: { type: boolean, example: true }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/workflows:
+    get:
+      tags: [Workflows]
+      summary: 'List workflow definitions (paginated)'
+      operationId: admin.workflows.index
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: active
+          schema: { type: boolean }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 25, maximum: 200 }
+      responses:
+        '200':
+          description: 'Paginated list of workflow definitions.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkflowListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+    post:
+      tags: [Workflows]
+      summary: 'Create a workflow definition (with optional states + transitions)'
+      operationId: admin.workflows.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WorkflowStoreRequest' }
+      responses:
+        '201':
+          description: 'Workflow created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkflowResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: 'A workflow with this code already exists.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/workflows/{workflow}:
+    parameters:
+      - in: path
+        name: workflow
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Workflows]
+      summary: 'Show a workflow definition with its full graph (states + transitions)'
+      operationId: admin.workflows.show
+      responses:
+        '200':
+          description: 'Workflow found.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkflowResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Workflows]
+      summary: 'Update a workflow definition (name / active / states / transitions)'
+      operationId: admin.workflows.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WorkflowUpdateRequest' }
+      responses:
+        '200':
+          description: 'Workflow updated. Read-side cache is invalidated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkflowResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: 'The new code is already in use by another workflow.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Workflows]
+      summary: 'Soft-delete a workflow definition'
+      description: |
+        The default civic workflow (`code = civic_default`) is
+        protected and cannot be deleted; a workflow that is
+        still referenced by reports cannot be deleted either
+        — use the `active` flag via PUT to retire it.
+      operationId: admin.workflows.destroy
+      responses:
+        '200':
+          description: 'Workflow soft-deleted.'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          deleted: { type: boolean, example: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: 'The default civic workflow is protected, or the workflow is still in use.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /api/v1/reports:
     post:
       tags: [Reports]
@@ -1325,6 +1446,158 @@ components:
           nullable: true
           additionalProperties: true
         created_at: { type: string, format: date-time }
+    WorkflowState:
+      type: object
+      description: 'A node in a workflow graph (docs/04 section 11).'
+      required: [id, code, name]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, maxLength: 64, description: 'Natural key inside the parent definition (e.g. "draft", "submitted").' }
+        name: { type: string, maxLength: 255 }
+        description: { type: string, nullable: true }
+        is_initial: { type: boolean, description: 'Exactly one per definition; the entry state.' }
+        is_terminal: { type: boolean, description: 'One or more per definition; no outgoing transitions.' }
+        sort_order: { type: integer, minimum: 0 }
+        color: { type: string, nullable: true, description: '7- or 9-char hex color for the timeline UI.' }
+        active: { type: boolean }
+    WorkflowTransition:
+      type: object
+      description: 'A directed edge in a workflow graph (docs/04 section 11).'
+      required: [id, from_state_id, to_state_id, event, active]
+      properties:
+        id: { type: string, format: uuid }
+        from_state_id: { type: string, format: uuid }
+        to_state_id: { type: string, format: uuid }
+        event: { type: string, maxLength: 64, description: 'The action that fires this transition (e.g. "submit", "assign", "reject").' }
+        required_role: { type: string, nullable: true, maxLength: 64, description: 'Spatie role required on the actor; null means the engine accepts any actor (or null actor for system events).' }
+        required_permission: { type: string, nullable: true, maxLength: 128 }
+        conditions:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: 'JSON-Schema-fragment conditions the engine evaluates against (report.*, actor.*).'
+        sla_minutes: { type: integer, nullable: true, minimum: 1, maximum: 525600, description: 'SLA in minutes; null means the transition has no SLA.' }
+        notify_before_minutes: { type: integer, nullable: true, minimum: 0, maximum: 525600 }
+        priority: { type: integer, minimum: 0, description: 'Higher priority wins on (from_state, event) ties.' }
+        active: { type: boolean }
+    Workflow:
+      type: object
+      description: 'A workflow definition with its full state + transition graph (M6).'
+      required: [id, code, name, active, states, transitions]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, maxLength: 64, description: 'Natural key. Snake-case lower-case letters, digits, underscores.' }
+        name: { type: string, maxLength: 255 }
+        description: { type: string, nullable: true }
+        active: { type: boolean }
+        states:
+          type: array
+          items: { $ref: '#/components/schemas/WorkflowState' }
+        transitions:
+          type: array
+          items: { $ref: '#/components/schemas/WorkflowTransition' }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        deleted_at: { type: string, format: date-time, nullable: true }
+    WorkflowStoreRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string, maxLength: 64, pattern: '^[a-z0-9_]+$' }
+        name: { type: string, maxLength: 255 }
+        description: { type: string, nullable: true }
+        active: { type: boolean, default: true }
+        states:
+          type: array
+          description: 'Optional initial states. Sent in full; the service replaces the current set.'
+          items:
+            type: object
+            required: [code, name]
+            properties:
+              code: { type: string, maxLength: 64 }
+              name: { type: string, maxLength: 255 }
+              description: { type: string, nullable: true }
+              is_initial: { type: boolean }
+              is_terminal: { type: boolean }
+              sort_order: { type: integer, minimum: 0 }
+              color: { type: string, nullable: true, maxLength: 16 }
+              active: { type: boolean }
+        transitions:
+          type: array
+          description: 'Optional initial transitions. Reference states by their `code` value.'
+          items:
+            type: object
+            required: [from_state, to_state, event]
+            properties:
+              from_state: { type: string, maxLength: 64 }
+              to_state: { type: string, maxLength: 64 }
+              event: { type: string, maxLength: 64 }
+              required_role: { type: string, nullable: true, maxLength: 64 }
+              required_permission: { type: string, nullable: true, maxLength: 128 }
+              conditions:
+                type: object
+                nullable: true
+                additionalProperties: true
+              sla_minutes: { type: integer, nullable: true, minimum: 1, maximum: 525600 }
+              notify_before_minutes: { type: integer, nullable: true, minimum: 0, maximum: 525600 }
+              priority: { type: integer, minimum: 0 }
+              active: { type: boolean }
+    WorkflowUpdateRequest:
+      type: object
+      description: 'All fields optional. `states` and `transitions` blocks, when sent, REPLACE the current set in full.'
+      properties:
+        code: { type: string, maxLength: 64, pattern: '^[a-z0-9_]+$' }
+        name: { type: string, maxLength: 255 }
+        description: { type: string, nullable: true }
+        active: { type: boolean }
+        states:
+          type: array
+          items:
+            type: object
+            required: [code, name]
+            properties:
+              code: { type: string, maxLength: 64 }
+              name: { type: string, maxLength: 255 }
+              description: { type: string, nullable: true }
+              is_initial: { type: boolean }
+              is_terminal: { type: boolean }
+              sort_order: { type: integer, minimum: 0 }
+              color: { type: string, nullable: true, maxLength: 16 }
+              active: { type: boolean }
+        transitions:
+          type: array
+          items:
+            type: object
+            required: [from_state, to_state, event]
+            properties:
+              from_state: { type: string, maxLength: 64 }
+              to_state: { type: string, maxLength: 64 }
+              event: { type: string, maxLength: 64 }
+              required_role: { type: string, nullable: true, maxLength: 64 }
+              required_permission: { type: string, nullable: true, maxLength: 128 }
+              conditions:
+                type: object
+                nullable: true
+                additionalProperties: true
+              sla_minutes: { type: integer, nullable: true, minimum: 1, maximum: 525600 }
+              notify_before_minutes: { type: integer, nullable: true, minimum: 0, maximum: 525600 }
+              priority: { type: integer, minimum: 0 }
+              active: { type: boolean }
+    WorkflowResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/Workflow' }
+    WorkflowListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/Workflow' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
 tags:
   -
     name: Health
@@ -1341,6 +1614,9 @@ tags:
   -
     name: 'Feature Flags'
     description: 'Super Admin CRUD for app_configs (feature flags) and the deterministic evaluator.'
+  -
+    name: Workflows
+    description: 'Super Admin CRUD for workflow definitions (M6) - state machine graphs, transitions, and SLA configuration.'
   -
     name: Reports
     description: 'Citizen report submission + read-back; staff report search, read, and timeline.'
