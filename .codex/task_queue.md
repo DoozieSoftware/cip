@@ -998,7 +998,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/seeders/AppConfigsSeeder.php`
 - **Acceptance criteria:** All 10 flags exist; defaults match `docs/09`.
 - **Required tests:** Seed test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-022 — Document master-data strategy
 - **Milestone:** M3
