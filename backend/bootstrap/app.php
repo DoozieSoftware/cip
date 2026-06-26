@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Security\Http\Middleware\AuditMiddleware;
 use App\Modules\Shared\Exceptions\ApiException;
+use App\Modules\Shared\Http\Middleware\IdempotencyKey;
 use App\Modules\Shared\Http\Middleware\RequestId;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(RequestId::class);
+        $middleware->append(IdempotencyKey::class);
         $middleware->append(AuditMiddleware::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
