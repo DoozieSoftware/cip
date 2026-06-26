@@ -1127,7 +1127,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_reports_table.php`
 - **Acceptance criteria:** All FKs and indexes created.
 - **Required tests:** Migration + index probe.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-008 — Create Report model and factory
 - **Milestone:** M4
