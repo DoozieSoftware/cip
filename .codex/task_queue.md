@@ -892,7 +892,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** `tests/Feature/Settings/SettingsServiceTest.php`.
 - **Status:** Done
 
-### T-M3-013 — Implement FeatureFlagService
+### T-M3-013 — Implement FeatureFlagService [DONE 2026-06-27 — commit see git log]
 - **Milestone:** M3
 - **Title:** Implement FeatureFlagService
 - **Description:** `FeatureFlagService::enabled(key, ?User $user = null): bool` evaluates boolean flag, rollout percentage via deterministic hash on `user_id`, and cohort match.
@@ -902,7 +902,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Settings/Services/FeatureFlagService.php`
 - **Acceptance criteria:** Same user always gets same answer; rollout 0 means never, 100 means always; cohort filter respected.
 - **Required tests:** `tests/Feature/Settings/FeatureFlagServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-014 — DepartmentRepository and DepartmentService
 - **Milestone:** M3
