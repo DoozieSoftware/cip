@@ -2042,7 +2042,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_routing_rules_table.php`
 - **Acceptance criteria:** FKs and `priority` index created.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-002 — RoutingRule model
 - **Milestone:** M7
