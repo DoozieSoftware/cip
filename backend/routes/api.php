@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\HealthController;
 use App\Modules\Authentication\Http\Controllers\AuthController;
 use App\Modules\Departments\Http\Controllers\Admin\DepartmentController;
+use App\Modules\Settings\Http\Controllers\Admin\SettingController;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Route;
 
@@ -47,5 +48,12 @@ Route::prefix('v1')->group(function (): void {
         Route::get('departments/{department}', [DepartmentController::class, 'show'])->name('departments.show');
         Route::put('departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
         Route::delete('departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
+
+        // Settings CRUD (T-M3-017)
+        Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::post('settings', [SettingController::class, 'store'])->name('settings.store');
+        Route::get('settings/{setting}', [SettingController::class, 'show'])->name('settings.show');
+        Route::put('settings/{setting}', [SettingController::class, 'update'])->name('settings.update');
+        Route::delete('settings/{setting}', [SettingController::class, 'destroy'])->name('settings.destroy');
     });
 });
