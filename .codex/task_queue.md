@@ -1367,7 +1367,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Http/Controllers/Api/CitizenDashboardController.php`, `backend/app/Modules/Reports/Http/Resources/DashboardResource.php`
 - **Acceptance criteria:** Counts are scoped to the citizen; non-citizens get 403.
 - **Required tests:** `tests/Feature/Reports/CitizenDashboardEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-028 — GET /api/v1/citizen/reports endpoints
 - **Milestone:** M4
