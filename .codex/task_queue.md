@@ -2138,7 +2138,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Routing/Http/Controllers/Admin/RoutingAdminController.php`, `backend/app/Modules/Routing/Http/Requests/StoreRoutingRuleRequest.php`, `backend/app/Modules/Routing/Http/Resources/RoutingRuleResource.php`
 - **Acceptance criteria:** Reorder endpoint accepts `priority` updates and persists.
 - **Required tests:** `tests/Feature/Routing/RoutingCrudTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-010 — RoutingReassign endpoint
 - **Milestone:** M7
