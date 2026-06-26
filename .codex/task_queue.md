@@ -1055,7 +1055,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_report_types_table.php`
 - **Acceptance criteria:** Table created with all required fields and unique `code`.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-002 — Create ReportType model and factory
 - **Milestone:** M4
