@@ -856,7 +856,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** Migration test.
 - **Status:** Done
 
-### T-M3-010 — Create settings migration and model
+### T-M3-010 — Create settings migration and model [DONE 2026-06-27 — commit 6a87d45]
 - **Milestone:** M3
 - **Title:** Create settings migration and model
 - **Description:** Table `settings`: `id`, `key` (unique), `value` JSON, `type`, `description`, `is_public`, `timestamps`, `deleted_at`; model with casts.
@@ -866,7 +866,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_settings_table.php`, `backend/app/Modules/Settings/Models/Setting.php`
 - **Acceptance criteria:** `Setting::set('foo', 'bar')` and `get('foo')` roundtrip.
 - **Required tests:** `tests/Feature/Settings/SettingModelTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-011 — Create app_configs migration and model (feature flags)
 - **Milestone:** M3

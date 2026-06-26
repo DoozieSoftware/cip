@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 02:25 IST (after T-M3-009 done; M3 9/24; total 60/410 = 14.6 %)
+* **Last updated:** 2026-06-27 02:55 IST (after T-M3-010 done; M3 10/24; total 61/410 = 14.9 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -33,7 +33,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
-| M3  | Master Configuration & Geography         | 24    | 9    | 0           | 0       | 0        | 38 %       |
+| M3  | Master Configuration & Geography         | 24    | 10   | 0           | 0       | 0        | 42 %       |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **60** | **0**    | **0**   | **0**    | **14.6 %   |
+| **All** | **Total**                             | **410** | **61** | **0**    | **0**   | **0**    | **14.9 %   |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,7 +56,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 39 | 39 % |
+| Foundations | M2, M3, M5, M9 | 100 | 40 | 40 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
@@ -767,6 +767,16 @@ M2 (Identity, Auth & RBAC Core) is complete. 30/30 tasks done. The next mileston
 - **Acceptance criteria:** Migration roundtrips; unique constraint enforced; FK cascade on hard delete only.
 - **Required tests:** Pest `tests/Feature/Database/DepartmentUsersTableTest.php` — 6/6 pass; full suite 270/270 (1006 assertions) green; PHPStan clean (app/); Pint clean. Per D-009 the `DepartmentUser` model and the `User::departments()` / `Department::users()` belongsToMany land in T-M3-010 (the smallest unit the rest of M3 needs in place).
 
+### T-M3-010 — Create settings migration and model
+- **Milestone:** M3
+- **Status:** Done
+- **Completed at:** 2026-06-27 02:55 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(settings): complete T-M3-010 — settings migration and model` (sha: 6a87d45)
+- **Files touched:** `backend/database/migrations/2026_06_27_030000_create_settings_table.php` (new; UUID PK, unique `key` (dotted path), `value` JSON, `type` string default 'string' (string|int|bool|json|datetime), description, is_public bool default false, timestamps, softDeletes — forget preserves an audit trail; index on is_public; MySQL InnoDB / utf8mb4 / collation pins), `backend/app/Modules/Settings/Models/Setting.php` (new; HasUuids + HasFactory<SettingFactory> + SoftDeletes, fillable for every column, casts (value as array, is_public as bool); static `Setting::get(string $key, mixed $default = null)` reads + coerces by declared type, `Setting::set(string $key, mixed $value, string $type = 'string')` upserts via updateOrCreate; coerce() handles string / int / bool / datetime — JSON is the canonical on-disk format; the SettingsService in T-M3-012 wraps these with a Redis cache), `backend/database/factories/Modules/Settings/Models/SettingFactory.php` (new; faker factory with unique dotted key, sample value, default 'string' type, sentence description), `backend/tests/Feature/Settings/SettingModelTest.php` (new; 11 tests — required columns, unique (key) enforced via direct create, string / int / bool / JSON / datetime roundtrips through set→get, default fallback on miss, soft-deleted key returns default, table + UUID PK, value cast to array).
+- **Acceptance criteria:** `Setting::set('foo', 'bar')` and `Setting::get('foo')` roundtrip; int / bool / json / datetime types round-trip with the right PHP type.
+- **Required tests:** Pest `tests/Feature/Settings/SettingModelTest.php` — 11/11 pass; full suite 281/281 (1032 assertions) green; PHPStan clean (app/); Pint clean.
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -803,6 +813,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-27 02:55 IST | Logged T-M3-010 done; M3 10/24; total 61/410 = 14.9 %. | Lead Solution Architect | T-M3-010 |
 | 2026-06-27 02:25 IST | Logged T-M3-009 done; M3 9/24; total 60/410 = 14.6 %. | Lead Solution Architect | T-M3-009 |
 | 2026-06-27 02:00 IST | Logged T-M3-008 done; M3 8/24; total 59/410 = 14.4 %. | Lead Solution Architect | T-M3-008 |
 | 2026-06-27 01:30 IST | Logged T-M3-007 done; M3 7/24; total 58/410 = 14.1 %. | Lead Solution Architect | T-M3-007 |
@@ -876,7 +887,7 @@ Snapshot at file initialization. Updated as the repository grows.
 | Pest tests | 221 passing (850 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 70 |
+| Git commits on `main` | 72 |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |
