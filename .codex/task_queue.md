@@ -1700,7 +1700,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/Media/MediaJobTest.php`
 - **Acceptance criteria:** `Queue::fake` shows correct job dispatched.
 - **Required tests:** `vendor/bin/pest tests/Feature/Media/MediaJobTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-023 — Update OpenAPI for media endpoints
 - **Milestone:** M5
