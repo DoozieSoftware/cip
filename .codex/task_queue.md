@@ -1022,7 +1022,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/storage/api-docs/openapi.yaml`
 - **Acceptance criteria:** `swagger-cli validate` passes; new endpoints visible in Swagger UI.
 - **Required tests:** `tests/Feature/OpenApiAdminTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-024 — Add Pest feature suite for feature flag evaluation
 - **Milestone:** M3
