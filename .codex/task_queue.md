@@ -2126,7 +2126,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Routing/Services/RoutingEngine.php`
 - **Acceptance criteria:** Missing config throws `ROUTING_FALLBACK_MISSING`; configured fallback assigns correctly.
 - **Required tests:** `tests/Feature/Routing/RoutingFallbackTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-009 — /api/v1/admin/routing CRUD
 - **Milestone:** M7
