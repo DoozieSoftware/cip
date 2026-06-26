@@ -986,7 +986,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/seeders/DepartmentsSeeder.php`
 - **Acceptance criteria:** `Department::where('code', 'BBMP')->exists()` is true.
 - **Required tests:** `tests/Feature/Departments/DepartmentsSeedTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-021 — Seed default feature flags
 - **Milestone:** M3

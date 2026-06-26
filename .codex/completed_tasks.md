@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 07:55 IST (after T-M3-019 done; M3 19/24; total 70/410 = 17.1 %)
+* **Last updated:** 2026-06-27 08:20 IST (after T-M3-020 done; M3 20/24; total 71/410 = 17.3 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -33,7 +33,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
-| M3  | Master Configuration & Geography         | 24    | 19   | 0           | 0       | 0        | 79 %       |
+| M3  | Master Configuration & Geography         | 24    | 20   | 0           | 0       | 0        | 83 %       |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **70** | **0**    | **0**   | **0**    | **17.1 %   |
+| **All** | **Total**                             | **410** | **71** | **0**    | **0**   | **0**    | **17.3 %   |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,11 +56,11 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 49 | 49 % |
+| Foundations | M2, M3, M5, M9 | 100 | 50 | 50 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
-| **Total** | | **410** | **70** | **17.1 % |
+| **Total** | | **410** | **71** | **17.3 % |
 
 ---
 
@@ -870,6 +870,17 @@ M2 (Identity, Auth & RBAC Core) is complete. 30/30 tasks done. The next mileston
 - **Acceptance criteria:** First run produces 1 country / 1 state / 2 districts / 2 cities / 3 zones / 8 wards; second run is a no-op (idempotent).
 - **Required tests:** Pest `tests/Feature/Geography/GeographySeedTest.php` — 5/5 pass; full suite 361/361 (1253 assertions) green; PHPStan clean (app/); Pint clean.
 
+
+### T-M3-020 — Seed default departments
+- **Milestone:** M3
+- **Status:** Done
+- **Completed at:** 2026-06-27 08:20 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(departments): complete T-M3-020 — Seed default departments`
+- **Files touched:** `backend/database/seeders/DepartmentsSeeder.php` (new; BBMP / BTP / BWSSB / BESCOM with default_sla_minutes, working_hours, holiday_calendar, and escalation_matrix; routes through DepartmentService for event emission and audit trail), `backend/database/seeders/DatabaseSeeder.php` (registered DepartmentsSeeder after GeographySeeder), `backend/tests/Feature/Departments/DepartmentsSeedTest.php` (new; 3 tests — 4 default departments, every row has SLA + escalation, second run is a no-op).
+- **Acceptance criteria:** `Department::where('code', 'BBMP')->exists()` is true (and BTP, BWSSB, BESCOM too); idempotent.
+- **Required tests:** Pest `tests/Feature/Departments/DepartmentsSeedTest.php` — 3/3 pass; full suite 364/364 (1271 assertions) green; PHPStan clean (app/); Pint clean.
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -910,6 +921,7 @@ Append-only, newest entry at the top.
 | 2026-06-27 06:55 IST | Logged T-M3-017 done; M3 17/24; total 68/410 = 16.6 %. | Lead Solution Architect | T-M3-017 |
 | 2026-06-27 07:25 IST | Logged T-M3-018 done; M3 18/24; total 69/410 = 16.8 %. | Lead Solution Architect | T-M3-018 |
 | 2026-06-27 07:55 IST | Logged T-M3-019 done; M3 19/24; total 70/410 = 17.1 %. | Lead Solution Architect | T-M3-019 |
+| 2026-06-27 08:20 IST | Logged T-M3-020 done; M3 20/24; total 71/410 = 17.3 %. | Lead Solution Architect | T-M3-020 |
 | 2026-06-27 05:40 IST | Logged T-M3-015 done; M3 15/24; total 66/410 = 16.1 %. | Lead Solution Architect | T-M3-015 |
 | 2026-06-27 05:00 IST | Logged T-M3-014 done; M3 14/24; total 65/410 = 15.9 %. | Lead Solution Architect | T-M3-014 |
 | 2026-06-27 04:25 IST | Logged T-M3-013 done; M3 13/24; total 64/410 = 15.6 %. | Lead Solution Architect | T-M3-013 |
