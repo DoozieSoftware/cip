@@ -1841,7 +1841,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Workflow/Services/TransitionGuard.php`
 - **Acceptance criteria:** All guards unit-tested.
 - **Required tests:** `tests/Unit/Workflow/TransitionGuardTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-008 — WorkflowEngine.evaluate
 - **Milestone:** M6
