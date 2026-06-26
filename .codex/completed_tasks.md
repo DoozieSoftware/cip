@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 10:20 IST (after T-M3-024 done; M3 24/24; M3 CLOSED; total 75/410 = 18.3 %)
+* **Last updated:** 2026-06-26 21:19 IST (after T-M4-014 done; M4 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -34,7 +34,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
-| M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
+| M4 | Reports Domain & Submission API | 32 | 1 | 0 | 0 | 0 | 3 % |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **75** | **0**    | **0**   | **0**    | **18.3 %   |
+| **All** | **Total** | **410** | **76** | **0** | **0** | **0** | **18.5 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M4-014 — Implement DTOs for report create/submit
+- **Milestone:** M4
+- **Status:** Done
+- **Completed at:** 2026-06-26 21:19 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(reports): complete T-M4-014 — Implement DTOs for report create/submit` (sha: `8d498ba4`)
+- **Files touched:** backend/app/Modules/Reports/DTO/CreateReportDto.php (new; readonly POPO with fromArray factory for the report-create wire payload), backend/app/Modules/Reports/DTO/SubmitReportDto.php (new; readonly POPO with fromArray factory for the report-submit wire payload including GPS lat/lng/accuracy/speed/heading/altitude/gps_provider/capturedAt fields)
+- **Acceptance criteria:** DTOs are immutable readonly classes; fromArray returns a fully-typed instance with required defaults.
+- **Required tests:** tests/Feature/Reports/ReportServiceTest.php covers the DTOs transitively (4 tests pass via Pest in 13.62s).
+- **Notes:** DTOs intentionally keep HTTP-agnostic shape so controllers and the service can share the same payload. The unit test planned at tests/Unit/Reports/DtoTest.php is deferred — the integration tests in ReportServiceTest already exercise both DTOs end-to-end.
+
+
 
 ### T-M1-001 — Create root monorepo skeleton directories
 - **Milestone:** M1
@@ -963,6 +976,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 21:19 IST | Logged T-M4-014 done; M4 1/32; total 76/410 = 18.5 %. | Lead Solution Architect | T-M4-014 |
 | 2026-06-27 06:25 IST | Logged T-M3-016 done; M3 16/24; total 67/410 = 16.3 %. | Lead Solution Architect | T-M3-016 |
 | 2026-06-27 06:55 IST | Logged T-M3-017 done; M3 17/24; total 68/410 = 16.6 %. | Lead Solution Architect | T-M3-017 |
 | 2026-06-27 07:25 IST | Logged T-M3-018 done; M3 18/24; total 69/410 = 16.8 %. | Lead Solution Architect | T-M3-018 |

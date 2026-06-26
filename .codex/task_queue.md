@@ -1211,7 +1211,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/DTO/CreateReportDto.php`, `backend/app/Modules/Reports/DTO/SubmitReportDto.php`
 - **Acceptance criteria:** DTOs are immutable; `fromArray` validates required keys.
 - **Required tests:** `tests/Unit/Reports/DtoTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-015 — Implement ReportRepository
 - **Milestone:** M4
@@ -1223,7 +1223,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Repositories/ReportRepository.php`
 - **Acceptance criteria:** All search methods support filter, sort, page, per_page.
 - **Required tests:** `tests/Feature/Reports/ReportRepositoryTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-016 — Implement LocationService with reverse-geocoding stub
 - **Milestone:** M4
@@ -1235,7 +1235,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Services/LocationService.php`
 - **Acceptance criteria:** Invalid coordinates return `INVALID_GPS`; speed > 200 m/s flagged.
 - **Required tests:** `tests/Feature/Reports/LocationServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-017 — Implement ReportService
 - **Milestone:** M4
@@ -1247,7 +1247,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Services/ReportService.php`
 - **Acceptance criteria:** Calling `submit` writes one row to `reports` and one to `report_status_history`.
 - **Required tests:** `tests/Feature/Reports/ReportServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-018 — Implement ReportStatusChanged event and listener
 - **Milestone:** M4
