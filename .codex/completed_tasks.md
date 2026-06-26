@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 18:50 IST (after T-M2-018 done — M2 progress 17/30; total 39/410 = 9.5 %)
+* **Last updated:** 2026-06-26 19:10 IST (after T-M2-019 done — M2 progress 18/30; total 40/410 = 9.8 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 17   | 0           | 0       | 0        | 57 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 18   | 0           | 0       | 0        | 60 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **39** | **0**    | **0**   | **0**    | **9.5 %    |
+| **All** | **Total**                             | **410** | **40** | **0**    | **0**   | **0**    | **9.8 %    |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,11 +56,11 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 17 | 17 % |
+| Foundations | M2, M3, M5, M9 | 100 | 18 | 18 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
-| **Total** | | **410** | **39** | **9.5 % |
+| **Total** | | **410** | **40** | **9.8 % |
 
 ---
 
@@ -536,6 +536,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Notes:** The `docs/11` §10 list (Browser, OS, Screen, Timezone, Language, User Agent, Canvas, WebGL) is partially derivable server-side (UA → OS+Browser) and partially client-supplied (Canvas, WebGL, Screen, Timezone, explicit Language). Per the task description the service only carries what the server can read: UA + IP from the standard Request API, the rest from headers. The service also returns a `hash` field so callers do not have to re-implement the algorithm — the canonical hashing uses null-as-NUL-byte substitution so that "absent" and "present-but-blank" do not collide. The audit middleware (T-M2-020) is the first consumer and will call `fromRequest()` on every mutating request.
 
 
+### T-M2-019 — Implement BasePolicy and RoleService
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 19:10 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(rbac): complete T-M2-019 — BasePolicy + RoleService` (sha: <pending>)
+- **Files touched:** `backend/app/Modules/Shared/Policies/BasePolicy.php` (extended — added trashed/denied-statuses checks, system-role bypass alongside super_admin, narrowed `$user` parameter to `User` after the runtime check), `backend/app/Modules/Users/Services/RoleService.php` (new; `assign`, `revoke`, `hasRole`, `hasAnyRole`, `hasPermission`, `hasAnyPermission`, `grantPermission`, `revokePermission`, `rolesFor`, `permissionsFor`; idempotent + protected-role guard for `super_admin` / `system`), `backend/app/Modules/Users/Events/UserRoleChanged.php` (new; dispatchable event), `backend/app/Modules/Users/Events/UserPermissionChanged.php` (new; dispatchable event), `backend/tests/Unit/Shared/BasePolicyTest.php` (new; 7 tests via a tiny `TestBasePolicy` subclass — unauth, trashed, denied statuses, super_admin bypass, system bypass, default defer, moderator defer), `backend/tests/Feature/Users/RoleServiceTest.php` (new; 10 tests — assign + event, idempotent assign, revoke + event, idempotent revoke, protected-role refuse, unknown role 422, hasRole/hasAnyRole/hasPermission/hasAnyPermission, grant + revoke permissions, list helpers).
+- **Acceptance criteria:** Policies block unauthorized access; `RoleService` is idempotent; mutations emit the matching event for the audit pipeline.
+- **Required tests:** Pest `tests/Unit/Shared/BasePolicyTest.php` (7/7) + `tests/Feature/Users/RoleServiceTest.php` (10/10); full suite 151/151 (569 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** `BasePolicy::before()` is the single source of truth for "should this user even reach a per-ability check?". It returns `false` for unauthenticated / trashed / suspended / disabled / pending users, `true` for super_admin / system, and `null` (defer) otherwise. The protected-roles guard inside `RoleService::revoke()` makes `super_admin` / `system` revokable only via the Super Admin Portal (M12) under dual approval — direct API calls get a 422 ROLE_PROTECTED. `assign` and `revoke` are wrapped in a `DB::transaction` so the event dispatch and the role mutation are atomic. The events intentionally carry only ids + names (no model snapshots) so the audit pipeline (T-M2-020) can render the actor / target separately without worrying about event serialization across queues.
+
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -572,6 +584,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 19:10 | Logged T-M2-019 done; M2 progress 18/30; total 40/410 = 9.8 %. | Lead Solution Architect | T-M2-019 |
 | 2026-06-26 18:50 | Logged T-M2-018 done; M2 progress 17/30; total 39/410 = 9.5 %. | Lead Solution Architect | T-M2-018 |
 | 2026-06-26 18:25 | Logged T-M2-017 done; M2 progress 16/30; total 38/410 = 9.3 %. | Lead Solution Architect | T-M2-017 |
 | 2026-06-26 18:05 | Logged T-M2-016 done; M2 progress 15/30; total 37/410 = 9.0 %. Added D-018 (AuthenticationException handler in bootstrap/app.php) and D-019 (test-side Auth::forgetGuards() to clear RequestGuard cache between requests). | Lead Solution Architect | T-M2-016 |
@@ -620,10 +633,10 @@ Snapshot at file initialization. Updated as the repository grows.
 | Database migrations | 0 |
 | Eloquent models | 0 |
 | API endpoints (under `routes/api.php`) | 0 (only `/api/v1/health` and `/api/v1/health/ready` will exist after M1) |
-| Pest tests | 134 passing (533 assertions) |
+| Pest tests | 151 passing (569 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 30 (T-M2-018 pending) |
+| Git commits on `main` | 32 (T-M2-019 pending) |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |

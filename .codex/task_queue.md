@@ -602,10 +602,10 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Related specs:** `docs/03` §14; `docs/11` §9
 - **Dependencies:** T-M2-002
 - **Est. time:** 25 minutes
-- **Files:** `backend/app/Modules/Shared/BasePolicy.php`, `backend/app/Modules/Users/Services/RoleService.php`
+- **Files:** `backend/app/Modules/Shared/Policies/BasePolicy.php`, `backend/app/Modules/Users/Services/RoleService.php`, `backend/app/Modules/Users/Events/UserRoleChanged.php`, `backend/app/Modules/Users/Events/UserPermissionChanged.php`
 - **Acceptance criteria:** Policies block unauthorized access; `RoleService` is idempotent.
 - **Required tests:** `tests/Feature/Users/RoleServiceTest.php`, `tests/Unit/Shared/BasePolicyTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-020 — Implement audit middleware
 - **Milestone:** M2
