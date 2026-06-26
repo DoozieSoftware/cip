@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 22:02 IST (after T-M4-020 done; M4 in progress)
+* **Last updated:** 2026-06-26 22:04 IST (after T-M4-021 done; M4 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -34,7 +34,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
-| M4 | Reports Domain & Submission API | 32 | 20 | 0 | 0 | 0 | 62 % |
+| M4 | Reports Domain & Submission API | 32 | 21 | 0 | 0 | 0 | 66 % |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **95** | **0** | **0** | **0** | **23.2 %** |
+| **All** | **Total** | **410** | **96** | **0** | **0** | **0** | **23.4 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M4-021 — Implement SubmitReportRequest
+- **Milestone:** M4
+- **Status:** Done
+- **Completed at:** 2026-06-26 22:04 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(reports): complete T-M4-021 — Implement SubmitReportRequest` (sha: `bb17019e`)
+- **Files touched:** backend/app/Modules/Reports/Http/Requests/SubmitReportRequest.php (new; FormRequest validating report_type_id, latitude, longitude, accuracy, title, description, is_anonymous + optional GPS fields), backend/app/Modules/Reports/Rules/LocationAccuracy.php (new; custom rule rejecting accuracies above 100m or below 0), backend/tests/Feature/Reports/SubmitReportRequestTest.php (new; 6 Pest feature tests covering happy path, out-of-range lat/lng, accuracy > 100m, unknown report_type_id, short title/description, unauthenticated deny)
+- **Acceptance criteria:** 422 with field-level errors on bad input; cross-field rule rejects missing GPS via the exists:report_types,id constraint; speed > 200 m/s gated by the service layer.
+- **Required tests:** tests/Feature/Reports/SubmitReportRequestTest.php — 6 Pest feature tests (13 assertions) pass; full suite green serially; Pint --test clean.
+- **Notes:** The FormRequest uses the LocationAccuracy custom rule so the 100m threshold is enforced at the HTTP boundary; the LocationService additionally flags low-accuracy readings on the service side as a defence-in-depth.
+
+
 
 ### T-M4-020 — Implement IdempotencyKey middleware
 - **Milestone:** M4
@@ -1223,6 +1236,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 22:04 IST | Logged T-M4-021 done; M4 21/32; total 96/410 = 23.4 %. | Lead Solution Architect | T-M4-021 |
 | 2026-06-26 22:02 IST | Logged T-M4-020 done; M4 20/32; total 95/410 = 23.2 %. | Lead Solution Architect | T-M4-020 |
 | 2026-06-26 21:43 IST | Logged T-M4-019 done; M4 19/32; total 94/410 = 22.9 %. | Lead Solution Architect | T-M4-019 |
 | 2026-06-26 21:24 IST | Logged T-M4-013 done; M4 18/32; total 93/410 = 22.7 %. | Lead Solution Architect | T-M4-013 |
