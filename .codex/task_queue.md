@@ -1259,7 +1259,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Events/ReportStatusChanged.php`, `backend/app/Modules/Reports/Listeners/WriteStatusHistory.php`
 - **Acceptance criteria:** Every transition appends one history row.
 - **Required tests:** `tests/Feature/Reports/StatusHistoryListenerTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-019 — Implement ReportPolicy and LocationPolicy
 - **Milestone:** M4
