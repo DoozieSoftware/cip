@@ -2162,7 +2162,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/seeders/RoutingRulesSeeder.php`
 - **Acceptance criteria:** 3 rules present; `resolve` returns the correct department for the seeded reports.
 - **Required tests:** `tests/Feature/Routing/RoutingSeedTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-012 — RoutingDeterminismTest
 - **Milestone:** M7
