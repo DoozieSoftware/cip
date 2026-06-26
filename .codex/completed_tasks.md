@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 21:20 IST (after T-M4-017 done; M4 in progress)
+* **Last updated:** 2026-06-26 21:21 IST (after T-M4-018 done; M4 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -34,7 +34,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
-| M4 | Reports Domain & Submission API | 32 | 4 | 0 | 0 | 0 | 12 % |
+| M4 | Reports Domain & Submission API | 32 | 5 | 0 | 0 | 0 | 16 % |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **79** | **0** | **0** | **0** | **19.3 %** |
+| **All** | **Total** | **410** | **80** | **0** | **0** | **0** | **19.5 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M4-018 — Implement ReportStatusChanged event and listener
+- **Milestone:** M4
+- **Status:** Done
+- **Completed at:** 2026-06-26 21:21 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(reports): complete T-M4-018 — Implement ReportStatusChanged event and listener` (sha: `1d4537fb`)
+- **Files touched:** backend/app/Modules/Reports/Events/ReportStatusChanged.php (new; immutable Dispatchable+SerializesModels event with reportId, fromStatusId, toStatusId, actorId, reason, metadata), backend/app/Modules/Reports/Listeners/WriteStatusHistory.php (new; persists to report_status_history), backend/app/Providers/AppServiceProvider.php (modified; boot() wires Event::listen(ReportStatusChanged::class, WriteStatusHistory::class))
+- **Acceptance criteria:** Every transition appends exactly one history row.
+- **Required tests:** Status-history behaviour is verified end-to-end by tests/Feature/Reports/ReportServiceTest.php test #3 (submit moves draft→submitted and writes one status_history row) — full suite 394/394 (1436 assertions) green; Pint --test clean.
+- **Notes:** Listener is wired via Event::listen() in AppServiceProvider::boot() rather than an EventServiceProvider. Laravel 12 dropped the auto EventServiceProvider registration so the explicit wire keeps the contract stable.
+
+
 
 ### T-M4-017 — Implement ReportService
 - **Milestone:** M4
@@ -1015,6 +1028,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 21:21 IST | Logged T-M4-018 done; M4 5/32; total 80/410 = 19.5 %. | Lead Solution Architect | T-M4-018 |
 | 2026-06-26 21:20 IST | Logged T-M4-017 done; M4 4/32; total 79/410 = 19.3 %. | Lead Solution Architect | T-M4-017 |
 | 2026-06-26 21:20 IST | Logged T-M4-016 done; M4 3/32; total 78/410 = 19.0 %. | Lead Solution Architect | T-M4-016 |
 | 2026-06-26 21:20 IST | Logged T-M4-015 done; M4 2/32; total 77/410 = 18.8 %. | Lead Solution Architect | T-M4-015 |

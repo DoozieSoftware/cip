@@ -1295,7 +1295,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Http/Requests/SubmitReportRequest.php`, `backend/app/Modules/Reports/Rules/LocationAccuracy.php`
 - **Acceptance criteria:** 422 with field-level errors on bad input; cross-field rule rejects missing GPS.
 - **Required tests:** `tests/Feature/Reports/SubmitReportRequestTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-022 — POST /api/v1/reports endpoint
 - **Milestone:** M4
