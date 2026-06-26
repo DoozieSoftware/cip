@@ -91,7 +91,7 @@ class AuthController extends BaseController
             ],
             'refresh_token' => $result['refresh']['plain'],
             'refresh_expires_at' => $result['refresh']['expires_at']->toIso8601String(),
-            'user' => (new UserResource($result['user']))->toArray($request),
+            'user' => (new UserResource($result['user']->load('roles')))->toArray($request),
         ]);
     }
 
@@ -152,7 +152,7 @@ class AuthController extends BaseController
             return $this->respondError('Unauthenticated.', 401, 'UNAUTHORIZED');
         }
 
-        return $this->respond((new UserResource($user))->toArray($request));
+        return $this->respond((new UserResource($user->load('roles')))->toArray($request));
     }
 
     private function recordAttempt(string $mobile, ?string $ip, ?string $userAgent, bool $success, ?string $reason): void

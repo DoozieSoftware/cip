@@ -14,8 +14,16 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * Per AGENTS.md ("Never return Models directly") and docs/03 §20
  * (API envelope). Sensitive fields (password, 2FA secret, recovery
  * codes) are NEVER exposed. The `roles` and `permissions` arrays
- * come from Spatie Permission and are added to support role-aware
- * clients (PWA, portals).
+ * are returned only when the corresponding Spatie Permission
+ * relations are eager-loaded; otherwise the key is omitted. This
+ * avoids N+1 queries for the common /me endpoint (where a single
+ * user is shown) while keeping the resource safe to use in lists
+ * (where roles are not needed).
+ *
+ * Callers that want roles+permissions must call
+ *     $user->load('roles')
+ * before serialisation. The auth controller does this on the
+ * verify-otp, refresh, and me paths.
  *
  * @property-read User $resource
  */
@@ -28,7 +36,7 @@ class UserResource extends JsonResource
     {
         $user = $this->resource;
 
-        return [
+        $payload = [
             'id' => $user->id,
             'name' => $user->name,
             'mobile' => $user->mobile,
@@ -37,9 +45,19 @@ class UserResource extends JsonResource
             'status' => $user->status,
             'otp_verified_at' => $user->otp_verified_at?->toIso8601String(),
             'last_login_at' => $user->last_login_at?->toIso8601String(),
-            'roles' => $user->roles->pluck('name'),
-            'permissions' => $user->getAllPermissions()->pluck('name'),
             'created_at' => $user->created_at?->toIso8601String(),
         ];
+
+        // Lazy roles + permissions. `relationLoaded('roles')` is true
+        // only when the caller has called ->load('roles') or the
+        // relation was eager-loaded in a query. In that case we
+        // also compute permissions (Spatie Permission derives them
+        // from roles->permissions).
+        if ($user->relationLoaded('roles')) {
+            $payload['roles'] = $user->roles->pluck('name')->values()->all();
+            $payload['permissions'] = $user->getAllPermissions()->pluck('name')->values()->all();
+        }
+
+        return $payload;
     }
 }
