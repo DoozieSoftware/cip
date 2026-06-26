@@ -772,7 +772,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** Migration test.
 - **Status:** Done
 
-### T-M3-003 — Create districts migration and model
+### T-M3-003 — Create districts migration and model [DONE 2026-06-26 — commit 47cf33]
 - **Milestone:** M3
 - **Title:** Create districts migration and model
 - **Description:** Table `districts`: `id`, `state_id` FK, `name`, `code`, `active`.
@@ -782,7 +782,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_districts_table.php`, `backend/app/Modules/Departments/Models/District.php`
 - **Acceptance criteria:** FK enforced; `District::factory()->create()` works.
 - **Required tests:** Migration + factory test.
-- **Status:** In Progress
+- **Status:** Done
 
 ### T-M3-004 — Create cities migration and model
 - **Milestone:** M3
@@ -794,7 +794,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_cities_table.php`, `backend/app/Modules/Departments/Models/City.php`
 - **Acceptance criteria:** FK enforced; `belongsTo District` works.
 - **Required tests:** Migration + relationship test.
-- **Status:** Not Started
+- **Status:** In Progress
 
 ### T-M3-005 — Create zones migration and model
 - **Milestone:** M3
