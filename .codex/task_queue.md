@@ -880,7 +880,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** Model test.
 - **Status:** Done
 
-### T-M3-012 — Implement SettingsService with cache invalidation
+### T-M3-012 — Implement SettingsService with cache invalidation [DONE 2026-06-27 — commit c6edd1a]
 - **Milestone:** M3
 - **Title:** Implement SettingsService with cache invalidation
 - **Description:** `SettingsService::get(key, default)`, `set(key, value, type)`, `forget(key)`; cache prefix `settings:` with TTL of 1h; `Cache::tags(['settings'])->flush()` on `set`/`forget`.
@@ -890,7 +890,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Settings/Services/SettingsService.php`
 - **Acceptance criteria:** Second `get` hits cache; `set` invalidates cache.
 - **Required tests:** `tests/Feature/Settings/SettingsServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-013 — Implement FeatureFlagService
 - **Milestone:** M3
