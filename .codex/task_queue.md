@@ -1925,7 +1925,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Workflow/Services/WorkflowEngine.php`
 - **Acceptance criteria:** Audit row present with `entity='reports'`.
 - **Required tests:** `tests/Feature/Workflow/WorkflowAuditTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-015 — Transition SLA timer job
 - **Milestone:** M6
