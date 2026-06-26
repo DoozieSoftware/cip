@@ -194,6 +194,26 @@ the event to push alerts to the assigned role / department.
 code change) so a Super Admin publish takes effect on the
 next request without a deploy.
 
+
+## M7 — Routing
+
+The M7 Routing module decides **which department (and which
+officer) a report lands with** after the AI vision engine has
+finished classifying it. Rules are evaluated in `(priority ASC,
+id ASC)` order against a small JSON DSL (`category_in`, `ward_in`,
+`district_in`, `severity_in`, `keyword_match`,
+`time_of_day_between`, `ai_label_in`) with AND/OR composition.
+The first match wins; the fallback destination (configured via
+`app_configs.routing_default_department_id`) is used when no rule
+matches.
+
+The full DSL, the assignment algorithm, the manual reassignment
+workflow, and the Bangalore sample rules are documented in
+[`docs/routing.md`](./docs/routing.md). The OpenAPI surface
+(routing-rules CRUD + reorder + manual reassign) lives under the
+**Routing** tag in
+[`/api/documentation`](./backend/storage/api-docs/openapi.yaml).
+
 ## M5 — Media & Evidence
 
 The M5 Media namespace is the evidence layer for the platform:
