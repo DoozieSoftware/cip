@@ -796,7 +796,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** Migration + relationship test.
 - **Status:** Done
 
-### T-M3-005 — Create zones migration and model
+### T-M3-005 — Create zones migration and model [DONE 2026-06-27 — commit dd2dd53]
 - **Milestone:** M3
 - **Title:** Create zones migration and model
 - **Description:** Table `zones`: `id`, `city_id` FK, `name`, `code`, `active`.
@@ -806,9 +806,9 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_zones_table.php`, `backend/app/Modules/Departments/Models/Zone.php`
 - **Acceptance criteria:** FK enforced; soft delete disabled.
 - **Required tests:** Migration + model test.
-- **Status:** In Progress
+- **Status:** Done
 
-### T-M3-006 — Create wards migration with spatial polygon
+### T-M3-006 — Create wards migration with spatial polygon [DONE 2026-06-27 — commit a8efb9e]
 - **Milestone:** M3
 - **Title:** Create wards migration with spatial polygon
 - **Description:** Table `wards`: `id`, `city_id` FK, `zone_id` FK, `ward_number`, `name`, `municipality`, `boundary_polygon` (MySQL `POLYGON` with `NOT NULL` for seeded rows), spatial index on `boundary_polygon` via raw SQL.
@@ -818,7 +818,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_wards_table.php`, `backend/app/Modules/Departments/Models/Ward.php`
 - **Acceptance criteria:** Spatial index created; raw SQL guarded by `DB::statement`; insert roundtrips a polygon.
 - **Required tests:** `tests/Feature/Geography/WardPolygonTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-007 — Create departments migration
 - **Milestone:** M3

@@ -19,9 +19,9 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 00:10 IST (after T-M3-003 done; M3 3/24; total 54/410 = 13.2 %)
+* **Last updated:** 2026-06-27 01:05 IST (after T-M3-006 done; M3 6/24; total 57/410 = 13.9 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
-* **Active milestone:** M2 — Identity, Auth & RBAC Core (see `.codex/current_milestone.md`)
+* **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
 ---
 
@@ -33,7 +33,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
-| M3  | Master Configuration & Geography         | 24    | 3    | 0           | 0       | 0        | 13 %       |
+| M3  | Master Configuration & Geography         | 24    | 6    | 0           | 0       | 0        | 25 %       |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **54** | **0**    | **0**   | **0**    | **13.2 %   |
+| **All** | **Total**                             | **410** | **57** | **0**    | **0**   | **0**    | **13.9 %   |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,7 +56,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 33 | 33 % |
+| Foundations | M2, M3, M5, M9 | 100 | 36 | 36 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
@@ -707,6 +707,36 @@ M2 (Identity, Auth & RBAC Core) is complete. 30/30 tasks done. The next mileston
 - **Acceptance criteria:** FK enforced; `District::factory()->create()` works.
 - **Required tests:** Pest `tests/Feature/Database/DistrictsTableTest.php` — 4/4 pass; full suite 235/235 (893 assertions) green; PHPStan clean; Pint clean.
 
+### T-M3-004 — Create cities migration and model
+- **Milestone:** M3
+- **Status:** Done
+- **Completed at:** 2026-06-27 00:20 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(departments): complete T-M3-004 — cities migration and model` (sha: c6eba1)
+- **Files touched:** `backend/database/migrations/2026_06_26_170300_create_cities_table.php` (new; UUID PK, district_id UUID FK → districts (restrictOnDelete), unique (district_id, code), active, timestamps; MySQL InnoDB / utf8mb4 / collation pins), `backend/app/Modules/Departments/Models/City.php` (new; HasUuids + HasFactory<CityFactory>, fillable, active cast, belongsTo District), `backend/app/Modules/Departments/Models/District.php` (added reverse HasMany<City> per D-009), `backend/database/factories/Modules/Departments/Models/CityFactory.php` (new; faker factory + chained District factory), `backend/tests/Feature/Database/CitiesTableTest.php` (new; 4 tests — required columns, FK to districts, unique (district_id, code), belongsTo District).
+- **Acceptance criteria:** FK enforced; `City::factory()->create()` works; unique (district_id, code) rejects duplicates.
+- **Required tests:** Pest `tests/Feature/Database/CitiesTableTest.php` — 4/4 pass; full suite 240/240 (910 assertions) green; PHPStan clean (app/); Pint clean.
+
+### T-M3-005 — Create zones migration and model
+- **Milestone:** M3
+- **Status:** Done
+- **Completed at:** 2026-06-27 00:40 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(departments): complete T-M3-005 — zones migration and model` (sha: dd2dd53)
+- **Files touched:** `backend/database/migrations/2026_06_26_170400_create_zones_table.php` (new; UUID PK, city_id UUID FK → cities (restrictOnDelete), code varchar(8), unique (city_id, code), active, timestamps; MySQL InnoDB / utf8mb4 / collation pins; no soft deletes per spec), `backend/app/Modules/Departments/Models/Zone.php` (new; HasUuids + HasFactory<ZoneFactory>, fillable, active cast, belongsTo City), `backend/app/Modules/Departments/Models/City.php` (added reverse HasMany<Zone> per D-009), `backend/database/factories/Modules/Departments/Models/ZoneFactory.php` (new; faker factory + chained City factory), `backend/tests/Feature/Database/ZonesTableTest.php` (new; 4 tests — required columns, FK to cities, unique (city_id, code), belongsTo City).
+- **Acceptance criteria:** FK enforced; unique (city_id, code) rejects duplicates; soft delete disabled.
+- **Required tests:** Pest `tests/Feature/Database/ZonesTableTest.php` — 4/4 pass; full suite 243/243 (917 assertions) green; PHPStan clean (app/); Pint clean.
+
+### T-M3-006 — Create wards migration with spatial polygon
+- **Milestone:** M3
+- **Status:** Done
+- **Completed at:** 2026-06-27 01:05 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(departments): complete T-M3-006 — wards migration with spatial polygon` (sha: a8efb9e)
+- **Files touched:** `backend/database/migrations/2026_06_27_000000_create_wards_table.php` (new; UUID PK, city_id UUID FK → cities (restrictOnDelete), zone_id UUID FK → zones (nullOnDelete — small cities have no zones), unique (city_id, ward_number), active, timestamps, softDeletes; driver-specific `boundary_polygon` column: MySQL `POLYGON NOT NULL SRID 4326` with `SPATIAL INDEX wards_boundary_polygon_sidx` via raw `DB::statement`, SQLite `TEXT` fallback so the migration is portable across the test and prod drivers), `backend/app/Modules/Departments/Models/Ward.php` (new; HasUuids + HasFactory<WardFactory> + SoftDeletes, fillable, ward_number cast to int, active cast to bool, boundary_polygon kept as WKT (string), belongsTo City and belongsTo Zone), `backend/database/factories/Modules/Departments/Models/WardFactory.php` (new; faker factory producing a sample closed WKT polygon and chained City/Zone factories), `backend/tests/Feature/Geography/WardPolygonTest.php` (new; 9 tests — required columns incl. soft delete, FK to cities, FK to zones, nullOnDelete behaviour for zone, unique (city_id, ward_number), soft delete hides + restores, belongsTo City/Zone, WKT polygon roundtrip, MySQL spatial-index creation driver-guarded).
+- **Acceptance criteria:** Spatial index created on MySQL; raw SQL guarded by `DB::statement` and `getDriverName()`; SQLite gets a TEXT fallback column; insert roundtrips a polygon (WKT) on the test driver; soft delete hides the row from default queries.
+- **Required tests:** Pest `tests/Feature/Geography/WardPolygonTest.php` — 9/9 pass; full suite 252/252 (942 assertions) green; PHPStan clean (app/); Pint clean. (Pint applied the `blank_line_before_statement`, `class_definition`, `braces_position`, `fully_qualified_strict_types`, and `ordered_imports` fixers to the new files; non-T-M3-006 PHPStan noise in `StateFactory.php` + `RolesAndPermissionsSeeder.php` is pre-existing and out of scope for this task.)
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -743,6 +773,9 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-27 01:05 IST | Logged T-M3-006 done; M3 6/24; total 57/410 = 13.9 %. | Lead Solution Architect | T-M3-006 |
+| 2026-06-27 00:40 IST | Logged T-M3-005 done (backfill; the code commit landed in a prior session before its docs entry). | Lead Solution Architect | T-M3-005 |
+| 2026-06-27 00:20 IST | Logged T-M3-004 done (backfill; the code commit landed in a prior session before its docs entry). | Lead Solution Architect | T-M3-004 |
 | 2026-06-27 00:10 IST | Logged T-M3-003 done; M3 3/24; total 54/410 = 13.2 %. | Lead Solution Architect | T-M3-003 |
 | 2026-06-26 23:50 IST | Logged T-M3-002 done; M3 2/24; total 53/410 = 12.9 %. | Lead Solution Architect | T-M3-002 |
 | 2026-06-26 23:30 IST | Logged T-M3-001 done; M2 30/30; M3 1/24; total 52/410 = 12.7 %. | Lead Solution Architect | T-M3-001 |
@@ -784,6 +817,7 @@ Architecture-level or scope-level decisions taken during implementation. Each de
 | D-017 | 2026-06-26 | `ValidationException` rendered at 422 with the standard envelope (was being caught by generic `Throwable` handler as 500). | D-017 was actually adopted during T-M2-013; this row backfills the decision log. | `docs/03` §20, `docs/05` §5 | Lead Solution Architect |
 | D-018 | 2026-06-26 | `AuthenticationException` rendered at 401 with the standard envelope and `code: UNAUTHORIZED`. Required because `auth:sanctum`, `auth:web`, and any future `auth:*` middleware all throw this when the guard cannot resolve a user. Without a dedicated handler, the generic `Throwable` handler turned every 401-class error into a 500. | `docs/05` §5 (Logout, Get Current User), `docs/11` §6 | Lead Solution Architect |
 | D-019 | 2026-06-26 | Auth-feature tests call `Auth::forgetGuards()` between HTTP requests when they need to assert a different auth state in a second request. | `Illuminate\Auth\RequestGuard` caches the resolved user in `$this->user` and is itself cached on the `AuthManager` singleton. In production each HTTP request is a fresh process and the guard is rebuilt; in Pest the guard is reused, so the cached user survives the first request. Production code is correct as-is; the fix is test-only. | Pest test framework behaviour | Lead Solution Architect |
+| D-020 | 2026-06-27 | Wards: `boundary_polygon` is application-level WKT; the driver-specific column (MySQL `POLYGON NOT NULL SRID 4326` + spatial index, SQLite `TEXT` fallback) is an implementation detail guarded by `DB::connection()->getDriverName()` so the test suite remains SQLite-portable. | Keeps the geography migration portable across MySQL (prod) and SQLite (test) without using a third-party spatial extension. Application code only ever reads / writes WKT. | `docs/04` §8, `docs/16` §36 | Lead Solution Architect |
 
 ---
 
@@ -809,7 +843,7 @@ Snapshot at file initialization. Updated as the repository grows.
 | Pest tests | 221 passing (850 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 59 (T-M3-003 pending) |
+| Git commits on `main` | 64 |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |
