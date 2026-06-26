@@ -1544,7 +1544,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Jobs/ComputeHashesJob.php`
 - **Acceptance criteria:** Job populates all four hash fields.
 - **Required tests:** `tests/Feature/Media/ComputeHashesJobTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-010 — ExtractVideoMetadataJob
 - **Milestone:** M5

@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 23:30 IST (after T-M5-008 done; M5 in progress)
+* **Last updated:** 2026-06-26 23:40 IST (after T-M5-009 done; M5 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M5 — Media Pipeline & Evidence Integrity (see `.codex/current_milestone.md`; M4 closed 32/32 = 100 %)
 
@@ -35,7 +35,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
 | M4 | Reports Domain & Submission API | 32 | 32 | 0 | 0 | 0 | 100 % |
-| M5 | Media Pipeline & Evidence Integrity | 26 | 8 | 0 | 0 | 0 | 31 % |
+| M5 | Media Pipeline & Evidence Integrity | 26 | 9 | 0 | 0 | 0 | 35 % |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
 | M8  | AI Vision Pipeline & Provider Abstraction | 30  | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **115** | **0** | **0** | **0** | **28.0 %** |
+| **All** | **Total** | **410** | **116** | **0** | **0** | **0** | **28.3 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M5-009 — ComputeHashesJob
+- **Milestone:** M5
+- **Status:** Done
+- **Completed at:** 2026-06-26 23:40 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(media): complete T-M5-009 — ComputeHashesJob` (sha: `f412a1b9`)
+- **Files touched:** backend/app/Modules/Media/Jobs/ComputeHashesJob.php (new); backend/tests/Feature/Media/ComputeHashesJobTest.php (new)
+- **Acceptance criteria:** Job populates all four hash fields.
+- **Required tests:** Pest 461/461 passed (1592 assertions); 6 new ComputeHashesJobTest tests, 0 regressions
+- **Notes:** Reads bytes from Storage::disk to keep the HashService signature stable; updates media.checksum for content dedup.
+
+
 
 ### T-M5-008 — GenerateThumbnailJob
 - **Milestone:** M5
@@ -1486,6 +1499,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 23:40 IST | Logged T-M5-009 done; M5 9/26; total 116/410 = 28.3 %. | Lead Solution Architect | T-M5-009 |
 | 2026-06-26 23:30 IST | Logged T-M5-008 done; M5 8/26; total 115/410 = 28.0 %. | Lead Solution Architect | T-M5-008 |
 | 2026-06-26 23:15 IST | Logged T-M5-007 done; M5 7/26; total 114/410 = 27.8 %. | Lead Solution Architect | T-M5-007 |
 | 2026-06-26 23:05 IST | Logged T-M5-006 done; M5 6/26; total 113/410 = 27.6 %. | Lead Solution Architect | T-M5-006 |
