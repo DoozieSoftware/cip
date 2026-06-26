@@ -1676,7 +1676,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/Media/MediaFeatureTest.php`
 - **Acceptance criteria:** All cases pass; ≥ 90% line coverage on `Media/`.
 - **Required tests:** `vendor/bin/pest tests/Feature/Media/MediaFeatureTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-021 — MediaFailureTest (rejections)
 - **Milestone:** M5
