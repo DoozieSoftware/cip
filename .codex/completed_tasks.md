@@ -445,7 +445,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Status:** Done
 - **Completed at:** 2026-06-26 16:35 IST
 - **Agent / Committer:** Lead Solution Architect
-- **Commit:** `feat(auth): complete T-M2-011 — OtpService with rate limiting` (sha: pending)
+- **Commit:** `feat(auth): complete T-M2-011 — OtpService with rate limiting` (sha: 38b7b8b4)
 - **Files touched:** `backend/app/Modules/Authentication/Services/OtpService.php` (new; `request(mobile, ip, ua)` issues a 6-digit OTP, bcrypt-hashes it, persists the Otp, and dispatches the plaintext via a Closure; per-mobile and per-IP cap of 5/hour enforced before issuance, throwing `ApiException(429)`; default OTP expiry 5 min via `config('cip.auth.otp_expiry_minutes')`; `verify(mobile, code)` consumes the OTP on success, increments the attempt counter on every call, locks the OTP after 5 wrong attempts; `setDispatcher(Closure)` swaps the default log dispatcher for tests and for the real SMS gateway), `backend/config/logging.php` (added `sms` channel — daily file at `storage/logs/sms.log`), `backend/tests/Feature/Authentication/OtpRateLimitTest.php` (new; 8 tests — issue + hash verification, 6th per-mobile request, 6th per-IP request, verify + consume + reject re-use, increment counter on wrong code, lock after 5 failed, configurable expiry, default log dispatcher).
 - **Acceptance criteria:** 6th request in an hour returns `RATE_LIMITED`; OTP stored as hash, not plaintext.
 - **Required tests:** Pest `tests/Feature/Authentication/OtpRateLimitTest.php` — 8/8 pass; full suite 89/89 (344 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
