@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Horizon\Horizon;
 use Laravel\Horizon\HorizonApplicationServiceProvider;
@@ -17,22 +18,29 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
     {
         parent::boot();
 
-        // Horizon::routeSmsNotificationsTo('15556667777');
-        // Horizon::routeMailNotificationsTo('example@example.com');
-        // Horizon::routeSlackNotificationsTo('slack-webhook-url', '#channel');
+        Horizon::night();
     }
 
     /**
      * Register the Horizon gate.
      *
-     * This gate determines who can access Horizon in non-local environments.
+     * Horizon is restricted to the local environment until M2 lands the
+     * dedicated authorization rules. In non-local environments, only
+     * super-admin users (or those with a cip.local email) can access it.
+     *
+     * @param  \Illuminate\Contracts\Auth\Authenticatable|null  $user
      */
-    protected function gate(): void
+    protected function gate(?Authenticatable $user = null): void
     {
-        Gate::define('viewHorizon', function ($user = null) {
-            return in_array(optional($user)->email, [
-                //
-            ]);
+        if (app()->environment('local')) {
+            return;
+        }
+
+        Gate::define('viewHorizon', static function ($user = null): bool {
+            /** @var \Illuminate\Contracts\Auth\Authenticatable|null $auth */
+            $auth = $user;
+            $email = is_object($auth) ? $auth->email ?? null : null;
+            return is_string($email) && str_ends_with($email, '@cip.local');
         });
     }
 }

@@ -308,7 +308,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Shared/BaseController.php`, `BaseService.php`, `BasePolicy.php`, `ApiResponse.php`, `ApiException.php`, `RequestId.php`
 - **Acceptance criteria:** Each class file exists with the required method signature; `RequestId` is registered in `app/Http/Kernel.php`.
 - **Required tests:** Pest test `tests/Unit/Shared/RequestIdTest.php` asserts a header is set.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M1-018 — Implement standard API response envelope
 - **Milestone:** M1
@@ -320,7 +320,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Shared/ApiResponse.php`, `backend/app/Modules/Shared/BaseController.php`
 - **Acceptance criteria:** JSON shape matches `{success, message, data, meta}` and `{success:false, message, errors, trace_id}`.
 - **Required tests:** `tests/Unit/Shared/ApiResponseTest.php` covers both envelopes.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M1-019 — Implement domain ApiException and global handler
 - **Milestone:** M1
@@ -332,7 +332,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Shared/ApiException.php`, `backend/bootstrap/app.php`
 - **Acceptance criteria:** Throwing `ApiException::validation(...)` returns 422 + envelope; stack traces never appear in JSON.
 - **Required tests:** Pest test in `tests/Feature/Shared/ExceptionRenderTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M1-020 — Add /api/v1/health and /health/ready endpoints
 - **Milestone:** M1
@@ -344,7 +344,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Http/Controllers/HealthController.php`, `backend/routes/api.php`
 - **Acceptance criteria:** `GET /api/v1/health` returns 200 when all green; 503 when any component fails.
 - **Required tests:** `tests/Feature/HealthCheckTest.php` covers both happy and degraded.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M1-021 — Author OpenAPI 3.1 scaffold
 - **Milestone:** M1
