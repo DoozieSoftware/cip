@@ -614,10 +614,10 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Related specs:** `docs/03` §19; `docs/11` §28
 - **Dependencies:** T-M2-001, T-M2-018
 - **Est. time:** 30 minutes
-- **Files:** `backend/app/Modules/Security/Http/Middleware/AuditMiddleware.php`, `backend/app/Modules/Security/Models/AuditLog.php`, `backend/database/migrations/*_create_audit_logs_table.php`
+- **Files:** `backend/app/Modules/Security/Http/Middleware/AuditMiddleware.php`, `backend/app/Modules/Security/Models/AuditLog.php`, `backend/database/migrations/2026_06_26_190000_create_audit_logs_table.php`, `backend/bootstrap/app.php`, `backend/tests/Feature/Security/AuditMiddlewareTest.php`
 - **Acceptance criteria:** A POST that mutates a record writes exactly one audit row.
 - **Required tests:** `tests/Feature/Security/AuditMiddlewareTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-021 — Implement security event capture
 - **Milestone:** M2

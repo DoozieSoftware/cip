@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Security\Http\Middleware\AuditMiddleware;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Middleware\RequestId;
 use Illuminate\Auth\AuthenticationException;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(RequestId::class);
+        $middleware->append(AuditMiddleware::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // ValidationException → 422 with the standard envelope and the
