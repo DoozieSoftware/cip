@@ -57,11 +57,29 @@ class MediaController extends BaseController
 
     /**
      * POST /api/v1/reports/{id}/video
+     *
+     * Per docs/05 §14 the report may have at most one video.
+     * The duplicate guard is enforced by MediaService and
+     * surfaces as a 409 with code VIDEO_ALREADY_PRESENT.
+     *
+     * The duration window (3 – 300 s) is enforced
+     * server-side via MediaService::assertVideoDurationWindow
+     * when the client supplies a `duration_seconds` hint
+     * (typically read from the file on the device before
+     * upload). When the client does not supply a hint, the
+     * full ExtractVideoMetadataJob runs and a 422 is raised
+     * later if the duration turns out to be out of range.
      */
     public function uploadVideo(string $reportId, UploadMediaRequest $request): JsonResponse
     {
         $userId = (string) $request->user('sanctum')->id;
         $file = $request->file('video');
+
+        $duration = $request->input('duration_seconds');
+
+        if (is_numeric($duration)) {
+            $this->service->assertVideoDurationWindow((int) $duration);
+        }
 
         $created = $this->service->uploadVideo($reportId, $file, $userId);
 

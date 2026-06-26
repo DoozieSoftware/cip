@@ -52,6 +52,7 @@ enum ErrorCode: string
     // Media module
     case MEDIA_INVALID_MIME = 'MEDIA_INVALID_MIME';
     case MEDIA_INVALID_SIGNATURE = 'MEDIA_INVALID_SIGNATURE';
+    case VIDEO_ALREADY_PRESENT = 'VIDEO_ALREADY_PRESENT';
 
     /**
      * @return array<int, string>

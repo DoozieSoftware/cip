@@ -43,10 +43,35 @@ class UploadMediaRequest extends FormRequest
     }
 
     /**
+     * Override the validation rules so we can use a single
+     * FormRequest for both photos[] and the single video
+     * field. The route passes a query param `?type=video` or
+     * the controller sets the field via withField before
+     * validation runs.
+     */
+    protected function getValidatorInstance()
+    {
+        // If the request body has a 'video' file, switch to
+        // the video field name so the default rules() matches.
+        if ($this->hasFile('video')) {
+            $this->fieldName = 'video';
+        }
+
+        return parent::getValidatorInstance();
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function rules(): array
     {
+        if ($this->fieldName === 'video') {
+            return [
+                'video' => ['required', 'file', 'max:102400'], // 100 MB cap at the request layer (matches MediaService::MAX_BYTES['VIDEO'])
+                'duration_seconds' => ['nullable', 'integer', 'min:0'],
+            ];
+        }
+
         return [
             $this->fieldName => ['required', 'array', 'min:1', 'max:10'],
             $this->fieldName.'.*' => ['file', 'max:25600'], // 25 MB cap at the request layer

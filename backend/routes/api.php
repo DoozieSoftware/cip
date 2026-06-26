@@ -74,6 +74,8 @@ Route::prefix('v1')->group(function (): void {
         Route::post('reports', [ReportsController::class, 'store'])->name('api.v1.reports.store');
         // T-M5-012 — POST /api/v1/reports/{id}/photos
         Route::post('reports/{id}/photos', [MediaController::class, 'uploadPhotos'])->name('api.v1.reports.photos.store');
+        // T-M5-013 — POST /api/v1/reports/{id}/video
+        Route::post('reports/{id}/video', [MediaController::class, 'uploadVideo'])->name('api.v1.reports.video.store');
         // T-M4-023 — POST /api/v1/reports/{id}/submit
         Route::post('reports/{id}/submit', [ReportsController::class, 'submit'])->name('api.v1.reports.submit');
         // T-M4-027 — GET /api/v1/citizen/dashboard

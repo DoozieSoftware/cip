@@ -203,6 +203,17 @@ class MediaService
         $limit = self::MAX_COUNT[$type] ?? 0;
 
         if ($limit > 0 && $existing >= $limit) {
+            // A second video is a 409, not a 422 — the
+            // report already has a video; the request is in
+            // conflict with the current state, not malformed.
+            if ($type === 'VIDEO') {
+                throw new ApiException(
+                    ErrorCode::VIDEO_ALREADY_PRESENT->value,
+                    'A video has already been attached to this report.',
+                    409,
+                    ['existing' => $existing],
+                );
+            }
             throw new ApiException(
                 ErrorCode::VALIDATION_FAILED->value,
                 "Maximum {$limit} {$type} per report reached; upload rejected.",
