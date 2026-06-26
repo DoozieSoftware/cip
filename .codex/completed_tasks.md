@@ -385,7 +385,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Status:** Done
 - **Completed at:** 2026-06-26 15:25 IST
 - **Agent / Committer:** Lead Solution Architect
-- **Commit:** `feat(auth): complete T-M2-006 — refresh_tokens table migration` (sha: pending)
+- **Commit:** `feat(auth): complete T-M2-006 — refresh_tokens table migration` (sha: 44ed73f8)
 - **Files touched:** `backend/database/migrations/2026_06_26_150000_create_refresh_tokens_table.php` (new; uuid PK; user_id FK→users cascade; parent_id self-FK null-on-delete; token_hash, expires_at, revoked_at, ip, user_agent; composite index on (user_id, expires_at) + standalone index on expires_at; InnoDB / utf8mb4 on MySQL), `backend/tests/Feature/Database/RefreshTokensTableTest.php` (new; 6 tests — columns, no updated_at/deleted_at, index presence, FK roundtrip, force-delete cascade, parent_id rotation chain).
 - **Acceptance criteria:** Migration roundtrips; FK from user_id to users(id) enforced with cascade; parent_id self-FK enforces the rotation chain.
 - **Required tests:** Pest `tests/Feature/Database/RefreshTokensTableTest.php` — 6/6 pass; full suite 53/53 (196 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
