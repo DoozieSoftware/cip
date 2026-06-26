@@ -337,7 +337,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Status:** Done
 - **Completed at:** 2026-06-26 14:15 IST
 - **Agent / Committer:** Lead Solution Architect
-- **Commit:** `feat(users): complete T-M2-002 — User Eloquent model with HasRoles` (sha: pending)
+- **Commit:** `feat(users): complete T-M2-002 — User Eloquent model with HasRoles` (sha: 8ef97427)
 - **Files touched:** `backend/app/Modules/Users/Models/User.php` (new; extends `Authenticatable`; `use HasApiTokens, HasFactory, HasRoles, HasUuids, Notifiable, SoftDeletes`; `@use HasFactory<UserFactory>` PHPDoc; uuid PK; `fillable` includes `name/mobile/email/password/anonymous_enabled/status`; `hidden` covers `password/remember_token/two_factor_secret/two_factor_recovery_codes`; `casts` for `otp_verified_at/two_factor_confirmed_at/last_login_at/anonymous_enabled/password`; `isActive()` and `recordLogin()` helpers; NO module relations — those land in T-M2-005/006/008/009/020 per D-009), `backend/config/auth.php` (provider model swap `App\Models\User` → `App\Modules\Users\Models\User`), `backend/tests/Unit/Users/UserModelTest.php` (new; 5 tests covering uuid PK, table, fillable/hidden/casts, isActive, recordLogin).
 - **Acceptance criteria:** Model boots; UUID PK; Sanctum + Spatie traits wired; `isActive()` reflects status + soft-deleted; `recordLogin()` updates `last_login_at` + `last_login_ip`; `config/auth.php` provider points at the new module model.
 - **Required tests:** Pest `tests/Unit/Users/UserModelTest.php` — 5/5 pass; full suite 23/23 (97 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
