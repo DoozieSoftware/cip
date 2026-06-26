@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Reports\Models;
 
+use App\Modules\Departments\Models\Department;
 use Database\Factories\Modules\Reports\Models\ReportTypeFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -80,10 +81,10 @@ class ReportType extends Model
     }
 
     /**
-     * @return BelongsTo<\App\Modules\Departments\Models\Department, $this>
+     * @return BelongsTo<Department, $this>
      */
     public function departmentDefault(): BelongsTo
     {
-        return $this->belongsTo(\App\Modules\Departments\Models\Department::class, 'department_default_id');
+        return $this->belongsTo(Department::class, 'department_default_id');
     }
 }

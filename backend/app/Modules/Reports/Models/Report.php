@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * `reports` row per docs/04 §7.
@@ -40,8 +41,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property float|null $duplicate_score
  * @property bool $is_anonymous
  * @property bool $is_verified
- * @property \Illuminate\Support\Carbon|null $submitted_at
- * @property \Illuminate\Support\Carbon|null $closed_at
+ * @property Carbon|null $submitted_at
+ * @property Carbon|null $closed_at
  */
 class Report extends Model
 {
@@ -122,8 +123,10 @@ class Report extends Model
             ->value('tracking_number');
 
         $next = 1;
+
         if (is_string($latest) && $latest !== '') {
             $tail = substr($latest, strlen($prefix));
+
             if (ctype_digit($tail)) {
                 $next = (int) $tail + 1;
             }
@@ -173,7 +176,7 @@ class Report extends Model
     }
 
     /**
-     * @return HasMany<\App\Modules\Reports\Models\ReportStatusHistory, $this>
+     * @return HasMany<ReportStatusHistory, $this>
      */
     public function statusHistory(): HasMany
     {

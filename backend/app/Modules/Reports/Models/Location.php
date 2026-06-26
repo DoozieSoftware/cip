@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\Reports\Models;
 
+use App\Modules\Departments\Models\District;
+use App\Modules\Departments\Models\Ward;
 use Database\Factories\Modules\Reports\Models\LocationFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * `locations` row per docs/04 §8 and §24.
@@ -26,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property float|null $heading
  * @property float|null $speed
  * @property string|null $gps_provider
- * @property \Illuminate\Support\Carbon|null $captured_at
+ * @property Carbon|null $captured_at
  * @property string|null $address
  * @property string|null $ward_id
  * @property string|null $district_id
@@ -76,18 +79,18 @@ class Location extends Model
     }
 
     /**
-     * @return BelongsTo<\App\Modules\Departments\Models\Ward, $this>
+     * @return BelongsTo<Ward, $this>
      */
     public function ward(): BelongsTo
     {
-        return $this->belongsTo(\App\Modules\Departments\Models\Ward::class, 'ward_id');
+        return $this->belongsTo(Ward::class, 'ward_id');
     }
 
     /**
-     * @return BelongsTo<\App\Modules\Departments\Models\District, $this>
+     * @return BelongsTo<District, $this>
      */
     public function district(): BelongsTo
     {
-        return $this->belongsTo(\App\Modules\Departments\Models\District::class, 'district_id');
+        return $this->belongsTo(District::class, 'district_id');
     }
 }
