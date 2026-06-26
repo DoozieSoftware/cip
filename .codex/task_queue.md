@@ -629,7 +629,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Security/Services/SecurityEventService.php`
 - **Acceptance criteria:** `record` persists a row; model immutability test passes.
 - **Required tests:** `tests/Feature/Security/SecurityEventServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M2-022 — Configure rate limiters per docs/11 §21
 - **Milestone:** M2

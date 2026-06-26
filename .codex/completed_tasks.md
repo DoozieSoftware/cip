@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 19:30 IST (after T-M2-020 done — M2 progress 19/30; total 41/410 = 10.0 %)
+* **Last updated:** 2026-06-26 19:50 IST (after T-M2-021 done — M2 progress 20/30; total 42/410 = 10.2 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M1 — Repository Bootstrap & Tooling (see `.codex/current_milestone.md`)
 
@@ -32,7 +32,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
-| M2  | Identity, Auth & RBAC Core               | 30    | 19   | 0           | 0       | 0        | 63 %       |
+| M2  | Identity, Auth & RBAC Core               | 30    | 20   | 0           | 0       | 0        | 67 %       |
 | M3  | Master Configuration & Geography         | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **41** | **0**    | **0**   | **0**    | **10.0 %   |
+| **All** | **Total**                             | **410** | **42** | **0**    | **0**   | **0**    | **10.2 %   |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,11 +56,11 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 19 | 19 % |
+| Foundations | M2, M3, M5, M9 | 100 | 20 | 20 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
-| **Total** | | **410** | **41** | **10.0 % |
+| **Total** | | **410** | **42** | **10.2 % |
 
 ---
 
@@ -560,6 +560,18 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Notes:** The middleware is intentionally `append`-ed globally (not just to mutating routes) so the cost is uniform and so the `X-Audit-Id` response header is present on every request, which makes operational debugging easier. The controller can attach `audit.entity` / `audit.entity_id` / `audit.action` / `audit.before` / `audit.after` request attributes for non-model endpoints (e.g. auth login), but for the v1 the middleware falls back to the route-bound model + verb, which already covers the reports / workflow / users endpoints from M4+. The audit log is "complete enough" for V1 — future M15 (Compliance Hardening) will add tamper-evident hashing and a periodic integrity-check job.
 
 
+### T-M2-021 — Implement security event capture
+- **Milestone:** M2
+- **Status:** Done
+- **Completed at:** 2026-06-26 19:50 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(security): complete T-M2-021 — SecurityEventService` (sha: <pending>)
+- **Files touched:** `backend/app/Modules/Security/Services/SecurityEventService.php` (new; `record(event, severity, metadata, user, ip, userAgent)`; `info` / `warning` / `critical` convenience wrappers; `recordSafe` fail-open wrapper for hot paths; severity allow-list guard (422 INVALID_SEVERITY); event-name non-empty + ≤64 char guard (422 INVALID_EVENT); IP / UA fall back to the active request when not supplied; never throws to the caller when wrapped in `recordSafe`), `backend/tests/Feature/Security/SecurityEventServiceTest.php` (new; 12 tests — info-with-user, critical-without-user, empty-metadata-null-coercion, null-metadata, severity allow-list, empty-event reject, >64-char reject, model immutability update/delete, recordSafe swallow, recordSafe success, request IP/UA fallback).
+- **Acceptance criteria:** `record` persists a row; severity is constrained; event names are non-empty + ≤64 chars; the model layer still rejects update/delete (immutability test).
+- **Required tests:** Pest `tests/Feature/Security/SecurityEventServiceTest.php` — 12/12 pass; full suite 171/171 (616 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
+- **Notes:** The service is intentionally split into `record` (strict — throws on bad inputs) and `recordSafe` (swallow — logs the failure and returns null). Hot paths (e.g. the audit middleware, the login endpoint) should use `recordSafe` so a security-event write failure never breaks the user flow. Strict callers (admin tools, batch jobs) should use `record` so that input drift is caught early. The IP / UA fall back to the active request only when the caller did not supply them, so a console command (no HTTP request) still works with `null` IP / UA.
+
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -596,6 +608,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 19:50 | Logged T-M2-021 done; M2 progress 20/30; total 42/410 = 10.2 %. | Lead Solution Architect | T-M2-021 |
 | 2026-06-26 19:30 | Logged T-M2-020 done; M2 progress 19/30; total 41/410 = 10.0 %. | Lead Solution Architect | T-M2-020 |
 | 2026-06-26 19:10 | Logged T-M2-019 done; M2 progress 18/30; total 40/410 = 9.8 %. | Lead Solution Architect | T-M2-019 |
 | 2026-06-26 18:50 | Logged T-M2-018 done; M2 progress 17/30; total 39/410 = 9.5 %. | Lead Solution Architect | T-M2-018 |
@@ -646,10 +659,10 @@ Snapshot at file initialization. Updated as the repository grows.
 | Database migrations | 0 |
 | Eloquent models | 0 |
 | API endpoints (under `routes/api.php`) | 0 (only `/api/v1/health` and `/api/v1/health/ready` will exist after M1) |
-| Pest tests | 159 passing (595 assertions) |
+| Pest tests | 171 passing (616 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 34 (T-M2-020 pending) |
+| Git commits on `main` | 36 (T-M2-021 pending) |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |
