@@ -9,6 +9,7 @@ use Database\Factories\Modules\Departments\Models\CountryFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Country master. Part of the Location Domain per docs/04 §8.
@@ -56,5 +57,13 @@ class Country extends Model
         return [
             'active' => 'boolean',
         ];
+    }
+
+    /**
+     * @return HasMany<State, $this>
+     */
+    public function states(): HasMany
+    {
+        return $this->hasMany(State::class, 'country_id');
     }
 }
