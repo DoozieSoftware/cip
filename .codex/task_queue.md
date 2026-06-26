@@ -1163,7 +1163,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_report_assignments_table.php`
 - **Acceptance criteria:** FKs enforced; supports reassignment via new row.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-011 — Create idempotency_keys migration
 - **Milestone:** M4
