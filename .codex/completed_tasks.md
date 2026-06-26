@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 09:50 IST (after T-M3-023 done; M3 23/24; total 74/410 = 18.0 %)
+* **Last updated:** 2026-06-27 10:20 IST (after T-M3-024 done; M3 24/24; M3 CLOSED; total 75/410 = 18.3 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -33,7 +33,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
-| M3  | Master Configuration & Geography         | 24    | 23   | 0           | 0       | 0        | 96 %       |
+| M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **74** | **0**    | **0**   | **0**    | **18.0 %   |
+| **All** | **Total**                             | **410** | **75** | **0**    | **0**   | **0**    | **18.3 %   |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,11 +56,11 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 53 | 53 % |
+| Foundations | M2, M3, M5, M9 | 100 | 54 | 54 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
-| **Total** | | **410** | **74** | **18.0 % |
+| **Total** | | **410** | **75** | **18.3 % |
 
 ---
 
@@ -915,6 +915,18 @@ M2 (Identity, Auth & RBAC Core) is complete. 30/30 tasks done. The next mileston
 - **Acceptance criteria:** YAML parses via Symfony YAML; all M3 admin endpoints + schemas are visible; Swagger UI at `/api/documentation` serves the updated spec.
 - **Required tests:** Pest `tests/Feature/OpenApiAdminTest.php` — 5/5 pass; full suite 373/373 (1333 assertions) green; PHPStan clean (app/); Pint clean.
 
+
+### T-M3-024 — Add Pest feature suite for feature flag evaluation
+- **Milestone:** M3
+- **Status:** Done
+- **Completed at:** 2026-06-27 10:20 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(settings): complete T-M3-024 — Pest feature suite for feature flag evaluation`
+- **Files touched:** `backend/tests/Feature/Settings/FeatureFlagEvaluationTest.php` (new; 13 tests covering: missing-key default, master switch off at 100% rollout, master switch on at 100% rollout, master switch on at 0% rollout, deterministic per-user, 50% ± 15% distribution across 200 users, cohort short-circuit, cohort array-of-values "in" semantics, anonymous session id, HTTP evaluator endpoint for a known user, HTTP evaluator endpoint for an anonymous session, 404 for unknown flag, 401 for unauthenticated).
+- **Acceptance criteria:** All 13 cases pass; the suite exercises both service-level rules and the HTTP `/api/v1/admin/app-configs/{key}/evaluate` endpoint.
+- **Required tests:** Pest `tests/Feature/Settings/FeatureFlagEvaluationTest.php` — 13/13 pass; full suite 386/386 (1355 assertions) green; PHPStan clean (app/); Pint clean.
+- **Milestone close:** **M3 — Master Configuration & Geography is now complete (24/24 = 100 %).** M4 — Reports Domain & Submission API is the next milestone.
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -959,6 +971,7 @@ Append-only, newest entry at the top.
 | 2026-06-27 08:50 IST | Logged T-M3-021 done; M3 21/24; total 72/410 = 17.6 %. | Lead Solution Architect | T-M3-021 |
 | 2026-06-27 09:20 IST | Logged T-M3-022 done; M3 22/24; total 73/410 = 17.8 %. | Lead Solution Architect | T-M3-022 |
 | 2026-06-27 09:50 IST | Logged T-M3-023 done; M3 23/24; total 74/410 = 18.0 %. | Lead Solution Architect | T-M3-023 |
+| 2026-06-27 10:20 IST | Logged T-M3-024 done; M3 CLOSED 24/24 = 100 %; total 75/410 = 18.3 %. M4 starts next. | Lead Solution Architect | T-M3-024 |
 | 2026-06-27 05:40 IST | Logged T-M3-015 done; M3 15/24; total 66/410 = 16.1 %. | Lead Solution Architect | T-M3-015 |
 | 2026-06-27 05:00 IST | Logged T-M3-014 done; M3 14/24; total 65/410 = 15.9 %. | Lead Solution Architect | T-M3-014 |
 | 2026-06-27 04:25 IST | Logged T-M3-013 done; M3 13/24; total 64/410 = 15.6 %. | Lead Solution Architect | T-M3-013 |

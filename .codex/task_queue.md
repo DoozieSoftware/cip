@@ -1034,7 +1034,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/Settings/FeatureFlagEvaluationTest.php`
 - **Acceptance criteria:** All cases pass.
 - **Required tests:** `vendor/bin/pest tests/Feature/Settings/FeatureFlagEvaluationTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 
 ---
