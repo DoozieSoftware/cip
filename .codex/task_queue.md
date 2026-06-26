@@ -1568,7 +1568,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Services/MediaService.php`
 - **Acceptance criteria:** 11th photo rejected; video <3s or >5s rejected; 16MB photo rejected.
 - **Required tests:** `tests/Feature/Media/MediaServiceUploadTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M5-012 — POST /api/v1/reports/{id}/photos endpoint
 - **Milestone:** M5
