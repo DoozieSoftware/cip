@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Departments\Models;
 
-use Database\Factories\Modules\Departments\Models\DistrictFactory;
+use Database\Factories\Modules\Departments\Models\CityFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,29 +12,29 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * District master. Part of the Location Domain per docs/04 §8.
+ * City master. Part of the Location Domain per docs/04 §8.
  *
  * @property string $id
- * @property string $state_id
+ * @property string $district_id
  * @property string $name
  * @property string $code
  * @property bool $active
  */
-class District extends Model
+class City extends Model
 {
     /**
-     * @use HasFactory<DistrictFactory>
+     * @use HasFactory<CityFactory>
      */
     use HasFactory;
 
     use HasUuids;
 
-    protected $table = 'districts';
+    protected $table = 'cities';
 
     /**
      * @var list<string>
      */
-    protected $fillable = ['state_id', 'name', 'code', 'active'];
+    protected $fillable = ['district_id', 'name', 'code', 'active'];
 
     /**
      * @return array<string, string>
@@ -45,18 +45,18 @@ class District extends Model
     }
 
     /**
-     * @return BelongsTo<State, $this>
+     * @return BelongsTo<District, $this>
      */
-    public function state(): BelongsTo
+    public function district(): BelongsTo
     {
-        return $this->belongsTo(State::class, 'state_id');
+        return $this->belongsTo(District::class, 'district_id');
     }
 
     /**
-     * @return HasMany<City, $this>
+     * @return HasMany<Zone, $this>
      */
-    public function cities(): HasMany
+    public function zones(): HasMany
     {
-        return $this->hasMany(City::class, 'city_id');
+        return $this->hasMany(Zone::class, 'zone_id');
     }
 }
