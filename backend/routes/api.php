@@ -83,6 +83,8 @@ Route::prefix('v1')->group(function (): void {
         Route::post('reports/{id}/video', [MediaController::class, 'uploadVideo'])->name('api.v1.reports.video.store');
         // T-M5-014 — GET /api/v1/reports/{id}/media
         Route::get('reports/{id}/media', [MediaController::class, 'index'])->name('api.v1.reports.media.index');
+        // T-M5-016 — GET /api/v1/reports/{id}/media/{media}/audit (staff)
+        Route::get('reports/{id}/media/{media}/audit', [MediaController::class, 'audit'])->name('api.v1.reports.media.audit');
         // T-M4-023 — POST /api/v1/reports/{id}/submit
         Route::post('reports/{id}/submit', [ReportsController::class, 'submit'])->name('api.v1.reports.submit');
         // T-M4-027 — GET /api/v1/citizen/dashboard
