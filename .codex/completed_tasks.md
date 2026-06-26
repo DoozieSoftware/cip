@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 22:10 IST (after T-M4-026 done; M4 in progress)
+* **Last updated:** 2026-06-26 22:10 IST (after T-M4-028 done; M4 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -34,7 +34,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
-| M4 | Reports Domain & Submission API | 32 | 26 | 0 | 0 | 0 | 81 % |
+| M4 | Reports Domain & Submission API | 32 | 27 | 0 | 0 | 0 | 84 % |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **101** | **0** | **0** | **0** | **24.6 %** |
+| **All** | **Total** | **410** | **102** | **0** | **0** | **0** | **24.9 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M4-028 — GET /api/v1/citizen/reports endpoints
+- **Milestone:** M4
+- **Status:** Done
+- **Completed at:** 2026-06-26 22:10 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(reports): add ReportsController, Resources, and routes for M4 endpoints` (sha: `80e3f626`)
+- **Files touched:** backend/app/Modules/Reports/Http/Controllers/Api/ReportsController.php (citizenIndex() and citizenShow() handlers — citizen-scoped list and detail), backend/routes/api.php (routes GET /api/v1/citizen/reports and GET /api/v1/citizen/reports/{id} under auth:sanctum + throttle:citizen)
+- **Acceptance criteria:** Citizen index is paginated and supports status/date_from/date_to/q filters. Citizen show is gated to the owner or staff role.
+- **Required tests:** Repository searchForCitizen is exercised transitively; end-to-end tests land in T-M4-031.
+- **Notes:** Shares the same commit as T-M4-022. Anonymous reports are filtered out at the repository level (citizen_id IS NULL exclusion).
+
+
 
 ### T-M4-026 — GET /api/v1/reports/{id}/timeline endpoint
 - **Milestone:** M4
@@ -1301,6 +1314,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 22:10 IST | Logged T-M4-028 done; M4 27/32; total 102/410 = 24.9 %. | Lead Solution Architect | T-M4-028 |
 | 2026-06-26 22:10 IST | Logged T-M4-026 done; M4 26/32; total 101/410 = 24.6 %. | Lead Solution Architect | T-M4-026 |
 | 2026-06-26 22:09 IST | Logged T-M4-025 done; M4 25/32; total 100/410 = 24.4 %. | Lead Solution Architect | T-M4-025 |
 | 2026-06-26 22:09 IST | Logged T-M4-024 done; M4 24/32; total 99/410 = 24.1 %. | Lead Solution Architect | T-M4-024 |

@@ -1379,7 +1379,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Http/Controllers/Api/CitizenReportsController.php`
 - **Acceptance criteria:** Only the citizen's reports returned; 403 for others.
 - **Required tests:** `tests/Feature/Reports/CitizenReportsEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-029 — Standardize error codes
 - **Milestone:** M4
