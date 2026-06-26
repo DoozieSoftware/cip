@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-26 22:11 IST (after T-M4-023 done; M4 in progress)
+* **Last updated:** 2026-06-26 22:12 IST (after T-M4-029 done; M4 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -34,7 +34,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
-| M4 | Reports Domain & Submission API | 32 | 28 | 0 | 0 | 0 | 88 % |
+| M4 | Reports Domain & Submission API | 32 | 29 | 0 | 0 | 0 | 91 % |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **103** | **0** | **0** | **0** | **25.1 %** |
+| **All** | **Total** | **410** | **104** | **0** | **0** | **0** | **25.4 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M4-029 — Standardize error codes
+- **Milestone:** M4
+- **Status:** Done
+- **Completed at:** 2026-06-26 22:12 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(shared): complete T-M4-029 — Standardize error codes` (sha: `fa687c08`)
+- **Files touched:** backend/app/Modules/Shared/Enums/ErrorCode.php (new; enum with VALIDATION_FAILED, NOT_FOUND, UNAUTHORIZED, FORBIDDEN, RATE_LIMITED, CONFLICT, INTERNAL_ERROR, REPORT_NOT_FOUND, INVALID_GPS, INVALID_GPS_LOW_ACCURACY, IMPOSSIBLE_SPEED, VIDEO_REQUIRED, PHOTO_REQUIRED, DUPLICATE_REPORT, INVALID_STATUS, MISSING_REFERENCE_DATA, IDEMPOTENCY_KEY_CONFLICT)
+- **Acceptance criteria:** Every ApiException call site can now switch on a typed value instead of a string; future error codes are added to the enum first.
+- **Required tests:** Pint --test clean; the enum is referenced in code comments as the canonical source.
+- **Notes:** The enum is the single source of truth. Code sites that need a code from a non-M4 module should add their own enum entry to this file, then reference it by name.
+
+
 
 ### T-M4-023 — POST /api/v1/reports/{id}/submit endpoint
 - **Milestone:** M4
@@ -1327,6 +1340,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-26 22:12 IST | Logged T-M4-029 done; M4 29/32; total 104/410 = 25.4 %. | Lead Solution Architect | T-M4-029 |
 | 2026-06-26 22:11 IST | Logged T-M4-023 done; M4 28/32; total 103/410 = 25.1 %. | Lead Solution Architect | T-M4-023 |
 | 2026-06-26 22:10 IST | Logged T-M4-028 done; M4 27/32; total 102/410 = 24.9 %. | Lead Solution Architect | T-M4-028 |
 | 2026-06-26 22:10 IST | Logged T-M4-026 done; M4 26/32; total 101/410 = 24.6 %. | Lead Solution Architect | T-M4-026 |

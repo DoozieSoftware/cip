@@ -1391,7 +1391,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Shared/Enums/ErrorCode.php`, `backend/app/Modules/Shared/Exceptions/ApiException.php`
 - **Acceptance criteria:** Each code is rendered as a stable string in the envelope.
 - **Required tests:** `tests/Unit/Shared/ErrorCodeEnumTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-030 — Document reports API
 - **Milestone:** M4
