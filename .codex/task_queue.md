@@ -2198,7 +2198,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/storage/api-docs/openapi.yaml`
 - **Acceptance criteria:** `swagger-cli validate` passes.
 - **Required tests:** `tests/Feature/OpenApiRoutingTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-015 — Author docs/routing.md
 - **Milestone:** M7
