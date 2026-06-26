@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Routing\Services;
 
+use App\Modules\Reports\Events\ReportAssigned;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportAssignment;
 use App\Modules\Routing\ValueObjects\RoutingDecision;
@@ -24,18 +25,14 @@ use Illuminate\Support\Facades\DB;
  *    on the report itself (per docs/03 sec 16 the
  *    routing step is the one that fills the department
  *    bucket)
+ *  - dispatches the immutable `ReportAssigned` event so
+ *    downstream consumers (notifications, audit, analytics)
+ *    can react
  *
  * Round-robin state is held in the cache so a fresh
  * container instance picks up where the previous one left
  * off. The cache key is `routing:rr:<dept_id>` -> the index
  * of the next officer in the rotation list.
- *
- * The actor (the caller - usually the system or a
- * moderator) is recorded in `assigned_by` and is required
- * for the audit trail. When the system auto-routes, the
- * actor should be the system user; see T-M7-006 for the
- * `ReportAssigned` event that downstream listeners
- * consume.
  */
 class AssignmentService
 {
@@ -43,9 +40,9 @@ class AssignmentService
 
     public function __construct() {}
 
-    public function assign(Report $report, RoutingDecision $decision, ?User $actor): ReportAssignment
+    public function assign(Report $report, RoutingDecision $decision, ?User $actor, ?string $reason = null): ReportAssignment
     {
-        return DB::transaction(function () use ($report, $decision, $actor): ReportAssignment {
+        $assignment = DB::transaction(function () use ($report, $decision, $actor): ReportAssignment {
             $department = $decision->destinationDepartment;
             $officer = $decision->defaultOfficer ?? $this->pickOfficer($department->id);
 
@@ -70,6 +67,17 @@ class AssignmentService
 
             return $assignment;
         });
+
+        ReportAssigned::dispatch(
+            reportId: $report->id,
+            departmentId: $assignment->department_id,
+            officerId: $assignment->officer_id,
+            slaMinutes: $decision->defaultSlaMinutes,
+            actorId: $actor?->id,
+            reason: $reason,
+        );
+
+        return $assignment;
     }
 
     /**
@@ -100,7 +108,6 @@ class AssignmentService
     {
         $rows = DB::table('department_users')
             ->where('department_id', $departmentId)
-
             ->orderBy('user_id')
             ->pluck('user_id');
 
