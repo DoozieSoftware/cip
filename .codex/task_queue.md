@@ -2066,7 +2066,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Routing/Services/RoutingCondition.php`
 - **Acceptance criteria:** Each operator unit-tested.
 - **Required tests:** `tests/Unit/Routing/RoutingConditionTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-004 — RoutingEngine.resolve
 - **Milestone:** M7
