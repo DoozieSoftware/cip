@@ -832,7 +832,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** Migration test.
 - **Status:** Done
 
-### T-M3-008 — Create Department model with soft deletes
+### T-M3-008 — Create Department model with soft deletes [DONE 2026-06-27 — commit 31d77ee]
 - **Milestone:** M3
 - **Title:** Create Department model with soft deletes
 - **Description:** `Department` model with `HasUuids`, `SoftDeletes`; relationships: `parent`, `children`, `users`.
@@ -842,7 +842,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Departments/Models/Department.php`
 - **Acceptance criteria:** `$dept->parent` and `$dept->children` return correct relations.
 - **Required tests:** `tests/Unit/Departments/DepartmentModelTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M3-009 — Create department_users pivot migration
 - **Milestone:** M3

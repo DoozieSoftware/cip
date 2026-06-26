@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 01:30 IST (after T-M3-007 done; M3 7/24; total 58/410 = 14.1 %)
+* **Last updated:** 2026-06-27 02:00 IST (after T-M3-008 done; M3 8/24; total 59/410 = 14.4 %)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M3 — Master Configuration & Geography (see `.codex/current_milestone.md`)
 
@@ -33,7 +33,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
-| M3  | Master Configuration & Geography         | 24    | 7    | 0           | 0       | 0        | 29 %       |
+| M3  | Master Configuration & Geography         | 24    | 8    | 0           | 0       | 0        | 33 %       |
 | M4  | Reports Domain & Submission API          | 32    | 0    | 0           | 0       | 0        | 0 %        |
 | M5  | Media Pipeline & Evidence Integrity     | 26    | 0    | 0           | 0       | 0        | 0 %        |
 | M6  | Workflow Engine & State Machine          | 22    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total**                             | **410** | **58** | **0**    | **0**   | **0**    | **14.1 %   |
+| **All** | **Total**                             | **410** | **59** | **0**    | **0**   | **0**    | **14.4 %   |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,7 +56,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 37 | 37 % |
+| Foundations | M2, M3, M5, M9 | 100 | 38 | 38 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
@@ -747,6 +747,16 @@ M2 (Identity, Auth & RBAC Core) is complete. 30/30 tasks done. The next mileston
 - **Acceptance criteria:** Self-FK works; soft delete column present; unique code enforced.
 - **Required tests:** Pest `tests/Feature/Database/DepartmentsTableTest.php` — 5/5 pass; full suite 257/257 (964 assertions) green; PHPStan clean (app/); Pint clean. Per D-009 the `Department` model and its `parent`/`children` relations ship in T-M3-008.
 
+### T-M3-008 — Create Department model with soft deletes
+- **Milestone:** M3
+- **Status:** Done
+- **Completed at:** 2026-06-27 02:00 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(departments): complete T-M3-008 — Department model with soft deletes` (sha: 31d77ee)
+- **Files touched:** `backend/app/Modules/Departments/Models/Department.php` (new; HasUuids + HasFactory<DepartmentFactory> + SoftDeletes, fillable for every column, casts for active / default_sla_minutes / working_hours / holiday_calendar / escalation_matrix, belongsTo parent (self) + hasMany children (self) — M:N users relation deferred to T-M3-009 per D-009), `backend/database/factories/Modules/Departments/Models/DepartmentFactory.php` (new; faker factory with slug-style code, plausible working_hours, empty holiday_calendar + escalation_matrix, default_sla_minutes = 2880; states `inactive()` + `withParent(Department $parent)`), `backend/tests/Unit/Departments/DepartmentModelTest.php` (new; 7 tests — UUID PK + table + key type, cast map, JSON roundtrips, parent belongsTo, children hasMany, soft delete hides + restores, soft-deleted parent leaves child intact).
+- **Acceptance criteria:** `$dept->parent` and `$dept->children` return correct relations; soft delete works.
+- **Required tests:** Pest `tests/Unit/Departments/DepartmentModelTest.php` — 7/7 pass; full suite 264/264 (992 assertions) green; PHPStan clean (app/); Pint clean.
+
 ## 4. In-Progress Tasks
 
 > **No tasks are in progress.** Entries appear here when a task is moved to `Status: In Progress` in `.codex/task_queue.md` and remain until the matching `Done` entry is appended to §3.
@@ -783,6 +793,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-27 02:00 IST | Logged T-M3-008 done; M3 8/24; total 59/410 = 14.4 %. | Lead Solution Architect | T-M3-008 |
 | 2026-06-27 01:30 IST | Logged T-M3-007 done; M3 7/24; total 58/410 = 14.1 %. | Lead Solution Architect | T-M3-007 |
 | 2026-06-27 01:05 IST | Logged T-M3-006 done; M3 6/24; total 57/410 = 13.9 %. | Lead Solution Architect | T-M3-006 |
 | 2026-06-27 00:40 IST | Logged T-M3-005 done (backfill; the code commit landed in a prior session before its docs entry). | Lead Solution Architect | T-M3-005 |
@@ -854,7 +865,7 @@ Snapshot at file initialization. Updated as the repository grows.
 | Pest tests | 221 passing (850 assertions) |
 | Vitest tests | 0 |
 | Playwright E2E tests | 0 |
-| Git commits on `main` | 66 |
+| Git commits on `main` | 68 |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
 | Coverage: Backend | n/a (no code yet) |
