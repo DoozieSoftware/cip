@@ -361,7 +361,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Status:** Done
 - **Completed at:** 2026-06-26 15:00 IST
 - **Agent / Committer:** Lead Solution Architect
-- **Commit:** `feat(auth): complete T-M2-004 — otps table migration` (sha: pending)
+- **Commit:** `feat(auth): complete T-M2-004 — otps table migration` (sha: 9ff42913)
 - **Files touched:** `backend/database/migrations/2026_06_26_144500_create_otps_table.php` (new; uuid PK; mobile indexed; code_hash, expires_at, consumed_at, attempts, ip, user_agent; created_at only — no updated_at/deleted_at; composite index on (mobile, expires_at) + standalone index on expires_at; MySQL InnoDB / utf8mb4), `backend/tests/Feature/Database/OtpsTableTest.php` (new; 6 tests — columns, uuid PK, no updated_at/deleted_at, index presence, row roundtrip, NOT NULL enforcement on mobile).
 - **Acceptance criteria:** Table created with composite index on `mobile` + `expires_at` and a standalone index on `expires_at`; the `id` column is a string/uuid PK; `mobile` and `code_hash` are NOT NULL; rows roundtrip cleanly.
 - **Required tests:** Pest `tests/Feature/Database/OtpsTableTest.php` — 6/6 pass; full suite 38/38 (148 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
