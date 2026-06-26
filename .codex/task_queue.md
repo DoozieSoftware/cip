@@ -569,7 +569,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Authentication/Http/Controllers/AuthController.php`
 - **Acceptance criteria:** Subsequent calls with the same access token return 401; refresh token also rejected.
 - **Required tests:** `tests/Feature/Authentication/LogoutEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** In Progress
 
 ### T-M2-017 — GET /api/v1/auth/me endpoint
 - **Milestone:** M2
