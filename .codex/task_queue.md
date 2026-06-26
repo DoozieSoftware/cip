@@ -1307,7 +1307,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Http/Controllers/Api/ReportsController.php`, `backend/app/Modules/Reports/Http/Resources/ReportResource.php`
 - **Acceptance criteria:** 201 on success; 422 on validation; 409 on duplicate idempotency-key mismatch.
 - **Required tests:** `tests/Feature/Reports/CreateReportEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M4-023 — POST /api/v1/reports/{id}/submit endpoint
 - **Milestone:** M4
