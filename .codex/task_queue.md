@@ -760,7 +760,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Required tests:** Migration + model test.
 - **Status:** Done
 
-### T-M3-002 — Create states migration and model
+### T-M3-002 — Create states migration and model [DONE 2026-06-26 — commit 503cb3]
 - **Milestone:** M3
 - **Title:** Create states migration and model
 - **Description:** Table `states`: `id`, `country_id` FK, `name`, `code`, `active`; index on `(country_id, code)`.
@@ -770,7 +770,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_states_table.php`, `backend/app/Modules/Departments/Models/State.php`
 - **Acceptance criteria:** FK enforced; unique index on `(country_id, code)`.
 - **Required tests:** Migration test.
-- **Status:** In Progress
+- **Status:** Done
 
 ### T-M3-003 — Create districts migration and model
 - **Milestone:** M3
@@ -782,7 +782,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_districts_table.php`, `backend/app/Modules/Departments/Models/District.php`
 - **Acceptance criteria:** FK enforced; `District::factory()->create()` works.
 - **Required tests:** Migration + factory test.
-- **Status:** Not Started
+- **Status:** In Progress
 
 ### T-M3-004 — Create cities migration and model
 - **Milestone:** M3
