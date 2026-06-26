@@ -493,7 +493,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Status:** Done
 - **Completed at:** 2026-06-26 17:40 IST
 - **Agent / Committer:** Lead Solution Architect
-- **Commit:** `feat(auth): complete T-M2-015 — POST /api/v1/auth/refresh endpoint` (sha: pending)
+- **Commit:** `feat(auth): complete T-M2-015 — POST /api/v1/auth/refresh endpoint` (sha: 83a80702)
 - **Files touched:** `backend/app/Modules/Authentication/Http/Requests/RefreshTokenRequest.php` (new; refresh_token string, min 32 chars), `backend/app/Modules/Authentication/Services/AuthenticationService.php` (added `refresh(plain, ip, ua)` — calls `RefreshTokenService::rotate`, issues a new Sanctum PAT, returns the rotated pair), `backend/app/Modules/Authentication/Http/Controllers/AuthController.php` (added `refresh(RefreshTokenRequest)`), `backend/routes/api.php` (registered `POST api/v1/auth/refresh`), `backend/tests/Feature/Authentication/RefreshEndpointTest.php` (new; 6 tests — happy path, second-use rejected (rotation invariant), unknown token, malformed body, row rotation with parent_id, fresh Sanctum PAT).
 - **Acceptance criteria:** Old refresh token rejected on second use; new pair returned.
 - **Required tests:** Pest `tests/Feature/Authentication/RefreshEndpointTest.php` — 6/6 pass; full suite 115/115 (458 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
