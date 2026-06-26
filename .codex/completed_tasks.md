@@ -409,7 +409,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Status:** Done
 - **Completed at:** 2026-06-26 15:50 IST
 - **Agent / Committer:** Lead Solution Architect
-- **Commit:** `feat(auth): complete T-M2-008 — login_histories table + model` (sha: pending)
+- **Commit:** `feat(auth): complete T-M2-008 — login_histories table + model` (sha: 58bff03d)
 - **Files touched:** `backend/database/migrations/2026_06_26_153000_create_login_histories_table.php` (new; uuid PK; user_id FK→users nullOnDelete (failure paths may target unregistered mobiles); mobile (NOT NULL); ip, user_agent, device_fingerprint; success boolean; failure_reason; login_at; composite index on (success, login_at) for stream queries), `backend/app/Modules/Authentication/Models/LoginHistory.php` (new; uses HasUuids; `timestamps = false`; BelongsTo<User, LoginHistory> `user()`; casts success → boolean, login_at → datetime), `backend/app/Modules/Users/Models/User.php` (added `loginHistories(): HasMany<LoginHistory, $this>` relation per D-009), `backend/tests/Feature/Authentication/LoginHistoryTest.php` (new; 5 tests — columns, no updated_at/deleted_at, success roundtrip + relation, failure without user, composite index).
 - **Acceptance criteria:** Table created; model write/read works; failure rows accepted with null user_id; the `user()` relation resolves when user_id is set.
 - **Required tests:** Pest `tests/Feature/Authentication/LoginHistoryTest.php` — 5/5 pass; full suite 66/66 (244 assertions) green; PHPStan analyse app/ clean; Pint --test clean.
