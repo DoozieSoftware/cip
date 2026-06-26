@@ -748,7 +748,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 
 ---
 
-### T-M3-001 — Create countries migration and model
+### T-M3-001 — Create countries migration and model [DONE 2026-06-26 — commit 200aa8]
 - **Milestone:** M3
 - **Title:** Create countries migration and model
 - **Description:** Table `countries` with `id` UUID, `name`, `iso2` (unique), `iso3`, `phone_code`, `active`; model with fillable + casts.
@@ -758,7 +758,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_countries_table.php`, `backend/app/Modules/Departments/Models/Country.php`
 - **Acceptance criteria:** `Country::create([...])` succeeds; seeder inserts "India" idempotently.
 - **Required tests:** Migration + model test.
-- **Status:** In Progress
+- **Status:** Done
 
 ### T-M3-002 — Create states migration and model
 - **Milestone:** M3
@@ -770,7 +770,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_states_table.php`, `backend/app/Modules/Departments/Models/State.php`
 - **Acceptance criteria:** FK enforced; unique index on `(country_id, code)`.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** In Progress
 
 ### T-M3-003 — Create districts migration and model
 - **Milestone:** M3

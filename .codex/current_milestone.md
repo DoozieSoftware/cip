@@ -2,8 +2,8 @@
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** Done (30 / 30 tasks complete — M2 closed)
-**Last updated:** 2026-06-26 23:05 IST (after T-M2-030 done — M2 closed)
+**Status:** In Progress (1 / 24 tasks complete — M3 started)
+**Last updated:** 2026-06-26 23:30 IST (after T-M3-001 done)
 **Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M2, `.codex/task_queue.md` §M2, `docs/02` §4 §11 §17, `docs/03` §13–14 §19, `docs/05` §5, `docs/11` §6–9 §19 §21 §22 §28–29, `docs/14` §19 §37, `docs/15` §6–7
 
 > M1 is complete (22/22). M2 picks up where M1 left off and lands a production-grade identity layer: citizens authenticate via OTP, staff via username + password (2FA-ready), and Spatie Permission powers RBAC. JWT lifecycle with refresh-token rotation, audit logging on every mutating request, and rate limiters from `docs/11` §21 are all in scope.
@@ -93,6 +93,6 @@ Build a production-grade identity layer that supports three user personas with d
 
 ## 8. Implementation Status
 
-* **M2 closed.** Active milestone now: **M3 — Master Configuration & Geography** (24 tasks). Next task: T-M3-001.
+* Active task: **T-M3-002 — Create states migration and model** (next: states table with country_id FK, name, code, unique (country_id, code)).
 * Blockers: none.
 * Next task on completion: T-M2-002 (User model).
