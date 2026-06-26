@@ -1973,7 +1973,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Unit/Workflow/ConditionEvaluatorTest.php`
 - **Acceptance criteria:** All cases pass.
 - **Required tests:** `vendor/bin/pest tests/Unit/Workflow/ConditionEvaluatorTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M6-019 — Update OpenAPI for workflow admin
 - **Milestone:** M6

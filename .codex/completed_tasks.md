@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 03:06 IST (after T-M6-017 done; M6 in progress)
+* **Last updated:** 2026-06-27 03:07 IST (after T-M6-018 done; M6 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M5 — Media Pipeline & Evidence Integrity (see `.codex/current_milestone.md`; M4 closed 32/32 = 100 %)
 
@@ -36,7 +36,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
 | M4 | Reports Domain & Submission API | 32 | 32 | 0 | 0 | 0 | 100 % |
 | M5 | Media Pipeline & Evidence Integrity | 26 | 26 | 0 | 0 | 0 | 100 % |
-| M6 | Workflow Engine & State Machine | 22 | 17 | 0 | 0 | 0 | 77 % |
+| M6 | Workflow Engine & State Machine | 22 | 18 | 0 | 0 | 0 | 82 % |
 | M7  | Routing Engine & Department Assignment   | 18    | 0    | 0           | 0       | 0        | 0 %        |
 | M8  | AI Vision Pipeline & Provider Abstraction | 30  | 0    | 0           | 0       | 0        | 0 %        |
 | M9  | Notification & Eventing Platform         | 20    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **150** | **0** | **0** | **0** | **36.6 %** |
+| **All** | **Total** | **410** | **151** | **0** | **0** | **0** | **36.8 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M6-018 — WorkflowConditionTest
+- **Milestone:** M6
+- **Status:** Done
+- **Completed at:** 2026-06-27 03:07 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `docs(codex): log T-M6-017 as Done — M6 17/22 = 77 %; total 150/410 = 36.6 %` (sha: `ce2eeccd9da694e58d29eff9399a4f693638ba1f`)
+- **Files touched:** ConditionEvaluatorTest.php
+- **Acceptance criteria:** All cases pass
+- **Required tests:** 11 ConditionEvaluatorTest tests already cover every operator (eq, ne, in, not_in, gt, gte, lt, lte, between, truthy, falsy) plus dotted paths, AND-semantics combination, unknown-operator exception, and single-scalar shorthand. All 11 pass. Test file already present from T-M6-006.
+- **Notes:** 
+
+
 
 ### T-M6-017 — WorkflowRoleEnforcementTest
 - **Milestone:** M6
@@ -1941,6 +1954,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-27 03:07 IST | Logged T-M6-018 done; M6 18/22; total 151/410 = 36.8 %. | Lead Solution Architect | T-M6-018 |
 | 2026-06-27 03:06 IST | Logged T-M6-017 done; M6 17/22; total 150/410 = 36.6 %. | Lead Solution Architect | T-M6-017 |
 | 2026-06-27 02:56 IST | Logged T-M6-016 done; M6 16/22; total 149/410 = 36.3 %. | Lead Solution Architect | T-M6-016 |
 | 2026-06-27 02:46 IST | Logged T-M6-015 done; M6 15/22; total 148/410 = 36.1 %. | Lead Solution Architect | T-M6-015 |
