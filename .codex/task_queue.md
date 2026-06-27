@@ -2459,7 +2459,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Services/ProviderFailoverService.php`
 - **Acceptance criteria:** First provider 503 → second provider succeeds.
 - **Required tests:** `tests/Feature/AI/ProviderFailoverTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-018 — AiPipelineOrchestrator job
 - **Milestone:** M8
