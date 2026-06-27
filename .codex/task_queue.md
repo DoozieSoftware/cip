@@ -2327,7 +2327,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Models/AiProviderConfig.php`, `backend/app/Modules/AI/Models/PromptVersion.php`, `backend/app/Modules/AI/Models/AiJob.php`, `backend/app/Modules/AI/Models/AiResult.php`, `backend/app/Modules/AI/Models/AiLabel.php`
 - **Acceptance criteria:** Relationships return collections.
 - **Required tests:** Model test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-007 — AIProviderInterface
 - **Milestone:** M8
