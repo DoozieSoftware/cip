@@ -14,7 +14,8 @@ use App\Modules\Users\Models\User;
 
 beforeEach(function (): void {
     $this->evaluator = new RoutingCondition;
-    $this->engine = new RoutingEngine($this->evaluator);
+    $this->repository = new \App\Modules\Routing\Repositories\RoutingRepository;
+    $this->engine = new RoutingEngine($this->evaluator, $this->repository);
 
     $this->typePothole = new ReportType(['code' => 'pothole', 'name' => 'Pothole']);
     $this->priHigh = makePri('pri-high', 'high', 60);

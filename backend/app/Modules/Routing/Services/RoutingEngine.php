@@ -6,6 +6,7 @@ namespace App\Modules\Routing\Services;
 
 use App\Modules\Reports\Models\Report;
 use App\Modules\Routing\Models\RoutingRule;
+use App\Modules\Routing\Repositories\RoutingRepository;
 use App\Modules\Routing\ValueObjects\RoutingDecision;
 use Illuminate\Support\Collection;
 
@@ -30,6 +31,7 @@ class RoutingEngine
 {
     public function __construct(
         private readonly RoutingCondition $condition,
+        private readonly RoutingRepository $repository,
     ) {}
 
     public function resolve(Report $report): ?RoutingDecision
@@ -76,11 +78,6 @@ class RoutingEngine
      */
     private function loadActiveRules(): Collection
     {
-        return RoutingRule::query()
-            ->where('active', true)
-            ->orderBy('priority', 'asc')
-            ->orderBy('id', 'asc')
-            ->with(['destinationDepartment', 'defaultOfficer', 'defaultPriority'])
-            ->get();
+        return $this->repository->activeRules();
     }
 }

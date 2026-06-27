@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Routing\Services;
 
 use App\Modules\Routing\Models\RoutingRule;
+use App\Modules\Routing\Repositories\RoutingRepository;
 use App\Modules\Security\Models\AuditLog;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
@@ -29,6 +30,10 @@ use Illuminate\Support\Facades\DB;
  */
 class RoutingAdminService
 {
+    public function __construct(
+        private readonly RoutingRepository $repository,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $attributes
      */
@@ -47,6 +52,9 @@ class RoutingAdminService
                 'active' => array_key_exists('active', $attributes) ? (bool) $attributes['active'] : true,
             ]);
 
+            $this->writeAudit($rule, null, $actor, $request, 'routing.create');
+
+            $this->repository->invalidate();
             $this->writeAudit($rule, null, $actor, $request, 'routing.create');
 
             return $rule;
@@ -80,6 +88,7 @@ class RoutingAdminService
             ])->save();
 
             $this->writeAudit($rule, $before, $actor, $request, 'routing.update');
+            $this->repository->invalidate();
 
             return $rule->refresh();
         });
@@ -91,6 +100,7 @@ class RoutingAdminService
             $before = $rule->only(['name', 'priority', 'active']);
             $rule->delete();
             $this->writeAudit($rule, $before, $actor, $request, 'routing.delete');
+            $this->repository->invalidate();
         });
     }
 
@@ -128,6 +138,7 @@ class RoutingAdminService
 
             $requestId = $request?->attributes->get('trace_id');
 
+            $this->repository->invalidate();
             AuditLog::query()->create([
                 'user_id' => $actor?->id,
                 'entity' => 'routing_rules',
