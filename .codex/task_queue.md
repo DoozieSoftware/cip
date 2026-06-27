@@ -2411,7 +2411,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Services/DuplicateDetector.php`
 - **Acceptance criteria:** Identical hash → 100; distance > 5 → 0.
 - **Required tests:** `tests/Unit/AI/DuplicateDetectorTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-014 — FraudScorer
 - **Milestone:** M8
