@@ -2387,7 +2387,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Services/PiiMaskingService.php`
 - **Acceptance criteria:** No mobile/email survives the mask.
 - **Required tests:** `tests/Unit/AI/PiiMaskingServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-012 — ImageQualityAnalyzer
 - **Milestone:** M8
