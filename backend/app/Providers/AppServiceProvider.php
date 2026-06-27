@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Modules\AI\Events\AiCompleted;
 use App\Modules\AI\Listeners\AiCompletedListener;
+use App\Modules\AI\Listeners\ReportSubmittedListener;
 use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Listeners\WriteStatusHistory;
 use Illuminate\Support\Facades\Event;
@@ -33,5 +34,7 @@ class AppServiceProvider extends ServiceProvider
 
         // M7: wire AI completion -> routing -> assignment -> workflow.
         Event::listen(AiCompleted::class, AiCompletedListener::class);
+        // M8: wire report submission (status -> ai_processing) -> vision pipeline.
+        Event::listen(ReportStatusChanged::class, ReportSubmittedListener::class);
     }
 }
