@@ -2267,7 +2267,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_ai_provider_configs_table.php`
 - **Acceptance criteria:** FKs and unique `code` enforced.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-002 — Create prompt_versions migration
 - **Milestone:** M8
