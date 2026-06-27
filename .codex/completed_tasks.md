@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 06:31 IST (after T-M8-019 done; M8 in progress)
+* **Last updated:** 2026-06-27 06:36 IST (after T-M8-020 done; M8 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M5 — Media Pipeline & Evidence Integrity (see `.codex/current_milestone.md`; M4 closed 32/32 = 100 %)
 
@@ -38,7 +38,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M5 | Media Pipeline & Evidence Integrity | 26 | 26 | 0 | 0 | 0 | 100 % |
 | M6 | Workflow Engine & State Machine | 22 | 22 | 0 | 0 | 0 | 100 % |
 | M7 | Routing Engine & Department Assignment | 18 | 18 | 0 | 0 | 0 | 100 % |
-| M8 | AI Vision Pipeline & Provider Abstraction | 30 | 19 | 0 | 0 | 0 | 63 % |
+| M8 | AI Vision Pipeline & Provider Abstraction | 30 | 20 | 0 | 0 | 0 | 67 % |
 | M9  | Notification & Eventing Platform         | 20    | 0    | 0           | 0       | 0        | 0 %        |
 | M10 | Moderator Portal                         | 28    | 0    | 0           | 0       | 0        | 0 %        |
 | M11 | Operations Portal (Department)           | 28    | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **192** | **0** | **0** | **0** | **46.8 %** |
+| **All** | **Total** | **410** | **193** | **0** | **0** | **0** | **47.1 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,19 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M8-020 — Dispatch pipeline on report submit
+- **Milestone:** M8
+- **Status:** Done
+- **Completed at:** 2026-06-27 06:36 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(ai): complete T-M8-020 — Dispatch pipeline on report submit` (sha: `9c5f0d8982b82f8fc81122f150629a07119e446d`)
+- **Files touched:** backend/app/Modules/AI/Listeners/ReportSubmittedListener.php, backend/app/Providers/AppServiceProvider.php, backend/tests/Feature/AI/ReportSubmitTriggersAiTest.php
+- **Acceptance criteria:** Submitting a report creates an ai_jobs row
+- **Required tests:** ReportSubmitTriggersAiTest: 4 cases
+- **Notes:** 
+
+
 
 ### T-M8-019 — AICompleted event
 - **Milestone:** M8
@@ -2487,6 +2500,7 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-27 06:36 IST | Logged T-M8-020 done; M8 20/30; total 193/410 = 47.1 %. | Lead Solution Architect | T-M8-020 |
 | 2026-06-27 06:31 IST | Logged T-M8-019 done; M8 19/30; total 192/410 = 46.8 %. | Lead Solution Architect | T-M8-019 |
 | 2026-06-27 06:30 IST | Logged T-M8-018 done; M8 18/30; total 191/410 = 46.6 %. | Lead Solution Architect | T-M8-018 |
 | 2026-06-27 06:24 IST | Logged T-M8-017 done; M8 17/30; total 190/410 = 46.3 %. | Lead Solution Architect | T-M8-017 |

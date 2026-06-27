@@ -2495,7 +2495,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Listeners/ReportSubmittedListener.php`
 - **Acceptance criteria:** Submitting a report creates an `ai_jobs` row.
 - **Required tests:** `tests/Feature/AI/ReportSubmitTriggersAiTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-021 — POST /api/v1/internal/ai/process
 - **Milestone:** M8
