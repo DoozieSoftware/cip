@@ -2315,7 +2315,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_ai_labels_table.php`
 - **Acceptance criteria:** Migration roundtrips.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-006 — AI Eloquent models
 - **Milestone:** M8
