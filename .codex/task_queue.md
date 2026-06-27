@@ -2399,7 +2399,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Services/ImageQualityAnalyzer.php`
 - **Acceptance criteria:** Solid black image scores 0; clean street photo scores > 80.
 - **Required tests:** `tests/Unit/AI/ImageQualityAnalyzerTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-013 — DuplicateDetector
 - **Milestone:** M8
