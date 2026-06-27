@@ -2339,7 +2339,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Contracts/AIProviderInterface.php`, `backend/app/Modules/AI/ValueObjects/AiRequest.php`, `backend/app/Modules/AI/ValueObjects/AiResponse.php`
 - **Acceptance criteria:** Interface enforced by a Pest test.
 - **Required tests:** `tests/Unit/AI/AIProviderInterfaceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-008 — MockProvider implementation
 - **Milestone:** M8
