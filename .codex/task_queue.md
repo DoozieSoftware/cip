@@ -2291,7 +2291,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_ai_jobs_table.php`
 - **Acceptance criteria:** Indexes on `(status)`, `(report_id)`.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-004 — Create ai_results migration
 - **Milestone:** M8
