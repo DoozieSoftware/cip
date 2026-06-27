@@ -2447,7 +2447,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Services/AiResponseValidator.php`
 - **Acceptance criteria:** Missing `category` raises; wrong types raise.
 - **Required tests:** `tests/Unit/AI/AiResponseValidatorTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-017 — ProviderFailoverService
 - **Milestone:** M8
