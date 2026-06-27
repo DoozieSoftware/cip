@@ -2423,7 +2423,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Services/FraudScorer.php`
 - **Acceptance criteria:** Mock-GPS signal of 0.9 pushes score > 75.
 - **Required tests:** `tests/Unit/AI/FraudScorerTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-015 — ConfidenceAggregator
 - **Milestone:** M8
