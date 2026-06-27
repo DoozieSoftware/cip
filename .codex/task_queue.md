@@ -2483,7 +2483,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Events/AICompleted.php`
 - **Acceptance criteria:** Event serializable; listener receives payload.
 - **Required tests:** `tests/Feature/AI/AICompletedEventTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-020 — Dispatch pipeline on report submit
 - **Milestone:** M8
