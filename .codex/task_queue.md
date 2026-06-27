@@ -2435,7 +2435,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Services/ConfidenceAggregator.php`
 - **Acceptance criteria:** Boundary cases map to expected buckets.
 - **Required tests:** `tests/Unit/AI/ConfidenceAggregatorTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-016 — AiResponseValidator
 - **Milestone:** M8
