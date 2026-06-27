@@ -1889,6 +1889,455 @@ components:
         - type: object
           properties:
             data: { $ref: '#/components/schemas/Reassignment' }
+  # =============================================================
+  # M8 — AI Vision Pipeline
+  # =============================================================
+  /api/v1/admin/ai/providers:
+    get:
+      tags: [AI]
+      summary: 'List AI provider configs (paginated, super_admin only)'
+      operationId: admin.ai.providers.index
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: active
+          schema: { type: boolean }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 25, maximum: 200 }
+      responses:
+        '200':
+          description: 'Paginated list of AI provider configs. api_key_secret_id is masked; has_secret boolean is surfaced.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiProviderListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [AI]
+      summary: 'Create an AI provider config'
+      operationId: admin.ai.providers.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AiProviderStoreRequest' }
+      responses:
+        '201':
+          description: 'AI provider config created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiProviderResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/ai/providers/{provider}:
+    get:
+      tags: [AI]
+      summary: 'Show an AI provider config'
+      operationId: admin.ai.providers.show
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'AI provider config.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiProviderResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [AI]
+      summary: 'Update an AI provider config'
+      operationId: admin.ai.providers.update
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AiProviderUpdateRequest' }
+      responses:
+        '200':
+          description: 'AI provider config updated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiProviderResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [AI]
+      summary: 'Delete an AI provider config'
+      operationId: admin.ai.providers.destroy
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: 'AI provider config deleted.' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/ai/prompts:
+    get:
+      tags: [AI]
+      summary: 'List AI prompt versions (paginated, super_admin only)'
+      operationId: admin.ai.prompts.index
+      parameters:
+        - in: query
+          name: name
+          schema: { type: string, description: 'Filter by prompt name (e.g. category_classifier).' }
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft, approved, deprecated] }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 25, maximum: 200 }
+      responses:
+        '200':
+          description: 'Paginated list of prompt versions.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromptVersionListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [AI]
+      summary: 'Create a new prompt version'
+      operationId: admin.ai.prompts.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PromptVersionStoreRequest' }
+      responses:
+        '201':
+          description: 'Prompt version created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromptVersionResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/ai/prompts/{prompt}:
+    get:
+      tags: [AI]
+      summary: 'Show a prompt version'
+      operationId: admin.ai.prompts.show
+      parameters:
+        - in: path
+          name: prompt
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Prompt version.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromptVersionResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [AI]
+      summary: 'Update a prompt version (only draft rows are editable)'
+      operationId: admin.ai.prompts.update
+      parameters:
+        - in: path
+          name: prompt
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PromptVersionUpdateRequest' }
+      responses:
+        '200':
+          description: 'Prompt version updated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromptVersionResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [AI]
+      summary: 'Delete a prompt version'
+      operationId: admin.ai.prompts.destroy
+      parameters:
+        - in: path
+          name: prompt
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: 'Prompt version deleted.' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/ai/prompts/{prompt}/approve:
+    post:
+      tags: [AI]
+      summary: 'Approve a new prompt version (deprecates the previous approved row for the same name)'
+      operationId: admin.ai.prompts.approve
+      parameters:
+        - in: path
+          name: prompt
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Prompt approved; the prior approved row for the same name is now deprecated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromptVersionResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/ai/prompts/{prompt}/rollback:
+    post:
+      tags: [AI]
+      summary: 'Roll back to a deprecated prompt version (re-approves it; demotes the current approved row)'
+      operationId: admin.ai.prompts.rollback
+      parameters:
+        - in: path
+          name: prompt
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Rollback applied. The target row is now approved; the prior approved row is deprecated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromptVersionResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/internal/ai/process/{reportId}:
+    post:
+      tags: [AI]
+      summary: 'Enqueue the AI pipeline for a report (system role only)'
+      operationId: internal.ai.process
+      parameters:
+        - in: path
+          name: reportId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '202':
+          description: 'Pipeline enqueued.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiProcessEnqueuedResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/internal/ai/job/{id}:
+    get:
+      tags: [AI]
+      summary: 'Read an ai_jobs row by id (system role only)'
+      operationId: internal.ai.job
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Job status.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiJobResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/internal/ai/job/{id}/result:
+    get:
+      tags: [AI]
+      summary: 'Read the ai_results row + labels for a completed job (system role only)'
+      operationId: internal.ai.job.result
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Result + labels.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiResultResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  # =============================================================
+  # AI schemas
+  # =============================================================
+  AiProvider:
+    type: object
+    properties:
+      id: { type: string, format: uuid }
+      code: { type: string, example: 'mock' }
+      name: { type: string, example: 'Mock Provider' }
+      base_url: { type: string, format: uri, nullable: true }
+      auth_type: { type: string, enum: [none, bearer, api_key, oauth] }
+      has_secret: { type: boolean, description: 'True when api_key_secret_id is set; the secret id itself is never returned.' }
+      model: { type: string, example: 'mock-1.0' }
+      temperature: { type: number, format: float, minimum: 0, maximum: 2 }
+      timeout_ms: { type: integer, minimum: 1 }
+      retry_count: { type: integer, minimum: 0 }
+      priority: { type: integer, minimum: 0 }
+      is_fallback: { type: boolean }
+      active: { type: boolean }
+      created_at: { type: string, format: date-time, nullable: true }
+      updated_at: { type: string, format: date-time, nullable: true }
+  AiProviderStoreRequest:
+    type: object
+    required: [code, name, base_url, auth_type, model, temperature, timeout_ms, retry_count, priority, active, is_fallback]
+    properties:
+      code: { type: string, minLength: 1, maxLength: 64, example: 'mock' }
+      name: { type: string, minLength: 1, maxLength: 255 }
+      base_url: { type: string, format: uri }
+      auth_type: { type: string, enum: [none, bearer, api_key, oauth] }
+      api_key_secret_id: { type: string, format: uuid, nullable: true }
+      model: { type: string, minLength: 1, maxLength: 128 }
+      temperature: { type: number, format: float, minimum: 0, maximum: 2 }
+      timeout_ms: { type: integer, minimum: 1, maximum: 120000 }
+      retry_count: { type: integer, minimum: 0, maximum: 10 }
+      priority: { type: integer, minimum: 0, maximum: 1000 }
+      is_fallback: { type: boolean }
+      active: { type: boolean }
+  AiProviderUpdateRequest:
+    type: object
+    properties:
+      name: { type: string, minLength: 1, maxLength: 255 }
+      base_url: { type: string, format: uri }
+      auth_type: { type: string, enum: [none, bearer, api_key, oauth] }
+      api_key_secret_id: { type: string, format: uuid, nullable: true }
+      model: { type: string, minLength: 1, maxLength: 128 }
+      temperature: { type: number, format: float, minimum: 0, maximum: 2 }
+      timeout_ms: { type: integer, minimum: 1, maximum: 120000 }
+      retry_count: { type: integer, minimum: 0, maximum: 10 }
+      priority: { type: integer, minimum: 0, maximum: 1000 }
+      is_fallback: { type: boolean }
+      active: { type: boolean }
+  AiProviderResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data: { $ref: '#/components/schemas/AiProvider' }
+  AiProviderListResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            type: array
+            items: { $ref: '#/components/schemas/AiProvider' }
+          meta: { $ref: '#/components/schemas/PaginationMeta' }
+  PromptVersion:
+    type: object
+    properties:
+      id: { type: string, format: uuid }
+      name: { type: string, example: 'category_classifier' }
+      version: { type: integer, minimum: 1, example: 1 }
+      purpose: { type: string, nullable: true }
+      provider_code: { type: string, example: 'mock' }
+      prompt_text: { type: string, description: 'The full prompt template sent to the provider.' }
+      expected_json_schema: { type: string, nullable: true, description: 'JSON schema (as string) the provider response must validate against.' }
+      status: { type: string, enum: [draft, approved, deprecated] }
+      is_active: { type: boolean, description: 'True when this is the approved version for its name.' }
+      created_at: { type: string, format: date-time, nullable: true }
+      updated_at: { type: string, format: date-time, nullable: true }
+  PromptVersionStoreRequest:
+    type: object
+    required: [name, version, provider_code, prompt_text, status]
+    properties:
+      name: { type: string, minLength: 1, maxLength: 128, example: 'category_classifier' }
+      version: { type: integer, minimum: 1 }
+      purpose: { type: string, nullable: true, maxLength: 255 }
+      provider_code: { type: string, minLength: 1, maxLength: 64 }
+      prompt_text: { type: string, minLength: 1 }
+      expected_json_schema: { type: string, nullable: true }
+      status: { type: string, enum: [draft, approved, deprecated] }
+  PromptVersionUpdateRequest:
+    type: object
+    properties:
+      purpose: { type: string, nullable: true, maxLength: 255 }
+      provider_code: { type: string, minLength: 1, maxLength: 64 }
+      prompt_text: { type: string, minLength: 1 }
+      expected_json_schema: { type: string, nullable: true }
+      status: { type: string, enum: [draft, approved, deprecated] }
+  PromptVersionResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data: { $ref: '#/components/schemas/PromptVersion' }
+  PromptVersionListResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            type: array
+            items: { $ref: '#/components/schemas/PromptVersion' }
+          meta: { $ref: '#/components/schemas/PaginationMeta' }
+  AiJob:
+    type: object
+    properties:
+      id: { type: string, format: uuid }
+      report_id: { type: string, format: uuid }
+      provider_code: { type: string, example: 'mock' }
+      prompt_version_id: { type: string, format: uuid, nullable: true }
+      status: { type: string, enum: [queued, running, succeeded, failed] }
+      attempts: { type: integer, minimum: 0 }
+      error: { type: string, nullable: true }
+      started_at: { type: string, format: date-time, nullable: true }
+      finished_at: { type: string, format: date-time, nullable: true }
+  AiJobResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data: { $ref: '#/components/schemas/AiJob' }
+  AiProcessEnqueuedResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              status: { type: string, example: 'queued' }
+              job_id: { type: string, format: uuid }
+              report_id: { type: string, format: uuid }
+  AiLabel:
+    type: object
+    properties:
+      id: { type: string, format: uuid }
+      result_id: { type: string, format: uuid }
+      label: { type: string, example: 'pothole' }
+      confidence: { type: number, format: float, minimum: 0, maximum: 1 }
+      is_primary: { type: boolean }
+  AiResult:
+    type: object
+    properties:
+      id: { type: string, format: uuid }
+      job_id: { type: string, format: uuid }
+      predicted_type: { type: string, example: 'pothole' }
+      confidence: { type: number, format: float, minimum: 0, maximum: 1 }
+      recommended_department: { type: string, nullable: true, example: 'public_works' }
+      severity: { type: string, enum: [low, medium, high, critical] }
+      quality_score: { type: integer, minimum: 0, maximum: 100 }
+      duplicate_score: { type: integer, minimum: 0, maximum: 100 }
+      fraud_score: { type: integer, minimum: 0, maximum: 100 }
+      summary: { type: string }
+      labels:
+        type: array
+        items: { $ref: '#/components/schemas/AiLabel' }
+  AiResultResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data: { $ref: '#/components/schemas/AiResult' }
 tags:
   -
     name: Health
@@ -1917,3 +2366,6 @@ tags:
   -
     name: Routing
     description: 'Super Admin routing rules CRUD + manual report reassignment (M7).'
+  -
+    name: AI
+    description: 'AI vision pipeline: provider configs, prompt versions, internal pipeline endpoints (M8).'
