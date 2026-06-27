@@ -53,9 +53,7 @@ class RoutingAdminService
             ]);
 
             $this->writeAudit($rule, null, $actor, $request, 'routing.create');
-
             $this->repository->invalidate();
-            $this->writeAudit($rule, null, $actor, $request, 'routing.create');
 
             return $rule;
         });
