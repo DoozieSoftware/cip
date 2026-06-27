@@ -2351,7 +2351,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Providers/MockProvider.php`, `backend/tests/fixtures/ai/mock_responses.json`
 - **Acceptance criteria:** Provider roundtrips with deterministic output.
 - **Required tests:** `tests/Feature/AI/MockProviderTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-009 — OpenAICompatibleProvider
 - **Milestone:** M8
