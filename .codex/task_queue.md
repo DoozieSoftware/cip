@@ -2246,7 +2246,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/Routing/RoutingAuditTest.php`
 - **Acceptance criteria:** 5 writes → 5 audit rows.
 - **Required tests:** `vendor/bin/pest tests/Feature/Routing/RoutingAuditTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 
 ---
