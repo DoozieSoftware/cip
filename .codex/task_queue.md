@@ -2363,7 +2363,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Providers/OpenAICompatibleProvider.php`
 - **Acceptance criteria:** Health check returns false on 4xx; happy path returns parsed JSON.
 - **Required tests:** `tests/Feature/AI/OpenAICompatibleProviderTest.php` (with `Http::fake`).
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-010 — QwenVLProvider adapter
 - **Milestone:** M8
