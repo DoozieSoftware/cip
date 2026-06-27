@@ -2471,7 +2471,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Jobs/AiPipelineOrchestrator.php`
 - **Acceptance criteria:** End-to-end with `MockProvider` produces a persisted `AiResult` matching schema.
 - **Required tests:** `tests/Feature/AI/PipelineOrchestratorTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-019 — AICompleted event
 - **Milestone:** M8
