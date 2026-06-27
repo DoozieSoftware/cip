@@ -7,7 +7,9 @@ use App\Modules\AI\Listeners\ReportSubmittedListener;
 use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
+use Database\Seeders\AiProvidersSeeder;
 use Database\Seeders\DefaultWorkflowSeeder;
+use Database\Seeders\PromptsSeeder;
 use Database\Seeders\ReportPrioritiesSeeder;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
@@ -22,6 +24,9 @@ beforeEach(function (): void {
     (new ReportPrioritiesSeeder)->run();
     (new ReportTypesSeeder)->run();
     (new DefaultWorkflowSeeder)->run();
+    // Seed the AI stack so the listener's guard passes.
+    (new AiProvidersSeeder)->run();
+    (new PromptsSeeder)->run();
 });
 
 it('dispatches AiPipelineOrchestrator when a report transitions to ai_processing', function (): void {

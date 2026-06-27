@@ -6,6 +6,9 @@ use App\Http\Controllers\HealthController;
 use App\Modules\Authentication\Http\Controllers\AuthController;
 use App\Modules\Departments\Http\Controllers\Admin\DepartmentController;
 use App\Modules\Media\Http\Controllers\Api\MediaController;
+use App\Modules\AI\Http\Controllers\Admin\AiProviderAdminController;
+use App\Modules\AI\Http\Controllers\Admin\AiPromptAdminController;
+use App\Modules\AI\Http\Controllers\Internal\InternalAiController;
 use App\Modules\Reports\Http\Controllers\Api\ReportsController;
 use App\Modules\Settings\Http\Controllers\Admin\AppConfigController;
 use App\Modules\Settings\Http\Controllers\Admin\SettingController;
@@ -87,6 +90,36 @@ Route::prefix('v1')->group(function (): void {
 
         // Manual reassignment (T-M7-010)
         Route::post('reports/{report}/reassign', ReassignController::class)->name('reports.reassign');
+
+        // AI provider configs CRUD (T-M8-024)
+        Route::get('ai/providers', [AiProviderAdminController::class, 'index'])->name('ai.providers.index');
+        Route::post('ai/providers', [AiProviderAdminController::class, 'store'])->name('ai.providers.store');
+        Route::get('ai/providers/{provider}', [AiProviderAdminController::class, 'show'])->name('ai.providers.show');
+        Route::put('ai/providers/{provider}', [AiProviderAdminController::class, 'update'])->name('ai.providers.update');
+        Route::delete('ai/providers/{provider}', [AiProviderAdminController::class, 'destroy'])->name('ai.providers.destroy');
+
+        // AI prompt versions CRUD + approve/rollback (T-M8-025)
+        Route::get('ai/prompts', [AiPromptAdminController::class, 'index'])->name('ai.prompts.index');
+        Route::post('ai/prompts', [AiPromptAdminController::class, 'store'])->name('ai.prompts.store');
+        Route::get('ai/prompts/{prompt}', [AiPromptAdminController::class, 'show'])->name('ai.prompts.show');
+        Route::put('ai/prompts/{prompt}', [AiPromptAdminController::class, 'update'])->name('ai.prompts.update');
+        Route::delete('ai/prompts/{prompt}', [AiPromptAdminController::class, 'destroy'])->name('ai.prompts.destroy');
+        Route::post('ai/prompts/{prompt}/approve', [AiPromptAdminController::class, 'approve'])->name('ai.prompts.approve');
+        Route::post('ai/prompts/{prompt}/rollback', [AiPromptAdminController::class, 'rollback'])->name('ai.prompts.rollback');
+    });
+
+    // Internal AI pipeline endpoints (T-M8-021..T-M8-023) — system role only.
+    // The system role is held by the platform's shared system user; in
+    // production these endpoints are reachable only via internal mTLS
+    // from the AI worker. In dev/test we expose them under
+    // auth:sanctum + an explicit role check in the controller.
+    Route::middleware([
+        'auth:sanctum',
+        'throttle:'.RouteServiceProvider::LIMITER_ADMIN,
+    ])->prefix('internal/ai')->name('api.v1.internal.ai.')->group(function (): void {
+        Route::post('process/{reportId}', [InternalAiController::class, 'process'])->name('process');
+        Route::get('job/{id}', [InternalAiController::class, 'job'])->name('job');
+        Route::get('job/{id}/result', [InternalAiController::class, 'result'])->name('result');
     });
 
     // T-M5-014 — public temporary-signed media serve (NOT under auth:sanctum;

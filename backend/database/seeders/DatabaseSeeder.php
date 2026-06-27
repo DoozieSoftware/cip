@@ -35,6 +35,9 @@ class DatabaseSeeder extends Seeder
             AppConfigsSeeder::class,
             ReportStatusesSeeder::class,
             DefaultWorkflowSeeder::class,
+            // M8: AI default providers + system prompts (idempotent).
+            AiProvidersSeeder::class,
+            PromptsSeeder::class,
         ]);
     }
 }

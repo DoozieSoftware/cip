@@ -55,9 +55,30 @@ class ReportSubmittedListener implements ShouldQueue
             return;
         }
 
-        $toStatus = $report->status?->code;
+        $toStatus = $report->refresh()->status?->code;
 
         if ($toStatus !== 'ai_processing') {
+            return;
+        }
+
+        // Only dispatch if the pipeline is actually wired. The
+        // orchestrator inserts an ai_jobs row that FK-restricts
+        // on prompt_versions and ai_provider_configs, so dispatching
+        // blindly would 500 in test environments that haven't seeded
+        // the AI stack.
+        $hasApprovedPrompt = \App\Modules\AI\Models\PromptVersion::query()
+            ->where('name', 'category_classifier')
+            ->where('status', \App\Modules\AI\Models\PromptVersion::STATUS_APPROVED)
+            ->exists();
+        $hasActiveProvider = \App\Modules\AI\Models\AiProviderConfig::query()
+            ->where('active', true)
+            ->exists();
+
+        if (! $hasApprovedPrompt || ! $hasActiveProvider) {
+            \Illuminate\Support\Facades\Log::debug('ai.ReportSubmittedListener: pipeline not wired', [
+                'has_approved_prompt' => $hasApprovedPrompt,
+                'has_active_provider' => $hasActiveProvider,
+            ]);
             return;
         }
 

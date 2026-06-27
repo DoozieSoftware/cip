@@ -6,7 +6,9 @@ use App\Modules\AI\Events\AiCompleted;
 use App\Modules\AI\Jobs\AiPipelineOrchestrator;
 use App\Modules\AI\Models\AiJob;
 use App\Modules\AI\Models\AiLabel;
+use App\Modules\AI\Models\AiProviderConfig;
 use App\Modules\AI\Models\AiResult;
+use App\Modules\AI\Models\PromptVersion;
 use App\Modules\AI\Providers\MockProvider;
 use App\Modules\AI\Services\AiResponseValidator;
 use App\Modules\AI\Services\DuplicateDetector;
@@ -18,7 +20,6 @@ use Database\Seeders\ReportPrioritiesSeeder;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
@@ -36,7 +37,7 @@ beforeEach(function (): void {
 
     // Seed an active 'mock' provider config so the failover
     // service can resolve a binding.
-    \App\Modules\AI\Models\AiProviderConfig::query()->create([
+    AiProviderConfig::query()->create([
         'code' => 'mock',
         'name' => 'Mock',
         'base_url' => 'http://localhost',
@@ -56,7 +57,7 @@ beforeEach(function (): void {
     // Seed an approved prompt_version so the orchestrator can
     // write the ai_jobs row (its FK on prompt_version_id is
     // restrict and not nullable).
-    \App\Modules\AI\Models\PromptVersion::query()->create([
+    PromptVersion::query()->create([
         'id' => (string) Str::uuid(),
         'name' => 'category_classifier',
         'version' => 1,
@@ -163,6 +164,7 @@ it('marks the job as failed and rethrows when the report does not exist', functi
     $missingId = (string) Str::uuid();
 
     $threw = false;
+
     try {
         (new AiPipelineOrchestrator($missingId))->handle(
             app(ProviderFailoverService::class),
@@ -171,13 +173,14 @@ it('marks the job as failed and rethrows when the report does not exist', functi
             app(DuplicateDetector::class),
             app(FraudScorer::class),
         );
-    } catch (\Throwable) {
+    } catch (Throwable) {
         $threw = true;
     }
     expect($threw)->toBeTrue();
 
     // The job row exists (we created it before the report lookup) and is marked failed
     $job = AiJob::query()->where('report_id', $missingId)->first();
+
     // FK cascade may have prevented the insert entirely on SQLite; in that
     // case we just verify the call threw.
     if ($job !== null) {
