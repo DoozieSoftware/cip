@@ -2234,7 +2234,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Routing/Repositories/RoutingRepository.php`
 - **Acceptance criteria:** Cache hit verified; CRUD clears cache.
 - **Required tests:** `tests/Feature/Routing/RoutingRepositoryTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M7-018 — RoutingAdminAuditTest
 - **Milestone:** M7
