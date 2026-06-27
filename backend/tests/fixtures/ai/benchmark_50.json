@@ -1,0 +1,1072 @@
+{
+    "_meta": {
+        "schema_version": "1.0",
+        "purpose": "docs/15 \u00a714 \u2014 50-case regression fixture for MockProvider + AiResponseValidator.",
+        "valid_count": 50,
+        "negative_count": 5,
+        "generated_at": "2026-06-27"
+    },
+    "responses": {
+        "bench_1_severity_estimator": {
+            "labels": [
+                {
+                    "label": "garbage",
+                    "confidence": 0.56,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "garbage",
+            "confidence": 0.56,
+            "recommended_department": "sanitation",
+            "severity": "medium",
+            "quality_score": 51,
+            "duplicate_score": 1,
+            "fraud_score": 1,
+            "summary": "Benchmark case #1: garbage reported with medium severity (purpose=severity_estimator)."
+        },
+        "bench_2_ai_labeller": {
+            "labels": [
+                {
+                    "label": "streetlight_out",
+                    "confidence": 0.57,
+                    "is_primary": true
+                },
+                {
+                    "label": "water_leak",
+                    "confidence": 0.35,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "streetlight_out",
+            "confidence": 0.57,
+            "recommended_department": "electricity",
+            "severity": "high",
+            "quality_score": 52,
+            "duplicate_score": 2,
+            "fraud_score": 2,
+            "summary": "Benchmark case #2: streetlight_out reported with high severity (purpose=ai_labeller)."
+        },
+        "bench_3_category_classifier": {
+            "labels": [
+                {
+                    "label": "water_leak",
+                    "confidence": 0.58,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "water_leak",
+            "confidence": 0.58,
+            "recommended_department": "water_supply",
+            "severity": "critical",
+            "quality_score": 53,
+            "duplicate_score": 3,
+            "fraud_score": 3,
+            "summary": "Benchmark case #3: water_leak reported with critical severity (purpose=category_classifier)."
+        },
+        "bench_4_severity_estimator": {
+            "labels": [
+                {
+                    "label": "broken_sign",
+                    "confidence": 0.59,
+                    "is_primary": true
+                },
+                {
+                    "label": "tree_fall",
+                    "confidence": 0.35,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "broken_sign",
+            "confidence": 0.59,
+            "recommended_department": "public_works",
+            "severity": "low",
+            "quality_score": 54,
+            "duplicate_score": 4,
+            "fraud_score": 4,
+            "summary": "Benchmark case #4: broken_sign reported with low severity (purpose=severity_estimator)."
+        },
+        "bench_5_ai_labeller": {
+            "labels": [
+                {
+                    "label": "tree_fall",
+                    "confidence": 0.6,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "tree_fall",
+            "confidence": 0.6,
+            "recommended_department": "horticulture",
+            "severity": "medium",
+            "quality_score": 55,
+            "duplicate_score": 5,
+            "fraud_score": 5,
+            "summary": "Benchmark case #5: tree_fall reported with medium severity (purpose=ai_labeller)."
+        },
+        "bench_6_category_classifier": {
+            "labels": [
+                {
+                    "label": "encroachment",
+                    "confidence": 0.61,
+                    "is_primary": true
+                },
+                {
+                    "label": "sewage_overflow",
+                    "confidence": 0.35,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "encroachment",
+            "confidence": 0.61,
+            "recommended_department": "town_planning",
+            "severity": "high",
+            "quality_score": 56,
+            "duplicate_score": 6,
+            "fraud_score": 6,
+            "summary": "Benchmark case #6: encroachment reported with high severity (purpose=category_classifier)."
+        },
+        "bench_7_severity_estimator": {
+            "labels": [
+                {
+                    "label": "sewage_overflow",
+                    "confidence": 0.62,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "sewage_overflow",
+            "confidence": 0.62,
+            "recommended_department": "water_supply",
+            "severity": "critical",
+            "quality_score": 57,
+            "duplicate_score": 7,
+            "fraud_score": 7,
+            "summary": "Benchmark case #7: sewage_overflow reported with critical severity (purpose=severity_estimator)."
+        },
+        "bench_8_ai_labeller": {
+            "labels": [
+                {
+                    "label": "drain_block",
+                    "confidence": 0.63,
+                    "is_primary": true
+                },
+                {
+                    "label": "illegal_parking",
+                    "confidence": 0.35,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "drain_block",
+            "confidence": 0.63,
+            "recommended_department": "sanitation",
+            "severity": "low",
+            "quality_score": 58,
+            "duplicate_score": 8,
+            "fraud_score": 8,
+            "summary": "Benchmark case #8: drain_block reported with low severity (purpose=ai_labeller)."
+        },
+        "bench_9_category_classifier": {
+            "labels": [
+                {
+                    "label": "illegal_parking",
+                    "confidence": 0.64,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "illegal_parking",
+            "confidence": 0.64,
+            "recommended_department": "traffic",
+            "severity": "medium",
+            "quality_score": 59,
+            "duplicate_score": 9,
+            "fraud_score": 9,
+            "summary": "Benchmark case #9: illegal_parking reported with medium severity (purpose=category_classifier)."
+        },
+        "bench_10_severity_estimator": {
+            "labels": [
+                {
+                    "label": "stray_cattle",
+                    "confidence": 0.65,
+                    "is_primary": true
+                },
+                {
+                    "label": "road_damage",
+                    "confidence": 0.45,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "stray_cattle",
+            "confidence": 0.65,
+            "recommended_department": "animal_control",
+            "severity": "high",
+            "quality_score": 60,
+            "duplicate_score": 10,
+            "fraud_score": 10,
+            "summary": "Benchmark case #10: stray_cattle reported with high severity (purpose=severity_estimator)."
+        },
+        "bench_11_ai_labeller": {
+            "labels": [
+                {
+                    "label": "road_damage",
+                    "confidence": 0.66,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "road_damage",
+            "confidence": 0.66,
+            "recommended_department": "public_works",
+            "severity": "critical",
+            "quality_score": 61,
+            "duplicate_score": 11,
+            "fraud_score": 11,
+            "summary": "Benchmark case #11: road_damage reported with critical severity (purpose=ai_labeller)."
+        },
+        "bench_12_category_classifier": {
+            "labels": [
+                {
+                    "label": "pothole",
+                    "confidence": 0.67,
+                    "is_primary": true
+                },
+                {
+                    "label": "streetlight_out",
+                    "confidence": 0.45,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "pothole",
+            "confidence": 0.67,
+            "recommended_department": "public_works",
+            "severity": "low",
+            "quality_score": 62,
+            "duplicate_score": 12,
+            "fraud_score": 12,
+            "summary": "Benchmark case #12: pothole reported with low severity (purpose=category_classifier)."
+        },
+        "bench_13_severity_estimator": {
+            "labels": [
+                {
+                    "label": "garbage",
+                    "confidence": 0.68,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "garbage",
+            "confidence": 0.68,
+            "recommended_department": "sanitation",
+            "severity": "medium",
+            "quality_score": 63,
+            "duplicate_score": 13,
+            "fraud_score": 13,
+            "summary": "Benchmark case #13: garbage reported with medium severity (purpose=severity_estimator)."
+        },
+        "bench_14_ai_labeller": {
+            "labels": [
+                {
+                    "label": "streetlight_out",
+                    "confidence": 0.69,
+                    "is_primary": true
+                },
+                {
+                    "label": "broken_sign",
+                    "confidence": 0.45,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "streetlight_out",
+            "confidence": 0.69,
+            "recommended_department": "electricity",
+            "severity": "high",
+            "quality_score": 64,
+            "duplicate_score": 14,
+            "fraud_score": 14,
+            "summary": "Benchmark case #14: streetlight_out reported with high severity (purpose=ai_labeller)."
+        },
+        "bench_15_category_classifier": {
+            "labels": [
+                {
+                    "label": "water_leak",
+                    "confidence": 0.7,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "water_leak",
+            "confidence": 0.7,
+            "recommended_department": "water_supply",
+            "severity": "critical",
+            "quality_score": 65,
+            "duplicate_score": 15,
+            "fraud_score": 15,
+            "summary": "Benchmark case #15: water_leak reported with critical severity (purpose=category_classifier)."
+        },
+        "bench_16_severity_estimator": {
+            "labels": [
+                {
+                    "label": "broken_sign",
+                    "confidence": 0.71,
+                    "is_primary": true
+                },
+                {
+                    "label": "encroachment",
+                    "confidence": 0.45,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "broken_sign",
+            "confidence": 0.71,
+            "recommended_department": "public_works",
+            "severity": "low",
+            "quality_score": 66,
+            "duplicate_score": 16,
+            "fraud_score": 16,
+            "summary": "Benchmark case #16: broken_sign reported with low severity (purpose=severity_estimator)."
+        },
+        "bench_17_ai_labeller": {
+            "labels": [
+                {
+                    "label": "tree_fall",
+                    "confidence": 0.72,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "tree_fall",
+            "confidence": 0.72,
+            "recommended_department": "horticulture",
+            "severity": "medium",
+            "quality_score": 67,
+            "duplicate_score": 17,
+            "fraud_score": 17,
+            "summary": "Benchmark case #17: tree_fall reported with medium severity (purpose=ai_labeller)."
+        },
+        "bench_18_category_classifier": {
+            "labels": [
+                {
+                    "label": "encroachment",
+                    "confidence": 0.73,
+                    "is_primary": true
+                },
+                {
+                    "label": "drain_block",
+                    "confidence": 0.45,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "encroachment",
+            "confidence": 0.73,
+            "recommended_department": "town_planning",
+            "severity": "high",
+            "quality_score": 68,
+            "duplicate_score": 18,
+            "fraud_score": 18,
+            "summary": "Benchmark case #18: encroachment reported with high severity (purpose=category_classifier)."
+        },
+        "bench_19_severity_estimator": {
+            "labels": [
+                {
+                    "label": "sewage_overflow",
+                    "confidence": 0.74,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "sewage_overflow",
+            "confidence": 0.74,
+            "recommended_department": "water_supply",
+            "severity": "critical",
+            "quality_score": 69,
+            "duplicate_score": 19,
+            "fraud_score": 19,
+            "summary": "Benchmark case #19: sewage_overflow reported with critical severity (purpose=severity_estimator)."
+        },
+        "bench_20_ai_labeller": {
+            "labels": [
+                {
+                    "label": "drain_block",
+                    "confidence": 0.75,
+                    "is_primary": true
+                },
+                {
+                    "label": "stray_cattle",
+                    "confidence": 0.55,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "drain_block",
+            "confidence": 0.75,
+            "recommended_department": "sanitation",
+            "severity": "low",
+            "quality_score": 70,
+            "duplicate_score": 20,
+            "fraud_score": 20,
+            "summary": "Benchmark case #20: drain_block reported with low severity (purpose=ai_labeller)."
+        },
+        "bench_21_category_classifier": {
+            "labels": [
+                {
+                    "label": "illegal_parking",
+                    "confidence": 0.76,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "illegal_parking",
+            "confidence": 0.76,
+            "recommended_department": "traffic",
+            "severity": "medium",
+            "quality_score": 71,
+            "duplicate_score": 21,
+            "fraud_score": 21,
+            "summary": "Benchmark case #21: illegal_parking reported with medium severity (purpose=category_classifier)."
+        },
+        "bench_22_severity_estimator": {
+            "labels": [
+                {
+                    "label": "stray_cattle",
+                    "confidence": 0.77,
+                    "is_primary": true
+                },
+                {
+                    "label": "pothole",
+                    "confidence": 0.55,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "stray_cattle",
+            "confidence": 0.77,
+            "recommended_department": "animal_control",
+            "severity": "high",
+            "quality_score": 72,
+            "duplicate_score": 22,
+            "fraud_score": 22,
+            "summary": "Benchmark case #22: stray_cattle reported with high severity (purpose=severity_estimator)."
+        },
+        "bench_23_ai_labeller": {
+            "labels": [
+                {
+                    "label": "road_damage",
+                    "confidence": 0.78,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "road_damage",
+            "confidence": 0.78,
+            "recommended_department": "public_works",
+            "severity": "critical",
+            "quality_score": 73,
+            "duplicate_score": 23,
+            "fraud_score": 23,
+            "summary": "Benchmark case #23: road_damage reported with critical severity (purpose=ai_labeller)."
+        },
+        "bench_24_category_classifier": {
+            "labels": [
+                {
+                    "label": "pothole",
+                    "confidence": 0.79,
+                    "is_primary": true
+                },
+                {
+                    "label": "water_leak",
+                    "confidence": 0.55,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "pothole",
+            "confidence": 0.79,
+            "recommended_department": "public_works",
+            "severity": "low",
+            "quality_score": 74,
+            "duplicate_score": 24,
+            "fraud_score": 24,
+            "summary": "Benchmark case #24: pothole reported with low severity (purpose=category_classifier)."
+        },
+        "bench_25_severity_estimator": {
+            "labels": [
+                {
+                    "label": "garbage",
+                    "confidence": 0.8,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "garbage",
+            "confidence": 0.8,
+            "recommended_department": "sanitation",
+            "severity": "medium",
+            "quality_score": 75,
+            "duplicate_score": 25,
+            "fraud_score": 0,
+            "summary": "Benchmark case #25: garbage reported with medium severity (purpose=severity_estimator)."
+        },
+        "bench_26_ai_labeller": {
+            "labels": [
+                {
+                    "label": "streetlight_out",
+                    "confidence": 0.81,
+                    "is_primary": true
+                },
+                {
+                    "label": "tree_fall",
+                    "confidence": 0.55,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "streetlight_out",
+            "confidence": 0.81,
+            "recommended_department": "electricity",
+            "severity": "high",
+            "quality_score": 76,
+            "duplicate_score": 26,
+            "fraud_score": 1,
+            "summary": "Benchmark case #26: streetlight_out reported with high severity (purpose=ai_labeller)."
+        },
+        "bench_27_category_classifier": {
+            "labels": [
+                {
+                    "label": "water_leak",
+                    "confidence": 0.82,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "water_leak",
+            "confidence": 0.82,
+            "recommended_department": "water_supply",
+            "severity": "critical",
+            "quality_score": 77,
+            "duplicate_score": 27,
+            "fraud_score": 2,
+            "summary": "Benchmark case #27: water_leak reported with critical severity (purpose=category_classifier)."
+        },
+        "bench_28_severity_estimator": {
+            "labels": [
+                {
+                    "label": "broken_sign",
+                    "confidence": 0.83,
+                    "is_primary": true
+                },
+                {
+                    "label": "sewage_overflow",
+                    "confidence": 0.55,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "broken_sign",
+            "confidence": 0.83,
+            "recommended_department": "public_works",
+            "severity": "low",
+            "quality_score": 78,
+            "duplicate_score": 28,
+            "fraud_score": 3,
+            "summary": "Benchmark case #28: broken_sign reported with low severity (purpose=severity_estimator)."
+        },
+        "bench_29_ai_labeller": {
+            "labels": [
+                {
+                    "label": "tree_fall",
+                    "confidence": 0.84,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "tree_fall",
+            "confidence": 0.84,
+            "recommended_department": "horticulture",
+            "severity": "medium",
+            "quality_score": 79,
+            "duplicate_score": 29,
+            "fraud_score": 4,
+            "summary": "Benchmark case #29: tree_fall reported with medium severity (purpose=ai_labeller)."
+        },
+        "bench_30_category_classifier": {
+            "labels": [
+                {
+                    "label": "encroachment",
+                    "confidence": 0.85,
+                    "is_primary": true
+                },
+                {
+                    "label": "illegal_parking",
+                    "confidence": 0.65,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "encroachment",
+            "confidence": 0.85,
+            "recommended_department": "town_planning",
+            "severity": "high",
+            "quality_score": 80,
+            "duplicate_score": 0,
+            "fraud_score": 5,
+            "summary": "Benchmark case #30: encroachment reported with high severity (purpose=category_classifier)."
+        },
+        "bench_31_severity_estimator": {
+            "labels": [
+                {
+                    "label": "sewage_overflow",
+                    "confidence": 0.86,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "sewage_overflow",
+            "confidence": 0.86,
+            "recommended_department": "water_supply",
+            "severity": "critical",
+            "quality_score": 81,
+            "duplicate_score": 1,
+            "fraud_score": 6,
+            "summary": "Benchmark case #31: sewage_overflow reported with critical severity (purpose=severity_estimator)."
+        },
+        "bench_32_ai_labeller": {
+            "labels": [
+                {
+                    "label": "drain_block",
+                    "confidence": 0.87,
+                    "is_primary": true
+                },
+                {
+                    "label": "road_damage",
+                    "confidence": 0.65,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "drain_block",
+            "confidence": 0.87,
+            "recommended_department": "sanitation",
+            "severity": "low",
+            "quality_score": 82,
+            "duplicate_score": 2,
+            "fraud_score": 7,
+            "summary": "Benchmark case #32: drain_block reported with low severity (purpose=ai_labeller)."
+        },
+        "bench_33_category_classifier": {
+            "labels": [
+                {
+                    "label": "illegal_parking",
+                    "confidence": 0.88,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "illegal_parking",
+            "confidence": 0.88,
+            "recommended_department": "traffic",
+            "severity": "medium",
+            "quality_score": 83,
+            "duplicate_score": 3,
+            "fraud_score": 8,
+            "summary": "Benchmark case #33: illegal_parking reported with medium severity (purpose=category_classifier)."
+        },
+        "bench_34_severity_estimator": {
+            "labels": [
+                {
+                    "label": "stray_cattle",
+                    "confidence": 0.89,
+                    "is_primary": true
+                },
+                {
+                    "label": "garbage",
+                    "confidence": 0.65,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "stray_cattle",
+            "confidence": 0.89,
+            "recommended_department": "animal_control",
+            "severity": "high",
+            "quality_score": 84,
+            "duplicate_score": 4,
+            "fraud_score": 9,
+            "summary": "Benchmark case #34: stray_cattle reported with high severity (purpose=severity_estimator)."
+        },
+        "bench_35_ai_labeller": {
+            "labels": [
+                {
+                    "label": "road_damage",
+                    "confidence": 0.9,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "road_damage",
+            "confidence": 0.9,
+            "recommended_department": "public_works",
+            "severity": "critical",
+            "quality_score": 85,
+            "duplicate_score": 5,
+            "fraud_score": 10,
+            "summary": "Benchmark case #35: road_damage reported with critical severity (purpose=ai_labeller)."
+        },
+        "bench_36_category_classifier": {
+            "labels": [
+                {
+                    "label": "pothole",
+                    "confidence": 0.91,
+                    "is_primary": true
+                },
+                {
+                    "label": "broken_sign",
+                    "confidence": 0.65,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "pothole",
+            "confidence": 0.91,
+            "recommended_department": "public_works",
+            "severity": "low",
+            "quality_score": 86,
+            "duplicate_score": 6,
+            "fraud_score": 11,
+            "summary": "Benchmark case #36: pothole reported with low severity (purpose=category_classifier)."
+        },
+        "bench_37_severity_estimator": {
+            "labels": [
+                {
+                    "label": "garbage",
+                    "confidence": 0.92,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "garbage",
+            "confidence": 0.92,
+            "recommended_department": "sanitation",
+            "severity": "medium",
+            "quality_score": 87,
+            "duplicate_score": 7,
+            "fraud_score": 12,
+            "summary": "Benchmark case #37: garbage reported with medium severity (purpose=severity_estimator)."
+        },
+        "bench_38_ai_labeller": {
+            "labels": [
+                {
+                    "label": "streetlight_out",
+                    "confidence": 0.93,
+                    "is_primary": true
+                },
+                {
+                    "label": "encroachment",
+                    "confidence": 0.65,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "streetlight_out",
+            "confidence": 0.93,
+            "recommended_department": "electricity",
+            "severity": "high",
+            "quality_score": 88,
+            "duplicate_score": 8,
+            "fraud_score": 13,
+            "summary": "Benchmark case #38: streetlight_out reported with high severity (purpose=ai_labeller)."
+        },
+        "bench_39_category_classifier": {
+            "labels": [
+                {
+                    "label": "water_leak",
+                    "confidence": 0.94,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "water_leak",
+            "confidence": 0.94,
+            "recommended_department": "water_supply",
+            "severity": "critical",
+            "quality_score": 89,
+            "duplicate_score": 9,
+            "fraud_score": 14,
+            "summary": "Benchmark case #39: water_leak reported with critical severity (purpose=category_classifier)."
+        },
+        "bench_40_severity_estimator": {
+            "labels": [
+                {
+                    "label": "broken_sign",
+                    "confidence": 0.55,
+                    "is_primary": true
+                },
+                {
+                    "label": "drain_block",
+                    "confidence": 0.35,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "broken_sign",
+            "confidence": 0.55,
+            "recommended_department": "public_works",
+            "severity": "low",
+            "quality_score": 90,
+            "duplicate_score": 10,
+            "fraud_score": 15,
+            "summary": "Benchmark case #40: broken_sign reported with low severity (purpose=severity_estimator)."
+        },
+        "bench_41_ai_labeller": {
+            "labels": [
+                {
+                    "label": "tree_fall",
+                    "confidence": 0.56,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "tree_fall",
+            "confidence": 0.56,
+            "recommended_department": "horticulture",
+            "severity": "medium",
+            "quality_score": 91,
+            "duplicate_score": 11,
+            "fraud_score": 16,
+            "summary": "Benchmark case #41: tree_fall reported with medium severity (purpose=ai_labeller)."
+        },
+        "bench_42_category_classifier": {
+            "labels": [
+                {
+                    "label": "encroachment",
+                    "confidence": 0.57,
+                    "is_primary": true
+                },
+                {
+                    "label": "stray_cattle",
+                    "confidence": 0.35,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "encroachment",
+            "confidence": 0.57,
+            "recommended_department": "town_planning",
+            "severity": "high",
+            "quality_score": 92,
+            "duplicate_score": 12,
+            "fraud_score": 17,
+            "summary": "Benchmark case #42: encroachment reported with high severity (purpose=category_classifier)."
+        },
+        "bench_43_severity_estimator": {
+            "labels": [
+                {
+                    "label": "sewage_overflow",
+                    "confidence": 0.58,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "sewage_overflow",
+            "confidence": 0.58,
+            "recommended_department": "water_supply",
+            "severity": "critical",
+            "quality_score": 93,
+            "duplicate_score": 13,
+            "fraud_score": 18,
+            "summary": "Benchmark case #43: sewage_overflow reported with critical severity (purpose=severity_estimator)."
+        },
+        "bench_44_ai_labeller": {
+            "labels": [
+                {
+                    "label": "drain_block",
+                    "confidence": 0.59,
+                    "is_primary": true
+                },
+                {
+                    "label": "pothole",
+                    "confidence": 0.35,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "drain_block",
+            "confidence": 0.59,
+            "recommended_department": "sanitation",
+            "severity": "low",
+            "quality_score": 94,
+            "duplicate_score": 14,
+            "fraud_score": 19,
+            "summary": "Benchmark case #44: drain_block reported with low severity (purpose=ai_labeller)."
+        },
+        "bench_45_category_classifier": {
+            "labels": [
+                {
+                    "label": "illegal_parking",
+                    "confidence": 0.6,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "illegal_parking",
+            "confidence": 0.6,
+            "recommended_department": "traffic",
+            "severity": "medium",
+            "quality_score": 95,
+            "duplicate_score": 15,
+            "fraud_score": 20,
+            "summary": "Benchmark case #45: illegal_parking reported with medium severity (purpose=category_classifier)."
+        },
+        "bench_46_severity_estimator": {
+            "labels": [
+                {
+                    "label": "stray_cattle",
+                    "confidence": 0.61,
+                    "is_primary": true
+                },
+                {
+                    "label": "streetlight_out",
+                    "confidence": 0.35,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "stray_cattle",
+            "confidence": 0.61,
+            "recommended_department": "animal_control",
+            "severity": "high",
+            "quality_score": 96,
+            "duplicate_score": 16,
+            "fraud_score": 21,
+            "summary": "Benchmark case #46: stray_cattle reported with high severity (purpose=severity_estimator)."
+        },
+        "bench_47_ai_labeller": {
+            "labels": [
+                {
+                    "label": "road_damage",
+                    "confidence": 0.62,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "road_damage",
+            "confidence": 0.62,
+            "recommended_department": "public_works",
+            "severity": "critical",
+            "quality_score": 97,
+            "duplicate_score": 17,
+            "fraud_score": 22,
+            "summary": "Benchmark case #47: road_damage reported with critical severity (purpose=ai_labeller)."
+        },
+        "bench_48_category_classifier": {
+            "labels": [
+                {
+                    "label": "pothole",
+                    "confidence": 0.63,
+                    "is_primary": true
+                },
+                {
+                    "label": "tree_fall",
+                    "confidence": 0.35,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "pothole",
+            "confidence": 0.63,
+            "recommended_department": "public_works",
+            "severity": "low",
+            "quality_score": 98,
+            "duplicate_score": 18,
+            "fraud_score": 23,
+            "summary": "Benchmark case #48: pothole reported with low severity (purpose=category_classifier)."
+        },
+        "bench_49_severity_estimator": {
+            "labels": [
+                {
+                    "label": "garbage",
+                    "confidence": 0.64,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "garbage",
+            "confidence": 0.64,
+            "recommended_department": "sanitation",
+            "severity": "medium",
+            "quality_score": 99,
+            "duplicate_score": 19,
+            "fraud_score": 24,
+            "summary": "Benchmark case #49: garbage reported with medium severity (purpose=severity_estimator)."
+        },
+        "bench_50_ai_labeller": {
+            "labels": [
+                {
+                    "label": "streetlight_out",
+                    "confidence": 0.65,
+                    "is_primary": true
+                },
+                {
+                    "label": "sewage_overflow",
+                    "confidence": 0.45,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "streetlight_out",
+            "confidence": 0.65,
+            "recommended_department": "electricity",
+            "severity": "high",
+            "quality_score": 50,
+            "duplicate_score": 20,
+            "fraud_score": 0,
+            "summary": "Benchmark case #50: streetlight_out reported with high severity (purpose=ai_labeller)."
+        }
+    },
+    "negative_responses": {
+        "neg_empty_labels": {
+            "labels": [],
+            "predicted_type": "pothole",
+            "confidence": 0.5,
+            "recommended_department": "public_works",
+            "severity": "low",
+            "quality_score": 70,
+            "duplicate_score": 0,
+            "fraud_score": 0,
+            "summary": "invalid: no labels"
+        },
+        "neg_no_primary": {
+            "labels": [
+                {
+                    "label": "pothole",
+                    "confidence": 0.5,
+                    "is_primary": false
+                }
+            ],
+            "predicted_type": "pothole",
+            "confidence": 0.5,
+            "recommended_department": "public_works",
+            "severity": "low",
+            "quality_score": 70,
+            "duplicate_score": 0,
+            "fraud_score": 0,
+            "summary": "invalid: no primary label"
+        },
+        "neg_two_primary": {
+            "labels": [
+                {
+                    "label": "pothole",
+                    "confidence": 0.5,
+                    "is_primary": true
+                },
+                {
+                    "label": "garbage",
+                    "confidence": 0.5,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "pothole",
+            "confidence": 0.5,
+            "recommended_department": "public_works",
+            "severity": "low",
+            "quality_score": 70,
+            "duplicate_score": 0,
+            "fraud_score": 0,
+            "summary": "invalid: two primary labels"
+        },
+        "neg_bad_severity": {
+            "labels": [
+                {
+                    "label": "pothole",
+                    "confidence": 0.5,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "pothole",
+            "confidence": 0.5,
+            "recommended_department": "public_works",
+            "severity": "spicy",
+            "quality_score": 70,
+            "duplicate_score": 0,
+            "fraud_score": 0,
+            "summary": "invalid: severity not in enum"
+        },
+        "neg_oor_quality": {
+            "labels": [
+                {
+                    "label": "pothole",
+                    "confidence": 0.5,
+                    "is_primary": true
+                }
+            ],
+            "predicted_type": "pothole",
+            "confidence": 0.5,
+            "recommended_department": "public_works",
+            "severity": "low",
+            "quality_score": 250,
+            "duplicate_score": 0,
+            "fraud_score": 0,
+            "summary": "invalid: quality_score > 100"
+        }
+    }
+}
