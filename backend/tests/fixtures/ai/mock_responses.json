@@ -1,0 +1,57 @@
+{
+    "category_classifier": {
+        "labels": [
+            {"label": "pothole", "confidence": 0.92, "is_primary": true},
+            {"label": "road_damage", "confidence": 0.71, "is_primary": false}
+        ],
+        "predicted_type": "pothole",
+        "confidence": 0.92,
+        "recommended_department": "public_works",
+        "severity": "high",
+        "quality_score": 88,
+        "duplicate_score": 0,
+        "fraud_score": 2,
+        "summary": "Large pothole in the right lane of MG Road near the signal."
+    },
+    "severity_estimator": {
+        "labels": [
+            {"label": "high", "confidence": 0.84, "is_primary": true}
+        ],
+        "predicted_type": "pothole",
+        "confidence": 0.84,
+        "recommended_department": "public_works",
+        "severity": "high",
+        "quality_score": 88,
+        "duplicate_score": 0,
+        "fraud_score": 2,
+        "summary": "Severity is high: the pothole is large and on a busy junction."
+    },
+    "ai_labeller": {
+        "labels": [
+            {"label": "pothole", "confidence": 0.95, "is_primary": true},
+            {"label": "road_damage", "confidence": 0.60, "is_primary": false},
+            {"label": "public_works", "confidence": 0.40, "is_primary": false}
+        ],
+        "predicted_type": "pothole",
+        "confidence": 0.95,
+        "recommended_department": "public_works",
+        "severity": "high",
+        "quality_score": 90,
+        "duplicate_score": 0,
+        "fraud_score": 0,
+        "summary": "Multi-label classification: pothole is primary, road_damage secondary."
+    },
+    "default": {
+        "labels": [
+            {"label": "uncategorised", "confidence": 0.50, "is_primary": true}
+        ],
+        "predicted_type": "uncategorised",
+        "confidence": 0.50,
+        "recommended_department": "",
+        "severity": "low",
+        "quality_score": 50,
+        "duplicate_score": 0,
+        "fraud_score": 0,
+        "summary": "Default mock response."
+    }
+}
