@@ -2375,7 +2375,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Providers/QwenVLProvider.php`
 - **Acceptance criteria:** Provider selected by `code=qwen-vl`.
 - **Required tests:** `tests/Feature/AI/QwenVLProviderTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-011 — PiiMaskingService
 - **Milestone:** M8
