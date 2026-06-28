@@ -2507,7 +2507,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Http/Controllers/Internal/InternalAiController.php`
 - **Acceptance criteria:** 202 with job id; 403 for non-system.
 - **Required tests:** `tests/Feature/AI/InternalProcessEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-022 — GET /api/v1/internal/ai/job/{id}
 - **Milestone:** M8
@@ -2519,7 +2519,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Http/Controllers/Internal/InternalAiController.php`, `backend/app/Modules/AI/Http/Resources/AiJobResource.php`
 - **Acceptance criteria:** 200 with job fields; 404 if missing.
 - **Required tests:** `tests/Feature/AI/InternalJobEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-023 — GET /api/v1/internal/ai/job/{id}/result
 - **Milestone:** M8
@@ -2531,7 +2531,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Http/Controllers/Internal/InternalAiController.php`, `backend/app/Modules/AI/Http/Resources/AiResultResource.php`
 - **Acceptance criteria:** 200 with result; 404 if not yet.
 - **Required tests:** `tests/Feature/AI/InternalResultEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-024 — /api/v1/admin/ai/providers CRUD
 - **Milestone:** M8
@@ -2543,7 +2543,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Http/Controllers/Admin/AiProviderAdminController.php`, `backend/app/Modules/AI/Http/Requests/StoreAiProviderRequest.php`, `backend/app/Modules/AI/Http/Resources/AiProviderConfigResource.php`
 - **Acceptance criteria:** Secrets never serialized; CRUD works.
 - **Required tests:** `tests/Feature/AI/AiProviderCrudTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-025 — /api/v1/admin/ai/prompts CRUD with version rollback
 - **Milestone:** M8
@@ -2555,7 +2555,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/AI/Http/Controllers/Admin/AiPromptAdminController.php`, `backend/app/Modules/AI/Http/Requests/StorePromptRequest.php`, `backend/app/Modules/AI/Http/Resources/PromptVersionResource.php`
 - **Acceptance criteria:** New version deprecates old; rollback restores.
 - **Required tests:** `tests/Feature/AI/AiPromptCrudTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-026 — Seed default prompt versions
 - **Milestone:** M8
@@ -2567,7 +2567,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/seeders/PromptsSeeder.php`
 - **Acceptance criteria:** 3 prompts present; active version is v1.
 - **Required tests:** Seed test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-027 — Seed Mock provider as default
 - **Milestone:** M8
@@ -2579,7 +2579,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/seeders/AiProvidersSeeder.php`
 - **Acceptance criteria:** Mock is default in dev env.
 - **Required tests:** Seed test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-028 — AiBenchmarkSuite
 - **Milestone:** M8
@@ -2591,7 +2591,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/AI/AiBenchmarkTest.php`
 - **Acceptance criteria:** All 50 cases pass schema validation.
 - **Required tests:** `vendor/bin/pest tests/Feature/AI/AiBenchmarkTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-029 — Update OpenAPI for AI
 - **Milestone:** M8
@@ -2603,7 +2603,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/storage/api-docs/openapi.yaml`
 - **Acceptance criteria:** `swagger-cli validate` passes.
 - **Required tests:** `tests/Feature/OpenApiAiTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M8-030 — Author docs/ai.md
 - **Milestone:** M8
@@ -2615,7 +2615,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docs/ai.md`
 - **Acceptance criteria:** Doc explains how to add a provider without code changes.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 
 ---
@@ -2636,7 +2636,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_notifications_table.php`
 - **Acceptance criteria:** Indexes on `(user_id, status)`, `(scheduled_at)`.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-002 — Create notification_templates migration
 - **Milestone:** M9
@@ -2648,7 +2648,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_notification_templates_table.php`
 - **Acceptance criteria:** Migration roundtrips.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-003 — Create notification_logs migration
 - **Milestone:** M9
@@ -2660,7 +2660,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_notification_logs_table.php`
 - **Acceptance criteria:** No update/delete allowed by model.
 - **Required tests:** Migration + model test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-004 — Notification models
 - **Milestone:** M9
@@ -2672,7 +2672,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Models/Notification.php`, `backend/app/Modules/Notifications/Models/NotificationTemplate.php`, `backend/app/Modules/Notifications/Models/NotificationLog.php`
 - **Acceptance criteria:** Relationships work; immutability test for `NotificationLog` passes.
 - **Required tests:** `tests/Unit/Notifications/NotificationModelTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-005 — ChannelInterface
 - **Milestone:** M9
@@ -2684,7 +2684,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Contracts/ChannelInterface.php`, `backend/app/Modules/Notifications/ValueObjects/ChannelResult.php`
 - **Acceptance criteria:** Interface enforced by Pest test.
 - **Required tests:** `tests/Unit/Notifications/ChannelInterfaceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-006 — LogChannel
 - **Milestone:** M9
@@ -2696,7 +2696,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Channels/LogChannel.php`
 - **Acceptance criteria:** `send` returns `ChannelResult(success: true, latency: <50ms)`.
 - **Required tests:** `tests/Feature/Notifications/LogChannelTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-007 — MailChannel
 - **Milestone:** M9
@@ -2708,7 +2708,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Channels/MailChannel.php`, `backend/app/Modules/Notifications/Mail/TemplateMailable.php`
 - **Acceptance criteria:** `Mail::fake()` asserts the mailable.
 - **Required tests:** `tests/Feature/Notifications/MailChannelTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-008 — PushChannel (FCM stub)
 - **Milestone:** M9

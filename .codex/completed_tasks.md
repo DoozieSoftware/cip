@@ -19,7 +19,7 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 06:36 IST (after T-M8-020 done; M8 in progress)
+* **Last updated:** 2026-06-27 07:19 IST (after T-M9-007 done; M9 in progress)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
 * **Active milestone:** M5 — Media Pipeline & Evidence Integrity (see `.codex/current_milestone.md`; M4 closed 32/32 = 100 %)
 
@@ -38,8 +38,8 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M5 | Media Pipeline & Evidence Integrity | 26 | 26 | 0 | 0 | 0 | 100 % |
 | M6 | Workflow Engine & State Machine | 22 | 22 | 0 | 0 | 0 | 100 % |
 | M7 | Routing Engine & Department Assignment | 18 | 18 | 0 | 0 | 0 | 100 % |
-| M8 | AI Vision Pipeline & Provider Abstraction | 30 | 20 | 0 | 0 | 0 | 67 % |
-| M9  | Notification & Eventing Platform         | 20    | 0    | 0           | 0       | 0        | 0 %        |
+| M8 | AI Vision Pipeline & Provider Abstraction | 30 | 30 | 0 | 0 | 0 | 100 % |
+| M9 | Notification & Eventing Platform | 20 | 7 | 0 | 0 | 0 | 35 % |
 | M10 | Moderator Portal                         | 28    | 0    | 0           | 0       | 0        | 0 %        |
 | M11 | Operations Portal (Department)           | 28    | 0    | 0           | 0       | 0        | 0 %        |
 | M12 | Super Admin Portal & Platform Configuration | 34 | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **193** | **0** | **0** | **0** | **47.1 %** |
+| **All** | **Total** | **410** | **210** | **0** | **0** | **0** | **51.2 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -86,6 +86,227 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 
 
 #### Completed entries (chronological)
+
+### T-M9-007 — MailChannel
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:19 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(notify): complete T-M9-007 — MailChannel + TemplateMailable` (sha: `1a0bb4a4b8ef5a99ceda0b74d630f98451c7faf8`)
+- **Files touched:** MailChannel.php, TemplateMailable.php, MailChannelTest.php
+- **Acceptance criteria:** Mail::fake() asserts the mailable
+- **Required tests:** 3 tests pass
+- **Notes:** 
+
+
+
+### T-M9-006 — LogChannel
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:19 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(notify): complete T-M9-006 — LogChannel` (sha: `0ec479b578f0b7f360674943c2832e80411610ce`)
+- **Files touched:** LogChannel.php, LogChannelTest.php
+- **Acceptance criteria:** send returns ChannelResult(success: true, latency <50ms)
+- **Required tests:** 2 tests pass
+- **Notes:** 
+
+
+
+### T-M9-005 — ChannelInterface
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:17 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(notify): complete T-M9-005 — ChannelInterface + ChannelResult` (sha: `ae324b16a6f92a2af2f5def3b39c7db604d753a8`)
+- **Files touched:** ChannelInterface.php, ChannelResult.php, ChannelInterfaceTest.php
+- **Acceptance criteria:** Interface enforced by Pest test
+- **Required tests:** 5 interface tests pass
+- **Notes:** 
+
+
+
+### T-M9-004 — Notification models
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:16 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(notify): complete T-M9-004 — Notification models` (sha: `37dcc8fc1fff2c3026f2bfffb63a4771ef8d5fd6`)
+- **Files touched:** Notification.php, NotificationTemplate.php, NotificationLog.php, NotificationModelTest.php
+- **Acceptance criteria:** Relationships work; NotificationLog immutability enforced
+- **Required tests:** 7 model tests pass
+- **Notes:** 
+
+
+
+### T-M9-003 — Create notification_logs migration
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:14 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(notify): complete T-M9-003 — Create notification_logs migration` (sha: `cd03e347cc47039b679fd8f73a3e32cdc54205bd`)
+- **Files touched:** 2026_06_27_090200_create_notification_logs_table.php, NotificationLogsMigrationTest.php
+- **Acceptance criteria:** Append-only history; FK cascade
+- **Required tests:** 4 migration tests pass
+- **Notes:** 
+
+
+
+### T-M9-002 — Create notification_templates migration
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:13 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(notify): complete T-M9-002 — Create notification_templates migration` (sha: `b3f1d047b7c3dc282f0f735b5b970a16e4bf15c3`)
+- **Files touched:** 2026_06_27_090100_create_notification_templates_table.php, NotificationTemplatesMigrationTest.php
+- **Acceptance criteria:** Migration roundtrips; unique (code, locale, version)
+- **Required tests:** 4 migration tests pass
+- **Notes:** 
+
+
+
+### T-M9-001 — Create notifications migration
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:12 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(notify): complete T-M9-001 — Create notifications migration` (sha: `8ef4e1b42c3d80e6a0efbce35e1b8a2d73a73261`)
+- **Files touched:** 2026_06_27_090000_create_notifications_table.php, NotificationsMigrationTest.php
+- **Acceptance criteria:** Indexes on (user_id, status) and (scheduled_at)
+- **Required tests:** 5 migration tests pass
+- **Notes:** 
+
+
+
+### T-M8-030 — Author docs/ai.md
+- **Milestone:** M8
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:08 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `docs(ai): complete T-M8-030 — Author docs/ai.md` (sha: `0a20c622cbd5803f4f20957013de313bc36a9e1b`)
+- **Files touched:** docs/ai.md
+- **Acceptance criteria:** Doc explains how to add a provider without code changes
+- **Required tests:** Manual review
+- **Notes:** 
+
+
+
+### T-M8-029 — Update OpenAPI for AI
+- **Milestone:** M8
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:06 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(ai): complete T-M8-029 — Update OpenAPI for AI endpoints` (sha: `e93a4b5fba9d43f4ec69d12a533dcb52dbee9c1b`)
+- **Files touched:** openapi.yaml, OpenApiAiTest.php
+- **Acceptance criteria:** All 9 AI paths + 16 schemas present; secrets masked
+- **Required tests:** 7 OpenAPI contract tests pass
+- **Notes:** 
+
+
+
+### T-M8-028 — AiBenchmarkSuite
+- **Milestone:** M8
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:04 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(ai): complete T-M8-028 — AiBenchmarkSuite (50-case + 5 negative)` (sha: `73dd8f3cf209f1142d4191b7209587a192fb538a`)
+- **Files touched:** AiBenchmarkTest.php, benchmark_50.json
+- **Acceptance criteria:** All 50 valid cases pass schema validation; 5 negative cases fail with named reasons
+- **Required tests:** 9 tests / 1011 assertions pass
+- **Notes:** 
+
+
+
+### T-M8-027 — Seed Mock provider as default
+- **Milestone:** M8
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:02 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(ai): complete T-M8-026 + T-M8-027 — default AI providers and prompts seeders` (sha: `abbd81558d5c34d161fa4b4e36ebd9d894064146`)
+- **Files touched:** AiProvidersSeeder.php, SeedersTest.php
+- **Acceptance criteria:** Mock is default in dev env; qwen-vl is fallback placeholder
+- **Required tests:** SeedersTest passes
+- **Notes:** 
+
+
+
+### T-M8-026 — Seed default prompt versions
+- **Milestone:** M8
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:02 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(ai): complete T-M8-026 + T-M8-027 — default AI providers and prompts seeders` (sha: `abbd81558d5c34d161fa4b4e36ebd9d894064146`)
+- **Files touched:** PromptsSeeder.php, SeedersTest.php
+- **Acceptance criteria:** 3 prompts present; active version is v1
+- **Required tests:** SeedersTest passes
+- **Notes:** 
+
+
+
+### T-M8-025 — /api/v1/admin/ai/prompts CRUD with version rollback
+- **Milestone:** M8
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:01 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(ai): complete T-M8-025 — /api/v1/admin/ai/prompts CRUD + approve/rollback` (sha: `6768442eb2cc0a95cdfa4e0109b0fb0771009837`)
+- **Files touched:** AiPromptAdminController.php, StorePromptRequest.php, UpdatePromptRequest.php, PromptVersionResource.php, AiPromptCrudTest.php
+- **Acceptance criteria:** New version deprecates old; rollback restores
+- **Required tests:** 7 tests pass
+- **Notes:** 
+
+
+
+### T-M8-024 — /api/v1/admin/ai/providers CRUD
+- **Milestone:** M8
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:01 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(ai): complete T-M8-024 — /api/v1/admin/ai/providers CRUD` (sha: `56d89037571f56748609cdc5d4a10fee0b450a4c`)
+- **Files touched:** AiProviderAdminController.php, StoreAiProviderRequest.php, UpdateAiProviderRequest.php, AiProviderConfigResource.php, AiProviderCrudTest.php
+- **Acceptance criteria:** Secrets never serialized; CRUD works for super_admin only
+- **Required tests:** 7 tests pass
+- **Notes:** 
+
+
+
+### T-M8-023 — GET /api/v1/internal/ai/job/{id}/result
+- **Milestone:** M8
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:01 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(ai): complete T-M8-021..023 — internal AI endpoints` (sha: `75726967407bf74b7392761088e9af3a4ad44a8a`)
+- **Files touched:** InternalAiController.php, AiResultResource.php
+- **Acceptance criteria:** 200 with result; 404 if not yet
+- **Required tests:** 5 internal endpoint tests pass
+- **Notes:** 
+
+
+
+### T-M8-022 — GET /api/v1/internal/ai/job/{id}
+- **Milestone:** M8
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:01 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(ai): complete T-M8-021..023 — internal AI endpoints` (sha: `75726967407bf74b7392761088e9af3a4ad44a8a`)
+- **Files touched:** InternalAiController.php, AiJobResource.php
+- **Acceptance criteria:** 200 with job fields; 404 if missing
+- **Required tests:** 5 internal endpoint tests pass
+- **Notes:** 
+
+
+
+### T-M8-021 — POST /api/v1/internal/ai/process
+- **Milestone:** M8
+- **Status:** Done
+- **Completed at:** 2026-06-27 07:01 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Commit:** `feat(ai): complete T-M8-021..023 — internal AI endpoints` (sha: `75726967407bf74b7392761088e9af3a4ad44a8a`)
+- **Files touched:** InternalAiController.php, AiJobResource.php, AiResultResource.php, InternalProcessEndpointTest.php
+- **Acceptance criteria:** POST returns 202 + job id; 403 for non-system
+- **Required tests:** 5 internal endpoint tests pass
+- **Notes:** 
+
+
 
 ### T-M8-020 — Dispatch pipeline on report submit
 - **Milestone:** M8
@@ -2500,6 +2721,23 @@ Append-only, newest entry at the top.
 
 | Timestamp (IST) | Change | Author | Linked task(s) |
 | --- | --- | --- | --- |
+| 2026-06-27 07:19 IST | Logged T-M9-007 done; M9 7/20; total 210/410 = 51.2 %. | Lead Solution Architect | T-M9-007 |
+| 2026-06-27 07:19 IST | Logged T-M9-006 done; M9 6/20; total 209/410 = 51.0 %. | Lead Solution Architect | T-M9-006 |
+| 2026-06-27 07:17 IST | Logged T-M9-005 done; M9 5/20; total 208/410 = 50.7 %. | Lead Solution Architect | T-M9-005 |
+| 2026-06-27 07:16 IST | Logged T-M9-004 done; M9 4/20; total 207/410 = 50.5 %. | Lead Solution Architect | T-M9-004 |
+| 2026-06-27 07:14 IST | Logged T-M9-003 done; M9 3/20; total 206/410 = 50.2 %. | Lead Solution Architect | T-M9-003 |
+| 2026-06-27 07:13 IST | Logged T-M9-002 done; M9 2/20; total 205/410 = 50.0 %. | Lead Solution Architect | T-M9-002 |
+| 2026-06-27 07:12 IST | Logged T-M9-001 done; M9 1/20; total 204/410 = 49.8 %. | Lead Solution Architect | T-M9-001 |
+| 2026-06-27 07:08 IST | Logged T-M8-030 done; M8 30/30; total 203/410 = 49.5 %. | Lead Solution Architect | T-M8-030 |
+| 2026-06-27 07:06 IST | Logged T-M8-029 done; M8 29/30; total 202/410 = 49.3 %. | Lead Solution Architect | T-M8-029 |
+| 2026-06-27 07:04 IST | Logged T-M8-028 done; M8 28/30; total 201/410 = 49.0 %. | Lead Solution Architect | T-M8-028 |
+| 2026-06-27 07:02 IST | Logged T-M8-027 done; M8 27/30; total 200/410 = 48.8 %. | Lead Solution Architect | T-M8-027 |
+| 2026-06-27 07:02 IST | Logged T-M8-026 done; M8 26/30; total 199/410 = 48.5 %. | Lead Solution Architect | T-M8-026 |
+| 2026-06-27 07:01 IST | Logged T-M8-025 done; M8 25/30; total 198/410 = 48.3 %. | Lead Solution Architect | T-M8-025 |
+| 2026-06-27 07:01 IST | Logged T-M8-024 done; M8 24/30; total 197/410 = 48.0 %. | Lead Solution Architect | T-M8-024 |
+| 2026-06-27 07:01 IST | Logged T-M8-023 done; M8 23/30; total 196/410 = 47.8 %. | Lead Solution Architect | T-M8-023 |
+| 2026-06-27 07:01 IST | Logged T-M8-022 done; M8 22/30; total 195/410 = 47.6 %. | Lead Solution Architect | T-M8-022 |
+| 2026-06-27 07:01 IST | Logged T-M8-021 done; M8 21/30; total 194/410 = 47.3 %. | Lead Solution Architect | T-M8-021 |
 | 2026-06-27 06:36 IST | Logged T-M8-020 done; M8 20/30; total 193/410 = 47.1 %. | Lead Solution Architect | T-M8-020 |
 | 2026-06-27 06:31 IST | Logged T-M8-019 done; M8 19/30; total 192/410 = 46.8 %. | Lead Solution Architect | T-M8-019 |
 | 2026-06-27 06:30 IST | Logged T-M8-018 done; M8 18/30; total 191/410 = 46.6 %. | Lead Solution Architect | T-M8-018 |
