@@ -2885,7 +2885,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Moderation/`
 - **Acceptance criteria:** Provider registered in `config/app.php`; folders exist.
 - **Required tests:** `php artisan route:list` includes the provider's routes after routing is added.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-002 — Moderation policy
 - **Milestone:** M10
@@ -2897,7 +2897,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Moderation/Policies/ModerationPolicy.php`
 - **Acceptance criteria:** Citizens blocked; moderators pass.
 - **Required tests:** `tests/Feature/Moderation/ModerationPolicyTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-003 — ReviewReportDto
 - **Milestone:** M10
@@ -2909,7 +2909,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Moderation/DTO/ReviewReportDto.php`
 - **Acceptance criteria:** DTO is immutable; missing fields throw.
 - **Required tests:** `tests/Unit/Moderation/ReviewReportDtoTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-004 — ModerationService.review
 - **Milestone:** M10
@@ -2921,7 +2921,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Moderation/Services/ModerationService.php`
 - **Acceptance criteria:** Override writes audit row with before/after category.
 - **Required tests:** `tests/Feature/Moderation/ReviewServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-005 — ModerationService.merge
 - **Milestone:** M10
@@ -2933,7 +2933,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Moderation/Services/ModerationService.php`
 - **Acceptance criteria:** Duplicates cannot be read via citizen API.
 - **Required tests:** `tests/Feature/Moderation/MergeServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-006 — ModerationService.reject
 - **Milestone:** M10
@@ -2945,7 +2945,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Moderation/Services/ModerationService.php`
 - **Acceptance criteria:** Rejection is terminal.
 - **Required tests:** `tests/Feature/Moderation/RejectServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-007 — ModerationService.escalate
 - **Milestone:** M10
@@ -2957,7 +2957,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Moderation/Services/ModerationService.php`
 - **Acceptance criteria:** Escalation row written; audit emitted.
 - **Required tests:** `tests/Feature/Moderation/EscalateServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-008 — /api/v1/moderator/queue
 - **Milestone:** M10

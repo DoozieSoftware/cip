@@ -79,6 +79,8 @@ class DefaultWorkflowSeeder extends Seeder
             ['code' => 'verified',          'name' => 'Verified',          'is_initial' => false, 'is_terminal' => true,  'sort_order' => 90, 'color' => '#1B5E20'],
             ['code' => 'closed',            'name' => 'Closed',            'is_initial' => false, 'is_terminal' => true,  'sort_order' => 100, 'color' => '#212121'],
             ['code' => 'rejected',          'name' => 'Rejected',          'is_initial' => false, 'is_terminal' => true,  'sort_order' => 110, 'color' => '#F44336'],
+            ['code' => 'merged',            'name' => 'Merged',            'is_initial' => false, 'is_terminal' => true,  'sort_order' => 120, 'color' => '#7B1FA2'],
+            ['code' => 'escalated',         'name' => 'Escalated',         'is_initial' => false, 'is_terminal' => false, 'sort_order' => 130, 'color' => '#E91E63'],
         ];
 
         $states = [];
@@ -105,6 +107,9 @@ class DefaultWorkflowSeeder extends Seeder
             ['ai_processing',     'moderator_review',  'pending_moderator', 'system',     30],
             ['ai_processing',     'ai_auto_assign',    'assigned',          'system',     120],
             ['pending_moderator', 'assign',            'assigned',          'moderator',  120],
+            ['pending_moderator', 'approve',           'assigned',          'moderator',  120],
+            ['pending_moderator', 'escalate',          'escalated',         'moderator',  null],
+            ['pending_moderator', 'merge',             'merged',            'moderator',  null],
             ['assigned',          'accept',            'accepted',          'department', 240],
             ['accepted',          'start',             'in_progress',       'department', 1440],
             ['in_progress',       'resolve',           'resolved',          'department', 4320],

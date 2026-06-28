@@ -31,6 +31,8 @@ class ReportStatusesSeeder extends Seeder
         ['code' => 'verified', 'name' => 'Verified', 'color' => '#1B5E20', 'is_terminal' => true, 'sort_order' => 90],
         ['code' => 'closed', 'name' => 'Closed', 'color' => '#212121', 'is_terminal' => true, 'sort_order' => 100],
         ['code' => 'rejected', 'name' => 'Rejected', 'color' => '#F44336', 'is_terminal' => true, 'sort_order' => 110],
+        ['code' => 'merged',            'name' => 'Merged',            'color' => '#7B1FA2', 'is_terminal' => true,  'sort_order' => 120],
+        ['code' => 'escalated',         'name' => 'Escalated',         'color' => '#E91E63', 'is_terminal' => false, 'sort_order' => 130],
     ];
 
     public function run(): void
