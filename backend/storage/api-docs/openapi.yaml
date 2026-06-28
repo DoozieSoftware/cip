@@ -2165,6 +2165,144 @@ components:
             application/json:
               schema: { $ref: '#/components/schemas/AiResultResponse' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/notifications:
+    get:
+      tags: [Notifications]
+      summary: "List the authenticated citizen's notifications (paginated, filterable)"
+      operationId: notifications.index
+      parameters:
+        - in: query
+          name: unread
+          schema: { type: string, enum: ['0', '1', 'true', 'false'] }
+        - in: query
+          name: type
+          schema: { type: string, example: 'report.assigned' }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: cursor
+          schema: { type: string, nullable: true }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/notifications/{id}/read:
+    post:
+      tags: [Notifications]
+      summary: 'Mark a single notification as read (idempotent)'
+      operationId: notifications.read
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationReadResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/notifications/preferences:
+    get:
+      tags: [Notifications]
+      summary: "List the caller's per-(channel, event_code) opt-in flags"
+      operationId: notifications.preferences.index
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationPreferenceListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Notifications]
+      summary: 'Bulk-upsert notification preferences (channel + event_code + enabled)'
+      operationId: notifications.preferences.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NotificationPreferenceBulkUpdate' }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationPreferenceListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  # =============================================================
+  # Notifications schemas
+  # =============================================================
+  Notification:
+    type: object
+    properties:
+      id: { type: string, format: uuid }
+      type: { type: string, example: 'report.assigned' }
+      channel: { type: string, enum: [push, email, sms, webhook] }
+      subject: { type: string }
+      body: { type: string }
+      status: { type: string, enum: [pending, sent, failed, dead] }
+      read_at: { type: string, format: date-time, nullable: true }
+      created_at: { type: string, format: date-time }
+      metadata:
+        type: object
+        additionalProperties: true
+  NotificationListResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              items:
+                type: array
+                items: { $ref: '#/components/schemas/Notification' }
+              next_cursor: { type: string, nullable: true }
+              unread_count: { type: integer }
+  NotificationReadResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              read_at: { type: string, format: date-time, nullable: true }
+  NotificationPreference:
+    type: object
+    properties:
+      channel: { type: string, enum: [push, email, sms, webhook] }
+      event_code: { type: string, example: 'report.assigned' }
+      enabled: { type: boolean }
+  NotificationPreferenceBulkUpdate:
+    type: object
+    required: [preferences]
+    properties:
+      preferences:
+        type: array
+        minItems: 1
+        items: { $ref: '#/components/schemas/NotificationPreference' }
+  NotificationPreferenceListResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              preferences:
+                type: array
+                items: { $ref: '#/components/schemas/NotificationPreference' }
+
   # =============================================================
   # AI schemas
   # =============================================================
@@ -2366,6 +2504,9 @@ tags:
   -
     name: Routing
     description: 'Super Admin routing rules CRUD + manual report reassignment (M7).'
+  -
+    name: Notifications
+    description: 'Citizen notification inbox + per-(channel, event) opt-in preferences (M9).'
   -
     name: AI
     description: 'AI vision pipeline: provider configs, prompt versions, internal pipeline endpoints (M8).'

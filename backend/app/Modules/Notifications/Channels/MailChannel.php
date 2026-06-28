@@ -30,6 +30,7 @@ class MailChannel implements ChannelInterface
         $start = hrtime(true);
 
         $user = User::find($notification->user_id);
+
         if ($user === null || empty($user->email)) {
             return ChannelResult::fail(
                 error: 'user has no email address',

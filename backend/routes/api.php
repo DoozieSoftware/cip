@@ -3,18 +3,20 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\HealthController;
+use App\Modules\AI\Http\Controllers\Admin\AiPromptAdminController;
+use App\Modules\AI\Http\Controllers\Admin\AiProviderAdminController;
+use App\Modules\AI\Http\Controllers\Internal\InternalAiController;
 use App\Modules\Authentication\Http\Controllers\AuthController;
 use App\Modules\Departments\Http\Controllers\Admin\DepartmentController;
 use App\Modules\Media\Http\Controllers\Api\MediaController;
-use App\Modules\AI\Http\Controllers\Admin\AiProviderAdminController;
-use App\Modules\AI\Http\Controllers\Admin\AiPromptAdminController;
-use App\Modules\AI\Http\Controllers\Internal\InternalAiController;
+use App\Modules\Notifications\Http\Controllers\Api\NotificationPreferenceController;
+use App\Modules\Notifications\Http\Controllers\Api\NotificationsController;
 use App\Modules\Reports\Http\Controllers\Api\ReportsController;
+use App\Modules\Routing\Http\Controllers\Admin\ReassignController;
+use App\Modules\Routing\Http\Controllers\Admin\RoutingAdminController;
 use App\Modules\Settings\Http\Controllers\Admin\AppConfigController;
 use App\Modules\Settings\Http\Controllers\Admin\SettingController;
 use App\Modules\Workflow\Http\Controllers\Admin\WorkflowAdminController;
-use App\Modules\Routing\Http\Controllers\Admin\RoutingAdminController;
-use App\Modules\Routing\Http\Controllers\Admin\ReassignController;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Route;
 
@@ -44,6 +46,12 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:sanctum', 'throttle:'.RouteServiceProvider::LIMITER_CITIZEN])->group(function (): void {
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
         Route::get('auth/me', [AuthController::class, 'me'])->name('api.v1.auth.me');
+
+        // Notifications inbox (T-M9-015/016)
+        Route::get('notifications', [NotificationsController::class, 'index'])->name('notifications.index');
+        Route::post('notifications/{id}/read', [NotificationsController::class, 'markRead'])->name('notifications.read');
+        Route::get('notifications/preferences', [NotificationPreferenceController::class, 'index'])->name('notifications.preferences.index');
+        Route::put('notifications/preferences', [NotificationPreferenceController::class, 'update'])->name('notifications.preferences.update');
     });
 
     // Super Admin (M3) — gated to super_admin role; rate limited with the admin limiter.

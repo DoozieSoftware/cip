@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Notifications\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -60,7 +61,7 @@ class NotificationLog extends Model
     /**
      * Append-only: block updates.
      */
-    protected function performUpdate(\Illuminate\Database\Eloquent\Builder $query)
+    protected function performUpdate(Builder $query): void
     {
         throw new RuntimeException(
             'NotificationLog is append-only; create a new row instead of updating.'
@@ -70,7 +71,7 @@ class NotificationLog extends Model
     /**
      * Append-only: block deletes.
      */
-    protected function performDeleteOnModel()
+    protected function performDeleteOnModel(): void
     {
         throw new RuntimeException(
             'NotificationLog is append-only; rows cannot be deleted.'

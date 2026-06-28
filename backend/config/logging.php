@@ -22,6 +22,10 @@ return [
 
     'default' => env('LOG_CHANNEL', 'stack'),
 
+    'deprecations' => [
+        'channel' => env('LOG_DEPRECATIONS_CHANNEL', 'null'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Deprecations Log Channel
@@ -53,6 +57,16 @@ return [
     */
 
     'channels' => [
+        'notifications' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/notifications.log'),
+            'level' => env('LOG_LEVEL_NOTIFICATIONS', 'debug'),
+        ],
+        'sms' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/sms.log'),
+            'level' => env('LOG_LEVEL_SMS', 'debug'),
+        ],
 
         'stack' => [
             'driver' => 'stack',

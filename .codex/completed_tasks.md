@@ -19,9 +19,9 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-27 07:19 IST (after T-M9-007 done; M9 in progress)
+* **Last updated:** 2026-06-28 IST (after T-M9-020 done; M9 CLOSED 20/20 = 100 %; total 224/410 = 54.6 %; next: M10 — Moderator Portal)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
-* **Active milestone:** M5 — Media Pipeline & Evidence Integrity (see `.codex/current_milestone.md`; M4 closed 32/32 = 100 %)
+* **Active milestone:** M10 — Moderator Portal (see `.codex/current_milestone.md`; M9 closed 20/20 = 100 %)
 
 ---
 
@@ -39,7 +39,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M6 | Workflow Engine & State Machine | 22 | 22 | 0 | 0 | 0 | 100 % |
 | M7 | Routing Engine & Department Assignment | 18 | 18 | 0 | 0 | 0 | 100 % |
 | M8 | AI Vision Pipeline & Provider Abstraction | 30 | 30 | 0 | 0 | 0 | 100 % |
-| M9 | Notification & Eventing Platform | 20 | 7 | 0 | 0 | 0 | 35 % |
+| M9 | Notification & Eventing Platform | 20 | 20 | 0 | 0 | 0 | 100 %  ✓ |
 | M10 | Moderator Portal                         | 28    | 0    | 0           | 0       | 0        | 0 %        |
 | M11 | Operations Portal (Department)           | 28    | 0    | 0           | 0       | 0        | 0 %        |
 | M12 | Super Admin Portal & Platform Configuration | 34 | 0    | 0           | 0       | 0        | 0 %        |
@@ -47,7 +47,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **210** | **0** | **0** | **0** | **51.2 %** |
+| **All** | **Total** | **410** | **224** | **0** | **0** | **0** | **54.6 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,7 +56,7 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 54 | 54 % |
+| Foundations | M2, M3, M5, M9 | 100 | 74 | 74 % |
 | Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
 | Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
@@ -176,6 +176,163 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 - **Required tests:** 5 migration tests pass
 - **Notes:** 
 
+
+### T-M9-008 — PushChannel (FCM stub)
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-28 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Files touched:** `app/Modules/Notifications/Channels/PushChannel.php`, `tests/Feature/Notifications/PushChannelTest.php`
+- **Acceptance criteria:** With `Http::fake`, success and 5xx are handled; permanent on 4xx, transient on 5xx
+- **Required tests:** PushChannelTest (HTTP 200, 4xx permanent, 5xx transient, network timeout, missing device token)
+- **Notes:** Reads `notifications.fcm.*` config; project + access_token + endpoint are config-driven; the OAuth2 service-account exchange is left to ops (M14 connector framework will formalize this).
+
+### T-M9-009 — SmsChannel (provider stub)
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-28 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Files touched:** `app/Modules/Notifications/Channels/SmsChannel.php`, `app/Modules/Notifications/Drivers/LogSmsGateway.php`, `tests/Feature/Notifications/SmsChannelTest.php`
+- **Acceptance criteria:** Stub logs message; falls back to `LogSmsGateway`
+- **Required tests:** SmsChannelTest (transient on RuntimeException, permanent on other exceptions, permanent when user deleted)
+- **Notes:** Reuses the `SmsGatewayInterface` registered in M2; real driver is wired via the M14 connector framework.
+
+### T-M9-010 — WebhookChannel
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-28 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Files touched:** `app/Modules/Notifications/Channels/WebhookChannel.php`, `tests/Feature/Notifications/WebhookChannelTest.php`
+- **Acceptance criteria:** HMAC-SHA256 signed body (`X-CIP-Signature: sha256=<hex>`); 200 → success, 4xx → permanent, 5xx/timeout → transient
+- **Required tests:** WebhookChannelTest (4xx permanent, 5xx transient, network timeout, missing URL permanent)
+- **Notes:** Signing key is read from `notifications.webhook.signing_key` config; never logged.
+
+### T-M9-011 — TemplateEngine
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-28 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Files touched:** `app/Modules/Notifications/Services/TemplateEngine.php`, `tests/Unit/Notifications/TemplateEngineTest.php`
+- **Acceptance criteria:** `{var}` substitution, `\{` `\}` escapes, `null` → empty, arrays → JSON, locale fallback, highest active version wins, missing placeholder → `MissingTemplateVariableException`
+- **Required tests:** 11 TemplateEngineTest assertions
+- **Notes:** Renders both subject and body with the same grammar; placeholder list is returned in sorted order.
+
+### T-M9-012 — NotificationDispatcher
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-28 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Files touched:** `app/Modules/Notifications/Services/NotificationDispatcher.php`, `app/Modules/Notifications/Services/NotificationPreferenceService.php`, `tests/Feature/Notifications/NotificationDispatcherTest.php`
+- **Acceptance criteria:** Resolves the active template, checks the per-(user, channel, event) preference, persists a `pending` row and dispatches `SendNotificationJob`
+- **Required tests:** NotificationDispatcherTest (preference gate, opt-out short-circuit, multi-channel override, missing template throw, missing user throw)
+- **Notes:** When the user is opted-out, the row is persisted as `dead` with `payload.reason = 'opted_out'` for audit traceability.
+
+### T-M9-013 — SendNotificationJob
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-28 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Files touched:** `app/Modules/Notifications/Jobs/SendNotificationJob.php`, `tests/Feature/Notifications/SendNotificationJobTest.php`
+- **Acceptance criteria:** `tries=5`, backoff `[60, 300, 900, 3600]`, `timeout=30s`, writes `notification_logs` per attempt, marks `sent` on success, marks `dead` after 5 attempts, writes `audit_logs` row on dead-letter
+- **Required tests:** SendNotificationJobTest (happy path, transient retry, dead-letter after 5 failures, dead-letter audit row)
+- **Notes:** Transient failures re-throw so the queue retries with backoff; permanent failures are caught and the row is marked `dead` directly.
+
+### T-M9-014 — Wire event listeners
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-28 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Files touched:** `app/Modules/Notifications/Listeners/{AiCompletedListener,ReportAssignedListener,ReportStatusChangedListener,SecurityEventListener}.php`, `app/Providers/AppServiceProvider.php`, `tests/Feature/Notifications/EventListenersTest.php`
+- **Acceptance criteria:** `ReportAssigned` → `report.assigned`, `ReportStatusChanged` → `report.status_changed`, `AiCompleted` (high-confidence) → `ai.classified`, `SecurityEvent` → `security.alert`
+- **Required tests:** 6 EventListenersTest assertions (incl. missing-report / missing-user tolerance)
+- **Notes:** All listeners tolerate missing rows and log+swallow dispatcher exceptions so the originating event remains the source of truth. Auto-discovered by Laravel (in `App\Modules\Notifications\Listeners` namespace).
+
+### T-M9-015 — GET /api/v1/notifications
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-28 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Files touched:** `app/Modules/Notifications/Http/Controllers/Api/NotificationsController.php`, `app/Modules/Notifications/Http/Resources/NotificationResource.php`, `routes/api.php`, `tests/Feature/Notifications/IndexEndpointTest.php`
+- **Acceptance criteria:** 200 with cursor-paginated list; filterable by `unread`, `type`; `unread_count` returned in the envelope
+- **Required tests:** IndexEndpointTest (auth required, filter by unread, filter by type, pagination cursor)
+- **Notes:** `throttle:citizen` rate-limiter; `cursor` is opaque (Laravel's `cursorPaginate`).
+
+### T-M9-016 — POST /api/v1/notifications/{id}/read
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-28 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Files touched:** `app/Modules/Notifications/Http/Controllers/Api/NotificationsController.php`, `tests/Feature/Notifications/MarkReadEndpointTest.php`
+- **Acceptance criteria:** 200 with `read_at`; idempotent (re-marking a read row is a no-op success); 404 if not yours
+- **Required tests:** MarkReadEndpointTest (happy, idempotent, not-found, not-yours)
+- **Notes:** `read_at` is set on first mark; subsequent marks preserve the original timestamp.
+
+### T-M9-017 — NotificationPreference endpoints
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-28 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Files touched:** `app/Modules/Notifications/Http/Controllers/Api/NotificationPreferenceController.php`, `tests/Feature/Notifications/PreferenceTest.php`
+- **Acceptance criteria:** GET returns the caller's per-(channel, event_code) opt-in flags; PUT bulk-upserts (channel + event_code + enabled) with `preferences[]` array
+- **Required tests:** PreferenceTest (list defaults, bulk update, validation rejects unknown channel, validation rejects missing event_code)
+- **Notes:** Absence = platform default (opt-in for V1); presence = explicit value.
+
+### T-M9-018 — Seed default notification templates
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-28 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Files touched:** `database/seeders/NotificationTemplatesSeeder.php`, `database/seeders/DatabaseSeeder.php`, `tests/Feature/Notifications/NotificationTemplatesSeederTest.php`
+- **Acceptance criteria:** 6 default templates present (`report.assigned` email, `report.assigned.sms`, `report.status_changed` email, `ai.classified` email, `ai.completed` webhook, `security.alert` email) — all `active=true, version=1, locale=en`
+- **Required tests:** NotificationTemplatesSeederTest (idempotent, 6 rows, active version is v1)
+- **Notes:** Registered as the last seeder in `DatabaseSeeder::run()`; idempotent — re-running does not duplicate rows.
+
+### T-M9-019 — NotificationFeatureTest
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-28 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Files touched:** `tests/Feature/Notifications/NotificationFeatureTest.php`, `tests/Feature/Notifications/NotificationDispatcherTest.php`, `tests/Feature/Notifications/EventListenersTest.php`
+- **Acceptance criteria:** End-to-end happy path — submit report → AI classifies → moderator assigns → citizen receives `report.assigned` notification; webhooks fire on `ai.completed`
+- **Required tests:** NotificationFeatureTest (full lifecycle, dead-letter path, webhook channel)
+- **Notes:** 100 new M9 tests added across 19 spec files; total platform suite is 1106 tests / 4534 assertions, all green.
+
+### T-M9-020 — Update OpenAPI + docs/notifications.md
+- **Milestone:** M9
+- **Status:** Done
+- **Completed at:** 2026-06-28 IST
+- **Agent / Committer:** Lead Solution Architect
+- **Files touched:** `storage/api-docs/openapi.yaml`, `docs/notifications.md`, `tests/Feature/Notifications/OpenApiNotificationsTest.php`
+- **Acceptance criteria:** `openapi.yaml` declares all 4 M9 endpoints, the 6 M9 schemas, the `Notifications` tag, the standard error envelopes, and the canonical `channel` enum (push/email/sms/webhook). `docs/notifications.md` covers channels, templates, dispatcher, job, listeners, REST, preferences, and module layout.
+- **Required tests:** OpenApiNotificationsTest (9 assertions, all green) — endpoint coverage, schema coverage, tag index, channel enum, error envelopes, cursor envelope, bulk-update `minItems`, YAML parseability.
+- **Notes:** `swagger-cli validate` is the CI lint step; the Pest test is the in-process equivalent.
+
+#### M9 — Notifications & Eventing Platform — CLOSED 20/20 = 100 %
+
+| T-M9-XXX | Title                                              | Status |
+| -------- | -------------------------------------------------- | ------ |
+| T-M9-001 | Create notifications migration                    | Done   |
+| T-M9-002 | Create notification_templates migration            | Done   |
+| T-M9-003 | Create notification_logs migration                 | Done   |
+| T-M9-004 | Notification models                                | Done   |
+| T-M9-005 | ChannelInterface                                   | Done   |
+| T-M9-006 | LogChannel                                         | Done   |
+| T-M9-007 | MailChannel                                        | Done   |
+| T-M9-008 | PushChannel (FCM stub)                             | Done   |
+| T-M9-009 | SmsChannel (provider stub)                         | Done   |
+| T-M9-010 | WebhookChannel                                     | Done   |
+| T-M9-011 | TemplateEngine                                     | Done   |
+| T-M9-012 | NotificationDispatcher                             | Done   |
+| T-M9-013 | SendNotificationJob                                | Done   |
+| T-M9-014 | Wire event listeners                               | Done   |
+| T-M9-015 | GET /api/v1/notifications                          | Done   |
+| T-M9-016 | POST /api/v1/notifications/{id}/read               | Done   |
+| T-M9-017 | NotificationPreference endpoints                   | Done   |
+| T-M9-018 | Seed default notification templates                | Done   |
+| T-M9-019 | NotificationFeatureTest                            | Done   |
+| T-M9-020 | Update OpenAPI + docs/notifications.md             | Done   |
+
+M9 wires the M4 report lifecycle (`ReportSubmitted` → AI pipeline → `ReportAssigned`) to the M9 notification fan-out. The M9 listener set consumes the `AiCompleted` (high-confidence → citizen `ai.classified`), `ReportAssigned` (citizen `report.assigned`), `ReportStatusChanged` (citizen `report.status_changed`), and `SecurityEvent` (`security.alert`) platform events. Total tests: 1106 / 4534 assertions, all green.
 
 
 ### T-M8-030 — Author docs/ai.md
@@ -2924,31 +3081,31 @@ Architecture-level or scope-level decisions taken during implementation. Each de
 
 ## 9. Repository Statistics
 
-Snapshot at file initialization. Updated as the repository grows.
+Snapshot at 2026-06-28 (after M9 closeout).
 
 | Metric | Value |
 | --- | --- |
-| Source files (excluding `.git/`, `vendor/`, `node_modules/`) | 0 |
-| Lines of backend code (`backend/app/`) | 0 |
-| Lines of backend tests (`backend/tests/`) | 0 |
-| Lines of frontend code (`frontend/src/`) | 0 |
-| Lines of frontend tests (`frontend/src/**/*.test.*`, `frontend/e2e/`) | 0 |
-| Lines of `docs/` | 16,204 |
+| Source files (excluding `.git/`, `vendor/`, `node_modules/`) | 567 |
+| Lines of backend code (`backend/app/`) | 19,618 |
+| Lines of backend tests (`backend/tests/`) | 19,337 |
+| Lines of frontend code (`frontend/src/`) | 56 |
+| Lines of frontend tests (`frontend/src/**/*.test.*`, `frontend/e2e/`) | 22 |
+| Lines of `docs/` | 16,859 |
 | Lines of `.codex/roadmap.md` | 991 |
 | Lines of `.codex/task_queue.md` | 5,163 |
-| Lines of `.codex/current_milestone.md` | 212 |
-| Lines of `.codex/completed_tasks.md` (this file) | 1055 |
-| Database migrations | 0 |
-| Eloquent models | 0 |
-| API endpoints (under `routes/api.php`) | 0 (only `/api/v1/health` and `/api/v1/health/ready` will exist after M1) |
-| Pest tests | 221 passing (850 assertions) |
-| Vitest tests | 0 |
-| Playwright E2E tests | 0 |
-| Git commits on `main` | 84 |
+| Lines of `.codex/current_milestone.md` | 116 |
+| Lines of `.codex/completed_tasks.md` (this file) | ~3,200 (after M9 closeout inserts) |
+| Database migrations | 47 |
+| Eloquent models | 39 |
+| API endpoints (under `routes/api.php`) | 75 (M1 health + M2 auth + M3 master + M4 reports + M5 media + M6 workflow + M7 routing + M8 AI + M9 notifications) |
+| Pest tests | 1,106 passing (4,534 assertions) |
+| Vitest tests | 1 (sanity smoke) |
+| Playwright E2E tests | 1 (a11y) |
+| Git commits on `main` | 371 |
 | Open PRs | 0 |
 | Open Critical / High defects | 0 |
-| Coverage: Backend | n/a (no code yet) |
-| Coverage: Frontend | n/a (no code yet) |
+| Coverage: Backend | not yet measured (1106 tests pass; coverage instrumentation pending) |
+| Coverage: Frontend | not yet measured (Vitest scaffolded; a11y Playwright spec in place) |
 
 > **Refresh rule:** after each task is marked `Done`, the agent updates the relevant counters above and the milestone table in §2. Do not rewrite history; only update current values.
 
@@ -2967,9 +3124,10 @@ Snapshot at file initialization. Updated as the repository grows.
 
 ## 11. Next Action
 
-* **M1 — Repository Bootstrap & Tooling is complete (22/22 tasks done, 5.4 % of the 410-task roadmap).** Next milestone is M2 — Identity, Auth & RBAC Core (30 tasks; first task `T-M2-001 — Create users migration with UUID PK and soft deletes`). Switch `.codex/current_milestone.md` to M2 before resuming work.
-* After `T-M1-001` is marked `Status: Done` in `.codex/task_queue.md`, append the first entry to §3 here, increment the M1 `Done` counter in §2, and update §1's `Last updated` timestamp.
+* **M1–M9 are complete (224/410 = 54.6 % of the 410-task roadmap).** M1 (22/22) + M2 (30/30) + M3 (24/24) + M4 (32/32) + M5 (26/26) + M6 (22/22) + M7 (18/18) + M8 (30/30) + M9 (20/20) all CLOSED. Next milestone is **M10 — Moderator Portal** (28 tasks; first task `T-M10-001 — Create Moderation module skeleton`). Switch `.codex/current_milestone.md` to M10 before resuming work.
+* After the first M10 task is marked `Status: Done` in `.codex/task_queue.md`, append the next entry to §3 here, increment the M10 `Done` counter in §2, and update §1's `Last updated` timestamp.
 * If any host prerequisite (PHP 8.4, Composer, Node 20+, Docker, Docker Compose) is missing, add a §6 entry and stop until the prerequisite is met.
+* The current `vendor/bin/pest` suite is green at 1,106 tests / 4,534 assertions (335 s); add M10 coverage on top of that baseline.
 
 
 ---

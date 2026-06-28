@@ -38,6 +38,7 @@ class DatabaseSeeder extends Seeder
             // M8: AI default providers + system prompts (idempotent).
             AiProvidersSeeder::class,
             PromptsSeeder::class,
+            NotificationTemplatesSeeder::class,
         ]);
     }
 }

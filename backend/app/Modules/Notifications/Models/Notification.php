@@ -45,13 +45,19 @@ class Notification extends Model
     use HasUuids;
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_SENT = 'sent';
+
     public const STATUS_FAILED = 'failed';
+
     public const STATUS_DEAD = 'dead';
 
     public const CHANNEL_PUSH = 'push';
+
     public const CHANNEL_EMAIL = 'email';
+
     public const CHANNEL_SMS = 'sms';
+
     public const CHANNEL_WEBHOOK = 'webhook';
 
     protected $table = 'notifications';

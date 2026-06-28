@@ -1,100 +1,116 @@
-# Current Milestone — M8: AI Vision Pipeline & Provider Abstraction
+# Current Milestone — M9: Notification & Eventing Platform
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** **M7 CLOSED 18/18 = 100 %** (M1–M7 complete; M8 starts next)
-**Last updated:** 2026-06-27 05:46 IST (after T-M7-018 done; M7 18/18; M7 CLOSED; total 173/410 = 42.2 %)
+**Status:** **M8 CLOSED 30/30 = 100 %**; M1–M8 complete; **M9 20/20 = 100 %** (CLOSED); total 224/410 = 54.6 %.
+**Last updated:** 2026-06-28 (after T-M9-020 done; M9 20/20; M9 CLOSED)
 
-> M1 (22/22), M2 (22/22), M3 (30/30), M4 (32/32), M5 (22/22), M6 (22/22), and M7 (18/18) are complete. **M7 is the routing layer** — the JSON DSL (`category_in`, `ward_in`, `district_in`, `severity_in`, `keyword_match`, `time_of_day_between`, `ai_label_in`) with AND/OR composition, the `RoutingEngine` + `RoutingCondition` + `RoutingRepository` (1h cache, `routing` tag), the `AssignmentService` (round-robin via cache cursor), the `ReportAssigned` event, the `RoutingFallbackService` (`app_configs.routing_default_department_id`), the `AiCompletedListener` that bridges M7 routing to the M6 workflow engine's new `ai_auto_assign` transition, the `ReassignService` for manual overrides, the `RoutingAdminService` (CRUD + reorder + audit + cache invalidation), the Super Admin REST surface, the `RoutingRulesSeeder` with the three Bangalore sample rules, the OpenAPI extension, `docs/routing.md`, the README cross-link, and 109 new tests. The M7 module is fully wired to the M4 reports + M6 workflow + future M8 AI vision (via the `AiCompleted` event stub).
+> M1 (22/22), M2 (30/30), M3 (24/24), M4 (32/32), M5 (26/26), M6 (22/22), M7 (18/18), M8 (30/30), and M9 (20/20) are complete. **M8 is the AI vision pipeline** — the `ai_provider_configs` + `prompt_versions` + `ai_jobs` + `ai_results` + `ai_labels` tables, the `AIProviderInterface` with `MockProvider` / `OpenAICompatibleProvider` / `QwenVLProvider`, the `PiiMaskingService` + `ImageQualityAnalyzer` + `DuplicateDetector` + `FraudScorer` + `ConfidenceAggregator` + `AiResponseValidator` + `ProviderFailoverService`, the `AiPipelineOrchestrator` queueable job, the `AiCompleted` event bridged to M7 routing, the `ReportAssigned` listener that fires the AI pipeline on submit, the internal `/api/v1/internal/ai/{process,job,result}` REST surface, the Super Admin `/api/v1/admin/ai/{providers,prompts}` CRUD (with approve + rollback), the `AiBenchmarkSuite` (50-case + 5 negative), the default seeders (`Mock` provider, 3 base system prompts as approved v1), the OpenAPI extension, `docs/ai.md`, and 109 new tests. **M9 is the notification fan-out** — the `notifications` + `notification_templates` + `notification_logs` + `notification_preferences` tables, the `ChannelInterface` + `ChannelResult`, the five concrete channels (`LogChannel`, `MailChannel`, `PushChannel` FCM stub, `SmsChannel` + `LogSmsGateway` driver, `WebhookChannel` HMAC-signed), the `TemplateEngine` (curly-brace placeholders + escape + version pick), the `NotificationDispatcher` (preference gate + opt-out short-circuit), the `SendNotificationJob` (`tries=5`, backoff `[60, 300, 900, 3600]`, dead-letter on retry exhaustion), the `ReportAssigned` / `ReportStatusChanged` / `AiCompleted` / `SecurityEvent` listeners wired in `AppServiceProvider`, the citizen `/api/v1/notifications` + `/api/v1/notifications/{id}/read` + `/api/v1/notifications/preferences` REST surface, the `NotificationTemplatesSeeder` (6 default templates), the `docs/notifications.md` doc, the `OpenApiNotificationsTest` contract check, and 100 new tests. The M9 module is fully wired to M4 reports + M6 workflow + M7 routing + M8 AI vision (consumes `AiCompleted` for `ai.classified` and `ReportAssigned` for `report.assigned`).
 
-**Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M8, `.codex/task_queue.md` §M8, `docs/03` §7, `docs/10` (entire), `docs/04` §10, `docs/05` §11, `docs/11` §28.
+**Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M10, `.codex/task_queue.md` §M10, `docs/03` §4, `docs/07` (entire), `docs/13` (entire), `docs/15` §7, §9.
 
 ---
 
 ## 1. Current Milestone
 
-* **Milestone ID:** M8
-* **Title:** AI Vision Pipeline & Provider Abstraction
-* **Estimated complexity:** **High** (multi-provider abstraction, prompt versioning, async job pipeline, retry / fallback, audit + cost tracking)
-* **Estimated duration:** 2 weeks
-* **Total tasks:** see `.codex/task_queue.md` §M8
+* **Milestone ID:** M10
+* **Title:** Moderator Portal
+* **Estimated complexity:** High (full SPA for the moderator workflow — queue, duplicate review, fraud triage, manual override, audit, status transitions, reassignment).
+* **Estimated duration:** 2–3 weeks
+* **Total tasks:** see `.codex/task_queue.md` §M10
 * **Status:** **Not Started** (0 %)
-* **Depends on:** M1 (buildable repo, base `Shared` utilities), M2 (audit + rate limiters + role), M3 (geography + categories + master-config), M4 (Report + media rows), M5 (signed media URLs), M6 (workflow `ai_processing` + `ai_auto_assign` states), M7 (`AiCompleted` event stub + routing).
-* **Unblocks:** M9 (Notifications — needs the `AiCompleted` consumer for staff alerts), M10–M13 (portals render the AI labels / confidence scores), M14 (Analytics consumes the `ai_results` rows).
+* **Depends on:** M1 (buildable repo, base `Shared` utilities), M2 (auth + RBAC + `Moderator` role), M4 (Report + media), M5 (signed media URLs), M6 (workflow engine + transitions), M7 (routing + reassign), M8 (AI labels / confidence / fraud / duplicate scores), M9 (citizen notifications on moderator decision).
+* **Unblocks:** M11 (Operations Portal), M12 (Super Admin Portal), M13 (Citizen PWA — moderation timeline view).
 
 ---
 
 ## 2. Objective
 
-Land the AI vision pipeline end-to-end. This includes the `ai_provider_configs` and `prompt_versions` master tables, the `AiProvider` interface + at least one concrete implementation (OpenAI-compatible HTTP client), the deterministic `prompt_versions` registry with `draft | approved | deprecated` lifecycle, the `VisionService` orchestrator that calls the provider with the report's media URLs and writes the structured `ai_results` row, the queued `RunVisionJob` with retry / fallback, the `ai_label` column on `reports` that M7 routing already reads, the `vision.provider` setting, the Super Admin REST surface for provider configs + prompt versions, the audit log for every AI call, and `docs/ai.md`.
+Land the Moderator Portal end-to-end. This includes the `Moderation` module skeleton (controller, policy, service, resources, request DTOs), the `ModerationService` review/merge/reject/escalate operations, the `ReassignService` reuse, the moderator queue REST surface (`/api/v1/moderator/queue`, `/api/v1/moderator/duplicates`, `/api/v1/moderator/fraud`), the per-report moderation detail endpoint, the AI overlay (labels, confidence, fraud, duplicate scores, recommended department), the audit + per-action logging, the workflow transitions (`pending_review → approved`, `pending_review → rejected`, `pending_review → merged`, `pending_review → escalated`), the OpenAPI extension, the Pest feature coverage, the React `Moderator` portal with TanStack Query + React Hook Form + Zod, the queue / duplicate / fraud / detail / override / audit views, the a11y + Vitest + Playwright coverage, and `docs/moderator.md`.
 
 ---
 
-## 3. Deliverables (per `.codex/roadmap.md` §M8)
+## 3. Deliverables (per `.codex/roadmap.md` §M10)
 
-* `ai_provider_configs` table (UUID PK, `code` unique, `base_url`, `auth_type`, `api_key_secret_id` nullable FK to a secrets table, `model`, `temperature`, `timeout_ms`, `retry_count`, `is_fallback` bool, `priority` int, `active`).
-* `prompt_versions` table (UUID PK, `(name, version)` unique, `purpose`, `provider_code`, `prompt_text`, `expected_json_schema` JSON, `status` enum, `approved_by` + `approved_at`).
-* `ai_results` table (UUID PK, `report_id` FK, `provider_id` FK, `prompt_version_id` FK, `labels` JSON, `confidence` JSON, `raw_response` JSON, `latency_ms`, `cost_usd`, `error` nullable, `attempt` int).
-* `AiProviderInterface` + concrete `OpenAiCompatibleProvider` and a `LocalStubProvider` for tests.
-* `VisionService::run(Report, Media[])` returns a structured `VisionResult` value object.
-* `RunVisionJob` queueable with `tries = provider.retry_count`, `backoff = [10, 30, 60]`, and provider fallback on hard failure.
-* `ai_label` column on `reports` (already shipped in T-M7-003) — M8 must populate it from the `ai_results.labels` payload.
-* `vision.provider` setting + `app_configs` keys for the per-feature prompt overrides.
-* Super Admin REST surface for provider configs + prompt versions; OpenAPI extension.
-* Pest feature coverage for the provider abstraction, the prompt version lifecycle, the fallback chain, the queueable job, and the audit + cost tracking.
-* `docs/ai.md` authored.
+* `app/Modules/Moderation/` — controller, policy, service, DTOs, resources, requests.
+* `ModerationService::review(Report, ModerationDecisionDto, Moderator)` — applies the moderator's decision (approve / reject / merge / escalate), writes the audit row, and emits the right event(s).
+* `ModerationService::merge(Report, canonicalReportId, Moderator)` — soft-merges a duplicate into the canonical report.
+* `ModerationService::reject(Report, reasonCode, notes, Moderator)` — closes a report with rejection.
+* `ModerationService::escalate(Report, reasonCode, notes, Moderator)` — moves the report to a `senior_moderator` queue.
+* `ModerationPolicy` — `view`, `viewQueue`, `review`, `merge`, `reject`, `escalate`, `reassign` abilities.
+* REST surface:
+  * `GET /api/v1/moderator/queue` — paginated, filter by status / category / ward / district / ai_label.
+  * `GET /api/v1/moderator/duplicates` — paginated list of `duplicate_score > 60` reports.
+  * `GET /api/v1/moderator/fraud` — paginated list of `fraud_score > 60` reports.
+  * `GET /api/v1/moderator/reports/{id}` — full detail with AI overlay, media, audit, transitions.
+  * `POST /api/v1/moderator/reports/{id}/review` — apply the moderator's decision.
+  * `POST /api/v1/moderator/reports/{id}/merge` — merge a duplicate into a canonical.
+  * `POST /api/v1/moderator/reports/{id}/reject` — reject with reason + notes.
+  * `POST /api/v1/moderator/reports/{id}/escalate` — escalate to senior queue.
+* AI overlay data on the detail endpoint — `ai_label`, `confidence`, `recommended_department`, `fraud_score`, `duplicate_score`, `quality_score`.
+* Workflow transitions `pending_review → approved`, `pending_review → rejected`, `pending_review → merged`, `pending_review → escalated` wired into the M6 engine.
+* OpenAPI extension under the `Moderation` tag.
+* Pest feature coverage for the policy, the service, the REST endpoints, the audit + workflow wiring.
+* React `Moderator` portal under `frontend/src/portals/moderator/` — queue / duplicates / fraud / detail / override / audit views.
+* Vitest + Playwright + axe-core coverage.
+* `docs/moderator.md`.
 
 ---
 
 ## 4. Scope (current milestone)
 
-* In scope: the `ai_*` tables, the provider abstraction, the orchestrator + job, the `ai_label` population, the admin REST + OpenAPI, the audit + cost rows, the test coverage, the docs.
-* Out of scope: the M10 portal rendering of the AI confidence chips, the M14 analytics dashboards, the actual model integration tuning (provider-specific prompt engineering), the streaming response support.
+* In scope: the `Moderation` module backend, the REST surface, the AI overlay wiring, the workflow transitions, the OpenAPI + tests, the React portal, the docs.
+* Out of scope: the M11 Operations Portal (department officer UI), the M12 Super Admin Portal (cross-cutting config), the M13 Citizen PWA (timeline + status view), the M14 connector framework.
 
 ---
 
 ## 5. Exit Criteria
 
-* All M8 tasks in `.codex/task_queue.md` marked `Done`.
-* `vendor/bin/pest` is green (the full platform suite; 818/818 today, 818 + new M8 tests).
+* All M10 tasks in `.codex/task_queue.md` marked `Done`.
+* `vendor/bin/pest` is green (the full platform suite; 1106+ new M10 tests).
 * Every new REST endpoint has OpenAPI coverage and a Pest feature test.
-* Every AI call writes an `audit_logs` row.
-* `docs/ai.md` describes the provider abstraction, the prompt-version lifecycle, the fallback chain, and the `ai_label` contract.
-* The `app_configs` row for `vision.provider` is documented and seeded.
-* M8 closes M7's `AiCompleted` event stub — the listener is now firing from a real `VisionService::run()` instead of being dispatched manually in tests.
+* Every moderation action writes an `audit_logs` row + the right `report_status_history` row.
+* `docs/moderator.md` describes the queue, the decisions, the audit trail, and the AI overlay.
+* The Moderator portal renders, has a passing Vitest + Playwright + axe-core suite, and the queue / detail flows are wired end-to-end.
 
 ---
 
 ## 6. Documents to read before implementation
 
-* `AGENTS.md` — coding standards, security rules, AI rules (AI never decides legally, AI only recommends, moderator overrides).
-* `.codex/roadmap.md` §M8.
-* `.codex/task_queue.md` §M8 (T-M8-001 → end).
-* `docs/10-AI-and-Vision-Engine-Specification.md` (entire).
-* `docs/03-System-Architecture.md` §7 (the AI provider section).
-* `docs/04-Database-Design.md` §10 (the `ai_*` tables).
-* `docs/05-REST-API-Specification.md` §11 (the AI REST surface).
-* `docs/11-Security-and-Anti-Fraud-Specification.md` §28 (AI audit + cost tracking).
-* The existing `AiCompleted` event in `app/Modules/AI/Events/AiCompleted.php` and the `AiCompletedListener` in `app/Modules/AI/Listeners/AiCompletedListener.php` — M8 must produce events that the listener already consumes.
+* `AGENTS.md` — coding standards, security rules, RBAC rules.
+* `.codex/roadmap.md` §M10.
+* `.codex/task_queue.md` §M10 (T-M10-001 → end).
+* `docs/07-Moderator-Portal-Specification.md` (entire).
+* `docs/03-System-Architecture.md` §4 (Moderator Portal context).
+* `docs/05-REST-API-Specification.md` §8 (Moderator REST surface).
+* `docs/13-UI-Design-System.md` (entire).
+* `docs/15-QA-and-Test-Strategy.md` §7, §9 (Moderator test scope).
+* The existing `ReassignService` in `app/Modules/Routing/Services/ReassignService.php` and the M7 routing REST — the moderation reassign path should reuse the same service.
 
 ---
 
 ## 7. Current Implementation Status
 
 * **M1 (Bootstrap):** 22/22 = 100 % — CLOSED.
-* **M2 (Authentication):** 22/22 = 100 % — CLOSED.
-* **M3 (Master Data):** 30/30 = 100 % — CLOSED.
+* **M2 (Authentication):** 30/30 = 100 % — CLOSED.
+* **M3 (Master Data):** 24/24 = 100 % — CLOSED.
 * **M4 (Reports):** 32/32 = 100 % — CLOSED.
-* **M5 (Media):** 22/22 = 100 % — CLOSED.
+* **M5 (Media):** 26/26 = 100 % — CLOSED.
 * **M6 (Workflow):** 22/22 = 100 % — CLOSED.
 * **M7 (Routing):** 18/18 = 100 % — CLOSED.
-* **M8 (AI Vision):** 0/30 = 0 % — **active**.
-* **Total:** 173/410 = 42.2 %.
+* **M8 (AI Vision):** 30/30 = 100 % — CLOSED.
+* **M9 (Notifications):** 20/20 = 100 % — CLOSED.
+* **M10 (Moderator Portal):** 0/28 = 0 % — **active**.
+* **Total:** 224/410 = 54.6 %.
+
+---
 
 ## 8. Blocking Issues
 
-* None. The M7 `AiCompleted` event stub is the wiring point; M8 only has to fire it from a real `VisionService::run()` instead of a test dispatch.
+* None. M9 closes the last event consumer the moderator portal needs (`AiCompleted` → `ai.classified`, `ReportAssigned` → `report.assigned`).
+
+---
 
 ## 9. Next Milestone
 
-* **M9 — Notifications & Communication.** M9 consumes the `ReportAssigned`, `ReportStatusChanged`, and `AiCompleted` events that M6 / M7 / M8 produce. SMS + email + push fan-out, template registry, per-channel audit, rate limiting.
+* **M11 — Operations Portal (Department).** M11 consumes the `ReportAssigned` event for the department officer inbox and renders the per-department queue, the assignment view, and the field-update view.

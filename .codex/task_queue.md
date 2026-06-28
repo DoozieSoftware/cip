@@ -2720,7 +2720,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Channels/PushChannel.php`
 - **Acceptance criteria:** With `Http::fake`, success and 5xx are handled.
 - **Required tests:** `tests/Feature/Notifications/PushChannelTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-009 — SmsChannel (provider stub)
 - **Milestone:** M9
@@ -2732,7 +2732,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Channels/SmsChannel.php`
 - **Acceptance criteria:** Stub logs message.
 - **Required tests:** `tests/Feature/Notifications/SmsChannelTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-010 — WebhookChannel
 - **Milestone:** M9
@@ -2744,7 +2744,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Channels/WebhookChannel.php`
 - **Acceptance criteria:** `Http::fake` receives signed payload.
 - **Required tests:** `tests/Feature/Notifications/WebhookChannelTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-011 — TemplateEngine
 - **Milestone:** M9
@@ -2756,7 +2756,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Services/TemplateEngine.php`
 - **Acceptance criteria:** Missing variable throws; locale fallback to `en` works.
 - **Required tests:** `tests/Unit/Notifications/TemplateEngineTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-012 — NotificationDispatcher
 - **Milestone:** M9
@@ -2768,7 +2768,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Services/NotificationDispatcher.php`
 - **Acceptance criteria:** Dead letter after 5 failures.
 - **Required tests:** `tests/Feature/Notifications/NotificationDispatcherTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-013 — SendNotificationJob
 - **Milestone:** M9
@@ -2780,7 +2780,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Jobs/SendNotificationJob.php`
 - **Acceptance criteria:** Backoff schedule verified by `Queue::fake`.
 - **Required tests:** `tests/Feature/Notifications/SendNotificationJobTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-014 — Wire event listeners
 - **Milestone:** M9
@@ -2792,7 +2792,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Listeners/*`
 - **Acceptance criteria:** Each event triggers the right template.
 - **Required tests:** `tests/Feature/Notifications/EventListenersTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-015 — GET /api/v1/notifications
 - **Milestone:** M9
@@ -2804,7 +2804,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Http/Controllers/Api/NotificationsController.php`, `backend/app/Modules/Notifications/Http/Resources/NotificationResource.php`
 - **Acceptance criteria:** Only the user's notifications are returned.
 - **Required tests:** `tests/Feature/Notifications/IndexEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-016 — POST /api/v1/notifications/{id}/read
 - **Milestone:** M9
@@ -2816,7 +2816,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Http/Controllers/Api/NotificationsController.php`
 - **Acceptance criteria:** 200 on success; 403/404 otherwise.
 - **Required tests:** `tests/Feature/Notifications/MarkReadEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-017 — NotificationPreference endpoints
 - **Milestone:** M9
@@ -2828,7 +2828,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Http/Controllers/Api/NotificationPreferenceController.php`, `backend/app/Modules/Notifications/Services/NotificationPreferenceService.php`
 - **Acceptance criteria:** Disabled preference suppresses dispatch.
 - **Required tests:** `tests/Feature/Notifications/PreferenceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-018 — Seed default notification templates
 - **Milestone:** M9
@@ -2840,7 +2840,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/seeders/NotificationTemplatesSeeder.php`
 - **Acceptance criteria:** ≥ 5 templates present.
 - **Required tests:** Seed test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-019 — NotificationFeatureTest
 - **Milestone:** M9
@@ -2852,7 +2852,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/Notifications/NotificationFeatureTest.php`
 - **Acceptance criteria:** All cases green.
 - **Required tests:** `vendor/bin/pest tests/Feature/Notifications/NotificationFeatureTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M9-020 — Update OpenAPI and docs/notifications.md
 - **Milestone:** M9
@@ -2864,7 +2864,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/storage/api-docs/openapi.yaml`, `docs/notifications.md`
 - **Acceptance criteria:** `swagger-cli validate` passes; doc has a template example.
 - **Required tests:** `tests/Feature/OpenApiNotificationsTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 
 ---
