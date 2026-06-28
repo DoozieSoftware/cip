@@ -1,0 +1,218 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Moderation\Http\Controllers\Api;
+
+use App\Modules\Reports\Http\Resources\ReportResource;
+use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportStatus;
+use App\Modules\Shared\Http\Controllers\BaseController;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * The moderator's review queue.
+ *
+ *   GET /api/v1/moderator/queue
+ *     - paginated cursor list of reports in
+ *       `ai_processing` or `pending_moderator` or `escalated`
+ *     - filters: category, ward, district, confidence, date, priority
+ *     - sorts by `submitted_at` desc (oldest unhandled first)
+ *
+ * The same controller backs:
+ *   GET /api/v1/moderator/duplicates — duplicate_score > 60
+ *   GET /api/v1/moderator/fraud      — fraud_score > 60
+ *
+ * Per docs/05 §8 the response envelope is the standard
+ * `ApiResponse` shape (success / data / meta / pagination).
+ *
+ * No business logic in the controller — the SQL is read-only
+ * composition; the moderator applies decisions through the
+ * four `POST /moderator/reports/{id}/{action}` endpoints.
+ */
+class QueueController extends BaseController
+{
+    public function __construct() {}
+
+    /**
+     * GET /api/v1/moderator/queue
+     *
+     * @return array<string, mixed>
+     */
+    public function queue(Request $request): JsonResponse
+    {
+        $this->authorize('viewQueue', Report::class);
+
+        $query = $this->baseQueueQuery()
+            ->whereIn('current_status_id', $this->statusIdsFor(['ai_processing', 'pending_moderator', 'escalated']));
+
+        $this->applyFilters($query, $request);
+        $this->applySort($query, $request);
+
+        $paginator = $query->cursorPaginate(
+            perPage: (int) min(100, max(1, (int) $request->query('per_page', 20))),
+            cursor: $request->query('cursor'),
+        );
+
+        return $this->respond([
+            'items' => ReportResource::collection($paginator->items())->resolve(),
+            'next_cursor' => $paginator->nextCursor()?->encode(),
+            'prev_cursor' => $paginator->previousCursor()?->encode(),
+        ]);
+    }
+
+    /**
+     * GET /api/v1/moderator/duplicates
+     *
+     * @return array<string, mixed>
+     */
+    public function duplicates(Request $request): JsonResponse
+    {
+        $this->authorize('viewQueue', Report::class);
+
+        $query = $this->baseQueueQuery()
+            ->whereNotNull('duplicate_score')
+            ->where('duplicate_score', '>=', 60.0);
+
+        $this->applyFilters($query, $request);
+
+        $query->orderByDesc('duplicate_score')->orderByDesc('submitted_at');
+
+        $paginator = $query->cursorPaginate(
+            perPage: (int) min(100, max(1, (int) $request->query('per_page', 20))),
+            cursor: $request->query('cursor'),
+        );
+
+        return $this->respond([
+            'items' => ReportResource::collection($paginator->items())->resolve(),
+            'next_cursor' => $paginator->nextCursor()?->encode(),
+            'prev_cursor' => $paginator->previousCursor()?->encode(),
+        ]);
+    }
+
+    /**
+     * GET /api/v1/moderator/fraud
+     *
+     * @return array<string, mixed>
+     */
+    public function fraud(Request $request): JsonResponse
+    {
+        $this->authorize('viewQueue', Report::class);
+
+        $query = $this->baseQueueQuery()
+            ->whereNotNull('fraud_score')
+            ->where('fraud_score', '>=', 60.0);
+
+        $this->applyFilters($query, $request);
+
+        $query->orderByDesc('fraud_score')->orderByDesc('submitted_at');
+
+        $paginator = $query->cursorPaginate(
+            perPage: (int) min(100, max(1, (int) $request->query('per_page', 20))),
+            cursor: $request->query('cursor'),
+        );
+
+        return $this->respond([
+            'items' => ReportResource::collection($paginator->items())->resolve(),
+            'next_cursor' => $paginator->nextCursor()?->encode(),
+            'prev_cursor' => $paginator->previousCursor()?->encode(),
+        ]);
+    }
+
+    /**
+     * GET /api/v1/moderator/reports/{report}
+     * The single-report moderation detail view.
+     *
+     * @return array<string, mixed>
+     */
+    public function show(Request $request, string $reportId): JsonResponse
+    {
+        $report = Report::query()
+            ->with(['status', 'reportType', 'priority', 'location', 'statusHistory'])
+            ->find($reportId);
+        if ($report === null) {
+            return $this->respondError('Report not found', 404, 'NOT_FOUND');
+        }
+        $this->authorize('viewReport', $report);
+
+        return $this->respond([
+            'report' => (new ReportResource($report))->resolve(),
+        ]);
+    }
+
+    private function baseQueueQuery()
+    {
+        return Report::query()
+            ->with(['status', 'reportType', 'priority', 'location'])
+            ->whereNull('reports.deleted_at');
+    }
+
+    /**
+     * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $query
+     */
+    private function applyFilters($query, Request $request): void
+    {
+        if ($category = $request->query('category')) {
+            $query->where('report_type_id', (string) $category);
+        }
+        if ($priority = $request->query('priority')) {
+            $query->where('priority_id', (string) $priority);
+        }
+        if ($ward = $request->query('ward')) {
+            $query->whereHas('location', function ($q) use ($ward): void {
+                $q->where('ward_id', (string) $ward);
+            });
+        }
+        if ($district = $request->query('district')) {
+            $query->whereHas('location', function ($q) use ($district): void {
+                $q->where('district_id', (string) $district);
+            });
+        }
+        if ($confidence = $request->query('confidence')) {
+            // Confidence is a percentage; allow `>=` and `<=` operators.
+            if (str_starts_with((string) $confidence, '>=')) {
+                $query->where('ai_confidence', '>=', (float) substr((string) $confidence, 2));
+            } elseif (str_starts_with((string) $confidence, '<=')) {
+                $query->where('ai_confidence', '<=', (float) substr((string) $confidence, 2));
+            } else {
+                $query->where('ai_confidence', '=', (float) $confidence);
+            }
+        }
+        if ($from = $request->query('from')) {
+            $query->where('submitted_at', '>=', (string) $from);
+        }
+        if ($to = $request->query('to')) {
+            $query->where('submitted_at', '<=', (string) $to);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $query
+     */
+    private function applySort($query, Request $request): void
+    {
+        $sort = (string) $request->query('sort', 'submitted_desc');
+        match ($sort) {
+            'submitted_asc' => $query->orderBy('submitted_at')->orderBy('id'),
+            'confidence_desc' => $query->orderByDesc('ai_confidence')->orderByDesc('submitted_at'),
+            'priority_desc' => $query
+                ->leftJoin('report_priorities', 'reports.priority_id', '=', 'report_priorities.id')
+                ->orderByDesc('report_priorities.sort_order')
+                ->orderByDesc('reports.submitted_at'),
+            default => $query->orderByDesc('submitted_at')->orderByDesc('id'),
+        };
+    }
+
+    /**
+     * @param  list<string>  $codes
+     * @return list<string>
+     */
+    private function statusIdsFor(array $codes): array
+    {
+        $ids = ReportStatus::query()->whereIn('code', $codes)->pluck('id')->all();
+        /** @var list<string> $ids */
+        return $ids;
+    }
+}

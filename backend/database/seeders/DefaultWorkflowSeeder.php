@@ -52,7 +52,7 @@ class DefaultWorkflowSeeder extends Seeder
                 ['code' => 'civic_default'],
                 [
                     'name' => 'Civic Report (default)',
-                    'description' => 'Default 11-state lifecycle per docs/02 §7.',
+                    'description' => 'Default 13-state lifecycle per docs/02 §7 + M10 moderation (merged, escalated).',
                     'active' => true,
                 ],
             );

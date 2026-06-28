@@ -9,6 +9,8 @@ use App\Modules\AI\Http\Controllers\Internal\InternalAiController;
 use App\Modules\Authentication\Http\Controllers\AuthController;
 use App\Modules\Departments\Http\Controllers\Admin\DepartmentController;
 use App\Modules\Media\Http\Controllers\Api\MediaController;
+use App\Modules\Moderation\Http\Controllers\Api\ModerationActionsController;
+use App\Modules\Moderation\Http\Controllers\Api\QueueController;
 use App\Modules\Notifications\Http\Controllers\Api\NotificationPreferenceController;
 use App\Modules\Notifications\Http\Controllers\Api\NotificationsController;
 use App\Modules\Reports\Http\Controllers\Api\ReportsController;
@@ -134,6 +136,27 @@ Route::prefix('v1')->group(function (): void {
     // the signed URL is the auth). The `signed` middleware
     // rejects expired or tampered signatures with 403.
     Route::get('media/{media}/serve', [MediaController::class, 'serve'])->middleware('signed')->name('api.v1.media.serve');
+
+    // Moderator portal (M10) — gated to the `moderator` role; rate
+    // limited with the moderator limiter.
+    Route::middleware([
+        'auth:sanctum',
+        'throttle:'.RouteServiceProvider::LIMITER_MODERATOR,
+    ])->prefix('moderator')->name('api.v1.moderator.')->group(function (): void {
+        // T-M10-008 — review queue
+        Route::get('queue', [QueueController::class, 'queue'])->name('queue');
+        // T-M10-009 — duplicate queue
+        Route::get('duplicates', [QueueController::class, 'duplicates'])->name('duplicates');
+        // T-M10-010 — fraud queue
+        Route::get('fraud', [QueueController::class, 'fraud'])->name('fraud');
+        // Per-report moderation detail (companion of the queue endpoints).
+        Route::get('reports/{report}', [QueueController::class, 'show'])->name('reports.show');
+        // T-M10-011 — four action endpoints
+        Route::post('reports/{report}/review', [ModerationActionsController::class, 'review'])->name('reports.review');
+        Route::post('reports/{report}/merge', [ModerationActionsController::class, 'merge'])->name('reports.merge');
+        Route::post('reports/{report}/reject', [ModerationActionsController::class, 'reject'])->name('reports.reject');
+        Route::post('reports/{report}/escalate', [ModerationActionsController::class, 'escalate'])->name('reports.escalate');
+    });
 
     // Citizen PWA — report submission and read-back (M4)
     Route::middleware(['auth:sanctum', 'throttle:'.RouteServiceProvider::LIMITER_CITIZEN])->group(function (): void {

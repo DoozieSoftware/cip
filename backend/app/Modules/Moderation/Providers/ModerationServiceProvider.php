@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Moderation\Providers;
 
+use App\Modules\Moderation\Policies\ModerationPolicy;
+use App\Modules\Reports\Models\Report;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -19,11 +22,10 @@ use Illuminate\Support\ServiceProvider;
  * and `audit_logs` (handled by the underlying Workflow + Audit
  * middleware, not by the provider itself).
  *
- * The provider deliberately does NOT publish a real-time
- * push channel for moderators — the queue / detail views
- * poll (TanStack Query, 15 s refresh). M14 (External Connector
- * Framework) will replace polling with a websocket connector
- * when the platform scales past the demo.
+ * The provider registers the ModerationPolicy with the Gate
+ * for the Report model, plus the non-resource abilities
+ * `viewQueue` and `viewAnalytics` which the dashboard
+ * surfaces call directly.
  */
 class ModerationServiceProvider extends ServiceProvider
 {
@@ -37,10 +39,11 @@ class ModerationServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // No event subscriptions here — the moderator's own
-        // actions (review, merge, reject, escalate) emit the
-        // events; the listeners for those events live in
-        // app/Modules/Moderation/Listeners and are auto-
-        // discovered by Laravel.
+        Gate::policy(Report::class, ModerationPolicy::class);
+
+        // The non-resource abilities do not auto-route through
+        // the policy; wire them explicitly.
+        Gate::define('viewQueue', [ModerationPolicy::class, 'viewQueue']);
+        Gate::define('viewAnalytics', [ModerationPolicy::class, 'viewAnalytics']);
     }
 }

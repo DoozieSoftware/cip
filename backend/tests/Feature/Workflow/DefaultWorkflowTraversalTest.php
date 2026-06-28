@@ -23,8 +23,8 @@ beforeEach(function (): void {
 it('seeds the default civic workflow with 11 states and 14 transitions', function (): void {
     $graph = $this->repo->loadGraph('civic_default');
     expect($graph)->not->toBeNull();
-    expect($graph['states'])->toHaveCount(11);
-    expect($graph['transitions'])->toHaveCount(14);
+    expect($graph['states'])->toHaveCount(13);
+    expect($graph['transitions'])->toHaveCount(17);
     expect(array_keys($graph['states']))->toContain('draft', 'submitted', 'closed', 'rejected');
 });
 
@@ -103,8 +103,8 @@ it('rejects an unknown event with a denied decision and a reason', function (): 
 it('the seeder is idempotent (re-running does not duplicate states or transitions)', function (): void {
     $this->seed(DefaultWorkflowSeeder::class);
     $graph = $this->repo->loadGraph('civic_default');
-    expect($graph['states'])->toHaveCount(11);
-    expect($graph['transitions'])->toHaveCount(14);
+    expect($graph['states'])->toHaveCount(13);
+    expect($graph['transitions'])->toHaveCount(17);
 });
 
 /**

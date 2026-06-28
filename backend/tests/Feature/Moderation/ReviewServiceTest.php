@@ -50,6 +50,7 @@ function makeModerator(): User
  * Move the report through the workflow engine to land in
  * `pending_moderator` (the M10 hand-off state).
  */
+if (! function_exists('landReportInPendingModerator')) {
 function landReportInPendingModerator(): Report
 {
     $engine = app(WorkflowEngine::class);
@@ -80,6 +81,7 @@ function landReportInPendingModerator(): Report
     $engine->apply($report, $d, $system);
 
     return $report->refresh()->load('status');
+}
 }
 
 it('a moderator can approve a pending_moderator report', function (): void {
