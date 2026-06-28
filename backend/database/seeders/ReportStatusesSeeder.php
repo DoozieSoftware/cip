@@ -8,7 +8,7 @@ use App\Modules\Reports\Models\ReportStatus;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeds the 11 report lifecycle states from docs/02 §7:
+ * Seeds the 13 report lifecycle states from docs/02 §7 + M10 moderation (merged, escalated):
  *   Draft, Submitted, AI Processing, Pending Moderator, Assigned,
  *   Accepted, In Progress, Resolved, Verified, Closed, Rejected.
  *

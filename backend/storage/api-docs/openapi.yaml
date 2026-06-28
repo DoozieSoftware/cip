@@ -369,6 +369,213 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationError' }
 
+  /api/v1/moderator/queue:
+    get:
+      tags: [Moderation]
+      summary: 'List reports awaiting moderator action (M10)'
+      operationId: moderator.queue.index
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, example: 'pending_moderator' }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: ward
+          schema: { type: string }
+        - in: query
+          name: district
+          schema: { type: string }
+        - in: query
+          name: confidence_min
+          schema: { type: integer, minimum: 0, maximum: 100 }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportQueueListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/moderator/duplicates:
+    get:
+      tags: [Moderation]
+      summary: 'List duplicate candidates (duplicate_score > 60)'
+      operationId: moderator.duplicates.index
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportQueueListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/moderator/fraud:
+    get:
+      tags: [Moderation]
+      summary: 'List fraud-suspect reports (fraud_score > 60)'
+      operationId: moderator.fraud.index
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportQueueListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/moderator/reports/{id}:
+    get:
+      tags: [Moderation]
+      summary: 'Fetch a single report with AI overlay, media, audit, and status history'
+      operationId: moderator.reports.show
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/moderator/reports/{id}/review:
+    post:
+      tags: [Moderation]
+      summary: 'Apply a moderator decision (approve | reject | merge | escalate)'
+      operationId: moderator.reports.review
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReviewReportRequest' }
+      responses:
+        '200':
+          description: 'Updated report resource.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/moderator/reports/{id}/merge:
+    post:
+      tags: [Moderation]
+      summary: 'Bulk-fold a list of duplicate reports into the canonical one'
+      operationId: moderator.reports.merge
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BulkMergeRequest' }
+      responses:
+        '200':
+          description: 'Updated canonical report.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/moderator/reports/{id}/reject:
+    post:
+      tags: [Moderation]
+      summary: 'Reject a report (terminal)'
+      operationId: moderator.reports.reject
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RejectRequest' }
+      responses:
+        '200':
+          description: 'Updated report resource.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/moderator/reports/{id}/escalate:
+    post:
+      tags: [Moderation]
+      summary: 'Escalate a report to the senior queue'
+      operationId: moderator.reports.escalate
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EscalateRequest' }
+      responses:
+        '200':
+          description: 'Updated report resource.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/moderator/analytics/summary:
+    get:
+      tags: [Moderation]
+      summary: 'Aggregate metrics for the moderator dashboard'
+      operationId: moderator.analytics.summary
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnalyticsSummaryResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/moderator/analytics/ai-performance:
+    get:
+      tags: [Moderation]
+      summary: 'Per-provider AI performance (override rate, confidence)'
+      operationId: moderator.analytics.ai_performance
+      parameters:
+        - in: query
+          name: window
+          schema: { type: string, enum: [24h, 7d, 30d], default: 7d }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiPerformanceResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
 components:
   securitySchemes:
     sanctum:
@@ -2476,6 +2683,179 @@ components:
       - type: object
         properties:
           data: { $ref: '#/components/schemas/AiResult' }
+  # =============================================================
+  # Moderation schemas (M10)
+  # =============================================================
+  ReportListItem:
+    type: object
+    properties:
+      id: { type: string, format: uuid }
+      tracking_number: { type: string }
+      title: { type: string }
+      category: { $ref: '#/components/schemas/Category' }
+      department: { $ref: '#/components/schemas/Department' }
+      status_code:
+        type: string
+        enum: [draft, submitted, ai_processing, pending_moderator, assigned, accepted, in_progress, resolved, verified, closed, rejected, merged, escalated]
+      ai_confidence: { type: number, format: float, nullable: true }
+      fraud_score: { type: number, format: float, nullable: true }
+      duplicate_score: { type: number, format: float, nullable: true }
+      submitted_at: { type: string, format: date-time }
+      ward: { type: string, nullable: true }
+      district: { type: string, nullable: true }
+      evidence_count: { type: integer }
+  ReportDetail:
+    allOf:
+      - $ref: '#/components/schemas/ReportListItem'
+      - type: object
+        properties:
+          description: { type: string }
+          citizen_id: { type: string, format: uuid }
+          location:
+            type: object
+            nullable: true
+            properties:
+              lat: { type: number, format: float }
+              lng: { type: number, format: float }
+          media:
+            type: array
+            items: { $ref: '#/components/schemas/MediaItem' }
+          ai_result:
+            nullable: true
+            allOf:
+              - $ref: '#/components/schemas/AiResult'
+          assigned_to:
+            type: object
+            nullable: true
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+          audit_log:
+            type: array
+            items: { $ref: '#/components/schemas/AuditEntry' }
+          status_history:
+            type: array
+            items: { $ref: '#/components/schemas/StatusHistoryEntry' }
+  MediaItem:
+    type: object
+    properties:
+      id: { type: string, format: uuid }
+      mime_type: { type: string }
+      url: { type: string, format: uri }
+      width: { type: integer, nullable: true }
+      height: { type: integer, nullable: true }
+      duration_seconds: { type: number, nullable: true }
+      captured_at: { type: string, format: date-time, nullable: true }
+  AuditEntry:
+    type: object
+    properties:
+      id: { type: string, format: uuid }
+      actor_id: { type: string, format: uuid, nullable: true }
+      actor_name: { type: string, nullable: true }
+      action: { type: string }
+      payload:
+        type: object
+        nullable: true
+        additionalProperties: true
+      created_at: { type: string, format: date-time }
+  StatusHistoryEntry:
+    type: object
+    properties:
+      from_code: { type: string, nullable: true }
+      to_code: { type: string }
+      actor_id: { type: string, format: uuid, nullable: true }
+      reason: { type: string, nullable: true }
+      created_at: { type: string, format: date-time }
+  ReviewReportRequest:
+    type: object
+    required: [decision]
+    properties:
+      decision: { type: string, enum: [approve, reject, merge, escalate] }
+      reason_code: { type: string }
+      remarks: { type: string, maxLength: 2000 }
+      category_id: { type: string, format: uuid }
+      department_id: { type: string, format: uuid }
+      override_ai: { type: boolean }
+  BulkMergeRequest:
+    type: object
+    required: [canonical_id, duplicate_ids]
+    properties:
+      canonical_id: { type: string, format: uuid }
+      duplicate_ids:
+        type: array
+        minItems: 1
+        items: { type: string, format: uuid }
+      reason_code: { type: string }
+      remarks: { type: string, maxLength: 2000 }
+  RejectRequest:
+    type: object
+    required: [reason_code]
+    properties:
+      reason_code: { type: string }
+      remarks: { type: string, maxLength: 2000 }
+  EscalateRequest:
+    type: object
+    required: [reason_code]
+    properties:
+      reason_code: { type: string }
+      remarks: { type: string, maxLength: 2000 }
+      level: { type: string }
+  AnalyticsSummary:
+    type: object
+    properties:
+      pending_moderator: { type: integer }
+      duplicates_pending: { type: integer }
+      fraud_pending: { type: integer }
+      approved_today: { type: integer }
+      rejected_today: { type: integer }
+      merged_today: { type: integer }
+      escalated_today: { type: integer }
+      avg_review_minutes: { type: number, format: float }
+      ai_accuracy_pct: { type: number, format: float }
+  AiPerformance:
+    type: object
+    properties:
+      window: { type: string, enum: [24h, 7d, 30d] }
+      total_ai_decisions: { type: integer }
+      overridden_by_moderator: { type: integer }
+      override_rate_pct: { type: number, format: float }
+      per_provider:
+        type: array
+        items:
+          type: object
+          properties:
+            provider_code: { type: string }
+            total: { type: integer }
+            overridden: { type: integer }
+            avg_confidence: { type: number, format: float }
+  ReportQueueListResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            type: array
+            items: { $ref: '#/components/schemas/ReportListItem' }
+          meta: { $ref: '#/components/schemas/PaginationMeta' }
+  ReportDetailResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data: { $ref: '#/components/schemas/ReportDetail' }
+  AnalyticsSummaryResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data: { $ref: '#/components/schemas/AnalyticsSummary' }
+  AiPerformanceResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data: { $ref: '#/components/schemas/AiPerformance' }
+
 tags:
   -
     name: Health
@@ -2510,3 +2890,6 @@ tags:
   -
     name: AI
     description: 'AI vision pipeline: provider configs, prompt versions, internal pipeline endpoints (M8).'
+  -
+    name: Moderation
+    description: 'Moderator portal: queue, duplicate + fraud review, manual override, reassign, analytics, AI performance (M10).'

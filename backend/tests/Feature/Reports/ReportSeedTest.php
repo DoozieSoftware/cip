@@ -12,14 +12,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-it('seeds all 11 report status lifecycle codes', function (): void {
+it('seeds all 13 report status lifecycle codes', function (): void {
     (new ReportStatusesSeeder)->run();
 
     foreach (['draft', 'submitted', 'ai_processing', 'pending_moderator', 'assigned',
         'accepted', 'in_progress', 'resolved', 'verified', 'closed', 'rejected'] as $code) {
         expect(ReportStatus::query()->where('code', $code)->exists())->toBeTrue("missing status: {$code}");
     }
-    expect(ReportStatus::query()->count())->toBe(11);
+    expect(ReportStatus::query()->count())->toBe(13);
 });
 
 it('seeds the 5 priority levels with sensible SLAs', function (): void {
@@ -52,7 +52,7 @@ it('seeds the 10 default report types with photo + video required', function ():
 it('is idempotent — re-running each seeder does not duplicate rows', function (): void {
     (new ReportStatusesSeeder)->run();
     (new ReportStatusesSeeder)->run();
-    expect(ReportStatus::query()->count())->toBe(11);
+    expect(ReportStatus::query()->count())->toBe(13);
 
     (new ReportPrioritiesSeeder)->run();
     (new ReportPrioritiesSeeder)->run();
