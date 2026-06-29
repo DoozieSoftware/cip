@@ -35,7 +35,7 @@ beforeEach(function (): void {
 });
 
 if (! function_exists('makeModerator')) {
-function makeModerator(): User
+function mergeModerator(): User
 {
     $u = User::factory()->create();
     $u->assignRole('moderator');
@@ -50,7 +50,7 @@ it('merges multiple duplicates into a canonical report', function (): void {
     $dup2 = Report::factory()->create();
     $unrelated = Report::factory()->create();
 
-    $moderator = makeModerator();
+    $moderator = mergeModerator();
     $service = app(ModerationService::class);
 
     $merged = $service->merge($canonical->id, [$dup1->id, $dup2->id], 'Same pothole', 'duplicate', $moderator);
@@ -77,14 +77,14 @@ it('merges multiple duplicates into a canonical report', function (): void {
 
 it('rejects an unknown canonical id with VALIDATION_FAILED', function (): void {
     $service = app(ModerationService::class);
-    $service->merge('019f0000-0000-7000-8000-000000000000', ['dup-1'], null, null, makeModerator());
+    $service->merge('019f0000-0000-7000-8000-000000000000', ['dup-1'], null, null, mergeModerator());
 })->throws(ApiException::class);
 
 it('skips a duplicate id that does not exist', function (): void {
     $canonical = Report::factory()->create();
     $service = app(ModerationService::class);
 
-    $merged = $service->merge($canonical->id, ['019f0000-0000-7000-8000-000000000001'], null, null, makeModerator());
+    $merged = $service->merge($canonical->id, ['019f0000-0000-7000-8000-000000000001'], null, null, mergeModerator());
     expect($merged)->toBe([]);
 });
 
@@ -92,7 +92,7 @@ it('skips a duplicate id that is the canonical itself', function (): void {
     $canonical = Report::factory()->create();
     $service = app(ModerationService::class);
 
-    $merged = $service->merge($canonical->id, [$canonical->id], null, null, makeModerator());
+    $merged = $service->merge($canonical->id, [$canonical->id], null, null, mergeModerator());
     expect($merged)->toBe([]);
 });
 
@@ -107,7 +107,7 @@ it('deduplicates a duplicate-id list', function (): void {
     $dup1 = Report::factory()->create();
 
     $service = app(ModerationService::class);
-    $merged = $service->merge($canonical->id, [$dup1->id, $dup1->id, $dup1->id], null, null, makeModerator());
+    $merged = $service->merge($canonical->id, [$dup1->id, $dup1->id, $dup1->id], null, null, mergeModerator());
 
     expect($merged)->toBe([$dup1->id]);
     $auditCount = AuditLog::query()->where('entity_id', $dup1->id)->where('action', 'report.merged')->count();

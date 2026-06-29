@@ -18,7 +18,7 @@ beforeEach(function (): void {
 });
 
 if (! function_exists('makeSuperAdmin')) {
-    function makeSuperAdmin(): User
+    function settingSuperAdmin(): User
     {
         $user = User::factory()->create();
         $user->assignRole('super_admin');
@@ -37,7 +37,7 @@ it('rejects authenticated non-admin callers with 403', function (): void {
 });
 
 it('lists settings paginated for super_admin', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(settingSuperAdmin());
     Setting::factory()->count(3)->create();
 
     $response = $this->getJson('/api/v1/admin/settings?per_page=2');
@@ -47,7 +47,7 @@ it('lists settings paginated for super_admin', function (): void {
 });
 
 it('filters the listing by a substring of key or description', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(settingSuperAdmin());
     Setting::factory()->create(['key' => 'ai.vision.provider', 'description' => 'vision stack']);
     Setting::factory()->create(['key' => 'mail.driver', 'description' => 'outgoing mail']);
 
@@ -58,7 +58,7 @@ it('filters the listing by a substring of key or description', function (): void
 });
 
 it('creates a setting via POST and stores it in the DB', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(settingSuperAdmin());
 
     $response = $this->postJson('/api/v1/admin/settings', [
         'key' => 'ai.vision.provider',
@@ -77,7 +77,7 @@ it('creates a setting via POST and stores it in the DB', function (): void {
 });
 
 it('rejects a duplicate key on POST with 422', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(settingSuperAdmin());
     Setting::factory()->create(['key' => 'dup.key']);
 
     $this->postJson('/api/v1/admin/settings', [
@@ -89,7 +89,7 @@ it('rejects a duplicate key on POST with 422', function (): void {
 });
 
 it('rejects an unknown type with 422', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(settingSuperAdmin());
 
     $this->postJson('/api/v1/admin/settings', [
         'key' => 'some.key',
@@ -100,7 +100,7 @@ it('rejects an unknown type with 422', function (): void {
 });
 
 it('shows a setting by key', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(settingSuperAdmin());
     Setting::factory()->create(['key' => 'show.me']);
 
     $this->getJson('/api/v1/admin/settings/show.me')
@@ -109,7 +109,7 @@ it('shows a setting by key', function (): void {
 });
 
 it('returns 404 for an unknown key', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(settingSuperAdmin());
 
     $this->getJson('/api/v1/admin/settings/does.not.exist')
         ->assertStatus(404)
@@ -117,7 +117,7 @@ it('returns 404 for an unknown key', function (): void {
 });
 
 it('updates a setting via PUT and invalidates the cache', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(settingSuperAdmin());
 
     // Prime the cache.
     $service = new SettingsService;
@@ -136,7 +136,7 @@ it('updates a setting via PUT and invalidates the cache', function (): void {
 });
 
 it('preserves untouched fields on PUT (partial update)', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(settingSuperAdmin());
     Setting::factory()->create([
         'key' => 'partial.key',
         'value' => 'before',
@@ -151,7 +151,7 @@ it('preserves untouched fields on PUT (partial update)', function (): void {
 });
 
 it('soft-deletes a setting via DELETE and clears the cache', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(settingSuperAdmin());
     Setting::factory()->create(['key' => 'doomed.key']);
 
     $this->deleteJson('/api/v1/admin/settings/doomed.key')

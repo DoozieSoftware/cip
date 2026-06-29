@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 use App\Modules\Authentication\Services\AuthenticationService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Authentication\Services\OtpService;
 use Database\Seeders\RolesAndPermissionsSeeder;
+
+uses(RefreshDatabase::class);
 
 /**
  * Validates GET /api/v1/auth/me introduced in T-M2-017.

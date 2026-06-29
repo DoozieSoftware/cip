@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Media\Jobs\ComputeHashesJob;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Media\Jobs\ExtractVideoMetadataJob;
 use App\Modules\Media\Jobs\GenerateThumbnailJob;
 use App\Modules\Media\Models\Media;
@@ -20,6 +21,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Sanctum\Sanctum;
+
+uses(RefreshDatabase::class);
+
 
 /**
  * M5 queue behaviour. Per docs/14 §16 every media

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Users\Models\User;
@@ -11,6 +12,10 @@ use App\Modules\Workflow\Services\TransitionGuard;
 use App\Modules\Workflow\Services\WorkflowEngine;
 use Database\Seeders\DefaultWorkflowSeeder;
 use Spatie\Permission\Models\Role;
+
+uses(RefreshDatabase::class);
+
+
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);

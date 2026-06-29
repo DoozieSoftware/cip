@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 use App\Modules\Authentication\Models\LoginHistory;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+
+uses(RefreshDatabase::class);
 
 it('creates the login_histories table with the expected columns', function (): void {
     expect(Schema::hasTable('login_histories'))->toBeTrue();

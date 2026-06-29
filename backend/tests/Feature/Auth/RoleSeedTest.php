@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+
+uses(RefreshDatabase::class);
+
 
 /**
  * Invoke the seeder directly. We avoid the Pest `artisan()` helper

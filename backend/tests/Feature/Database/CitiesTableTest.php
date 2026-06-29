@@ -3,9 +3,13 @@
 declare(strict_types=1);
 
 use App\Modules\Departments\Models\City;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Departments\Models\District;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Schema;
+
+uses(RefreshDatabase::class);
+
 
 it('creates the cities table with the required columns', function (): void {
     expect(Schema::hasTable('cities'))->toBeTrue();

@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 use App\Modules\Authentication\Models\LoginHistory;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Authentication\Models\Otp;
 use App\Modules\Authentication\Services\OtpService;
 use Illuminate\Support\Facades\Hash;
+
+uses(RefreshDatabase::class);
 
 /**
  * Validates POST /api/v1/auth/send-otp introduced in T-M2-013.

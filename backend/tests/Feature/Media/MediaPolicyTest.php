@@ -2,12 +2,17 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Policies\MediaPolicy;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Laravel\Sanctum\Sanctum;
+
+uses(RefreshDatabase::class);
+
+
 
 beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();

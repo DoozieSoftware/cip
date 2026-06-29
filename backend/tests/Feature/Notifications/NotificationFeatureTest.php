@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Notifications\Jobs\SendNotificationJob;
 use App\Modules\Notifications\Models\Notification;
 use App\Modules\Notifications\Models\NotificationLog;
@@ -16,6 +17,10 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+
+uses(RefreshDatabase::class);
+
+
 
 beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();

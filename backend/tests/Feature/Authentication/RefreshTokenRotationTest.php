@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 use App\Modules\Authentication\Models\RefreshToken;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Authentication\Services\RefreshTokenService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
+
+uses(RefreshDatabase::class);
 
 /**
  * Refresh token issuance, rotation, and revocation.

@@ -6,12 +6,15 @@ use App\Modules\AI\Models\PromptVersion;
 use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Laravel\Sanctum\Sanctum;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();
 });
 
-function superAdminUser(): User
+function aiPromptSuperAdmin(): User
 {
     $admin = User::factory()->create();
     $admin->assignRole('super_admin');
@@ -20,7 +23,7 @@ function superAdminUser(): User
 }
 
 it('GET /admin/ai/prompts returns a paginated list', function (): void {
-    Sanctum::actingAs(superAdminUser());
+    Sanctum::actingAs(aiPromptSuperAdmin());
     PromptVersion::query()->create([
         'name' => 'a', 'version' => 1, 'purpose' => null, 'provider_code' => 'mock',
         'prompt_text' => 'x', 'expected_json_schema' => null, 'status' => 'approved',
@@ -32,7 +35,7 @@ it('GET /admin/ai/prompts returns a paginated list', function (): void {
 });
 
 it('POST /admin/ai/prompts creates a new prompt version', function (): void {
-    Sanctum::actingAs(superAdminUser());
+    Sanctum::actingAs(aiPromptSuperAdmin());
 
     $this->postJson('/api/v1/admin/ai/prompts', [
         'name' => 'category_classifier',
@@ -47,7 +50,7 @@ it('POST /admin/ai/prompts creates a new prompt version', function (): void {
 });
 
 it('PUT /admin/ai/prompts/{id} updates the prompt', function (): void {
-    Sanctum::actingAs(superAdminUser());
+    Sanctum::actingAs(aiPromptSuperAdmin());
     $p = PromptVersion::query()->create([
         'name' => 'b', 'version' => 1, 'purpose' => null, 'provider_code' => 'mock',
         'prompt_text' => 'x', 'expected_json_schema' => null, 'status' => 'draft',
@@ -59,7 +62,7 @@ it('PUT /admin/ai/prompts/{id} updates the prompt', function (): void {
 });
 
 it('DELETE /admin/ai/prompts/{id} removes the prompt', function (): void {
-    Sanctum::actingAs(superAdminUser());
+    Sanctum::actingAs(aiPromptSuperAdmin());
     $p = PromptVersion::query()->create([
         'name' => 'c', 'version' => 1, 'purpose' => null, 'provider_code' => 'mock',
         'prompt_text' => 'x', 'expected_json_schema' => null, 'status' => 'draft',
@@ -73,7 +76,7 @@ it('DELETE /admin/ai/prompts/{id} removes the prompt', function (): void {
 });
 
 it('POST /admin/ai/prompts/{id}/approve flips the new row to approved and deprecates the previous', function (): void {
-    Sanctum::actingAs(superAdminUser());
+    Sanctum::actingAs(aiPromptSuperAdmin());
     $old = PromptVersion::query()->create([
         'name' => 'd', 'version' => 1, 'purpose' => null, 'provider_code' => 'mock',
         'prompt_text' => 'v1', 'expected_json_schema' => null, 'status' => 'approved',
@@ -92,7 +95,7 @@ it('POST /admin/ai/prompts/{id}/approve flips the new row to approved and deprec
 });
 
 it('POST /admin/ai/prompts/{id}/rollback flips the deprecated row back to approved', function (): void {
-    Sanctum::actingAs(superAdminUser());
+    Sanctum::actingAs(aiPromptSuperAdmin());
     $v1 = PromptVersion::query()->create([
         'name' => 'e', 'version' => 1, 'purpose' => null, 'provider_code' => 'mock',
         'prompt_text' => 'v1', 'expected_json_schema' => null, 'status' => 'deprecated',
@@ -111,7 +114,7 @@ it('POST /admin/ai/prompts/{id}/rollback flips the deprecated row back to approv
 });
 
 it('rollback rejects a target that is not deprecated (422)', function (): void {
-    Sanctum::actingAs(superAdminUser());
+    Sanctum::actingAs(aiPromptSuperAdmin());
     $p = PromptVersion::query()->create([
         'name' => 'f', 'version' => 1, 'purpose' => null, 'provider_code' => 'mock',
         'prompt_text' => 'x', 'expected_json_schema' => null, 'status' => 'draft',

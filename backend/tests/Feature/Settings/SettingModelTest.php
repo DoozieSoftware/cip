@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 use App\Modules\Settings\Models\Setting;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
+
+uses(RefreshDatabase::class);
+
 
 it('creates the settings table with the required columns', function (): void {
     $cols = ['id', 'key', 'value', 'type', 'description', 'is_public',

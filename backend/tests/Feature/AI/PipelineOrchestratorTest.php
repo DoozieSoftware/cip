@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\AI\Events\AiCompleted;
 use App\Modules\AI\Jobs\AiPipelineOrchestrator;
 use App\Modules\AI\Models\AiJob;
@@ -25,7 +26,11 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
+uses(RefreshDatabase::class);
+
 uses(WithFaker::class);
+
+
 
 beforeEach(function (): void {
     Storage::fake('local');

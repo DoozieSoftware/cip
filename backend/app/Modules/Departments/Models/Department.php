@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\Departments\Models;
 
+use App\Modules\Users\Models\User;
 use Database\Factories\Modules\Departments\Models\DepartmentFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -108,5 +110,24 @@ class Department extends Model
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id');
+    }
+
+    /**
+     * M:N — Officers (and managers) attached to the
+     * department through `department_users` (T-M3-009).
+     * The pivot is exposed by `User::departments()` from
+     * the inverse direction.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            User::class,
+            'department_users',
+            'department_id',
+            'user_id',
+        )->withPivot(['id', 'is_manager', 'assigned_at'])
+         ->withTimestamps();
     }
 }

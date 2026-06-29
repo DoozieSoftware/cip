@@ -246,6 +246,66 @@ The `cip-media` bucket is created at first boot by
 script uses `mc` (MinIO client) and idempotently creates the
 bucket plus a 7-day lifecycle expiry on the `tmp/` prefix.
 
+## M11 — Operations Portal (Department)
+
+The M11 Operations Portal is the third end-user surface. It serves
+two distinct personas:
+
+- **Department Officer** — a government employee who triages, works,
+  and closes reports routed to their department. The officer sees a
+  live dashboard, a paginated assigned-reports list, and the full
+  accept → start → progress → resolve → close lifecycle plus
+  department-private internal notes.
+- **Super / Department Administrator** — a platform operator who
+  configures the department surface: officer attach / detach, SLA
+  minutes, working hours, holiday calendar, and the escalation
+  matrix.
+
+### Backend
+
+- Routes — `/api/v1/department/*` (officer) and
+  `/api/v1/admin/departments/{id}/*` (admin). All behind
+  `auth:sanctum` + ability middleware, rate-limited with
+  `LIMITER_DEPARTMENT` / `LIMITER_ADMIN`.
+- Authorisation — `DepartmentPolicy` enforced through `Gate::define`
+  callbacks (Laravel allows one `Gate::policy()` per model class, and
+  the M10 surface already owns `Report::class`).
+- Services — `DepartmentReportService` (lifecycle), `DepartmentAdminService`
+  (admin surface), `DepartmentReportsExport` (CSV / XLSX / PDF).
+- Database — one new migration, `report_internal_notes`, plus reuse
+  of the existing `department_users` pivot from M3.
+- Audit — every transition writes an `audit_logs` row and dispatches
+  `ReportStatusChanged` for the M9 notification fan-out.
+- **50 backend tests** cover the full M11 surface (endpoints, policy,
+  repository, service, scope, migration, admin, export, OpenAPI).
+
+### Frontend
+
+- Mounted at `/operations*` via `OperationsApp` in
+  `frontend/src/App.tsx`. Five pages: Dashboard, ReportList,
+  ReportDetail, Export, Admin.
+- API client — `frontend/src/portals/operations/api/operations.ts`
+  mirrors the backend 1-to-1. Supports `get`, `post`, `put`, `patch`,
+  `delete` with the Sanctum bearer token.
+- A11y — every page has a heading hierarchy, `aria-label` on the nav,
+  `aria-live` on loading / error states, and a Playwright axe-core
+  WCAG 2.1 AA gate.
+
+### OpenAPI
+
+The M11 surface is documented in
+[`backend/storage/api-docs/openapi.yaml`](./backend/storage/api-docs/openapi.yaml)
+under two new tags — **Operations** and **Department Admin**. The
+contract is enforced by `tests/Feature/Departments/OpenApiDepartmentTest.php`.
+
+### Further reading
+
+- [`docs/operations.md`](./docs/operations.md) — implementation-level
+  reference: routes, authorisation model, services, database, OpenAPI
+  contract, test commands, and known follow-ups
+- [`docs/08-Department-Portal-Specification.md`](./docs/08-Department-Portal-Specification.md)
+  — the M11 product spec (authoritative)
+
 ## Development
 
 

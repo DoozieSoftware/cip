@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 use App\Modules\Settings\Models\Setting;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Settings\Services\SettingsService;
 use Illuminate\Support\Facades\Cache;
+
+uses(RefreshDatabase::class);
+
 
 it('returns the default when the key is missing', function (): void {
     Cache::flush();

@@ -10,6 +10,14 @@ use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
+function appConfigSuperAdmin(): User
+{
+    $admin = User::factory()->create();
+    $admin->assignRole('super_admin');
+
+    return $admin;
+}
+
 beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();
 });
@@ -24,7 +32,7 @@ it('rejects authenticated non-admin callers with 403', function (): void {
 });
 
 it('lists feature flags paginated for super_admin', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(appConfigSuperAdmin());
     AppConfig::factory()->count(3)->create();
 
     $response = $this->getJson('/api/v1/admin/app-configs?per_page=2');
@@ -34,7 +42,7 @@ it('lists feature flags paginated for super_admin', function (): void {
 });
 
 it('filters the listing by enabled flag and a substring of key', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(appConfigSuperAdmin());
     AppConfig::factory()->enabled()->create(['key' => 'ai.vision.enabled']);
     AppConfig::factory()->create(['key' => 'mail.driver', 'enabled' => false]);
 
@@ -45,7 +53,7 @@ it('filters the listing by enabled flag and a substring of key', function (): vo
 });
 
 it('creates a feature flag via POST', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(appConfigSuperAdmin());
 
     $response = $this->postJson('/api/v1/admin/app-configs', [
         'key' => 'ai.vision.enabled',
@@ -64,7 +72,7 @@ it('creates a feature flag via POST', function (): void {
 });
 
 it('rejects a duplicate key on POST with 422', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(appConfigSuperAdmin());
     AppConfig::factory()->create(['key' => 'dup.flag']);
 
     $this->postJson('/api/v1/admin/app-configs', [
@@ -75,7 +83,7 @@ it('rejects a duplicate key on POST with 422', function (): void {
 });
 
 it('rejects an out-of-range rollout_percentage with 422', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(appConfigSuperAdmin());
 
     $this->postJson('/api/v1/admin/app-configs', [
         'key' => 'bad.percent',
@@ -85,7 +93,7 @@ it('rejects an out-of-range rollout_percentage with 422', function (): void {
 });
 
 it('shows a feature flag by key', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(appConfigSuperAdmin());
     AppConfig::factory()->create(['key' => 'show.flag']);
 
     $this->getJson('/api/v1/admin/app-configs/show.flag')
@@ -94,7 +102,7 @@ it('shows a feature flag by key', function (): void {
 });
 
 it('returns 404 for an unknown flag', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(appConfigSuperAdmin());
 
     $this->getJson('/api/v1/admin/app-configs/does.not.exist')
         ->assertStatus(404)
@@ -102,7 +110,7 @@ it('returns 404 for an unknown flag', function (): void {
 });
 
 it('updates a feature flag via PUT (partial)', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(appConfigSuperAdmin());
     AppConfig::factory()->enabled(10)->create(['key' => 'partial.flag', 'description' => 'keep me']);
 
     $this->putJson('/api/v1/admin/app-configs/partial.flag', ['rollout_percentage' => 50])
@@ -112,7 +120,7 @@ it('updates a feature flag via PUT (partial)', function (): void {
 });
 
 it('deletes a feature flag via DELETE', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(appConfigSuperAdmin());
     AppConfig::factory()->create(['key' => 'doomed.flag']);
 
     $this->deleteJson('/api/v1/admin/app-configs/doomed.flag')
@@ -123,7 +131,7 @@ it('deletes a feature flag via DELETE', function (): void {
 });
 
 it('evaluates an enabled flag with full rollout as true', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(appConfigSuperAdmin());
     AppConfig::factory()->enabled(100)->create(['key' => 'always.on']);
 
     $this->getJson('/api/v1/admin/app-configs/always.on/evaluate')
@@ -133,7 +141,7 @@ it('evaluates an enabled flag with full rollout as true', function (): void {
 });
 
 it('evaluates a disabled flag as false', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(appConfigSuperAdmin());
     AppConfig::factory()->create(['key' => 'always.off', 'enabled' => false, 'rollout_percentage' => 100]);
 
     $this->getJson('/api/v1/admin/app-configs/always.off/evaluate')
@@ -142,7 +150,7 @@ it('evaluates a disabled flag as false', function (): void {
 });
 
 it('evaluates deterministically — the same user always gets the same answer', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(appConfigSuperAdmin());
     AppConfig::factory()->enabled(50)->create(['key' => 'fifty.fifty']);
 
     $user = User::factory()->create();
@@ -158,7 +166,7 @@ it('evaluates deterministically — the same user always gets the same answer', 
 });
 
 it('returns 404 for evaluate on an unknown flag', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(appConfigSuperAdmin());
 
     $this->getJson('/api/v1/admin/app-configs/does.not.exist/evaluate')
         ->assertStatus(404);

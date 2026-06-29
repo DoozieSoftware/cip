@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Notifications\Jobs\SendNotificationJob;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Notifications\Models\Notification;
 use App\Modules\Notifications\Models\NotificationPreference;
 use App\Modules\Notifications\Models\NotificationTemplate;
@@ -12,6 +13,9 @@ use App\Modules\Users\Models\User;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+
+uses(RefreshDatabase::class);
+
 
 beforeEach(function (): void {
     $this->user = User::factory()->create(['email' => 'citizen@example.test']);

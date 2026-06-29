@@ -3,10 +3,14 @@
 declare(strict_types=1);
 
 use App\Modules\Notifications\Models\Notification;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Notifications\Models\NotificationTemplate;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+
+uses(RefreshDatabase::class);
+
 
 beforeEach(function (): void {
     $this->user = User::factory()->create();

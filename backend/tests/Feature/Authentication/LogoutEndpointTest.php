@@ -3,12 +3,15 @@
 declare(strict_types=1);
 
 use App\Modules\Authentication\Models\RefreshToken;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Authentication\Services\AuthenticationService;
 use App\Modules\Authentication\Services\OtpService;
 use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\Sanctum;
+
+uses(RefreshDatabase::class);
 
 /**
  * Validates POST /api/v1/auth/logout introduced in T-M2-016.

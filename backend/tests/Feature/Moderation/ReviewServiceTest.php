@@ -37,7 +37,7 @@ beforeEach(function (): void {
 });
 
 if (! function_exists('makeModerator')) {
-function makeModerator(): User
+function reviewModerator(): User
 {
     $u = User::factory()->create();
     $u->assignRole('moderator');
@@ -86,7 +86,7 @@ function landReportInPendingModerator(): Report
 
 it('a moderator can approve a pending_moderator report', function (): void {
     $report = landReportInPendingModerator();
-    $moderator = makeModerator();
+    $moderator = reviewModerator();
 
     $dto = ReviewReportDto::fromArray([
         'decision' => 'approve',
@@ -119,7 +119,7 @@ it('a moderator can approve a pending_moderator report', function (): void {
 
 it('a moderator can reject a pending_moderator report', function (): void {
     $report = landReportInPendingModerator();
-    $moderator = makeModerator();
+    $moderator = reviewModerator();
 
     $dto = ReviewReportDto::fromArray([
         'decision' => 'reject',
@@ -137,7 +137,7 @@ it('a moderator can reject a pending_moderator report', function (): void {
 
 it('a moderator can escalate a pending_moderator report', function (): void {
     $report = landReportInPendingModerator();
-    $moderator = makeModerator();
+    $moderator = reviewModerator();
 
     $dto = ReviewReportDto::fromArray([
         'decision' => 'escalate',
@@ -164,7 +164,7 @@ it('rejects review when the current state has no matching transition', function 
     // A report in 'draft' state cannot be approved.
     $draft = \App\Modules\Reports\Models\ReportStatus::query()->where('code', 'draft')->firstOrFail();
     $report = Report::factory()->create(['current_status_id' => $draft->id]);
-    $moderator = makeModerator();
+    $moderator = reviewModerator();
 
     $dto = ReviewReportDto::fromArray(['decision' => 'approve']);
 
@@ -184,7 +184,7 @@ it('rejects a non-moderator actor', function (): void {
 
 it('an override writes the before/after category in the audit row', function (): void {
     $report = landReportInPendingModerator();
-    $moderator = makeModerator();
+    $moderator = reviewModerator();
     $originalCategory = $report->report_type_id;
 
     $newType = \App\Modules\Reports\Models\ReportType::factory()->create();

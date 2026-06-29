@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\AI\Jobs\AiPipelineOrchestrator;
 use App\Modules\AI\Listeners\ReportSubmittedListener;
 use App\Modules\Reports\Events\ReportStatusChanged;
@@ -16,6 +17,10 @@ use Database\Seeders\ReportTypesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Bus;
+
+uses(RefreshDatabase::class);
+
+
 
 beforeEach(function (): void {
     Bus::fake([AiPipelineOrchestrator::class]);

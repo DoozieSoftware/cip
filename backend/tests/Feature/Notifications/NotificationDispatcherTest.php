@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Notifications\Exceptions\MissingTemplateVariableException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Notifications\Exceptions\TemplateNotFoundException;
 use App\Modules\Notifications\Jobs\SendNotificationJob;
 use App\Modules\Notifications\Models\Notification;
@@ -11,6 +12,9 @@ use App\Modules\Notifications\Services\NotificationDispatcher;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
+
 
 beforeEach(function (): void {
     $this->dispatcher = app(NotificationDispatcher::class);

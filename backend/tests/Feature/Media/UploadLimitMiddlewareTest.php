@@ -3,10 +3,14 @@
 declare(strict_types=1);
 
 use App\Modules\Media\Http\Middleware\MediaUploadLimit;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Users\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\Sanctum;
+
+uses(RefreshDatabase::class);
+
 
 beforeEach(function (): void {
     Cache::flush();

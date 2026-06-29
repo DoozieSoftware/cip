@@ -7,6 +7,9 @@ use App\Modules\Security\Services\SecurityEventService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Exceptions\ModelImmutableException;
 use App\Modules\Users\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 /**
  * Feature coverage for SecurityEventService (T-M2-021).

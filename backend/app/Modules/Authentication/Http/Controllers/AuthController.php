@@ -55,7 +55,13 @@ class AuthController extends BaseController
 
         $this->recordAttempt($mobile, $ip, $userAgent, success: true, reason: null);
 
-        return $this->respond(['otp_sent' => true]);
+        $payload = ['otp_sent' => true];
+        if (app()->environment('local')) {
+            $payload['debug_otp'] = $this->otpService->latestCodeFor($mobile);
+            $payload['expires_in'] = (int) config('cip.auth.otp_expiry_minutes', 5) * 60;
+        }
+
+        return $this->respond($payload);
     }
 
     /**

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Authentication\Events\UserAuthenticated;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Authentication\Models\LoginHistory;
 use App\Modules\Authentication\Models\Otp;
 use App\Modules\Authentication\Models\RefreshToken;
@@ -10,6 +11,8 @@ use App\Modules\Authentication\Services\OtpService;
 use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Event;
+
+uses(RefreshDatabase::class);
 
 /**
  * Validates POST /api/v1/auth/verify-otp introduced in T-M2-014.

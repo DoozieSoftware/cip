@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Reports\Models\Report;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Security\Models\AuditLog;
 use App\Modules\Users\Models\User;
@@ -12,6 +13,9 @@ use App\Modules\Workflow\Models\WorkflowTransition;
 use App\Modules\Workflow\Services\ConditionEvaluator;
 use App\Modules\Workflow\Services\TransitionGuard;
 use App\Modules\Workflow\Services\WorkflowEngine;
+
+uses(RefreshDatabase::class);
+
 
 beforeEach(function (): void {
     $this->engine = new WorkflowEngine(new TransitionGuard(new ConditionEvaluator));

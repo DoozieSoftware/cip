@@ -6,12 +6,15 @@ use App\Modules\AI\Models\AiProviderConfig;
 use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Laravel\Sanctum\Sanctum;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();
 });
 
-function superAdmin(): User
+function aiProviderSuperAdmin(): User
 {
     $admin = User::factory()->create();
     $admin->assignRole('super_admin');
@@ -20,7 +23,7 @@ function superAdmin(): User
 }
 
 it('GET /admin/ai/providers returns a paginated list', function (): void {
-    Sanctum::actingAs(superAdmin());
+    Sanctum::actingAs(aiProviderSuperAdmin());
     AiProviderConfig::query()->create([
         'code' => 'p1', 'name' => 'P1', 'base_url' => 'http://x', 'auth_type' => 'none',
         'model' => 'm', 'temperature' => 0.2, 'timeout_ms' => 5000, 'retry_count' => 1,
@@ -33,7 +36,7 @@ it('GET /admin/ai/providers returns a paginated list', function (): void {
 });
 
 it('the resource hides api_key_secret_id and surfaces has_secret', function (): void {
-    Sanctum::actingAs(superAdmin());
+    Sanctum::actingAs(aiProviderSuperAdmin());
     $cfg = AiProviderConfig::query()->create([
         'code' => 'p2', 'name' => 'P2', 'base_url' => 'http://x', 'auth_type' => 'bearer',
         'api_key_secret_id' => '11111111-1111-1111-1111-111111111111',
@@ -48,7 +51,7 @@ it('the resource hides api_key_secret_id and surfaces has_secret', function (): 
 });
 
 it('POST /admin/ai/providers creates a provider', function (): void {
-    Sanctum::actingAs(superAdmin());
+    Sanctum::actingAs(aiProviderSuperAdmin());
 
     $this->postJson('/api/v1/admin/ai/providers', [
         'code' => 'newone',
@@ -67,7 +70,7 @@ it('POST /admin/ai/providers creates a provider', function (): void {
 });
 
 it('POST /admin/ai/providers rejects a duplicate code', function (): void {
-    Sanctum::actingAs(superAdmin());
+    Sanctum::actingAs(aiProviderSuperAdmin());
     AiProviderConfig::query()->create([
         'code' => 'dupe', 'name' => 'A', 'base_url' => 'http://x', 'auth_type' => 'none',
         'model' => 'm', 'temperature' => 0.2, 'timeout_ms' => 5000, 'retry_count' => 1,
@@ -82,7 +85,7 @@ it('POST /admin/ai/providers rejects a duplicate code', function (): void {
 });
 
 it('PUT /admin/ai/providers/{id} updates the provider', function (): void {
-    Sanctum::actingAs(superAdmin());
+    Sanctum::actingAs(aiProviderSuperAdmin());
     $cfg = AiProviderConfig::query()->create([
         'code' => 'p3', 'name' => 'P3', 'base_url' => 'http://x', 'auth_type' => 'none',
         'model' => 'm', 'temperature' => 0.2, 'timeout_ms' => 5000, 'retry_count' => 1,
@@ -95,7 +98,7 @@ it('PUT /admin/ai/providers/{id} updates the provider', function (): void {
 });
 
 it('DELETE /admin/ai/providers/{id} removes the provider', function (): void {
-    Sanctum::actingAs(superAdmin());
+    Sanctum::actingAs(aiProviderSuperAdmin());
     $cfg = AiProviderConfig::query()->create([
         'code' => 'p4', 'name' => 'P4', 'base_url' => 'http://x', 'auth_type' => 'none',
         'model' => 'm', 'temperature' => 0.2, 'timeout_ms' => 5000, 'retry_count' => 1,

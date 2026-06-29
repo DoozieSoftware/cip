@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Departments\DTOs\GeographyDTO;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Departments\Models\City;
 use App\Modules\Departments\Models\Country;
 use App\Modules\Departments\Models\District;
@@ -12,6 +13,9 @@ use App\Modules\Departments\Models\Zone;
 use App\Modules\Departments\Repositories\GeographyRepository;
 use App\Modules\Departments\Services\GeographyService;
 use App\Modules\Shared\Exceptions\ApiException;
+
+uses(RefreshDatabase::class);
+
 
 it('lists countries paginated', function (): void {
     Country::factory()->count(3)->create();

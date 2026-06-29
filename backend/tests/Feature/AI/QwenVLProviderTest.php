@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 use App\Modules\AI\Providers\QwenVLProvider;
 use App\Modules\AI\ValueObjects\AiRequest;
 use Illuminate\Support\Facades\Http;

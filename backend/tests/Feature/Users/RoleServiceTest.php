@@ -9,6 +9,9 @@ use App\Modules\Users\Models\User;
 use App\Modules\Users\Services\RoleService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 /**
  * Feature coverage for RoleService (T-M2-019).

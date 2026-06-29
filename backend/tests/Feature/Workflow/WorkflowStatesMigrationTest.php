@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 use Illuminate\Database\QueryException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
+
 
 it('creates the workflow_states table with the expected columns', function (): void {
     expect(Schema::hasTable('workflow_states'))->toBeTrue();

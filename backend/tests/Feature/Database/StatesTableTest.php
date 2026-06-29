@@ -3,9 +3,13 @@
 declare(strict_types=1);
 
 use App\Modules\Departments\Models\Country;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Departments\Models\State;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Schema;
+
+uses(RefreshDatabase::class);
+
 
 it('creates the states table with the required columns', function (): void {
     expect(Schema::hasTable('states'))->toBeTrue();

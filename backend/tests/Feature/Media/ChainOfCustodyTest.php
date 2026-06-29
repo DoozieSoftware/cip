@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Models\MediaAccessLog;
 use App\Modules\Media\Services\ChainOfCustodyWriter;
@@ -15,6 +16,10 @@ use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Sanctum\Sanctum;
+
+uses(RefreshDatabase::class);
+
+
 
 beforeEach(function (): void {
     Storage::fake('local');

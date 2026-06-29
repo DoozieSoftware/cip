@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Services\LogScanner;
 use App\Modules\Media\Services\MediaService;
@@ -13,6 +14,10 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Laravel\Sanctum\Sanctum;
+
+uses(RefreshDatabase::class);
+
+
 
 beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();

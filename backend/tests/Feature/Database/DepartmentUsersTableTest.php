@@ -3,10 +3,14 @@
 declare(strict_types=1);
 
 use App\Modules\Departments\Models\Department;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Users\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+
+uses(RefreshDatabase::class);
+
 
 it('creates the department_users table with the required columns', function (): void {
     expect(Schema::hasTable('department_users'))->toBeTrue();

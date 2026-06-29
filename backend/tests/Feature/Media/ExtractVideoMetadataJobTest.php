@@ -3,9 +3,13 @@
 declare(strict_types=1);
 
 use App\Modules\Media\Jobs\ExtractVideoMetadataJob;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Media\Models\Media;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Storage;
+
+uses(RefreshDatabase::class);
+
 
 const EVMJ_TINY_MP4 = 'AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAW1vb3YAAABsbXZoZAAAAAAAAAAAAAAAAAAAA+gAAAAUAAEAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 

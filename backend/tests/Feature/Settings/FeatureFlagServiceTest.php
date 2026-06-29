@@ -3,9 +3,13 @@
 declare(strict_types=1);
 
 use App\Modules\Settings\Models\AppConfig;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Settings\Services\FeatureFlagService;
 use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
+
+uses(RefreshDatabase::class);
+
 
 it('returns false for a missing key', function (): void {
     expect((new FeatureFlagService)->enabled('does.not.exist'))->toBeFalse();

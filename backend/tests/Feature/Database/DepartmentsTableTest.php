@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 use Illuminate\Database\QueryException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+
+uses(RefreshDatabase::class);
+
 
 it('creates the departments table with the required columns', function (): void {
     expect(Schema::hasTable('departments'))->toBeTrue();

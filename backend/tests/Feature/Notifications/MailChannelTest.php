@@ -3,11 +3,15 @@
 declare(strict_types=1);
 
 use App\Modules\Notifications\Channels\MailChannel;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Notifications\Mail\TemplateMailable;
 use App\Modules\Notifications\Models\Notification;
 use App\Modules\Notifications\Models\NotificationTemplate;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Facades\Mail;
+
+uses(RefreshDatabase::class);
+
 
 it('sends a TemplateMailable to the user email and reports success', function (): void {
     Mail::fake();

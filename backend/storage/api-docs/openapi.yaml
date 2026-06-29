@@ -29,26 +29,504 @@ servers:
 paths:
   /api/v1/health:
     get:
-      tags:
-        - Health
       summary: 'Liveness probe'
+      tags: [Health]
       operationId: health.live
       responses:
         '200':
-          description: 'Service is alive'
+          description: 'Service alive'
           content:
             application/json:
-              schema:
-                required:
-                  - success
-                  - message
-                  - data
-                properties:
-                  success: { type: boolean, example: true }
-                  message: { type: string, example: 'Service is alive' }
-                  data: { required: [status, service, time], properties: { status: { type: string, example: ok }, service: { type: string, example: 'Civic Intelligence Platform' }, time: { type: string, format: date-time } }, type: object }
-                  meta: { type: object }
-                type: object
+              schema: { $ref: '#/components/schemas/HealthLiveResponse' }
+  # =============================================================
+  # M11 — Operations portal (Department) paths
+  # =============================================================
+  /api/v1/department/dashboard:
+    get:
+      tags: [Operations]
+      summary: 'Department-officer dashboard (M11)'
+      operationId: department.dashboard.show
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentDashboardResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/department/reports:
+    get:
+      tags: [Operations]
+      summary: 'Paginated list of reports assigned to the officer''s department (M11)'
+      operationId: department.reports.index
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: priority
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: ward_id
+          schema: { type: string, format: uuid }
+        - in: query
+          name: date_from
+          schema: { type: string, format: date-time }
+        - in: query
+          name: date_to
+          schema: { type: string, format: date-time }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 500, default: 20 }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentReportListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/department/reports/export:
+    get:
+      tags: [Operations]
+      summary: 'Export reports assigned to the officer''s department as CSV/XLSX/PDF (M11)'
+      operationId: department.reports.export
+      parameters:
+        - in: query
+          name: format
+          required: true
+          schema: { type: string, enum: [csv, xlsx, pdf] }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: priority
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: ward_id
+          schema: { type: string, format: uuid }
+        - in: query
+          name: date_from
+          schema: { type: string, format: date-time }
+        - in: query
+          name: date_to
+          schema: { type: string, format: date-time }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        '200':
+          description: 'Downloadable file (text/csv, application/vnd.ms-excel, or application/pdf)'
+          content:
+            text/csv: { schema: { type: string } }
+            application/vnd.ms-excel: { schema: { type: string } }
+            application/pdf: { schema: { type: string, format: binary } }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/department/reports/{report}/accept:
+    post:
+      tags: [Operations]
+      summary: 'Department officer accepts a report (assigned -> accepted) (M11)'
+      operationId: department.reports.accept
+      parameters:
+        - $ref: '#/components/parameters/PathReportId'
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentReportDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/department/reports/{report}/start:
+    post:
+      tags: [Operations]
+      summary: 'Department officer starts work on a report (accepted -> in_progress) (M11)'
+      operationId: department.reports.start
+      parameters:
+        - $ref: '#/components/parameters/PathReportId'
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentReportDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/department/reports/{report}/progress:
+    post:
+      tags: [Operations]
+      summary: 'Department officer records a progress comment (no state change) (M11)'
+      operationId: department.reports.progress
+      parameters:
+        - $ref: '#/components/parameters/PathReportId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProgressNoteRequest' }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentReportDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/department/reports/{report}/resolve:
+    post:
+      tags: [Operations]
+      summary: 'Department officer resolves a report (in_progress -> resolved) (M11)'
+      operationId: department.reports.resolve
+      parameters:
+        - $ref: '#/components/parameters/PathReportId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProgressNoteRequest' }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentReportDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/department/reports/{report}/close:
+    post:
+      tags: [Operations]
+      summary: 'Department officer closes a report (resolved -> closed) (M11)'
+      operationId: department.reports.close
+      parameters:
+        - $ref: '#/components/parameters/PathReportId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProgressNoteRequest' }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentReportDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/department/reports/{report}/note:
+    post:
+      tags: [Operations]
+      summary: 'Department officer adds an internal note (department-private) (M11)'
+      operationId: department.reports.note.store
+      parameters:
+        - $ref: '#/components/parameters/PathReportId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InternalNoteRequest' }
+      responses:
+        '201':
+          description: 'Note created'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InternalNoteResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/department/reports/{report}/notes:
+    get:
+      tags: [Operations]
+      summary: 'List the internal notes on a report, newest-first (M11)'
+      operationId: department.reports.notes.index
+      parameters:
+        - $ref: '#/components/parameters/PathReportId'
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InternalNoteListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/admin/departments/{department}/officers:
+    get:
+      tags: ['Department Admin']
+      summary: 'List officers attached to a department (M11)'
+      operationId: admin.departments.officers.index
+      parameters:
+        - $ref: '#/components/parameters/PathDepartmentId'
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentOfficerListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: ['Department Admin']
+      summary: 'Attach an officer to a department (M11)'
+      operationId: admin.departments.officers.store
+      parameters:
+        - $ref: '#/components/parameters/PathDepartmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AttachOfficerRequest' }
+      responses:
+        '201':
+          description: 'Officer attached'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AttachOfficerResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/departments/{department}/officers/{user}:
+    delete:
+      tags: ['Department Admin']
+      summary: 'Detach an officer from a department (M11)'
+      operationId: admin.departments.officers.destroy
+      parameters:
+        - $ref: '#/components/parameters/PathDepartmentId'
+        - in: path
+          name: user
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DetachOfficerResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/admin/departments/{department}/admin:
+    patch:
+      tags: ['Department Admin']
+      summary: 'Update SLA / working hours / holiday calendar / escalation matrix (M11)'
+      operationId: admin.departments.admin.update
+      parameters:
+        - $ref: '#/components/parameters/PathDepartmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateDepartmentAdminRequest' }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UpdateDepartmentAdminResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  # =============================================================
+  # M11 — Operations schemas
+  # =============================================================
+  DepartmentDashboardCounts:
+    type: object
+    properties:
+      open: { type: integer }
+      due_today: { type: integer }
+      sla_breached: { type: integer }
+      by_category:
+        type: object
+        additionalProperties: { type: integer }
+  DepartmentDashboardResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data: { $ref: '#/components/schemas/DepartmentDashboardCounts' }
+  DepartmentReportListItem:
+    allOf:
+      - $ref: '#/components/schemas/ReportListItem'
+      - type: object
+        properties:
+          current_status_code: { type: string, example: 'assigned' }
+          department_sla_minutes: { type: integer, nullable: true }
+          internal_notes:
+            type: array
+            items: { $ref: '#/components/schemas/InternalNote' }
+  DepartmentReportDetail:
+    allOf:
+      - $ref: '#/components/schemas/DepartmentReportListItem'
+  DepartmentReportListResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            type: array
+            items: { $ref: '#/components/schemas/DepartmentReportListItem' }
+          meta:
+            type: object
+            properties:
+              current_page: { type: integer }
+              per_page: { type: integer }
+              total: { type: integer }
+              last_page: { type: integer }
+  DepartmentReportDetailResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data: { $ref: '#/components/schemas/DepartmentReportDetail' }
+  ProgressNoteRequest:
+    type: object
+    properties:
+      note: { type: string, maxLength: 4000 }
+  InternalNote:
+    type: object
+    properties:
+      id: { type: string, format: uuid }
+      body: { type: string }
+      author_id: { type: string, format: uuid, nullable: true }
+      author_name: { type: string, nullable: true }
+      created_at: { type: string, format: date-time }
+  InternalNoteRequest:
+    type: object
+    required: [body]
+    properties:
+      body: { type: string, minLength: 1, maxLength: 4000 }
+  InternalNoteResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data: { $ref: '#/components/schemas/InternalNote' }
+  InternalNoteListResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            type: array
+            items: { $ref: '#/components/schemas/InternalNote' }
+  DepartmentOfficer:
+    type: object
+    properties:
+      id: { type: string, format: uuid }
+      name: { type: string, nullable: true }
+      mobile: { type: string }
+      email: { type: string, nullable: true }
+      is_manager: { type: boolean }
+      assigned_at: { type: string, format: date-time, nullable: true }
+  DepartmentOfficerListResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            type: array
+            items: { $ref: '#/components/schemas/DepartmentOfficer' }
+          meta:
+            type: object
+            properties:
+              total: { type: integer }
+              per_page: { type: integer }
+              current_page: { type: integer }
+              last_page: { type: integer }
+  AttachOfficerRequest:
+    type: object
+    required: [user_id]
+    properties:
+      user_id: { type: string, format: uuid }
+      is_manager: { type: boolean, default: false }
+      assigned_at: { type: string, format: date-time, nullable: true }
+  AttachOfficerResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              pivot_id: { type: string, format: uuid }
+              department_id: { type: string, format: uuid }
+  DetachOfficerResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              removed: { type: boolean }
+  UpdateDepartmentAdminRequest:
+    type: object
+    properties:
+      default_sla_minutes: { type: integer, minimum: 1, maximum: 525600 }
+      working_hours:
+        type: array
+        items:
+          type: object
+          required: [day, open, close]
+          properties:
+            day: { type: string, enum: [mon, tue, wed, thu, fri, sat, sun] }
+            open: { type: string, example: '09:00' }
+            close: { type: string, example: '17:00' }
+      holiday_calendar:
+        type: array
+        items: { type: string, format: date, example: '2026-12-25' }
+      escalation_matrix:
+        type: array
+        items:
+          type: object
+          required: [after_minutes]
+          properties:
+            after_minutes: { type: integer, minimum: 1 }
+            escalate_to: { type: string, format: uuid, nullable: true }
+  UpdateDepartmentAdminResponse:
+    allOf:
+      - $ref: '#/components/schemas/ApiResponse'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              default_sla_minutes: { type: integer }
+              working_hours:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    day: { type: string }
+                    open: { type: string }
+                    close: { type: string }
+              holiday_calendar:
+                type: array
+                items: { type: string, format: date }
+              escalation_matrix:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    after_minutes: { type: integer }
+                    escalate_to: { type: string, format: uuid, nullable: true }
+
   /api/v1/health/ready:
     get:
       tags:
@@ -576,6 +1054,1127 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
+  /api/v1/admin/users:
+    get:
+      tags: ['Super Admin']
+      summary: 'List users (paginated, filterable by role, status, department)'
+      operationId: admin.users.index
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string, description: 'Free-text search over name / mobile / email.' }
+        - in: query
+          name: role
+          schema: { type: string, description: 'Filter by Spatie role name.' }
+        - in: query
+          name: status
+          schema: { type: string, description: 'Filter by user status (active, suspended, banned, pending).' }
+        - in: query
+          name: department_id
+          schema: { type: string, format: uuid }
+        - in: query
+          name: include_trashed
+          schema: { type: boolean, default: false }
+        - in: query
+          name: only_trashed
+          schema: { type: boolean, default: false }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 25, maximum: 200 }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: ['Super Admin']
+      summary: 'Create a user (super_admin only)'
+      operationId: admin.users.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserStoreRequest' }
+      responses:
+        '201':
+          description: 'User created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/users/{user}:
+    get:
+      tags: ['Super Admin']
+      summary: 'Show a user (super_admin only)'
+      operationId: admin.users.show
+      parameters:
+        - in: path
+          name: user
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: ['Super Admin']
+      summary: 'Update a user (super_admin only)'
+      operationId: admin.users.update
+      parameters:
+        - in: path
+          name: user
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserUpdateRequest' }
+      responses:
+        '200':
+          description: 'User updated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: ['Super Admin']
+      summary: 'Soft-delete a user (super_admin only)'
+      operationId: admin.users.destroy
+      parameters:
+        - in: path
+          name: user
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'User deleted.'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/users/{user}/restore:
+    post:
+      tags: ['Super Admin']
+      summary: 'Restore a soft-deleted user (super_admin only)'
+      operationId: admin.users.restore
+      parameters:
+        - in: path
+          name: user
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'User restored.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/roles:
+    get:
+      tags: ['Super Admin']
+      summary: 'List roles (super_admin only)'
+      operationId: admin.roles.index
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 200, default: 25 }
+      responses:
+        '200':
+          description: 'Paginated role list.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: ['Super Admin']
+      summary: 'Create a role (super_admin only)'
+      operationId: admin.roles.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RoleStoreRequest' }
+      responses:
+        '201':
+          description: 'Role created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/roles/{role}:
+    get:
+      tags: ['Super Admin']
+      summary: 'Show a role (super_admin only)'
+      operationId: admin.roles.show
+      parameters:
+        - in: path
+          name: role
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 'Role details.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: ['Super Admin']
+      summary: 'Update a role (super_admin only)'
+      operationId: admin.roles.update
+      parameters:
+        - in: path
+          name: role
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RoleUpdateRequest' }
+      responses:
+        '200':
+          description: 'Role updated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: ['Super Admin']
+      summary: 'Delete a role (super_admin only; protected roles forbidden)'
+      operationId: admin.roles.destroy
+      parameters:
+        - in: path
+          name: role
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 'Role deleted.'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/roles/{role}/permissions/sync:
+    post:
+      tags: ['Super Admin']
+      summary: 'Sync the permission set of a role (super_admin only)'
+      operationId: admin.roles.permissions.sync
+      parameters:
+        - in: path
+          name: role
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RolePermissionsSyncRequest' }
+      responses:
+        '200':
+          description: 'Permissions synced.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/permissions:
+    get:
+      tags: ['Super Admin']
+      summary: 'List permissions (super_admin only)'
+      operationId: admin.permissions.index
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: guard_name
+          schema: { type: string }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        '200':
+          description: 'Paginated permission list.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PermissionListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: ['Super Admin']
+      summary: 'Create a permission (super_admin only)'
+      operationId: admin.permissions.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PermissionStoreRequest' }
+      responses:
+        '201':
+          description: 'Permission created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PermissionResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/permissions/{permission}:
+    get:
+      tags: ['Super Admin']
+      summary: 'Show a permission (super_admin only)'
+      operationId: admin.permissions.show
+      parameters:
+        - in: path
+          name: permission
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 'Permission details.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PermissionResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: ['Super Admin']
+      summary: 'Delete a permission (super_admin only)'
+      operationId: admin.permissions.destroy
+      parameters:
+        - in: path
+          name: permission
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 'Permission deleted.'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/report-types:
+    get:
+      tags: ['Super Admin']
+      summary: 'List report types (super_admin only)'
+      operationId: admin.report-types.index
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: active
+          schema: { type: boolean }
+        - in: query
+          name: include_trashed
+          schema: { type: boolean }
+        - in: query
+          name: only_trashed
+          schema: { type: boolean }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 200, default: 25 }
+      responses:
+        '200':
+          description: 'Paginated report-type list.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportTypeListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: ['Super Admin']
+      summary: 'Create a report type (super_admin only)'
+      operationId: admin.report-types.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReportTypeStoreRequest' }
+      responses:
+        '201':
+          description: 'Report type created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportTypeResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/report-types/{report_type}:
+    get:
+      tags: ['Super Admin']
+      summary: 'Show a report type (super_admin only)'
+      operationId: admin.report-types.show
+      parameters:
+        - in: path
+          name: report_type
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Report type details.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportTypeResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: ['Super Admin']
+      summary: 'Update a report type (super_admin only)'
+      operationId: admin.report-types.update
+      parameters:
+        - in: path
+          name: report_type
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReportTypeUpdateRequest' }
+      responses:
+        '200':
+          description: 'Report type updated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportTypeResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: ['Super Admin']
+      summary: 'Soft-delete a report type (super_admin only)'
+      operationId: admin.report-types.destroy
+      parameters:
+        - in: path
+          name: report_type
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Report type deleted.'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/report-types/{report_type}/restore:
+    post:
+      tags: ['Super Admin']
+      summary: 'Restore a soft-deleted report type (super_admin only)'
+      operationId: admin.report-types.restore
+      parameters:
+        - in: path
+          name: report_type
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Report type restored.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportTypeResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/admin/security-policies:
+    get:
+      tags: ['Super Admin']
+      summary: 'List security policies (super_admin only)'
+      operationId: admin.security-policies.index
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        '200':
+          description: 'Paginated policy list.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SecurityPolicyListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: ['Super Admin']
+      summary: 'Upsert a security policy by key (super_admin only)'
+      operationId: admin.security-policies.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SecurityPolicyUpsertRequest' }
+      responses:
+        '201':
+          description: 'Policy saved.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SecurityPolicyResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/security-policies/{key}:
+    get:
+      tags: ['Super Admin']
+      summary: 'Show a security policy by key (super_admin only)'
+      operationId: admin.security-policies.show
+      parameters:
+        - in: path
+          name: key
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 'Policy details.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SecurityPolicyResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: ['Super Admin']
+      summary: 'Update a security policy by key (super_admin only)'
+      operationId: admin.security-policies.update
+      parameters:
+        - in: path
+          name: key
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SecurityPolicyUpsertRequest' }
+      responses:
+        '200':
+          description: 'Policy updated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SecurityPolicyResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: ['Super Admin']
+      summary: 'Delete a security policy by key (super_admin only)'
+      operationId: admin.security-policies.destroy
+      parameters:
+        - in: path
+          name: key
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 'Policy deleted.'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/audit-logs:
+    get:
+      tags: ['Super Admin', 'Auditor']
+      summary: 'Search audit logs (super_admin / auditor / department_admin)'
+      operationId: admin.audit-logs.index
+      parameters:
+        - in: query
+          name: user_id
+          schema: { type: string, format: uuid }
+        - in: query
+          name: role
+          schema: { type: string }
+        - in: query
+          name: action
+          schema: { type: string }
+        - in: query
+          name: entity
+          schema: { type: string }
+        - in: query
+          name: entity_id
+          schema: { type: string }
+        - in: query
+          name: ip
+          schema: { type: string }
+        - in: query
+          name: device_fingerprint
+          schema: { type: string }
+        - in: query
+          name: date_from
+          schema: { type: string, format: date-time }
+        - in: query
+          name: date_to
+          schema: { type: string, format: date-time }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+      responses:
+        '200':
+          description: 'Paginated audit log list.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuditLogListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  # =============================================================
+  # T-M12-007 — Integrations CRUD
+  # =============================================================
+  /api/v1/admin/integrations:
+    get:
+      tags: [Integrations]
+      summary: 'List integrations (paginated, super_admin only)'
+      operationId: admin.integrations.index
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string, enum: [active, degraded, disabled] }
+        - in: query
+          name: provider
+          schema: { type: string }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 25, maximum: 200 }
+      responses:
+        '200':
+          description: 'Paginated list of integrations. Credentials are masked.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegrationListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Integrations]
+      summary: 'Create an integration'
+      operationId: admin.integrations.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IntegrationStoreRequest' }
+      responses:
+        '201':
+          description: 'Integration created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegrationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/integrations/{integration}:
+    get:
+      tags: [Integrations]
+      summary: 'Show one integration (super_admin only)'
+      operationId: admin.integrations.show
+      parameters:
+        - in: path
+          name: integration
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Integration row (credentials masked).'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegrationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Integrations]
+      summary: 'Update an integration (super_admin only)'
+      operationId: admin.integrations.update
+      parameters:
+        - in: path
+          name: integration
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IntegrationUpdateRequest' }
+      responses:
+        '200':
+          description: 'Integration updated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegrationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Integrations]
+      summary: 'Soft-delete an integration (super_admin only)'
+      operationId: admin.integrations.destroy
+      parameters:
+        - in: path
+          name: integration
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: 'Integration deleted.' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/admin/integrations/{integration}/restore:
+    post:
+      tags: [Integrations]
+      summary: 'Restore a soft-deleted integration (super_admin only)'
+      operationId: admin.integrations.restore
+      parameters:
+        - in: path
+          name: integration
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Integration restored.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegrationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/admin/integrations/{integration}/health:
+    post:
+      tags: [Integrations]
+      summary: 'Run a health probe against the integration (super_admin only)'
+      operationId: admin.integrations.health
+      parameters:
+        - in: path
+          name: integration
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Health probe complete.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegrationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  # =============================================================
+  # T-M12-008 — Media storage config
+  # =============================================================
+  /api/v1/admin/media/storage:
+    get:
+      tags: [MediaStorage]
+      summary: 'Get the platform media storage config (super_admin only)'
+      operationId: admin.media.storage.show
+      responses:
+        '200':
+          description: 'Storage config.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MediaStorageResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    put:
+      tags: [MediaStorage]
+      summary: 'Update the platform media storage config (super_admin only)'
+      operationId: admin.media.storage.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MediaStorageUpdateRequest' }
+      responses:
+        '200':
+          description: 'Storage config updated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MediaStorageResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/media/storage/probe:
+    post:
+      tags: [MediaStorage]
+      summary: 'Probe the configured storage disk (super_admin only)'
+      operationId: admin.media.storage.probe
+      responses:
+        '200':
+          description: 'Storage probe complete.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MediaStorageProbeResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  # =============================================================
+  # T-M12-009 — Notification channel configs
+  # =============================================================
+  /api/v1/admin/notification-configs:
+    get:
+      tags: [NotificationConfigs]
+      summary: 'List notification channel configs (paginated, super_admin only)'
+      operationId: admin.notification-configs.index
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: channel
+          schema: { type: string, enum: [mail, push, sms, webhook] }
+        - in: query
+          name: active
+          schema: { type: boolean }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 25, maximum: 200 }
+      responses:
+        '200':
+          description: 'Paginated list. Credentials are masked.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationChannelConfigListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [NotificationConfigs]
+      summary: 'Create a notification channel config (super_admin only)'
+      operationId: admin.notification-configs.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NotificationChannelConfigStoreRequest' }
+      responses:
+        '201':
+          description: 'Channel config created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationChannelConfigResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/notification-configs/{config}:
+    get:
+      tags: [NotificationConfigs]
+      summary: 'Show one channel config (super_admin only)'
+      operationId: admin.notification-configs.show
+      parameters:
+        - in: path
+          name: config
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Channel config (credentials masked).'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationChannelConfigResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [NotificationConfigs]
+      summary: 'Update a channel config (super_admin only)'
+      operationId: admin.notification-configs.update
+      parameters:
+        - in: path
+          name: config
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NotificationChannelConfigUpdateRequest' }
+      responses:
+        '200':
+          description: 'Channel config updated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationChannelConfigResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [NotificationConfigs]
+      summary: 'Soft-delete a channel config (super_admin only)'
+      operationId: admin.notification-configs.destroy
+      parameters:
+        - in: path
+          name: config
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: 'Channel config deleted.' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/admin/notification-configs/{config}/restore:
+    post:
+      tags: [NotificationConfigs]
+      summary: 'Restore a soft-deleted channel config (super_admin only)'
+      operationId: admin.notification-configs.restore
+      parameters:
+        - in: path
+          name: config
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Channel config restored.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationChannelConfigResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  # =============================================================
+  # T-M12-012 — Scheduler dashboard
+  # =============================================================
+  /api/v1/admin/scheduler/jobs:
+    get:
+      tags: [Scheduler]
+      summary: 'List scheduled jobs (super_admin only)'
+      operationId: admin.scheduler.jobs.index
+      responses:
+        '200':
+          description: 'List of scheduled jobs with paused flag.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SchedulerJobsResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/admin/scheduler/jobs/{id}/run-now:
+    post:
+      tags: [Scheduler]
+      summary: 'Run a scheduled job synchronously (super_admin only)'
+      operationId: admin.scheduler.jobs.run-now
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 'Job executed.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SchedulerRunNowResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/admin/scheduler/jobs/{id}/pause:
+    post:
+      tags: [Scheduler]
+      summary: 'Pause a scheduled job (super_admin only)'
+      operationId: admin.scheduler.jobs.pause
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 'Job paused.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SchedulerPauseResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/admin/scheduler/jobs/{id}/resume:
+    post:
+      tags: [Scheduler]
+      summary: 'Resume a scheduled job (super_admin only)'
+      operationId: admin.scheduler.jobs.resume
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 'Job resumed.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SchedulerPauseResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  # =============================================================
+  # T-M12-013 — Organizations CRUD
+  # =============================================================
+  /api/v1/admin/organizations:
+    get:
+      tags: [Organizations]
+      summary: 'List organizations (paginated, super_admin only)'
+      operationId: admin.organizations.index
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: active
+          schema: { type: boolean }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 25, maximum: 200 }
+      responses:
+        '200':
+          description: 'Paginated list of organizations.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrganizationListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Organizations]
+      summary: 'Create an organization (super_admin only)'
+      operationId: admin.organizations.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OrganizationStoreRequest' }
+      responses:
+        '201':
+          description: 'Organization created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrganizationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/organizations/{organization}:
+    get:
+      tags: [Organizations]
+      summary: 'Show one organization (super_admin only)'
+      operationId: admin.organizations.show
+      parameters:
+        - in: path
+          name: organization
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Organization row.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrganizationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Organizations]
+      summary: 'Update an organization (super_admin only)'
+      operationId: admin.organizations.update
+      parameters:
+        - in: path
+          name: organization
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OrganizationUpdateRequest' }
+      responses:
+        '200':
+          description: 'Organization updated.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrganizationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Organizations]
+      summary: 'Soft-delete an organization (super_admin only)'
+      operationId: admin.organizations.destroy
+      parameters:
+        - in: path
+          name: organization
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: 'Organization deleted.' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/admin/organizations/{organization}/restore:
+    post:
+      tags: [Organizations]
+      summary: 'Restore a soft-deleted organization (super_admin only)'
+      operationId: admin.organizations.restore
+      parameters:
+        - in: path
+          name: organization
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 'Organization restored.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrganizationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  # =============================================================
+  # T-M12-015 — Platform health
+  # =============================================================
+  /api/v1/admin/health:
+    get:
+      tags: [PlatformHealth]
+      summary: 'Aggregate platform health (super_admin only)'
+      operationId: admin.health.summary
+      responses:
+        '200':
+          description: 'Platform health summary.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlatformHealthResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/admin/health/components:
+    get:
+      tags: [PlatformHealth]
+      summary: 'Per-component platform health (super_admin only)'
+      operationId: admin.health.components
+      responses:
+        '200':
+          description: 'Per-component health snapshot.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlatformHealthComponentsResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
 components:
   securitySchemes:
     sanctum:
@@ -583,6 +2182,17 @@ components:
       description: 'Laravel Sanctum personal access token (M2).'
       bearerFormat: 'Sanctum PAT'
       scheme: bearer
+  parameters:
+    PathReportId:
+      in: path
+      name: report
+      required: true
+      schema: { type: string, format: uuid }
+    PathDepartmentId:
+      in: path
+      name: department
+      required: true
+      schema: { type: string, format: uuid }
   schemas:
     ApiResponse:
       type: object
@@ -703,6 +2313,535 @@ components:
         - type: object
           properties:
             data: { $ref: '#/components/schemas/User' }
+    UserListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/User' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+    UserStoreRequest:
+      type: object
+      required: [mobile]
+      properties:
+        name: { type: string, maxLength: 255 }
+        mobile: { type: string, maxLength: 32, description: 'E.164 mobile number; unique per user.' }
+        email: { type: string, format: email, nullable: true, maxLength: 255 }
+        password: { type: string, nullable: true, minLength: 8, maxLength: 128 }
+        status:
+          type: string
+          nullable: true
+          enum: ['active', 'suspended', 'banned', 'pending']
+        anonymous_enabled: { type: boolean, nullable: true }
+        roles:
+          type: array
+          nullable: true
+          items: { type: string, description: 'Spatie role name.' }
+    UserUpdateRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 255 }
+        mobile: { type: string, maxLength: 32 }
+        email: { type: string, format: email, nullable: true, maxLength: 255 }
+        password: { type: string, nullable: true, minLength: 8, maxLength: 128 }
+        status:
+          type: string
+          nullable: true
+          enum: ['active', 'suspended', 'banned', 'pending']
+        anonymous_enabled: { type: boolean, nullable: true }
+        roles:
+          type: array
+          nullable: true
+          items: { type: string }
+    RoleResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/Role' }
+    RoleListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/Role' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+    Role:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: 'moderator' }
+        guard_name: { type: string, example: 'web' }
+        protected: { type: boolean, example: false }
+        permissions:
+          type: array
+          items: { type: string, example: 'reports.view' }
+        created_at: { type: string, format: date-time, nullable: true }
+    RoleStoreRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 64, example: 'analyst' }
+        guard_name: { type: string, nullable: true, maxLength: 64, example: 'web' }
+        permissions:
+          type: array
+          nullable: true
+          items: { type: string, description: 'Spatie permission name to attach on create.' }
+    RoleUpdateRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 64 }
+        guard_name: { type: string, nullable: true, maxLength: 64 }
+        permissions:
+          type: array
+          nullable: true
+          items: { type: string }
+    RolePermissionsSyncRequest:
+      type: object
+      required: [permissions]
+      properties:
+        permissions:
+          type: array
+          items: { type: string, description: 'Full replacement list of permission names.' }
+    PermissionResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/Permission' }
+    PermissionListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/Permission' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+    Permission:
+      type: object
+      properties:
+        id: { type: integer, example: 12 }
+        name: { type: string, example: 'reports.view' }
+        guard_name: { type: string, example: 'web' }
+        created_at: { type: string, format: date-time, nullable: true }
+    SecurityPolicyResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/SecurityPolicy' }
+    SecurityPolicyListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/SecurityPolicy' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+    SecurityPolicy:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        key: { type: string, example: 'password.min_length' }
+        value: { type: object, nullable: true, additionalProperties: true }
+        type: { type: string, enum: ['string', 'int', 'bool', 'array'] }
+        description: { type: string, nullable: true }
+        created_at: { type: string, format: date-time, nullable: true }
+        updated_at: { type: string, format: date-time, nullable: true }
+    SecurityPolicyUpsertRequest:
+      type: object
+      required: [key]
+      properties:
+        key: { type: string, maxLength: 128, pattern: '^[a-z0-9._]+$' }
+        value: { type: object, nullable: true, additionalProperties: true }
+        type: { type: string, nullable: true, enum: ['string', 'int', 'bool', 'array'] }
+        description: { type: string, nullable: true, maxLength: 255 }
+    AuditLog:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid, nullable: true }
+        role: { type: string, nullable: true }
+        action: { type: string, example: 'user.created' }
+        entity: { type: string, nullable: true, example: 'User' }
+        entity_id: { type: string, nullable: true }
+        ip: { type: string, nullable: true }
+        device_fingerprint: { type: string, nullable: true }
+        metadata: { type: object, nullable: true, additionalProperties: true }
+        created_at: { type: string, format: date-time, nullable: true }
+    AuditLogListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/AuditLog' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+    IntegrationResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/Integration' }
+    IntegrationListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/Integration' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+    Integration:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, example: 'gmc' }
+        provider: { type: string, example: 'gmc' }
+        display_name: { type: string, example: 'Greater Chennai Corporation' }
+        base_url: { type: string, format: uri }
+        credentials: { type: object, additionalProperties: { type: string, example: '********' }, nullable: true }
+        settings: { type: object, nullable: true }
+        status: { type: string, enum: [active, degraded, disabled] }
+        last_check_at: { type: string, format: date-time, nullable: true }
+        last_error: { type: string, nullable: true }
+    IntegrationStoreRequest:
+      type: object
+      required: [code, provider, display_name, base_url, credentials]
+      properties:
+        code: { type: string, pattern: '^[a-z0-9_]+$', maxLength: 64 }
+        provider: { type: string, maxLength: 64 }
+        display_name: { type: string, maxLength: 128 }
+        base_url: { type: string, format: uri, maxLength: 512 }
+        credentials: { type: object, additionalProperties: true }
+        settings: { type: object, nullable: true }
+        status: { type: string, enum: [active, degraded, disabled] }
+    IntegrationUpdateRequest:
+      type: object
+      properties:
+        code: { type: string, pattern: '^[a-z0-9_]+$', maxLength: 64 }
+        provider: { type: string, maxLength: 64 }
+        display_name: { type: string, maxLength: 128 }
+        base_url: { type: string, format: uri, maxLength: 512 }
+        credentials: { type: object, additionalProperties: true }
+        settings: { type: object, nullable: true }
+        status: { type: string, enum: [active, degraded, disabled] }
+    MediaStorageResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/MediaStorage' }
+    MediaStorage:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        key: { type: string, example: 'media_storage' }
+        disk: { type: string, enum: [media_local, media_minio, media_s3] }
+        region: { type: string, nullable: true }
+        bucket: { type: string, nullable: true }
+        endpoint: { type: string, nullable: true }
+        retention_days: { type: integer }
+        encryption_at_rest: { type: boolean }
+        max_photo_bytes: { type: integer }
+        max_video_bytes: { type: integer }
+        max_document_bytes: { type: integer }
+        updated_at: { type: string, format: date-time, nullable: true }
+    MediaStorageUpdateRequest:
+      type: object
+      required: [disk, retention_days, encryption_at_rest, max_photo_bytes, max_video_bytes, max_document_bytes]
+      properties:
+        disk: { type: string, enum: [media_local, media_minio, media_s3] }
+        region: { type: string, nullable: true, maxLength: 64 }
+        bucket: { type: string, nullable: true, maxLength: 128 }
+        endpoint: { type: string, nullable: true, maxLength: 512 }
+        retention_days: { type: integer, minimum: 0, maximum: 3650 }
+        encryption_at_rest: { type: boolean }
+        max_photo_bytes: { type: integer, minimum: 0, maximum: 1073741824 }
+        max_video_bytes: { type: integer, minimum: 0, maximum: 5368709120 }
+        max_document_bytes: { type: integer, minimum: 0, maximum: 536870912 }
+    MediaStorageProbeResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                disk: { type: string }
+                reachable: { type: boolean }
+                message: { type: string }
+    NotificationChannelConfigResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/NotificationChannelConfig' }
+    NotificationChannelConfigListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/NotificationChannelConfig' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+    NotificationChannelConfig:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        channel: { type: string, enum: [mail, push, sms, webhook] }
+        code: { type: string }
+        display_name: { type: string }
+        credentials: { type: object, additionalProperties: { type: string, example: '********' }, nullable: true }
+        retry_policy: { type: object, nullable: true }
+        settings: { type: object, nullable: true }
+        per_locale_defaults: { type: object, nullable: true }
+        active: { type: boolean }
+    NotificationChannelConfigStoreRequest:
+      type: object
+      required: [channel, code, display_name, credentials]
+      properties:
+        channel: { type: string, enum: [mail, push, sms, webhook] }
+        code: { type: string, pattern: '^[a-z0-9_-]+$', maxLength: 64 }
+        display_name: { type: string, maxLength: 128 }
+        credentials: { type: object, additionalProperties: true }
+        retry_policy:
+          type: object
+          nullable: true
+          properties:
+            tries: { type: integer, minimum: 1, maximum: 10 }
+            backoff:
+              type: array
+              items: { type: integer, minimum: 1, maximum: 86400 }
+              maxItems: 10
+        settings: { type: object, nullable: true }
+        per_locale_defaults: { type: object, nullable: true }
+        active: { type: boolean }
+    NotificationChannelConfigUpdateRequest:
+      type: object
+      properties:
+        display_name: { type: string, maxLength: 128 }
+        credentials: { type: object, additionalProperties: true }
+        retry_policy:
+          type: object
+          nullable: true
+          properties:
+            tries: { type: integer, minimum: 1, maximum: 10 }
+            backoff:
+              type: array
+              items: { type: integer, minimum: 1, maximum: 86400 }
+              maxItems: 10
+        settings: { type: object, nullable: true }
+        per_locale_defaults: { type: object, nullable: true }
+        active: { type: boolean }
+    SchedulerJobsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                jobs:
+                  type: array
+                  items: { $ref: '#/components/schemas/SchedulerJob' }
+    SchedulerJob:
+      type: object
+      properties:
+        id: { type: string, example: 'workflow:check-sla-breaches' }
+        command: { type: string }
+        expression: { type: string, example: '*/5 * * * *' }
+        next_due_at: { type: string, format: date-time, nullable: true }
+        timezone: { type: string, nullable: true }
+        without_overlapping: { type: boolean }
+        paused: { type: boolean }
+    SchedulerRunNowResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                job: { type: string }
+                result: { type: string }
+    SchedulerPauseResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                job: { type: string }
+                paused: { type: boolean }
+    OrganizationResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/Organization' }
+    OrganizationListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/Organization' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+    Organization:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, example: 'gmc' }
+        name: { type: string, example: 'Greater Chennai Corporation' }
+        legal_name: { type: string, nullable: true }
+        domain: { type: string, nullable: true }
+        contact: { type: object, nullable: true }
+        branding: { type: object, nullable: true }
+        storage_quota_mb: { type: integer }
+        settings: { type: object, nullable: true }
+        active: { type: boolean }
+    OrganizationStoreRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string, pattern: '^[a-z0-9_-]+$', maxLength: 64 }
+        name: { type: string, maxLength: 128 }
+        legal_name: { type: string, nullable: true, maxLength: 255 }
+        domain: { type: string, nullable: true, maxLength: 128 }
+        contact: { type: object, nullable: true }
+        branding: { type: object, nullable: true }
+        storage_quota_mb: { type: integer, minimum: 0, maximum: 1048576 }
+        settings: { type: object, nullable: true }
+        active: { type: boolean }
+    OrganizationUpdateRequest:
+      type: object
+      properties:
+        code: { type: string, pattern: '^[a-z0-9_-]+$', maxLength: 64 }
+        name: { type: string, maxLength: 128 }
+        legal_name: { type: string, nullable: true, maxLength: 255 }
+        domain: { type: string, nullable: true, maxLength: 128 }
+        contact: { type: object, nullable: true }
+        branding: { type: object, nullable: true }
+        storage_quota_mb: { type: integer, minimum: 0, maximum: 1048576 }
+        settings: { type: object, nullable: true }
+        active: { type: boolean }
+    PlatformHealthResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                status: { type: string, enum: [ok, degraded, down] }
+                checked_at: { type: string, format: date-time }
+                components:
+                  type: object
+                  additionalProperties: { $ref: '#/components/schemas/HealthComponent' }
+    PlatformHealthComponentsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                checked_at: { type: string, format: date-time }
+                components:
+                  type: object
+                  additionalProperties: { $ref: '#/components/schemas/HealthComponent' }
+    HealthComponent:
+      type: object
+      properties:
+        status: { type: string, enum: [ok, degraded, down] }
+        latency_ms: { type: integer }
+        detail: { type: string }
+        checked_at: { type: string, format: date-time }
+    PermissionStoreRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 128, example: 'reports.export' }
+        guard_name: { type: string, nullable: true, maxLength: 64, example: 'web' }
+    ReportTypeResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/ReportType' }
+    ReportTypeListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/ReportType' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+    ReportType:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: 'Pothole' }
+        code: { type: string, example: 'pothole' }
+        description: { type: string, nullable: true }
+        icon: { type: string, nullable: true }
+        color: { type: string, nullable: true }
+        department_default_id: { type: string, format: uuid, nullable: true }
+        requires_video: { type: boolean }
+        requires_photo: { type: boolean }
+        min_photos: { type: integer }
+        max_photos: { type: integer }
+        workflow_definition_id: { type: string, format: uuid, nullable: true }
+        validation_rules: { type: object, nullable: true, additionalProperties: true }
+        active: { type: boolean }
+        created_at: { type: string, format: date-time, nullable: true }
+        updated_at: { type: string, format: date-time, nullable: true }
+        deleted_at: { type: string, format: date-time, nullable: true }
+    ReportTypeStoreRequest:
+      type: object
+      required: [name, code]
+      properties:
+        name: { type: string, maxLength: 255 }
+        code: { type: string, maxLength: 64, pattern: '^[a-z0-9_]+$' }
+        description: { type: string, nullable: true, maxLength: 1000 }
+        icon: { type: string, nullable: true, maxLength: 64 }
+        color: { type: string, nullable: true, maxLength: 16 }
+        department_default_id: { type: string, format: uuid, nullable: true }
+        requires_video: { type: boolean, nullable: true }
+        requires_photo: { type: boolean, nullable: true }
+        min_photos: { type: integer, nullable: true, minimum: 0, maximum: 99 }
+        max_photos: { type: integer, nullable: true, minimum: 0, maximum: 99 }
+        workflow_definition_id: { type: string, format: uuid, nullable: true }
+        validation_rules: { type: object, nullable: true, additionalProperties: true }
+        active: { type: boolean, nullable: true }
+    ReportTypeUpdateRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 255 }
+        code: { type: string, maxLength: 64, pattern: '^[a-z0-9_]+$' }
+        description: { type: string, nullable: true, maxLength: 1000 }
+        icon: { type: string, nullable: true, maxLength: 64 }
+        color: { type: string, nullable: true, maxLength: 16 }
+        department_default_id: { type: string, format: uuid, nullable: true }
+        requires_video: { type: boolean }
+        requires_photo: { type: boolean }
+        min_photos: { type: integer, minimum: 0, maximum: 99 }
+        max_photos: { type: integer, minimum: 0, maximum: 99 }
+        workflow_definition_id: { type: string, format: uuid, nullable: true }
+        validation_rules: { type: object, nullable: true, additionalProperties: true }
+        active: { type: boolean }
     DepartmentStoreRequest:
       type: object
       required: [name, code]
@@ -926,6 +3065,11 @@ components:
           schema: { $ref: '#/components/schemas/ErrorResponse' }
     Unauthorized:
       description: 'Authentication required or invalid.'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Conflict:
+      description: 'Resource state conflict (e.g. restoring a non-deleted row).'
       content:
         application/json:
           schema: { $ref: '#/components/schemas/ErrorResponse' }
@@ -2893,3 +5037,12 @@ tags:
   -
     name: Moderation
     description: 'Moderator portal: queue, duplicate + fraud review, manual override, reassign, analytics, AI performance (M10).'
+  -
+    name: Operations
+    description: 'Department-officer portal: dashboard, list, lifecycle actions (accept/start/progress/resolve/close), internal notes, exports (M11).'
+  -
+    name: 'Department Admin'
+    description: 'Super-admin department sub-resources: officer attach/detach, SLA, working hours, holiday calendar (M11).'
+  -
+    name: 'Super Admin'
+    description: 'Super Admin user, role, and permission management (M12).'

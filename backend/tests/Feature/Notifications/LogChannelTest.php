@@ -3,10 +3,14 @@
 declare(strict_types=1);
 
 use App\Modules\Notifications\Channels\LogChannel;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Notifications\Models\Notification;
 use App\Modules\Notifications\Models\NotificationTemplate;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Facades\Log;
+
+uses(RefreshDatabase::class);
+
 
 it('returns a success ChannelResult with sub-50ms latency', function (): void {
     $user = User::factory()->create();

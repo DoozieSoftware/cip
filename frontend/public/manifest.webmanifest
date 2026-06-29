@@ -1,0 +1,42 @@
+{
+  "name": "Civic Intelligence Platform",
+  "short_name": "CIP",
+  "description": "Civic Intelligence Platform — report civic issues with photos, video, and GPS.",
+  "start_url": "/citizen",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F172A",
+  "theme_color": "#0F62FE",
+  "categories": ["government", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Submit a report",
+      "short_name": "Report",
+      "description": "Open the camera to submit a new civic report",
+      "url": "/citizen/reports/new",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "My reports",
+      "short_name": "Reports",
+      "description": "View the reports you have submitted",
+      "url": "/citizen/reports",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+    }
+  ]
+}

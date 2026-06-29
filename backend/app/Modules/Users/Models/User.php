@@ -11,6 +11,7 @@ use Carbon\CarbonInterface;
 use Database\Factories\Modules\Users\Models\UserFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -144,6 +145,24 @@ class User extends Authenticatable
     public function isActive(): bool
     {
         return $this->status === 'active' && $this->deleted_at === null;
+    }
+
+    /**
+     * M11 — M:N relation to the departments this user is a member of.
+     * Backed by the `department_users` pivot populated by the M3 seeders.
+     *
+     * @return BelongsToMany<Department, $this>
+     */
+    public function departments(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            \App\Modules\Departments\Models\Department::class,
+            'department_users',
+            'user_id',
+            'department_id',
+        )->using(\App\Modules\Users\DepartmentUserPivot::class)
+          ->withPivot(['id', 'is_manager', 'assigned_at'])
+          ->withTimestamps();
     }
 
     /**

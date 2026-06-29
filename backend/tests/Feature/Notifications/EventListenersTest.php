@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\AI\Events\AiCompleted;
 use App\Modules\Departments\Models\Department;
 use App\Modules\Notifications\Jobs\SendNotificationJob;
@@ -17,6 +18,10 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
+
+
 
 beforeEach(function (): void {
     Bus::fake([SendNotificationJob::class]);

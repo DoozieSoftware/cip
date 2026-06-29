@@ -7,6 +7,9 @@ use App\Modules\Authentication\Services\OtpService;
 use App\Modules\Security\Models\AuditLog;
 use App\Modules\Shared\Exceptions\ModelImmutableException;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 /**
  * Feature coverage for AuditMiddleware (T-M2-020).

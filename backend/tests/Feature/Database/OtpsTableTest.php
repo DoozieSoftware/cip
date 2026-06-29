@@ -3,9 +3,13 @@
 declare(strict_types=1);
 
 use Illuminate\Database\QueryException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
+
 
 /**
  * Roundtrip test for the otps migration introduced in T-M2-004.

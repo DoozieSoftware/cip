@@ -3,12 +3,16 @@
 declare(strict_types=1);
 
 use App\Modules\Notifications\Channels\WebhookChannel;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Notifications\Models\Notification;
 use App\Modules\Notifications\Models\NotificationTemplate;
 use App\Modules\Notifications\ValueObjects\ChannelResult;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
+
 
 it('returns a success ChannelResult when the webhook returns 2xx', function (): void {
     Http::fake([

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Notifications\Channels\SmsChannel;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Notifications\Contracts\SmsGatewayInterface;
 use App\Modules\Notifications\Models\Notification;
 use App\Modules\Notifications\Models\NotificationTemplate;
@@ -10,6 +11,9 @@ use App\Modules\Notifications\ValueObjects\ChannelResult;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Str;
 use Mockery as m;
+
+uses(RefreshDatabase::class);
+
 
 afterEach(function (): void {
     m::close();

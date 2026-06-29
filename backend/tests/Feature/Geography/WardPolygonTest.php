@@ -3,11 +3,15 @@
 declare(strict_types=1);
 
 use App\Modules\Departments\Models\City;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Departments\Models\Ward;
 use App\Modules\Departments\Models\Zone;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+
+uses(RefreshDatabase::class);
+
 
 it('creates the wards table with the required columns', function (): void {
     expect(Schema::hasTable('wards'))->toBeTrue();

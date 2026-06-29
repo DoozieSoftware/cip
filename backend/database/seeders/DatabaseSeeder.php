@@ -39,6 +39,8 @@ class DatabaseSeeder extends Seeder
             AiProvidersSeeder::class,
             PromptsSeeder::class,
             NotificationTemplatesSeeder::class,
+            SecurityPoliciesSeeder::class,
+            DemoUsersSeeder::class,
         ]);
     }
 }

@@ -10,6 +10,9 @@ use App\Modules\Departments\Repositories\DepartmentRepository;
 use App\Modules\Departments\Services\DepartmentService;
 use App\Modules\Shared\Exceptions\ApiException;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 it('creates a department, persists it, and emits DepartmentCreated', function (): void {
     Event::fake([DepartmentCreated::class]);

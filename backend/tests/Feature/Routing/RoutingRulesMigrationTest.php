@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
 
 it('creates the routing_rules table with the expected columns', function (): void {
     expect(Schema::hasTable('routing_rules'))->toBeTrue();

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\AI\Events\AiCompleted;
 use App\Modules\AI\Listeners\AiCompletedListener;
 use App\Modules\Reports\Models\Report;
@@ -12,6 +13,10 @@ use Database\Seeders\ReportTypesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\RoutingRulesSeeder;
 use Illuminate\Support\Facades\Event;
+
+uses(RefreshDatabase::class);
+
+
 
 beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();

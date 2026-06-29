@@ -11,6 +11,14 @@ use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
+function flagSuperAdmin(): User
+{
+    $admin = User::factory()->create();
+    $admin->assignRole('super_admin');
+
+    return $admin;
+}
+
 beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();
 });
@@ -120,7 +128,7 @@ it('uses the session id for an anonymous caller', function (): void {
 // --------------------------------------------------------------------------
 
 it('evaluates a flag over HTTP for a known user', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(flagSuperAdmin());
     AppConfig::factory()->enabled(100)->create(['key' => 'feature.http_on']);
 
     $user = User::factory()->create();
@@ -132,7 +140,7 @@ it('evaluates a flag over HTTP for a known user', function (): void {
 });
 
 it('evaluates a flag over HTTP for an anonymous session', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(flagSuperAdmin());
     AppConfig::factory()->enabled(100)->create(['key' => 'feature.http_anon']);
 
     $this->getJson('/api/v1/admin/app-configs/feature.http_anon/evaluate?session_id=sess-001')
@@ -142,7 +150,7 @@ it('evaluates a flag over HTTP for an anonymous session', function (): void {
 });
 
 it('returns 404 for an unknown flag on the evaluate endpoint', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(flagSuperAdmin());
 
     $this->getJson('/api/v1/admin/app-configs/does.not.exist/evaluate')
         ->assertStatus(404)

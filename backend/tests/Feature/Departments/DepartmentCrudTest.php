@@ -14,7 +14,7 @@ beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();
 });
 
-function makeSuperAdmin(): User
+function departmentSuperAdmin(): User
 {
     $user = User::factory()->create();
     $user->assignRole('super_admin');
@@ -32,7 +32,7 @@ it('rejects authenticated non-admin callers with 403', function (): void {
 });
 
 it('lists departments paginated when called by super_admin', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(departmentSuperAdmin());
     Department::factory()->count(3)->create();
 
     $response = $this->getJson('/api/v1/admin/departments?per_page=2');
@@ -43,7 +43,7 @@ it('lists departments paginated when called by super_admin', function (): void {
 });
 
 it('creates a department via POST', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(departmentSuperAdmin());
 
     $response = $this->postJson('/api/v1/admin/departments', [
         'name' => 'Public Works',
@@ -58,7 +58,7 @@ it('creates a department via POST', function (): void {
 });
 
 it('rejects a duplicate code with 422', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(departmentSuperAdmin());
     Department::factory()->create(['code' => 'DUP']);
 
     $this->postJson('/api/v1/admin/departments', [
@@ -68,7 +68,7 @@ it('rejects a duplicate code with 422', function (): void {
 });
 
 it('shows a single department by id', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(departmentSuperAdmin());
     $dept = Department::factory()->create();
 
     $this->getJson("/api/v1/admin/departments/{$dept->id}")
@@ -77,14 +77,14 @@ it('shows a single department by id', function (): void {
 });
 
 it('returns 404 for an unknown id', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(departmentSuperAdmin());
 
     $this->getJson('/api/v1/admin/departments/00000000-0000-0000-0000-000000000000')
         ->assertStatus(404);
 });
 
 it('updates a department via PUT (partial)', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(departmentSuperAdmin());
     $dept = Department::factory()->create(['name' => 'Old', 'code' => 'OLD']);
 
     $this->putJson("/api/v1/admin/departments/{$dept->id}", ['name' => 'New'])
@@ -96,7 +96,7 @@ it('updates a department via PUT (partial)', function (): void {
 });
 
 it('soft-deletes a department via DELETE', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(departmentSuperAdmin());
     $dept = Department::factory()->create();
 
     $this->deleteJson("/api/v1/admin/departments/{$dept->id}")
@@ -108,7 +108,7 @@ it('soft-deletes a department via DELETE', function (): void {
 });
 
 it('validates input on POST', function (): void {
-    Sanctum::actingAs(makeSuperAdmin());
+    Sanctum::actingAs(departmentSuperAdmin());
 
     $this->postJson('/api/v1/admin/departments', [
         'name' => '',

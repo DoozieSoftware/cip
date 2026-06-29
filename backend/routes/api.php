@@ -7,6 +7,7 @@ use App\Modules\AI\Http\Controllers\Admin\AiPromptAdminController;
 use App\Modules\AI\Http\Controllers\Admin\AiProviderAdminController;
 use App\Modules\AI\Http\Controllers\Internal\InternalAiController;
 use App\Modules\Authentication\Http\Controllers\AuthController;
+use App\Modules\Departments\Http\Controllers\Admin\DepartmentAdminController;
 use App\Modules\Departments\Http\Controllers\Admin\DepartmentController;
 use App\Modules\Media\Http\Controllers\Api\MediaController;
 use App\Modules\Moderation\Http\Controllers\Api\ModerationActionsController;
@@ -15,10 +16,23 @@ use App\Modules\Notifications\Http\Controllers\Api\NotificationPreferenceControl
 use App\Modules\Notifications\Http\Controllers\Api\NotificationsController;
 use App\Modules\Reports\Http\Controllers\Api\ReportsController;
 use App\Modules\Routing\Http\Controllers\Admin\ReassignController;
+use App\Modules\Security\Http\Controllers\Api\AuditLogController;
+use App\Modules\Security\Http\Controllers\Api\SecurityDashboardController;
+use App\Modules\Users\Http\Controllers\Admin\AdminUserController;
+use App\Modules\Users\Http\Controllers\Admin\AdminRoleController;
+use App\Modules\Users\Http\Controllers\Admin\AdminPermissionController;
+use App\Modules\Security\Http\Controllers\Admin\AdminSecurityPolicyController;
+use App\Modules\Reports\Http\Controllers\Admin\AdminReportTypeController;
 use App\Modules\Routing\Http\Controllers\Admin\RoutingAdminController;
 use App\Modules\Settings\Http\Controllers\Admin\AppConfigController;
 use App\Modules\Settings\Http\Controllers\Admin\SettingController;
 use App\Modules\Workflow\Http\Controllers\Admin\WorkflowAdminController;
+use App\Modules\Integrations\Http\Controllers\Admin\AdminIntegrationController;
+use App\Modules\Media\Http\Controllers\Admin\AdminStorageController;
+use App\Modules\Notifications\Http\Controllers\Admin\AdminNotificationConfigController;
+use App\Modules\Shared\Http\Controllers\Admin\SchedulerController;
+use App\Modules\Departments\Http\Controllers\Admin\AdminOrganizationController;
+use App\Modules\Shared\Http\Controllers\Admin\PlatformHealthController;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Route;
 
@@ -67,6 +81,88 @@ Route::prefix('v1')->group(function (): void {
         Route::get('departments/{department}', [DepartmentController::class, 'show'])->name('departments.show');
         Route::put('departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
         Route::delete('departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
+
+        // T-M11-019 — Audit log search (super_admin / auditor / department_admin)
+        Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+        // T-M11-020 — Security dashboard (super_admin / auditor / department_admin)
+        Route::get('security/dashboard', [SecurityDashboardController::class, 'index'])->name('security.dashboard');
+        // T-M12-001 — User CRUD (super_admin)
+        Route::get('users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::post('users', [AdminUserController::class, 'store'])->name('users.store');
+        Route::get('users/{user}', [AdminUserController::class, 'show'])->name('users.show');
+        Route::put('users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+        Route::delete('users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+        Route::post('users/{user}/restore', [AdminUserController::class, 'restore'])->name('users.restore');
+        // T-M12-002 — Role + Permission directory (super_admin only)
+        Route::get('roles', [AdminRoleController::class, 'index'])->name('roles.index');
+        Route::post('roles', [AdminRoleController::class, 'store'])->name('roles.store');
+        Route::get('roles/{role}', [AdminRoleController::class, 'show'])->name('roles.show');
+        Route::put('roles/{role}', [AdminRoleController::class, 'update'])->name('roles.update');
+        Route::delete('roles/{role}', [AdminRoleController::class, 'destroy'])->name('roles.destroy');
+        Route::post('roles/{role}/permissions/sync', [AdminRoleController::class, 'syncPermissionsEndpoint'])->name('roles.permissions.sync');
+        Route::get('permissions', [AdminPermissionController::class, 'index'])->name('permissions.index');
+        Route::post('permissions', [AdminPermissionController::class, 'store'])->name('permissions.store');
+        Route::get('permissions/{permission}', [AdminPermissionController::class, 'show'])->name('permissions.show');
+        Route::delete('permissions/{permission}', [AdminPermissionController::class, 'destroy'])->name('permissions.destroy');
+
+        // T-M12-003 — Report-type CRUD (super_admin)
+        Route::get('report-types', [AdminReportTypeController::class, 'index'])->name('report-types.index');
+        Route::post('report-types', [AdminReportTypeController::class, 'store'])->name('report-types.store');
+        Route::get('report-types/{report_type}', [AdminReportTypeController::class, 'show'])->name('report-types.show');
+        Route::put('report-types/{report_type}', [AdminReportTypeController::class, 'update'])->name('report-types.update');
+        Route::delete('report-types/{report_type}', [AdminReportTypeController::class, 'destroy'])->name('report-types.destroy');
+        Route::post('report-types/{report_type}/restore', [AdminReportTypeController::class, 'restore'])->name('report-types.restore');
+
+        Route::get('security-policies', [AdminSecurityPolicyController::class, 'index'])->name('security-policies.index');
+        Route::post('security-policies', [AdminSecurityPolicyController::class, 'store'])->name('security-policies.store');
+        Route::get('security-policies/{key}', [AdminSecurityPolicyController::class, 'show'])->name('security-policies.show');
+        Route::put('security-policies/{key}', [AdminSecurityPolicyController::class, 'update'])->name('security-policies.update');
+        Route::delete('security-policies/{key}', [AdminSecurityPolicyController::class, 'destroy'])->name('security-policies.destroy');
+
+        // T-M12-007 — Integrations CRUD (super_admin)
+        Route::get('integrations', [AdminIntegrationController::class, 'index'])->name('integrations.index');
+        Route::post('integrations', [AdminIntegrationController::class, 'store'])->name('integrations.store');
+        Route::get('integrations/{integration}', [AdminIntegrationController::class, 'show'])->name('integrations.show');
+        Route::put('integrations/{integration}', [AdminIntegrationController::class, 'update'])->name('integrations.update');
+        Route::delete('integrations/{integration}', [AdminIntegrationController::class, 'destroy'])->name('integrations.destroy');
+        Route::post('integrations/{integration}/restore', [AdminIntegrationController::class, 'restore'])->name('integrations.restore');
+        Route::post('integrations/{integration}/health', [AdminIntegrationController::class, 'health'])->name('integrations.health');
+        // T-M12-008 — Media storage config (super_admin)
+        Route::get('media/storage', [AdminStorageController::class, 'show'])->name('media.storage.show');
+        Route::put('media/storage', [AdminStorageController::class, 'update'])->name('media.storage.update');
+        Route::post('media/storage/probe', [AdminStorageController::class, 'probe'])->name('media.storage.probe');
+        // T-M12-009 — Notification channel configs (super_admin)
+        Route::get('notification-configs', [AdminNotificationConfigController::class, 'index'])->name('notification-configs.index');
+        Route::post('notification-configs', [AdminNotificationConfigController::class, 'store'])->name('notification-configs.store');
+        Route::get('notification-configs/{config}', [AdminNotificationConfigController::class, 'show'])->name('notification-configs.show');
+        Route::put('notification-configs/{config}', [AdminNotificationConfigController::class, 'update'])->name('notification-configs.update');
+        Route::delete('notification-configs/{config}', [AdminNotificationConfigController::class, 'destroy'])->name('notification-configs.destroy');
+        Route::post('notification-configs/{config}/restore', [AdminNotificationConfigController::class, 'restore'])->name('notification-configs.restore');
+        // T-M12-012 — Scheduler dashboard (super_admin)
+        Route::get('scheduler/jobs', [SchedulerController::class, 'index'])->name('scheduler.jobs.index');
+        Route::post('scheduler/jobs/{id}/run-now', [SchedulerController::class, 'runNow'])->name('scheduler.jobs.run-now');
+        Route::post('scheduler/jobs/{id}/pause', [SchedulerController::class, 'pause'])->name('scheduler.jobs.pause');
+        Route::post('scheduler/jobs/{id}/resume', [SchedulerController::class, 'resume'])->name('scheduler.jobs.resume');
+        // T-M12-013 — Organizations CRUD (super_admin)
+        Route::get('organizations', [AdminOrganizationController::class, 'index'])->name('organizations.index');
+        Route::post('organizations', [AdminOrganizationController::class, 'store'])->name('organizations.store');
+        Route::get('organizations/{organization}', [AdminOrganizationController::class, 'show'])->name('organizations.show');
+        Route::put('organizations/{organization}', [AdminOrganizationController::class, 'update'])->name('organizations.update');
+        Route::delete('organizations/{organization}', [AdminOrganizationController::class, 'destroy'])->name('organizations.destroy');
+        Route::post('organizations/{organization}/restore', [AdminOrganizationController::class, 'restore'])->name('organizations.restore');
+        // T-M12-015 — Platform health (super_admin)
+        Route::get('health', [PlatformHealthController::class, 'show'])->name('health.summary');
+        Route::get('health/components', [PlatformHealthController::class, 'components'])->name('health.components');
+
+        // T-M11-009 — Department admin surface (officers, SLAs,
+        // working hours, holiday calendar).
+        Route::prefix('departments/{department}')->name('departments.')->group(function (): void {
+            Route::get('officers', [DepartmentAdminController::class, 'listOfficers'])->name('officers.index');
+            Route::post('officers', [DepartmentAdminController::class, 'attachOfficer'])->name('officers.store');
+            Route::delete('officers/{user}', [DepartmentAdminController::class, 'detachOfficer'])->name('officers.destroy');
+            Route::patch('admin', [DepartmentAdminController::class, 'updateAdmin'])->name('admin.update');
+        });
+
 
         // Settings CRUD (T-M3-017)
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
@@ -156,6 +252,50 @@ Route::prefix('v1')->group(function (): void {
         Route::post('reports/{report}/merge', [ModerationActionsController::class, 'merge'])->name('reports.merge');
         Route::post('reports/{report}/reject', [ModerationActionsController::class, 'reject'])->name('reports.reject');
         Route::post('reports/{report}/escalate', [ModerationActionsController::class, 'escalate'])->name('reports.escalate');
+    });
+
+    // Operations portal (M11) — gated to the `department` role (and the
+    // super_admin / system bypass through DepartmentPolicy::before()).
+    // Rate limited with the department limiter.
+    Route::middleware([
+        'auth:sanctum',
+        'throttle:'.RouteServiceProvider::LIMITER_DEPARTMENT,
+    ])->prefix('department')->name('api.v1.department.')->group(function (): void {
+        // T-M11-007 — dashboard summary
+        Route::get('dashboard', [\App\Modules\Departments\Http\Controllers\Api\DepartmentDashboardController::class, 'show'])
+            ->middleware('can:viewDashboard')
+            ->name('dashboard');
+        // T-M11-008 — paginated list
+        Route::get('reports', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportListController::class, 'index'])
+            ->middleware('can:viewReports')
+            ->name('reports.index');
+        // T-M11-010 — CSV / XLSX / PDF export
+        Route::get('reports/export', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportExportController::class, 'export'])
+            ->middleware('can:viewReports')
+            ->name('reports.export');
+        // T-M11-006 — five lifecycle actions + T-M11-005 — internal note
+        Route::post('reports/{report}/accept', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController::class, 'accept'])
+            ->middleware('can:accept,report')
+            ->name('reports.accept');
+        Route::post('reports/{report}/start', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController::class, 'start'])
+            ->middleware('can:start,report')
+            ->name('reports.start');
+        Route::post('reports/{report}/progress', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController::class, 'progress'])
+            ->middleware('can:progress,report')
+            ->name('reports.progress');
+        Route::post('reports/{report}/resolve', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController::class, 'resolve'])
+            ->middleware('can:resolve,report')
+            ->name('reports.resolve');
+        Route::post('reports/{report}/close', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController::class, 'close'])
+            ->middleware('can:close,report')
+            ->name('reports.close');
+        // T-M11-005 — internal note (department-private)
+        Route::post('reports/{report}/note', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController::class, 'addNote'])
+            ->middleware('can:addNote,report')
+            ->name('reports.note');
+        Route::get('reports/{report}/notes', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController::class, 'listNotes'])
+            ->middleware('can:view,report')
+            ->name('reports.notes.index');
     });
 
     // Citizen PWA — report submission and read-back (M4)

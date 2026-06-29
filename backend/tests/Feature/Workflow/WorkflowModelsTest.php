@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 use App\Modules\Workflow\Models\WorkflowDefinition;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Workflow\Models\WorkflowState;
 use App\Modules\Workflow\Models\WorkflowTransition;
+
+uses(RefreshDatabase::class);
+
 
 it('round-trips a WorkflowDefinition through Eloquent', function (): void {
     $def = WorkflowDefinition::factory()->create();

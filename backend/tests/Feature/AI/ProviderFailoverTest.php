@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 use App\Modules\AI\Contracts\AIProviderInterface;
 use App\Modules\AI\Models\AiProviderConfig;
 use App\Modules\AI\Services\ProviderFailoverService;

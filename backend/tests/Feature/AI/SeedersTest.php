@@ -3,9 +3,13 @@
 declare(strict_types=1);
 
 use App\Modules\AI\Models\AiProviderConfig;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\AI\Models\PromptVersion;
 use Database\Seeders\AiProvidersSeeder;
 use Database\Seeders\PromptsSeeder;
+
+uses(RefreshDatabase::class);
+
 
 it('AiProvidersSeeder inserts mock as the highest-priority active provider', function (): void {
     (new AiProvidersSeeder)->run();

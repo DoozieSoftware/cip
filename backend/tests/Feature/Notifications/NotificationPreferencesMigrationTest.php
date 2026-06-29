@@ -3,10 +3,14 @@
 declare(strict_types=1);
 
 use App\Modules\Notifications\Models\NotificationPreference;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Users\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
+
 
 it('has the expected columns', function (): void {
     $columns = [

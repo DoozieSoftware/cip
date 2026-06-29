@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
+
 
 it('creates the notification_templates table with the expected columns', function (): void {
     expect(Schema::hasTable('notification_templates'))->toBeTrue();

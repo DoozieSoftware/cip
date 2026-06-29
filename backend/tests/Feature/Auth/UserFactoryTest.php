@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 use App\Modules\Users\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
 
 /**
  * Validates the UserFactory states introduced in T-M2-003.

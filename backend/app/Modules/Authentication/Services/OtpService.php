@@ -30,6 +30,16 @@ class OtpService extends BaseService
 {
     private const MAX_ATTEMPTS = 5;
 
+    /**
+     * In-memory cache of the most-recently-issued plaintext code per
+     * mobile. Used by the demo `/auth/send-otp` response so the
+     * Citizen PWA can sign in without an SMS gateway. Only populated
+     * in `local` / `testing` environments.
+     *
+     * @var array<string, string>
+     */
+    private array $latestPlain = [];
+
     private const MAX_REQUESTS_PER_HOUR = 5;
 
     /**
@@ -90,11 +100,26 @@ class OtpService extends BaseService
             sprintf('Your Civic Intelligence Platform verification code is %s. It expires in %d minutes.', $plain, $expiryMinutes),
         );
 
+        $this->latestPlain[$mobile] = $plain;
+
         return [
             'otp' => $otp,
             'plain' => $plain,
             'expires_at' => $otp->expires_at,
         ];
+    }
+
+    /**
+     * Return the most-recently-issued plaintext code for the given
+     * mobile. Returns `null` outside dev / testing environments.
+     */
+    public function latestCodeFor(string $mobile): ?string
+    {
+        if (! app()->environment(['local', 'testing'])) {
+            return null;
+        }
+
+        return $this->latestPlain[$mobile] ?? null;
     }
 
     /**

@@ -3,10 +3,13 @@
 declare(strict_types=1);
 
 use App\Modules\Authentication\Models\RefreshToken;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Authentication\Services\AuthenticationService;
 use App\Modules\Authentication\Services\OtpService;
 use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
+
+uses(RefreshDatabase::class);
 
 /**
  * Validates POST /api/v1/auth/refresh introduced in T-M2-015.

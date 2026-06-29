@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 use App\Modules\Settings\Models\AppConfig;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Schema;
+
+uses(RefreshDatabase::class);
+
 
 it('creates the app_configs table with the required columns', function (): void {
     expect(Schema::hasTable('app_configs'))->toBeTrue();

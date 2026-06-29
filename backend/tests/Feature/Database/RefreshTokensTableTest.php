@@ -3,9 +3,13 @@
 declare(strict_types=1);
 
 use App\Modules\Users\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
+
 
 /**
  * Roundtrip test for the refresh_tokens migration introduced in T-M2-006.

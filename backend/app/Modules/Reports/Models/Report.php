@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Reports\Models;
 
+use App\Modules\Departments\Models\Department;
 use App\Modules\Users\Models\User;
 use Database\Factories\Modules\Reports\Models\ReportFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -54,6 +55,16 @@ class Report extends Model
 
     use HasUuids;
     use SoftDeletes;
+
+    /**
+     * M11 — Department-internal notes attached to this report.
+     *
+     * @return HasMany<\App\Modules\Reports\Models\InternalNote, $this>
+     */
+    public function internalNotes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Modules\Reports\Models\InternalNote::class, 'report_id');
+    }
 
     protected $table = 'reports';
 
@@ -191,5 +202,16 @@ class Report extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(ReportAssignment::class, 'report_id');
+    }
+
+    /**
+     * M11 — BelongsTo the assigned Department. Nullable for unassigned
+     * (in which case the moderator portal still owns the report).
+     *
+     * @return BelongsTo<Department, $this>
+     */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
     }
 }

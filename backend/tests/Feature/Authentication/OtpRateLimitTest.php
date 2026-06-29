@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 use App\Modules\Authentication\Models\Otp;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Authentication\Services\OtpService;
 use App\Modules\Shared\Exceptions\ApiException;
+
+uses(RefreshDatabase::class);
 
 /**
  * Validates the rate-limited OTP request flow introduced in T-M2-011.
