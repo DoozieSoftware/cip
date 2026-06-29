@@ -664,3 +664,56 @@ export function useDeleteWorkflow() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'workflows'] }),
   });
 }
+
+/* ---------------------------------------------------------------------- *
+ *  T-M12-027 / T-M12-028 — Settings (retention + system config)
+ * ---------------------------------------------------------------------- */
+
+export interface Setting {
+  id: string;
+  key: string;
+  value: unknown;
+  type: 'string' | 'int' | 'bool' | 'json' | 'datetime';
+  description?: string | null;
+  is_public: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+  deleted_at?: string | null;
+}
+
+export function useSettings(q?: string) {
+  return useQuery({
+    queryKey: ['admin', 'settings', q],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<Setting[]>>('/admin/settings', { query: { q, per_page: 100 } });
+      return res.data;
+    },
+  });
+}
+
+export function useCreateSetting() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Partial<Setting>) =>
+      apiRequest<ApiEnvelope<Setting>>('/admin/settings', { method: 'POST', body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'settings'] }),
+  });
+}
+
+export function useUpdateSetting() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: Partial<Setting> & { id: string }) =>
+      apiRequest<ApiEnvelope<Setting>>(`/admin/settings/${encodeURIComponent(id)}`, { method: 'PUT', body: patch }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'settings'] }),
+  });
+}
+
+export function useDeleteSetting() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      apiRequest<unknown>(`/admin/settings/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'settings'] }),
+  });
+}

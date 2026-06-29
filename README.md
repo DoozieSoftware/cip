@@ -29,6 +29,49 @@ open http://localhost/api/documentation
 - **Modules:** Each domain lives in `backend/app/Modules/<Name>/` with controllers, services, policies, events, jobs, requests, resources, tests.
 
 See:
+
+## Super Admin Portal (M12)
+
+The platform-configuration console. Lives at `/admin` in the React
+frontend and at `/api/v1/admin/*` in the Laravel backend.
+
+### Sections
+
+| Tab | Backend endpoint | Purpose |
+| --- | --- | --- |
+| Dashboard | `/admin/{users,roles,report-types,security-policies,app-configs}` | Live counts |
+| Users | `/admin/users` | Create / disable staff, assign roles |
+| Roles & perms | `/admin/roles`, `/admin/permissions` | Spatie roles + permission sync |
+| Report types | `/admin/report-types` | Category configuration (photo / video / min / max) |
+| Workflows | `/admin/workflows` | Definitions, states, transition matrix |
+| Routing | `/admin/routing-rules` | Condition → department mapping |
+| AI | `/admin/ai/{providers,prompts}` | Provider credentials (write-only), prompt versions |
+| Integrations | `/admin/integrations` | External connectors (BBMP, BTP, …) |
+| Storage | `/admin/media-storage` | Disk, bucket, retention, max upload |
+| Notifications | `/admin/notification-configs` | Channel credentials, retry policy |
+| Security | `/admin/security-policies` | Password, OTP, rate limits |
+| Feature flags | `/admin/app-configs` | `enabled` + `rollout_percentage` + cohort |
+| Health | `/admin/health` | DB, Redis, queue, AI, storage, scheduler |
+| Scheduler | `/admin/scheduler/jobs` | Pause, resume, run-now |
+| Audit log | `/admin/audit-logs` | Read-only, paginated, filterable |
+| Retention | `/admin/settings?key=retention.*` | Media, audit, backup, notifications |
+| System | `/admin/settings` (catch-all) | Limits, locale, observability toggles |
+| Organizations | `/admin/organizations` | Multi-tenant config |
+
+### Security model
+
+* Every admin route is gated to `super_admin` (with `system` as
+  test/automation bypass).
+* Credentials (API keys, SMTP passwords, webhooks signing secrets)
+  are write-only — read responses mask every value as `********`.
+* The audit log is immutable: there is no write endpoint to it.
+  Reads cap at 500 rows per page.
+
+### Reference
+
+See `docs/admin.md` for the full operator manual and
+`backend/app/Modules/*/Http/Controllers/Admin/` for the controllers.
+
 - [`docs/`](./docs) — full specification
 - [`.codex/roadmap.md`](./.codex/roadmap.md) — implementation roadmap
 - [`.codex/task_queue.md`](./.codex/task_queue.md) — atomic task queue

@@ -18,6 +18,8 @@ const NAV = [
   { to: '/admin/ai', label: 'AI', icon: '🤖' },
   { to: '/admin/routing-rules', label: 'Routing', icon: '🧭' },
   { to: '/admin/workflows', label: 'Workflows', icon: '🔀' },
+  { to: '/admin/retention', label: 'Retention', icon: '🗄️' },
+  { to: '/admin/system', label: 'System', icon: '⚙️' },
   { to: '/admin/audit', label: 'Audit log', icon: '📜' },
 ];
 
