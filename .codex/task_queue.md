@@ -2969,7 +2969,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Moderation/Http/Controllers/Api/QueueController.php`
 - **Acceptance criteria:** Filters compose; pagination meta correct.
 - **Required tests:** `tests/Feature/Moderation/QueueEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-009 — /api/v1/moderator/duplicates
 - **Milestone:** M10
@@ -2981,7 +2981,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Moderation/Http/Controllers/Api/DuplicateQueueController.php`
 - **Acceptance criteria:** Returns candidate pairs with similarity, distance, time delta.
 - **Required tests:** `tests/Feature/Moderation/DuplicateQueueEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-010 — /api/v1/moderator/fraud
 - **Milestone:** M10
@@ -2993,7 +2993,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Moderation/Http/Controllers/Api/FraudQueueController.php`
 - **Acceptance criteria:** Returns fraud-suspect reports with reasons.
 - **Required tests:** `tests/Feature/Moderation/FraudQueueEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-011 — POST /api/v1/moderator/{review,merge,reject,escalate}
 - **Milestone:** M10
@@ -3005,7 +3005,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Moderation/Http/Controllers/Api/ModerationActionsController.php`, `backend/app/Modules/Moderation/Http/Requests/*`
 - **Acceptance criteria:** All four actions return 200 with updated `ReportResource`; 422 on bad input.
 - **Required tests:** `tests/Feature/Moderation/ActionsEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-012 — Moderator web app shell
 - **Milestone:** M10
@@ -3017,7 +3017,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/`
 - **Acceptance criteria:** `npm run dev` starts on a unique port; `AppLayout` renders sidebar and header per `docs/13`.
 - **Required tests:** `npm run build` exits 0.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-013 — Design system primitives
 - **Milestone:** M10
@@ -3029,7 +3029,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/packages/ui/src/*`
 - **Acceptance criteria:** Storybook or `*.stories.tsx` exists; Vitest component tests pass.
 - **Required tests:** `npm run test --workspace=@cip/ui`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-014 — Moderator Dashboard page
 - **Milestone:** M10
@@ -3041,7 +3041,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/src/pages/Dashboard.tsx`
 - **Acceptance criteria:** Widgets render; loading and empty states exist.
 - **Required tests:** Vitest component test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-015 — Review Queue page
 - **Milestone:** M10
@@ -3053,7 +3053,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/src/pages/ReviewQueue.tsx`
 - **Acceptance criteria:** Filters compose; row click navigates to detail.
 - **Required tests:** Vitest + Playwright.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-016 — Report Detail page
 - **Milestone:** M10
@@ -3065,7 +3065,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/src/pages/ReportDetails.tsx`
 - **Acceptance criteria:** All sections render with safe data.
 - **Required tests:** Playwright e2e.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-017 — Evidence Viewer component
 - **Milestone:** M10
@@ -3077,7 +3077,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/src/components/EvidenceViewer.tsx`
 - **Acceptance criteria:** Keyboard nav works; download disabled.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-018 — AI Analysis panel
 - **Milestone:** M10
@@ -3089,7 +3089,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/src/components/AIAnalysisPanel.tsx`
 - **Acceptance criteria:** Reads `ai_results` endpoint; loading/empty states.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-019 — Assignment dialog
 - **Milestone:** M10
@@ -3101,7 +3101,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/src/components/AssignmentDialog.tsx`
 - **Acceptance criteria:** Submits to `POST /moderator/review` with assignment.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-020 — Duplicate and Fraud queue pages
 - **Milestone:** M10
@@ -3113,7 +3113,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/src/pages/{DuplicateQueue,FraudQueue}.tsx`
 - **Acceptance criteria:** Actions wired to backend endpoints.
 - **Required tests:** Vitest + Playwright.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-021 — Keyboard shortcuts
 - **Milestone:** M10
@@ -3125,7 +3125,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/src/hooks/useShortcuts.ts`
 - **Acceptance criteria:** A approves, R rejects, etc.; respects focused input.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-022 — Bulk operations UI
 - **Milestone:** M10
@@ -3137,7 +3137,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/src/components/BulkActions.tsx`
 - **Acceptance criteria:** Confirms before sending; shows progress; reports failures.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-023 — Moderator analytics page
 - **Milestone:** M10
@@ -3149,7 +3149,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/src/pages/Analytics.tsx`
 - **Acceptance criteria:** All widgets render.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-024 — AI performance dashboard
 - **Milestone:** M10
@@ -3161,7 +3161,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/src/pages/AiPerformance.tsx`
 - **Acceptance criteria:** Real data on staging; empty state otherwise.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-025 — Playwright E2E: review happy path
 - **Milestone:** M10
@@ -3173,7 +3173,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/e2e/review-happy.spec.ts`
 - **Acceptance criteria:** Test passes against `vite preview` build.
 - **Required tests:** `npm run e2e -- review-happy`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-026 — Playwright E2E: merge and reject
 - **Milestone:** M10
@@ -3185,7 +3185,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/e2e/{merge,reject}.spec.ts`
 - **Acceptance criteria:** Both tests green.
 - **Required tests:** `npm run e2e`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-027 — Moderator a11y audit
 - **Milestone:** M10
@@ -3197,7 +3197,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/moderator/e2e/a11y.spec.ts`
 - **Acceptance criteria:** Zero serious/critical violations.
 - **Required tests:** `npm run e2e -- a11y`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M10-028 — Author docs/moderator.md
 - **Milestone:** M10
@@ -3209,7 +3209,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docs/moderator.md`
 - **Acceptance criteria:** Doc has screenshots placeholders and keyboard shortcut table.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 
 ---

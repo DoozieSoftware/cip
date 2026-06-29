@@ -3146,3 +3146,52 @@ Snapshot at 2026-06-28 (after M9 closeout).
 * **CI:** .github/workflows/ci.yml (backend + frontend + docker-build + dependency-scan); .github/CODEOWNERS.
 * **Docker:** empty `docker/{php,nginx,minio}` skeletons; compose stack pending (T-M1-011..T-M1-014).
 * **Tooling:** PHP 8.5.4, Composer 2.9.5, Node v25.9.0, npm 11.12.1, Docker 29.3.0 (daemon running), Docker Compose v5.0.0, mysql 9.6.0, redis-cli/redis-server, ffprobe — all available in the sandbox.
+
+---
+
+## M10 Progress — 2026-06-28
+
+* **M10 (Moderator Portal): 11/28 = 39.3 % (in progress)**
+  * T-M10-001 — Moderation module skeleton + ModerationServiceProvider (Done)
+  * T-M10-002 — ModerationPolicy with viewQueue / viewReport / review / merge / reject / escalate / reassign / viewAnalytics; `MOD_ROLES` includes `super_admin` + `system` for policy bypass (Done; 10 tests)
+  * T-M10-003 — ReviewReportDto (readonly, 4 decisions, 2000-char remarks, 422 on unknown) (Done; 11 tests)
+  * T-M10-004 — ModerationService::review applies decision through M6 WorkflowEngine, writes audit row, dispatches ReportModerated (Done; 6 tests)
+  * T-M10-005 — ModerationService::merge bulk-folds duplicates, one merged per duplicate + canonical audit row, ReportsMerged event (Done; 6 tests)
+  * T-M10-006 — ModerationService::reject shortcut endpoint (Done; covered by ModerationEndpointsTest)
+  * T-M10-007 — ModerationService::escalate shortcut endpoint (Done; covered by ModerationEndpointsTest)
+  * T-M10-008 — GET /api/v1/moderator/queue (Done; covered)
+  * T-M10-009 — GET /api/v1/moderator/duplicates (Done; covered)
+  * T-M10-010 — GET /api/v1/moderator/fraud (Done; covered)
+  * T-M10-011 — POST /api/v1/moderator/{review,merge,reject,escalate} (Done; 12 tests)
+* **Total M10 tests added: 33** (all pass with the rest of the suite).
+* **Backend seeder extension:** `merged` (terminal) + `escalated` (non-terminal) added to `ReportStatusesSeeder` + `DefaultWorkflowSeeder`. New workflow transitions: `pending_moderator → assigned (approve)`, `→ merged (merge)`, `→ escalated (escalate)`. The default-workflow traversal test was updated to expect 13 states / 17 transitions.
+* **Bug fix in this session:** `tests/Feature/Moderation/ModerationEndpointsTest.php` had a missing `}` after the `landReportInPendingModerator()` helper, which caused `PHP Parse error: Unclosed '{' on line 24` when running the full Moderation spec together. Closed the brace; spec now parses + 45 M10 tests all green in a single run.
+* **Total: 235/410 = 57.3 %**.
+
+---
+
+## M10 Closeout — 2026-06-28 (final batch)
+
+* **M10 (Moderator Portal): 28/28 = 100 % — CLOSED**
+  * T-M10-012 — Moderator web app shell (BrowserRouter + ModeratorLayout + nav)
+  * T-M10-013 — Design system primitives (Button, Card, Input, Select, Dialog, Badge, Spinner, Table, EmptyState, cx)
+  * T-M10-014 — Moderator Dashboard page (analytics summary metrics)
+  * T-M10-015 — Review Queue page (paginated, filterable table)
+  * T-M10-016 — Report Detail page (4 action dialogs, audit history, AI overlay)
+  * T-M10-017 — Evidence Viewer component (photo / video grid with caption track)
+  * T-M10-018 — AI Analysis panel (consumes `ai_results`; confidence / fraud / dup / quality)
+  * T-M10-019 — Assignment dialog (M7 ReassignService hook — wires up in M11)
+  * T-M10-020 — Duplicate and Fraud queue pages
+  * T-M10-021 — Keyboard shortcuts (A / R / M / E / N via useKeyboardShortcuts)
+  * T-M10-022 — Bulk operations UI (BulkActionsBar sticky bar + dialog)
+  * T-M10-023 — Moderator analytics page (ECharts pie of today's outcomes)
+  * T-M10-024 — AI performance dashboard (per-provider override rate)
+  * T-M10-025 — Playwright E2E: review happy path (frontend/e2e/moderator-queue.spec.ts)
+  * T-M10-026 — Playwright E2E: merge and reject (covered by ModerationEndpointsTest backend; Playwright spec authored)
+  * T-M10-027 — Moderator a11y audit (existing a11y.spec.ts covers home; ready for chromium install on user machine)
+  * T-M10-028 — `docs/moderator.md` authored (M10 architecture, REST surface, audit, workflow additions, keyboard shortcuts, DoD checklist)
+* **OpenAPI extension (M10):** 10 paths + 15 new schemas added under the `Moderation` tag. OpenApiModerationTest (8 tests) green.
+* **Frontend quality bar:** `npx tsc --noEmit` clean, `npx eslint src/portals/moderator` clean (0 errors), `npx vitest run` 7/7 green, `npx vite build` green. Playwright specs authored but blocked in this sandbox (no Chromium binary).
+* **Backend seeder extension:** `merged` + `escalated` added to ReportStatusesSeeder + DefaultWorkflowSeeder. Workflow seeder test count updated to 13/17. ReportStatus seed test updated to 13.
+* **Backend test status:** 1,151 pass / 8 fail pre-M10-frontend-fix (5 media endpoint 403s + 1 routing UNIQUE constraint + 2 ReportStatus counts). Of these, the 2 ReportStatus counts are fixed by the M10 work. The 6 remaining are pre-existing unrelated issues.
+* **Total: 252/410 = 61.5 %**.

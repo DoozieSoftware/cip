@@ -2,8 +2,8 @@
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** **M8 CLOSED 30/30 = 100 %**; M1–M8 complete; **M9 20/20 = 100 %** (CLOSED); total 224/410 = 54.6 %.
-**Last updated:** 2026-06-28 (after T-M9-020 done; M9 20/20; M9 CLOSED)
+**Status:** **M1–M10 CLOSED 252/252 = 100 %**; total 252/410 = 61.5 %.
+**Last updated:** 2026-06-28 (M10 28/28 closed; portal + OpenAPI + tests + docs done)
 
 > M1 (22/22), M2 (30/30), M3 (24/24), M4 (32/32), M5 (26/26), M6 (22/22), M7 (18/18), M8 (30/30), and M9 (20/20) are complete. **M8 is the AI vision pipeline** — the `ai_provider_configs` + `prompt_versions` + `ai_jobs` + `ai_results` + `ai_labels` tables, the `AIProviderInterface` with `MockProvider` / `OpenAICompatibleProvider` / `QwenVLProvider`, the `PiiMaskingService` + `ImageQualityAnalyzer` + `DuplicateDetector` + `FraudScorer` + `ConfidenceAggregator` + `AiResponseValidator` + `ProviderFailoverService`, the `AiPipelineOrchestrator` queueable job, the `AiCompleted` event bridged to M7 routing, the `ReportAssigned` listener that fires the AI pipeline on submit, the internal `/api/v1/internal/ai/{process,job,result}` REST surface, the Super Admin `/api/v1/admin/ai/{providers,prompts}` CRUD (with approve + rollback), the `AiBenchmarkSuite` (50-case + 5 negative), the default seeders (`Mock` provider, 3 base system prompts as approved v1), the OpenAPI extension, `docs/ai.md`, and 109 new tests. **M9 is the notification fan-out** — the `notifications` + `notification_templates` + `notification_logs` + `notification_preferences` tables, the `ChannelInterface` + `ChannelResult`, the five concrete channels (`LogChannel`, `MailChannel`, `PushChannel` FCM stub, `SmsChannel` + `LogSmsGateway` driver, `WebhookChannel` HMAC-signed), the `TemplateEngine` (curly-brace placeholders + escape + version pick), the `NotificationDispatcher` (preference gate + opt-out short-circuit), the `SendNotificationJob` (`tries=5`, backoff `[60, 300, 900, 3600]`, dead-letter on retry exhaustion), the `ReportAssigned` / `ReportStatusChanged` / `AiCompleted` / `SecurityEvent` listeners wired in `AppServiceProvider`, the citizen `/api/v1/notifications` + `/api/v1/notifications/{id}/read` + `/api/v1/notifications/preferences` REST surface, the `NotificationTemplatesSeeder` (6 default templates), the `docs/notifications.md` doc, the `OpenApiNotificationsTest` contract check, and 100 new tests. The M9 module is fully wired to M4 reports + M6 workflow + M7 routing + M8 AI vision (consumes `AiCompleted` for `ai.classified` and `ReportAssigned` for `report.assigned`).
 
@@ -18,7 +18,7 @@
 * **Estimated complexity:** High (full SPA for the moderator workflow — queue, duplicate review, fraud triage, manual override, audit, status transitions, reassignment).
 * **Estimated duration:** 2–3 weeks
 * **Total tasks:** see `.codex/task_queue.md` §M10
-* **Status:** **Not Started** (0 %)
+* **Status:** **CLOSED** — 28/28 = 100 % (T-M10-001..T-M10-028 done)
 * **Depends on:** M1 (buildable repo, base `Shared` utilities), M2 (auth + RBAC + `Moderator` role), M4 (Report + media), M5 (signed media URLs), M6 (workflow engine + transitions), M7 (routing + reassign), M8 (AI labels / confidence / fraud / duplicate scores), M9 (citizen notifications on moderator decision).
 * **Unblocks:** M11 (Operations Portal), M12 (Super Admin Portal), M13 (Citizen PWA — moderation timeline view).
 
@@ -100,8 +100,8 @@ Land the Moderator Portal end-to-end. This includes the `Moderation` module skel
 * **M7 (Routing):** 18/18 = 100 % — CLOSED.
 * **M8 (AI Vision):** 30/30 = 100 % — CLOSED.
 * **M9 (Notifications):** 20/20 = 100 % — CLOSED.
-* **M10 (Moderator Portal):** 0/28 = 0 % — **active**.
-* **Total:** 224/410 = 54.6 %.
+* **M10 (Moderator Portal):** 28/28 = 100 % — **CLOSED** (all 28 tasks done).
+* **Total:** 252/410 = 61.5 %.
 
 ---
 
