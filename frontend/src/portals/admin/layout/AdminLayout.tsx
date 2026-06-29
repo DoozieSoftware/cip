@@ -10,6 +10,8 @@ const NAV = [
   { to: '/admin/report-types', label: 'Report types', icon: '🏷️' },
   { to: '/admin/security-policies', label: 'Security', icon: '🔒' },
   { to: '/admin/feature-flags', label: 'Feature flags', icon: '🚩' },
+  { to: '/admin/health', label: 'Health', icon: '💓' },
+  { to: '/admin/scheduler', label: 'Scheduler', icon: '⏱️' },
   { to: '/admin/audit', label: 'Audit log', icon: '📜' },
 ];
 

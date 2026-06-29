@@ -28,3 +28,10 @@ if (typeof window !== 'undefined' && (!window.localStorage || typeof window.loca
     writable: true,
   });
 }
+
+import { afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
+
+afterEach(() => {
+  cleanup();
+});

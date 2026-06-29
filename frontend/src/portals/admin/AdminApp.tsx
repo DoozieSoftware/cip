@@ -11,6 +11,8 @@ const AdminReportTypes = lazy(() => import('./pages/AdminReportTypes'));
 const AdminSecurityPolicies = lazy(() => import('./pages/AdminSecurityPolicies'));
 const AdminFeatureFlags = lazy(() => import('./pages/AdminFeatureFlags'));
 const AdminAuditLog = lazy(() => import('./pages/AdminAuditLog'));
+const AdminPlatformHealth = lazy(() => import('./pages/AdminPlatformHealth'));
+const AdminScheduler = lazy(() => import('./pages/AdminScheduler'));
 
 function Fallback() {
   return (
@@ -33,6 +35,8 @@ export function AdminApp(): JSX.Element {
             <Route path="security-policies" element={<AdminSecurityPolicies />} />
             <Route path="feature-flags" element={<AdminFeatureFlags />} />
             <Route path="audit" element={<AdminAuditLog />} />
+            <Route path="health" element={<AdminPlatformHealth />} />
+            <Route path="scheduler" element={<AdminScheduler />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Route>
         </Routes>

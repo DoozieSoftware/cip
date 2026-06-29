@@ -179,3 +179,81 @@ export function useUpsertSecurityPolicy() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'security-policies'] }),
   });
 }
+
+/* ---------------------------------------------------------------------- *
+ *  T-M12-015 + T-M12-012 — Platform health + Scheduler
+ * ---------------------------------------------------------------------- */
+
+export interface HealthComponent {
+  status: 'ok' | 'degraded' | 'down';
+  latency_ms: number;
+  detail: string;
+  checked_at: string;
+  driver?: string;
+  count?: number;
+  disk?: string;
+}
+
+export interface PlatformHealth {
+  status: 'ok' | 'degraded' | 'down';
+  checked_at: string;
+  components: Record<string, HealthComponent>;
+}
+
+export interface SchedulerJob {
+  id: string;
+  name: string;
+  schedule: string;
+  next_due?: string | null;
+  last_run?: string | null;
+  paused: boolean;
+  description?: string;
+  command?: string;
+}
+
+export function usePlatformHealth() {
+  return useQuery({
+    queryKey: ['admin', 'health'],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<PlatformHealth>>('/admin/health');
+      return res.data;
+    },
+    refetchInterval: 30_000,
+  });
+}
+
+export function usePlatformHealthComponents() {
+  return useQuery({
+    queryKey: ['admin', 'health', 'components'],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<{ components: Record<string, HealthComponent>; checked_at: string }>>(
+        '/admin/health/components',
+      );
+      return res.data;
+    },
+    refetchInterval: 30_000,
+  });
+}
+
+export function useSchedulerJobs() {
+  return useQuery({
+    queryKey: ['admin', 'scheduler', 'jobs'],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<SchedulerJob[]>>('/admin/scheduler/jobs');
+      return res.data;
+    },
+    refetchInterval: 30_000,
+  });
+}
+
+export function useSchedulerAction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; action: 'run-now' | 'pause' | 'resume' }) => {
+      return apiRequest<unknown>(`/admin/scheduler/jobs/${encodeURIComponent(input.id)}/${input.action}`, {
+        method: 'POST',
+      });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'scheduler'] }),
+  });
+}
