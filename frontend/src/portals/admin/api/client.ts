@@ -427,3 +427,121 @@ export function useDeleteNotificationConfig() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'notification-configs'] }),
   });
 }
+
+/* ---------------------------------------------------------------------- *
+ *  T-M12-006 / T-M12-021 — AI providers + prompts
+ * ---------------------------------------------------------------------- */
+
+export interface AiProvider {
+  id: string;
+  code: string;
+  name: string;
+  driver: string;
+  base_url?: string | null;
+  model: string;
+  priority: number;
+  active: boolean;
+  has_secret: boolean;
+  cost_per_1k_in?: number | null;
+  cost_per_1k_out?: number | null;
+  description?: string | null;
+  last_health_at?: string | null;
+  last_health_status?: string | null;
+  created_at?: string | null;
+}
+
+export interface PromptVersion {
+  id: string;
+  name: string;
+  version: number;
+  status: 'draft' | 'approved' | 'deprecated';
+  template: string;
+  variables: string[];
+  description?: string | null;
+  approved_at?: string | null;
+  approved_by?: string | null;
+  created_at?: string | null;
+}
+
+export function useAiProviders(active?: boolean) {
+  return useQuery({
+    queryKey: ['admin', 'ai', 'providers', active],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<AiProvider[]>>('/admin/ai/providers', { query: { active, per_page: 50 } });
+      return res.data;
+    },
+  });
+}
+
+export function useAiPrompts(name?: string, status?: string) {
+  return useQuery({
+    queryKey: ['admin', 'ai', 'prompts', name, status],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<PromptVersion[]>>('/admin/ai/prompts', { query: { name, status, per_page: 50 } });
+      return res.data;
+    },
+  });
+}
+
+export function useCreateAiProvider() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Partial<AiProvider>) =>
+      apiRequest<ApiEnvelope<AiProvider>>('/admin/ai/providers', { method: 'POST', body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'providers'] }),
+  });
+}
+
+export function useUpdateAiProvider() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: Partial<AiProvider> & { id: string }) =>
+      apiRequest<ApiEnvelope<AiProvider>>(`/admin/ai/providers/${encodeURIComponent(id)}`, { method: 'PUT', body: patch }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'providers'] }),
+  });
+}
+
+export function useTestAiProvider() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      apiRequest<unknown>(`/admin/ai/providers/${encodeURIComponent(id)}/test`, { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'providers'] }),
+  });
+}
+
+export function useActivateAiProvider() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      apiRequest<unknown>(`/admin/ai/providers/${encodeURIComponent(id)}/activate`, { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'providers'] }),
+  });
+}
+
+export function useCreatePrompt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Partial<PromptVersion>) =>
+      apiRequest<ApiEnvelope<PromptVersion>>('/admin/ai/prompts', { method: 'POST', body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'prompts'] }),
+  });
+}
+
+export function useApprovePrompt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      apiRequest<unknown>(`/admin/ai/prompts/${encodeURIComponent(id)}/approve`, { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'prompts'] }),
+  });
+}
+
+export function useRollbackPrompt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      apiRequest<unknown>(`/admin/ai/prompts/${encodeURIComponent(id)}/rollback`, { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'prompts'] }),
+  });
+}

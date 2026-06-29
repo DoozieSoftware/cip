@@ -16,6 +16,7 @@ const AdminScheduler = lazy(() => import('./pages/AdminScheduler'));
 const AdminIntegrations = lazy(() => import('./pages/AdminIntegrations'));
 const AdminStorage = lazy(() => import('./pages/AdminStorage'));
 const AdminNotificationConfigs = lazy(() => import('./pages/AdminNotificationConfigs'));
+const AdminAi = lazy(() => import('./pages/AdminAi'));
 
 function Fallback() {
   return (
@@ -43,6 +44,7 @@ export function AdminApp(): JSX.Element {
             <Route path="integrations" element={<AdminIntegrations />} />
             <Route path="storage" element={<AdminStorage />} />
             <Route path="notifications" element={<AdminNotificationConfigs />} />
+            <Route path="ai" element={<AdminAi />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Route>
         </Routes>

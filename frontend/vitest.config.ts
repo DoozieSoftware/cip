@@ -13,5 +13,12 @@ export default defineConfig({
         url: 'http://localhost:5173',
       },
     },
+    // Run files serially to avoid jsdom + sandbox fork-bomb timeouts.
+    pool: 'forks',
+    poolOptions: {
+      forks: { singleFork: true },
+    },
+    testTimeout: 15_000,
+    hookTimeout: 30_000,
   },
 });
