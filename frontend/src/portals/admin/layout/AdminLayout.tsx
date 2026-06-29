@@ -12,6 +12,9 @@ const NAV = [
   { to: '/admin/feature-flags', label: 'Feature flags', icon: '🚩' },
   { to: '/admin/health', label: 'Health', icon: '💓' },
   { to: '/admin/scheduler', label: 'Scheduler', icon: '⏱️' },
+  { to: '/admin/integrations', label: 'Integrations', icon: '🔌' },
+  { to: '/admin/storage', label: 'Storage', icon: '💾' },
+  { to: '/admin/notifications', label: 'Notifications', icon: '🔔' },
   { to: '/admin/audit', label: 'Audit log', icon: '📜' },
 ];
 

@@ -257,3 +257,173 @@ export function useSchedulerAction() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'scheduler'] }),
   });
 }
+
+/* ---------------------------------------------------------------------- *
+ *  T-M12-007 / 008 / 009 — Integrations + Storage + Notification configs
+ * ---------------------------------------------------------------------- */
+
+export interface Integration {
+  id: string;
+  code: string;
+  name: string;
+  provider: string;
+  status: 'active' | 'degraded' | 'disabled' | 'pending';
+  base_url?: string | null;
+  credentials: Record<string, unknown>;
+  settings: Record<string, unknown>;
+  last_health_at?: string | null;
+  last_health_status?: string | null;
+  description?: string | null;
+  created_at?: string | null;
+  deleted_at?: string | null;
+}
+
+export interface MediaStorage {
+  id: string;
+  key: string;
+  value: {
+    disk: string;
+    bucket?: string | null;
+    endpoint?: string | null;
+    region?: string | null;
+    retention_days?: number;
+    max_upload_mb?: number;
+    public_url?: string | null;
+  };
+  updated_at?: string | null;
+}
+
+export interface NotificationConfig {
+  id: string;
+  channel: 'mail' | 'sms' | 'push' | 'webhook' | 'log';
+  code: string;
+  name: string;
+  active: boolean;
+  credentials: Record<string, unknown>;
+  retry_policy: {
+    max_attempts: number;
+    backoff: number[];
+  };
+  locale?: string | null;
+  description?: string | null;
+  created_at?: string | null;
+}
+
+export function useIntegrations(params: { q?: string; status?: string; provider?: string }) {
+  return useQuery({
+    queryKey: ['admin', 'integrations', params],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<Integration[]>>('/admin/integrations', {
+        query: { ...params, per_page: 100 },
+      });
+      return res.data;
+    },
+  });
+}
+
+export function useCreateIntegration() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Partial<Integration>) =>
+      apiRequest<ApiEnvelope<Integration>>('/admin/integrations', { method: 'POST', body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'integrations'] }),
+  });
+}
+
+export function useUpdateIntegration() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: Partial<Integration> & { id: string }) =>
+      apiRequest<ApiEnvelope<Integration>>(`/admin/integrations/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: patch,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'integrations'] }),
+  });
+}
+
+export function useDeleteIntegration() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      apiRequest<unknown>(`/admin/integrations/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'integrations'] }),
+  });
+}
+
+export function useProbeIntegration() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      apiRequest<unknown>(`/admin/integrations/${encodeURIComponent(id)}/health`, { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'integrations'] }),
+  });
+}
+
+export function useMediaStorage() {
+  return useQuery({
+    queryKey: ['admin', 'media-storage'],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<MediaStorage>>('/admin/media-storage');
+      return res.data;
+    },
+  });
+}
+
+export function useUpdateMediaStorage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: MediaStorage['value']) =>
+      apiRequest<ApiEnvelope<MediaStorage>>('/admin/media-storage', { method: 'PUT', body: { value: input } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'media-storage'] }),
+  });
+}
+
+export function useProbeMediaStorage() {
+  return useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest<ApiEnvelope<{ reachable: boolean; detail: string }>>('/admin/media-storage/probe', { method: 'POST' });
+      return res.data;
+    },
+  });
+}
+
+export function useNotificationConfigs(params: { channel?: string; active?: boolean }) {
+  return useQuery({
+    queryKey: ['admin', 'notification-configs', params],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<NotificationConfig[]>>('/admin/notification-configs', {
+        query: { ...params, per_page: 100 },
+      });
+      return res.data;
+    },
+  });
+}
+
+export function useUpsertNotificationConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Partial<NotificationConfig> & { id?: string }) => {
+      if (input.id) {
+        return apiRequest<ApiEnvelope<NotificationConfig>>(
+          `/admin/notification-configs/${encodeURIComponent(input.id)}`,
+          { method: 'PUT', body: input },
+        );
+      }
+      return apiRequest<ApiEnvelope<NotificationConfig>>('/admin/notification-configs', {
+        method: 'POST',
+        body: input,
+      });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'notification-configs'] }),
+  });
+}
+
+export function useDeleteNotificationConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      apiRequest<unknown>(`/admin/notification-configs/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'notification-configs'] }),
+  });
+}
