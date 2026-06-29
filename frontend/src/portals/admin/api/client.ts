@@ -545,3 +545,122 @@ export function useRollbackPrompt() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'prompts'] }),
   });
 }
+
+/* ---------------------------------------------------------------------- *
+ *  T-M12-005 / T-M12-004 / T-M12-020 / T-M12-019 — Routing + Workflow
+ * ---------------------------------------------------------------------- */
+
+export interface RoutingRule {
+  id: string;
+  name: string;
+  description?: string | null;
+  conditions: Record<string, unknown>;
+  destination_department_id?: string | null;
+  priority: number;
+  active: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface WorkflowDefinition {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  states: Array<{ key: string; name: string; terminal: boolean }>;
+  transitions: Array<{ from: string; to: string; action: string; required_role?: string | null }>;
+  active: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export function useRoutingRules(params: { q?: string; active?: boolean } = {}) {
+  return useQuery({
+    queryKey: ['admin', 'routing-rules', params],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<RoutingRule[]>>('/admin/routing-rules', {
+        query: { ...params, per_page: 100 },
+      });
+      return res.data;
+    },
+  });
+}
+
+export function useCreateRoutingRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Partial<RoutingRule>) =>
+      apiRequest<ApiEnvelope<RoutingRule>>('/admin/routing-rules', { method: 'POST', body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'routing-rules'] }),
+  });
+}
+
+export function useUpdateRoutingRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: Partial<RoutingRule> & { id: string }) =>
+      apiRequest<ApiEnvelope<RoutingRule>>(`/admin/routing-rules/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: patch,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'routing-rules'] }),
+  });
+}
+
+export function useDeleteRoutingRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      apiRequest<unknown>(`/admin/routing-rules/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'routing-rules'] }),
+  });
+}
+
+export function useReorderRoutingRules() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (order: string[]) =>
+      apiRequest<unknown>('/admin/routing-rules/reorder', { method: 'POST', body: { order } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'routing-rules'] }),
+  });
+}
+
+export function useWorkflows() {
+  return useQuery({
+    queryKey: ['admin', 'workflows'],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<WorkflowDefinition[]>>('/admin/workflows', { query: { per_page: 100 } });
+      return res.data;
+    },
+  });
+}
+
+export function useCreateWorkflow() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Partial<WorkflowDefinition>) =>
+      apiRequest<ApiEnvelope<WorkflowDefinition>>('/admin/workflows', { method: 'POST', body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'workflows'] }),
+  });
+}
+
+export function useUpdateWorkflow() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: Partial<WorkflowDefinition> & { id: string }) =>
+      apiRequest<ApiEnvelope<WorkflowDefinition>>(`/admin/workflows/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: patch,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'workflows'] }),
+  });
+}
+
+export function useDeleteWorkflow() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      apiRequest<unknown>(`/admin/workflows/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'workflows'] }),
+  });
+}

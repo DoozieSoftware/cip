@@ -16,6 +16,8 @@ const NAV = [
   { to: '/admin/storage', label: 'Storage', icon: '💾' },
   { to: '/admin/notifications', label: 'Notifications', icon: '🔔' },
   { to: '/admin/ai', label: 'AI', icon: '🤖' },
+  { to: '/admin/routing-rules', label: 'Routing', icon: '🧭' },
+  { to: '/admin/workflows', label: 'Workflows', icon: '🔀' },
   { to: '/admin/audit', label: 'Audit log', icon: '📜' },
 ];
 
