@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
 import { cx } from '../../moderator/design/cx';
-import { blockFileInputs, guardVideoDuration, scrubFile } from "../security/evidenceGuards";
+import { guardVideoDuration, scrubFile } from "../security/evidenceGuards";
 
 /**
  * T-M13-008 / T-M13-019 — Camera capture component.
@@ -45,10 +45,6 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
   const [active, setActive] = useState(false);
   const [error, setError] = useState<CameraError | null>(null);
   const [recordingMs, setRecordingMs] = useState(0);
-
-  // Per the docs we never expose a file input. This is the
-  // single source of truth for the OS camera launch.
-  const inputProps = blockFileInputs();
 
   useEffect(() => {
     return () => {
@@ -230,11 +226,6 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
         )}
       </div>
 
-      {/* Hidden file input kept for fallback only — its display:none
-          and the OS camera launch is forced via `capture`. The citizen
-          never sees a file picker because the CameraCapture flow goes
-          through getUserMedia exclusively. */}
-      <input type="file" {...inputProps} style={{ display: 'none' }} aria-hidden="true" tabIndex={-1} />
     </div>
   );
 }

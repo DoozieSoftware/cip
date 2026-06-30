@@ -1,8 +1,9 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateReport, useReportTypes, type ReportType } from '../api/client';
 import { Spinner, cx } from '../../moderator/design';
+import { CameraCapture, type CameraError } from '../components/CameraCapture';
 
 export default function SubmitPage(): JSX.Element {
   const navigate = useNavigate();
@@ -15,6 +16,11 @@ export default function SubmitPage(): JSX.Element {
   const [address, setAddress] = useState<string>('');
   const [locating, setLocating] = useState<boolean>(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [showVideo, setShowVideo] = useState<boolean>(false);
+
+  function onCameraError(err: CameraError): void {
+    setError(err.message);
+  }
   const [error, setError] = useState<string | null>(null);
 
   function detectLocation(): void {
@@ -39,11 +45,6 @@ export default function SubmitPage(): JSX.Element {
       },
       { enableHighAccuracy: true, timeout: 8000 },
     );
-  }
-
-  function onPickFiles(e: ChangeEvent<HTMLInputElement>): void {
-    const list = Array.from(e.target.files ?? []);
-    setFiles((prev) => [...prev, ...list].slice(0, 5));
   }
 
   function removeFile(idx: number): void {
@@ -162,10 +163,23 @@ export default function SubmitPage(): JSX.Element {
       <section>
         <h2 className="text-sm font-semibold text-slate-700">4 · Photo / video evidence</h2>
         <p className="text-xs text-slate-500">Up to 5 photos and 1 short video. Each up to 25 MB.</p>
-        <label className="mt-2 flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600 hover:border-emerald-400">
-          <input type="file" accept="image/*,video/*" multiple onChange={onPickFiles} className="sr-only" />
-          <span>Tap to add photos or video</span>
-        </label>
+        <div className="mt-2 space-y-3">
+          <CameraCapture mode="photo" onCapture={(f) => setFiles((prev) => [...prev, f].slice(0, 5))} onError={onCameraError} />
+          <button
+            type="button"
+            onClick={() => setShowVideo((v) => !v)}
+            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            {showVideo ? 'Hide video recorder' : 'Add a short video (optional)'}
+          </button>
+          {showVideo ? (
+            <CameraCapture
+              mode="video"
+              onCapture={(f) => setFiles((prev) => [...prev, f].slice(0, 5))}
+              onError={onCameraError}
+            />
+          ) : null}
+        </div>
         {files.length > 0 && (
           <ul className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5">
             {files.map((f, i) => (

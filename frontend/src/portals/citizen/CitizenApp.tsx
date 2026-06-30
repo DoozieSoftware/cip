@@ -1,8 +1,8 @@
 import { lazy, Suspense } from 'react';
 import { type JSX } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { CitizenLayout } from './layout/CitizenLayout';
-import { Spinner } from '../moderator/design';
+import { ErrorBoundary, ErrorState, Spinner } from '../moderator/design';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const SubmitPage = lazy(() => import('./pages/SubmitPage'));
@@ -21,24 +21,43 @@ function Fallback() {
   );
 }
 
+function RouteError() {
+  return (
+    <ErrorState
+      title="Page not found"
+      description="The page you were looking for doesn't exist or has moved."
+      action={
+        <a
+          href="/citizen"
+          className="rounded-md bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-rose-700"
+        >
+          Back to home
+        </a>
+      }
+    />
+  );
+}
+
 export function CitizenApp(): JSX.Element {
   return (
-    <BrowserRouter>
-      <Suspense fallback={<Fallback />}>
-        <Routes>
-          <Route element={<CitizenLayout />}>
-            <Route index element={<HomePage />} />
-            <Route path="submit" element={<SubmitPage />} />
-            <Route path="reports" element={<MyReportsPage />} />
-            <Route path="reports/:id" element={<ReportDetailPage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate to="/citizen" replace />} />
-          </Route>
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Suspense fallback={<Fallback />}>
+          <Routes>
+            <Route element={<CitizenLayout />}>
+              <Route index element={<HomePage />} />
+              <Route path="submit" element={<SubmitPage />} />
+              <Route path="reports" element={<MyReportsPage />} />
+              <Route path="reports/:id" element={<ReportDetailPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="*" element={<RouteError />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }

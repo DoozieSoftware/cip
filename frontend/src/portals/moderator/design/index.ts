@@ -9,3 +9,5 @@ export { Dialog } from './Dialog';
 export { Table, THead, TBody, TR, TH, TD } from './Table';
 export { EmptyState } from './EmptyState';
 export { cx } from './cx';
+export { ErrorState } from './ErrorState';
+export { ErrorBoundary } from './ErrorBoundary';
