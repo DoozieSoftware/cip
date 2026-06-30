@@ -3232,3 +3232,36 @@ Snapshot at 2026-06-28 (after M9 closeout).
 * T-M13-022 — Performance / Lighthouse gate.
 * T-M13-024 — Full Playwright E2E: offline submission (real network cut + queue replay).
 * T-M13-030 — Citizen security review checklist.
+
+## 5. M13 Closeout — Citizen PWA (30/30 = 100 %)
+
+Final commit on `main`: `84c55e20` — `feat(citizen): finish M13 closeout (T-M13-020/021/022/024/030)`.
+
+* T-M13-001..T-M13-005 — Scaffold: `CitizenApp` (router + lazy pages + `ErrorBoundary` + 404 → `ErrorState`), `CitizenLayout` (bottom nav + `ToastProvider`), design tokens (`src/styles/global.css`), routing skeleton, `LoginPage` + OTP, `AuthContext` + `api` client.
+* T-M13-006 — IndexedDB offline queue: `OfflineQueue` + `MemoryAdapter` + `IndexedDBAdapter` (idb peer dep installed as `idb@^8.0.3`); exponential backoff with jitter; dedup by UUID; 5 attempts; `dead` flag; 9 Vitest cases.
+* T-M13-007 — Service worker `cip-sw-v2`: shell pre-cache on install, network-first `/api/*` with OFFLINE envelope, cache-first static, navigation fallback, `sync` (cip-queue-drain tag) + `push` (Notification + `push:received` broadcast) + `notificationclick` (focus + `push:navigate`). SW bridge: `requestBackgroundSync`, `onQueueDrain`, `onPushReceived`, `onPushNavigate` (6 Vitest cases).
+* T-M13-008 — `CameraCapture` (getUserMedia, EXIF scrub, 3..5 s video guard, no file input).
+* T-M13-009 — `GpsCapture` (geolocation, mock-GPS heuristic).
+* T-M13-010..T-M13-016 — Pages: Home, Submit, My Reports, Report Detail, Dashboard, Notifications, Profile, Settings. SubmitPage uses `CameraCapture` (no file input).
+* T-M13-017 — `subscribeToPush` + `unsubscribeFromPush`.
+* T-M13-018 — Mock-GPS heuristic (`security/mockGps.ts`, `MockGpsResult`).
+* T-M13-019 — Security guardrails (`security/evidenceGuards.ts`): `blockFileInputs`, `evidencePreviewHandlers`, `stripExif`, `scrubFile`, `guardVideoDuration`.
+* T-M13-020 — Error + empty states: design/ErrorState + design/ErrorBoundary, citizen/components/PageStates, CitizenApp wrapped, route 404 friendly. Vitest: 4 + 4 cases.
+* T-M13-021 — A11y audit: `e2e/citizen-a11y.spec.ts` runs axe-core (WCAG 2.1 AA) on every citizen route plus a heading/bottom-nav sanity check.
+* T-M13-022 — Performance / Lighthouse: `scripts/check_bundle_budget.sh` (largest chunk ≤ 600 KB, entry-gz ≤ 350 KB, SW+manifest+icons ≤ 100 KB). Wired as `npm run budget`. Current: largest 537 KB, entry gz 92 KB, SW 8 KB — green.
+* T-M13-023 — Playwright E2E: full citizen shell (`e2e/citizen-shell.spec.ts`).
+* T-M13-024 — Playwright E2E: offline path (`e2e/citizen-offline.spec.ts`) + deeper offline submission E2E (`e2e/citizen-offline-submit.spec.ts`).
+* T-M13-025 — Playwright E2E: push notification (`e2e/citizen-push.spec.ts`).
+* T-M13-026 — Vitest unit: offline queue (9 cases).
+* T-M13-027 — Vitest unit: video duration guard (4 cases in evidenceGuards suite).
+* T-M13-028 — `docs/citizen.md` authored.
+* T-M13-029 — README updated with the M13 section.
+* T-M13-030 — `docs/citizen-security-review.md`: 9 sections, ✅/⚠ annotations, code pointers, open follow-ups scoped to M15.
+
+### Verification
+
+* `npx vitest run` — 87 / 87 across 21 files.
+* `npx tsc --noEmit` — clean.
+* `npx vite build` — clean.
+* `npm run budget` — green.
+* `origin/main` at `84c55e20` (pushed).
