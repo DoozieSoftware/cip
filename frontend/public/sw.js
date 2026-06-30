@@ -11,15 +11,22 @@
  *      - GET navigation requests fall back to the cached /citizen shell when
  *        offline so the SPA still boots
  *      - static assets (Vite bundles, images) are cache-first
+ *  - on `sync` (background sync API): ping every open client so its
+ *    IndexedDB queue drains. The SPA owns the queue; the SW just
+ *    wakes the client up.
+ *  - on `push`: show a Notification (with the platform's icon and a
+ *    `data.url` payload) and forward the payload to any open client
+ *    so the in-app inbox updates.
  *
  * Offline submission of new reports is handled in the SPA via the
  * IndexedDB queue (T-M13-006). This SW only caches GETs; mutations
  * are intercepted and queued by the SPA before they hit the network.
  */
 
-const VERSION = 'cip-sw-v1';
+const VERSION = 'cip-sw-v2';
 const SHELL_CACHE = `${VERSION}-shell`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
+const SYNC_TAG = 'cip-queue-drain';
 
 const APP_SHELL = [
   '/',
@@ -55,7 +62,7 @@ function isApiRequest(url) {
 }
 
 function isStaticAsset(url) {
-  return /\\.(?:js|css|woff2?|ttf|otf|svg|png|jpg|jpeg|webp|ico|map)$/.test(url.pathname);
+  return /\.(?:js|css|woff2?|ttf|otf|svg|png|jpg|jpeg|webp|ico|map)$/.test(url.pathname);
 }
 
 self.addEventListener('fetch', (event) => {
@@ -75,8 +82,12 @@ self.addEventListener('fetch', (event) => {
       (async () => {
         try {
           const response = await fetch(request);
-          const cache = await caches.open(RUNTIME_CACHE);
-          cache.put(request, response.clone());
+          // Only cache successful, basic/cors responses — opaque responses
+          // (e.g. cross-origin media) would explode the runtime cache.
+          if (response && response.ok && response.type !== 'opaque') {
+            const cache = await caches.open(RUNTIME_CACHE);
+            cache.put(request, response.clone());
+          }
           return response;
         } catch (err) {
           const cached = await caches.match(request);
@@ -102,8 +113,10 @@ self.addEventListener('fetch', (event) => {
         }
         try {
           const response = await fetch(request);
-          const cache = await caches.open(RUNTIME_CACHE);
-          cache.put(request, response.clone());
+          if (response && response.ok && response.type !== 'opaque') {
+            const cache = await caches.open(RUNTIME_CACHE);
+            cache.put(request, response.clone());
+          }
           return response;
         } catch (err) {
           return new Response('', { status: 504 });
@@ -132,8 +145,88 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+/* ------------------------------------------------------------------ *
+ * Background sync — when connectivity returns, wake the SPA so its
+ * IndexedDB queue drains. The SW does not own the queue, by design.
+ * ------------------------------------------------------------------ */
+
+self.addEventListener('sync', (event) => {
+  if (event.tag !== SYNC_TAG) return;
+  event.waitUntil(notifyClients({ type: 'queue:drain' }));
+});
+
+/* ------------------------------------------------------------------ *
+ * Push — show a system notification and forward the payload to any
+ * open client so the in-app inbox updates in real time.
+ * ------------------------------------------------------------------ */
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (err) {
+    payload = { title: 'Civic update', body: event.data ? event.data.text() : '' };
+  }
+  const title = payload.title || 'Civic update';
+  const body = payload.body || '';
+  const url = payload.url || '/citizen/notifications';
+  const tag = payload.tag || 'cip-notification';
+
+  event.waitUntil(
+    (async () => {
+      await self.registration.showNotification(title, {
+        body,
+        tag,
+        icon: '/icons/icon-192.svg',
+        badge: '/icons/icon-192.svg',
+        data: { url },
+      });
+      await notifyClients({ type: 'push:received', payload: { title, body, url, tag } });
+    })(),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/citizen/notifications';
+  event.waitUntil(
+    (async () => {
+      const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of all) {
+        if ('focus' in client) {
+          await client.focus();
+          client.postMessage({ type: 'push:navigate', url });
+          return;
+        }
+      }
+      if (self.clients.openWindow) {
+        await self.clients.openWindow(url);
+      }
+    })(),
+  );
+});
+
+async function notifyClients(message) {
+  const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  for (const client of all) {
+    client.postMessage(message);
+  }
+}
+
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  const data = event.data || {};
+  if (data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+    return;
+  }
+  if (data.type === 'queue:request-sync') {
+    // The SPA asked the SW to register a background-sync tag. If
+    // the browser does not support the API, fall back to a client
+    // broadcast so the SPA can drain immediately.
+    if ('sync' in self.registration) {
+      self.registration.sync.register(SYNC_TAG).catch(() => notifyClients({ type: 'queue:drain' }));
+    } else {
+      notifyClients({ type: 'queue:drain' });
+    }
   }
 });

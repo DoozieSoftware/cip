@@ -349,6 +349,74 @@ contract is enforced by `tests/Feature/Departments/OpenApiDepartmentTest.php`.
 - [`docs/08-Department-Portal-Specification.md`](./docs/08-Department-Portal-Specification.md)
   — the M11 product spec (authoritative)
 
+## M13 — Citizen PWA
+
+The Citizen PWA is a React 19 SPA that boots at `/citizen`, installs
+on the home screen, and lets a citizen submit a geo-tagged report
+(photo or short video + GPS + category + description) even when
+offline. The IndexedDB queue drains in the background when the
+device comes back online; pushes wake the app for in-app updates.
+
+### Frontend
+
+- Routes — `/citizen/*` (see `frontend/src/portals/citizen/CitizenApp.tsx`).
+  Pages: Home, Submit, My reports, Report detail, Dashboard,
+  Notifications, Profile, Settings.
+- API client — `frontend/src/auth/api.ts` (Sanctum bearer token,
+  shared with the other portals).
+- State — TanStack Query for the dashboard, my-reports, and
+  notifications; React Hook Form + Zod for the submit form.
+- Toast — `src/portals/citizen/components/Toast.tsx`
+  (provider + `useToast()` helper).
+
+### Offline & service worker
+
+- IndexedDB queue — `src/portals/citizen/offline/queue.ts`
+  (exponential backoff with jitter, dedup by UUID, 5 attempts,
+  `dead` flag after exhaustion).
+- SW bridge — `src/portals/citizen/offline/swBridge.ts`
+  (requestBackgroundSync, onQueueDrain, onPushReceived).
+- Service worker — `frontend/public/sw.js` (cip-sw-v2):
+  pre-caches the shell, network-first for `/api/*`, cache-first
+  for static assets, navigation fallback to the cached shell,
+  background-sync broadcast, push handler with notification +
+  client message.
+
+### Push
+
+- Subscribe / unsubscribe —
+  `src/portals/citizen/push/subscribe.ts`. The SPA stores the
+  subscription on `/api/v1/notifications/push/subscriptions`.
+- The SW shows a `Notification` on `push` and forwards
+  `push:received` to the in-app inbox.
+
+### Security guardrails
+
+- `src/portals/citizen/security/evidenceGuards.ts`:
+  `blockFileInputs()` (no file pickers), `evidencePreviewHandlers()`
+  (right-click + drag blocked), `stripExif()` (zeroes GPS + camera
+  EXIF), `scrubFile()`, `guardVideoDuration()` (3..5 s video
+  window).
+- `src/portals/citizen/security/mockGps.ts` — heuristic stack
+  producing a `MockGpsResult`; the moderator portal surfaces the
+  score for triage.
+
+### Tests
+
+- Vitest — `src/portals/citizen/**/__tests__/*` (queue, swBridge,
+  evidenceGuards).
+- Playwright — `frontend/e2e/citizen-*.spec.ts` (shell + WCAG AA,
+  SW registration, push settings).
+- `npm run build` is green; `npm test` runs 79 tests.
+
+### Further reading
+
+- [`docs/citizen.md`](./docs/citizen.md) — implementation-level
+  reference: pages, queue API, SW strategy, push contract,
+  security guardrails, source map.
+- [`docs/06-Citizen-PWA-Specification.md`](./docs/06-Citizen-PWA-Specification.md)
+  — the M13 product spec (authoritative).
+
 ## Development
 
 

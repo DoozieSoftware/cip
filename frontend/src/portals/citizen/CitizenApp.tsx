@@ -10,6 +10,8 @@ const MyReportsPage = lazy(() => import('./pages/MyReportsPage'));
 const ReportDetailPage = lazy(() => import('./pages/ReportDetailPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 function Fallback() {
   return (
@@ -31,6 +33,8 @@ export function CitizenApp(): JSX.Element {
             <Route path="reports/:id" element={<ReportDetailPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="profile" element={<ProfilePage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/citizen" replace />} />
           </Route>
         </Routes>

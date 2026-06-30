@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { type JSX } from 'react';
 import { useAuth } from '../../../auth/AuthContext';
 import { InstallPrompt } from '../../../pwa/InstallPrompt';
+import { ToastProvider } from '../components/Toast';
 import { cx } from '../../moderator/design/cx';
 
 const NAV = [
@@ -10,6 +11,7 @@ const NAV = [
   { to: '/citizen/reports', label: 'My reports', icon: '📋' },
   { to: '/citizen/notifications', label: 'Updates', icon: '🔔' },
   { to: '/citizen/profile', label: 'Profile', icon: '👤' },
+  { to: '/citizen/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export function CitizenLayout(): JSX.Element {
@@ -39,9 +41,12 @@ export function CitizenLayout(): JSX.Element {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6 pb-24 sm:py-10">
-        <Outlet />
-      </main>
+      <ToastProvider>
+        <main className="mx-auto max-w-5xl px-4 py-6 pb-24 sm:py-10">
+          <Outlet />
+        </main>
+        <InstallPrompt />
+      </ToastProvider>
 
       <nav aria-label="Citizen sections" className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white shadow-lg">
         <ul className="mx-auto flex max-w-5xl items-stretch justify-around">
@@ -64,7 +69,6 @@ export function CitizenLayout(): JSX.Element {
           ))}
         </ul>
       </nav>
-      <InstallPrompt />
     </div>
   );
 }

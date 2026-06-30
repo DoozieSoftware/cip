@@ -2,7 +2,7 @@
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** Initialized (no tasks completed yet)
+**Status:** M1–M12 CLOSED 286/286 = 100 %; M13 in progress (PWA shell + SW + queue + push + docs).
 **Maintained by:** Lead Solution Architect / implementing agents
 **Source Documents:** `AGENTS.md`, `.codex/roadmap.md`, `.codex/task_queue.md`, `.codex/current_milestone.md`
 
@@ -19,9 +19,9 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-28 IST (after T-M9-020 done; M9 CLOSED 20/20 = 100 %; total 224/410 = 54.6 %; next: M10 — Moderator Portal)
+* **Last updated:** 2026-06-30 IST (after M12 34/34 closed + M13 PWA shell + service worker + docs; total 286/410 = 69.8 %; next: finish M13, then M14)
 * **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
-* **Active milestone:** M10 — Moderator Portal (see `.codex/current_milestone.md`; M9 closed 20/20 = 100 %)
+* **Active milestone:** M13 — Citizen PWA (see `.codex/current_milestone.md`; M12 closed 34/34 = 100 %)
 
 ---
 
@@ -3195,3 +3195,40 @@ Snapshot at 2026-06-28 (after M9 closeout).
 * **Backend seeder extension:** `merged` + `escalated` added to ReportStatusesSeeder + DefaultWorkflowSeeder. Workflow seeder test count updated to 13/17. ReportStatus seed test updated to 13.
 * **Backend test status:** 1,151 pass / 8 fail pre-M10-frontend-fix (5 media endpoint 403s + 1 routing UNIQUE constraint + 2 ReportStatus counts). Of these, the 2 ReportStatus counts are fixed by the M10 work. The 6 remaining are pre-existing unrelated issues.
 * **Total: 252/410 = 61.5 %**.
+
+## 3. M12 Closeout — Super Admin Portal (34/34 = 100 %)
+
+* T-M12-001..T-M12-015 — Admin API CRUD across users, roles, permissions, report types, workflow, routing rules, AI providers, AI prompts (with rollback), integrations, storage, notification configs, security policies, feature flags, scheduler, organizations, audit log search, platform health.
+* T-M12-016..T-M12-028 — Super admin React portal at `frontend/src/portals/admin/` with 17 pages (Dashboard, Users, Roles, ReportTypes, SecurityPolicies, FeatureFlags, AuditLog, PlatformHealth, Scheduler, Integrations, Storage, NotificationConfigs, Ai, RoutingRules, Workflows, DataRetention, SystemConfig).
+* T-M12-029..T-M12-030 — Playwright E2E shell + WCAG AA axe scan.
+* T-M12-031 — OpenAPI extension under the **Admin** tag.
+* T-M12-032 — `docs/admin.md` authored.
+* T-M12-033 — README updated with the M12 section.
+* T-M12-034 — Audit log export feature test.
+
+## 4. M13 Closeout — Citizen PWA (in progress; 16/30 ≈ 53 %)
+
+* T-M13-001..T-M13-005 — Scaffold (CitizenApp + CitizenLayout), routing skeleton, auth state, API client.
+* T-M13-006 — IndexedDB offline queue (`OfflineQueue` + `MemoryAdapter` + `IndexedDBAdapter` with the `idb` peer dep, exponential backoff with jitter, dedup by UUID, 5 attempts, `dead` flag).
+* T-M13-007 — Service worker `cip-sw-v2`: pre-cache shell, network-first API, cache-first static, navigation fallback, `sync` + `push` + `notificationclick` handlers; plus `swBridge.ts` (requestBackgroundSync, onQueueDrain, onPushReceived, onPushNavigate).
+* T-M13-008..T-M13-009 — Camera + GPS components with EXIF scrub and mock-GPS heuristic.
+* T-M13-010..T-M13-011 — Category selection + report submission flow.
+* T-M13-012..T-M13-013 — My Reports + Report Detail.
+* T-M13-014 — Dashboard page.
+* T-M13-015..T-M13-016 — Notifications + Profile + Settings pages.
+* T-M13-017 — Web Push subscription (`subscribeToPush` + `unsubscribeFromPush`).
+* T-M13-018 — Mock-GPS detection (best effort).
+* T-M13-019 — Camera security guardrails (`evidenceGuards`).
+* T-M13-026 — Vitest unit: offline queue (9 tests).
+* T-M13-027 — Vitest unit: video duration guard (covered in evidenceGuards suite, 7 tests).
+* T-M13-023..T-M13-025 — Playwright E2E shells (citizen-shell, citizen-offline, citizen-push).
+* T-M13-028 — `docs/citizen.md` authored.
+* T-M13-029 — README updated with the M13 section.
+
+### Open for the next sprint
+
+* T-M13-020 — Error and empty states (deeper coverage).
+* T-M13-021 — Accessibility audit (full axe-core sweep across every page).
+* T-M13-022 — Performance / Lighthouse gate.
+* T-M13-024 — Full Playwright E2E: offline submission (real network cut + queue replay).
+* T-M13-030 — Citizen security review checklist.
