@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\AI\Listeners;
 
 use App\Modules\AI\Events\AiCompleted;
+use App\Modules\AI\Services\ConfidenceAggregator;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Routing\Services\AssignmentService;
 use App\Modules\Routing\Services\RoutingEngine;
@@ -19,14 +20,25 @@ use Illuminate\Support\Facades\Log;
  * `AiCompleted` event.
  *
  *   ai_completed
- *      ├─ routing rule matched   -> AssignmentService::assign
- *      │                            -> WorkflowEngine 'ai_auto_assign'
- *      │                               (ai_processing -> assigned)
- *      ├─ no rule matched + config
+ *      ├─ confidence below the auto-route threshold
+ *      │   (ConfidenceAggregator)   -> WorkflowEngine 'moderator_review'
+ *      │                               (ai_processing -> pending_moderator)
+ *      │                               NO department assignment — the
+ *      │                               AI's `recommended_department` is
+ *      │                               already on the ai_results row for
+ *      │                               the moderator to see, but only a
+ *      │                               human commits it. This is the
+ *      │                               "moderator always overrides AI"
+ *      │                               guarantee (AGENTS.md).
+ *      ├─ confidence above threshold + routing rule matched
+ *      │                            -> AssignmentService::assign
+ *      │                               -> WorkflowEngine 'ai_auto_assign'
+ *      │                                  (ai_processing -> assigned)
+ *      ├─ confidence above threshold + no rule matched + config
  *      │   present                 -> AssignmentService::assign via
  *      │                            RoutingFallbackService
  *      │                            -> WorkflowEngine 'ai_auto_assign'
- *      └─ no rule matched + no
+ *      └─ confidence above threshold + no rule matched + no
  *          fallback config         -> throws ROUTING_FALLBACK_MISSING
  *                                    (the operator / Super Admin
  *                                    must configure the fallback
@@ -34,13 +46,15 @@ use Illuminate\Support\Facades\Log;
  *                                    process un-routed reports)
  *
  * The listener is idempotent: it will not re-route a
- * report that already has an active assignment. The
- * "actor" for the workflow transition is the platform's
+ * report that already has an active assignment, and the
+ * `moderator_review` transition is a no-op once the report
+ * has already left `ai_processing` (WorkflowEngine::evaluate
+ * only matches transitions from the report's current state).
+ * The "actor" for the workflow transition is the platform's
  * shared system user; the system user carries both
  * `system` and `moderator` Spatie roles so it satisfies
  * the role gates on the `ai_auto_assign` transition
- * (system) and the existing `moderator_review` transition
- * (system).
+ * (system) and the `moderator_review` transition (system).
  */
 class AiCompletedListener
 {
@@ -50,6 +64,7 @@ class AiCompletedListener
         private readonly WorkflowEngine $workflow,
         private readonly SystemUserService $system,
         private readonly RoutingFallbackService $fallback,
+        private readonly ConfidenceAggregator $confidence,
     ) {}
 
     public function handle(AiCompleted $event): void
@@ -73,6 +88,21 @@ class AiCompletedListener
         }
 
         $systemActor = $this->system->user();
+
+        // `confidence` on AiResponse/visionResult is [0.0, 1.0];
+        // ConfidenceAggregator's thresholds are on a 0-100 scale.
+        $confidencePct = ((float) ($event->visionResult['confidence'] ?? 0.0)) * 100;
+
+        if ($this->confidence->decide($confidencePct) !== ConfidenceAggregator::DECISION_AUTO_ROUTE) {
+            $reviewDecision = $this->workflow->evaluate($report, 'moderator_review', $systemActor);
+
+            if ($reviewDecision->allowed) {
+                $this->workflow->apply($report, $reviewDecision, $systemActor);
+            }
+
+            return;
+        }
+
         $decision = $this->engine->resolve($report);
 
         if ($decision === null) {

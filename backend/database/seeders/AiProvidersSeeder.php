@@ -27,10 +27,11 @@ class AiProvidersSeeder extends Seeder
         $providers = [
             [
                 'code' => 'mock',
+                'driver' => 'mock',
                 'name' => 'Mock provider (dev/test)',
                 'base_url' => 'http://localhost',
                 'auth_type' => 'none',
-                'api_key_secret_id' => null,
+                'credentials' => null,
                 'model' => 'mock-1.0',
                 'temperature' => 0.2,
                 'timeout_ms' => 5000,
@@ -41,10 +42,11 @@ class AiProvidersSeeder extends Seeder
             ],
             [
                 'code' => 'openai',
+                'driver' => 'openai_compatible',
                 'name' => 'OpenAI (gpt-4o)',
                 'base_url' => 'https://api.openai.com',
                 'auth_type' => 'bearer',
-                'api_key_secret_id' => null,
+                'credentials' => null,
                 'model' => 'gpt-4o',
                 'temperature' => 0.2,
                 'timeout_ms' => 30000,
@@ -55,10 +57,11 @@ class AiProvidersSeeder extends Seeder
             ],
             [
                 'code' => 'qwen-vl',
+                'driver' => 'qwen_vl',
                 'name' => 'Qwen-VL (DashScope)',
                 'base_url' => 'https://dashscope.aliyuncs.com',
                 'auth_type' => 'bearer',
-                'api_key_secret_id' => null,
+                'credentials' => null,
                 'model' => 'qwen-vl-plus',
                 'temperature' => 0.2,
                 'timeout_ms' => 30000,

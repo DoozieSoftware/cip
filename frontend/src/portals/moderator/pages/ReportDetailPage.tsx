@@ -229,7 +229,7 @@ export default function ReportDetailPage() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <EvidenceViewer media={data.media} />
-        <AiAnalysisPanel ai={data.ai_result} />
+        <AiAnalysisPanel ai={data.ai_result} mockGpsScore={data.mock_gps_score} />
       </div>
 
       <Card>

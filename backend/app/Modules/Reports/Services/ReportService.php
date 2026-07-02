@@ -12,6 +12,7 @@ use App\Modules\Reports\Models\ReportPriority;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Reports\Models\ReportType;
 use App\Modules\Reports\Repositories\ReportRepository;
+use App\Modules\Security\Services\SecurityEventService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
 use App\Modules\Workflow\Repositories\WorkflowRepository;
@@ -35,11 +36,20 @@ use App\Modules\Workflow\Services\WorkflowEngine;
  */
 class ReportService
 {
+    /**
+     * Mirrors the citizen PWA's `mockGpsLikely()` threshold
+     * (`frontend/src/portals/citizen/security/mockGps.ts`) — a score
+     * at or above this is "likely mock" and worth a security event,
+     * but never a reason to auto-reject the report.
+     */
+    private const MOCK_GPS_LIKELY_THRESHOLD = 0.5;
+
     public function __construct(
         private readonly ReportRepository $repository,
         private readonly LocationService $locationService,
         private readonly WorkflowEngine $workflowEngine,
         private readonly WorkflowRepository $workflowRepository,
+        private readonly SecurityEventService $securityEvents,
     ) {}
 
     public function createDraft(CreateReportDto $dto): Report
@@ -112,6 +122,7 @@ class ReportService
             'title' => $dto->title,
             'description' => $dto->description,
             'is_anonymous' => $dto->isAnonymous,
+            'mock_gps_score' => $dto->mockGpsScore,
         ]);
 
         // Drive the citizen's submit through the workflow
@@ -128,6 +139,18 @@ class ReportService
 
         $report->submitted_at = now();
         $report->save();
+
+        // Never auto-rejects — only records a security event for the
+        // dashboard + moderator triage. The FraudScorer pipeline reads
+        // this same column later via AiPipelineOrchestrator.
+        if ($dto->mockGpsScore !== null && $dto->mockGpsScore >= self::MOCK_GPS_LIKELY_THRESHOLD) {
+            $this->securityEvents->recordSafe(
+                'mock_gps',
+                SecurityEventService::SEVERITY_WARNING,
+                ['report_id' => $report->id, 'score' => $dto->mockGpsScore],
+                $actor,
+            );
+        }
 
         return $report->refresh();
     }

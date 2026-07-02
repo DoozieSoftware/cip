@@ -432,22 +432,44 @@ export function useDeleteNotificationConfig() {
  *  T-M12-006 / T-M12-021 — AI providers + prompts
  * ---------------------------------------------------------------------- */
 
+export type AiProviderDriver = 'mock' | 'qwen_vl' | 'openai_compatible';
+
 export interface AiProvider {
   id: string;
   code: string;
+  driver: AiProviderDriver;
   name: string;
-  driver: string;
   base_url?: string | null;
+  auth_type: 'bearer' | 'api_key' | 'none';
   model: string;
+  temperature: number;
+  timeout_ms: number;
+  retry_count: number;
   priority: number;
+  is_fallback: boolean;
   active: boolean;
   has_secret: boolean;
-  cost_per_1k_in?: number | null;
-  cost_per_1k_out?: number | null;
-  description?: string | null;
-  last_health_at?: string | null;
-  last_health_status?: string | null;
+  extra_headers?: Record<string, string>;
   created_at?: string | null;
+  updated_at?: string | null;
+}
+
+/** Write-only payload for create/update — `credentials` is never read back. */
+export interface AiProviderInput {
+  code: string;
+  driver: AiProviderDriver;
+  name: string;
+  base_url: string;
+  auth_type: 'bearer' | 'api_key' | 'none';
+  credentials?: { api_key?: string };
+  extra_headers?: Record<string, string>;
+  model: string;
+  temperature: number;
+  timeout_ms: number;
+  retry_count: number;
+  priority: number;
+  is_fallback: boolean;
+  active: boolean;
 }
 
 export interface PromptVersion {
@@ -486,7 +508,7 @@ export function useAiPrompts(name?: string, status?: string) {
 export function useCreateAiProvider() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: Partial<AiProvider>) =>
+    mutationFn: async (input: AiProviderInput) =>
       apiRequest<ApiEnvelope<AiProvider>>('/admin/ai/providers', { method: 'POST', body: input }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'providers'] }),
   });
@@ -495,18 +517,16 @@ export function useCreateAiProvider() {
 export function useUpdateAiProvider() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...patch }: Partial<AiProvider> & { id: string }) =>
+    mutationFn: async ({ id, ...patch }: Partial<AiProviderInput> & { id: string }) =>
       apiRequest<ApiEnvelope<AiProvider>>(`/admin/ai/providers/${encodeURIComponent(id)}`, { method: 'PUT', body: patch }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'providers'] }),
   });
 }
 
 export function useTestAiProvider() {
-  const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) =>
-      apiRequest<unknown>(`/admin/ai/providers/${encodeURIComponent(id)}/test`, { method: 'POST' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'providers'] }),
+      apiRequest<{ healthy: boolean; error?: string }>(`/admin/ai/providers/${encodeURIComponent(id)}/test`, { method: 'POST' }),
   });
 }
 

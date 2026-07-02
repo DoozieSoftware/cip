@@ -62,11 +62,11 @@ it('declares a schema for every M8 AI resource', function (): void {
     }
 });
 
-it('masks api_key_secret_id and surfaces has_secret on the provider schema', function (): void {
+it('masks credentials and surfaces has_secret on the provider schema', function (): void {
     $yaml = file_get_contents(storage_path('api-docs/openapi.yaml'));
 
     expect($yaml)->toContain('has_secret:')
-        ->and($yaml)->toContain("description: 'True when api_key_secret_id is set; the secret id itself is never returned.'");
+        ->and($yaml)->toContain("description: 'True when credentials.api_key is set; the credentials themselves are never returned.'");
 });
 
 it('tags the AI endpoints and references provider_code on prompt schemas', function (): void {

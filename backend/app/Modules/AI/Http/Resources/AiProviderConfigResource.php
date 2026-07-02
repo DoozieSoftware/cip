@@ -11,9 +11,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * AiProviderConfigResource — the API representation of a provider
  * configuration. The spec is explicit (docs/09 §13): secrets MUST
- * NEVER be serialised. We strip `api_key_secret_id` from the
- * response and add a `has_secret` boolean so the Super Admin
- * can see whether a key is attached without seeing the key itself.
+ * NEVER be serialised. `credentials` is stripped from the response
+ * and replaced with a `has_secret` boolean so the Super Admin can
+ * see whether a key is attached without seeing the key itself.
  *
  * @property-read AiProviderConfig $resource
  */
@@ -29,10 +29,12 @@ class AiProviderConfigResource extends JsonResource
         return [
             'id' => $cfg->id,
             'code' => $cfg->code,
+            'driver' => $cfg->driver,
             'name' => $cfg->name,
             'base_url' => $cfg->base_url,
             'auth_type' => $cfg->auth_type,
-            'has_secret' => $cfg->api_key_secret_id !== null,
+            'has_secret' => ! empty($cfg->credentials['api_key'] ?? null),
+            'extra_headers' => $cfg->extra_headers ?? [],
             'model' => $cfg->model,
             'temperature' => $cfg->temperature,
             'timeout_ms' => $cfg->timeout_ms,

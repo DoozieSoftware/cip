@@ -32,6 +32,8 @@ class RouteServiceProvider extends ServiceProvider
 {
     public const LIMITER_OTP = 'otp';
 
+    public const LIMITER_LOGIN = 'login';
+
     public const LIMITER_CITIZEN = 'citizen';
 
     public const LIMITER_UPLOADS = 'uploads';
@@ -41,6 +43,8 @@ class RouteServiceProvider extends ServiceProvider
     public const LIMITER_DEPARTMENT = 'department';
 
     public const LIMITER_ADMIN = 'admin';
+
+    public const LIMITER_PUBLIC = 'public';
 
     public function boot(): void
     {
@@ -93,6 +97,18 @@ class RouteServiceProvider extends ServiceProvider
             ];
         });
 
+        // 10 requests / hour / (IP + mobile) — stricter than OTP because
+        // a password is a standing secret (brute-forceable) rather than
+        // a short-lived, rate-limited-at-issuance code.
+        RateLimiter::for(self::LIMITER_LOGIN, function (Request $request): array {
+            $mobileInput = $request->input('mobile', '');
+            $mobile = is_string($mobileInput) ? $mobileInput : '';
+
+            return [
+                Limit::perHour(10)->by('login:'.$this->ipKey($request).':'.$mobile),
+            ];
+        });
+
         // 60 requests / minute — keyed by user id when authenticated,
         // IP otherwise. Mixed keying keeps a single device / single
         // account honest.
@@ -133,6 +149,16 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for(self::LIMITER_ADMIN, function (Request $request): array {
             return [
                 Limit::perMinute(600)->by('admin:'.$this->userKey($request)),
+            ];
+        });
+
+        // 30 requests / minute / IP — unauthenticated public endpoints
+        // (landing page stats, the M17 Public Portal). Low cap is fine:
+        // the response is server-side cached for 5 minutes, so a
+        // legitimate client never needs to poll faster than that.
+        RateLimiter::for(self::LIMITER_PUBLIC, function (Request $request): array {
+            return [
+                Limit::perMinute(30)->by('public:'.$this->ipKey($request)),
             ];
         });
     }

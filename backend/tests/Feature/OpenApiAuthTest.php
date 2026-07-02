@@ -24,12 +24,13 @@ it('declares an Authentication tag', function (): void {
     expect($names)->toContain('Authentication');
 });
 
-it('documents all five auth endpoints under /api/v1/auth', function (): void {
+it('documents all six auth endpoints under /api/v1/auth', function (): void {
     $doc = cipOpenApiDoc();
     $paths = array_keys($doc['paths'] ?? []);
 
     expect($paths)->toContain('/api/v1/auth/send-otp')
         ->and($paths)->toContain('/api/v1/auth/verify-otp')
+        ->and($paths)->toContain('/api/v1/auth/login')
         ->and($paths)->toContain('/api/v1/auth/refresh')
         ->and($paths)->toContain('/api/v1/auth/logout')
         ->and($paths)->toContain('/api/v1/auth/me');
@@ -40,6 +41,7 @@ it('declares the right HTTP methods per auth endpoint', function (): void {
 
     expect($doc['paths']['/api/v1/auth/send-otp'])->toHaveKey('post')
         ->and($doc['paths']['/api/v1/auth/verify-otp'])->toHaveKey('post')
+        ->and($doc['paths']['/api/v1/auth/login'])->toHaveKey('post')
         ->and($doc['paths']['/api/v1/auth/refresh'])->toHaveKey('post')
         ->and($doc['paths']['/api/v1/auth/logout'])->toHaveKey('post')
         ->and($doc['paths']['/api/v1/auth/me'])->toHaveKey('get');
@@ -57,6 +59,7 @@ it('does not require auth on the pre-login endpoints', function (): void {
 
     expect($doc['paths']['/api/v1/auth/send-otp']['post'])->not->toHaveKey('security')
         ->and($doc['paths']['/api/v1/auth/verify-otp']['post'])->not->toHaveKey('security')
+        ->and($doc['paths']['/api/v1/auth/login']['post'])->not->toHaveKey('security')
         ->and($doc['paths']['/api/v1/auth/refresh']['post'])->not->toHaveKey('security');
 });
 
@@ -67,6 +70,7 @@ it('exposes the request and response schemas referenced by the auth paths', func
     expect($schemas)->toHaveKeys([
         'SendOtpRequest', 'SendOtpResponse',
         'VerifyOtpRequest', 'VerifyOtpResponse',
+        'LoginRequest',
         'RefreshTokenRequest', 'RefreshTokenResponse',
         'LogoutResponse', 'User', 'UserResponse',
         'ApiResponse', 'ErrorResponse',

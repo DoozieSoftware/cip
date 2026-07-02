@@ -10,13 +10,12 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
-
 it('creates the ai_provider_configs table with the expected columns', function (): void {
     expect(Schema::hasTable('ai_provider_configs'))->toBeTrue();
 
     foreach ([
-        'id', 'code', 'name', 'base_url', 'auth_type',
-        'api_key_secret_id', 'model', 'temperature', 'timeout_ms',
+        'id', 'code', 'driver', 'name', 'base_url', 'auth_type',
+        'extra_headers', 'credentials', 'model', 'temperature', 'timeout_ms',
         'retry_count', 'is_fallback', 'priority', 'active',
         'created_at', 'updated_at',
     ] as $col) {
@@ -62,15 +61,16 @@ it('enforces a unique code on ai_provider_configs', function (): void {
     ]))->toThrow(QueryException::class);
 });
 
-it('accepts a NULL api_key_secret_id (no FK constraint by design)', function (): void {
+it('accepts a NULL credentials value (mock/none-auth providers need no secret)', function (): void {
     $id = (string) Str::uuid();
     DB::table('ai_provider_configs')->insert([
         'id' => $id,
         'code' => strtolower(Str::random(8)),
+        'driver' => 'mock',
         'name' => 'No key',
         'base_url' => 'https://example.com',
         'auth_type' => 'none',
-        'api_key_secret_id' => null,
+        'credentials' => null,
         'model' => 'local',
         'temperature' => 0.0,
         'timeout_ms' => 5000,
@@ -82,7 +82,7 @@ it('accepts a NULL api_key_secret_id (no FK constraint by design)', function ():
         'updated_at' => now(),
     ]);
 
-    expect(DB::table('ai_provider_configs')->where('id', $id)->whereNull('api_key_secret_id')->exists())->toBeTrue();
+    expect(DB::table('ai_provider_configs')->where('id', $id)->whereNull('credentials')->exists())->toBeTrue();
 });
 
 it('has the is_fallback, active, and priority indexes for the resolve query', function (): void {

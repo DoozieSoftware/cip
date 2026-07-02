@@ -5,8 +5,8 @@ declare(strict_types=1);
 use App\Modules\AI\Models\AiProviderConfig;
 use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Laravel\Sanctum\Sanctum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
@@ -35,11 +35,11 @@ it('GET /admin/ai/providers returns a paginated list', function (): void {
         ->assertJsonStructure(['data' => [['id', 'code', 'name', 'active']]]);
 });
 
-it('the resource hides api_key_secret_id and surfaces has_secret', function (): void {
+it('the resource hides credentials and surfaces has_secret', function (): void {
     Sanctum::actingAs(aiProviderSuperAdmin());
     $cfg = AiProviderConfig::query()->create([
-        'code' => 'p2', 'name' => 'P2', 'base_url' => 'http://x', 'auth_type' => 'bearer',
-        'api_key_secret_id' => '11111111-1111-1111-1111-111111111111',
+        'code' => 'p2', 'driver' => 'openai_compatible', 'name' => 'P2', 'base_url' => 'http://x', 'auth_type' => 'bearer',
+        'credentials' => ['api_key' => 'sk-super-secret'],
         'model' => 'm', 'temperature' => 0.2, 'timeout_ms' => 5000, 'retry_count' => 1,
         'is_fallback' => false, 'priority' => 1, 'active' => true,
     ]);
@@ -47,17 +47,20 @@ it('the resource hides api_key_secret_id and surfaces has_secret', function (): 
     $this->getJson('/api/v1/admin/ai/providers/'.$cfg->id)
         ->assertOk()
         ->assertJsonPath('data.has_secret', true)
-        ->assertJsonMissing(['api_key_secret_id' => '11111111-1111-1111-1111-111111111111']);
+        ->assertJsonMissing(['credentials' => ['api_key' => 'sk-super-secret']]);
 });
 
-it('POST /admin/ai/providers creates a provider', function (): void {
+it('POST /admin/ai/providers creates a custom OpenAI-compatible provider (e.g. OpenRouter)', function (): void {
     Sanctum::actingAs(aiProviderSuperAdmin());
 
     $this->postJson('/api/v1/admin/ai/providers', [
         'code' => 'newone',
-        'name' => 'New One',
-        'base_url' => 'https://api.example.com',
+        'driver' => 'openai_compatible',
+        'name' => 'OpenRouter',
+        'base_url' => 'https://openrouter.ai/api',
         'auth_type' => 'bearer',
+        'credentials' => ['api_key' => 'sk-or-test'],
+        'extra_headers' => ['HTTP-Referer' => 'https://civic-intelligence.example', 'X-Title' => 'Civic Intelligence Platform'],
         'model' => 'gpt-4o',
         'temperature' => 0.2,
         'timeout_ms' => 30000,
@@ -66,19 +69,32 @@ it('POST /admin/ai/providers creates a provider', function (): void {
         'priority' => 50,
         'active' => true,
     ])->assertCreated()
-        ->assertJsonPath('data.code', 'newone')->assertJsonPath('data.name', 'New One');
+        ->assertJsonPath('data.code', 'newone')
+        ->assertJsonPath('data.driver', 'openai_compatible')
+        ->assertJsonPath('data.has_secret', true)
+        ->assertJsonPath('data.extra_headers.X-Title', 'Civic Intelligence Platform');
+});
+
+it('POST /admin/ai/providers rejects an unknown driver', function (): void {
+    Sanctum::actingAs(aiProviderSuperAdmin());
+
+    $this->postJson('/api/v1/admin/ai/providers', [
+        'code' => 'bad-driver', 'driver' => 'not_a_real_driver', 'name' => 'A', 'base_url' => 'http://x', 'auth_type' => 'none',
+        'model' => 'm', 'temperature' => 0.2, 'timeout_ms' => 5000, 'retry_count' => 1,
+        'is_fallback' => false, 'priority' => 1, 'active' => true,
+    ])->assertStatus(422);
 });
 
 it('POST /admin/ai/providers rejects a duplicate code', function (): void {
     Sanctum::actingAs(aiProviderSuperAdmin());
     AiProviderConfig::query()->create([
-        'code' => 'dupe', 'name' => 'A', 'base_url' => 'http://x', 'auth_type' => 'none',
+        'code' => 'dupe', 'driver' => 'mock', 'name' => 'A', 'base_url' => 'http://x', 'auth_type' => 'none',
         'model' => 'm', 'temperature' => 0.2, 'timeout_ms' => 5000, 'retry_count' => 1,
         'is_fallback' => false, 'priority' => 1, 'active' => true,
     ]);
 
     $this->postJson('/api/v1/admin/ai/providers', [
-        'code' => 'dupe', 'name' => 'B', 'base_url' => 'http://x', 'auth_type' => 'none',
+        'code' => 'dupe', 'driver' => 'mock', 'name' => 'B', 'base_url' => 'http://x', 'auth_type' => 'none',
         'model' => 'm', 'temperature' => 0.2, 'timeout_ms' => 5000, 'retry_count' => 1,
         'is_fallback' => false, 'priority' => 1, 'active' => true,
     ])->assertStatus(422);

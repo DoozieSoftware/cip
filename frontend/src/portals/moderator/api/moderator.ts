@@ -32,21 +32,24 @@ export const queueApi = {
   fraud: (filters: QueueFilters = {}) =>
     api.get<Paginated<ReportListItem>>('/moderator/fraud', filters as Record<string, unknown>),
 
-  show: (id: string) => api.get<ReportDetail>(`/moderator/reports/${id}`),
+  // QueueController::show() nests the resource under a `report` key
+  // (`respond(['report' => ...])`) — one level deeper than the
+  // ApiResponse envelope `client.ts` already unwraps.
+  show: (id: string) => api.get<{ report: ReportDetail }>(`/moderator/reports/${id}`).then((r) => r.report),
 };
 
 export const actionsApi = {
   review: (id: string, payload: ReviewPayload) =>
-    api.post<ReportDetail>(`/moderator/reports/${id}/review`, payload),
+    api.post<{ report: ReportDetail }>(`/moderator/reports/${id}/review`, payload).then((r) => r.report),
 
   merge: (id: string, payload: MergePayload) =>
-    api.post<ReportDetail>(`/moderator/reports/${id}/merge`, payload),
+    api.post<{ merged_count: number; merged_report_ids: string[] }>(`/moderator/reports/${id}/merge`, payload),
 
   reject: (id: string, payload: { reason_code: string; remarks?: string }) =>
-    api.post<ReportDetail>(`/moderator/reports/${id}/reject`, payload),
+    api.post<{ report: ReportDetail }>(`/moderator/reports/${id}/reject`, payload).then((r) => r.report),
 
   escalate: (id: string, payload: { reason_code: string; remarks?: string; level?: string }) =>
-    api.post<ReportDetail>(`/moderator/reports/${id}/escalate`, payload),
+    api.post<{ report: ReportDetail }>(`/moderator/reports/${id}/escalate`, payload).then((r) => r.report),
 };
 
 export const analyticsApi = {

@@ -1,23 +1,23 @@
-# Current Milestone — M13 Closeout
+# Current Milestone — M17 Closeout (next: M14)
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** **M1–M13 CLOSED 316/316 = 100 %**; total 316/410 = 77.1 %.
-**Last updated:** 2026-06-30 (M13 30/30 closed; commit `84c55e20`).
+**Status:** **M1–M13 + M17 CLOSED 354/354 = 100 % of in-scope work**; total 354/420 = 84.3 %.
+**Last updated:** 2026-07-02 (post-audit remediation: M11 backfilled 28/28 in `.codex` tracking — the module was already fully implemented on `main` but the tracking files never caught up; M17 — Public Transparency Portal — added as new scope and closed 10/10).
 
-> M1 (22/22), M2 (30/30), M3 (24/24), M4 (32/32), M5 (26/26), M6 (22/22), M7 (18/18), M8 (30/30), M9 (20/20), M10 (28/28), M11 (28/28), M12 (34/34), and M13 (30/30) are complete. **M13 is the Citizen PWA** — the React 19 SPA at `/citizen` with the bottom-nav shell, 8 pages (Home, Submit, My Reports, Report Detail, Dashboard, Notifications, Profile, Settings), the IndexedDB offline queue (`OfflineQueue` + `MemoryAdapter` + `IndexedDBAdapter` backed by the `idb` peer dep), the service worker (`cip-sw-v2` — shell pre-cache, network-first API, cache-first static, navigation fallback, background-sync broadcast, push handler with `push:received` client message), the `swBridge` (requestBackgroundSync, onQueueDrain, onPushReceived, onPushNavigate), the `subscribeToPush` (FCM-style), the security guardrails (`blockFileInputs`, `evidencePreviewHandlers`, `stripExif`, `scrubFile`, `guardVideoDuration`), the mock-GPS heuristic, the design-system additions (`ErrorBoundary`, `ErrorState`, `PageStates`), `docs/citizen.md`, `docs/citizen-security-review.md`, the `scripts/check_bundle_budget.sh` budget gate, README M13 section, and full Vitest (87 / 87) + Playwright (49 total) coverage.
+> M1 (22/22), M2 (30/30), M3 (24/24), M4 (32/32), M5 (26/26), M6 (22/22), M7 (18/18), M8 (30/30), M9 (20/20), M10 (28/28), M11 (28/28), M12 (34/34), M13 (30/30), and M17 (10/10) are complete. **M13 is the Citizen PWA** — the React 19 SPA at `/citizen` with the bottom-nav shell, 8 pages (Home, Submit, My Reports, Report Detail, Dashboard, Notifications, Profile, Settings), the IndexedDB offline queue (`OfflineQueue` + `MemoryAdapter` + `IndexedDBAdapter` backed by the `idb` peer dep), the service worker (`cip-sw-v2` — shell pre-cache, network-first API, cache-first static, navigation fallback, background-sync broadcast, push handler with `push:received` client message), the `swBridge` (requestBackgroundSync, onQueueDrain, onPushReceived, onPushNavigate), the `subscribeToPush` (FCM-style), the security guardrails (`blockFileInputs`, `evidencePreviewHandlers`, `stripExif`, `scrubFile`, `guardVideoDuration`), the mock-GPS heuristic (now actually wired into the submit flow and the fraud scorer — see the 2026-07-01 remediation note in §11), the design-system additions (`ErrorBoundary`, `ErrorState`, `PageStates`), `docs/citizen.md`, `docs/citizen-security-review.md`, the `scripts/check_bundle_budget.sh` budget gate, README M13 section, and full Vitest (87 / 87) + Playwright (49 total) coverage. **M17 is the Public Transparency Portal** — new scope discovered missing during a 2026-07-01 documentation-vs-reality audit (`docs/02` §7 scoped it; nothing was ever built); see `.codex/roadmap.md` §M17 and `docs/public.md`.
 
-**Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M13, `.codex/task_queue.md` §M13, `docs/06-Citizen-PWA-Specification.md` (entire), `docs/13-UI-Design-System.md` (entire), `docs/15-QA-and-Test-Strategy.md` §7, §9.
+**Source Documents:** `AGENTS.md`, `.codex/roadmap.md` §M13, §M17, `.codex/task_queue.md` §M13, §M17, `docs/06-Citizen-PWA-Specification.md` (entire), `docs/13-UI-Design-System.md` (entire), `docs/15-QA-and-Test-Strategy.md` §7, §9, `docs/public.md`.
 
 ---
 
 ## 1. Current Milestone
 
-* **Milestone ID:** M13 — **CLOSED**
-* **Title:** Citizen PWA
-* **Status:** **30 / 30 = 100 %** — every T-M13-001..T-M13-030 row has the corresponding code, tests, and (where applicable) documentation on `main`.
-* **Depends on:** M1, M2, M4, M5, M8, M9.
-* **Unblocks:** Production launch.
+* **Milestone ID:** M17 — **CLOSED** (most recently closed milestone; M13 closed earlier, see §7)
+* **Title:** Public Transparency Portal
+* **Status:** **10 / 10 = 100 %** — every T-M17-001..T-M17-010 row has the corresponding code, tests, and documentation on the working tree (`docs/public.md`, `backend/app/Modules/Public/`, `frontend/src/portals/public/`). Not part of the original M1–M16 roadmap; see `.codex/roadmap.md` §M17 provenance note.
+* **Depends on:** M4, M6, M9.
+* **Unblocks:** Nothing downstream is gated on M17. **Next up: M14 — External Connector Framework** (not started).
 
 ---
 
@@ -63,34 +63,43 @@ Land the Citizen PWA end-to-end. This includes the React 19 SPA shell, the botto
 
 ## 4. Scope (closed)
 
-* In scope: the citizen SPA, the offline queue, the service worker, the push subscription, the security guardrails, the docs.
-* Out of scope: M14 connector framework, M15 security hardening (e.g. anti-fraud reporting to the citizen), M16 production hardening.
+* **M13 in scope:** the citizen SPA, the offline queue, the service worker, the push subscription, the security guardrails, the docs.
+* **M17 in scope:** the read-only `Public` module (stats/heatmap/department-performance services), the three unauthenticated `/public/*` endpoints, the `frontend/src/portals/public/` portal, the landing-page link, `docs/public.md`.
+* Out of scope for both: M14 connector framework, M15 security hardening (e.g. anti-fraud reporting to the citizen), M16 production hardening.
 
 ---
 
 ## 5. Exit Criteria — all met
 
+**M13:**
 * All M13 tasks in `.codex/task_queue.md` have the corresponding code path on `main` (T-M13-001..030).
-* `npm test` is green (87 / 87 across 21 files).
+* `npm test` is green (87 / 87 across 21 files at M13 close; 109/109 platform-wide as of the 2026-07-02 verification pass).
 * `npm run build` is green.
 * `npm run budget` is green (largest 537 KB / entry-gz 92 KB / SW+manifest+icons 8 KB).
 * Every new component has Vitest coverage; the PWA shell, SW registration, and settings page have Playwright coverage.
 * The service worker registers, pre-caches the shell, and handles `sync` + `push`.
 * `docs/citizen.md` and `docs/citizen-security-review.md` describe the queue, the SW strategy, the push contract, the security guardrails, and the test surface.
 
+**M17:**
+* All M17 tasks in `.codex/task_queue.md` have the corresponding code path (T-M17-001..010).
+* `/public/stats`, `/public/heatmap`, `/public/departments/performance` are reachable with no `Authorization` header and rate-limited to 30 req/min/IP.
+* No response from any `/public/*` endpoint contains an un-rounded coordinate, a citizen identifier, or department-internal detail — asserted by `backend/tests/Feature/Public/` (17 tests).
+* `docs/public.md` and the README M17 section describe the endpoints, privacy rules, and portal.
+
 ---
 
 ## 6. Documents to read before implementation
 
 * `AGENTS.md` — coding standards, security rules, RBAC rules.
-* `.codex/roadmap.md` §M13.
-* `.codex/task_queue.md` §M13 (T-M13-001 → T-M13-030).
+* `.codex/roadmap.md` §M13, §M17.
+* `.codex/task_queue.md` §M13 (T-M13-001 → T-M13-030), §M17 (T-M17-001 → T-M17-010).
 * `docs/06-Citizen-PWA-Specification.md` (entire).
 * `docs/03-System-Architecture.md` §4 (Citizen PWA context).
 * `docs/05-REST-API-Specification.md` §9 (citizen REST surface).
 * `docs/11-Security-and-Anti-Fraud-Specification.md` §12 (mock-GPS), §13 (EXIF).
 * `docs/13-UI-Design-System.md` (entire).
 * `docs/15-QA-and-Test-Strategy.md` §7, §9.
+* `docs/public.md` — M17 reference.
 
 ---
 
@@ -106,16 +115,20 @@ Land the Citizen PWA end-to-end. This includes the React 19 SPA shell, the botto
 * **M8 (AI Vision):** 30/30 = 100 % — CLOSED.
 * **M9 (Notifications):** 20/20 = 100 % — CLOSED.
 * **M10 (Moderator Portal):** 28/28 = 100 % — CLOSED.
-* **M11 (Operations Portal):** 28/28 = 100 % — CLOSED.
+* **M11 (Operations Portal):** 28/28 = 100 % — CLOSED (backfilled in `.codex` tracking 2026-07-02; the module itself has been on `main` since before M12).
 * **M12 (Super Admin Portal):** 34/34 = 100 % — CLOSED.
-* **M13 (Citizen PWA):** 30/30 = 100 % — **CLOSED** (commit `84c55e20`).
-* **Total:** 316 / 410 = 77.1 %.
+* **M13 (Citizen PWA):** 30/30 = 100 % — CLOSED (commit `84c55e20`).
+* **M14 (External Connector Framework):** 0/24 — NOT STARTED.
+* **M15 (Security, Anti-Fraud & Compliance Hardening):** 0/24 — NOT STARTED.
+* **M16 (Production Hardening, Observability & Release):** 0/18 — NOT STARTED.
+* **M17 (Public Transparency Portal):** 10/10 = 100 % — **CLOSED** (new scope added 2026-07-02; see `.codex/roadmap.md` §M17).
+* **Total:** 354 / 420 = 84.3 %.
 
 ---
 
 ## 8. Blocking Issues
 
-* None. M13 closes the last end-user surface. Production launch is unblocked by M14 (connector framework) + M15 (security hardening) + M16 (production hardening).
+* None. M13 and M17 close every currently-scoped end-user-facing surface. Production launch is unblocked by M14 (connector framework) + M15 (security hardening) + M16 (production hardening).
 
 ---
 
@@ -137,3 +150,16 @@ d69578c0 test(admin): Playwright E2E shell + WCAG AA axe scan (T-M12-029 + T-M12
 81f345a4 feat(admin): docs/admin.md + platform health + scheduler UI
 375b8575 feat: complete M12 remaining CRUD + M13 PWA shell
 ```
+
+## 11. Post-audit remediation (2026-07-01 → 2026-07-02, uncommitted at time of writing)
+
+A red-team documentation-vs-reality audit on 2026-07-01 (Overall Alignment Score 47/100) drove a 6-phase remediation plan (`plans/session-post-audit-remediation.md`):
+
+1. **AI providers, real and configurable + container-binding fix** — closes the audit's top Critical finding that no report had ever been AI-classified end-to-end (M8).
+2. **Staff password authentication** — `POST /api/v1/auth/login` (M2).
+3. **DEMO.md + landing page accuracy** — real `/public/stats`-backed numbers (M4).
+4. **Citizen offline queue + mock-GPS wiring** — `SubmitPage.tsx` now actually enqueues on network failure and the mock-GPS score reaches the moderator fraud panel (M13).
+5. **Public Transparency Portal** — new scope, tracked as **M17** (closed 10/10, see §7).
+6. **This `.codex` rebuild** — M11 backfilled from 0 % to 100 % (the module was already real code; only the tracking was stale), M17 added, totals recomputed across `current_milestone.md` / `task_queue.md` / `completed_tasks.md`.
+
+See `.codex/completed_tasks.md` §6 ("Post-Audit Remediation — Phases 1–4") and §6.1 ("M17 Closeout") for full detail. This work is on the working tree but has not yet been committed to `main` as of this update.

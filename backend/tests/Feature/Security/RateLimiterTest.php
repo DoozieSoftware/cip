@@ -5,9 +5,9 @@ declare(strict_types=1);
 use App\Modules\Users\Models\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
@@ -51,6 +51,14 @@ it('falls back to IP keying for the citizen limiter when unauthenticated', funct
     expect($limits[0]->key)->toBe('citizen:203.0.113.5');
 });
 
+it('registers the login limiter at 10 per hour keyed by IP + mobile', function (): void {
+    $request = Request::create('/api/v1/auth/login', 'POST', ['mobile' => '9876543210'], server: ['REMOTE_ADDR' => '203.0.113.5']);
+    $limits = RateLimiter::limiter('login')($request);
+
+    expect($limits[0]->maxAttempts)->toBe(10);
+    expect($limits[0]->key)->toBe('login:203.0.113.5:9876543210');
+});
+
 it('registers uploads, moderator, department, admin limiters', function (): void {
     foreach (['uploads', 'moderator', 'department', 'admin'] as $name) {
         $request = Request::create('/api/v1/test', 'GET');
@@ -62,6 +70,7 @@ it('registers uploads, moderator, department, admin limiters', function (): void
 
 it('exposes the limiter names as RouteServiceProvider constants', function (): void {
     expect(RouteServiceProvider::LIMITER_OTP)->toBe('otp')
+        ->and(RouteServiceProvider::LIMITER_LOGIN)->toBe('login')
         ->and(RouteServiceProvider::LIMITER_CITIZEN)->toBe('citizen')
         ->and(RouteServiceProvider::LIMITER_UPLOADS)->toBe('uploads')
         ->and(RouteServiceProvider::LIMITER_MODERATOR)->toBe('moderator')

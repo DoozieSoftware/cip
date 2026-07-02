@@ -1,54 +1,46 @@
 import { useState, type FormEvent } from 'react';
 import { type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCreateReport, useReportTypes, type ReportType } from '../api/client';
+import { useCreateReport, useReportTypes, type ReportType, type CreateReportInput } from '../api/client';
 import { Spinner, cx } from '../../moderator/design';
 import { CameraCapture, type CameraError } from '../components/CameraCapture';
+import { GpsCapture, type CapturedLocation } from '../components/GpsCapture';
+import { getQueue } from '../offline/queue';
+import { useToast } from '../components/Toast';
+import { ApiError } from '../../../auth/api';
 
 export default function SubmitPage(): JSX.Element {
   const navigate = useNavigate();
+  const toast = useToast();
   const types = useReportTypes();
   const create = useCreateReport();
   const [typeId, setTypeId] = useState<string>('');
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [coords, setCoords] = useState<{ lat: number; lng: number; acc?: number } | null>(null);
+  const [location, setLocation] = useState<CapturedLocation | null>(null);
   const [address, setAddress] = useState<string>('');
-  const [locating, setLocating] = useState<boolean>(false);
   const [files, setFiles] = useState<File[]>([]);
   const [showVideo, setShowVideo] = useState<boolean>(false);
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
   function onCameraError(err: CameraError): void {
     setError(err.message);
   }
   const [error, setError] = useState<string | null>(null);
 
-  function detectLocation(): void {
-    if (!('geolocation' in navigator)) {
-      setError('Geolocation not supported in this browser.');
-      return;
-    }
-    setLocating(true);
-    setError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setCoords({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          acc: pos.coords.accuracy,
-        });
-        setLocating(false);
-      },
-      (err) => {
-        setError(`Couldn't get location: ${err.message}. You can enter the address manually.`);
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 8000 },
-    );
-  }
-
   function removeFile(idx: number): void {
     setFiles((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  /**
+   * A `TypeError` (or any non-`ApiError`) from `mutateAsync` means
+   * `fetch` itself failed — no network, not a server rejection. An
+   * `ApiError` means the server was reachable and said no (validation,
+   * auth, etc.), which must surface as a real error, not a silent
+   * offline-queue save.
+   */
+  function isNetworkFailure(err: unknown): boolean {
+    return !(err instanceof ApiError);
   }
 
   async function onSubmit(e: FormEvent): Promise<void> {
@@ -57,21 +49,34 @@ export default function SubmitPage(): JSX.Element {
     if (!typeId) { setError('Pick a category.'); return; }
     if (title.length < 5) { setError('Title should be at least 5 characters.'); return; }
     if (description.length < 10) { setError('Description should be at least 10 characters.'); return; }
-    if (coords === null) { setError('Tap "Use my location" to tag the report.'); return; }
+    if (location === null) { setError('Tap "Use my location" to tag the report.'); return; }
+
+    const payload: CreateReportInput = {
+      report_type_id: typeId,
+      title,
+      description,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      accuracy_m: location.accuracy_m ?? undefined,
+      address,
+      media_files: files,
+      mock_gps_score: location.mock_heuristic.score,
+    };
+
+    setSubmitting(true);
     try {
-      const res = await create.mutateAsync({
-        report_type_id: typeId,
-        title,
-        description,
-        latitude: coords.lat,
-        longitude: coords.lng,
-        accuracy_m: coords.acc,
-        address,
-        media_files: files,
-      });
+      const res = await create.mutateAsync(payload);
       void navigate(`/citizen/reports/${res.id}`);
     } catch (err) {
+      if (isNetworkFailure(err)) {
+        await getQueue().enqueue({ kind: 'report.create', payload });
+        toast.show("Saved offline — we'll submit it when you're back online.", 'info', 6000);
+        void navigate('/citizen');
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Submit failed');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -136,22 +141,13 @@ export default function SubmitPage(): JSX.Element {
 
       <section>
         <h2 className="text-sm font-semibold text-slate-700">3 · Location</h2>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={detectLocation}
-            disabled={locating}
-            className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:bg-emerald-300"
-          >
-            📍 {locating ? 'Locating…' : 'Use my location'}
-          </button>
-          {coords !== null && (
-            <span className="text-xs text-slate-600">
-              {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
-              {coords.acc !== undefined && ` (±${Math.round(coords.acc)} m)`}
-            </span>
-          )}
-        </div>
+        <GpsCapture onCapture={setLocation} className="mt-2" />
+        {location !== null && (
+          <span className="text-xs text-slate-600">
+            {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
+            {location.accuracy_m !== null && ` (±${Math.round(location.accuracy_m)} m)`}
+          </span>
+        )}
         <input
           value={address}
           onChange={(e) => setAddress(e.target.value)}
@@ -211,10 +207,10 @@ export default function SubmitPage(): JSX.Element {
 
       <button
         type="submit"
-        disabled={create.isPending}
+        disabled={submitting}
         className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:bg-emerald-300"
       >
-        {create.isPending ? 'Submitting…' : 'Submit report'}
+        {submitting ? 'Submitting…' : 'Submit report'}
       </button>
     </form>
   );

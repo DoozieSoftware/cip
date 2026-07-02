@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -69,11 +69,50 @@ describe('AdminAi (T-M12-021)', () => {
       </QueryClientProvider>,
     );
     const promptsTab = await screen.findByRole('button', { name: /Prompts/ });
-    promptsTab.click();
+    fireEvent.click(promptsTab);
     const table = await screen.findByRole('table');
     expect(within(table).getByText('v1')).toBeTruthy();
     expect(within(table).getByText('v2')).toBeTruthy();
     expect(within(table).getByText('approved')).toBeTruthy();
     expect(within(table).getByText('draft')).toBeTruthy();
+  });
+
+  it('opens the new-provider form and submits a custom OpenAI-compatible provider (OpenRouter/Modal.com)', async () => {
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter><AdminAi /></MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: '+ New provider' }));
+
+    const form = await screen.findByRole('form', { name: 'Provider form' });
+    fireEvent.change(within(form).getByLabelText('Code'), { target: { value: 'openrouter' } });
+    fireEvent.change(within(form).getByLabelText('Name'), { target: { value: 'OpenRouter' } });
+    fireEvent.change(within(form).getByLabelText('Model'), { target: { value: 'openrouter/auto' } });
+    fireEvent.change(within(form).getByLabelText('Base URL'), { target: { value: 'https://openrouter.ai/api' } });
+
+    fireEvent.click(within(form).getByRole('button', { name: 'Save' }));
+
+    expect(mutateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'openrouter', name: 'OpenRouter', model: 'openrouter/auto', base_url: 'https://openrouter.ai/api' }),
+      expect.anything(),
+    );
+  });
+
+  it('edits an existing provider, pre-filling the form from its current values', async () => {
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter><AdminAi /></MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    const table = await screen.findByRole('table');
+    const editButtons = within(table).getAllByRole('button', { name: 'Edit' });
+    fireEvent.click(editButtons[0]);
+
+    const form = await screen.findByRole('form', { name: 'Provider form' });
+    expect(within(form).getByLabelText<HTMLInputElement>('Code').value).toBe('mock');
+    expect(within(form).getByLabelText<HTMLInputElement>('Name').value).toBe('Mock provider');
   });
 });

@@ -2,7 +2,7 @@
 
 **Project:** Civic Intelligence Platform
 **Version:** 1.0
-**Status:** M1–M12 CLOSED 286/286 = 100 %; M13 in progress (PWA shell + SW + queue + push + docs).
+**Status:** M1–M13 + M17 CLOSED 354/354 = 100 % of in-scope work; total 354/420 = 84.3 % of the full V1 roadmap (M14–M16 not started).
 **Maintained by:** Lead Solution Architect / implementing agents
 **Source Documents:** `AGENTS.md`, `.codex/roadmap.md`, `.codex/task_queue.md`, `.codex/current_milestone.md`
 
@@ -19,35 +19,36 @@
 
 ## 1. Last Updated
 
-* **Last updated:** 2026-06-30 IST (after M12 34/34 closed + M13 PWA shell + service worker + docs; total 286/410 = 69.8 %; next: finish M13, then M14)
-* **Last update trigger:** T-M1-001..T-M1-007 batch (initial M1 backend bootstrap complete)
-* **Active milestone:** M13 — Citizen PWA (see `.codex/current_milestone.md`; M12 closed 34/34 = 100 %)
+* **Last updated:** 2026-07-02 IST (post-audit remediation rebuild: M11 backfilled 28/28, M17 — Public Transparency Portal — added and closed 10/10; total 354/420 = 84.3 %; next: M14)
+* **Last update trigger:** Phase 6 of `plans/session-post-audit-remediation.md` — reconciling `.codex` tracking with on-disk reality after the 2026-07-01 documentation-vs-reality audit found M11 showing 0 % despite being fully implemented, and a scoped-but-untracked Public Portal surface.
+* **Active milestone:** M14 — External Connector Framework (not started; see `.codex/current_milestone.md`). M1–M13 and M17 are closed.
 
 ---
 
 ## 2. Milestone Progress Summary
 
-Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initialization.
+Counts derive from `.codex/task_queue.md`.
 
 | ID  | Title                                    | Total | Done | In Progress | Blocked | Deferred | % Complete |
 | --- | ---------------------------------------- | ----- | ---- | ----------- | ------- | -------- | ---------- |
 | M1  | Repository Bootstrap & Tooling          | 22    | 22   | 0           | 0       | 0        | 100 %      |
 | M2  | Identity, Auth & RBAC Core               | 30    | 30   | 0           | 0       | 0        | 100 %      |
-| M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %  ✓   |
-| M4 | Reports Domain & Submission API | 32 | 32 | 0 | 0 | 0 | 100 % |
-| M5 | Media Pipeline & Evidence Integrity | 26 | 26 | 0 | 0 | 0 | 100 % |
-| M6 | Workflow Engine & State Machine | 22 | 22 | 0 | 0 | 0 | 100 % |
-| M7 | Routing Engine & Department Assignment | 18 | 18 | 0 | 0 | 0 | 100 % |
-| M8 | AI Vision Pipeline & Provider Abstraction | 30 | 30 | 0 | 0 | 0 | 100 % |
-| M9 | Notification & Eventing Platform | 20 | 20 | 0 | 0 | 0 | 100 %  ✓ |
-| M10 | Moderator Portal                         | 28    | 0    | 0           | 0       | 0        | 0 %        |
-| M11 | Operations Portal (Department)           | 28    | 0    | 0           | 0       | 0        | 0 %        |
-| M12 | Super Admin Portal & Platform Configuration | 34 | 0    | 0           | 0       | 0        | 0 %        |
-| M13 | Citizen PWA                              | 30    | 0    | 0           | 0       | 0        | 0 %        |
+| M3  | Master Configuration & Geography         | 24    | 24   | 0           | 0       | 0        | 100 %      |
+| M4  | Reports Domain & Submission API | 32 | 32 | 0 | 0 | 0 | 100 % |
+| M5  | Media Pipeline & Evidence Integrity | 26 | 26 | 0 | 0 | 0 | 100 % |
+| M6  | Workflow Engine & State Machine | 22 | 22 | 0 | 0 | 0 | 100 % |
+| M7  | Routing Engine & Department Assignment | 18 | 18 | 0 | 0 | 0 | 100 % |
+| M8  | AI Vision Pipeline & Provider Abstraction | 30 | 30 | 0 | 0 | 0 | 100 % |
+| M9  | Notification & Eventing Platform | 20 | 20 | 0 | 0 | 0 | 100 % |
+| M10 | Moderator Portal                         | 28    | 28   | 0           | 0       | 0        | 100 %      |
+| M11 | Operations Portal (Department)           | 28    | 28   | 0           | 0       | 0        | 100 %      |
+| M12 | Super Admin Portal & Platform Configuration | 34 | 34   | 0           | 0       | 0        | 100 %      |
+| M13 | Citizen PWA                              | 30    | 30   | 0           | 0       | 0        | 100 %      |
 | M14 | External Connector Framework             | 24    | 0    | 0           | 0       | 0        | 0 %        |
 | M15 | Security, Anti-Fraud & Compliance Hardening | 24 | 0    | 0           | 0       | 0        | 0 %        |
 | M16 | Production Hardening, Observability & Release | 18 | 0    | 0           | 0       | 0        | 0 %        |
-| **All** | **Total** | **410** | **224** | **0** | **0** | **0** | **54.6 %** |
+| M17 | Public Transparency Portal                | 10    | 10   | 0           | 0       | 0        | 100 %      |
+| **All** | **Total** | **420** | **354** | **0** | **0** | **0** | **84.3 %** |
 
 **Legend:** `Done` = `Status: Done`; `In Progress` = actively being worked; `Blocked` = cannot start due to an issue recorded in §6; `Deferred` = explicitly postponed with a decision in §5; `% Complete` = `Done / Total`.
 
@@ -56,11 +57,12 @@ Counts derive from `.codex/task_queue.md`. All tasks are `Not Started` at initia
 | Phase | Milestones | Total tasks | Done | % Complete |
 | --- | --- | --- | --- | --- |
 | Bootstrap | M1 | 22 | 22 | 100 % |
-| Foundations | M2, M3, M5, M9 | 100 | 74 | 74 % |
-| Domain core | M4, M6, M7, M8 | 102 | 0 | 0 % |
-| Portals & PWA | M10, M11, M12, M13 | 120 | 0 | 0 % |
+| Foundations | M2, M3, M5, M9 | 100 | 100 | 100 % |
+| Domain core | M4, M6, M7, M8 | 102 | 102 | 100 % |
+| Portals & PWA | M10, M11, M12, M13 | 120 | 120 | 100 % |
 | Cross-cutting | M14, M15, M16 | 66 | 0 | 0 % |
-| **Total** | | **410** | **75** | **18.3 % |
+| Public Portal | M17 | 10 | 10 | 100 % |
+| **Total** | | **420** | **354** | **84.3 %** |
 
 ---
 
@@ -3196,6 +3198,21 @@ Snapshot at 2026-06-28 (after M9 closeout).
 * **Backend test status:** 1,151 pass / 8 fail pre-M10-frontend-fix (5 media endpoint 403s + 1 routing UNIQUE constraint + 2 ReportStatus counts). Of these, the 2 ReportStatus counts are fixed by the M10 work. The 6 remaining are pre-existing unrelated issues.
 * **Total: 252/410 = 61.5 %**.
 
+## 2.2 M11 Closeout — Operations Portal (28/28 = 100 %)
+
+> **Rebuilt 2026-07-02** from git history + on-disk evidence during the post-audit remediation pass. This milestone's code shipped on `main` well before this entry was written — the `.codex` tracking files simply never caught up (every M11 task sat at `Status: Not Started` while the module was fully implemented and covered by tests). Spot-verified against the working tree before being logged.
+
+* T-M11-001..T-M11-010 — Backend: `DepartmentPolicy` (member-only access), `DepartmentReportRepository` (filtered/paginated/sortable), `DepartmentReportService` (accept/start/progress/resolve/close/addNote via the M6 `WorkflowEngine`, audit + events on every action), `report_internal_notes` migration + model (private per department), `POST /api/v1/department/report/{id}/note`, `POST /api/v1/department/report/{id}/{accept|start|progress|resolve|close}`, `GET /api/v1/department/dashboard`, `GET /api/v1/department/reports`, department admin endpoints (officers/SLAs/working hours/holiday calendar), CSV/Excel/PDF exports (`maatwebsite/excel` + `barryvdh/dompdf`, pinned in `backend/composer.json`).
+* T-M11-011..T-M11-021 — Operations React portal at `frontend/src/portals/operations/` (not a standalone `frontend/apps/operations/` package — same portal-per-directory convention as every other frontend surface): `DashboardPage` (ECharts widgets), `ReportListPage` (filters/sort/bulk select), `ReportDetailPage` (action buttons + internal notes), `GisMapPage` (Leaflet + OSM, clusters/heatmap/ward boundaries — reused as the pattern basis for M17's `HeatmapPage`), `AdminPage` (officers/SLAs/working hours/holidays), `AnalyticsPage`, `useLiveQueue` polling hook, `AuditLogPage`, `SecurityPage`, `ExportMenu` component.
+* T-M11-022..T-M11-023 — Playwright E2E: `frontend/e2e/operations.spec.ts`, `operations-accept-close.spec.ts` (full accept→close lifecycle), `operations-a11y.spec.ts` (axe-core WCAG AA).
+* T-M11-024 — `backend/tests/Feature/Departments/DepartmentScopeTest.php` — cross-department denial (member of dept A cannot see dept B's reports or notes).
+* T-M11-025 — `/department/*` and department-admin endpoints under the OpenAPI **Departments**/**Operations** surface; `tests/Feature/OpenApiDepartmentTest.php` green.
+* T-M11-026 — `docs/operations.md` authored.
+* T-M11-027 — README "Operations Portal (M11)" section (see `README.md` §"M11 — Operations Portal (Department)").
+* T-M11-028 — `maatwebsite/excel` + `barryvdh/dompdf` pinned in `backend/composer.json`; `ExportTest.php` green.
+* **Backend test coverage:** `backend/tests/Feature/Departments/` — `AdminEndpointsTest`, `DepartmentCrudTest`, `DepartmentEndpointsTest`, `DepartmentPolicyTest`, `DepartmentReportRepositoryTest`, `DepartmentReportServiceTest`, `DepartmentScopeTest`, `DepartmentServiceTest`, `DepartmentsSeedTest`, `ExportTest`, `InternalNoteMigrationTest`, `OpenApiDepartmentTest` — all pass as of the 2026-07-02 verification pass (see §7 Change Log).
+* **Total: 344/410 = 83.9 %** (M1–M13 closed; M14–M16 not started — M11 was the only closed milestone still showing 0 % before this entry).
+
 ## 3. M12 Closeout — Super Admin Portal (34/34 = 100 %)
 
 * T-M12-001..T-M12-015 — Admin API CRUD across users, roles, permissions, report types, workflow, routing rules, AI providers, AI prompts (with rollback), integrations, storage, notification configs, security policies, feature flags, scheduler, organizations, audit log search, platform health.
@@ -3265,3 +3282,39 @@ Final commit on `main`: `84c55e20` — `feat(citizen): finish M13 closeout (T-M1
 * `npx vite build` — clean.
 * `npm run budget` — green.
 * `origin/main` at `84c55e20` (pushed).
+
+## 6. Post-Audit Remediation — Phases 1–4 (2026-07-01)
+
+A red-team "Documentation vs Reality" audit run on 2026-07-01 scored the platform 47/100 on doc-vs-implementation alignment and surfaced several Critical findings in already-"closed" milestones. The user reviewed the findings and directed a 6-phase remediation plan (`plans/session-post-audit-remediation.md`). Phases 1–4 are fixes/completions layered onto **existing** milestone scope (M2, M4, M8, M13) rather than new milestones, so they are logged here as a remediation batch instead of new `T-Mxx-xxx` task rows. Phase 5 (Public Portal) was genuinely new scope and is tracked as milestone **M17** (§6 below). Phase 6 is this `.codex` rebuild itself.
+
+* **Phase 1 — AI providers, real and configurable (Modal.com / OpenRouter) + container-binding fix [M8].** The audit's top Critical finding: `ProviderFailoverService`'s `$bindings` array was never populated — no service provider ever constructed a real `AIProviderInterface` from an `ai_provider_configs` row, so **zero reports had ever been AI-classified end-to-end** despite M8 being marked 30/30 Done. Fixed by adding `AiServiceProvider` (registered in `bootstrap/providers.php`), `AiProviderFactory`, and a `driver`/`extra_headers`/`credentials` schema on `ai_provider_configs` so an admin can point at any OpenAI-compatible endpoint (Modal.com, OpenRouter) without a deploy. Also wired two previously-orphaned M8 pieces into the live pipeline: `ConfidenceAggregator` (low-confidence AI results now route to `pending_moderator` instead of auto-assigning) and `PiiMaskingService` (structured PII masked before every outbound AI request). New tests: `AiProviderFactoryTest`, `AiServiceProviderBindingTest` (the regression guard for the container-binding gap itself).
+* **Phase 2 — Staff password authentication [M2].** The audit found `docs/auth.md` described a password-login flow for staff that had no backing route — every staff login path in the codebase was OTP-only, with no way to exercise password auth outside test harnesses. Added `POST /api/v1/auth/login`, `AuthenticationService::loginWithPassword()` (mirrors the existing OTP flow: lockout after 5 failures/15min, `LOGIN_SUCCESS`/`LOGIN_FAILURE` security events, login history), and `SecurityPolicyService::passwordRule()` reading the live `password.min_length` policy row (also fixed the seeder's default from `min:8` to the documented `min:12`). `docs/auth.md` rewritten to match — including correcting several previously-fabricated claims (a "dual approval" claim that was actually a hard block; a "sanctum guard" claim that didn't exist; a device-fingerprint claim honestly flagged as still-unwired).
+* **Phase 3 — DEMO.md + landing page accuracy [M4].** The stakeholder-facing landing page (`LandingPage.tsx`) hardcoded three "live" metrics (`'12,847'`, `'94%'`, `'38s'`) as fixed strings. Replaced with a real `GET /api/v1/public/stats` endpoint (the same endpoint M17 later builds on) and a React Query hook. `DEMO.md`'s Security Policies and Feature Flags demo steps were rewritten to describe actual live-edit behavior instead of scripted-but-nonfunctional steps; a fabricated face-blurring PII claim was replaced with the real text-masking behavior.
+* **Phase 4 — Citizen offline queue + mock-GPS wiring [M13].** M13's `OfflineQueue` and `GpsCapture` components existed and were unit-tested in isolation but were never actually wired into `SubmitPage.tsx` — a citizen submitting while offline saw a bare "Submit failed" with no queueing. Wired `getQueue().enqueue()` on network failure, registered the queue's retry handler to the real submit flow, and fixed `OfflineBridge`'s `onQueueDrain` handler (it invalidated caches but never actually called `.drain()`). Also closed the loop on mock-GPS: added `reports.mock_gps_score`, wired it through `SubmitReportRequest`/`ReportService`/`AiPipelineOrchestrator`'s fraud scorer (previously hardcoded to `0.0`), and surfaced it in the moderator `AiAnalysisPanel`. Two additional severe bugs were discovered and fixed while wiring this: the citizen submit payload sent `accuracy_m` but the backend only read `accuracy` (GPS accuracy silently dropped on every submission since M13 shipped), and the moderator API client (`frontend/src/portals/moderator/api/client.ts`) never unwrapped the `{success,data,...}` `ApiResponse` envelope — meaning the entire Report Detail page had been rendering `undefined` for every field. Both fixed with regression tests; the moderator client's queue-list cursor/offset pagination mismatch was identified as a separate, larger issue and explicitly left out of scope pending a product decision.
+* **Cross-phase verification discipline:** every phase was checked against a `git stash` baseline on clean `main` before any phpstan/lint finding was "fixed," to distinguish genuinely new regressions from pre-existing debt — applied consistently through M17's own verification pass (§6 below) and this `.codex` rebuild.
+
+## 6.1 M17 Closeout — Public Transparency Portal (10/10 = 100 %)
+
+**Added 2026-07-02.** M17 is new scope, not part of the original M1–M16 roadmap — see the provenance note in `.codex/roadmap.md` §M17. The red-team documentation-vs-reality audit run on 2026-07-01 found that a public transparency surface had been scoped in `docs/02` §7 but silently dropped somewhere between planning and `.codex` tracking; this milestone closes that gap.
+
+* T-M17-001 — `backend/app/Modules/Public/` module skeleton (read-only, no new tables).
+* T-M17-002 — `PublicStatsService` + `GET /api/v1/public/stats` (`total_reports`, `ai_classified_percent`, `median_assign_seconds`; 5-minute cache).
+* T-M17-003 — `PublicHeatmapService` + `GET /api/v1/public/heatmap` (2-decimal grid-bucketed density, same rounding convention as `PiiMaskingService`).
+* T-M17-004 — `PublicDepartmentPerformanceService` + `GET /api/v1/public/departments/performance` (resolution rate + median resolution hours per department; only `name`/`code`/aggregate counts).
+* T-M17-005 — `public` rate limiter (30 req/min/IP) + unauthenticated route group in `backend/routes/api.php`.
+* T-M17-006 — `frontend/src/portals/public/` portal shell mounted at `/public`, no `ProtectedRoute` wrapper.
+* T-M17-007 — `OverviewPage`, `HeatmapPage` (Leaflet, same pattern as M11's `GisMapPage.tsx`), `DepartmentPerformancePage` (reuses the M10 moderator `design/` component set).
+* T-M17-008 — Landing page (`frontend/src/pages/LandingPage.tsx`) link to `/public`; shares the `/public/stats` endpoint for its own summary tiles.
+* T-M17-009 — `docs/public.md` + README "Public Transparency Portal (M17)" section.
+* T-M17-010 — Privacy-leak regression coverage in every Public Feature test suite.
+* **Backend tests:** `backend/tests/Feature/Public/` — `PublicStatsEndpointTest` (8), `PublicHeatmapEndpointTest` (4), `PublicDepartmentPerformanceEndpointTest` (5) — 17 tests, all green.
+* **Frontend tests:** `frontend/src/portals/public/pages/__tests__/OverviewPage.test.tsx` (2), `DepartmentPerformancePage.test.tsx` (3); `frontend/src/pages/__tests__/LandingPage.test.tsx` gained a 5th test asserting the `/public` link. No Vitest unit test for `HeatmapPage.tsx` — Leaflet+jsdom isn't exercised anywhere in this codebase (including the pre-existing M11 `GisMapPage.tsx`), so this follows established precedent rather than introducing a gap.
+* **Bug found and fixed during this milestone's own verification pass:** `PublicHeatmapService::grid()` triggered a PHPStan "cannot cast mixed to float/int" error on the `DB::table()` `stdClass` row properties — fixed with `is_numeric()` narrowing rather than a bare cast, per the repo's standing rule against widening types or suppressing PHPStan findings.
+* **Total: 354/420 = 84.3 %** (M1–M13 + M17 closed; M14–M16 not started — see §2 for the recomputed roll-up).
+
+### Verification
+
+* Backend: `vendor/bin/pest tests/Feature/Public` — 17/17. Full `tests/Feature` sweep by directory (the `--parallel` full-suite run remains blocked by a pre-existing, unrelated `TestCaseClassOrTraitNotFound: Tests\Feature\RefreshDatabase` crash, confirmed via `git stash` to predate this session) — 329 tests green across the touched-module directories, plus 4 pre-existing unrelated Media-module failures confirmed present on a clean `git stash` baseline.
+* `vendor/bin/phpstan analyse` — 602 errors repo-wide vs. a 605-error baseline on clean `main` (net improvement; the `Public` module itself carries exactly one accepted `missingType.iterableValue` finding, consistent with the pre-existing pattern in `ReportService::transitionTo()`).
+* `vendor/bin/pint --test` — clean on every touched file.
+* Frontend: `npx tsc --noEmit` clean; `npm test -- --run` 109/109; `npm run build` clean; `npm run lint` — 46 problems (38 errors, 8 warnings), identical to the clean-`main` baseline (zero net-new).

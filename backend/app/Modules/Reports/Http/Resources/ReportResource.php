@@ -38,6 +38,7 @@ class ReportResource extends JsonResource
             'ai_confidence' => $report->ai_confidence,
             'fraud_score' => $report->fraud_score,
             'duplicate_score' => $report->duplicate_score,
+            'mock_gps_score' => $report->mock_gps_score,
             'citizen_id' => $report->is_anonymous ? null : $report->citizen_id,
             'report_type' => $type === null ? null : [
                 'id' => $type->id,

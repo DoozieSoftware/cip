@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Users\Http\Requests\Admin;
 
+use App\Modules\Security\Services\SecurityPolicyService;
 use App\Modules\Users\Services\AdminUserService;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -27,8 +28,8 @@ class StoreUserRequest extends FormRequest
             'name' => ['nullable', 'string', 'max:255'],
             'mobile' => ['required', 'string', 'max:32', 'unique:users,mobile'],
             'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['nullable', 'string', 'min:8', 'max:128'],
-            'status' => ['nullable', 'string', 'in:' . implode(',', AdminUserService::ALLOWED_STATUSES)],
+            'password' => ['nullable', 'string', 'max:128', app(SecurityPolicyService::class)->passwordRule()],
+            'status' => ['nullable', 'string', 'in:'.implode(',', AdminUserService::ALLOWED_STATUSES)],
             'anonymous_enabled' => ['nullable', 'boolean'],
             'roles' => ['nullable', 'array'],
             'roles.*' => ['string', 'max:64'],

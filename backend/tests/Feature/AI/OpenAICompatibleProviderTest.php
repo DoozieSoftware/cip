@@ -154,3 +154,60 @@ it('classify() throws on non-JSON content (defensive against prompt drift)', fun
     expect(fn () => $p->classify(new AiRequest(promptName: 'category_classifier')))
         ->toThrow(RuntimeException::class, 'invalid_ai_response');
 });
+
+it('sends extra_headers on both healthCheck and classify (OpenRouter-style custom headers)', function (): void {
+    Http::fake([
+        'openrouter.ai/*' => Http::response([
+            'choices' => [['message' => ['content' => json_encode(['predicted_type' => 'pothole'])]]],
+        ], 200),
+    ]);
+
+    $p = new OpenAICompatibleProvider(
+        name: 'openrouter',
+        model: 'openrouter/auto',
+        baseUrl: 'https://openrouter.ai/api',
+        apiKey: 'sk-or-test',
+        extraHeaders: ['HTTP-Referer' => 'https://civic-intelligence.example', 'X-Title' => 'Civic Intelligence Platform'],
+    );
+
+    $p->healthCheck();
+    $p->classify(new AiRequest(promptName: 'category_classifier'));
+
+    Http::assertSent(function ($request): bool {
+        return $request->hasHeader('HTTP-Referer', 'https://civic-intelligence.example')
+            && $request->hasHeader('X-Title', 'Civic Intelligence Platform')
+            && $request->hasHeader('Authorization', 'Bearer sk-or-test');
+    });
+});
+
+it('healthCheck falls back to a bare connectivity check when /v1/models 404s (Modal.com-style deployments)', function (): void {
+    Http::fake([
+        'my-model.modal.run/v1/models' => Http::response(['error' => 'not found'], 404),
+        'my-model.modal.run' => Http::response('ok', 200),
+    ]);
+
+    $p = new OpenAICompatibleProvider(
+        name: 'modal-vision',
+        model: 'custom-vision-1',
+        baseUrl: 'https://my-model.modal.run',
+        apiKey: 'modal-token',
+    );
+
+    expect($p->healthCheck())->toBeTrue();
+});
+
+it('healthCheck returns false when both /v1/models and the bare base URL fail', function (): void {
+    Http::fake([
+        'my-model.modal.run/v1/models' => Http::response(['error' => 'not found'], 404),
+        'my-model.modal.run' => Http::response('down', 500),
+    ]);
+
+    $p = new OpenAICompatibleProvider(
+        name: 'modal-vision',
+        model: 'custom-vision-1',
+        baseUrl: 'https://my-model.modal.run',
+        apiKey: 'modal-token',
+    );
+
+    expect($p->healthCheck())->toBeFalse();
+});

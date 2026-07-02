@@ -1,7 +1,38 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { type JSX } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth, type Role } from '../auth/AuthContext';
 import { routeForRoles } from './LoginPage';
+import { apiRequest, type ApiEnvelope } from '../auth/api';
+
+interface PublicStats {
+  total_reports: number;
+  ai_classified_percent: number;
+  median_assign_seconds: number | null;
+}
+
+function formatDuration(seconds: number | null): string {
+  if (seconds === null) {
+    return '—';
+  }
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
+  const minutes = Math.floor(seconds / 60);
+  const remaining = seconds % 60;
+  return remaining === 0 ? `${minutes}m` : `${minutes}m ${remaining}s`;
+}
+
+function usePublicStats() {
+  return useQuery({
+    queryKey: ['public', 'stats'],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<PublicStats>>('/public/stats');
+      return res.data;
+    },
+    staleTime: 5 * 60_000,
+  });
+}
 
 interface Portal {
   title: string;
@@ -60,6 +91,7 @@ const PORTALS: Portal[] = [
 export function LandingPage(): JSX.Element {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
+  const stats = usePublicStats();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
@@ -143,19 +175,31 @@ export function LandingPage(): JSX.Element {
           ))}
         </section>
 
-        <section className="mt-20 grid grid-cols-1 gap-6 rounded-3xl border border-slate-200 bg-white p-8 sm:grid-cols-3">
-          {[
-            { label: 'Reports processed', value: '12,847', sub: 'in the last 30 days' },
-            { label: 'AI-classified', value: '94%', sub: 'before human review' },
-            { label: 'Median time to assign', value: '38s', sub: 'submit → department' },
-          ].map((m) => (
-            <div key={m.label} className="text-center">
-              <div className="text-3xl font-bold tracking-tight text-brand-700 sm:text-4xl">{m.value}</div>
-              <div className="mt-1 text-sm font-semibold text-slate-900">{m.label}</div>
-              <div className="text-xs text-slate-500">{m.sub}</div>
-            </div>
-          ))}
+        <section aria-label="Platform statistics" className="mt-20 grid grid-cols-1 gap-6 rounded-3xl border border-slate-200 bg-white p-8 sm:grid-cols-3">
+          {stats.isLoading ? (
+            <div className="col-span-3 py-4 text-center text-sm text-slate-500">Loading live stats…</div>
+          ) : stats.isError || !stats.data ? (
+            <div className="col-span-3 py-4 text-center text-sm text-slate-500">Live stats are unavailable right now.</div>
+          ) : (
+            [
+              { label: 'Reports processed', value: stats.data.total_reports.toLocaleString(), sub: 'all time' },
+              { label: 'AI-classified', value: `${stats.data.ai_classified_percent}%`, sub: 'before human review' },
+              { label: 'Median time to assign', value: formatDuration(stats.data.median_assign_seconds), sub: 'submit → department' },
+            ].map((m) => (
+              <div key={m.label} className="text-center">
+                <div className="text-3xl font-bold tracking-tight text-brand-700 sm:text-4xl">{m.value}</div>
+                <div className="mt-1 text-sm font-semibold text-slate-900">{m.label}</div>
+                <div className="text-xs text-slate-500">{m.sub}</div>
+              </div>
+            ))
+          )}
         </section>
+
+        <p className="mt-6 text-center text-sm">
+          <Link to="/public" className="font-medium text-brand-700 hover:underline">
+            View the full public transparency portal →
+          </Link>
+        </p>
 
         <footer className="mt-16 text-center text-xs text-slate-500">
           Built for the Government of Karnataka · Demo seed data · 2026

@@ -14,7 +14,7 @@ export class ApiError extends Error {
   }
 }
 
-function getToken(): string | null {
+export function getToken(): string | null {
   if (typeof window === 'undefined') {
     return null;
   }

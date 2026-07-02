@@ -8,6 +8,7 @@ use App\Modules\AI\Contracts\AIProviderInterface;
 use App\Modules\AI\ValueObjects\AiRequest;
 use App\Modules\AI\ValueObjects\AiResponse;
 use Illuminate\Http\Client\Factory as HttpFactory;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -35,6 +36,13 @@ use RuntimeException;
  */
 class OpenAICompatibleProvider implements AIProviderInterface
 {
+    /**
+     * @param  array<string, string>  $extraHeaders  static headers a custom
+     *                                               endpoint needs (e.g.
+     *                                               OpenRouter's `HTTP-Referer`/
+     *                                               `X-Title`, or a Modal.com
+     *                                               deployment token header)
+     */
     public function __construct(
         private readonly string $name,
         private readonly string $model,
@@ -43,6 +51,7 @@ class OpenAICompatibleProvider implements AIProviderInterface
         private readonly int $timeoutMs = 30000,
         private readonly ?HttpFactory $http = null,
         private readonly float $temperature = 0.2,
+        private readonly array $extraHeaders = [],
     ) {}
 
     public function getName(): string
@@ -58,13 +67,25 @@ class OpenAICompatibleProvider implements AIProviderInterface
     public function healthCheck(): bool
     {
         try {
-            $http = $this->http ?? Http::getFacadeRoot();
-            $response = $http
-                ->withToken($this->apiKey)
-                ->timeout($this->timeoutMs / 1000)
-                ->get(rtrim($this->baseUrl, '/').'/v1/models');
+            $client = $this->authenticatedClient()->timeout($this->timeoutMs / 1000);
+            $response = $client->get(rtrim($this->baseUrl, '/').'/v1/models');
 
-            return $response->successful();
+            if ($response->successful()) {
+                return true;
+            }
+
+            if ($response->status() === 404) {
+                // Custom-deployed endpoints (e.g. Modal.com) frequently don't
+                // expose an OpenAI-shaped /v1/models listing. Fall back to a
+                // bare connectivity check against the base URL instead of
+                // hard-failing the health check on a 404.
+                return $this->authenticatedClient()
+                    ->timeout($this->timeoutMs / 1000)
+                    ->get(rtrim($this->baseUrl, '/'))
+                    ->status() < 500;
+            }
+
+            return false;
         } catch (\Throwable) {
             return false;
         }
@@ -72,12 +93,9 @@ class OpenAICompatibleProvider implements AIProviderInterface
 
     public function classify(AiRequest $request): AiResponse
     {
-        $http = $this->http ?? Http::getFacadeRoot();
-
         $messages = $this->buildMessages($request);
 
-        $response = $http
-            ->withToken($this->apiKey)
+        $response = $this->authenticatedClient()
             ->timeout($this->timeoutMs / 1000)
             ->post(rtrim($this->baseUrl, '/').'/v1/chat/completions', [
                 'model' => $this->model,
@@ -108,6 +126,13 @@ class OpenAICompatibleProvider implements AIProviderInterface
         }
 
         return $this->mapResponse($decoded, $payload);
+    }
+
+    private function authenticatedClient(): PendingRequest
+    {
+        $http = $this->http ?? Http::getFacadeRoot();
+
+        return $http->withToken($this->apiKey)->withHeaders($this->extraHeaders);
     }
 
     /**

@@ -68,6 +68,14 @@ async function request<T>(
         : null) ?? `Request failed (${res.status})`;
     throw new ApiError(res.status, message, payload);
   }
+  // Every backend response uses the standard ApiResponse envelope
+  // (`{success, message, data, ...}` — docs/03 §20). This client used
+  // to return the raw envelope cast as if it were the payload itself,
+  // so every caller's `data.someField` was actually
+  // `envelope.someField` (undefined). Unwrap it here, once.
+  if (typeof payload === 'object' && payload !== null && 'data' in payload) {
+    return (payload as { data: T }).data;
+  }
   return payload as T;
 }
 

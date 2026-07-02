@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Authentication\Http\Controllers;
 
+use App\Modules\Authentication\Http\Requests\LoginRequest;
 use App\Modules\Authentication\Http\Requests\RefreshTokenRequest;
 use App\Modules\Authentication\Http\Requests\SendOtpRequest;
 use App\Modules\Authentication\Http\Requests\VerifyOtpRequest;
@@ -21,6 +22,7 @@ use Illuminate\Http\Request;
  *
  *  - POST /api/v1/auth/send-otp   (T-M2-013)
  *  - POST /api/v1/auth/verify-otp (T-M2-014)
+ *  - POST /api/v1/auth/login      (staff password login, docs/11 §8)
  *  - POST /api/v1/auth/refresh    (T-M2-015)
  *  - POST /api/v1/auth/logout     (T-M2-016)
  *  - GET  /api/v1/auth/me         (T-M2-017)
@@ -56,6 +58,7 @@ class AuthController extends BaseController
         $this->recordAttempt($mobile, $ip, $userAgent, success: true, reason: null);
 
         $payload = ['otp_sent' => true];
+
         if (app()->environment('local')) {
             $payload['debug_otp'] = $this->otpService->latestCodeFor($mobile);
             $payload['expires_in'] = (int) config('cip.auth.otp_expiry_minutes', 5) * 60;
@@ -86,6 +89,36 @@ class AuthController extends BaseController
         } catch (ApiException $e) {
             $this->recordAttempt($mobile, $ip, $userAgent, success: false, reason: $e->errorCode);
 
+            return $this->respondError($e->getMessage(), $e->httpStatus, $e->errorCode);
+        }
+
+        return $this->respond([
+            'token' => [
+                'access_token' => $result['access_token'],
+                'type' => 'Bearer',
+                'expires_at' => $result['token']->accessToken->expires_at?->toIso8601String(),
+            ],
+            'refresh_token' => $result['refresh']['plain'],
+            'refresh_expires_at' => $result['refresh']['expires_at']->toIso8601String(),
+            'user' => (new UserResource($result['user']->load('roles')))->toArray($request),
+        ]);
+    }
+
+    /**
+     * POST /api/v1/auth/login — staff password login (docs/11 §8).
+     * Citizens have no password set and always 401 here; they
+     * authenticate via `verifyOtp()` instead.
+     */
+    public function login(LoginRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->auth->loginWithPassword(
+                $request->mobile(),
+                $request->password(),
+                $request->ip(),
+                $request->userAgent(),
+            );
+        } catch (ApiException $e) {
             return $this->respondError($e->getMessage(), $e->httpStatus, $e->errorCode);
         }
 

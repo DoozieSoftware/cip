@@ -8,12 +8,14 @@ use App\Modules\Authentication\Events\UserAuthenticated;
 use App\Modules\Authentication\Models\LoginHistory;
 use App\Modules\Authentication\Models\Otp;
 use App\Modules\Authentication\Models\RefreshToken;
+use App\Modules\Security\Services\SecurityEventService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Services\BaseService;
 use App\Modules\Users\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\NewAccessToken;
 
 /**
@@ -31,9 +33,14 @@ use Laravel\Sanctum\NewAccessToken;
  */
 class AuthenticationService extends BaseService
 {
+    private const MAX_FAILED_LOGIN_ATTEMPTS = 5;
+
+    private const LOGIN_LOCKOUT_WINDOW_MINUTES = 15;
+
     public function __construct(
         private readonly OtpService $otpService,
         private readonly RefreshTokenService $refreshTokens,
+        private readonly SecurityEventService $securityEvents,
     ) {}
 
     /**
@@ -88,6 +95,69 @@ class AuthenticationService extends BaseService
             'ip' => $ip,
             'user_agent' => $userAgent,
             'device_fingerprint' => $deviceFingerprint,
+        ]);
+
+        return [
+            'token' => $token,
+            'access_token' => $token->plainTextToken,
+            'refresh' => $refresh,
+            'user' => $user,
+        ];
+    }
+
+    /**
+     * Staff password login (docs/11 §8). Citizens have no `password`
+     * set and always authenticate through `verifyOtp()` instead — a
+     * null password column makes this endpoint a guaranteed 401 for
+     * them, never a hint that the mobile exists.
+     *
+     * Emits `LOGIN_SUCCESS` / `LOGIN_FAILURE` security events (the
+     * two of the six documented events that were never wired to any
+     * code path before this method existed) and enforces a rolling
+     * lockout after 5 failed attempts in 15 minutes.
+     *
+     * @return array{token: NewAccessToken, refresh: array{token: RefreshToken, plain: string, expires_at: Carbon}, user: User, access_token: string}
+     *
+     * @throws ApiException 401 on bad credentials, 429 when locked out
+     */
+    public function loginWithPassword(string $mobile, string $password, ?string $ip = null, ?string $userAgent = null): array
+    {
+        $this->assertNotLockedOut($mobile);
+
+        $user = User::query()->where('mobile', $mobile)->first();
+
+        if ($user === null || $user->password === null || ! Hash::check($password, $user->password)) {
+            $this->recordLoginAttempt($user, $mobile, $ip, $userAgent, success: false, reason: 'invalid_credentials');
+            $this->securityEvents->recordSafe(
+                'LOGIN_FAILURE',
+                SecurityEventService::SEVERITY_WARNING,
+                ['mobile' => $mobile, 'ip' => $ip],
+                $user,
+            );
+
+            throw ApiException::unauthorized('Invalid mobile or password.');
+        }
+
+        $user->recordLogin($ip ?? '0.0.0.0');
+
+        $token = $user->createToken(
+            name: 'staff-password',
+            abilities: ['*'],
+        );
+
+        $refresh = $this->refreshTokens->issue($user, $ip, $userAgent);
+
+        $this->recordLoginAttempt($user, $mobile, $ip, $userAgent, success: true, reason: null);
+        $this->securityEvents->recordSafe(
+            'LOGIN_SUCCESS',
+            SecurityEventService::SEVERITY_INFO,
+            ['mobile' => $mobile, 'ip' => $ip],
+            $user,
+        );
+
+        UserAuthenticated::dispatch($user, 'password', [
+            'ip' => $ip,
+            'user_agent' => $userAgent,
         ]);
 
         return [
@@ -160,6 +230,48 @@ class AuthenticationService extends BaseService
             ]);
         } catch (\Throwable) {
             // Audit must not break the user-facing flow. Swallow.
+        }
+    }
+
+    /**
+     * Same as `recordLoginHistory()` but tolerates a null user — the
+     * password-login flow logs a failed attempt even when the mobile
+     * doesn't match any account, so a brute-force sweep is visible
+     * without leaking which mobiles are registered.
+     */
+    private function recordLoginAttempt(?User $user, string $mobile, ?string $ip, ?string $userAgent, bool $success, ?string $reason): void
+    {
+        try {
+            LoginHistory::query()->create([
+                'user_id' => $user?->id,
+                'mobile' => $mobile,
+                'ip' => $ip,
+                'user_agent' => $userAgent,
+                'device_fingerprint' => null,
+                'success' => $success,
+                'failure_reason' => $reason,
+                'login_at' => now(),
+            ]);
+        } catch (\Throwable) {
+            // Audit must not break the user-facing flow. Swallow.
+        }
+    }
+
+    /**
+     * Throws ApiException(429) after 5 failed password-login attempts
+     * for the same mobile within a rolling 15-minute window — mirrors
+     * OtpService's rate-limit-by-count-query pattern.
+     */
+    private function assertNotLockedOut(string $mobile): void
+    {
+        $recentFailures = LoginHistory::query()
+            ->where('mobile', $mobile)
+            ->where('success', false)
+            ->where('login_at', '>=', now()->subMinutes(self::LOGIN_LOCKOUT_WINDOW_MINUTES))
+            ->count();
+
+        if ($recentFailures >= self::MAX_FAILED_LOGIN_ATTEMPTS) {
+            throw ApiException::rateLimited('Too many failed login attempts. Please try again later.');
         }
     }
 }

@@ -7,32 +7,39 @@ use App\Modules\AI\Http\Controllers\Admin\AiPromptAdminController;
 use App\Modules\AI\Http\Controllers\Admin\AiProviderAdminController;
 use App\Modules\AI\Http\Controllers\Internal\InternalAiController;
 use App\Modules\Authentication\Http\Controllers\AuthController;
+use App\Modules\Departments\Http\Controllers\Admin\AdminOrganizationController;
 use App\Modules\Departments\Http\Controllers\Admin\DepartmentAdminController;
 use App\Modules\Departments\Http\Controllers\Admin\DepartmentController;
+use App\Modules\Departments\Http\Controllers\Api\DepartmentDashboardController;
+use App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController;
+use App\Modules\Departments\Http\Controllers\Api\DepartmentReportExportController;
+use App\Modules\Departments\Http\Controllers\Api\DepartmentReportListController;
+use App\Modules\Integrations\Http\Controllers\Admin\AdminIntegrationController;
+use App\Modules\Media\Http\Controllers\Admin\AdminStorageController;
 use App\Modules\Media\Http\Controllers\Api\MediaController;
 use App\Modules\Moderation\Http\Controllers\Api\ModerationActionsController;
 use App\Modules\Moderation\Http\Controllers\Api\QueueController;
+use App\Modules\Notifications\Http\Controllers\Admin\AdminNotificationConfigController;
 use App\Modules\Notifications\Http\Controllers\Api\NotificationPreferenceController;
 use App\Modules\Notifications\Http\Controllers\Api\NotificationsController;
+use App\Modules\Public\Http\Controllers\PublicDepartmentPerformanceController;
+use App\Modules\Public\Http\Controllers\PublicHeatmapController;
+use App\Modules\Public\Http\Controllers\PublicStatsController;
+use App\Modules\Reports\Http\Controllers\Admin\AdminReportTypeController;
 use App\Modules\Reports\Http\Controllers\Api\ReportsController;
 use App\Modules\Routing\Http\Controllers\Admin\ReassignController;
+use App\Modules\Routing\Http\Controllers\Admin\RoutingAdminController;
+use App\Modules\Security\Http\Controllers\Admin\AdminSecurityPolicyController;
 use App\Modules\Security\Http\Controllers\Api\AuditLogController;
 use App\Modules\Security\Http\Controllers\Api\SecurityDashboardController;
-use App\Modules\Users\Http\Controllers\Admin\AdminUserController;
-use App\Modules\Users\Http\Controllers\Admin\AdminRoleController;
-use App\Modules\Users\Http\Controllers\Admin\AdminPermissionController;
-use App\Modules\Security\Http\Controllers\Admin\AdminSecurityPolicyController;
-use App\Modules\Reports\Http\Controllers\Admin\AdminReportTypeController;
-use App\Modules\Routing\Http\Controllers\Admin\RoutingAdminController;
 use App\Modules\Settings\Http\Controllers\Admin\AppConfigController;
 use App\Modules\Settings\Http\Controllers\Admin\SettingController;
-use App\Modules\Workflow\Http\Controllers\Admin\WorkflowAdminController;
-use App\Modules\Integrations\Http\Controllers\Admin\AdminIntegrationController;
-use App\Modules\Media\Http\Controllers\Admin\AdminStorageController;
-use App\Modules\Notifications\Http\Controllers\Admin\AdminNotificationConfigController;
-use App\Modules\Shared\Http\Controllers\Admin\SchedulerController;
-use App\Modules\Departments\Http\Controllers\Admin\AdminOrganizationController;
 use App\Modules\Shared\Http\Controllers\Admin\PlatformHealthController;
+use App\Modules\Shared\Http\Controllers\Admin\SchedulerController;
+use App\Modules\Users\Http\Controllers\Admin\AdminPermissionController;
+use App\Modules\Users\Http\Controllers\Admin\AdminRoleController;
+use App\Modules\Users\Http\Controllers\Admin\AdminUserController;
+use App\Modules\Workflow\Http\Controllers\Admin\WorkflowAdminController;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Route;
 
@@ -49,6 +56,14 @@ Route::prefix('v1')->group(function (): void {
         return response()->file($path, ['Content-Type' => 'application/yaml']);
     })->name('api.v1.openapi');
 
+    // Public, unauthenticated platform stats (M17 Public Portal) — no
+    // PII, no exact coordinates. Server-side cached.
+    Route::middleware('throttle:'.RouteServiceProvider::LIMITER_PUBLIC)->group(function (): void {
+        Route::get('public/stats', [PublicStatsController::class, 'index'])->name('api.v1.public.stats');
+        Route::get('public/heatmap', [PublicHeatmapController::class, 'index'])->name('api.v1.public.heatmap');
+        Route::get('public/departments/performance', [PublicDepartmentPerformanceController::class, 'index'])->name('api.v1.public.departments.performance');
+    });
+
     // Auth (M2) — rate limited per docs/11 §21.
     Route::middleware('throttle:'.RouteServiceProvider::LIMITER_OTP)
         ->post('auth/send-otp', [AuthController::class, 'sendOtp'])
@@ -57,6 +72,10 @@ Route::prefix('v1')->group(function (): void {
         Route::post('auth/verify-otp', [AuthController::class, 'verifyOtp'])->name('api.v1.auth.verify-otp');
         Route::post('auth/refresh', [AuthController::class, 'refresh'])->name('api.v1.auth.refresh');
     });
+    // Staff password login (docs/11 §8) — citizens are OTP-only.
+    Route::middleware('throttle:'.RouteServiceProvider::LIMITER_LOGIN)
+        ->post('auth/login', [AuthController::class, 'login'])
+        ->name('api.v1.auth.login');
 
     // Authenticated routes
     Route::middleware(['auth:sanctum', 'throttle:'.RouteServiceProvider::LIMITER_CITIZEN])->group(function (): void {
@@ -163,7 +182,6 @@ Route::prefix('v1')->group(function (): void {
             Route::patch('admin', [DepartmentAdminController::class, 'updateAdmin'])->name('admin.update');
         });
 
-
         // Settings CRUD (T-M3-017)
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('settings', [SettingController::class, 'store'])->name('settings.store');
@@ -203,6 +221,8 @@ Route::prefix('v1')->group(function (): void {
         Route::get('ai/providers/{provider}', [AiProviderAdminController::class, 'show'])->name('ai.providers.show');
         Route::put('ai/providers/{provider}', [AiProviderAdminController::class, 'update'])->name('ai.providers.update');
         Route::delete('ai/providers/{provider}', [AiProviderAdminController::class, 'destroy'])->name('ai.providers.destroy');
+        Route::post('ai/providers/{provider}/test', [AiProviderAdminController::class, 'test'])->name('ai.providers.test');
+        Route::post('ai/providers/{provider}/activate', [AiProviderAdminController::class, 'activate'])->name('ai.providers.activate');
 
         // AI prompt versions CRUD + approve/rollback (T-M8-025)
         Route::get('ai/prompts', [AiPromptAdminController::class, 'index'])->name('ai.prompts.index');
@@ -262,38 +282,38 @@ Route::prefix('v1')->group(function (): void {
         'throttle:'.RouteServiceProvider::LIMITER_DEPARTMENT,
     ])->prefix('department')->name('api.v1.department.')->group(function (): void {
         // T-M11-007 — dashboard summary
-        Route::get('dashboard', [\App\Modules\Departments\Http\Controllers\Api\DepartmentDashboardController::class, 'show'])
+        Route::get('dashboard', [DepartmentDashboardController::class, 'show'])
             ->middleware('can:viewDashboard')
             ->name('dashboard');
         // T-M11-008 — paginated list
-        Route::get('reports', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportListController::class, 'index'])
+        Route::get('reports', [DepartmentReportListController::class, 'index'])
             ->middleware('can:viewReports')
             ->name('reports.index');
         // T-M11-010 — CSV / XLSX / PDF export
-        Route::get('reports/export', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportExportController::class, 'export'])
+        Route::get('reports/export', [DepartmentReportExportController::class, 'export'])
             ->middleware('can:viewReports')
             ->name('reports.export');
         // T-M11-006 — five lifecycle actions + T-M11-005 — internal note
-        Route::post('reports/{report}/accept', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController::class, 'accept'])
+        Route::post('reports/{report}/accept', [DepartmentReportActionsController::class, 'accept'])
             ->middleware('can:accept,report')
             ->name('reports.accept');
-        Route::post('reports/{report}/start', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController::class, 'start'])
+        Route::post('reports/{report}/start', [DepartmentReportActionsController::class, 'start'])
             ->middleware('can:start,report')
             ->name('reports.start');
-        Route::post('reports/{report}/progress', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController::class, 'progress'])
+        Route::post('reports/{report}/progress', [DepartmentReportActionsController::class, 'progress'])
             ->middleware('can:progress,report')
             ->name('reports.progress');
-        Route::post('reports/{report}/resolve', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController::class, 'resolve'])
+        Route::post('reports/{report}/resolve', [DepartmentReportActionsController::class, 'resolve'])
             ->middleware('can:resolve,report')
             ->name('reports.resolve');
-        Route::post('reports/{report}/close', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController::class, 'close'])
+        Route::post('reports/{report}/close', [DepartmentReportActionsController::class, 'close'])
             ->middleware('can:close,report')
             ->name('reports.close');
         // T-M11-005 — internal note (department-private)
-        Route::post('reports/{report}/note', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController::class, 'addNote'])
+        Route::post('reports/{report}/note', [DepartmentReportActionsController::class, 'addNote'])
             ->middleware('can:addNote,report')
             ->name('reports.note');
-        Route::get('reports/{report}/notes', [\App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController::class, 'listNotes'])
+        Route::get('reports/{report}/notes', [DepartmentReportActionsController::class, 'listNotes'])
             ->middleware('can:view,report')
             ->name('reports.notes.index');
     });

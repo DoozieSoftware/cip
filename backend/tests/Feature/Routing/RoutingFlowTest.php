@@ -77,6 +77,7 @@ it('routes and assigns a report when a matching rule is found', function (): voi
         categoryCode: null,
         severityCode: 'medium',
         aiLabel: 'pothole',
+        visionResult: ['confidence' => 0.97],
     );
 
     $fresh = $this->report->fresh();
@@ -109,6 +110,7 @@ it('falls back to the configured default department when no rule matches', funct
     AiCompleted::dispatch(
         reportId: $this->report->id,
         aiLabel: 'unknown',
+        visionResult: ['confidence' => 0.97],
     );
 
     $fresh = $this->report->fresh();
@@ -128,6 +130,7 @@ it('throws ROUTING_FALLBACK_MISSING when no rule matches and the fallback is not
         AiCompleted::dispatch(
             reportId: $this->report->id,
             aiLabel: 'unknown',
+            visionResult: ['confidence' => 0.97],
         );
         $this->fail('Expected ROUTING_FALLBACK_MISSING exception.');
     } catch (ApiException $e) {
@@ -154,14 +157,39 @@ it('is idempotent: re-dispatching AiCompleted does not create a second assignmen
         'active' => true,
     ]);
 
-    AiCompleted::dispatch(reportId: $this->report->id, aiLabel: 'pothole');
+    AiCompleted::dispatch(reportId: $this->report->id, aiLabel: 'pothole', visionResult: ['confidence' => 0.97]);
     expect(ReportAssignment::query()->where('report_id', $this->report->id)->count())->toBe(1);
 
     // Re-fire the same event. The listener sees the report
     // already has an active assignment and skips.
-    AiCompleted::dispatch(reportId: $this->report->id, aiLabel: 'pothole');
+    AiCompleted::dispatch(reportId: $this->report->id, aiLabel: 'pothole', visionResult: ['confidence' => 0.97]);
 
     expect(ReportAssignment::query()->where('report_id', $this->report->id)->count())->toBe(1);
+});
+
+it('routes to pending_moderator without assigning a department when AI confidence is below the auto-route threshold', function (): void {
+    RoutingRule::factory()->create([
+        'name' => 'Catch-all',
+        'priority' => 100,
+        'conditions' => [],
+        'destination_department_id' => $this->dept->id,
+        'default_officer_id' => null,
+        'default_priority_id' => $this->priority->id,
+        'default_sla_minutes' => 60,
+        'active' => true,
+    ]);
+
+    AiCompleted::dispatch(reportId: $this->report->id, aiLabel: 'pothole', visionResult: ['confidence' => 0.60]);
+
+    expect(ReportAssignment::query()->where('report_id', $this->report->id)->count())->toBe(0);
+
+    $fresh = $this->report->fresh();
+    expect($fresh->department_id)->toBeNull();
+
+    $status = ReportStatus::query()->find($fresh->current_status_id);
+    expect($status?->code)->toBe('pending_moderator');
+
+    Event::assertNotDispatched(ReportAssigned::class);
 });
 
 it('no-ops gracefully when the report id does not exist', function (): void {

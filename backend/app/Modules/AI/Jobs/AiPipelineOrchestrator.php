@@ -14,11 +14,13 @@ use App\Modules\AI\Services\AiResponseValidator;
 use App\Modules\AI\Services\DuplicateDetector;
 use App\Modules\AI\Services\FraudScorer;
 use App\Modules\AI\Services\ImageQualityAnalyzer;
+use App\Modules\AI\Services\PiiMaskingService;
 use App\Modules\AI\Services\ProviderFailoverService;
 use App\Modules\AI\ValueObjects\AiRequest;
 use App\Modules\AI\ValueObjects\AiResponse;
 use App\Modules\Media\Models\Media;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Settings\Models\AppConfig;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -40,14 +42,21 @@ use Throwable;
  *   2. write an `ai_jobs` row in `running` state
  *   3. image quality (ImageQualityAnalyzer)
  *   4. (stub) OCR
- *   5. vision classification (ProviderFailoverService)
- *   6. duplicate score (DuplicateDetector)
- *   7. fraud score (FraudScorer)
- *   8. write `ai_results` + `ai_labels`
- *   9. validate the result (AiResponseValidator)
- *  10. mark the job as `succeeded` and dispatch
- *      `AiCompleted` (the M7 routing listener picks it
- *      up from here)
+ *   5. mask PII out of the free text before it ever reaches a
+ *      third-party provider (PiiMaskingService, per docs/11 §28)
+ *   6. vision classification (ProviderFailoverService) — skipped
+ *      when the `ai_enabled` app_config flag is off, in which case
+ *      a zero-confidence "unclassified" result is synthesised so
+ *      the report still falls through to moderator review (see
+ *      ConfidenceAggregator in AiCompletedListener)
+ *   7. duplicate score (DuplicateDetector)
+ *   8. fraud score (FraudScorer)
+ *   9. write `ai_results` + `ai_labels`
+ *  10. validate the result (AiResponseValidator) — skipped when
+ *      AI was disabled, since there is nothing to validate
+ *  11. mark the job as `succeeded` (recording the real
+ *      provider/model that answered) and dispatch `AiCompleted`
+ *      (the M7 routing listener picks it up from here)
  *
  * On any unrecoverable failure: mark the job as
  * `failed` with `error_code`, log the exception, and
@@ -72,6 +81,7 @@ class AiPipelineOrchestrator implements ShouldQueue
         ImageQualityAnalyzer $quality,
         DuplicateDetector $duplicate,
         FraudScorer $fraud,
+        PiiMaskingService $pii,
     ): void {
         $job = $this->createJobRow();
 
@@ -82,23 +92,29 @@ class AiPipelineOrchestrator implements ShouldQueue
             $qualityScore = $media ? $quality->score($media) : 0;
             $ocrStub = ''; // Phase 2 — ship a stub until the OCR provider is bound.
 
+            $maskedText = (string) $pii->mask([
+                'text' => $report->title."\n".$report->description."\n".$ocrStub,
+            ])['text'];
+            $maskedMetadata = $pii->mask([
+                'ward' => null, // The M3 GeographySeeder already binds these
+                'district' => null,
+            ]);
+
             $request = new AiRequest(
                 promptName: 'category_classifier',
                 mediaUrls: $media ? [$this->mediaUrl($media)] : [],
                 mediaTypes: $media ? [$media->mime] : [],
-                text: $report->title."\n".$report->description."\n".$ocrStub,
-                metadata: [
-                    'ward' => null, // The M3 GeographySeeder already binds these
-                    'district' => null,
-                ],
+                text: $maskedText,
+                metadata: $maskedMetadata,
             );
 
-            $response = $failover->execute($request);
-            $validator->validate($response);
+            [$response, $providerCode, $model] = $this->classify($request, $failover, $validator);
 
             $duplicateResult = $duplicate->detect($report);
             $fraudScore = $fraud->score($report, [
-                'mock_gps' => 0.0,
+                // The citizen PWA's client-side mock-GPS heuristic, captured
+                // at submit time onto reports.mock_gps_score (ReportService::submit).
+                'mock_gps' => (float) ($report->mock_gps_score ?? 0.0),
                 'replay' => 0.0,
                 'ai_synth' => isset($response->raw['synthetic_score']) ? (float) $response->raw['synthetic_score'] : 0.0,
             ]);
@@ -106,7 +122,7 @@ class AiPipelineOrchestrator implements ShouldQueue
             $result = $this->writeResult($job, $response, $qualityScore, $duplicateResult['score'], $fraudScore);
             $this->writeLabels($result, $response);
 
-            $this->markJobSucceeded($job, $response, $result);
+            $this->markJobSucceeded($job, $response, $result, $providerCode, $model);
 
             AiCompleted::dispatch(
                 $report->id,
@@ -126,6 +142,57 @@ class AiPipelineOrchestrator implements ShouldQueue
         }
     }
 
+    /**
+     * @return array{0: AiResponse, 1: string, 2: string}
+     */
+    private function classify(
+        AiRequest $request,
+        ProviderFailoverService $failover,
+        AiResponseValidator $validator,
+    ): array {
+        if (! $this->visionEnabled()) {
+            return [$this->disabledResponse(), 'disabled', 'n/a'];
+        }
+
+        $response = $failover->execute($request);
+        $validator->validate($response);
+
+        $providerCode = $failover->lastUsedProvider?->code ?? 'unknown';
+        $model = $failover->lastUsedProvider?->model ?? 'unknown';
+
+        return [$response, $providerCode, $model];
+    }
+
+    /**
+     * The `ai_enabled` app_configs flag (docs/09 §18) is the Super
+     * Admin kill-switch: when off, the pipeline skips the provider
+     * call entirely and every report falls through to moderator
+     * review via the zero-confidence result below and
+     * ConfidenceAggregator's threshold in AiCompletedListener.
+     */
+    private function visionEnabled(): bool
+    {
+        $flag = AppConfig::query()->where('key', 'ai_enabled')->first();
+
+        return $flag === null || $flag->enabled;
+    }
+
+    private function disabledResponse(): AiResponse
+    {
+        return new AiResponse(
+            labels: [],
+            predictedType: 'unclassified',
+            confidence: 0.0,
+            recommendedDepartment: '',
+            severity: 'low',
+            qualityScore: 0,
+            duplicateScore: 0,
+            fraudScore: 0,
+            summary: 'AI vision is disabled (app_configs.ai_enabled) — routed to moderator review.',
+            raw: ['ai_disabled' => true],
+        );
+    }
+
     private function createJobRow(): AiJob
     {
         $promptVersion = PromptVersion::query()
@@ -134,14 +201,14 @@ class AiPipelineOrchestrator implements ShouldQueue
             ->orderByDesc('version')
             ->first();
 
-        $providerCode = 'mock';
-        $model = 'mock-1.0';
-
         return AiJob::query()->create([
             'report_id' => $this->reportId,
             'prompt_version_id' => $promptVersion?->id ?? (string) Str::uuid(),
-            'provider_code' => $providerCode,
-            'model' => $model,
+            // Which provider/model actually answers isn't known until
+            // classify() returns; markJobSucceeded() overwrites these
+            // with the real values.
+            'provider_code' => 'pending',
+            'model' => 'pending',
             'status' => AiJob::STATUS_RUNNING,
             'requested_at' => now(),
             'started_at' => now(),
@@ -200,6 +267,8 @@ class AiPipelineOrchestrator implements ShouldQueue
         AiJob $job,
         AiResponse $response,
         AiResult $result,
+        string $providerCode,
+        string $model,
     ): void {
         $startMs = (int) $job->started_at?->valueOf() ?? (int) (microtime(true) * 1000);
         $endMs = (int) (microtime(true) * 1000);
@@ -207,6 +276,8 @@ class AiPipelineOrchestrator implements ShouldQueue
         $job->update([
             'status' => AiJob::STATUS_SUCCEEDED,
             'completed_at' => now(),
+            'provider_code' => $providerCode,
+            'model' => $model,
             'processing_time_ms' => max(0, $endMs - $startMs),
             'tokens_in' => isset($response->raw['usage']['prompt_tokens']) ? (int) $response->raw['usage']['prompt_tokens'] : null,
             'tokens_out' => isset($response->raw['usage']['completion_tokens']) ? (int) $response->raw['usage']['completion_tokens'] : null,

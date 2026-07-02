@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\AI\Events\AiCompleted;
 use App\Modules\AI\Jobs\AiPipelineOrchestrator;
 use App\Modules\AI\Models\AiJob;
@@ -15,12 +14,14 @@ use App\Modules\AI\Services\AiResponseValidator;
 use App\Modules\AI\Services\DuplicateDetector;
 use App\Modules\AI\Services\FraudScorer;
 use App\Modules\AI\Services\ImageQualityAnalyzer;
+use App\Modules\AI\Services\PiiMaskingService;
 use App\Modules\AI\Services\ProviderFailoverService;
 use App\Modules\Reports\Models\Report;
 use Database\Seeders\ReportPrioritiesSeeder;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
@@ -29,8 +30,6 @@ use Illuminate\Support\Str;
 uses(RefreshDatabase::class);
 
 uses(WithFaker::class);
-
-
 
 beforeEach(function (): void {
     Storage::fake('local');
@@ -44,10 +43,10 @@ beforeEach(function (): void {
     // service can resolve a binding.
     AiProviderConfig::query()->create([
         'code' => 'mock',
+        'driver' => 'mock',
         'name' => 'Mock',
         'base_url' => 'http://localhost',
         'auth_type' => 'none',
-        'api_key_secret_id' => null,
         'model' => 'mock-1.0',
         'temperature' => 0.2,
         'timeout_ms' => 30000,
@@ -96,6 +95,7 @@ it('end-to-end happy path produces a persisted AiResult matching the schema', fu
         app(ImageQualityAnalyzer::class),
         app(DuplicateDetector::class),
         app(FraudScorer::class),
+        app(PiiMaskingService::class),
     );
 
     $result = AiResult::query()->whereHas('job', function ($q) use ($report): void {
@@ -118,6 +118,7 @@ it('writes a single AiJob row in succeeded state with timing and token counts', 
         app(ImageQualityAnalyzer::class),
         app(DuplicateDetector::class),
         app(FraudScorer::class),
+        app(PiiMaskingService::class),
     );
 
     $job = AiJob::query()->where('report_id', $report->id)->first();
@@ -137,6 +138,7 @@ it('persists every label from the provider response with the right is_primary fl
         app(ImageQualityAnalyzer::class),
         app(DuplicateDetector::class),
         app(FraudScorer::class),
+        app(PiiMaskingService::class),
     );
 
     $result = AiResult::query()->whereHas('job', fn ($q) => $q->where('report_id', $report->id))->first();
@@ -156,6 +158,7 @@ it('dispatches the AiCompleted event after a successful run', function (): void 
         app(ImageQualityAnalyzer::class),
         app(DuplicateDetector::class),
         app(FraudScorer::class),
+        app(PiiMaskingService::class),
     );
 
     Event::assertDispatched(AiCompleted::class, function (AiCompleted $e) use ($report): bool {
@@ -177,6 +180,7 @@ it('marks the job as failed and rethrows when the report does not exist', functi
             app(ImageQualityAnalyzer::class),
             app(DuplicateDetector::class),
             app(FraudScorer::class),
+            app(PiiMaskingService::class),
         );
     } catch (Throwable) {
         $threw = true;

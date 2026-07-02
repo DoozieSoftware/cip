@@ -40,6 +40,14 @@ use RuntimeException;
 class ProviderFailoverService
 {
     /**
+     * The config row of the provider that most recently satisfied
+     * `execute()`, set right before returning a successful response.
+     * The orchestrator reads this to record the real provider/model
+     * on the `ai_jobs` row instead of a hardcoded placeholder.
+     */
+    public ?AiProviderConfig $lastUsedProvider = null;
+
+    /**
      * @param  array<string, AIProviderInterface>  $bindings  code => concrete impl
      */
     public function __construct(
@@ -69,6 +77,7 @@ class ProviderFailoverService
             for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
                 try {
                     $resp = $provider->classify($request);
+                    $this->lastUsedProvider = $cfg;
 
                     return $resp;
                 } catch (\Throwable $e) {

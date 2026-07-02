@@ -91,6 +91,8 @@ export interface ReportListItem {
   ai_confidence: number | null;
   fraud_score: number | null;
   duplicate_score: number | null;
+  /** Citizen PWA's client-side mock-GPS heuristic (0..1) — never auto-rejects; triage signal only. */
+  mock_gps_score: number | null;
   submitted_at: string;
   ward: string | null;
   district: string | null;

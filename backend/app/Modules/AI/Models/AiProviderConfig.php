@@ -21,21 +21,28 @@ use Illuminate\Support\Carbon;
  *    `anthropic`, `local-mock`); unique in the DB and
  *    referenced by `prompt_versions.provider_code` and
  *    `ai_jobs.provider_code`
- *  - `api_key_secret_id` is a UUID but does NOT have a FK
- *    to a `secrets` table — the secret store ships in a
- *    later milestone; for now the value is null and the
- *    provider service is responsible for fetching from
- *    env / config
+ *  - `driver` is the type discriminator `AiProviderFactory`
+ *    switches on (`mock` | `qwen_vl` | `openai_compatible`).
+ *    Any number of rows can share a driver — e.g. two
+ *    `openai_compatible` rows, one pointed at OpenRouter and
+ *    one at a Modal.com-deployed endpoint.
+ *  - `credentials` is an encrypted JSON blob (`{"api_key": "..."}`)
+ *    decrypted only when `AiProviderFactory` builds the
+ *    provider instance; the API resource never serialises it.
+ *  - `extra_headers` is a JSON map of static headers a
+ *    custom endpoint needs (e.g. OpenRouter's `HTTP-Referer`).
  *  - `temperature` is a decimal(3,2); 0.00–1.00
  *  - `timeout_ms` and `retry_count` control the HTTP
  *    client loop in OpenAICompatibleProvider (T-M8-009)
  *
  * @property string $id
  * @property string $code
+ * @property string $driver
  * @property string $name
  * @property string $base_url
  * @property string $auth_type
- * @property string|null $api_key_secret_id
+ * @property array<string, mixed>|null $credentials
+ * @property array<string, string>|null $extra_headers
  * @property string $model
  * @property float $temperature
  * @property int $timeout_ms
@@ -54,13 +61,15 @@ class AiProviderConfig extends Model
     protected $table = 'ai_provider_configs';
 
     protected $fillable = [
-        'code', 'name', 'base_url', 'auth_type',
-        'api_key_secret_id', 'model', 'temperature',
+        'code', 'driver', 'name', 'base_url', 'auth_type',
+        'credentials', 'extra_headers', 'model', 'temperature',
         'timeout_ms', 'retry_count', 'is_fallback',
         'priority', 'active',
     ];
 
     protected $casts = [
+        'credentials' => 'encrypted:array',
+        'extra_headers' => 'array',
         'temperature' => 'float',
         'timeout_ms' => 'integer',
         'retry_count' => 'integer',

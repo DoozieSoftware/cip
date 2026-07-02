@@ -3230,7 +3230,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Departments/Policies/DepartmentPolicy.php`
 - **Acceptance criteria:** Non-member gets 403.
 - **Required tests:** `tests/Feature/Departments/DepartmentPolicyTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-002 — DepartmentReportRepository
 - **Milestone:** M11
@@ -3242,7 +3242,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Departments/Repositories/DepartmentReportRepository.php`
 - **Acceptance criteria:** Filters compose; pagination meta correct.
 - **Required tests:** `tests/Feature/Departments/DepartmentReportRepositoryTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-003 — DepartmentReportService
 - **Milestone:** M11
@@ -3254,7 +3254,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Departments/Services/DepartmentReportService.php`
 - **Acceptance criteria:** Every action writes audit + status history.
 - **Required tests:** `tests/Feature/Departments/DepartmentReportServiceTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-004 — InternalNote model and migration
 - **Milestone:** M11
@@ -3266,7 +3266,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/database/migrations/*_create_report_internal_notes_table.php`, `backend/app/Modules/Reports/Models/InternalNote.php`
 - **Acceptance criteria:** Migration roundtrips.
 - **Required tests:** Migration test.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-005 — AddNote endpoint
 - **Milestone:** M11
@@ -3278,7 +3278,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Departments/Http/Controllers/Api/DepartmentReportActionsController.php`
 - **Acceptance criteria:** 201; 403 for non-member; 403 for other departments' reports.
 - **Required tests:** `tests/Feature/Departments/AddNoteEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-006 — Department action endpoints
 - **Milestone:** M11
@@ -3290,7 +3290,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Departments/Http/Controllers/Api/DepartmentReportActionsController.php`, `backend/app/Modules/Departments/Http/Requests/*`
 - **Acceptance criteria:** Workflow transitions; audit; 403 for non-members.
 - **Required tests:** `tests/Feature/Departments/ActionsEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-007 — GET /api/v1/department/dashboard
 - **Milestone:** M11
@@ -3302,7 +3302,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Departments/Http/Controllers/Api/DepartmentDashboardController.php`, `backend/app/Modules/Departments/Http/Resources/DashboardResource.php`
 - **Acceptance criteria:** Department-scoped; not cached stale.
 - **Required tests:** `tests/Feature/Departments/DashboardEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-008 — GET /api/v1/department/reports
 - **Milestone:** M11
@@ -3314,7 +3314,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Departments/Http/Controllers/Api/DepartmentReportListController.php`
 - **Acceptance criteria:** Filters compose; only assigned reports.
 - **Required tests:** `tests/Feature/Departments/ListEndpointTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-009 — Department admin endpoints
 - **Milestone:** M11
@@ -3326,7 +3326,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Departments/Http/Controllers/Admin/DepartmentAdminController.php`
 - **Acceptance criteria:** CRUD works; audit emitted.
 - **Required tests:** `tests/Feature/Departments/AdminEndpointsTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-010 — Exports (CSV/Excel/PDF)
 - **Milestone:** M11
@@ -3338,7 +3338,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Departments/Exports/DepartmentReportsExport.php`
 - **Acceptance criteria:** 200 with correct MIME; respects filters.
 - **Required tests:** `tests/Feature/Departments/ExportTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-011 — Operations web app shell
 - **Milestone:** M11
@@ -3350,7 +3350,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/operations/`
 - **Acceptance criteria:** `npm run build` exits 0; sidebar with role-based items.
 - **Required tests:** Build + Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-012 — Operations Dashboard page
 - **Milestone:** M11
@@ -3362,7 +3362,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/operations/src/pages/Dashboard.tsx`
 - **Acceptance criteria:** All widgets render under 2s on staging.
 - **Required tests:** Vitest + Playwright.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-013 — Assigned Reports list
 - **Milestone:** M11
@@ -3374,7 +3374,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/operations/src/pages/AssignedReports.tsx`
 - **Acceptance criteria:** Bulk select respects max 500.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-014 — Report Detail (department)
 - **Milestone:** M11
@@ -3386,7 +3386,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/operations/src/pages/ReportDetails.tsx`
 - **Acceptance criteria:** Actions dispatch to backend; internal notes private to department.
 - **Required tests:** Playwright.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-015 — GIS Map view
 - **Milestone:** M11
@@ -3398,7 +3398,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/operations/src/pages/GisMap.tsx`
 - **Acceptance criteria:** Heatmap and clusters render; filters apply.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-016 — Department admin screens
 - **Milestone:** M11
@@ -3410,7 +3410,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/operations/src/pages/Admin/*`
 - **Acceptance criteria:** Forms validated; saves call admin API.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-017 — Operations Analytics page
 - **Milestone:** M11
@@ -3422,7 +3422,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/operations/src/pages/Analytics.tsx`
 - **Acceptance criteria:** All charts render with real data on staging.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-018 — Live queue updates (polling)
 - **Milestone:** M11
@@ -3434,7 +3434,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/operations/src/hooks/useLiveQueue.ts`
 - **Acceptance criteria:** Polling respects visibility API.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-019 — Audit log search UI
 - **Milestone:** M11
@@ -3446,7 +3446,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/operations/src/pages/AuditLog.tsx`
 - **Acceptance criteria:** Filters compose; CSV export.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-020 — Security dashboard
 - **Milestone:** M11
@@ -3458,7 +3458,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/operations/src/pages/Security.tsx`
 - **Acceptance criteria:** All widgets render.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-021 — Exports UI buttons
 - **Milestone:** M11
@@ -3470,7 +3470,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/operations/src/components/ExportMenu.tsx`
 - **Acceptance criteria:** Downloads trigger; correct filenames.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-022 — Playwright E2E: accept→close
 - **Milestone:** M11
@@ -3482,7 +3482,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/operations/e2e/accept-to-close.spec.ts`
 - **Acceptance criteria:** Test passes against preview.
 - **Required tests:** `npm run e2e`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-023 — Operations a11y audit
 - **Milestone:** M11
@@ -3494,7 +3494,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/operations/e2e/a11y.spec.ts`
 - **Acceptance criteria:** Zero serious/critical violations.
 - **Required tests:** `npm run e2e -- a11y`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-024 — DepartmentFeatureTest (department scope)
 - **Milestone:** M11
@@ -3506,7 +3506,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/Departments/DepartmentScopeTest.php`
 - **Acceptance criteria:** 403 enforced.
 - **Required tests:** `vendor/bin/pest tests/Feature/Departments/DepartmentScopeTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-025 — Update OpenAPI for department endpoints
 - **Milestone:** M11
@@ -3518,7 +3518,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/storage/api-docs/openapi.yaml`
 - **Acceptance criteria:** `swagger-cli validate` passes.
 - **Required tests:** `tests/Feature/OpenApiDepartmentTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-026 — Author docs/operations.md
 - **Milestone:** M11
@@ -3530,7 +3530,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docs/operations.md`
 - **Acceptance criteria:** Doc covers each role.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-027 — README update for operations
 - **Milestone:** M11
@@ -3542,7 +3542,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `README.md`
 - **Acceptance criteria:** Anchor link works.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M11-028 — Pin and test exporter packages
 - **Milestone:** M11
@@ -3554,7 +3554,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/composer.json`
 - **Acceptance criteria:** `composer install` succeeds in CI.
 - **Required tests:** `composer install --no-interaction`.
-- **Status:** Not Started
+- **Status:** Done
 
 
 ---
@@ -3575,7 +3575,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Users/Http/Controllers/Admin/AdminUserController.php`, `backend/app/Modules/Users/Http/Requests/*`, `backend/app/Modules/Users/Http/Resources/Admin/UserResource.php`
 - **Acceptance criteria:** 5 endpoints, all gated; audit emitted.
 - **Required tests:** `tests/Feature/Users/AdminUserCrudTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-002 — Admin API: roles and permissions CRUD
 - **Milestone:** M12
@@ -3587,7 +3587,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Users/Http/Controllers/Admin/*`
 - **Acceptance criteria:** Custom roles supported; permission matrix editable.
 - **Required tests:** `tests/Feature/Users/AdminRoleCrudTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-003 — Admin API: report types CRUD
 - **Milestone:** M12
@@ -3599,7 +3599,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Reports/Http/Controllers/Admin/AdminReportTypeController.php`
 - **Acceptance criteria:** Creating a new type shows in citizen list within cache TTL.
 - **Required tests:** `tests/Feature/Reports/AdminReportTypeCrudTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-004 — Admin API: workflow CRUD (definitions/states/transitions)
 - **Milestone:** M12
@@ -3611,7 +3611,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Workflow/Http/Controllers/Admin/*`
 - **Acceptance criteria:** Updating a definition invalidates cache.
 - **Required tests:** `tests/Feature/Workflow/AdminWorkflowCrudTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-005 — Admin API: routing rules CRUD
 - **Milestone:** M12
@@ -3623,7 +3623,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Routing/Http/Controllers/Admin/*`
 - **Acceptance criteria:** Reorder persists; cache invalidated.
 - **Required tests:** `tests/Feature/Routing/AdminReorderTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-006 — Admin API: AI providers and prompts CRUD
 - **Milestone:** M12
@@ -3635,7 +3635,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** already present
 - **Acceptance criteria:** Admin can swap providers at runtime.
 - **Required tests:** Integration test in `tests/Feature/AI/AdminIntegrationTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-007 — Admin API: integrations CRUD
 - **Milestone:** M12
@@ -3647,7 +3647,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Integrations/Http/Controllers/Admin/AdminIntegrationController.php`
 - **Acceptance criteria:** CRUD works; health check returns provider status.
 - **Required tests:** `tests/Feature/Integrations/AdminIntegrationCrudTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-008 — Admin API: storage configs CRUD
 - **Milestone:** M12
@@ -3659,7 +3659,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Media/Http/Controllers/Admin/AdminStorageController.php`
 - **Acceptance criteria:** Changing disk is reflected on next upload.
 - **Required tests:** `tests/Feature/Media/AdminStorageTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-009 — Admin API: notification configs
 - **Milestone:** M12
@@ -3671,7 +3671,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Notifications/Http/Controllers/Admin/AdminNotificationConfigController.php`
 - **Acceptance criteria:** Secrets masked; CRUD works.
 - **Required tests:** `tests/Feature/Notifications/AdminNotificationConfigTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-010 — Admin API: security policies CRUD
 - **Milestone:** M12
@@ -3683,7 +3683,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Security/Http/Controllers/Admin/AdminSecurityPolicyController.php`
 - **Acceptance criteria:** Changes apply without redeploy.
 - **Required tests:** `tests/Feature/Security/AdminSecurityPolicyTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-011 — Admin API: feature flags CRUD
 - **Milestone:** M12
@@ -3695,7 +3695,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Settings/Http/Controllers/Admin/FeatureFlagController.php`
 - **Acceptance criteria:** Evaluate returns deterministic value.
 - **Required tests:** `tests/Feature/Settings/FeatureFlagEvaluateTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-012 — Admin API: scheduler endpoints
 - **Milestone:** M12
@@ -3707,7 +3707,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Shared/Http/Controllers/Admin/SchedulerController.php`
 - **Acceptance criteria:** Pause prevents next run; resume re-enables.
 - **Required tests:** `tests/Feature/Shared/SchedulerAdminTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-013 — Admin API: organizations CRUD
 - **Milestone:** M12
@@ -3719,7 +3719,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Departments/Models/Organization.php`, `backend/database/migrations/*_create_organizations_table.php`, `backend/app/Modules/Departments/Http/Controllers/Admin/AdminOrganizationController.php`
 - **Acceptance criteria:** CRUD works; soft deletes only where allowed.
 - **Required tests:** `tests/Feature/Departments/OrganizationCrudTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-014 — Admin API: audit log search
 - **Milestone:** M12
@@ -3731,7 +3731,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Security/Http/Controllers/Admin/AdminAuditLogController.php`
 - **Acceptance criteria:** Filters compose; export works; logs immutable.
 - **Required tests:** `tests/Feature/Security/AuditLogSearchTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-015 — Admin API: platform health
 - **Milestone:** M12
@@ -3743,7 +3743,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/app/Modules/Shared/Http/Controllers/Admin/PlatformHealthController.php`
 - **Acceptance criteria:** Returns per-component status with timestamps.
 - **Required tests:** `tests/Feature/Shared/PlatformHealthTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-016 — Super admin web app shell
 - **Milestone:** M12
@@ -3755,7 +3755,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/`
 - **Acceptance criteria:** Sidebar with all top-level items; `npm run build` exits 0.
 - **Required tests:** Build + Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-017 — Users/Roles/Permissions screens
 - **Milestone:** M12
@@ -3767,7 +3767,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/src/pages/{Users,Roles,Permissions}/*`
 - **Acceptance criteria:** Forms validated; matrix saves atomically.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-018 — Report types screen
 - **Milestone:** M12
@@ -3779,7 +3779,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/src/pages/ReportTypes/*`
 - **Acceptance criteria:** New types appear in citizen list after cache TTL.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-019 — Workflow builder screen
 - **Milestone:** M12
@@ -3791,7 +3791,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/src/pages/Workflow/*`
 - **Acceptance criteria:** Edits persist and invalidate cache.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-020 — Routing rules screen
 - **Milestone:** M12
@@ -3803,7 +3803,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/src/pages/Routing/*`
 - **Acceptance criteria:** Reorder persists.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-021 — AI providers + prompts screen
 - **Milestone:** M12
@@ -3815,7 +3815,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/src/pages/AI/*`
 - **Acceptance criteria:** Rollback restores prior version.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-022 — Integrations + storage + notifications screens
 - **Milestone:** M12
@@ -3827,7 +3827,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/src/pages/{Integrations,Storage,Notifications}/*`
 - **Acceptance criteria:** Secrets are masked in UI.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-023 — Security policies + feature flags screen
 - **Milestone:** M12
@@ -3839,7 +3839,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/src/pages/{Security,FeatureFlags}/*`
 - **Acceptance criteria:** Changes apply without redeploy.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-024 — Audit log search UI
 - **Milestone:** M12
@@ -3851,7 +3851,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/src/pages/AuditLog.tsx`
 - **Acceptance criteria:** Filters compose; export CSV works.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-025 — Platform health UI
 - **Milestone:** M12
@@ -3863,7 +3863,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/src/pages/Health.tsx`
 - **Acceptance criteria:** Each component shows status/latency/errors.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-026 — Scheduler dashboard UI
 - **Milestone:** M12
@@ -3875,7 +3875,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/src/pages/Scheduler.tsx`
 - **Acceptance criteria:** Actions dispatch to backend.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-027 — Data retention and backup screens
 - **Milestone:** M12
@@ -3887,7 +3887,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/src/pages/{Retention,Backups}/*`
 - **Acceptance criteria:** Configs persist; restore drill visible.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-028 — System configuration screen
 - **Milestone:** M12
@@ -3899,7 +3899,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/src/pages/SystemConfig.tsx`
 - **Acceptance criteria:** Branding uploads validated.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-029 — Playwright E2E: configure report type → submit report
 - **Milestone:** M12
@@ -3911,7 +3911,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/e2e/configure-and-submit.spec.ts`
 - **Acceptance criteria:** E2E green.
 - **Required tests:** `npm run e2e`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-030 — Super admin a11y audit
 - **Milestone:** M12
@@ -3923,7 +3923,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/super-admin/e2e/a11y.spec.ts`
 - **Acceptance criteria:** Zero serious/critical violations.
 - **Required tests:** `npm run e2e -- a11y`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-031 — Update OpenAPI for super admin
 - **Milestone:** M12
@@ -3935,7 +3935,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/storage/api-docs/openapi.yaml`
 - **Acceptance criteria:** `swagger-cli validate` passes.
 - **Required tests:** `tests/Feature/OpenApiSuperAdminTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-032 — Author docs/admin.md
 - **Milestone:** M12
@@ -3947,7 +3947,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docs/admin.md`
 - **Acceptance criteria:** Doc covers every top-level nav item.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-033 — README update for super admin
 - **Milestone:** M12
@@ -3959,7 +3959,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `README.md`
 - **Acceptance criteria:** Anchor link present.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M12-034 — AuditLogExportTest
 - **Milestone:** M12
@@ -3971,7 +3971,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `backend/tests/Feature/Security/AuditLogExportTest.php`
 - **Acceptance criteria:** CSV contains header and rows.
 - **Required tests:** `vendor/bin/pest tests/Feature/Security/AuditLogExportTest.php`.
-- **Status:** Not Started
+- **Status:** Done
 
 
 ---
@@ -3985,14 +3985,14 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 ### T-M13-001 — Citizen PWA scaffold
 - **Milestone:** M13
 - **Title:** Citizen PWA scaffold
-- **Description:** Scaffold `frontend/apps/citizen/` with Vite + React 19 + PWA plugin (`vite-plugin-pwa` + Workbox).
+- **Description:** Scaffold `frontend/src/portals/citizen/` (portal-per-directory within the single `frontend/` Vite app, not a standalone `frontend/apps/citizen/` package) with a hand-written `frontend/public/sw.js` service worker — no `vite-plugin-pwa`/Workbox dependency was actually added; see `docs/citizen.md`.
 - **Related specs:** `docs/06` §2, §4
 - **Dependencies:** T-M1-008
 - **Est. time:** 30 minutes
-- **Files:** `frontend/apps/citizen/`
+- **Files:** `frontend/src/portals/citizen/`, `frontend/public/sw.js`
 - **Acceptance criteria:** `npm run build` produces `manifest.webmanifest` and service worker.
 - **Required tests:** Build + Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-002 — Design tokens and base components
 - **Milestone:** M13
@@ -4004,7 +4004,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/components/layout/*`
 - **Acceptance criteria:** All layouts render with token-based styles.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-003 — Routing skeleton
 - **Milestone:** M13
@@ -4016,7 +4016,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/routes.tsx`
 - **Acceptance criteria:** Each route renders its placeholder.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-004 — Auth: Login + OTP screens
 - **Milestone:** M13
@@ -4028,7 +4028,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/pages/auth/*`
 - **Acceptance criteria:** Form validates; tokens stored in memory; refresh handled.
 - **Required tests:** Vitest + Playwright.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-005 — Auth state + API client
 - **Milestone:** M13
@@ -4040,7 +4040,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/api/client.ts`
 - **Acceptance criteria:** 401 triggers refresh; 429 waits.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-006 — IndexedDB offline queue
 - **Milestone:** M13
@@ -4052,7 +4052,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/offline/queue.ts`
 - **Acceptance criteria:** Queue persists across reloads; retry respects backoff.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-007 — Workbox background sync
 - **Milestone:** M13
@@ -4064,7 +4064,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/workers/sw.ts`
 - **Acceptance criteria:** Service worker registers; offline upload retries.
 - **Required tests:** Playwright with offline profile.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-008 — Camera capture component
 - **Milestone:** M13
@@ -4076,7 +4076,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/components/CameraCapture.tsx`
 - **Acceptance criteria:** Multi-photo; 3–5s video enforced client-side; gallery uploads blocked.
 - **Required tests:** Vitest + Playwright with mocked camera.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-009 — GPS capture component
 - **Milestone:** M13
@@ -4088,7 +4088,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/components/GpsCapture.tsx`
 - **Acceptance criteria:** Accuracy < 50m required; mock-GPS reported.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-010 — Category selection page
 - **Milestone:** M13
@@ -4100,7 +4100,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/pages/reports/NewReport.tsx`
 - **Acceptance criteria:** Categories loaded from API.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-011 — Report submission flow
 - **Milestone:** M13
@@ -4112,7 +4112,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/pages/reports/NewReport.tsx`
 - **Acceptance criteria:** Submission success returns tracking number; offline path queues.
 - **Required tests:** Vitest + Playwright.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-012 — My Reports list
 - **Milestone:** M13
@@ -4124,7 +4124,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/pages/reports/MyReports.tsx`
 - **Acceptance criteria:** Filters and pagination work.
 - **Required tests:** Vitest + Playwright.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-013 — Report Detail
 - **Milestone:** M13
@@ -4136,7 +4136,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/pages/reports/ReportDetails.tsx`
 - **Acceptance criteria:** No edit/delete controls.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-014 — Dashboard page
 - **Milestone:** M13
@@ -4148,7 +4148,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/pages/Dashboard.tsx`
 - **Acceptance criteria:** Counts match API.
 - **Required tests:** Vitest + Playwright.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-015 — Notifications page
 - **Milestone:** M13
@@ -4160,7 +4160,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/pages/Notifications.tsx`
 - **Acceptance criteria:** Mark read works.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-016 — Profile and Settings pages
 - **Milestone:** M13
@@ -4172,7 +4172,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/pages/{Profile,Settings}.tsx`
 - **Acceptance criteria:** Pages render.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-017 — Web Push subscription
 - **Milestone:** M13
@@ -4184,7 +4184,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/push/subscribe.ts`
 - **Acceptance criteria:** Subscription persisted server-side; logout unsubscribes.
 - **Required tests:** Vitest + Playwright.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-018 — Mock-GPS detection (best effort)
 - **Milestone:** M13
@@ -4196,7 +4196,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/security/mockGps.ts`
 - **Acceptance criteria:** Detection runs and reports; never false-positives normal usage.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-019 — Camera security guardrails
 - **Milestone:** M13
@@ -4208,7 +4208,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/security/evidenceGuards.ts`
 - **Acceptance criteria:** File inputs absent; right-click blocked; EXIF stripped in previews.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-020 — Error and empty states
 - **Milestone:** M13
@@ -4220,7 +4220,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/packages/ui/src/feedback/*`
 - **Acceptance criteria:** All pages have the three states.
 - **Required tests:** Vitest.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-021 — Accessibility audit
 - **Milestone:** M13
@@ -4232,7 +4232,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/e2e/a11y.spec.ts`
 - **Acceptance criteria:** Zero serious/critical violations; Lighthouse a11y ≥ 95.
 - **Required tests:** `npm run e2e -- a11y`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-022 — Performance / Lighthouse
 - **Milestone:** M13
@@ -4244,7 +4244,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `.github/workflows/lighthouse.yml`, `lighthouserc.json`
 - **Acceptance criteria:** Score targets met on preview.
 - **Required tests:** `lhci autorun`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-023 — Playwright E2E: full submission
 - **Milestone:** M13
@@ -4256,7 +4256,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/e2e/submit.spec.ts`
 - **Acceptance criteria:** E2E green.
 - **Required tests:** `npm run e2e -- submit`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-024 — Playwright E2E: offline path
 - **Milestone:** M13
@@ -4268,7 +4268,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/e2e/offline.spec.ts`
 - **Acceptance criteria:** E2E green.
 - **Required tests:** `npm run e2e -- offline`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-025 — Playwright E2E: push notification
 - **Milestone:** M13
@@ -4280,7 +4280,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/e2e/push.spec.ts`
 - **Acceptance criteria:** E2E green.
 - **Required tests:** `npm run e2e -- push`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-026 — Vitest unit: offline queue
 - **Milestone:** M13
@@ -4292,7 +4292,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/offline/queue.test.ts`
 - **Acceptance criteria:** All cases pass.
 - **Required tests:** `npm run test -- offline`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-027 — Vitest unit: video duration guard
 - **Milestone:** M13
@@ -4304,7 +4304,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `frontend/apps/citizen/src/components/CameraCapture.test.tsx`
 - **Acceptance criteria:** 2s and 6s rejected.
 - **Required tests:** `npm run test -- camera`.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-028 — Author docs/citizen.md
 - **Milestone:** M13
@@ -4316,7 +4316,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docs/citizen.md`
 - **Acceptance criteria:** Doc covers happy path + offline path.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-029 — README update for citizen
 - **Milestone:** M13
@@ -4328,7 +4328,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `README.md`
 - **Acceptance criteria:** Section present.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 ### T-M13-030 — Citizen security review checklist
 - **Milestone:** M13
@@ -4340,7 +4340,7 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Files:** `docs/citizen-security.md`
 - **Acceptance criteria:** Checklist signed off.
 - **Required tests:** Manual.
-- **Status:** Not Started
+- **Status:** Done
 
 
 ---
@@ -5160,4 +5160,134 @@ When the spec is ambiguous, the agent must stop and request clarification. The d
 - **Acceptance criteria:** Notes include feature list, breaking changes (none), upgrade path.
 - **Required tests:** Manual.
 - **Status:** Not Started
+
+---
+
+## Milestone M17 — Public Transparency Portal
+
+**Source:** `.codex/roadmap.md` §M17. **Specs:** `docs/01` §7 / `docs/02-PRD.md` §7 (Public Transparency scope, previously untracked); `docs/11` (Privacy-By-Design principle).
+
+> Added 2026-07-02 during the post-audit remediation pass. Not part of the original M1–M16 roadmap sequence — see the provenance note in `.codex/roadmap.md` §M17.
+
+---
+
+### T-M17-001 — Public module skeleton
+- **Milestone:** M17
+- **Title:** Public module skeleton
+- **Description:** Create `backend/app/Modules/Public/{Services,Http/Controllers}/` — read-only, no models/migrations of its own; aggregates existing `Report`/`Department`/`ReportStatusHistory` data.
+- **Related specs:** `docs/03` §6
+- **Dependencies:** T-M4-001
+- **Est. time:** 15 minutes
+- **Files:** `backend/app/Modules/Public/`
+- **Acceptance criteria:** Folders exist; no writes anywhere in the module.
+- **Required tests:** N/A (structural).
+- **Status:** Done
+
+### T-M17-002 — PublicStatsService + GET /api/v1/public/stats
+- **Milestone:** M17
+- **Title:** PublicStatsService + GET /api/v1/public/stats
+- **Description:** `total_reports`, `ai_classified_percent`, `median_assign_seconds` (median over the most recent 500 `submitted→assigned` transitions, computed in PHP). Cached 5 minutes.
+- **Related specs:** `docs/02` §7
+- **Dependencies:** T-M17-001, T-M6-009
+- **Est. time:** 30 minutes
+- **Files:** `backend/app/Modules/Public/Services/PublicStatsService.php`, `backend/app/Modules/Public/Http/Controllers/PublicStatsController.php`
+- **Acceptance criteria:** Unauthenticated; no PII in response.
+- **Required tests:** `backend/tests/Feature/Public/PublicStatsEndpointTest.php`.
+- **Status:** Done
+
+### T-M17-003 — PublicHeatmapService + GET /api/v1/public/heatmap
+- **Milestone:** M17
+- **Title:** PublicHeatmapService + GET /api/v1/public/heatmap
+- **Description:** Grid-bucketed report density: `(ROUND(latitude,2), ROUND(longitude,2), COUNT(*))` — the same 2-decimal (~1.1km) rounding `PiiMaskingService` uses. Never an exact coordinate. Cached 5 minutes.
+- **Related specs:** `docs/11` (Privacy-By-Design)
+- **Dependencies:** T-M17-001
+- **Est. time:** 30 minutes
+- **Files:** `backend/app/Modules/Public/Services/PublicHeatmapService.php`, `backend/app/Modules/Public/Http/Controllers/PublicHeatmapController.php`
+- **Acceptance criteria:** No response row contains an un-rounded coordinate.
+- **Required tests:** `backend/tests/Feature/Public/PublicHeatmapEndpointTest.php`.
+- **Status:** Done
+
+### T-M17-004 — PublicDepartmentPerformanceService + GET /api/v1/public/departments/performance
+- **Milestone:** M17
+- **Title:** PublicDepartmentPerformanceService + GET /api/v1/public/departments/performance
+- **Description:** Per active department: `total_reports`, `resolved_reports`, `resolution_rate_percent`, `median_resolution_hours` (submitted→first resolved-family status-history transition). Only `name`/`code`/aggregate counts — no officer names, no internal notes. Cached 5 minutes.
+- **Related specs:** `docs/02` §7
+- **Dependencies:** T-M17-001, T-M6-009
+- **Est. time:** 30 minutes
+- **Files:** `backend/app/Modules/Public/Services/PublicDepartmentPerformanceService.php`, `backend/app/Modules/Public/Http/Controllers/PublicDepartmentPerformanceController.php`
+- **Acceptance criteria:** No department-internal field ever appears in the response.
+- **Required tests:** `backend/tests/Feature/Public/PublicDepartmentPerformanceEndpointTest.php`.
+- **Status:** Done
+
+### T-M17-005 — `public` rate limiter + routes
+- **Milestone:** M17
+- **Title:** `public` rate limiter + routes
+- **Description:** `RouteServiceProvider::LIMITER_PUBLIC` (30 req/min/IP); register `GET /public/stats`, `/public/heatmap`, `/public/departments/performance` outside `auth:sanctum`.
+- **Related specs:** `docs/11` §21
+- **Dependencies:** T-M17-002, T-M17-003, T-M17-004
+- **Est. time:** 15 minutes
+- **Files:** `backend/app/Providers/RouteServiceProvider.php`, `backend/routes/api.php`
+- **Acceptance criteria:** 429 after 30 calls/min from one IP.
+- **Required tests:** Covered by each endpoint's Feature test.
+- **Status:** Done
+
+### T-M17-006 — Public React portal shell
+- **Milestone:** M17
+- **Title:** Public React portal shell
+- **Description:** `frontend/src/portals/public/` mounted at `/public` in `App.tsx` with **no** `ProtectedRoute` wrapper (unauthenticated by design); `PublicApp.tsx` + `layout/PublicLayout.tsx` (nav + privacy-rules footer disclaimer).
+- **Related specs:** `docs/13-UI-Design-System.md`
+- **Dependencies:** T-M17-005
+- **Est. time:** 25 minutes
+- **Files:** `frontend/src/portals/public/PublicApp.tsx`, `frontend/src/portals/public/layout/PublicLayout.tsx`
+- **Acceptance criteria:** `/public` loads with no bearer token.
+- **Required tests:** Build + Vitest.
+- **Status:** Done
+
+### T-M17-007 — Overview, Heat map, Department performance pages
+- **Milestone:** M17
+- **Title:** Overview, Heat map, Department performance pages
+- **Description:** `OverviewPage.tsx` (the three `/public/stats` numbers), `HeatmapPage.tsx` (Leaflet `MapContainer`/`CircleMarker`, same pattern as M11's `GisMapPage.tsx`), `DepartmentPerformancePage.tsx` (table + CSS resolution-rate bar, reusing the M10 moderator `design/` component set).
+- **Related specs:** `docs/13-UI-Design-System.md`
+- **Dependencies:** T-M17-006
+- **Est. time:** 30 minutes
+- **Files:** `frontend/src/portals/public/pages/OverviewPage.tsx`, `HeatmapPage.tsx`, `DepartmentPerformancePage.tsx`, `frontend/src/portals/public/api/client.ts`
+- **Acceptance criteria:** Each page renders from its React Query hook; no hardcoded numbers.
+- **Required tests:** `frontend/src/portals/public/pages/__tests__/OverviewPage.test.tsx`, `DepartmentPerformancePage.test.tsx`. (No Vitest unit test for `HeatmapPage.tsx` — Leaflet+jsdom isn't exercised anywhere in this codebase, including the pre-existing `GisMapPage.tsx`; this follows established precedent.)
+- **Status:** Done
+
+### T-M17-008 — Landing page link + shared stats hook
+- **Milestone:** M17
+- **Title:** Landing page link + shared stats hook
+- **Description:** `frontend/src/pages/LandingPage.tsx` links to `/public` and consumes `/public/stats` for its own summary tiles (replacing the previously hardcoded `{'12,847','94%','38s'}` array from the M13-era landing page).
+- **Related specs:** `docs/02` §7
+- **Dependencies:** T-M17-002, T-M17-006
+- **Est. time:** 10 minutes
+- **Files:** `frontend/src/pages/LandingPage.tsx`
+- **Acceptance criteria:** Landing page renders live numbers; link to `/public` present.
+- **Required tests:** `frontend/src/pages/__tests__/LandingPage.test.tsx`.
+- **Status:** Done
+
+### T-M17-009 — docs/public.md + README section
+- **Milestone:** M17
+- **Title:** docs/public.md + README section
+- **Description:** `docs/public.md` (matching the `docs/admin.md` pattern) documenting the REST surface, privacy rules, service-layer notes, and the React portal; README "Public Transparency Portal (M17)" section.
+- **Related specs:** `docs/14` §37
+- **Dependencies:** T-M17-007, T-M17-008
+- **Est. time:** 20 minutes
+- **Files:** `docs/public.md`, `README.md`
+- **Acceptance criteria:** Doc cross-references the OpenAPI-documented endpoints and the privacy rules.
+- **Required tests:** Manual.
+- **Status:** Done
+
+### T-M17-010 — Privacy-leak regression tests
+- **Milestone:** M17
+- **Title:** Privacy-leak regression tests
+- **Description:** Each of the three Feature test suites explicitly asserts the response contains no PII field and no un-rounded coordinate, in addition to correctness.
+- **Related specs:** `docs/11` (Privacy-By-Design)
+- **Dependencies:** T-M17-002, T-M17-003, T-M17-004
+- **Est. time:** 20 minutes
+- **Files:** `backend/tests/Feature/Public/PublicStatsEndpointTest.php`, `PublicHeatmapEndpointTest.php`, `PublicDepartmentPerformanceEndpointTest.php`
+- **Acceptance criteria:** 17 tests total, all green.
+- **Required tests:** `vendor/bin/pest tests/Feature/Public`.
+- **Status:** Done
 

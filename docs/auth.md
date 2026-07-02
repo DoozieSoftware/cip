@@ -14,15 +14,23 @@ This document explains how the M2 identity layer works end to end. It is the on-
 
 | Persona | Identifier | Auth mode | Default role | Notes |
 | --- | --- | --- | --- | --- |
-| Citizen | mobile (10-digit) | OTP via SMS | `citizen` | Stateless login; one-time code; no password in V1. |
-| Moderator | email | Password (bcrypt) + 2FA-ready | `moderator` | Staff portal user. Password + 2FA TOTP land in M10. |
-| Department officer | email | Password + 2FA-ready | `department_officer` | Operations portal user. |
-| Department admin | email | Password + 2FA-ready | `department_admin` | Manages the department's staff and SLAs. |
-| Super admin | email | Password + 2FA + dual approval | `super_admin` | Protected role. Cannot be self-revoked. |
+| Citizen | mobile (10-digit) | OTP via SMS | `citizen` | Stateless login; one-time code; no password. |
+| Moderator | mobile (10-digit) | Password (`POST /auth/login`) | `moderator` | Staff portal user. |
+| Department officer | mobile (10-digit) | Password | `department_officer` | Operations portal user. |
+| Department admin | mobile (10-digit) | Password | `department_admin` | Manages the department's staff and SLAs. |
+| Super admin | mobile (10-digit) | Password | `super_admin` | Protected role. Cannot be self-revoked. |
 | System | n/a | Service account | `system` | Used by jobs, AI workers, and the connector framework. Cannot log in via the web. |
-| Auditor | email | Password + 2FA | `auditor` | Read-only access to audit / security event streams. |
+| Auditor | mobile (10-digit) | Password | `auditor` | Read-only access to audit / security event streams. |
 
-Citizen authentication is OTP-only in V1. Staff authentication is password-based. The 2FA surface is in place (the `two_factor_secret` and `two_factor_recovery_codes` columns exist on `users`); the TOTP enrollment flow ships with M10 / M12. See `docs/11` §8 for the password policy and `docs/11` §7 for session policy.
+Citizen authentication is OTP-only, final. Staff authentication is
+password-based via `POST /api/v1/auth/login`, keyed by the same
+`users.mobile` field OTP uses — there is no separate email-login
+path. **2FA/TOTP is not implemented** — `two_factor_secret` /
+`two_factor_recovery_codes` columns exist on `users` but no
+enrollment or challenge flow reads or writes them; treat any
+reference to "2FA-ready" elsewhere as aspirational until an
+enrollment endpoint actually exists. See §5a below for the password
+policy and `docs/11` §7 for session policy.
 
 ## 2. Happy Path: Citizen Login
 
@@ -59,6 +67,43 @@ Citizen authentication is OTP-only in V1. Staff authentication is password-based
 
 The refresh token is the **only** time the client can capture it. Store it in a non-HTTP-only storage (e.g. `localStorage` for the PWA, `EncryptedSharedPreferences` for the eventual Android wrapper). The Sanctum access token goes into the `Authorization: Bearer …` header on every subsequent request.
 
+## 2a. Happy Path: Staff Password Login
+
+```
+   ┌─────────┐                              ┌─────────┐
+   │  Staff  │                              │  CIP    │
+   │ Portal  │                              │ Backend │
+   └────┬────┘                              └────┬────┘
+        │  POST /api/v1/auth/login              │
+        │  { mobile, password }                 │
+        │ ──────────────────────────────────────▶
+        │                                       │ - rate-limit (10/h per IP+mobile)
+        │                                       │ - lockout check (5 failures / 15 min)
+        │                                       │ - Hash::check(password, users.password)
+        │                                       │ - issue Sanctum PAT
+        │                                       │ - issue opaque refresh token
+        │                                       │ - record LoginHistory
+        │                                       │ - emit LOGIN_SUCCESS security event
+        │                                       │ - emit UserAuthenticated(channel: 'password')
+        │  200 { data: { token, refresh_token,  │
+        │              refresh_expires_at,      │
+        │              user: {...} } }          │
+        │ ◀──────────────────────────────────────
+```
+
+Citizens have no `password` column value (`null`), so this endpoint
+always returns 401 for a citizen mobile — it never confirms or
+denies whether a mobile is registered. A wrong password, an unknown
+mobile, and a citizen mobile are all indistinguishable 401 responses
+from the outside. After 5 failed attempts for the same mobile within
+a rolling 15-minute window, the endpoint returns 429 even if the
+6th attempt uses the correct password (`AuthenticationService::assertNotLockedOut`).
+
+`POST /auth/login` is implemented in `AuthenticationService::loginWithPassword()`
+and mirrors `verifyOtp()`'s token-issuance shape exactly (same
+`{token, refresh, user, access_token}` return array), so
+`AuthController` reuses the same response-building code for both.
+
 ## 3. JWT / Access Token Lifecycle
 
 * **Issuance.** `POST /auth/verify-otp` returns a Sanctum **personal access token** (PAT). The PAT id, the plaintext, the user's id, and the expiry are stored in `personal_access_tokens`. The plaintext is shown to the client exactly once and is **not recoverable** server-side.
@@ -84,11 +129,32 @@ Refresh tokens are 64 random URL-safe characters, hashed with sha256 in storage.
 
 Authorization is driven by Spatie Permission (`spatie/laravel-permission`).
 
-* **Roles** are the primary unit. They group permissions. Default roles are seeded in T-M2-019 / T-M2-029. Roles are guard-aware (the `web` guard is the default; `sanctum` is also wired in case staff auth shifts to a token-only path).
+* **Roles** are the primary unit. They group permissions. Default roles are seeded in T-M2-019 / T-M2-029. Roles are guard-aware — the seeded roles use the `web` guard exclusively (`RolesAndPermissionsSeeder`). There is **no** Spatie guard named `sanctum`; Sanctum's own guard is configured as `api` in `config/auth.php`. Any reference to a `sanctum`-named Spatie guard is a naming error, not a real guard.
 * **Permissions** are named strings (`reports.submit`, `moderation.override`, `users.create`, etc.). They are not user-facing in V1; clients see role names and (when eager-loaded) a flattened permission list.
-* **Assignment.** `RoleService` (`backend/app/Modules/Users/Services/RoleService.php`) is the single entry point for granting / revoking roles. It is wrapped in a `DB::transaction` and emits `UserRoleChanged` on every change. The protected roles `super_admin` and `system` cannot be revoked by a single API call; they require a Super Admin Portal flow with dual approval (lands in M12).
-* **Authorization.** `BasePolicy` (`backend/app/Modules/Users/Policies/BasePolicy.php`) implements the platform-wide `before()` rule: return `false` for unauthenticated / trashed / suspended / disabled / pending users, return `true` for `super_admin` and `system`, and `null` (defer) otherwise. Per-ability methods live in module-specific policies (e.g. `ReportPolicy@view`).
+* **Assignment.** `RoleService` (`backend/app/Modules/Users/Services/RoleService.php`) is the single entry point for granting / revoking roles. It is wrapped in a `DB::transaction` and emits `UserRoleChanged` on every change. The protected roles `super_admin` and `system` **cannot be revoked at all** through `RoleService` — `PROTECTED_ROLES` throws `ROLE_PROTECTED` (422) unconditionally for anyone. There is no dual-approval workflow; the current behaviour is a hard block, which is a stricter (if less flexible) guarantee than the dual-approval flow this document previously described.
+* **Authorization.** `BasePolicy` (`backend/app/Modules/Shared/Policies/BasePolicy.php` — **not** `Users/Policies`, a stale path this document used to cite) implements the platform-wide `before()` rule: return `false` for unauthenticated / trashed / suspended / disabled / pending users, return `true` for `super_admin` and `system`, and `null` (defer) otherwise. Per-ability methods live in module-specific policies (e.g. `ReportPolicy@view`).
 * **Super admin bypass.** `super_admin` and `system` always receive `true` from `BasePolicy::before()`. There is no per-ability short-circuit needed in the policy.
+
+## 5a. Password Policy
+
+Staff account passwords (login and admin create/update) are validated by
+`SecurityPolicyService::passwordRule()` (`backend/app/Modules/Security/Services/SecurityPolicyService.php`),
+which reads the `password.min_length` row from `security_policies` and
+builds a Laravel `Illuminate\Validation\Rules\Password` rule from it.
+Per `docs/11` §8 the defaults are: minimum length **12**, mixed case,
+at least one number, at least one special character. A Super Admin
+editing the `password.min_length` policy through the Security
+Policies admin screen changes this rule's behaviour on the next
+request — no deploy required. This is the first `security_policies`
+row with a real runtime effect; the remaining rows (`otp.expiry_seconds`,
+`jwt.access_ttl_minutes`, `ratelimit.otp_per_hour`, etc.) are still
+CRUD-only and not yet read by any code path — do not assume editing
+them changes behaviour until their own wiring lands.
+
+Password **history** (5 prior passwords) and **expiry** (90 days) from
+`docs/11` §8 have no backing storage yet (no `password_histories`
+table, no `password_changed_at` tracking) — only the complexity rule
+is enforced today.
 
 ## 6. Rate Limiting
 
@@ -97,6 +163,7 @@ Authorization is driven by Spatie Permission (`spatie/laravel-permission`).
 | Limiter | Budget | Key | Applied to |
 | --- | --- | --- | --- |
 | `otp` | 5 / hour | IP | `POST /auth/send-otp` |
+| `login` | 10 / hour | IP + mobile | `POST /auth/login` (stricter than OTP: a password is a standing secret, brute-forceable, unlike a short-lived issued code) |
 | `citizen` | 60 / minute | user id (or IP pre-auth) | `POST /auth/verify-otp`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me` |
 | `uploads` | 120 / hour | user id | T-M5 upload endpoints |
 | `moderator` | 300 / minute | user id | M10 moderator portal endpoints |
@@ -126,20 +193,19 @@ The middleware is wired globally on the API group in `backend/bootstrap/app.php`
 * `recordSafe(event, severity, metadata, user, ip, userAgent)` — fail-open; logs and returns null on any failure. Hot paths (audit middleware, login endpoint) use this so a security event write failure never breaks the user flow.
 * `info`, `warning`, `critical` convenience wrappers.
 
-Standard event names:
+Standard event names — status reflects what is actually wired today, not the original aspiration:
 
-* `LOGIN_SUCCESS` — emitted on a successful verify-otp or staff login.
-* `LOGIN_FAILURE` — emitted on bad OTP, locked account, rate-limited OTP, etc.
-* `REFRESH_TOKEN_REPLAY` — emitted when a single-use refresh token is presented twice. The session chain is revoked in the same transaction.
-* `RATE_LIMITED` — emitted on every 429 from a named limiter.
-* `SUSPICIOUS_DEVICE` — emitted by T-M2-018 when the device fingerprint changes mid-session.
-* `USER_ROLE_CHANGED` / `USER_PERMISSION_CHANGED` — emitted by `RoleService`.
+* `LOGIN_SUCCESS` / `LOGIN_FAILURE` — **wired**, but only for the staff password flow (`AuthenticationService::loginWithPassword()`). The citizen OTP flow (`verifyOtp()`) does not yet emit either event — extending it is a tracked fast-follow, not done here.
+* `REFRESH_TOKEN_REPLAY` — **wired**, emitted when a single-use refresh token is presented twice (`RefreshTokenService`). The session chain is revoked in the same transaction.
+* `RATE_LIMITED` — **not wired**. The 429 handler in `bootstrap/app.php` builds the error envelope but never calls `SecurityEventService`. Treat any dashboard widget that implies rate-limit events are tracked as reading an empty bucket today.
+* `SUSPICIOUS_DEVICE` — **not wired**. No code path ever records this event; `DeviceFingerprintService` computes a hash but nothing compares it across sessions or raises this event on a change.
+* `USER_ROLE_CHANGED` / `USER_PERMISSION_CHANGED` — **dispatched as Laravel events** by `RoleService`, but have no registered listener, so no `security_events` row is ever written for either. The event classes exist; the bridge into `SecurityEventService` does not.
 
 `security_events` is also append-only — the model layer rejects `update` and `delete`.
 
 ## 9. Device Fingerprinting
 
-`DeviceFingerprintService` (T-M2-018) computes a stable hash from the parts of the request the server can read (User-Agent, Accept-Language, IP). The browser-only signals (Canvas, WebGL, Screen, Timezone) land with the PWA in M13 and will be added to the hash. The hash is written to `login_histories.device_fingerprint` and to `audit_logs` so security can correlate sessions across devices.
+`DeviceFingerprintService` (T-M2-018) computes a stable hash from the parts of the request the server can read (User-Agent, Accept-Language, IP). The browser-only signals (Canvas, WebGL, Screen, Timezone) land with the PWA in M13 and will be added to the hash. **The hash is written to `audit_logs` (via `AuditMiddleware`) but not to `login_histories.device_fingerprint`** — both `verifyOtp()` and `loginWithPassword()` currently write `device_fingerprint: null` on every row. Wiring the fingerprint into login history is a tracked fast-follow, not yet done.
 
 ## 10. Error Envelope and Error Codes
 

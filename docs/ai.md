@@ -28,26 +28,35 @@ failover, and the benchmark suite. It is the operational companion to
  AiPipelineOrchestrator  (queue: ai-pipeline)
         │
         ▼
- ┌──────────────────────────────────────────┐
- │  1. PiiMaskingService.mask(metadata, …)  │
- │  2. ImageQualityAnalyzer.score(media)    │
- │  3. DuplicateDetector.detect(report)     │
- │  4. FraudScorer.score(events)            │
- │  5. provider.classify(AiRequest)         │
- │  6. AiResponseValidator.validate(resp)   │
- │  7. ConfidenceAggregator.decide(conf)    │
- │  8. persist ai_jobs / ai_results / labels│
- │  9. emit AiCompleted                    │
- └──────────────────────────────────────────┘
+ ┌────────────────────────────────────────────────────┐
+ │  1. PiiMaskingService.mask(title+description)      │
+ │  2. ImageQualityAnalyzer.score(media)               │
+ │  3. ai_enabled app_config check — if OFF, skip      │
+ │     straight to a zero-confidence result (7)        │
+ │  4. provider.classify(AiRequest) via                │
+ │     ProviderFailoverService (skipped if 3 is off)   │
+ │  5. AiResponseValidator.validate(resp)              │
+ │  6. DuplicateDetector.detect / FraudScorer.score    │
+ │  7. persist ai_jobs / ai_results / labels           │
+ │  8. emit AiCompleted                                │
+ └────────────────────────────────────────────────────┘
         │
         ▼
-   report → moderator_review | auto_route | manual_classification
+ AiCompletedListener — ConfidenceAggregator.decide(conf × 100)
+        │
+        ▼
+   report → pending_moderator (below auto-route threshold)
+          | assigned via routing rules (at/above threshold)
 ```
 
 The pipeline is the single integration point between the rest of the
 platform and any AI provider. It is implemented in
 `backend/app/Modules/AI/Jobs/AiPipelineOrchestrator.php` and is
 unit-tested in `tests/Feature/AI/PipelineOrchestratorTest.php`.
+`ConfidenceAggregator` is applied **after** the pipeline, inside
+`App\Modules\AI\Listeners\AiCompletedListener` — it gates whether the
+AI's routing recommendation is auto-applied or held for a moderator's
+`moderator_review` review (see "Confidence rules" below).
 
 ## Endpoints
 
@@ -58,6 +67,8 @@ unit-tested in `tests/Feature/AI/PipelineOrchestratorTest.php`.
 | GET    | `/api/v1/admin/ai/providers/{provider}`             | Super Admin                 | Single provider (secrets masked)               |
 | PUT    | `/api/v1/admin/ai/providers/{provider}`             | Super Admin                 | Partial update                                 |
 | DELETE | `/api/v1/admin/ai/providers/{provider}`             | Super Admin                 | Remove provider                                |
+| POST   | `/api/v1/admin/ai/providers/{provider}/test`        | Super Admin                 | Live `healthCheck()` probe; not persisted      |
+| POST   | `/api/v1/admin/ai/providers/{provider}/activate`    | Super Admin                 | Shortcut for `PUT` with `{"active": true}`     |
 | GET    | `/api/v1/admin/ai/prompts`                          | Super Admin                 | Paginated list                                 |
 | POST   | `/api/v1/admin/ai/prompts`                          | Super Admin                 | Create a prompt version                        |
 | GET    | `/api/v1/admin/ai/prompts/{prompt}`                 | Super Admin                 | Single prompt version                          |
@@ -78,11 +89,16 @@ The full OpenAPI surface is in
 Six tables back the engine; all PKs are UUIDs and follow the platform
 convention (InnoDB, utf8mb4, `created_at` / `updated_at` / `softDeletes`).
 
-- `ai_provider_configs` (T-M8-006)
-  - `id`, `code` (unique), `name`, `base_url`, `auth_type` enum
-    `{none, bearer, api_key, oauth}`
-  - `api_key_secret_id` (nullable UUID; **never serialized** — see
-    `AiProviderConfigResource`)
+- `ai_provider_configs`
+  - `id`, `code` (unique instance identifier, e.g. `openrouter-prod`),
+    `driver` (type discriminator: `mock` | `qwen_vl` |
+    `openai_compatible` — see "Provider abstraction" below),
+    `name`, `base_url`, `auth_type` enum `{none, bearer, api_key, oauth}`
+  - `credentials` (encrypted JSON, e.g. `{"api_key": "..."}`;
+    **never serialized** — see `AiProviderConfigResource`, which
+    exposes a `has_secret` boolean instead)
+  - `extra_headers` (JSON map of static headers, e.g. OpenRouter's
+    `HTTP-Referer`/`X-Title`)
   - `model`, `temperature` 0..2, `timeout_ms` 1..120000,
     `retry_count` 0..10
   - `priority` (lower = higher precedence), `is_fallback`, `active`
@@ -125,56 +141,60 @@ interface AIProviderInterface
 }
 ```
 
-Three implementations ship in M8:
+Three implementations ship today, selected by the `driver` column
+(not `code` — `code` is just the row's unique instance name):
 
-| Code       | Class                              | When to use                                      |
-| ---------- | ---------------------------------- | ------------------------------------------------ |
-| `mock`     | `App\Modules\AI\Providers\MockProvider` | dev, test, and CI (no external calls)        |
-| `openai`   | `App\Modules\AI\Providers\OpenAICompatibleProvider` | any OpenAI-compatible API (base_url + bearer) |
-| `qwen-vl`  | `App\Modules\AI\Providers\QwenVLProvider` | Alibaba Qwen-VL; supports image+video URLs   |
+| Driver               | Class                                                | When to use                                                  |
+| -------------------- | ----------------------------------------------------- | -------------------------------------------------------------|
+| `mock`               | `App\Modules\AI\Providers\MockProvider`               | dev, test, and CI (no external calls)                        |
+| `qwen_vl`            | `App\Modules\AI\Providers\QwenVLProvider`             | Alibaba Qwen-VL; fixed DashScope endpoint + model defaults    |
+| `openai_compatible`  | `App\Modules\AI\Providers\OpenAICompatibleProvider`   | any OpenAI chat-completions-shaped API — **OpenRouter, a Modal.com-deployed vision endpoint, Azure OpenAI, or self-hosted vLLM/Together-style gateways all use this driver** |
 
-All three read their config from `ai_provider_configs` at request time
-via the DI container, so swapping providers in production requires
-**zero code changes** — only a Super Admin CRUD call.
+`App\Modules\AI\Support\AiProviderFactory::make(AiProviderConfig $cfg)`
+is the single place that turns a config row into a real provider
+instance — it reads `base_url`, `model`, `credentials.api_key`,
+`extra_headers`, `timeout_ms`, and `temperature` straight off the row.
+`App\Modules\AI\Providers\AiServiceProvider` calls the factory for
+every `active = true` row at boot and binds the result into
+`ProviderFailoverService` — this is the piece that makes "swap
+providers via the Super Admin screen, zero code changes" actually
+true; before it existed, `ProviderFailoverService`'s binding map was
+always empty and every real classification request failed.
 
-### Adding a new provider without code changes
+### Adding a custom OpenAI-compatible provider (OpenRouter, Modal.com, …)
 
-The platform supports adding a new OpenAI-compatible vision provider
-end-to-end without writing any PHP:
+No PHP changes are needed for any endpoint that accepts the standard
+`POST {base_url}/v1/chat/completions` shape. From the Super Admin →
+AI → Providers screen (or `POST /api/v1/admin/ai/providers`):
 
-1. **Seed a new row** in `ai_provider_configs` (or use the Super
-   Admin API):
-   - `code`: e.g. `azure-gpt4v`
-   - `name`: human-readable label
-   - `base_url`: e.g. `https://my-resource.openai.azure.com/openai/deployments/gpt4v/`
-   - `auth_type`: `bearer` (or `api_key`)
-   - `api_key_secret_id`: UUID of the secret in the secrets vault
-   - `model`: the upstream model id
-   - `temperature`, `timeout_ms`, `retry_count`: tuning knobs
-   - `priority`: lower than your current primary to keep `mock` /
-     existing primary winning by default
-   - `active`: `true`
-2. **Bind it in code** by registering the slug in
-   `AppServiceProvider::registerAiProviders()` against
-   `OpenAICompatibleProvider` (the default generic adapter):
+1. **`driver`**: `openai_compatible`.
+2. **`base_url`**: e.g. `https://openrouter.ai/api` (OpenRouter) or
+   your Modal.com app's HTTPS URL. No trailing slash.
+3. **`credentials.api_key`**: the provider's API key / bearer token —
+   write-only, masked as `has_secret: true` on every read.
+4. **`extra_headers`** (optional): static headers the endpoint
+   requires beyond the bearer token — OpenRouter recommends
+   `HTTP-Referer` and `X-Title`; a Modal.com deployment might need a
+   custom auth header alongside the bearer token.
+5. **`model`**: the upstream model id, e.g. `openrouter/auto` or your
+   Modal deployment's model slug.
+6. **`priority`** / **`is_fallback`** / **`active`**: same semantics
+   as every other row — lower priority wins among active,
+   non-fallback rows.
 
-   ```php
-   $this->app->bind('ai.provider.azure-gpt4v', fn () => new OpenAICompatibleProvider(
-       name: 'azure-gpt4v',
-       model: config('ai.providers.azure-gpt4v.model'),
-       config: AiProviderConfig::where('code', 'azure-gpt4v')->firstOrFail(),
-   ));
-   ```
-3. **Update the provider factory** (`AiProviderFactory::make()`) to
-   map the new `code` to that binding. This is a one-line addition.
-4. **Test it** by running the benchmark suite against the new code
-   (`AiBenchmarkTest`) — every case must still validate.
+`OpenAICompatibleProvider::healthCheck()` tries `GET /v1/models`
+first and falls back to a bare connectivity check against `base_url`
+on a 404, since many custom-deployed endpoints (Modal.com in
+particular) don't expose an OpenAI-style model listing. Use the
+"Test" button on the admin screen to verify connectivity before
+flipping a new row `active`.
 
-If the new provider speaks a wire format that is **not**
-OpenAI-compatible, write a small `MyProvider` class implementing
-`AIProviderInterface` (typically < 100 lines) and bind it the same
-way. The orchestrator, validator, and aggregator do not need to
-change.
+If a provider's wire format is genuinely **not**
+chat-completions-shaped, write a small class implementing
+`AIProviderInterface` (typically < 100 lines), add a new driver
+constant + `match` arm to `AiProviderFactory::make()`, and add it to
+`StoreAiProviderRequest`/`UpdateAiProviderRequest`'s `driver` enum.
+The orchestrator, validator, and aggregator do not need to change.
 
 ## Prompt lifecycle
 
@@ -234,8 +254,16 @@ boundaries). `confidence = 0.80` and `confidence = 0.95` are inclusive
 lower / exclusive upper bounds respectively — see the unit tests in
 `tests/Unit/AI/ConfidenceAggregatorTest.php`.
 
-`auto_route` is **advisory** — the M7 routing engine still evaluates
-the `routing_rules` DSL and the moderator can override.
+`auto_route` is applied by `AiCompletedListener` (`App\Modules\AI\Listeners`),
+**not** inside the pipeline job itself — the listener converts the
+`AiCompleted` event's `confidence` (0..1) to the 0-100 scale
+`ConfidenceAggregator` expects. Anything below `auto_route` transitions
+the report to `pending_moderator` via the workflow engine's
+`moderator_review` event and does **not** create a department
+assignment — this is the concrete mechanism behind AGENTS.md's
+"moderator always overrides AI" rule. The M7 routing engine still
+evaluates the `routing_rules` DSL for the `auto_route` case, and a
+moderator can always override a completed assignment afterward.
 
 ## PII masking
 
@@ -305,21 +333,29 @@ fastest way to catch wire-format drift between providers.
 
 ## Configurability and security
 
-- All provider secrets live in the secrets vault; only the
-  `api_key_secret_id` UUID is stored in `ai_provider_configs`. The
-  secret value is never read by the AI module — the provider
-  implementations fetch it on demand through
-  `SecretService::reveal($apiKeySecretId)`.
+- Provider secrets live in `ai_provider_configs.credentials`, an
+  `encrypted:array` Eloquent cast (Laravel's built-in `APP_KEY`
+  encryption) — the plaintext key never appears in a query log or a
+  database dump taken without `APP_KEY`. `AiProviderFactory` is the
+  only code that ever reads `credentials['api_key']`, at the moment
+  it constructs the provider instance.
 - The provider response is logged **without** the raw `raw` payload
   in production (`LOG_LEVEL=info`); the payload is only persisted
   in `ai_results.raw` for forensic / re-prompting use.
-- `AiProviderConfigResource` masks `api_key_secret_id` and surfaces
-  a `has_secret` boolean instead. The OpenAPI schema enforces the
+- `AiProviderConfigResource` masks `credentials` and surfaces a
+  `has_secret` boolean instead. The OpenAPI schema enforces the
   same — see the `has_secret` field in
   `backend/storage/api-docs/openapi.yaml`.
 - Every state change (prompt approve / rollback, provider CRUD)
   emits an audit log row and is visible in the Super Admin
   Audit Log UI.
+- Citizen free text (title + description) is passed through
+  `PiiMaskingService` before it reaches any provider — it drops
+  PII-shaped keys and masks 10-digit Indian mobile numbers embedded
+  in the text. It does **not** perform image redaction (no face
+  detection or pixel-level PII stripping exists in this codebase);
+  if a stakeholder-facing claim describes photo-level PII stripping,
+  it is describing a feature that has not been built.
 
 ## Test coverage
 
@@ -328,7 +364,9 @@ fastest way to catch wire-format drift between providers.
 | `tests/Feature/AI/AiBenchmarkTest.php`          | 50-case regression on the provider wire format          |
 | `tests/Feature/AI/PipelineOrchestratorTest.php` | Full pipeline: queue, validator, persistence, event     |
 | `tests/Feature/AI/ProviderFailoverTest.php`     | Primary → fallback → fail routing                       |
-| `tests/Feature/AI/AiProviderCrudTest.php`       | Admin CRUD + secret masking + 403                       |
+| `tests/Feature/AI/AiProviderCrudTest.php`       | Admin CRUD + secret masking + 403 + driver validation    |
+| `tests/Feature/AI/AiProviderFactoryTest.php`    | `AiProviderFactory` builds the right class per driver    |
+| `tests/Feature/AI/AiServiceProviderBindingTest.php` | Container-resolved `ProviderFailoverService` actually classifies, no manual test override |
 | `tests/Feature/AI/AiPromptCrudTest.php`         | Admin CRUD + approve / rollback lifecycle               |
 | `tests/Feature/AI/InternalProcessEndpointTest.php` | Internal endpoints (process, job, result)             |
 | `tests/Feature/AI/ReportSubmitTriggersAiTest.php` | `ReportSubmittedListener` wires the pipeline          |
@@ -348,11 +386,19 @@ fastest way to catch wire-format drift between providers.
 
 ## Operational notes
 
-- The default `mock` provider is the dev / test default per
-  `AiProvidersSeeder` — production deployments should set
-  `APP_ENV=production` so the `ProviderFailoverService` skips
-  `mock` (it is forced to `active = false` in prod by the same
-  seeder guard).
+- `AiProvidersSeeder` seeds `mock` as `active = true` and highest
+  priority so a fresh dev/test environment never needs a real
+  provider configured. **There is no environment guard that
+  deactivates it automatically in production** — before going live,
+  a Super Admin must explicitly deactivate `mock` and activate a
+  real provider row (e.g. an `openai_compatible` row pointed at
+  OpenRouter or Modal.com) from the AI Providers admin screen.
+- The `ai_enabled` `app_configs` flag (docs/09 §18) is the platform
+  kill-switch: when off, `AiPipelineOrchestrator` skips the provider
+  call entirely and every report gets a zero-confidence
+  "unclassified" result, which `ConfidenceAggregator` routes to
+  `pending_moderator` — the same "non-AI path" referenced in
+  `DEMO.md`'s Super Admin walkthrough.
 - `ai_jobs.retention_days` (Super Admin setting, T-M8-009) is
   honoured by the daily `ai:purge-old-jobs` artisan command.
 - Re-trigger the pipeline for a report by calling

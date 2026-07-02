@@ -38,6 +38,23 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/HealthLiveResponse' }
+  /api/v1/public/stats:
+    get:
+      summary: 'Public, unauthenticated platform statistics for the landing page'
+      description: |
+        Aggregate, privacy-safe counts only — no citizen identity, no
+        exact coordinates, no evidence. Server-side cached for 5
+        minutes. Rate-limited to 30 requests/minute/IP.
+      tags: [Public]
+      operationId: public.stats.index
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PublicStatsResponse' }
+        '429':
+          $ref: '#/components/responses/RateLimited'
   # =============================================================
   # M11 — Operations portal (Department) paths
   # =============================================================
@@ -606,6 +623,38 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/VerifyOtpRequest'
+      responses:
+        '200':
+          description: 'Authentication successful; tokens returned.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyOtpResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: 'Staff password login'
+      description: |
+        Password-based login for staff accounts (moderator, department
+        officer/admin, super_admin, auditor) — docs/11 §8. Citizens are
+        OTP-only and have no password set, so this endpoint always
+        returns 401 for a citizen mobile. Locks out after 5 failed
+        attempts for the same mobile within a rolling 15-minute window
+        (429). Emits LOGIN_SUCCESS / LOGIN_FAILURE security events.
+      operationId: auth.login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
           description: 'Authentication successful; tokens returned.'
@@ -2206,6 +2255,18 @@ components:
         code: { type: string, description: 'Application-specific error code; null on success.' }
         trace_id: { type: string, description: 'Request id used for cross-service correlation.' }
         meta: { type: object, additionalProperties: true, nullable: true }
+    PublicStatsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [total_reports, ai_classified_percent, median_assign_seconds]
+              properties:
+                total_reports: { type: integer, example: 12847 }
+                ai_classified_percent: { type: number, format: float, example: 94.2 }
+                median_assign_seconds: { type: integer, nullable: true, example: 38 }
     ErrorResponse:
       type: object
       required: [success, message, code, trace_id]
@@ -2256,6 +2317,12 @@ components:
                   description: 'Opaque plaintext refresh token. Shown only once — store immediately.'
                 refresh_expires_at: { type: string, format: date-time }
                 user: { $ref: '#/components/schemas/User' }
+    LoginRequest:
+      type: object
+      required: [mobile, password]
+      properties:
+        mobile: { type: string, example: '9876543210' }
+        password: { type: string, description: 'Staff account password (docs/11 §8). Citizens have no password and always 401 here.' }
     RefreshTokenRequest:
       type: object
       required: [refresh_token]
@@ -4260,7 +4327,7 @@ components:
           schema: { type: integer, default: 25, maximum: 200 }
       responses:
         '200':
-          description: 'Paginated list of AI provider configs. api_key_secret_id is masked; has_secret boolean is surfaced.'
+          description: 'Paginated list of AI provider configs. credentials is masked; has_secret boolean is surfaced.'
           content:
             application/json:
               schema: { $ref: '#/components/schemas/AiProviderListResponse' }
@@ -4662,10 +4729,12 @@ components:
     properties:
       id: { type: string, format: uuid }
       code: { type: string, example: 'mock' }
+      driver: { type: string, enum: [mock, qwen_vl, openai_compatible], example: 'openai_compatible' }
       name: { type: string, example: 'Mock Provider' }
       base_url: { type: string, format: uri, nullable: true }
       auth_type: { type: string, enum: [none, bearer, api_key, oauth] }
-      has_secret: { type: boolean, description: 'True when api_key_secret_id is set; the secret id itself is never returned.' }
+      has_secret: { type: boolean, description: 'True when credentials.api_key is set; the credentials themselves are never returned.' }
+      extra_headers: { type: object, additionalProperties: { type: string }, description: 'Static headers sent with every request (e.g. OpenRouter HTTP-Referer/X-Title).' }
       model: { type: string, example: 'mock-1.0' }
       temperature: { type: number, format: float, minimum: 0, maximum: 2 }
       timeout_ms: { type: integer, minimum: 1 }
@@ -4677,13 +4746,15 @@ components:
       updated_at: { type: string, format: date-time, nullable: true }
   AiProviderStoreRequest:
     type: object
-    required: [code, name, base_url, auth_type, model, temperature, timeout_ms, retry_count, priority, active, is_fallback]
+    required: [code, driver, name, base_url, auth_type, model, temperature, timeout_ms, retry_count, priority, active, is_fallback]
     properties:
       code: { type: string, minLength: 1, maxLength: 64, example: 'mock' }
+      driver: { type: string, enum: [mock, qwen_vl, openai_compatible], example: 'openai_compatible' }
       name: { type: string, minLength: 1, maxLength: 255 }
       base_url: { type: string, format: uri }
       auth_type: { type: string, enum: [none, bearer, api_key, oauth] }
-      api_key_secret_id: { type: string, format: uuid, nullable: true }
+      credentials: { type: object, nullable: true, properties: { api_key: { type: string, nullable: true } }, description: 'Write-only; never returned by any read endpoint.' }
+      extra_headers: { type: object, nullable: true, additionalProperties: { type: string } }
       model: { type: string, minLength: 1, maxLength: 128 }
       temperature: { type: number, format: float, minimum: 0, maximum: 2 }
       timeout_ms: { type: integer, minimum: 1, maximum: 120000 }
@@ -4694,10 +4765,12 @@ components:
   AiProviderUpdateRequest:
     type: object
     properties:
+      driver: { type: string, enum: [mock, qwen_vl, openai_compatible] }
       name: { type: string, minLength: 1, maxLength: 255 }
       base_url: { type: string, format: uri }
       auth_type: { type: string, enum: [none, bearer, api_key, oauth] }
-      api_key_secret_id: { type: string, format: uuid, nullable: true }
+      credentials: { type: object, nullable: true, properties: { api_key: { type: string, nullable: true } }, description: 'Write-only; never returned by any read endpoint.' }
+      extra_headers: { type: object, nullable: true, additionalProperties: { type: string } }
       model: { type: string, minLength: 1, maxLength: 128 }
       temperature: { type: number, format: float, minimum: 0, maximum: 2 }
       timeout_ms: { type: integer, minimum: 1, maximum: 120000 }
@@ -5004,6 +5077,9 @@ tags:
   -
     name: Health
     description: 'Liveness and readiness probes.'
+  -
+    name: Public
+    description: 'Unauthenticated, privacy-safe aggregate stats (landing page, M17 Public Portal).'
   -
     name: Authentication
     description: 'Citizen OTP login, JWT issuance, refresh rotation, logout, current-user.'

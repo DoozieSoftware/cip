@@ -8,6 +8,7 @@ import { ModeratorApp } from './portals/moderator/ModeratorApp';
 import { OperationsApp } from './portals/operations/OperationsApp';
 import { CitizenApp } from './portals/citizen/CitizenApp';
 import { AdminApp } from './portals/admin/AdminApp';
+import { PublicApp } from './portals/public/PublicApp';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 
 /**
@@ -15,6 +16,7 @@ import { ProtectedRoute } from './auth/ProtectedRoute';
  *
  *  - `/`           → public landing page with role quick-switch
  *  - `/login`      → public OTP login
+ *  - `/public*`    → Public Transparency Portal (M17) — no auth
  *  - `/citizen*`   → Citizen PWA (M13)
  *  - `/moderator*` → Moderator portal (M10)
  *  - `/operations*`→ Operations portal (M11)
@@ -40,6 +42,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/public/*" element={<PublicApp />} />
             <Route
               path="/citizen/*"
               element={

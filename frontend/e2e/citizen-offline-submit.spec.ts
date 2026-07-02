@@ -8,64 +8,102 @@ import { test, expect } from '@playwright/test';
  *
  *  1. The page boots and the service worker registers.
  *  2. The SPA exposes a `requestBackgroundSync` mechanism.
- *  3. The IndexedDB queue accepts a payload while offline
- *     and a `queue:drain` broadcast kicks the drain.
- *  4. When the SPA receives a SW `queue:drain` postMessage,
- *     the drain runs and the queue size goes to 0.
+ *  3. A report submitted while offline lands in the REAL app-wide
+ *     `getQueue()` singleton — not a hand-rolled stand-in.
+ *  4. When the SPA receives a SW `queue:drain` postMessage, its own
+ *     registered listener (`CitizenApp`'s `OfflineBridge`, mounted for
+ *     real by loading the page) drains the queue and delivers the
+ *     queued report through the real `submitReportPayload` flow.
  *
- * Real network cut is not required — the spec asserts the
- * queue state machine works through the actual SPA code.
+ * The previous version of this spec constructed its own
+ * `new OfflineQueue({ adapter: new MemoryAdapter() })` and called
+ * `.drain()` directly, bypassing both the app's real singleton and
+ * its real `onQueueDrain` listener wiring — so it could never have
+ * caught the bug where `onQueueDrain`'s handler didn't call
+ * `drain()` at all (fixed alongside this spec). This version drives
+ * the real code path: it enqueues through the singleton the running
+ * app itself created, and asserts delivery via a real network
+ * request the test intercepts, not a hand-rolled callback.
  */
 
-declare global {
-  interface Window {
-    __offlineQueue?: { enqueue: (p: { kind: string; payload: unknown }) => Promise<{ id: string }>; size: () => Promise<number>; drain: () => Promise<unknown> };
-  }
-}
-
 test.describe('citizen — offline submission (T-M13-024)', () => {
-  test('queues a report while offline, drains on queue:drain message', async ({ page }) => {
+  test('a report enqueued through the real singleton is delivered when queue:drain fires', async ({ page }) => {
+    let submitCalled = false;
+
+    // Intercept the real network calls the offline-queue retry handler
+    // (submitReportPayload) makes once it drains — this is the
+    // end-to-end proof that delivery actually happens, not just that
+    // some in-page callback fired.
+    await page.route('**/api/v1/reports', async (route) => {
+      if (route.request().method() === 'POST') {
+        submitCalled = true;
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            message: 'Report submitted.',
+            data: { id: 'e2e-report-1', status: 'submitted' },
+            code: null,
+          }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+    await page.route('**/api/v1/reports/*/submit', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: { id: 'e2e-report-1', status: 'submitted' },
+          code: null,
+        }),
+      });
+    });
+
     await page.goto('/citizen');
 
-    // Wire the SPA queue into a deterministic adapter and
-    // patch the SW postMessage so we can broadcast queue:drain.
-    await page.evaluate(async () => {
-      const { OfflineQueue, MemoryAdapter } = await import('/src/portals/citizen/offline/queue.ts');
-      const q = new OfflineQueue({ adapter: new MemoryAdapter(), max_attempts: 3 });
-      window.__offlineQueue = q as unknown as Window['__offlineQueue'];
-
-      // Intercept the SW bridge: when the SPA would call
-      // `navigator.serviceWorker.ready`, simulate the SW
-      // coming back with a queue:drain postMessage.
-      const sw = navigator.serviceWorker as unknown as { __offlineFaker?: () => void };
-      sw.__offlineFaker = () => {
-        const ev = new MessageEvent('message', { data: { type: 'queue:drain' } });
-        navigator.serviceWorker.dispatchEvent(ev);
-      };
-    });
-
-    // 1. Enqueue an offline report
-    const initial = await page.evaluate(async () => {
-      const item = await window.__offlineQueue!.enqueue({
+    // Enqueue through the REAL singleton the running app created on
+    // mount (CitizenApp's OfflineBridge already called getQueue() and
+    // registerOfflineQueueRetry() by the time the page is interactive).
+    const initialSize = await page.evaluate(async () => {
+      const { getQueue } = await import('/src/portals/citizen/offline/queue.ts');
+      const q = getQueue();
+      await q.enqueue({
         kind: 'report.create',
-        payload: { title: 'pothole on 5th', category: 'roads' },
+        payload: {
+          report_type_id: 'e2e-type',
+          title: 'Pothole queued while offline',
+          description: 'Queued via the real singleton in an E2E test.',
+          latitude: 12.97,
+          longitude: 77.59,
+        },
       });
-      const size = await window.__offlineQueue!.size();
-      return { id: item.id, size };
+      return q.size();
     });
-    expect(initial.size).toBe(1);
+    expect(initialSize).toBe(1);
 
-    // 2. Trigger a queue:drain (simulating the SW pinging the client
-    //    after a `sync` event)
-    const drained = await page.evaluate(async () => {
-      const sw = navigator.serviceWorker as unknown as { __offlineFaker?: () => void };
-      // The SPA listens via `onQueueDrain(handler)` which calls
-      // `drain()` on the singleton. We call it directly because
-      // the test does not set up the listener path.
-      const ret = await window.__offlineQueue!.drain();
-      return ret;
+    // Simulate the service worker telling every open client to drain —
+    // this dispatches the exact message `swBridge.onQueueDrain` listens
+    // for, so CitizenApp's real listener (not a test stand-in) handles it.
+    await page.evaluate(() => {
+      const ev = new MessageEvent('message', { data: { type: 'queue:drain' } });
+      navigator.serviceWorker.dispatchEvent(ev);
     });
-    expect((drained as { processed: number }).processed).toBeGreaterThanOrEqual(0);
+
+    // The real listener calls getQueue().drain(), which calls the real
+    // submitReportPayload, which makes the intercepted network calls.
+    await expect
+      .poll(async () => page.evaluate(async () => {
+        const { getQueue } = await import('/src/portals/citizen/offline/queue.ts');
+        return getQueue().size();
+      }))
+      .toBe(0);
+
+    expect(submitCalled).toBe(true);
   });
 
   test('service worker registers and pre-caches the app shell', async ({ page }) => {

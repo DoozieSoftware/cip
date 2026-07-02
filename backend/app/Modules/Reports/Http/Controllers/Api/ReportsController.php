@@ -59,6 +59,7 @@ class ReportsController extends BaseController
             description: (string) $request->validated('description'),
             isAnonymous: (bool) $request->validated('is_anonymous', false),
             priorityId: $request->validated('priority_id'),
+            mockGpsScore: $request->validated('mock_gps_score') === null ? null : (float) $request->validated('mock_gps_score'),
         );
 
         $report = $this->service->submit($dto);

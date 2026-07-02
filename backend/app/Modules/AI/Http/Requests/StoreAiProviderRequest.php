@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\AI\Http\Requests;
 
+use App\Modules\AI\Support\AiProviderFactory;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreAiProviderRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $user = $this->user('sanctum');
-
         return true;
     }
 
@@ -22,10 +21,18 @@ class StoreAiProviderRequest extends FormRequest
     {
         return [
             'code' => ['required', 'string', 'max:64', 'unique:ai_provider_configs,code'],
+            'driver' => ['required', 'in:'.implode(',', [
+                AiProviderFactory::DRIVER_MOCK,
+                AiProviderFactory::DRIVER_QWEN_VL,
+                AiProviderFactory::DRIVER_OPENAI_COMPATIBLE,
+            ])],
             'name' => ['required', 'string', 'max:255'],
             'base_url' => ['required', 'url'],
             'auth_type' => ['required', 'in:bearer,api_key,none'],
-            'api_key_secret_id' => ['nullable', 'uuid'],
+            'credentials' => ['nullable', 'array'],
+            'credentials.api_key' => ['nullable', 'string'],
+            'extra_headers' => ['nullable', 'array'],
+            'extra_headers.*' => ['string'],
             'model' => ['required', 'string', 'max:255'],
             'temperature' => ['required', 'numeric', 'min:0', 'max:2'],
             'timeout_ms' => ['required', 'integer', 'min:1000', 'max:120000'],

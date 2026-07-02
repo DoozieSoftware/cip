@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Database\Seeders\SecurityPoliciesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
@@ -67,7 +68,7 @@ it('creates a user with roles and hashes the password', function (): void {
         'name' => 'Jane Q',
         'mobile' => '9222222222',
         'email' => 'jane@example.test',
-        'password' => 'super-secret',
+        'password' => 'Super-Secret1',
         'status' => 'active',
         'roles' => ['citizen'],
     ]);
@@ -77,8 +78,39 @@ it('creates a user with roles and hashes the password', function (): void {
         ->assertJsonPath('data.roles.0', 'citizen');
 
     $created = User::query()->where('mobile', '9222222222')->firstOrFail();
-    expect(Hash::check('super-secret', $created->password))->toBeTrue();
+    expect(Hash::check('Super-Secret1', $created->password))->toBeTrue();
     expect($created->hasRole('citizen'))->toBeTrue();
+});
+
+it('enforces the docs/11 §8 password policy via SecurityPolicyService — rejects a weak password', function (): void {
+    (new SecurityPoliciesSeeder)->run();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('super_admin');
+    Sanctum::actingAs($admin);
+
+    // 8 chars, lowercase only — fails min:12, mixedCase, numbers, symbols.
+    $this->postJson('/api/v1/admin/users', [
+        'mobile' => '9222222333',
+        'password' => 'tooshort',
+        'roles' => ['citizen'],
+    ])->assertStatus(422)->assertJsonPath('errors.password.0', fn ($msg) => is_string($msg));
+
+    expect(User::query()->where('mobile', '9222222333')->exists())->toBeFalse();
+});
+
+it('accepts a password meeting the docs/11 §8 policy (min 12, mixed case, number, symbol)', function (): void {
+    (new SecurityPoliciesSeeder)->run();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('super_admin');
+    Sanctum::actingAs($admin);
+
+    $this->postJson('/api/v1/admin/users', [
+        'mobile' => '9222222444',
+        'password' => 'Correct-Horse9',
+        'roles' => ['citizen'],
+    ])->assertCreated();
 });
 
 it('rejects unknown role names on create with 422', function (): void {

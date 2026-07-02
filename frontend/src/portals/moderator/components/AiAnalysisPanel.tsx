@@ -13,15 +13,29 @@ function scoreTone(n: number | null | undefined, threshold = 60) {
   return 'success' as const;
 }
 
-export function AiAnalysisPanel({ ai }: { ai: AiResult | null }) {
+export interface AiAnalysisPanelProps {
+  ai: AiResult | null;
+  /** Citizen PWA's client-side mock-GPS heuristic (0..1). Triage signal only — never a reason to auto-reject. */
+  mockGpsScore?: number | null;
+}
+
+function mockGpsPct(n: number | null | undefined): string {
+  if (n === null || n === undefined) return '—';
+  return `${Math.round(n * 100)}%`;
+}
+
+export function AiAnalysisPanel({ ai, mockGpsScore }: AiAnalysisPanelProps) {
   if (!ai) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>AI Analysis</CardTitle>
         </CardHeader>
-        <CardBody>
+        <CardBody className="space-y-3">
           <p className="text-sm text-slate-500">No AI result yet — the M8 vision pipeline has not run for this report.</p>
+          {mockGpsScore !== null && mockGpsScore !== undefined && (
+            <Stat label="Mock GPS score" value={mockGpsPct(mockGpsScore)} tone={scoreTone(mockGpsScore * 100)} />
+          )}
         </CardBody>
       </Card>
     );
@@ -41,6 +55,9 @@ export function AiAnalysisPanel({ ai }: { ai: AiResult | null }) {
           <Stat label="Fraud score" value={pct(ai.fraud_score)} tone={scoreTone(ai.fraud_score)} />
           <Stat label="Duplicate score" value={pct(ai.duplicate_score)} tone={scoreTone(ai.duplicate_score)} />
           <Stat label="Quality" value={pct(ai.quality_score)} />
+          {mockGpsScore !== null && mockGpsScore !== undefined && (
+            <Stat label="Mock GPS score" value={mockGpsPct(mockGpsScore)} tone={scoreTone(mockGpsScore * 100)} />
+          )}
         </div>
 
         <div>

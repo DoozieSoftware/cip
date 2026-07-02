@@ -22,9 +22,9 @@ class SecurityPoliciesSeeder extends Seeder
     private const DEFAULTS = [
         [
             'key' => 'password.min_length',
-            'value' => ['min' => 8, 'require_symbol' => true, 'require_number' => true],
+            'value' => ['min' => 12, 'require_mixed_case' => true, 'require_symbol' => true, 'require_number' => true],
             'type' => 'array',
-            'description' => 'Password length and complexity rules.',
+            'description' => 'Password length and complexity rules (docs/11 §8): staff accounts only — citizens are OTP-only and exempt. Read by SecurityPolicyService::passwordRule().',
         ],
         [
             'key' => 'otp.expiry_seconds',

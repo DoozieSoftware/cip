@@ -41,6 +41,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $ai_label
  * @property float|null $fraud_score
  * @property float|null $duplicate_score
+ * @property float|null $mock_gps_score
  * @property bool $is_anonymous
  * @property bool $is_verified
  * @property Carbon|null $submitted_at
@@ -59,11 +60,11 @@ class Report extends Model
     /**
      * M11 — Department-internal notes attached to this report.
      *
-     * @return HasMany<\App\Modules\Reports\Models\InternalNote, $this>
+     * @return HasMany<InternalNote, $this>
      */
-    public function internalNotes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function internalNotes(): HasMany
     {
-        return $this->hasMany(\App\Modules\Reports\Models\InternalNote::class, 'report_id');
+        return $this->hasMany(InternalNote::class, 'report_id');
     }
 
     protected $table = 'reports';
@@ -87,6 +88,7 @@ class Report extends Model
         'ai_label',
         'fraud_score',
         'duplicate_score',
+        'mock_gps_score',
         'is_anonymous',
         'is_verified',
         'submitted_at',
@@ -102,6 +104,7 @@ class Report extends Model
             'ai_confidence' => 'float',
             'fraud_score' => 'float',
             'duplicate_score' => 'float',
+            'mock_gps_score' => 'float',
             'is_anonymous' => 'boolean',
             'is_verified' => 'boolean',
             'submitted_at' => 'datetime',

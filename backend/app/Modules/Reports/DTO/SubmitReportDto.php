@@ -27,6 +27,7 @@ final readonly class SubmitReportDto
         public string $description = '',
         public bool $isAnonymous = false,
         public ?string $priorityId = null,
+        public ?float $mockGpsScore = null,
     ) {}
 
     /**
@@ -63,6 +64,7 @@ final readonly class SubmitReportDto
             priorityId: isset($validated['priority_id']) && is_string($validated['priority_id'])
                 ? $validated['priority_id']
                 : null,
+            mockGpsScore: isset($validated['mock_gps_score']) ? (float) $validated['mock_gps_score'] : null,
         );
     }
 }

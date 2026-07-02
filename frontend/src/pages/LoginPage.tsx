@@ -27,12 +27,34 @@ const DEMO_ACCOUNTS: { label: string; mobile: string; description: string; path:
 export function LoginPage(): JSX.Element {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [authMode, setAuthMode] = useState<'otp' | 'password'>('otp');
   const [mobile, setMobile] = useState<string>('+919999900001');
   const [otp, setOtp] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
   const [stage, setStage] = useState<'request' | 'verify'>('request');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [debugOtp, setDebugOtp] = useState<string | null>(null);
+
+  async function loginWithPassword(e: FormEvent): Promise<void> {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await apiRequest<ApiEnvelope<{ token: { access_token: string; type: string; expires_at?: string }; refresh_token: string; refresh_expires_at: string; user: SessionUser }>>('/auth/login', {
+        method: 'POST',
+        body: { mobile, password },
+      });
+      login(res.data.token.access_token, res.data.user);
+      const me = await apiRequest<ApiEnvelope<MeResponse>>('/auth/me');
+      const target = routeForRoles(me.data.roles);
+      void navigate(target, { replace: true });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Invalid mobile or password');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function requestOtp(e: FormEvent): Promise<void> {
     e.preventDefault();
@@ -92,68 +114,130 @@ export function LoginPage(): JSX.Element {
               Sign in to the demo
             </h1>
             <p className="mt-4 text-lg text-slate-600">
-              Pick a role on the right, or enter your own mobile number. The demo uses a static OTP (printed in the response) so you can sign in without a phone.
+              {authMode === 'otp'
+                ? 'Pick a role on the right, or enter your own mobile number. The demo uses a static OTP (printed in the response) so you can sign in without a phone.'
+                : 'Staff accounts (moderator, department, super admin) can sign in with a password instead of OTP.'}
             </p>
 
-            <form onSubmit={(e) => { e.preventDefault(); if (stage === 'request') { void requestOtp(e); } else { void verifyOtp(e); } }} className="mt-8 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div>
-                <label htmlFor="mobile" className="block text-sm font-medium text-slate-700">Mobile number</label>
-                <input
-                  id="mobile"
-                  name="mobile"
-                  type="tel"
-                  value={mobile}
-                  onChange={(e) => setMobile(e.target.value)}
-                  placeholder="+919999900001"
-                  className="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                  required
-                />
-              </div>
+            <div className="mt-6 flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 text-sm">
+              <button
+                type="button"
+                onClick={() => { setAuthMode('otp'); setError(null); }}
+                className={`flex-1 rounded-md px-3 py-1.5 font-medium transition ${authMode === 'otp' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Sign in with OTP
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAuthMode('password'); setError(null); }}
+                className={`flex-1 rounded-md px-3 py-1.5 font-medium transition ${authMode === 'password' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Staff password login
+              </button>
+            </div>
 
-              {stage === 'verify' && (
+            {authMode === 'otp' ? (
+              <form onSubmit={(e) => { e.preventDefault(); if (stage === 'request') { void requestOtp(e); } else { void verifyOtp(e); } }} className="mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div>
-                  <label htmlFor="otp" className="block text-sm font-medium text-slate-700">One-time code</label>
+                  <label htmlFor="mobile" className="block text-sm font-medium text-slate-700">Mobile number</label>
                   <input
-                    id="otp"
-                    name="otp"
-                    type="text"
-                    inputMode="numeric"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    placeholder="123456"
+                    id="mobile"
+                    name="mobile"
+                    type="tel"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    placeholder="+919999900001"
                     className="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
                     required
                   />
-                  {debugOtp && (
-                    <p className="mt-2 text-xs text-emerald-700">
-                      Demo OTP (auto-filled): <span className="font-mono">{debugOtp}</span>
-                    </p>
-                  )}
                 </div>
-              )}
 
-              {error !== null && (
-                <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
-              )}
+                {stage === 'verify' && (
+                  <div>
+                    <label htmlFor="otp" className="block text-sm font-medium text-slate-700">One-time code</label>
+                    <input
+                      id="otp"
+                      name="otp"
+                      type="text"
+                      inputMode="numeric"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      placeholder="123456"
+                      className="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                      required
+                    />
+                    {debugOtp && (
+                      <p className="mt-2 text-xs text-emerald-700">
+                        Demo OTP (auto-filled): <span className="font-mono">{debugOtp}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-md bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:bg-brand-300"
-              >
-                {loading ? 'Working…' : stage === 'request' ? 'Send OTP' : 'Verify and continue'}
-              </button>
+                {error !== null && (
+                  <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+                )}
 
-              {stage === 'verify' && (
                 <button
-                  type="button"
-                  onClick={() => { setStage('request'); setError(null); }}
-                  className="w-full text-sm text-slate-500 hover:text-slate-700"
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-md bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:bg-brand-300"
                 >
-                  ← Use a different number
+                  {loading ? 'Working…' : stage === 'request' ? 'Send OTP' : 'Verify and continue'}
                 </button>
-              )}
-            </form>
+
+                {stage === 'verify' && (
+                  <button
+                    type="button"
+                    onClick={() => { setStage('request'); setError(null); }}
+                    className="w-full text-sm text-slate-500 hover:text-slate-700"
+                  >
+                    ← Use a different number
+                  </button>
+                )}
+              </form>
+            ) : (
+              <form onSubmit={(e) => { void loginWithPassword(e); }} className="mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div>
+                  <label htmlFor="staff-mobile" className="block text-sm font-medium text-slate-700">Mobile number</label>
+                  <input
+                    id="staff-mobile"
+                    name="mobile"
+                    type="tel"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    placeholder="+919999900002"
+                    className="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="staff-password" className="block text-sm font-medium text-slate-700">Password</label>
+                  <input
+                    id="staff-password"
+                    name="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                    required
+                  />
+                </div>
+
+                {error !== null && (
+                  <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-md bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:bg-brand-300"
+                >
+                  {loading ? 'Working…' : 'Sign in'}
+                </button>
+              </form>
+            )}
           </section>
 
           <section>
@@ -163,7 +247,7 @@ export function LoginPage(): JSX.Element {
                 <li key={acc.mobile}>
                   <button
                     type="button"
-                    onClick={() => { setMobile(acc.mobile); setStage('request'); setError(null); }}
+                    onClick={() => { setMobile(acc.mobile); setStage('request'); setAuthMode('otp'); setError(null); }}
                     className="group block w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-brand-400 hover:shadow"
                   >
                     <div className="flex items-center justify-between">

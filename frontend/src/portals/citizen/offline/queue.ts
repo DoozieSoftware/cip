@@ -199,7 +199,7 @@ export class OfflineQueue {
   private readonly maxAttempts: number;
   private readonly backoff: (attempt: number) => number;
   private readonly now: () => number;
-  private readonly retry?: (item: QueueItem) => Promise<void>;
+  private retry?: (item: QueueItem) => Promise<void>;
   private running = false;
   private listeners: Array<() => void> = [];
 
@@ -209,6 +209,16 @@ export class OfflineQueue {
     this.backoff = opts.backoff ?? DEFAULT_BACKOFF;
     this.now = opts.now ?? (() => Date.now());
     this.retry = opts.retry;
+  }
+
+  /**
+   * Configure (or replace) the delivery function after construction —
+   * used by the app shell to wire the singleton returned by
+   * `getQueue()` to the real submit-report flow once, at startup,
+   * without needing to thread it through the constructor call site.
+   */
+  setRetryHandler(retry: (item: QueueItem) => Promise<void>): void {
+    this.retry = retry;
   }
 
   /** Total items, regardless of status. */

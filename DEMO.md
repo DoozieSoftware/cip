@@ -42,7 +42,7 @@ Open `http://localhost:5173`. The user sees:
 
 - A branded hero: **"See the city respond."**
 - 4 portal cards: Citizen PWA, Moderator, Operations, Super Admin
-- Live metrics: 12,847 reports / 94% AI-classified / 38s median assign time
+- Live metrics fetched from `GET /api/v1/public/stats` (unauthenticated, 5-min server cache): total reports, % AI-classified, median submit→assign time. On a fresh seed these will be small/zero — submit a report or two before the meeting if you want non-trivial numbers on screen.
 
 This is the entry point. Stakeholders pick a role and sign in.
 
@@ -87,8 +87,8 @@ This is the entry point. Stakeholders pick a role and sign in.
 **Sign in as Super Admin**.
 
 1. **Dashboard** — Live counts of users, roles, report types, security policies, feature flags.
-2. **Security policies** — Show live edit of the `password.min_length` policy. Change `min` from 8 to 12. The new value applies to the next auth flow.
-3. **Feature flags** — Flip `ai.vision.enabled` off. The next submit will fall back to a non-AI path.
+2. **Security policies** — Show live edit of the `password.min_length` policy (default is min 12, mixed case, number, symbol per docs/11 §8). Change `min` to 16 and save. Then, in a second tab, try creating a staff user via `POST /admin/users` with a 14-character password — it now fails validation immediately, because `SecurityPolicyService::passwordRule()` reads this row on every request. No deploy required.
+3. **Feature flags** — Flip `ai_enabled` off (Feature Flags tab). The next citizen submit skips the AI provider call entirely: `AiPipelineOrchestrator` synthesises a zero-confidence "unclassified" result, which routes the report straight to a moderator's `pending_moderator` queue instead of auto-assigning a department.
 4. **Audit log** — Show every action just taken: citizen submit, AI pipeline, moderator approve, department resolve, policy edit, flag flip.
 
 ---
@@ -119,6 +119,6 @@ Pick the smallest loop that still tells the story: **Citizen submit → Moderato
 | --- | --- |
 | "How is fraud handled?" | AI fraud score on every report; mods see the score and can reject without contacting the citizen. |
 | "What if AI is wrong?" | AI only recommends. Moderator always overrides. Audit log captures both. |
-| "What about PII?" | `pii_masking` strips faces from photos before they reach the AI provider. |
+| "What about PII?" | `PiiMaskingService` strips PII-shaped keys (mobile, email, address) and masks 10-digit Indian phone numbers out of the free-text title/description before it reaches the AI provider, and rounds lat/lng to a ~1.1 km grid. It does **not** blur faces in photos — there is no image-level redaction yet; don't claim otherwise if asked directly. |
 | "Offline / low-bandwidth?" | PWA caches the home screen; submits queue locally and retry on reconnect. (Out of scope for v1 demo; on the roadmap.) |
 | "How is the demo data isolated from production?" | `DemoUsersSeeder` only runs in `local` / `testing` env. Production data goes through the full seeder chain. |

@@ -63,8 +63,11 @@ If specifications conflict with this roadmap, the **specifications win**. If spe
 | M14 | External Connector Framework   | High       | 2 weeks   | M4, M6                |
 | M15 | Security, Anti-Fraud & Compliance Hardening | High | 2 weeks | M2, M4, M5, M8       |
 | M16 | Production Hardening, Observability & Release | High | 1.5 weeks | All above            |
+| M17 | Public Transparency Portal     | Low        | 0.5 week  | M4, M6, M9             |
 
-**Total indicative duration:** ~30 engineer-weeks (~7.5 months with one engineer, ~3.5 months with a small squad of three).
+**Total indicative duration:** ~30.5 engineer-weeks (~7.5 months with one engineer, ~3.5 months with a small squad of three).
+
+> **M17 provenance:** M17 was not in the original 16-milestone plan. `docs/01` §7 / `docs/02` (PRD) §7 scoped a public transparency surface, but it was dropped somewhere between planning and `.codex` tracking — no module, route, or frontend page existed for it prior to the 2026-07-01 post-audit remediation pass that added it. It is appended here rather than renumbered into the M1–M16 sequence to keep every existing milestone ID stable.
 
 ---
 
@@ -907,6 +910,48 @@ If specifications conflict with this roadmap, the **specifications win**. If spe
   * All release-gate items in `docs/15` §32 checked
   * Backup restore drill succeeded
   * All documentation published
+
+---
+
+### M17 — Public Transparency Portal
+
+* **Milestone ID:** M17
+* **Title:** Public Transparency Portal
+* **Objective:** Deliver an unauthenticated, read-only window into aggregate platform activity — total reports, AI-classification rate, median assign/resolve times, and a grid-bucketed report-density heat map — per the Privacy-By-Design principle already established by `PiiMaskingService`. No exact coordinates, no citizen identity, no department-internal detail may ever leave these endpoints.
+
+* **Modules Covered:** `Public` (new, read-only aggregation services only — no writes, no new tables).
+
+* **Prerequisites:**
+  * M4 (reports to aggregate), M6 (status-history transitions for median timings), M9 (nothing consumed directly, but the module follows the same unauthenticated-endpoint conventions)
+  * `docs/01` §7 / `docs/02-PRD.md` §7 (Public Transparency scope)
+  * `docs/11-Security-and-Anti-Fraud-Specification.md` (Privacy-By-Design principle; the rounding convention already used by `PiiMaskingService`)
+
+* **Expected Deliverables:**
+  * `backend/app/Modules/Public/Services/`: `PublicStatsService` (total reports, AI-classified %, median assign seconds), `PublicHeatmapService` (2-decimal grid-bucketed report density), `PublicDepartmentPerformanceService` (resolution rate + median resolution time per department)
+  * `GET /api/v1/public/stats`, `GET /api/v1/public/heatmap`, `GET /api/v1/public/departments/performance` — all unauthenticated, rate-limited (`public` limiter, 30 req/min/IP), 5-minute server-side cache
+  * React portal `frontend/src/portals/public/` mounted at `/public` with no `ProtectedRoute` wrapper: Overview, Heat map (Leaflet, same pattern as the M11 `GisMapPage.tsx`), Department performance
+  * Landing page (`frontend/src/pages/LandingPage.tsx`) link to `/public` and shared use of `/public/stats` for its own summary tiles
+  * `docs/public.md` + README "Public Transparency Portal (M17)" section
+  * Pest feature tests asserting both aggregation correctness and the privacy rules (no PII, no un-rounded coordinate) in every response
+
+* **Dependencies on Previous Milestones:** M4, M6, M9.
+
+* **Estimated Implementation Complexity:** **Low**
+* **Estimated Implementation Duration:** **0.5 week**
+
+* **Expected Git Commit Boundaries:**
+  * `feat(public): read-only Public module — stats, heatmap, department-performance services`
+  * `feat(api): unauthenticated /public/* endpoints with public rate limiter`
+  * `feat(public-web): Public Transparency Portal at /public`
+  * `feat: landing page link to /public`
+  * `test(public): Pest aggregation + privacy-leak coverage`
+  * `docs: public.md + README M17 section`
+
+* **Definition of Done:**
+  * All three `/public/*` endpoints are reachable with no `Authorization` header
+  * No response from any `/public/*` endpoint contains an un-rounded coordinate, a citizen identifier, or department-internal detail
+  * The Landing page renders live numbers (not hardcoded strings) sourced from `/public/stats`
+  * Pest coverage on the `Public` module ≥ 90%
 
 ---
 

@@ -80,7 +80,9 @@ See `docs/admin.md` for the full operator manual and
 
 ## Authentication
 
-The M2 identity layer is in place. Citizens authenticate via OTP; staff authenticate via password (2FA-ready in M10+). Roles and permissions are powered by Spatie Permission. Every protected endpoint is rate-limited, audited, and emits a security event for the security team.
+The M2 identity layer is in place. Citizens authenticate via OTP (`POST /auth/send-otp` + `/auth/verify-otp`); staff (moderator, department officer/admin, super admin, auditor) authenticate via password on `POST /auth/login`, keyed by the same `users.mobile` field. There is no separate email-login path and no 2FA/TOTP flow yet — treat any "2FA-ready" language elsewhere as aspirational. Roles and permissions are powered by Spatie Permission. Every protected endpoint is rate-limited and audited; `LOGIN_SUCCESS`/`LOGIN_FAILURE` security events are emitted for the staff password flow (the citizen OTP flow does not yet emit them — see `docs/auth.md` §8).
+
+Staff password policy (docs/11 §8: min 12, mixed case, number, symbol) is enforced for real via `SecurityPolicyService::passwordRule()`, reading the `password.min_length` row from `security_policies` — editing that policy from the Super Admin screen changes validation on the next request, no deploy required.
 
 ### Seeded roles
 
@@ -104,6 +106,7 @@ The Authentication namespace lives under `/api/v1/auth/*`:
 | --- | --- | --- |
 | POST | `/api/v1/auth/send-otp` | Request a 6-digit OTP (5/h per IP) |
 | POST | `/api/v1/auth/verify-otp` | Verify the OTP, issue access + refresh tokens |
+| POST | `/api/v1/auth/login` | Staff password login (10/h per IP+mobile; 429 after 5 failed attempts in 15 min) |
 | POST | `/api/v1/auth/refresh` | Rotate the refresh token (single-use) |
 | POST | `/api/v1/auth/logout` | Revoke the current bearer and refresh tokens |
 | GET | `/api/v1/auth/me` | Return the authenticated user (with roles + permissions) |
@@ -416,6 +419,27 @@ device comes back online; pushes wake the app for in-app updates.
   security guardrails, source map.
 - [`docs/06-Citizen-PWA-Specification.md`](./docs/06-Citizen-PWA-Specification.md)
   — the M13 product spec (authoritative).
+
+## Public Transparency Portal (M17)
+
+An unauthenticated, read-only window into aggregate platform
+activity — total reports, AI-classification rate, median
+assign/resolve times, and a grid-bucketed report-density heat map.
+Per the Privacy-By-Design principle, every response is rounded/
+aggregated: no exact coordinates, no citizen identity, no
+department-internal detail ever leaves these endpoints.
+
+| Page | Backend endpoint | Purpose |
+| --- | --- | --- |
+| Overview | `/public/stats` | Total reports, AI-classified %, median assign time |
+| Heat map | `/public/heatmap` | Report density on a ~1.1 km grid |
+| Department performance | `/public/departments/performance` | Resolution rate + median resolution time per department |
+
+All three sit behind the `public` rate limiter (30 req/min/IP) and a
+5-minute server-side cache. The Landing page links to `/public` and
+shares the `/public/stats` endpoint for its own summary tiles.
+
+See [`docs/public.md`](./docs/public.md) for the full reference.
 
 ## Development
 

@@ -53,6 +53,11 @@ class SubmitReportRequest extends FormRequest
 
             'priority_id' => ['nullable', 'uuid', 'exists:report_priorities,id'],
             'idempotency_key' => ['nullable', 'string', 'max:128'],
+
+            // Citizen PWA's client-side mock-GPS heuristic (0..1) — never
+            // used to auto-reject; stored and fed into FraudScorer + the
+            // moderator's fraud panel.
+            'mock_gps_score' => ['nullable', 'numeric', 'between:0,1'],
         ];
     }
 
