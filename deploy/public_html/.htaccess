@@ -20,6 +20,11 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
+    # API subdomain: route all requests to Laravel, not the React SPA.
+    RewriteCond %{HTTP_HOST} ^cip-api\.dgisipl\.com$ [NC]
+    RewriteCond %{REQUEST_URI} !^/index\.php$ [NC]
+    RewriteRule ^ index.php [L]
+
     # ─── API routes: /api/* → Laravel front controller ───────────
     # All API requests go to index.php (Laravel). This must be
     # checked BEFORE the SPA fallback so that /api/v1/* is never
