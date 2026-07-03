@@ -96,9 +96,29 @@ jobs:
             -e "ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes" \
             deploy/staging/cip/ $REMOTE:~/cip/
 
-          # Preserve .env on server (don't overwrite)
+          # Always copy the latest .env.cpanel template, then merge
+          # any keys from the existing server .env that are already
+          # set (DB credentials, APP_KEY, etc). This ensures new env
+          # keys (like CIP_DEBUG_OTP) are always present.
+          scp -P $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            deploy/staging/cip/.env.cpanel $REMOTE:~/cip/.env.cpanel
+
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
-            $REMOTE "cd ~/cip && test -f .env || cp .env.cpanel .env 2>/dev/null || true"
+            $REMOTE "cd ~/cip && \
+              if [ -f .env ]; then \
+                cp .env .env.bak; \
+                cp .env.cpanel .env.tmp; \
+                while IFS='=' read -r key value; do \
+                  if [ -n \"\$key\" ] && [ -n \"\$value\" ] && grep -q \"^\$key=\" .env 2>/dev/null; then \
+                    existing=\$(grep \"^\$key=\" .env | head -1 | cut -d'=' -f2-); \
+                    sed -i \"s|^\$key=.*|\$key=\$existing|\" .env.tmp; \
+                  fi; \
+                done < .env.cpanel; \
+                cp .env.tmp .env; \
+              else \
+                cp .env.cpanel .env; \
+              fi; \
+              grep -q '^APP_KEY=base64:' .env || $PHP_BIN artisan key:generate --force"
 
           # Deploy frontend (public_html/)
           rsync -az --delete \
@@ -106,14 +126,16 @@ jobs:
             deploy/staging/public_html/ $REMOTE:~/public_html/
 
           # Run post-deploy tasks
+          # Use migrate:fresh --seed for demo/pilot — this drops and
+          # recreates all tables, ensuring clean state. The DB is
+          # seeded with demo data every deploy.
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             $REMOTE "cd ~/cip && \
-              grep -q '^APP_KEY=base64:' .env || $PHP_BIN artisan key:generate --force; \
-              $PHP_BIN artisan migrate --force || true; \
-              sleep 5; \
-              $PHP_BIN artisan db:seed --force || true; \
+              $PHP_BIN artisan config:clear 2>/dev/null || true; \
+              $PHP_BIN artisan migrate:fresh --seed --force; \
               sleep 5; \
               $PHP_BIN artisan storage:link --force || true; \
+              sleep 2; \
               $PHP_BIN artisan config:cache || true; \
               $PHP_BIN artisan route:cache || true; \
               $PHP_BIN artisan event:cache || true; \
