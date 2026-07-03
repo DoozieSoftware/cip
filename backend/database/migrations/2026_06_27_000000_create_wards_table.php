@@ -62,7 +62,13 @@ return new class extends Migration
         $driver = DB::connection()->getDriverName();
 
         if ($driver === 'mysql') {
-            DB::statement('ALTER TABLE wards ADD COLUMN boundary_polygon POLYGON NOT NULL SRID 4326');
+            $version = DB::selectOne('select version() as version')->version ?? '';
+            $isMariaDb = stripos($version, 'mariadb') !== false;
+            $columnDefinition = $isMariaDb
+                ? 'POLYGON NOT NULL'
+                : 'POLYGON NOT NULL SRID 4326';
+
+            DB::statement("ALTER TABLE wards ADD COLUMN boundary_polygon {$columnDefinition}");
             DB::statement('ALTER TABLE wards ADD SPATIAL INDEX wards_boundary_polygon_sidx (boundary_polygon)');
         } else {
             Schema::table('wards', function (Blueprint $table): void {

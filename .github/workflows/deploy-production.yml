@@ -87,6 +87,7 @@ jobs:
           SSH_PORT="${{ secrets.DEPLOY_PORT }}"
           SSH_PORT="${SSH_PORT:-7822}"
           REMOTE="${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
+          PHP_BIN="/opt/alt/php84/usr/bin/php"
 
           # Deploy backend (cip/)
           rsync -az --delete \
@@ -106,17 +107,17 @@ jobs:
 
           # Run post-deploy tasks
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
-            $REMOTE 'cd ~/cip && \
-              test -s .env || php artisan key:generate --force; \
-              php artisan migrate --force || true; \
+            $REMOTE "cd ~/cip && \
+              grep -q '^APP_KEY=base64:' .env || $PHP_BIN artisan key:generate --force; \
+              $PHP_BIN artisan migrate --force || true; \
               sleep 5; \
-              php artisan db:seed --force || true; \
+              $PHP_BIN artisan db:seed --force || true; \
               sleep 5; \
-              php artisan storage:link --force || true; \
-              php artisan config:cache || true; \
-              php artisan route:cache || true; \
-              php artisan event:cache || true; \
-              echo "Post-deploy complete"'
+              $PHP_BIN artisan storage:link --force || true; \
+              $PHP_BIN artisan config:cache || true; \
+              $PHP_BIN artisan route:cache || true; \
+              $PHP_BIN artisan event:cache || true; \
+              echo 'Post-deploy complete'"
 
           rm -f /tmp/deploy_key
 
