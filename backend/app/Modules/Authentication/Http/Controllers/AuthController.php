@@ -59,7 +59,7 @@ class AuthController extends BaseController
 
         $payload = ['otp_sent' => true];
 
-        if (app()->environment('local')) {
+        if (app()->environment('local') || config('cip.auth.debug_otp', false)) {
             $payload['debug_otp'] = $this->otpService->latestCodeFor($mobile);
             $payload['expires_in'] = (int) config('cip.auth.otp_expiry_minutes', 5) * 60;
         }

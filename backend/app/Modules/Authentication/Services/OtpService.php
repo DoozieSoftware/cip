@@ -115,7 +115,7 @@ class OtpService extends BaseService
      */
     public function latestCodeFor(string $mobile): ?string
     {
-        if (! app()->environment(['local', 'testing'])) {
+        if (! app()->environment(['local', 'testing']) && ! config('cip.auth.debug_otp', false)) {
             return null;
         }
 

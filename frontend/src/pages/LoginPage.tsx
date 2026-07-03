@@ -84,7 +84,7 @@ export function LoginPage(): JSX.Element {
     try {
       const res = await apiRequest<ApiEnvelope<{ token: { access_token: string; type: string; expires_at?: string }; refresh_token: string; refresh_expires_at: string; user: SessionUser }>>('/auth/verify-otp', {
         method: 'POST',
-        body: { mobile, otp },
+        body: { mobile, code: otp },
       });
       login(res.data.token.access_token, res.data.user);
       // Pull /auth/me to confirm roles

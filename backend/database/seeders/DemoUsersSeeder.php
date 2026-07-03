@@ -35,24 +35,28 @@ class DemoUsersSeeder extends Seeder
             'name' => 'Asha Citizen',
             'role' => 'citizen',
             'email' => 'asha@cip.demo',
+            'password' => null,
         ],
         [
             'mobile' => '+919999900002',
             'name' => 'Manish Moderator',
             'role' => 'moderator',
             'email' => 'manish@cip.demo',
+            'password' => 'demo1234',
         ],
         [
             'mobile' => '+919999900003',
             'name' => 'Deepa Dept Officer (BBMP)',
             'role' => 'department_officer',
             'email' => 'deepa@cip.demo',
+            'password' => 'demo1234',
         ],
         [
             'mobile' => '+919999900004',
             'name' => 'Ravi Super Admin',
             'role' => 'super_admin',
             'email' => 'ravi@cip.demo',
+            'password' => 'demo1234',
         ],
     ];
 
@@ -70,6 +74,12 @@ class DemoUsersSeeder extends Seeder
                     'status' => 'active',
                 ],
             );
+
+            if (isset($row['password']) && $row['password'] !== null) {
+                $user->password = \Illuminate\Support\Facades\Hash::make($row['password']);
+                $user->save();
+            }
+
             if (! $user->hasRole($row['role'])) {
                 $user->assignRole($row['role']);
             }
