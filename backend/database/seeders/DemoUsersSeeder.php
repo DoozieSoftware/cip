@@ -31,28 +31,28 @@ class DemoUsersSeeder extends Seeder
      */
     private const ACCOUNTS = [
         [
-            'mobile' => '+919999900001',
+            'mobile' => '9999900001',
             'name' => 'Asha Citizen',
             'role' => 'citizen',
             'email' => 'asha@cip.demo',
             'password' => null,
         ],
         [
-            'mobile' => '+919999900002',
+            'mobile' => '9999900002',
             'name' => 'Manish Moderator',
             'role' => 'moderator',
             'email' => 'manish@cip.demo',
             'password' => 'demo1234',
         ],
         [
-            'mobile' => '+919999900003',
+            'mobile' => '9999900003',
             'name' => 'Deepa Dept Officer (BBMP)',
             'role' => 'department_officer',
             'email' => 'deepa@cip.demo',
             'password' => 'demo1234',
         ],
         [
-            'mobile' => '+919999900004',
+            'mobile' => '9999900004',
             'name' => 'Ravi Super Admin',
             'role' => 'super_admin',
             'email' => 'ravi@cip.demo',
@@ -76,7 +76,11 @@ class DemoUsersSeeder extends Seeder
             );
 
             if (isset($row['password']) && $row['password'] !== null) {
-                $user->password = \Illuminate\Support\Facades\Hash::make($row['password']);
+                // The User model has a 'hashed' cast on the password
+                // attribute, so assigning the plain value is enough —
+                // the model will bcrypt it on save. Calling Hash::make()
+                // here would double-hash and break password login.
+                $user->password = $row['password'];
                 $user->save();
             }
 

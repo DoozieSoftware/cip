@@ -18,17 +18,17 @@ interface OtpResponse {
 }
 
 const DEMO_ACCOUNTS: { label: string; mobile: string; description: string; path: string }[] = [
-  { label: 'Citizen', mobile: '+919999900001', description: 'Submit a new report, see notifications, track status.', path: '/citizen' },
-  { label: 'Moderator', mobile: '+919999900002', description: 'Triage the AI-classified queue, merge duplicates, reject fraud.', path: '/moderator' },
-  { label: 'Department Officer', mobile: '+919999900003', description: 'Accept, progress, resolve assigned reports in the BBMP zone.', path: '/operations' },
-  { label: 'Super Admin', mobile: '+919999900004', description: 'Configure report types, security policies, feature flags, audit log.', path: '/admin' },
+  { label: 'Citizen', mobile: '9999900001', description: 'Submit a new report, see notifications, track status.', path: '/citizen' },
+  { label: 'Moderator', mobile: '9999900002', description: 'Triage the AI-classified queue, merge duplicates, reject fraud.', path: '/moderator' },
+  { label: 'Department Officer', mobile: '9999900003', description: 'Accept, progress, resolve assigned reports in the BBMP zone.', path: '/operations' },
+  { label: 'Super Admin', mobile: '9999900004', description: 'Configure report types, security policies, feature flags, audit log.', path: '/admin' },
 ];
 
 export function LoginPage(): JSX.Element {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [authMode, setAuthMode] = useState<'otp' | 'password'>('otp');
-  const [mobile, setMobile] = useState<string>('+919999900001');
+  const [mobile, setMobile] = useState<string>('9999900001');
   const [otp, setOtp] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [stage, setStage] = useState<'request' | 'verify'>('request');
@@ -146,7 +146,7 @@ export function LoginPage(): JSX.Element {
                     type="tel"
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value)}
-                    placeholder="+919999900001"
+                    placeholder="9999900001"
                     className="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
                     required
                   />
@@ -206,7 +206,7 @@ export function LoginPage(): JSX.Element {
                     type="tel"
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value)}
-                    placeholder="+919999900002"
+                    placeholder="9999900002"
                     className="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
                     required
                   />

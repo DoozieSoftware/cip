@@ -50,9 +50,14 @@ return new class extends Migration
         // MySQL-only: create the POINT column + spatial index.
         // SQLite (test driver) ignores this branch.
         if (DB::getDriverName() === 'mysql') {
-            $version = DB::selectOne('select version() as version')->version ?? '';
+            $versionRow = DB::selectOne('select version() as version');
+            $version = $versionRow->version ?? '';
             $isMariaDb = stripos($version, 'mariadb') !== false;
-            $columnDefinition = $isMariaDb ? 'POINT NOT NULL' : 'POINT';
+            $isMysql57 = version_compare(preg_replace('/-[a-z0-9].*$/i', '', $version), '8.0', '<');
+
+            $columnDefinition = ($isMariaDb || $isMysql57)
+                ? 'POINT NOT NULL'
+                : 'POINT NOT NULL SRID 4326';
 
             DB::statement("ALTER TABLE locations ADD geom {$columnDefinition} AFTER longitude");
             DB::statement('CREATE SPATIAL INDEX idx_locations_geom ON locations (geom)');

@@ -62,9 +62,12 @@ return new class extends Migration
         $driver = DB::connection()->getDriverName();
 
         if ($driver === 'mysql') {
-            $version = DB::selectOne('select version() as version')->version ?? '';
+            $versionRow = DB::selectOne('select version() as version');
+            $version = $versionRow->version ?? '';
             $isMariaDb = stripos($version, 'mariadb') !== false;
-            $columnDefinition = $isMariaDb
+            $isMysql57 = version_compare(preg_replace('/-[a-z0-9].*$/i', '', $version), '8.0', '<');
+
+            $columnDefinition = ($isMariaDb || $isMysql57)
                 ? 'POLYGON NOT NULL'
                 : 'POLYGON NOT NULL SRID 4326';
 
