@@ -11,6 +11,7 @@ use App\Modules\Departments\Models\State;
 use App\Modules\Departments\Models\Ward;
 use App\Modules\Departments\Models\Zone;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Master data: India → Karnataka → Bangalore Urban + Rural
@@ -121,16 +122,25 @@ class GeographySeeder extends Seeder
         ];
 
         foreach ($wards as [$cityId, $zoneId, $wardNumber, $name, $municipality]) {
-            Ward::query()->updateOrCreate(
+            $ward = Ward::query()->updateOrCreate(
                 ['city_id' => $cityId, 'ward_number' => $wardNumber],
                 [
                     'zone_id' => $zoneId,
                     'name' => $name,
                     'municipality' => $municipality,
                     'active' => true,
-                    'boundary_polygon' => $this->placeholderPolygon($cityId, $wardNumber),
                 ],
             );
+
+            $polygon = $this->placeholderPolygon($cityId, $wardNumber);
+
+            if (DB::getDriverName() === 'mysql') {
+                DB::table('wards')
+                    ->where('id', $ward->id)
+                    ->update(['boundary_polygon' => DB::raw("ST_GeomFromText('{$polygon}', 4326)")]);
+            } else {
+                $ward->forceFill(['boundary_polygon' => $polygon])->save();
+            }
         }
     }
 
