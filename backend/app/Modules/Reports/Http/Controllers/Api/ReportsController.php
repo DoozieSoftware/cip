@@ -8,8 +8,10 @@ use App\Modules\Reports\DTO\SubmitReportDto;
 use App\Modules\Reports\Http\Requests\SubmitReportRequest;
 use App\Modules\Reports\Http\Resources\ReportResource;
 use App\Modules\Reports\Http\Resources\ReportStatusHistoryResource;
+use App\Modules\Reports\Http\Resources\ReportTypeResource;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
+use App\Modules\Reports\Models\ReportType;
 use App\Modules\Reports\Repositories\ReportRepository;
 use App\Modules\Reports\Services\ReportService;
 use App\Modules\Shared\Exceptions\ApiException;
@@ -37,6 +39,25 @@ class ReportsController extends BaseController
         private readonly ReportRepository $repository,
         private readonly ReportService $service,
     ) {}
+
+    /**
+     * GET /api/v1/report-types — citizen-facing list of active report types.
+     *
+     * Returns all active report types for the citizen submit form.
+     * Unlike the admin endpoint, this does not require super_admin role
+     * and only returns active (non-trashed) types.
+     */
+    public function reportTypes(Request $request): JsonResponse
+    {
+        $types = ReportType::query()
+            ->where('active', true)
+            ->orderBy('name')
+            ->get();
+
+        return $this->respond(
+            $types->map(static fn (ReportType $t): array => (new ReportTypeResource($t))->toArray($request))->all(),
+        );
+    }
 
     /**
      * POST /api/v1/reports

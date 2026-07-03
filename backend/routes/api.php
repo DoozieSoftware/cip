@@ -320,6 +320,8 @@ Route::prefix('v1')->group(function (): void {
 
     // Citizen PWA — report submission and read-back (M4)
     Route::middleware(['auth:sanctum', 'throttle:'.RouteServiceProvider::LIMITER_CITIZEN])->group(function (): void {
+        // Report types for citizen submit form (active only)
+        Route::get('report-types', [ReportsController::class, 'reportTypes'])->name('api.v1.report-types.index');
         // T-M4-022 — POST /api/v1/reports
         Route::post('reports', [ReportsController::class, 'store'])->name('api.v1.reports.store');
         // T-M5-012 — POST /api/v1/reports/{id}/photos

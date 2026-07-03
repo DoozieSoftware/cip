@@ -60,7 +60,7 @@ export function useReportTypes() {
   return useQuery({
     queryKey: ['report-types'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<ReportType[]>>('/admin/report-types', { query: { per_page: 100 } });
+      const res = await apiRequest<ApiEnvelope<ReportType[]>>('/report-types');
       return res.data.filter((t) => t);
     },
   });

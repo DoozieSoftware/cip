@@ -29,16 +29,14 @@ export interface GpsCaptureProps {
 }
 
 export function GpsCapture(props: GpsCaptureProps): JSX.Element {
-  const { onCapture, maxAccuracyM = 50, className, watch = false } = props;
+  const { onCapture, maxAccuracyM = 100, className, watch = false } = props;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<Array<{ altitude: number | null }>>([]);
   const [lastResult, setLastResult] = useState<MockGpsResult | null>(null);
 
   useEffect(() => {
-    return () => {
-      // No-op: navigator.geolocation.watchPosition is cleaned in stopWatch.
-    };
+    detect();
   }, []);
 
   function handlePosition(pos: GeolocationPosition): void {
