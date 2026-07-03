@@ -9,12 +9,17 @@ use Illuminate\Database\Seeder;
 
 /**
  * Seeds the default AI provider set per docs/10 §7:
- *  - `mock` is the highest-priority active provider in dev/test
- *    so the orchestrator never makes a real network call unless
- *    a Super Admin disables it
- *  - `qwen-vl` is present but inactive until a Super Admin
- *    configures the secret and flips the `active` flag
- *  - `openai` is also present but inactive
+ *  - `modal-vision` is the highest-priority active provider in
+ *    pilot — it points at a Modal.com-hosted vLLM endpoint
+ *    serving a vision-capable model (e.g. Qwen2.5-VL-7B-Instruct).
+ *    The `credentials.api_key` is populated from
+ *    `AI_MODAL_API_KEY` at seed time, or left null for the admin
+ *    to configure via the portal.
+ *  - `mock` is the second-priority fallback (dev/test only).
+ *    The orchestrator never makes a real network call unless a
+ *    Super Admin disables it.
+ *  - `qwen-vl` is present but inactive (DashScope direct).
+ *  - `openai` is also present but inactive.
  *
  * Idempotent: each (code) is unique and we use updateOrCreate.
  */
@@ -26,9 +31,26 @@ class AiProvidersSeeder extends Seeder
 
         $providers = [
             [
+                'code' => 'modal-vision',
+                'driver' => 'openai_compatible',
+                'name' => 'Modal Vision (vLLM)',
+                'base_url' => env('AI_MODAL_BASE_URL', 'https://akshayjoshi999--cpr-chatbot-vllm-serve.modal.run'),
+                'auth_type' => 'bearer',
+                'credentials' => env('AI_MODAL_API_KEY') !== null
+                    ? ['api_key' => env('AI_MODAL_API_KEY')]
+                    : null,
+                'model' => env('AI_MODAL_MODEL', 'Qwen/Qwen2.5-VL-7B-Instruct'),
+                'temperature' => 0.2,
+                'timeout_ms' => 60000,
+                'retry_count' => 2,
+                'is_fallback' => false,
+                'priority' => 10,
+                'active' => true,
+            ],
+            [
                 'code' => 'mock',
                 'driver' => 'mock',
-                'name' => 'Mock provider (dev/test)',
+                'name' => 'Mock provider (dev/test fallback)',
                 'base_url' => 'http://localhost',
                 'auth_type' => 'none',
                 'credentials' => null,
@@ -36,8 +58,8 @@ class AiProvidersSeeder extends Seeder
                 'temperature' => 0.2,
                 'timeout_ms' => 5000,
                 'retry_count' => 1,
-                'is_fallback' => false,
-                'priority' => 10,
+                'is_fallback' => true,
+                'priority' => 90,
                 'active' => true,
             ],
             [

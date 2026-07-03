@@ -19,6 +19,7 @@ use App\Modules\AI\Services\ProviderFailoverService;
 use App\Modules\AI\ValueObjects\AiRequest;
 use App\Modules\AI\ValueObjects\AiResponse;
 use App\Modules\Media\Models\Media;
+use App\Modules\Media\Support\MediaUrl;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Settings\Models\AppConfig;
 use Illuminate\Bus\Queueable;
@@ -218,11 +219,14 @@ class AiPipelineOrchestrator implements ShouldQueue
 
     private function mediaUrl(Media $media): string
     {
-        // The OpenAI-compatible provider expects a URL; in
-        // production the M5 media service hands out short-lived
-        // pre-signed MinIO URLs. In dev/test we point at a
-        // local route the harness knows about.
-        return url('/storage/'.$media->storage_path);
+        // The AI provider (e.g. a Modal.com-hosted vLLM endpoint)
+        // needs a publicly-reachable URL to fetch the photo.
+        // MediaUrl::temporary() generates either an S3 presigned
+        // URL (MinIO/production) or a Laravel signed route
+        // (api.v1.media.serve) that the endpoint can fetch. The
+        // signed route includes an expiry and signature so the
+        // URL is self-authenticating — no auth header needed.
+        return app(MediaUrl::class)->temporary($media);
     }
 
     private function writeResult(
