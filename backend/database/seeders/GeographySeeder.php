@@ -12,6 +12,7 @@ use App\Modules\Departments\Models\Ward;
 use App\Modules\Departments\Models\Zone;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Master data: India → Karnataka → Bangalore Urban + Rural
@@ -122,24 +123,39 @@ class GeographySeeder extends Seeder
         ];
 
         foreach ($wards as [$cityId, $zoneId, $wardNumber, $name, $municipality]) {
-            $ward = Ward::query()->updateOrCreate(
-                ['city_id' => $cityId, 'ward_number' => $wardNumber],
-                [
-                    'zone_id' => $zoneId,
-                    'name' => $name,
-                    'municipality' => $municipality,
-                    'active' => true,
-                ],
-            );
-
             $polygon = $this->placeholderPolygon($cityId, $wardNumber);
 
             if (DB::getDriverName() === 'mysql') {
-                DB::table('wards')
-                    ->where('id', $ward->id)
-                    ->update(['boundary_polygon' => DB::raw("ST_GeomFromText('{$polygon}', 4326)")]);
+                DB::statement(
+                    'INSERT INTO wards (id, city_id, zone_id, ward_number, name, municipality, active, boundary_polygon, created_at, updated_at) '
+                    .'VALUES (?, ?, ?, ?, ?, ?, ?, ST_GeomFromText(?, 4326), ?, ?) '
+                    .'ON DUPLICATE KEY UPDATE zone_id = VALUES(zone_id), name = VALUES(name), '
+                    .'municipality = VALUES(municipality), active = VALUES(active), '
+                    .'boundary_polygon = VALUES(boundary_polygon), updated_at = VALUES(updated_at)',
+                    [
+                        (string) Str::uuid(),
+                        $cityId,
+                        $zoneId,
+                        $wardNumber,
+                        $name,
+                        $municipality,
+                        true,
+                        $polygon,
+                        now(),
+                        now(),
+                    ],
+                );
             } else {
-                $ward->forceFill(['boundary_polygon' => $polygon])->save();
+                Ward::query()->updateOrCreate(
+                    ['city_id' => $cityId, 'ward_number' => $wardNumber],
+                    [
+                        'zone_id' => $zoneId,
+                        'name' => $name,
+                        'municipality' => $municipality,
+                        'active' => true,
+                        'boundary_polygon' => $polygon,
+                    ],
+                );
             }
         }
     }
