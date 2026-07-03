@@ -1,0 +1,131 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+env:
+  PHP_VERSION: "8.4"
+  NODE_VERSION: "20"
+  BACKEND_DIR: backend
+  FRONTEND_DIR: frontend
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: bcmath, exif, gd, intl, mbstring, pdo_mysql, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm ci --no-audit --no-fund
+
+      - name: Build frontend
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm run build
+
+      - name: Install backend dependencies (no-dev)
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Stage cPanel layout
+        run: |
+          mkdir -p deploy/staging/cip deploy/staging/public_html
+
+          # Backend → cip/
+          rsync -a \
+            --exclude='tests/' --exclude='.git/' --exclude='node_modules/' \
+            --exclude='storage/framework/cache/data/*' \
+            --exclude='storage/framework/sessions/*' \
+            --exclude='storage/framework/views/*' \
+            --exclude='storage/logs/*' \
+            --exclude='.env' \
+            ${{ env.BACKEND_DIR }}/ deploy/staging/cip/
+
+          # Copy .env.cpanel as .env (will be replaced on server)
+          cp ${{ env.BACKEND_DIR }}/.env.cpanel deploy/staging/cip/.env
+
+          # Frontend dist → public_html/
+          cp -r ${{ env.FRONTEND_DIR }}/dist/* deploy/staging/public_html/
+
+          # cPanel deployment files
+          cp deploy/public_html/.htaccess deploy/staging/public_html/.htaccess
+          cp deploy/public_html/index.php deploy/staging/public_html/index.php
+
+          echo "Staged files:"
+          find deploy/staging/ -type f | wc -l
+          echo "public_html contents:"
+          ls deploy/staging/public_html/
+
+      - name: Deploy to server
+        run: |
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" | tr -d '\r' > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+
+          SSH_PORT="${{ secrets.DEPLOY_PORT }}"
+          SSH_PORT="${SSH_PORT:-7822}"
+          REMOTE="${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
+
+          # Deploy backend (cip/)
+          rsync -az --delete \
+            --exclude='storage/' \
+            --exclude='.env' \
+            -e "ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes" \
+            deploy/staging/cip/ $REMOTE:~/cip/
+
+          # Preserve .env on server (don't overwrite)
+          ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            $REMOTE "cd ~/cip && test -f .env || cp .env.cpanel .env 2>/dev/null || true"
+
+          # Deploy frontend (public_html/)
+          rsync -az --delete \
+            -e "ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes" \
+            deploy/staging/public_html/ $REMOTE:~/public_html/
+
+          # Run post-deploy tasks
+          ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            $REMOTE 'cd ~/cip && \
+              test -s .env || php artisan key:generate --force; \
+              php artisan migrate --force || true; \
+              sleep 5; \
+              php artisan db:seed --force || true; \
+              sleep 5; \
+              php artisan storage:link --force || true; \
+              php artisan config:cache || true; \
+              php artisan route:cache || true; \
+              php artisan event:cache || true; \
+              echo "Post-deploy complete"'
+
+          rm -f /tmp/deploy_key
+
+      - name: Deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "Deployment completed successfully"
+          else
+            echo "Deployment failed"
+            exit 1
+          fi
