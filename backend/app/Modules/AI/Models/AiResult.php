@@ -29,6 +29,8 @@ use Illuminate\Support\Carbon;
  * @property int $duplicate_score
  * @property int $fraud_score
  * @property string $summary
+ * @property string|null $license_plate
+ * @property float|null $plate_confidence
  * @property array<string, mixed> $raw_response
  * @property Carbon $created_at
  */
@@ -44,7 +46,7 @@ class AiResult extends Model
     protected $fillable = [
         'job_id', 'predicted_type', 'confidence', 'recommended_department',
         'severity', 'quality_score', 'duplicate_score', 'fraud_score',
-        'summary', 'raw_response', 'created_at',
+        'summary', 'license_plate', 'plate_confidence', 'raw_response', 'created_at',
     ];
 
     protected $casts = [
@@ -52,6 +54,7 @@ class AiResult extends Model
         'quality_score' => 'integer',
         'duplicate_score' => 'integer',
         'fraud_score' => 'integer',
+        'plate_confidence' => 'float',
         'raw_response' => 'array',
         'created_at' => 'datetime',
     ];

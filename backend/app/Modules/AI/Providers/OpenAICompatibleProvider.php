@@ -188,6 +188,12 @@ class OpenAICompatibleProvider implements AIProviderInterface
             fraudScore: (int) ($decoded['fraud_score'] ?? 0),
             summary: (string) ($decoded['summary'] ?? ''),
             raw: $raw,
+            licensePlate: isset($decoded['license_plate']) && is_string($decoded['license_plate']) && $decoded['license_plate'] !== ''
+                ? strtoupper(trim($decoded['license_plate']))
+                : null,
+            plateConfidence: isset($decoded['plate_confidence']) && is_numeric($decoded['plate_confidence'])
+                ? (float) $decoded['plate_confidence']
+                : null,
         );
     }
 }

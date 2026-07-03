@@ -34,6 +34,8 @@ class AiResultResource extends JsonResource
             'duplicate_score' => $r->duplicate_score,
             'fraud_score' => $r->fraud_score,
             'summary' => $r->summary,
+            'license_plate' => $r->license_plate,
+            'plate_confidence' => $r->plate_confidence,
             'raw_response' => $r->raw_response,
             'created_at' => $r->created_at?->toIso8601String(),
             'labels' => $r->relationLoaded('labels')

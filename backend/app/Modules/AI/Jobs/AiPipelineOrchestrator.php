@@ -130,6 +130,7 @@ class AiPipelineOrchestrator implements ShouldQueue
                 $response->predictedType,
                 $response->severity,
                 $response->primaryLabel() ?? $response->predictedType,
+                $response->licensePlate,
                 $response->toArray(),
             );
         } catch (InvalidAiResponseException $e) {
@@ -246,6 +247,8 @@ class AiPipelineOrchestrator implements ShouldQueue
             'duplicate_score' => $duplicateScore,
             'fraud_score' => $fraudScore,
             'summary' => $response->summary,
+            'license_plate' => $response->licensePlate,
+            'plate_confidence' => $response->plateConfidence,
             'raw_response' => $response->raw,
             'created_at' => now(),
         ]);

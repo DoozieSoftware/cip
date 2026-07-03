@@ -26,6 +26,10 @@ namespace App\Modules\AI\ValueObjects;
  *  - `severity` is the canonical severity bucket
  *  - The three 0–100 scores (quality, duplicate, fraud)
  *    feed the moderator review flagging logic
+ *  - `licensePlate` is the detected vehicle number plate
+ *    (ANPR) when the report involves a vehicle violation;
+ *    null for non-vehicle categories. `plateConfidence`
+ *    is the VLM's confidence in the plate read (0.0–1.0)
  *  - `raw` keeps the unparsed provider payload for
  *    forensic / re-prompting / cost audit
  */
@@ -46,6 +50,8 @@ final class AiResponse
         public readonly int $fraudScore,
         public readonly string $summary,
         public readonly array $raw = [],
+        public readonly ?string $licensePlate = null,
+        public readonly ?float $plateConfidence = null,
     ) {}
 
     /**
@@ -92,6 +98,8 @@ final class AiResponse
             'duplicate_score' => $this->duplicateScore,
             'fraud_score' => $this->fraudScore,
             'summary' => $this->summary,
+            'license_plate' => $this->licensePlate,
+            'plate_confidence' => $this->plateConfidence,
             'raw' => $this->raw,
         ];
     }

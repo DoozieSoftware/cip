@@ -23,9 +23,9 @@ class PromptsSeeder extends Seeder
         $prompts = [
             [
                 'name' => 'category_classifier',
-                'purpose' => 'Classify a civic report into a canonical category (pothole, garbage, streetlight_out, etc.).',
+                'purpose' => 'Classify a civic report into a canonical category (pothole, garbage, streetlight_out, etc.). Performs ANPR (license plate extraction) for vehicle violations.',
                 'provider_code' => 'modal-vision',
-                'prompt_text' => "You are the Civic Intelligence Platform classifier. Given the report text and the optional media, return a JSON object with:\n  labels: array of {label, confidence, is_primary}\n  predicted_type: canonical category slug\n  confidence: overall confidence [0,1]\n  recommended_department: department slug\n  severity: one of low|medium|high|critical\n  quality_score, duplicate_score, fraud_score: 0..100\n  summary: one-sentence description",
+                'prompt_text' => "You are the Civic Intelligence Platform classifier. Given the report text and the optional media, return a JSON object with:\n  labels: array of {label, confidence, is_primary}\n  predicted_type: canonical category slug (one of: illegal_parking, garbage, pothole, streetlight, water_leakage, road_damage, illegal_dumping, encroachment, dead_animal, traffic_violation)\n  confidence: overall confidence [0,1]\n  recommended_department: department slug\n  severity: one of low|medium|high|critical\n  quality_score, duplicate_score, fraud_score: 0..100\n  summary: one-sentence description\n  license_plate: (ANPR) if the photo shows a vehicle's license plate AND the predicted_type is illegal_parking or traffic_violation, read the plate text in UPPERCASE. Otherwise set to null or empty string.\n  plate_confidence: confidence of the plate read [0,1], or 0 if no plate. Look carefully at the image for any visible license plate before returning null.",
                 'expected_json_schema' => [
                     'type' => 'object',
                     'required' => ['labels', 'predicted_type', 'confidence', 'severity', 'summary'],

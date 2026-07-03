@@ -68,6 +68,21 @@ export function AiAnalysisPanel({ ai, mockGpsScore }: AiAnalysisPanelProps) {
           </p>
         </div>
 
+        {ai.license_plate && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-amber-700">Detected License Plate (ANPR)</p>
+            <div className="mt-1 flex items-center gap-3">
+              <span className="font-mono text-2xl font-bold tracking-widest text-slate-900">{ai.license_plate}</span>
+              {ai.plate_confidence !== null && ai.plate_confidence !== undefined && (
+                <Badge tone={ai.plate_confidence >= 0.8 ? 'success' : 'warning'}>
+                  {Math.round(ai.plate_confidence * 100)}% confidence
+                </Badge>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-amber-700">Verify against the evidence photo before acting.</p>
+          </div>
+        )}
+
         {ai.labels.length > 0 && (
           <div>
             <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">Labels</p>

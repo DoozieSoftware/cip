@@ -34,6 +34,7 @@ final class AiCompleted
         public readonly ?string $categoryCode = null,
         public readonly ?string $severityCode = null,
         public readonly ?string $aiLabel = null,
+        public readonly ?string $licensePlate = null,
         public readonly array $visionResult = [],
     ) {}
 }

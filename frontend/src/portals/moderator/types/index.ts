@@ -63,6 +63,10 @@ export interface AiResult {
   duplicate_score: number;
   quality_score: number;
   notes: string | null;
+  /** ANPR — detected vehicle license plate (UPPERCASE) or null for non-vehicle reports. */
+  license_plate: string | null;
+  /** VLM confidence in the plate read (0..1), or null. */
+  plate_confidence: number | null;
   created_at: string;
 }
 
