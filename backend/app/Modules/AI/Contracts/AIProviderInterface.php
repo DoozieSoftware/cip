@@ -11,8 +11,8 @@ use App\Modules\AI\ValueObjects\AiResponse;
  * Provider-agnostic contract every AI backend must implement.
  *
  * Per docs/10 §6, the platform supports multiple provider
- * flavours (OpenAI-compatible, Qwen-VL, Anthropic, local
- * mock). The orchestrator (T-M8-018) and the failover
+ * flavours (OpenAI-compatible, Qwen-VL, Anthropic). The
+ * orchestrator (T-M8-018) and the failover
  * service (T-M8-017) both depend on this interface, not on
  * concrete implementations, so a new provider can be added
  * via config alone (AiProviderConfig + a zero-code binding

@@ -27,7 +27,7 @@ use Illuminate\Support\Carbon;
  *   - DELETE       : a hard-delete (M16 hardening) removed
  *                    the row
  *   - VIRUS_SCAN   : the virus scanner produced a verdict
- *                    (LogScanner / ClamAvScanner)
+ *                    (ClamAvScanner)
  *
  * @property string $id
  * @property string $media_id

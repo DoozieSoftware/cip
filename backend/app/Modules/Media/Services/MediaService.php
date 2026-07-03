@@ -31,8 +31,7 @@ use Throwable;
  *   2. per-type caps  — max count (10 photos, 1 video, * docs),
  *                       max size (16 MB photo, 100 MB video),
  *                       video duration window (3 – 300 s)
- *   3. VirusScanService — defaults to LogScanner; production
- *      flips to ClamAvScanner via CIP_MEDIA_SCANNER=clamav
+ *   3. VirusScanService — ClamAvScanner (CIP_MEDIA_SCANNER=clamav)
  *
  * On success the bytes are streamed into the configured
  * storage disk under:

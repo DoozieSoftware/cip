@@ -6,19 +6,13 @@ namespace App\Modules\AI\Support;
 
 use App\Modules\AI\Contracts\AIProviderInterface;
 use App\Modules\AI\Models\AiProviderConfig;
-use App\Modules\AI\Providers\MockProvider;
 use App\Modules\AI\Providers\OpenAICompatibleProvider;
 use App\Modules\AI\Providers\QwenVLProvider;
 use RuntimeException;
 
 /**
  * Builds the concrete `AIProviderInterface` implementation for an
- * `ai_provider_configs` row. This is the piece that was missing
- * entirely before the post-audit remediation: `ProviderFailoverService`
- * could read config rows but nothing ever turned a row into a callable
- * provider instance, so real classification never happened in
- * production (`AiServiceProvider` calls this class at boot to build the
- * failover bindings).
+ * `ai_provider_configs` row.
  *
  * `driver` selects the implementation; `openai_compatible` is the
  * generic driver that covers any OpenAI-chat-completions-shaped API,
@@ -28,8 +22,6 @@ use RuntimeException;
  */
 class AiProviderFactory
 {
-    public const DRIVER_MOCK = 'mock';
-
     public const DRIVER_QWEN_VL = 'qwen_vl';
 
     public const DRIVER_OPENAI_COMPATIBLE = 'openai_compatible';
@@ -37,10 +29,6 @@ class AiProviderFactory
     public function make(AiProviderConfig $cfg): AIProviderInterface
     {
         return match ($cfg->driver) {
-            self::DRIVER_MOCK => new MockProvider(
-                name: $cfg->code,
-                model: $cfg->model,
-            ),
             self::DRIVER_QWEN_VL => new QwenVLProvider(
                 apiKey: $this->apiKey($cfg),
                 timeoutMs: $cfg->timeout_ms,

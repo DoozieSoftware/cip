@@ -15,11 +15,8 @@ namespace App\Modules\Media\Contracts;
  * `MediaServiceProvider::register()`.
  *
  * Implementations:
- *   - LogScanner      : default in V1; always returns true and
- *                       writes a structured log line
- *   - ClamAvScanner   : shell-out to `clamscan` (stub in M5;
- *                       the full streaming + verdict parsing
- *                       is added in M16 hardening)
+ *   - ClamAvScanner   : shell-out to `clamscan` binary
+ *   - NullScanner     : explicit no-op skip (dev only)
  */
 interface VirusScanServiceInterface
 {
@@ -35,7 +32,7 @@ interface VirusScanServiceInterface
 
     /**
      * Human-readable name of the scanner implementation
-     * (e.g. "log", "clamav"). Stored on the media row's
+     * (e.g. "clamav", "none"). Stored on the media row's
      * `metadata.scanner` field for audit traceability.
      */
     public function name(): string;

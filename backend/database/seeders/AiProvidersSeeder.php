@@ -15,9 +15,6 @@ use Illuminate\Database\Seeder;
  *    The `credentials.api_key` is populated from
  *    `AI_MODAL_API_KEY` at seed time, or left null for the admin
  *    to configure via the portal.
- *  - `mock` is the second-priority fallback (dev/test only).
- *    The orchestrator never makes a real network call unless a
- *    Super Admin disables it.
  *  - `qwen-vl` is present but inactive (DashScope direct).
  *  - `openai` is also present but inactive.
  *
@@ -45,21 +42,6 @@ class AiProvidersSeeder extends Seeder
                 'retry_count' => 2,
                 'is_fallback' => false,
                 'priority' => 10,
-                'active' => true,
-            ],
-            [
-                'code' => 'mock',
-                'driver' => 'mock',
-                'name' => 'Mock provider (dev/test fallback)',
-                'base_url' => 'http://localhost',
-                'auth_type' => 'none',
-                'credentials' => null,
-                'model' => 'mock-1.0',
-                'temperature' => 0.2,
-                'timeout_ms' => 5000,
-                'retry_count' => 1,
-                'is_fallback' => true,
-                'priority' => 90,
                 'active' => true,
             ],
             [

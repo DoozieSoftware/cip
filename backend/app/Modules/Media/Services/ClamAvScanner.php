@@ -9,11 +9,10 @@ use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /**
- * ClamAV-backed virus scanner (stub for M5).
+ * ClamAV-backed virus scanner.
  *
  * Shells out to the `clamscan` binary that ships with the
- * platform's ClamAV daemon container (see docs/16 §36). The
- * M5 implementation is a conservative stub:
+ * platform's ClamAV daemon container (see docs/16 §36).
  *
  *   - binary missing  : throws RuntimeException — surface the
  *                       misconfiguration loudly rather than
@@ -22,9 +21,6 @@ use RuntimeException;
  *   - exit code 1     : INFECTED — return false (caller decides
  *                       quarantine / hard-delete)
  *   - exit code >= 2  : ERROR — throw RuntimeException
- *
- * The full streaming + verdict parsing (FOUND lines, signature
- * extraction) is upgraded in M16 (Production Hardening).
  */
 class ClamAvScanner implements VirusScanServiceInterface
 {

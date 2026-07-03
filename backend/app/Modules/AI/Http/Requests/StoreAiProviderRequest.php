@@ -22,7 +22,6 @@ class StoreAiProviderRequest extends FormRequest
         return [
             'code' => ['required', 'string', 'max:64', 'unique:ai_provider_configs,code'],
             'driver' => ['required', 'in:'.implode(',', [
-                AiProviderFactory::DRIVER_MOCK,
                 AiProviderFactory::DRIVER_QWEN_VL,
                 AiProviderFactory::DRIVER_OPENAI_COMPATIBLE,
             ])],

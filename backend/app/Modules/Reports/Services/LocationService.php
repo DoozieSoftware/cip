@@ -16,9 +16,8 @@ use App\Modules\Shared\Exceptions\ApiException;
  *  - accuracy threshold (we accept any non-null accuracy ≤ 100m
  *    without flagging; > 100m triggers INVALID_GPS_LOW_ACCURACY)
  *  - speed sanity (we flag speeds > 200 m/s as IMPOSSIBLE_SPEED)
- *  - reverse-geocoding stub: returns a deterministic placeholder
- *    address from the env (REVERSE_GEOCODING_STUB_ADDRESS) until
- *    M8 (AI Vision) wires the real reverse-geocoding provider.
+ *  - reverse-geocoding: stores coordinates as the address until
+ *    a real reverse-geocoding provider is wired
  *
  * The service is the only path that should mutate `locations`
  * in production. Controllers and seeders both go through it.
@@ -44,7 +43,7 @@ class LocationService
         $location->speed = $dto->speed;
         $location->gps_provider = $dto->gpsProvider;
         $location->captured_at = $dto->capturedAt ?? now();
-        $location->address = $this->reverseGeocodeStub($dto->latitude, $dto->longitude);
+        $location->address = $this->reverseGeocode($dto->latitude, $dto->longitude);
         $location->save();
 
         return $location;
@@ -99,16 +98,8 @@ class LocationService
         }
     }
 
-    private function reverseGeocodeStub(float $lat, float $lng): string
+    private function reverseGeocode(float $lat, float $lng): string
     {
-        $stub = env('REVERSE_GEOCODING_STUB_ADDRESS');
-
-        if (is_string($stub) && $stub !== '') {
-            return $stub;
-        }
-
-        // A deterministic, non-PII placeholder. The real
-        // reverse-geocoding provider lands in M8 (AI Vision).
-        return sprintf('%.4f, %.4f (unverified)', $lat, $lng);
+        return sprintf('%.4f, %.4f', $lat, $lng);
     }
 }

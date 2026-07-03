@@ -24,7 +24,7 @@ class PromptsSeeder extends Seeder
             [
                 'name' => 'category_classifier',
                 'purpose' => 'Classify a civic report into a canonical category (pothole, garbage, streetlight_out, etc.).',
-                'provider_code' => 'mock',
+                'provider_code' => 'modal-vision',
                 'prompt_text' => "You are the Civic Intelligence Platform classifier. Given the report text and the optional media, return a JSON object with:\n  labels: array of {label, confidence, is_primary}\n  predicted_type: canonical category slug\n  confidence: overall confidence [0,1]\n  recommended_department: department slug\n  severity: one of low|medium|high|critical\n  quality_score, duplicate_score, fraud_score: 0..100\n  summary: one-sentence description",
                 'expected_json_schema' => [
                     'type' => 'object',
@@ -34,7 +34,7 @@ class PromptsSeeder extends Seeder
             [
                 'name' => 'severity_estimator',
                 'purpose' => 'Estimate the severity of a civic report from text + media.',
-                'provider_code' => 'mock',
+                'provider_code' => 'modal-vision',
                 'prompt_text' => 'Given the report, return a JSON object with severity ∈ {low, medium, high, critical} and a brief rationale.',
                 'expected_json_schema' => [
                     'type' => 'object',
@@ -44,7 +44,7 @@ class PromptsSeeder extends Seeder
             [
                 'name' => 'ai_labeller',
                 'purpose' => 'Multi-label classification for routing rules (the M7 routing DSL reads the primary label).',
-                'provider_code' => 'mock',
+                'provider_code' => 'modal-vision',
                 'prompt_text' => 'Return a JSON object with a `labels` array. Exactly one label MUST have is_primary=true. The primary label is the canonical category the routing engine matches against.',
                 'expected_json_schema' => [
                     'type' => 'object',

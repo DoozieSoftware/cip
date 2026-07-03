@@ -16,8 +16,7 @@ use Throwable;
  * FCM (Firebase Cloud Messaging) HTTP v1 push channel.
  *
  * Sends a single message to one device token via the
- * FCM HTTP v1 endpoint. In V1 this is a stub
- * implementation — the auth + project wiring is read
+ * FCM HTTP v1 endpoint. The auth + project wiring is read
  * from `config('notifications.fcm')` and the actual
  * OAuth2 service-account exchange is left to the
  * operations team (the FCM project id, the service
@@ -30,10 +29,6 @@ use Throwable;
  *    error code → permanent fail (token dead)
  *  - HTTP 4xx otherwise → permanent fail
  *  - HTTP 5xx / network timeout → transient fail
- *
- * The stub is exercised through Http::fake() in
- * tests; in production the Http factory uses the
- * service-account bearer for Authorization.
  */
 class PushChannel implements ChannelInterface
 {
@@ -44,9 +39,17 @@ class PushChannel implements ChannelInterface
         $start = hrtime(true);
 
         $config = (array) config('notifications.fcm', []);
-        $endpoint = (string) ($config['endpoint'] ?? 'https://fcm.googleapis.com/v1/projects/stub/messages:send');
-        $bearer = (string) ($config['access_token'] ?? 'stub-access-token');
-        $project = (string) ($config['project_id'] ?? 'stub-project');
+        $endpoint = (string) ($config['endpoint'] ?? '');
+        $bearer = (string) ($config['access_token'] ?? '');
+        $project = (string) ($config['project_id'] ?? '');
+
+        if ($endpoint === '' || $bearer === '' || $project === '') {
+            return ChannelResult::fail(
+                error: 'fcm.push_not_configured — set FCM_ENDPOINT, FCM_PROJECT_ID, FCM_ACCESS_TOKEN',
+                transient: false,
+                latencyMs: $this->elapsedMs($start),
+            );
+        }
 
         $token = $this->resolveDeviceToken($notification);
 

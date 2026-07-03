@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Schema;
  * media row: VIEW (the list endpoint), DOWNLOAD (the signed
  * serve endpoint), REPLACE (chain-of-custody replacement),
  * DELETE (hard-delete via M16 hardening), and VIRUS_SCAN
- * (LogScanner / ClamAvScanner verdicts).
+ * (ClamAvScanner verdicts).
  *
  * The table is the primary artifact of the chain-of-custody
  * requirement (docs/11 §15): every event captures actor, IP,

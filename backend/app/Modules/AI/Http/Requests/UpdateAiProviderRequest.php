@@ -25,7 +25,6 @@ class UpdateAiProviderRequest extends FormRequest
         return [
             'code' => ['sometimes', 'string', 'max:64', Rule::unique('ai_provider_configs', 'code')->ignore($id)],
             'driver' => ['sometimes', 'in:'.implode(',', [
-                AiProviderFactory::DRIVER_MOCK,
                 AiProviderFactory::DRIVER_QWEN_VL,
                 AiProviderFactory::DRIVER_OPENAI_COMPATIBLE,
             ])],

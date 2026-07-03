@@ -42,7 +42,7 @@ use Throwable;
  *   1. resolve the report + its first media asset
  *   2. write an `ai_jobs` row in `running` state
  *   3. image quality (ImageQualityAnalyzer)
- *   4. (stub) OCR
+ *   4. OCR (not yet wired — passes empty string to PII masker)
  *   5. mask PII out of the free text before it ever reaches a
  *      third-party provider (PiiMaskingService, per docs/11 §28)
  *   6. vision classification (ProviderFailoverService) — skipped
@@ -91,10 +91,10 @@ class AiPipelineOrchestrator implements ShouldQueue
             $media = Media::query()->where('report_id', $this->reportId)->first();
 
             $qualityScore = $media ? $quality->score($media) : 0;
-            $ocrStub = ''; // Phase 2 — ship a stub until the OCR provider is bound.
+            $ocrText = ''; // OCR provider not yet wired.
 
             $maskedText = (string) $pii->mask([
-                'text' => $report->title."\n".$report->description."\n".$ocrStub,
+                'text' => $report->title."\n".$report->description."\n".$ocrText,
             ])['text'];
             $maskedMetadata = $pii->mask([
                 'ward' => null, // The M3 GeographySeeder already binds these

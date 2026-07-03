@@ -18,11 +18,11 @@ use Illuminate\Support\Carbon;
  * (code, is_default) tuple in a single sorted query.
  *
  *  - `code` is the natural key (e.g. `openai`, `qwen-vl`,
- *    `anthropic`, `local-mock`); unique in the DB and
+ *    `anthropic`); unique in the DB and
  *    referenced by `prompt_versions.provider_code` and
  *    `ai_jobs.provider_code`
  *  - `driver` is the type discriminator `AiProviderFactory`
- *    switches on (`mock` | `qwen_vl` | `openai_compatible`).
+ *    switches on (`qwen_vl` | `openai_compatible`).
  *    Any number of rows can share a driver — e.g. two
  *    `openai_compatible` rows, one pointed at OpenRouter and
  *    one at a Modal.com-deployed endpoint.

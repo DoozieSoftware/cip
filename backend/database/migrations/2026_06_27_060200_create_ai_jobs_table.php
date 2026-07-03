@@ -16,8 +16,7 @@ use Illuminate\Support\Facades\Schema;
  *
  *  - status: `queued`, `running`, `succeeded`, `failed`, `timeout`
  *  - retry_count: number of retries already attempted for this job
- *  - tokens_in / tokens_out: provider usage (nullable for the
- *    local stub provider)
+ *  - tokens_in / tokens_out: provider usage (nullable)
  *  - cost_cents: billed cost in cents (nullable)
  */
 return new class extends Migration

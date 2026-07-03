@@ -17,7 +17,6 @@ import { Spinner } from '../../moderator/design';
 import { cx } from '../../moderator/design/cx';
 
 const DRIVERS: { value: AiProviderDriver; label: string }[] = [
-  { value: 'mock', label: 'Mock (dev/test)' },
   { value: 'qwen_vl', label: 'Qwen-VL (DashScope)' },
   { value: 'openai_compatible', label: 'OpenAI-compatible (OpenRouter, Modal.com, …)' },
 ];

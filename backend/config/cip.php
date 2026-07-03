@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'media' => [
-        'scanner' => env('CIP_MEDIA_SCANNER', 'log'),
+        'scanner' => env('CIP_MEDIA_SCANNER', 'clamav'),
         'disk' => env('CIP_MEDIA_DISK', 'local'),
     ],
     'notifications' => [

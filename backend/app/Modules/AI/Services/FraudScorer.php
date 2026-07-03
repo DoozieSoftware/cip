@@ -21,8 +21,7 @@ use App\Modules\Reports\Models\Report;
  *                  a different reporter
  *  - ai_synth    : 0.20 weight — does the AI provider's
  *                  raw_response carry a synthetic-image
- *                  signal (provider-specific; for now the
- *                  MockProvider sets it explicitly)
+ *                  signal (provider-specific)
  *  - repeated_device : 0.10 weight — has this device /
  *                  uploader_id submitted more than 5
  *                  reports in the last 24h

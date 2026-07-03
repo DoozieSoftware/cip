@@ -432,7 +432,7 @@ export function useDeleteNotificationConfig() {
  *  T-M12-006 / T-M12-021 — AI providers + prompts
  * ---------------------------------------------------------------------- */
 
-export type AiProviderDriver = 'mock' | 'qwen_vl' | 'openai_compatible';
+export type AiProviderDriver = 'qwen_vl' | 'openai_compatible';
 
 export interface AiProvider {
   id: string;

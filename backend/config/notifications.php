@@ -14,9 +14,9 @@ declare(strict_types=1);
  */
 return [
     'fcm' => [
-        'endpoint' => env('FCM_ENDPOINT', 'https://fcm.googleapis.com/v1/projects/stub/messages:send'),
-        'project_id' => env('FCM_PROJECT_ID', 'stub-project'),
-        'access_token' => env('FCM_ACCESS_TOKEN', 'stub-access-token'),
+        'endpoint' => env('FCM_ENDPOINT'),
+        'project_id' => env('FCM_PROJECT_ID'),
+        'access_token' => env('FCM_ACCESS_TOKEN'),
     ],
 
     'webhooks' => [
@@ -24,5 +24,5 @@ return [
         // 'report.status_changed' => env('WEBHOOK_REPORT_STATUS', ''),
     ],
 
-    'webhook_secret' => env('WEBHOOK_SECRET', 'stub-webhook-secret'),
+    'webhook_secret' => env('WEBHOOK_SECRET'),
 ];

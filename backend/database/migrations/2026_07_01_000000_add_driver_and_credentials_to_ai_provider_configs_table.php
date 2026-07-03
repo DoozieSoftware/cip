@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Schema;
  * right `AIProviderInterface` implementation for a row at runtime.
  *
  *  - `driver`         type discriminator consumed by AiProviderFactory
- *                     (`mock` | `qwen_vl` | `openai_compatible`)
+ *                     (`qwen_vl` | `openai_compatible`)
  *  - `extra_headers`  json, nullable — static headers a custom
  *                     OpenAI-compatible endpoint needs (e.g.
  *                     OpenRouter's `HTTP-Referer`/`X-Title`)
