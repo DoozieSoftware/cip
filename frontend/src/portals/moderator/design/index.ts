@@ -11,3 +11,5 @@ export { EmptyState } from './EmptyState';
 export { cx } from './cx';
 export { ErrorState } from './ErrorState';
 export { ErrorBoundary } from './ErrorBoundary';
+export { SidebarLayout } from './SidebarLayout';
+export type { SidebarLayoutProps, SidebarNavItem } from './SidebarLayout';
