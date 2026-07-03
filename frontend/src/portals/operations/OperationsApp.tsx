@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { OperationsLayout } from './layout/OperationsLayout';
 import { Spinner } from './design';
 
@@ -23,23 +23,21 @@ function Fallback() {
 
 export function OperationsApp() {
   return (
-    <BrowserRouter>
-      <Suspense fallback={<Fallback />}>
-        <Routes>
-          <Route element={<OperationsLayout />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="reports" element={<ReportListPage />} />
-            <Route path="reports/export" element={<ExportPage />} />
-            <Route path="reports/:id" element={<ReportDetailPage />} />
-            <Route path="map" element={<GisMapPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="audit" element={<AuditLogPage />} />
-            <Route path="security" element={<SecurityPage />} />
-            <Route path="admin" element={<AdminPage />} />
-            <Route path="*" element={<Navigate to="/operations" replace />} />
-          </Route>
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+    <Suspense fallback={<Fallback />}>
+      <Routes>
+        <Route element={<OperationsLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="reports" element={<ReportListPage />} />
+          <Route path="reports/export" element={<ExportPage />} />
+          <Route path="reports/:id" element={<ReportDetailPage />} />
+          <Route path="map" element={<GisMapPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="audit" element={<AuditLogPage />} />
+          <Route path="security" element={<SecurityPage />} />
+          <Route path="admin" element={<AdminPage />} />
+          <Route path="*" element={<Navigate to="/operations" replace />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }

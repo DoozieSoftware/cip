@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { ModeratorLayout } from './layout/ModeratorLayout';
 import { Spinner } from './design';
 
@@ -21,21 +21,19 @@ function Fallback() {
 
 export function ModeratorApp() {
   return (
-    <BrowserRouter>
-      <Suspense fallback={<Fallback />}>
-        <Routes>
-          <Route element={<ModeratorLayout />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="queue" element={<ReviewQueuePage />} />
-            <Route path="duplicates" element={<DuplicatesQueuePage />} />
-            <Route path="fraud" element={<FraudQueuePage />} />
-            <Route path="reports/:id" element={<ReportDetailPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="ai-performance" element={<AiPerformancePage />} />
-            <Route path="*" element={<Navigate to="/moderator" replace />} />
-          </Route>
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+    <Suspense fallback={<Fallback />}>
+      <Routes>
+        <Route element={<ModeratorLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="queue" element={<ReviewQueuePage />} />
+          <Route path="duplicates" element={<DuplicatesQueuePage />} />
+          <Route path="fraud" element={<FraudQueuePage />} />
+          <Route path="reports/:id" element={<ReportDetailPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="ai-performance" element={<AiPerformancePage />} />
+          <Route path="*" element={<Navigate to="/moderator" replace />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }

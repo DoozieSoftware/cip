@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { type JSX } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { AdminLayout } from './layout/AdminLayout';
 import { Spinner } from '../moderator/design';
 
@@ -32,31 +32,29 @@ function Fallback() {
 
 export function AdminApp(): JSX.Element {
   return (
-    <BrowserRouter>
-      <Suspense fallback={<Fallback />}>
-        <Routes>
-          <Route element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="roles" element={<AdminRoles />} />
-            <Route path="report-types" element={<AdminReportTypes />} />
-            <Route path="security-policies" element={<AdminSecurityPolicies />} />
-            <Route path="feature-flags" element={<AdminFeatureFlags />} />
-            <Route path="audit" element={<AdminAuditLog />} />
-            <Route path="health" element={<AdminPlatformHealth />} />
-            <Route path="scheduler" element={<AdminScheduler />} />
-            <Route path="integrations" element={<AdminIntegrations />} />
-            <Route path="storage" element={<AdminStorage />} />
-            <Route path="notifications" element={<AdminNotificationConfigs />} />
-            <Route path="ai" element={<AdminAi />} />
-            <Route path="routing-rules" element={<AdminRoutingRules />} />
-            <Route path="workflows" element={<AdminWorkflows />} />
-            <Route path="retention" element={<AdminDataRetention />} />
-            <Route path="system" element={<AdminSystemConfig />} />
-            <Route path="*" element={<Navigate to="/admin" replace />} />
-          </Route>
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+    <Suspense fallback={<Fallback />}>
+      <Routes>
+        <Route element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="roles" element={<AdminRoles />} />
+          <Route path="report-types" element={<AdminReportTypes />} />
+          <Route path="security-policies" element={<AdminSecurityPolicies />} />
+          <Route path="feature-flags" element={<AdminFeatureFlags />} />
+          <Route path="audit" element={<AdminAuditLog />} />
+          <Route path="health" element={<AdminPlatformHealth />} />
+          <Route path="scheduler" element={<AdminScheduler />} />
+          <Route path="integrations" element={<AdminIntegrations />} />
+          <Route path="storage" element={<AdminStorage />} />
+          <Route path="notifications" element={<AdminNotificationConfigs />} />
+          <Route path="ai" element={<AdminAi />} />
+          <Route path="routing-rules" element={<AdminRoutingRules />} />
+          <Route path="workflows" element={<AdminWorkflows />} />
+          <Route path="retention" element={<AdminDataRetention />} />
+          <Route path="system" element={<AdminSystemConfig />} />
+          <Route path="*" element={<Navigate to="/admin" replace />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
