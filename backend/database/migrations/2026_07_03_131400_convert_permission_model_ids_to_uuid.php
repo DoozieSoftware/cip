@@ -13,6 +13,7 @@ return new class extends Migration
             return;
         }
 
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
         DB::statement('ALTER TABLE model_has_roles DROP PRIMARY KEY');
         DB::statement('DROP INDEX model_has_roles_model_id_model_type_index ON model_has_roles');
         DB::statement('ALTER TABLE model_has_roles MODIFY model_id CHAR(36) NOT NULL');
@@ -24,6 +25,7 @@ return new class extends Migration
         DB::statement('ALTER TABLE model_has_permissions MODIFY model_id CHAR(36) NOT NULL');
         DB::statement('ALTER TABLE model_has_permissions ADD PRIMARY KEY (permission_id, model_id, model_type)');
         DB::statement('CREATE INDEX model_has_permissions_model_id_model_type_index ON model_has_permissions (model_id, model_type)');
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
     }
 
     public function down(): void
@@ -32,6 +34,7 @@ return new class extends Migration
             return;
         }
 
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
         DB::statement('ALTER TABLE model_has_roles DROP PRIMARY KEY');
         DB::statement('DROP INDEX model_has_roles_model_id_model_type_index ON model_has_roles');
         DB::statement('ALTER TABLE model_has_roles MODIFY model_id BIGINT UNSIGNED NOT NULL');
@@ -43,5 +46,6 @@ return new class extends Migration
         DB::statement('ALTER TABLE model_has_permissions MODIFY model_id BIGINT UNSIGNED NOT NULL');
         DB::statement('ALTER TABLE model_has_permissions ADD PRIMARY KEY (permission_id, model_id, model_type)');
         DB::statement('CREATE INDEX model_has_permissions_model_id_model_type_index ON model_has_permissions (model_id, model_type)');
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
     }
 };
