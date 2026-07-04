@@ -37,22 +37,22 @@ jobs:
           echo "Restoring DB credentials on production..."
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             $REMOTE "cd ~/cip && \
-              cp .env .env.broken && \
+              cp .env .env.bak; \
               while IFS='=' read -r key value; do \
                 case \"\$key\" in \
-                  DB_DATABASE) echo \"DB_DATABASE=$DB_NAME\" >> /tmp/db_fix ;; \
-                  DB_USERNAME) echo \"DB_USERNAME=$DB_USER\" >> /tmp/db_fix ;; \
-                  DB_PASSWORD) echo \"DB_PASSWORD=$DB_PASS\" >> /tmp/db_fix ;; \
+                  DB_DATABASE) echo 'DB_DATABASE=$DB_NAME' >> /tmp/db_fix ;; \
+                  DB_USERNAME) echo 'DB_USERNAME=$DB_USER' >> /tmp/db_fix ;; \
+                  DB_PASSWORD) echo 'DB_PASSWORD=\"$DB_PASS\"' >> /tmp/db_fix ;; \
                 esac; \
               done < .env.cpanel; \
               cp .env .env.bak; \
               while IFS='=' read -r key value; do \
                 if [ \"\$key\" = 'DB_DATABASE' ]; then \
-                  echo \"DB_DATABASE=$DB_NAME\"; \
+                  echo 'DB_DATABASE=$DB_NAME'; \
                 elif [ \"\$key\" = 'DB_USERNAME' ]; then \
-                  echo \"DB_USERNAME=$DB_USER\"; \
+                  echo 'DB_USERNAME=$DB_USER'; \
                 elif [ \"\$key\" = 'DB_PASSWORD' ]; then \
-                  echo \"DB_PASSWORD=$DB_PASS\"; \
+                  echo 'DB_PASSWORD=\"$DB_PASS\"'; \
                 else \
                   echo \"\$key=\$value\"; \
                 fi; \
