@@ -120,6 +120,12 @@ class OpenAICompatibleProvider implements AIProviderInterface
             throw new RuntimeException('openai_compatible_error: missing message content');
         }
 
+        // Strip markdown code fences (```json ... ``` or ``` ... ```)
+        // that some VL models wrap around JSON responses.
+        if (preg_match('/```(?:json)?\s*(.+?)\s*```/s', $content, $m)) {
+            $content = $m[1];
+        }
+
         $decoded = json_decode($content, true);
 
         if (! is_array($decoded)) {
