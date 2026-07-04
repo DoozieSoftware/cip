@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react';
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { cx } from '../../moderator/design/cx';
 import { mockGpsLikely, type MockGpsResult } from '../security/mockGps';
 
@@ -32,16 +32,12 @@ export function GpsCapture(props: GpsCaptureProps): JSX.Element {
   const { onCapture, maxAccuracyM = 100, className, watch = false } = props;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<Array<{ altitude: number | null }>>([]);
+  const historyRef = useRef<Array<{ altitude: number | null }>>([]);
   const [lastResult, setLastResult] = useState<MockGpsResult | null>(null);
 
-  useEffect(() => {
-    detect();
-  }, []);
-
-  function handlePosition(pos: GeolocationPosition): void {
-    const hist = [...history, { altitude: pos.coords.altitude }].slice(-5);
-    setHistory(hist);
+  const handlePosition = useCallback((pos: GeolocationPosition): void => {
+    const hist = [...historyRef.current, { altitude: pos.coords.altitude }].slice(-5);
+    historyRef.current = hist;
     const mock = mockGpsLikely(pos, hist.slice(0, -1));
     setLastResult(mock);
     if (pos.coords.accuracy > maxAccuracyM) {
@@ -56,9 +52,9 @@ export function GpsCapture(props: GpsCaptureProps): JSX.Element {
       captured_at: pos.timestamp,
       mock_heuristic: mock,
     });
-  }
+  }, [maxAccuracyM, onCapture]);
 
-  function detect(): void {
+  const detect = useCallback((): void => {
     if (!('geolocation' in navigator)) {
       setError('Geolocation not supported in this browser.');
       return;
@@ -75,7 +71,11 @@ export function GpsCapture(props: GpsCaptureProps): JSX.Element {
       },
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
     );
-  }
+  }, [handlePosition]);
+
+  useEffect(() => {
+    detect();
+  }, [detect]);
 
   return (
     <div className={cx('space-y-2', className)}>
@@ -84,9 +84,9 @@ export function GpsCapture(props: GpsCaptureProps): JSX.Element {
           type="button"
           onClick={detect}
           disabled={busy}
-          className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:bg-emerald-300"
+          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:bg-blue-300"
         >
-          📍 {busy ? 'Locating…' : 'Use my location'}
+          ⌖ {busy ? 'Locating…' : 'Use my location'}
         </button>
         {lastResult && lastResult.accuracy_m !== null ? (
           <span className="text-xs text-slate-600">last fix ±{Math.round(lastResult.accuracy_m)} m</span>

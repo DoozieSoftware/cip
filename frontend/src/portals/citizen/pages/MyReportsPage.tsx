@@ -1,26 +1,8 @@
 import { Link } from 'react-router-dom';
 import { type JSX } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../../../auth/AuthContext';
-import { apiRequest, type ApiEnvelope } from '../../../auth/api';
 import { EmptyState } from '../../moderator/design';
 
-interface MeResponse {
-  id: string;
-  name?: string | null;
-  mobile?: string | null;
-}
-
 export default function MyReportsPage(): JSX.Element {
-  const { user } = useAuth();
-  const me = useQuery({
-    queryKey: ['me'],
-    queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<MeResponse>>('/auth/me');
-      return res.data;
-    },
-  });
-
   return (
     <div className="space-y-5">
       <header className="flex items-end justify-between">
@@ -30,7 +12,7 @@ export default function MyReportsPage(): JSX.Element {
         </div>
         <Link
           to="/citizen/submit"
-          className="rounded-full bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+          className="rounded-md bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
         >
           + New
         </Link>
@@ -42,16 +24,12 @@ export default function MyReportsPage(): JSX.Element {
         action={
           <Link
             to="/citizen/submit"
-            className="mt-2 rounded-full bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+            className="mt-2 rounded-md bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
           >
             Report an issue
           </Link>
         }
       />
-
-      <p className="text-xs text-slate-500">
-        Signed in as <span className="font-mono">{user?.mobile}</span>. User ID: <span className="font-mono">{me.data?.id ?? '…'}</span>
-      </p>
     </div>
   );
 }

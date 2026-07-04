@@ -63,7 +63,7 @@ export default function DashboardPage(): JSX.Element {
 
       <Link
         to="/citizen/submit"
-        className="block rounded-xl bg-emerald-600 px-5 py-4 text-center text-base font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+        className="block rounded-lg bg-blue-600 px-5 py-4 text-center text-base font-semibold text-white shadow-sm transition hover:bg-blue-700"
       >
         + Report a new issue
       </Link>
@@ -78,7 +78,7 @@ export default function DashboardPage(): JSX.Element {
               title="No reports yet"
               description="Your submitted reports will appear here."
               action={
-                <Link to="/citizen/submit" className="mt-2 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700">
+                <Link to="/citizen/submit" className="mt-2 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">
                   Report your first issue
                 </Link>
               }

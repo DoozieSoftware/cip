@@ -83,14 +83,33 @@ export default function SubmitPage(): JSX.Element {
   const selectedType: ReportType | undefined = types.data?.find((t) => t.id === typeId);
 
   return (
-    <form onSubmit={(e) => void onSubmit(e)} className="space-y-5">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-900">Report an issue</h1>
-        <p className="text-sm text-slate-600">Add a photo, pick a category, tag the location. The rest is automatic.</p>
+    <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
+      <header className="rounded-lg border border-slate-200 bg-white p-4">
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => void navigate('/citizen')}
+            className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-xl text-blue-700 hover:bg-slate-50"
+            aria-label="Back to citizen home"
+          >
+            ‹
+          </button>
+          <div className="text-center">
+            <h1 className="text-lg font-bold text-slate-950">New Report</h1>
+            <p className="text-xs text-slate-500">Step 2 of 4</p>
+          </div>
+          <span aria-hidden className="h-9 w-9" />
+        </div>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full w-2/3 rounded-full bg-blue-600" />
+        </div>
       </header>
 
-      <section>
-        <h2 className="text-sm font-semibold text-slate-700">1 · Category</h2>
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-950">Issue details</h2>
+          {selectedType && <span className="text-xs text-slate-500">{selectedType.name}</span>}
+        </div>
         {types.isLoading ? (
           <Spinner label="Loading categories" />
         ) : (
@@ -101,9 +120,9 @@ export default function SubmitPage(): JSX.Element {
                 type="button"
                 onClick={() => setTypeId(t.id)}
                 className={cx(
-                  'flex items-center gap-2 rounded-xl border p-3 text-left text-sm transition',
+                  'flex items-center gap-2 rounded-lg border p-3 text-left text-sm transition',
                   typeId === t.id
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-800 ring-1 ring-emerald-300'
+                    ? 'border-blue-500 bg-blue-50 text-blue-800 ring-1 ring-blue-200'
                     : 'border-slate-200 bg-white hover:border-slate-300',
                 )}
               >
@@ -114,19 +133,15 @@ export default function SubmitPage(): JSX.Element {
           </div>
         )}
         {selectedType && (
-          <p className="mt-2 text-xs text-slate-500">
-            {selectedType.requires_photo ? 'Photo required.' : 'Photo optional.'} {selectedType.requires_video ? 'Video required.' : ''}
+          <p className="mt-2 inline-flex rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
+            {selectedType.requires_photo ? 'Evidence required' : 'Evidence optional'} {selectedType.requires_video ? '· Video required' : ''}
           </p>
         )}
-      </section>
-
-      <section>
-        <h2 className="text-sm font-semibold text-slate-700">2 · Title and description</h2>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Big pothole near MG Road metro gate 3"
-          className="mt-2 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+          className="mt-3 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-blue-500 focus:ring-blue-500"
           required
         />
         <textarea
@@ -134,16 +149,21 @@ export default function SubmitPage(): JSX.Element {
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
           placeholder="Affects traffic; vehicles swerve into the bus lane. Approx 80 cm wide."
-          className="mt-2 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+          className="mt-2 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-blue-500 focus:ring-blue-500"
           required
         />
       </section>
 
-      <section>
-        <h2 className="text-sm font-semibold text-slate-700">3 · Location</h2>
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-950">Location</h2>
+          {location !== null && (
+            <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">GPS verified</span>
+          )}
+        </div>
         <GpsCapture onCapture={setLocation} className="mt-2" />
         {location !== null && (
-          <span className="text-xs text-slate-600">
+          <span className="mt-2 block text-xs text-slate-600">
             {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
             {location.accuracy_m !== null && ` (±${Math.round(location.accuracy_m)} m)`}
           </span>
@@ -152,19 +172,24 @@ export default function SubmitPage(): JSX.Element {
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           placeholder="Landmark / address (optional, helps the officer)"
-          className="mt-2 block w-full rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+          className="mt-2 block w-full rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
         />
       </section>
 
-      <section>
-        <h2 className="text-sm font-semibold text-slate-700">4 · Photo / video evidence</h2>
-        <p className="text-xs text-slate-500">Up to 5 photos and 1 short video. Each up to 25 MB.</p>
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-950">Evidence</h2>
+            <p className="text-xs text-slate-500">Up to 5 photos and 1 short video. Each up to 25 MB.</p>
+          </div>
+          <span className="rounded-full border border-red-200 px-2 py-1 text-xs font-semibold text-red-600">Required</span>
+        </div>
         <div className="mt-2 space-y-3">
           <CameraCapture mode="photo" onCapture={(f) => setFiles((prev) => [...prev, f].slice(0, 5))} onError={onCameraError} />
           <button
             type="button"
             onClick={() => setShowVideo((v) => !v)}
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="w-full rounded-md border border-blue-600 bg-white px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
           >
             {showVideo ? 'Hide video recorder' : 'Add a short video (optional)'}
           </button>
@@ -208,7 +233,7 @@ export default function SubmitPage(): JSX.Element {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:bg-emerald-300"
+        className="w-full rounded-lg bg-blue-600 px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:bg-blue-300"
       >
         {submitting ? 'Submitting…' : 'Submit report'}
       </button>

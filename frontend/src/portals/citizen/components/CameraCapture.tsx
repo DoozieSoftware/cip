@@ -126,7 +126,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     rec.ondataavailable = (e: BlobEvent) => {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
-    rec.onstop = async () => {
+    rec.onstop = () => {
       const duration = Date.now() - startedAtRef.current;
       const result = guardVideoDuration(duration, videoMinMs, videoMaxMs);
       if (!result.ok) {
@@ -157,7 +157,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
 
   return (
     <div className={cx('space-y-3', className)}>
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-900">
+      <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900">
         <video
           ref={videoRef}
           playsInline
@@ -166,7 +166,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
         />
         {!active ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-300">
-            <span aria-hidden className="text-4xl">📷</span>
+            <span aria-hidden className="text-4xl">◎</span>
             <p className="text-sm">Camera off</p>
           </div>
         ) : null}
@@ -175,7 +175,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
             aria-live="polite"
             className={cx(
               'absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs text-white',
-              recordingMs > videoMaxMs - 1000 ? 'text-rose-300' : 'text-emerald-300',
+              recordingMs > videoMaxMs - 1000 ? 'text-rose-300' : 'text-blue-300',
             )}
           >
             ● {(recordingMs / 1000).toFixed(1)}s
@@ -194,7 +194,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
           <button
             type="button"
             onClick={() => void startCamera()}
-            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
           >
             {mode === 'photo' ? 'Open camera' : 'Open camera'}
           </button>
@@ -202,10 +202,10 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
           <button
             type="button"
             onClick={() => void takePhoto()}
-            className="rounded-full bg-white p-4 shadow ring-2 ring-emerald-500 transition hover:bg-emerald-50"
+            className="rounded-full bg-white p-4 shadow ring-2 ring-blue-500 transition hover:bg-blue-50"
             aria-label="Take photo"
           >
-            <span aria-hidden className="block h-12 w-12 rounded-full bg-emerald-600" />
+            <span aria-hidden className="block h-12 w-12 rounded-full bg-blue-600" />
           </button>
         ) : recorderRef.current?.state === 'recording' ? (
           <button

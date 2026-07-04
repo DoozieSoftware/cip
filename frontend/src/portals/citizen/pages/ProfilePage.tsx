@@ -6,7 +6,7 @@ import { apiRequest, type ApiEnvelope } from '../../../auth/api';
 import { Spinner } from '../../moderator/design';
 
 export default function ProfilePage(): JSX.Element {
-  const { user, token, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const me = useQuery({
     queryKey: ['me'],
@@ -26,7 +26,7 @@ export default function ProfilePage(): JSX.Element {
       {me.isLoading ? (
         <Spinner label="Loading profile" />
       ) : (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="rounded-lg border border-slate-200 bg-white p-5">
           <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-xs text-slate-500">Name</dt>
@@ -44,13 +44,9 @@ export default function ProfilePage(): JSX.Element {
               <dt className="text-xs text-slate-500">Roles</dt>
               <dd className="flex flex-wrap gap-1">
                 {(me.data?.roles ?? []).map((r) => (
-                  <span key={r} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{r}</span>
+                  <span key={r} className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">{r}</span>
                 ))}
               </dd>
-            </div>
-            <div className="sm:col-span-2">
-              <dt className="text-xs text-slate-500">Auth token (first 24)</dt>
-              <dd className="break-all font-mono text-xs text-slate-500">{token ? `${token.slice(0, 24)}…` : '—'}</dd>
             </div>
           </dl>
         </section>
@@ -59,7 +55,7 @@ export default function ProfilePage(): JSX.Element {
       <button
         type="button"
         onClick={() => { logout(); void navigate('/'); }}
-        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
       >
         Sign out
       </button>

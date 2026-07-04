@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { type JSX } from 'react';
 import { useReportDetail, useReportTimeline } from '../api/client';
 import { Spinner, EmptyState } from '../../moderator/design';
+import { StatusBadge } from '../components/StatusBadge';
 
 export default function ReportDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -12,11 +13,11 @@ export default function ReportDetailPage(): JSX.Element {
   if (detail.error || !detail.data) {
     const msg = detail.error instanceof Error ? detail.error.message : "Maybe it was deleted or you don't have access.";
     return (
-      <EmptyState
-        title="Couldn't load this report"
-        description={msg}
-        action={
-          <Link to="/citizen" className="mt-2 rounded-full bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white">
+        <EmptyState
+          title="Couldn't load this report"
+          description={msg}
+          action={
+          <Link to="/citizen" className="mt-2 rounded-md bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white">
             Back to home
           </Link>
         }
@@ -27,55 +28,93 @@ export default function ReportDetailPage(): JSX.Element {
   const r = detail.data;
 
   return (
-    <div className="space-y-5">
-      <header>
-        <Link to="/citizen/reports" className="text-sm text-emerald-700 hover:underline">← My reports</Link>
-        <h1 className="mt-2 text-2xl font-bold text-slate-900">{r.title}</h1>
-        <p className="mt-1 text-sm text-slate-600">{r.description}</p>
+    <div className="space-y-4">
+      <header className="rounded-lg border border-slate-200 bg-white p-4">
+        <div className="flex items-center justify-between gap-3">
+          <Link to="/citizen/reports" className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-xl text-blue-700 hover:bg-slate-50" aria-label="Back to reports">
+            ‹
+          </Link>
+          <div className="text-center">
+            <h1 className="text-lg font-bold text-slate-950">Report details</h1>
+            <p className="text-xs text-slate-500">Track report</p>
+          </div>
+          <span aria-hidden className="h-9 w-9" />
+        </div>
+
+        <div className="mt-4 flex gap-3">
+          <div className="grid h-20 w-24 shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-2xl text-slate-400">
+            {r.media[0]?.signed_url || r.media[0]?.url ? (
+              <img src={r.media[0].signed_url ?? r.media[0].url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span aria-hidden>▧</span>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base font-bold text-slate-950">{r.title}</h2>
+            <p className="mt-0.5 text-xs font-semibold text-blue-700">#{r.id.slice(0, 8).toUpperCase()}</p>
+            <p className="mt-1 line-clamp-2 text-sm text-slate-600">{r.description}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <StatusBadge status={r.status} />
+              <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">GPS verified</span>
+            </div>
+          </div>
+        </div>
+
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">{r.type?.name}</span>
           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">{r.priority?.name}</span>
-          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-800">{r.status?.name}</span>
           {r.assigned_department && (
-            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-indigo-800">→ {r.assigned_department.name}</span>
+            <span className="rounded-full bg-cyan-50 px-2 py-0.5 text-cyan-800">Assigned to {r.assigned_department.name}</span>
           )}
         </div>
       </header>
 
       {r.ai_summary && (
-        <section className="rounded-2xl border border-violet-200 bg-violet-50/60 p-4">
-          <h2 className="text-sm font-semibold text-violet-900">AI analysis</h2>
+        <section className="rounded-lg border border-cyan-200 bg-cyan-50/60 p-4">
+          <h2 className="text-sm font-semibold text-cyan-950">AI insights</h2>
           {r.ai_summary.labels && r.ai_summary.labels.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {r.ai_summary.labels.map((l) => (
-                <span key={l.name} className="rounded-full bg-white px-2 py-0.5 text-xs text-violet-800 ring-1 ring-violet-200">
+                <span key={l.name} className="rounded-full bg-white px-2 py-0.5 text-xs text-cyan-800 ring-1 ring-cyan-200">
                   {l.name} · {Math.round(l.confidence * 100)}%
                 </span>
               ))}
             </div>
           )}
           {r.ai_summary.recommended_department && (
-            <p className="mt-2 text-xs text-violet-900">Suggested: <strong>{r.ai_summary.recommended_department.name}</strong></p>
+            <p className="mt-2 text-xs text-cyan-950">Suggested department: <strong>{r.ai_summary.recommended_department.name}</strong></p>
           )}
           {typeof r.ai_summary.fraud_score === 'number' && (
-            <p className="mt-1 text-xs text-violet-900">Fraud score: <strong>{Math.round(r.ai_summary.fraud_score * 100)}%</strong></p>
+            <p className="mt-1 text-xs text-cyan-950">Evidence review score: <strong>{Math.round(r.ai_summary.fraud_score * 100)}%</strong></p>
           )}
+          <p className="mt-3 rounded-md border border-cyan-200 bg-white px-3 py-2 text-xs text-cyan-950">
+            AI insights are informational only. A moderator or department officer reviews the report.
+          </p>
         </section>
       )}
 
-      <section>
-        <h2 className="text-sm font-semibold text-slate-700">Timeline</h2>
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
+        <div className="grid grid-cols-2 border-b border-slate-200 text-center text-sm font-semibold">
+          <span className="border-b-2 border-blue-600 pb-2 text-blue-700">Timeline</span>
+          <span className="pb-2 text-slate-500">Details</span>
+        </div>
         {timeline.isLoading ? (
-          <Spinner label="Loading timeline" />
+          <div className="py-8"><Spinner label="Loading timeline" /></div>
         ) : (
-          <ol className="mt-3 space-y-3 border-l-2 border-slate-200 pl-5">
+          <ol className="mt-4 space-y-5 border-l-2 border-slate-200 pl-5">
             {(timeline.data ?? []).map((t, i) => (
               <li key={i} className="relative">
-                <span aria-hidden className="absolute -left-[27px] grid h-4 w-4 place-items-center rounded-full bg-emerald-500 ring-4 ring-white" />
-                <div className="text-sm font-semibold text-slate-900">{t.event}</div>
+                <span
+                  aria-hidden
+                  className={`absolute -left-[29px] grid h-5 w-5 place-items-center rounded-full ring-4 ring-white ${i === 0 ? 'bg-amber-500' : 'bg-cyan-500'}`}
+                />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="text-sm font-semibold text-slate-900">{t.event}</div>
+                  <div className="shrink-0 text-xs text-slate-400">{new Date(t.at).toLocaleDateString()}</div>
+                </div>
                 {t.actor && <div className="text-xs text-slate-500">{t.actor}</div>}
                 {t.note && <div className="text-sm text-slate-700">{t.note}</div>}
-                <div className="text-xs text-slate-400">{new Date(t.at).toLocaleString()}</div>
+                <div className="text-xs text-slate-400">{new Date(t.at).toLocaleTimeString()}</div>
               </li>
             ))}
           </ol>
@@ -83,8 +122,8 @@ export default function ReportDetailPage(): JSX.Element {
       </section>
 
       {r.location && (
-        <section>
-          <h2 className="text-sm font-semibold text-slate-700">Location</h2>
+        <section className="rounded-lg border border-slate-200 bg-white p-4">
+          <h2 className="text-sm font-semibold text-slate-950">Location</h2>
           <p className="mt-1 text-sm text-slate-700">
             {r.location.latitude.toFixed(5)}, {r.location.longitude.toFixed(5)}
             {r.location.address && ` — ${r.location.address}`}

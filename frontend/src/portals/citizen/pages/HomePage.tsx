@@ -4,6 +4,7 @@ import { useAuth } from '../../../auth/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest, type ApiEnvelope } from '../../../auth/api';
 import { Spinner } from '../../moderator/design';
+import { getQueue } from '../offline/queue';
 
 interface ProfileResponse {
   id: string;
@@ -14,7 +15,7 @@ interface ProfileResponse {
 }
 
 export default function HomePage(): JSX.Element {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const me = useQuery({
     queryKey: ['me'],
     queryFn: async () => {
@@ -22,51 +23,86 @@ export default function HomePage(): JSX.Element {
       return res.data;
     },
   });
+  const queue = useQuery({
+    queryKey: ['citizen', 'queue', 'size'],
+    queryFn: async () => getQueue().size(),
+    refetchInterval: 5_000,
+  });
+
+  const queueSize = queue.data ?? 0;
 
   return (
-    <div className="space-y-6">
-      <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600 p-6 text-white shadow-lg sm:p-8">
-        <div className="relative">
-          <h1 className="text-2xl font-bold sm:text-3xl">
-            Namaskara{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋
-          </h1>
-          <p className="mt-2 text-sm text-emerald-50 sm:text-base">
-            See an issue in your ward? Snap it, tag it, send it. The right department picks it up.
-          </p>
+    <div className="space-y-4">
+      <section className="rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase text-slate-500">Good morning</p>
+            <h1 className="mt-1 text-xl font-bold text-slate-950 sm:text-2xl">
+              {user?.name ? user.name.split(' ')[0] : 'Citizen'} dashboard
+            </h1>
+            <p className="mt-1 text-sm text-slate-600">Capture an issue, verify the location, and track department action.</p>
+          </div>
           <Link
-            to="/citizen/submit"
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-50"
+            to="/citizen/notifications"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-slate-200 text-lg text-slate-600 hover:bg-slate-50"
+            aria-label="Open updates"
           >
-            📷  Report an issue
+            ◉
           </Link>
         </div>
+
+        <Link
+          to="/citizen/submit"
+          className="mt-4 flex items-center justify-between rounded-lg bg-blue-600 px-4 py-4 text-white transition hover:bg-blue-700"
+        >
+          <span className="flex items-center gap-3">
+            <span aria-hidden className="grid h-11 w-11 place-items-center rounded-lg bg-white/15 text-2xl">◎</span>
+            <span>
+              <span className="block text-base font-semibold">New Report</span>
+              <span className="block text-xs text-blue-100">Capture an issue in your area</span>
+            </span>
+          </span>
+          <span aria-hidden className="text-xl">›</span>
+        </Link>
       </section>
 
-      <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Quick actions</h2>
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-slate-950">Overview</h2>
+          <span className="text-xs text-slate-500">Today</span>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
-            { to: '/citizen/submit', label: 'New report', emoji: '📷', tint: 'bg-rose-50 text-rose-700' },
-            { to: '/citizen/reports', label: 'My reports', emoji: '📋', tint: 'bg-blue-50 text-blue-700' },
-            { to: '/citizen/notifications', label: 'Updates', emoji: '🔔', tint: 'bg-amber-50 text-amber-700' },
-            { to: '/citizen/profile', label: 'Profile', emoji: '👤', tint: 'bg-violet-50 text-violet-700' },
-          ].map((c) => (
-            <Link
-              key={c.to}
-              to={c.to}
-              className="group flex flex-col items-start gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-emerald-300 hover:shadow"
-            >
-              <span aria-hidden className={`grid h-10 w-10 place-items-center rounded-xl text-lg ${c.tint}`}>
-                {c.emoji}
+            { label: 'My Reports', value: '12', tone: 'bg-blue-50 text-blue-700', icon: '▤' },
+            { label: 'Resolved', value: '5', tone: 'bg-green-50 text-green-700', icon: '✓' },
+            { label: 'Pending', value: '4', tone: 'bg-amber-50 text-amber-700', icon: '◷' },
+            { label: 'Drafts', value: String(queueSize), tone: 'bg-slate-100 text-slate-700', icon: '□' },
+          ].map((item) => (
+            <div key={item.label} className="rounded-lg border border-slate-200 p-3">
+              <span aria-hidden className={`grid h-8 w-8 place-items-center rounded-full text-sm font-bold ${item.tone}`}>
+                {item.icon}
               </span>
-              <span className="text-sm font-semibold text-slate-900 group-hover:text-emerald-700">{c.label}</span>
-            </Link>
+              <div className="mt-2 text-xl font-bold text-slate-950">{item.value}</div>
+              <div className="text-xs text-slate-500">{item.label}</div>
+            </div>
           ))}
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-3">
+          <div className="flex items-center gap-3">
+            <span aria-hidden className="grid h-10 w-10 place-items-center rounded-full bg-cyan-50 text-cyan-700">≈</span>
+            <div>
+              <div className="text-sm font-semibold text-slate-900">
+                {queueSize > 0 ? `${queueSize} waiting to sync` : 'Offline ready'}
+              </div>
+              <div className="text-xs text-slate-500">Reports sync when your connection is back.</div>
+            </div>
+          </div>
+          <span aria-hidden className="text-slate-400">›</span>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Your account</h2>
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-slate-950">Your account</h2>
         {me.isLoading ? (
           <div className="mt-3"><Spinner label="Loading profile" /></div>
         ) : me.data ? (
@@ -87,29 +123,23 @@ export default function HomePage(): JSX.Element {
               <dt className="text-xs text-slate-500">Roles</dt>
               <dd className="flex flex-wrap gap-1">
                 {me.data.roles.map((r) => (
-                  <span key={r} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{r}</span>
+                  <span key={r} className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">{r}</span>
                 ))}
               </dd>
             </div>
-            {token && (
-              <div className="sm:col-span-2">
-                <dt className="text-xs text-slate-500">Token (first 16 chars)</dt>
-                <dd className="break-all font-mono text-xs text-slate-500">{token.slice(0, 16)}…</dd>
-              </div>
-            )}
           </dl>
         ) : me.error ? (
           <p className="mt-2 text-sm text-red-600">Couldn't load profile.</p>
         ) : null}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">What happens after you submit</h2>
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-slate-950">What happens after you submit</h2>
         <ol className="mt-3 space-y-3 text-sm text-slate-700">
           <li className="flex gap-3">
-            <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full bg-emerald-100 text-xs font-semibold text-emerald-700">1</span>
+            <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700">1</span>
             <div>
-              <strong>AI vision classifies the report</strong> — picks a category, scores fraud, detects duplicates. Median 2-3 seconds.
+              <strong>Evidence is checked</strong> — photo, video, GPS and device signals are validated.
             </div>
           </li>
           <li className="flex gap-3">
@@ -121,13 +151,13 @@ export default function HomePage(): JSX.Element {
           <li className="flex gap-3">
             <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700">3</span>
             <div>
-              <strong>Routed to the right department</strong> — BBMP, BTP, BWSSB, BESCOM, etc. based on category + location.
+              <strong>Routed to the right department</strong> — assignment is based on category and location.
             </div>
           </li>
           <li className="flex gap-3">
-            <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full bg-violet-100 text-xs font-semibold text-violet-700">4</span>
+            <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full bg-green-100 text-xs font-semibold text-green-700">4</span>
             <div>
-              <strong>Department officer resolves</strong> — you'll get a push, SMS, and email when status changes.
+              <strong>Track every status change</strong> — updates appear here and in notifications.
             </div>
           </li>
         </ol>

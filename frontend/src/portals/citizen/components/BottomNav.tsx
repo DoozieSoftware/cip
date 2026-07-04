@@ -3,11 +3,11 @@ import { type JSX } from 'react';
 import { cx } from '../../moderator/design/cx';
 
 const NAV = [
-  { to: '/citizen', label: 'Home', icon: '🏠', end: true },
-  { to: '/citizen/submit', label: 'Report', icon: '➕' },
-  { to: '/citizen/reports', label: 'My reports', icon: '📋' },
-  { to: '/citizen/notifications', label: 'Alerts', icon: '🔔' },
-  { to: '/citizen/profile', label: 'Profile', icon: '👤' },
+  { to: '/citizen', label: 'Home', icon: '⌂', end: true },
+  { to: '/citizen/submit', label: 'Report', icon: '◎' },
+  { to: '/citizen/reports', label: 'Reports', icon: '▤' },
+  { to: '/citizen/notifications', label: 'Alerts', icon: '◉' },
+  { to: '/citizen/profile', label: 'Profile', icon: '□' },
 ];
 
 /**
@@ -32,7 +32,7 @@ export function BottomNav(): JSX.Element {
                 cx(
                   'flex h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium transition sm:h-auto sm:flex-row sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm',
                   isActive
-                    ? 'text-emerald-700 sm:border-b-2 sm:border-emerald-600'
+                    ? 'text-blue-700 sm:border-b-2 sm:border-blue-600'
                     : 'text-slate-500 hover:text-slate-900 sm:border-b-2 sm:border-transparent',
                 )
               }

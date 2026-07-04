@@ -67,7 +67,7 @@ export default function SettingsPage(): JSX.Element {
         <p className="mt-1 text-sm text-slate-600">Notification preferences, push, and account.</p>
       </header>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4">
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-700">Account</h2>
         <dl className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
           <div>
@@ -81,7 +81,7 @@ export default function SettingsPage(): JSX.Element {
         </dl>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4">
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-700">Push notifications</h2>
         <p className="mt-1 text-xs text-slate-500">
           We use push to tell you when a report changes status. You can disable it any time.
@@ -92,7 +92,7 @@ export default function SettingsPage(): JSX.Element {
             disabled={busy}
             onClick={() => void togglePush()}
             aria-pressed={pushOn}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${pushOn ? 'bg-emerald-500' : 'bg-slate-300'} disabled:opacity-50`}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${pushOn ? 'bg-blue-600' : 'bg-slate-300'} disabled:opacity-50`}
           >
             <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${pushOn ? 'translate-x-6' : 'translate-x-1'}`} />
           </button>
@@ -100,15 +100,15 @@ export default function SettingsPage(): JSX.Element {
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4">
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-700">Privacy &amp; legal</h2>
-        <ul className="mt-2 space-y-1 text-sm text-emerald-700">
+        <ul className="mt-2 space-y-1 text-sm text-blue-700">
           <li><a href="/legal/privacy" className="underline">Privacy policy</a></li>
           <li><a href="/legal/terms" className="underline">Terms of use</a></li>
         </ul>
       </section>
 
-      <section className="rounded-xl border border-rose-200 bg-rose-50 p-4">
+      <section className="rounded-lg border border-rose-200 bg-rose-50 p-4">
         <h2 className="text-sm font-semibold text-rose-700">Sign out</h2>
         <p className="mt-1 text-xs text-rose-600">Ends your session on this device.</p>
         <button
