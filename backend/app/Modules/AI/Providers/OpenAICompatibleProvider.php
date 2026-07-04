@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\AI\Providers;
 
 use App\Modules\AI\Contracts\AIProviderInterface;
+use App\Modules\AI\Models\PromptVersion;
 use App\Modules\AI\ValueObjects\AiRequest;
 use App\Modules\AI\ValueObjects\AiResponse;
 use Illuminate\Http\Client\Factory as HttpFactory;
@@ -132,7 +133,17 @@ class OpenAICompatibleProvider implements AIProviderInterface
     {
         $http = $this->http ?? Http::getFacadeRoot();
 
-        return $http->withToken($this->apiKey)->withHeaders($this->extraHeaders);
+        $client = $http->withHeaders($this->extraHeaders);
+
+        // Only send a Bearer token when an API key is configured.
+        // Modal.com endpoints authenticate via `Modal-Key`/`Modal-Secret`
+        // headers (passed in extraHeaders) and an empty `Authorization:
+        // Bearer` header can cause some gateways to reject the request.
+        if ($this->apiKey !== '') {
+            $client = $client->withToken($this->apiKey);
+        }
+
+        return $client;
     }
 
     /**
@@ -140,6 +151,23 @@ class OpenAICompatibleProvider implements AIProviderInterface
      */
     private function buildMessages(AiRequest $request): array
     {
+        // Resolve the prompt template from PromptVersion so the
+        // model receives the full classification instructions
+        // (category list, JSON schema, ANPR rules, etc.) — not
+        // just the raw report text.
+        $systemPrompt = 'You are the Civic Intelligence Platform vision engine. Respond with JSON only.';
+
+        if ($request->promptName !== '') {
+            $pv = PromptVersion::query()
+                ->where('name', $request->promptName)
+                ->orderByDesc('version')
+                ->first();
+
+            if ($pv !== null) {
+                $systemPrompt = $pv->prompt_text;
+            }
+        }
+
         $userContent = [];
 
         if ($request->text !== '') {
@@ -155,7 +183,7 @@ class OpenAICompatibleProvider implements AIProviderInterface
         }
 
         return [
-            ['role' => 'system', 'content' => 'You are the Civic Intelligence Platform vision engine. Respond with JSON only.'],
+            ['role' => 'system', 'content' => $systemPrompt],
             ['role' => 'user', 'content' => $userContent],
         ];
     }

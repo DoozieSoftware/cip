@@ -30,7 +30,7 @@ class UpdateAiProviderRequest extends FormRequest
             ])],
             'name' => ['sometimes', 'string', 'max:255'],
             'base_url' => ['sometimes', 'url'],
-            'auth_type' => ['sometimes', 'in:bearer,api_key,none'],
+            'auth_type' => ['sometimes', 'in:bearer,api_key,header,none'],
             'credentials' => ['nullable', 'array'],
             'credentials.api_key' => ['nullable', 'string'],
             'extra_headers' => ['nullable', 'array'],

@@ -12,9 +12,13 @@ use Illuminate\Database\Seeder;
  *  - `modal-vision` is the highest-priority active provider in
  *    pilot — it points at a Modal.com-hosted vLLM endpoint
  *    serving a vision-capable model (e.g. Qwen2.5-VL-7B-Instruct).
- *    The `credentials.api_key` is populated from
- *    `AI_MODAL_API_KEY` at seed time, or left null for the admin
- *    to configure via the portal.
+ *    Modal.com proxy auth uses `Modal-Key`/`Modal-Secret` headers
+ *    (not a Bearer token), so those are populated from
+ *    `AI_MODAL_KEY`/`AI_MODAL_SECRET` at seed time into
+ *    `extra_headers`. `credentials.api_key` is left null because
+ *    the OpenAICompatibleProvider's `withToken()` call would
+ *    otherwise send an empty `Authorization: Bearer` header that
+ *    some Modal gateways reject.
  *  - `qwen-vl` is present but inactive (DashScope direct).
  *  - `openai` is also present but inactive.
  *
@@ -32,11 +36,13 @@ class AiProvidersSeeder extends Seeder
                 'driver' => 'openai_compatible',
                 'name' => 'Modal Vision (vLLM)',
                 'base_url' => env('AI_MODAL_BASE_URL', 'https://akshayjoshi999--cpr-chatbot-vllm-serve.modal.run'),
-                'auth_type' => 'bearer',
-                'credentials' => env('AI_MODAL_API_KEY') !== null
-                    ? ['api_key' => env('AI_MODAL_API_KEY')]
-                    : null,
-                'model' => env('AI_MODAL_MODEL', 'Qwen/Qwen2.5-VL-7B-Instruct'),
+                'auth_type' => 'header',
+                'credentials' => null,
+                'extra_headers' => array_filter([
+                    'Modal-Key' => env('AI_MODAL_KEY'),
+                    'Modal-Secret' => env('AI_MODAL_SECRET'),
+                ], static fn ($v) => is_string($v) && $v !== ''),
+                'model' => env('AI_MODAL_MODEL', 'Qwen/Qwen2.5-3B-Instruct'),
                 'temperature' => 0.2,
                 'timeout_ms' => 60000,
                 'retry_count' => 2,

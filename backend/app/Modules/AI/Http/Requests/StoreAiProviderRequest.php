@@ -27,7 +27,7 @@ class StoreAiProviderRequest extends FormRequest
             ])],
             'name' => ['required', 'string', 'max:255'],
             'base_url' => ['required', 'url'],
-            'auth_type' => ['required', 'in:bearer,api_key,none'],
+            'auth_type' => ['required', 'in:bearer,api_key,header,none'],
             'credentials' => ['nullable', 'array'],
             'credentials.api_key' => ['nullable', 'string'],
             'extra_headers' => ['nullable', 'array'],
