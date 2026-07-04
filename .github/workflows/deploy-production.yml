@@ -97,23 +97,32 @@ jobs:
             deploy/staging/cip/ $REMOTE:~/cip/
 
           # Always copy the latest .env.cpanel template, then merge
-          # any keys from the existing server .env that are NOT in
-          # .env.cpanel (DB credentials, APP_KEY, etc). Keys present
-          # in .env.cpanel always take precedence so updates to
-          # endpoint URLs, model names, etc. propagate on deploy.
+          # with the existing server .env. Most keys (DB credentials,
+          # APP_KEY, etc.) are preserved from the server since
+          # .env.cpanel has placeholders. However, specific keys listed
+          # in FORCE_UPDATE_KEYS are always overwritten from .env.cpanel
+          # so that endpoint URLs, model names, and feature flags
+          # propagate on every deploy.
           scp -P $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             deploy/staging/cip/.env.cpanel $REMOTE:~/cip/.env.cpanel
 
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             $REMOTE "cd ~/cip && \
               if [ -f .env ]; then \
+                cp .env .env.bak; \
                 cp .env.cpanel .env.tmp; \
                 while IFS='=' read -r key value; do \
-                  if [ -n \"\$key\" ] && [ -n \"\$value\" ] && ! grep -q \"^\$key=\" .env.cpanel 2>/dev/null && grep -q \"^\$key=\" .env 2>/dev/null; then \
+                  if [ -n \"\$key\" ] && [ -n \"\$value\" ] && grep -q \"^\$key=\" .env 2>/dev/null; then \
                     existing=\$(grep \"^\$key=\" .env | head -1 | cut -d'=' -f2-); \
-                    echo \"\$key=\$existing\" >> .env.tmp; \
+                    sed -i \"s|^\$key=.*|\$key=\$existing|\" .env.tmp; \
                   fi; \
-                done < .env; \
+                done < .env.cpanel; \
+                for force_key in AI_MODAL_BASE_URL AI_MODAL_MODEL AI_DEFAULT_PROVIDER CIP_DEBUG_OTP; do \
+                  if grep -q \"^\$force_key=\" .env.cpanel 2>/dev/null; then \
+                    new_val=\$(grep \"^\$force_key=\" .env.cpanel | head -1 | cut -d'=' -f2-); \
+                    sed -i \"s|^\$force_key=.*|\$force_key=\$new_val|\" .env.tmp; \
+                  fi; \
+                done; \
                 cp .env.tmp .env; \
               else \
                 cp .env.cpanel .env; \
