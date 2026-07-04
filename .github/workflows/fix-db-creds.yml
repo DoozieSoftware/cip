@@ -38,7 +38,7 @@ jobs:
           cat > /tmp/fix_env.py << PYEOF
           import sys, os
           env_path = os.path.expanduser("~/cip/.env")
-          with open(env_path) as f:
+          with open(env_path, encoding="utf-8") as f:
               lines = f.readlines()
           out = []
           for line in lines:
@@ -51,7 +51,7 @@ jobs:
                   out.append('DB_PASSWORD="$DB_PASS"\n')
               else:
                   out.append(line)
-          with open(env_path, "w") as f:
+          with open(env_path, "w", encoding="utf-8") as f:
               f.writelines(out)
           print("Done - .env updated")
           PYEOF
