@@ -1,0 +1,65 @@
+name: Fix Production DB Credentials
+
+on:
+  workflow_dispatch:
+    inputs:
+      db_name:
+        description: 'MySQL database name'
+        required: true
+      db_user:
+        description: 'MySQL database user'
+        required: true
+      db_password:
+        description: 'MySQL database password'
+        required: true
+
+env:
+  PHP_VERSION: "8.4"
+
+jobs:
+  fix:
+    name: Restore DB Credentials & Reseed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore credentials and reseed
+        run: |
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" | tr -d '\r' > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+
+          SSH_PORT="${{ secrets.DEPLOY_PORT }}"
+          SSH_PORT="${SSH_PORT:-7822}"
+          REMOTE="${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
+          PHP_BIN="/opt/alt/php84/usr/bin/php"
+
+          DB_NAME="${{ github.event.inputs.db_name }}"
+          DB_USER="${{ github.event.inputs.db_user }}"
+          DB_PASS="${{ github.event.inputs.db_password }}"
+
+          echo "Restoring DB credentials on production..."
+          ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            $REMOTE "cd ~/cip && \
+              sed -i \"s|^DB_DATABASE=.*|DB_DATABASE=$DB_NAME|\" .env && \
+              sed -i \"s|^DB_USERNAME=.*|DB_USERNAME=$DB_USER|\" .env && \
+              sed -i \"s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASS|\" .env && \
+              cp .env .env.bak && \
+              echo 'DB credentials restored.' && \
+              grep '^DB_' .env && \
+              $PHP_BIN artisan config:clear 2>/dev/null && \
+              $PHP_BIN artisan migrate:fresh --seed --force && \
+              sleep 3 && \
+              $PHP_BIN artisan config:cache && \
+              $PHP_BIN artisan route:cache && \
+              $PHP_BIN artisan event:cache && \
+              echo 'Post-fix complete'"
+
+          rm -f /tmp/deploy_key
+
+      - name: Verify fix
+        run: |
+          echo "Waiting 10s for cache to settle..."
+          sleep 10
+          curl -s -X POST https://cip-api.dgisipl.com/api/v1/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"mobile":"9999900004","password":"demo1234"}' | python3 -m json.tool

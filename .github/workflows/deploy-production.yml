@@ -109,6 +109,17 @@ jobs:
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             $REMOTE "cd ~/cip && \
               if [ -f .env ]; then \
+                DB_CHECK=\$(grep '^DB_DATABASE=' .env | cut -d'=' -f2-); \
+                if echo \"\$DB_CHECK\" | grep -q 'YOUR_CPANEL'; then \
+                  echo 'WARNING: Current .env has placeholder DB creds. Restoring from .env.bak if available.'; \
+                  if [ -f .env.bak ]; then \
+                    BAK_DB=\$(grep '^DB_DATABASE=' .env.bak | cut -d'=' -f2-); \
+                    if ! echo \"\$BAK_DB\" | grep -q 'YOUR_CPANEL'; then \
+                      echo 'Restoring .env from .env.bak (has real DB creds)'; \
+                      cp .env.bak .env; \
+                    fi; \
+                  fi; \
+                fi; \
                 cp .env .env.bak; \
                 cp .env.cpanel .env.tmp; \
                 while IFS='=' read -r key value; do \
