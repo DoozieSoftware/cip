@@ -13,9 +13,6 @@ on:
         description: 'MySQL database password'
         required: true
 
-env:
-  PHP_VERSION: "8.4"
-
 jobs:
   fix:
     name: Restore DB Credentials & Reseed
@@ -24,10 +21,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Restore credentials and reseed
-        env:
-          DB_NAME: ${{ github.event.inputs.db_name }}
-          DB_USER: ${{ github.event.inputs.db_user }}
-          DB_PASS: ${{ github.event.inputs.db_password }}
         run: |
           echo "${{ secrets.DEPLOY_SSH_KEY }}" | tr -d '\r' > /tmp/deploy_key
           chmod 600 /tmp/deploy_key
@@ -37,29 +30,35 @@ jobs:
           REMOTE="${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
           PHP_BIN="/opt/alt/php84/usr/bin/php"
 
+          DB_NAME="${{ github.event.inputs.db_name }}"
+          DB_USER="${{ github.event.inputs.db_user }}"
+          DB_PASS="${{ github.event.inputs.db_password }}"
+
           echo "Restoring DB credentials on production..."
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             $REMOTE "cd ~/cip && \
-              python3 -c \"
-          import os
-          env_path = os.path.expanduser('~/cip/.env')
-          replacements = {
-              'DB_DATABASE': os.environ['DB_NAME'],
-              'DB_USERNAME': os.environ['DB_USER'],
-              'DB_PASSWORD': os.environ['DB_PASS'],
-          }
-          with open(env_path) as f:
-              lines = f.readlines()
-          with open(env_path, 'w') as f:
-              for line in lines:
-                  key = line.split('=', 1)[0] if '=' in line else ''
-                  if key in replacements:
-                      f.write(f'{key}={replacements[key]}\n')
-                  else:
-                      f.write(line)
-          print('DB credentials restored.')
-          \" && \
-              cp .env .env.bak && \
+              cp .env .env.broken && \
+              while IFS='=' read -r key value; do \
+                case \"\$key\" in \
+                  DB_DATABASE) echo \"DB_DATABASE=$DB_NAME\" >> /tmp/db_fix ;; \
+                  DB_USERNAME) echo \"DB_USERNAME=$DB_USER\" >> /tmp/db_fix ;; \
+                  DB_PASSWORD) echo \"DB_PASSWORD=$DB_PASS\" >> /tmp/db_fix ;; \
+                esac; \
+              done < .env.cpanel; \
+              cp .env .env.bak; \
+              while IFS='=' read -r key value; do \
+                if [ \"\$key\" = 'DB_DATABASE' ]; then \
+                  echo \"DB_DATABASE=$DB_NAME\"; \
+                elif [ \"\$key\" = 'DB_USERNAME' ]; then \
+                  echo \"DB_USERNAME=$DB_USER\"; \
+                elif [ \"\$key\" = 'DB_PASSWORD' ]; then \
+                  echo \"DB_PASSWORD=$DB_PASS\"; \
+                else \
+                  echo \"\$key=\$value\"; \
+                fi; \
+              done < .env > .env.tmp && \
+              cp .env.tmp .env && \
+              echo 'DB credentials restored.' && \
               grep '^DB_' .env && \
               $PHP_BIN artisan config:clear 2>/dev/null && \
               $PHP_BIN artisan migrate:fresh --seed --force && \
@@ -69,7 +68,7 @@ jobs:
               $PHP_BIN artisan event:cache && \
               echo 'Post-fix complete'"
 
-          rm -f /tmp/deploy_key
+          rm -f /tmp/deploy_key /tmp/db_fix
 
       - name: Verify fix
         run: |
