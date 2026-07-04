@@ -34,41 +34,47 @@ jobs:
           DB_USER="${{ github.event.inputs.db_user }}"
           DB_PASS="${{ github.event.inputs.db_password }}"
 
-          echo "Restoring DB credentials on production..."
+          echo "Step 1: Writing .env to remote..."
+          cat > /tmp/fix_env.py << PYEOF
+          import sys, os
+          env_path = os.path.expanduser("~/cip/.env")
+          with open(env_path) as f:
+              lines = f.readlines()
+          out = []
+          for line in lines:
+              k = line.split("=", 1)[0].strip() if "=" in line else ""
+              if k == "DB_DATABASE":
+                  out.append("DB_DATABASE=$DB_NAME\n")
+              elif k == "DB_USERNAME":
+                  out.append("DB_USERNAME=$DB_USER\n")
+              elif k == "DB_PASSWORD":
+                  out.append('DB_PASSWORD="$DB_PASS"\n')
+              else:
+                  out.append(line)
+          with open(env_path, "w") as f:
+              f.writelines(out)
+          print("Done - .env updated")
+          PYEOF
+
+          scp -P $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            /tmp/fix_env.py $REMOTE:~/cip/fix_env.py
+
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             $REMOTE "cd ~/cip && \
-              cp .env .env.bak; \
-              while IFS='=' read -r key value; do \
-                case \"\$key\" in \
-                  DB_DATABASE) echo 'DB_DATABASE=$DB_NAME' >> /tmp/db_fix ;; \
-                  DB_USERNAME) echo 'DB_USERNAME=$DB_USER' >> /tmp/db_fix ;; \
-                  DB_PASSWORD) echo 'DB_PASSWORD=\"$DB_PASS\"' >> /tmp/db_fix ;; \
-                esac; \
-              done < .env.cpanel; \
-              cp .env .env.bak; \
-              while IFS='=' read -r key value; do \
-                if [ \"\$key\" = 'DB_DATABASE' ]; then \
-                  echo 'DB_DATABASE=$DB_NAME'; \
-                elif [ \"\$key\" = 'DB_USERNAME' ]; then \
-                  echo 'DB_USERNAME=$DB_USER'; \
-                elif [ \"\$key\" = 'DB_PASSWORD' ]; then \
-                  echo 'DB_PASSWORD=\"$DB_PASS\"'; \
-                else \
-                  echo \"\$key=\$value\"; \
-                fi; \
-              done < .env > .env.tmp && \
-              cp .env.tmp .env && \
-              echo 'DB credentials restored.' && \
+              cp .env .env.bak && \
+              python3 fix_env.py && \
+              echo '--- DB credentials in .env ---' && \
               grep '^DB_' .env && \
-              $PHP_BIN artisan config:clear 2>/dev/null && \
-              $PHP_BIN artisan migrate:fresh --seed --force && \
+              echo '--- Testing DB connection ---' && \
+              $PHP_BIN artisan config:clear 2>&1 && \
+              $PHP_BIN artisan migrate:fresh --seed --force 2>&1 && \
               sleep 3 && \
-              $PHP_BIN artisan config:cache && \
-              $PHP_BIN artisan route:cache && \
-              $PHP_BIN artisan event:cache && \
+              $PHP_BIN artisan config:cache 2>&1 && \
+              $PHP_BIN artisan route:cache 2>&1 && \
+              $PHP_BIN artisan event:cache 2>&1 && \
               echo 'Post-fix complete'"
 
-          rm -f /tmp/deploy_key /tmp/db_fix
+          rm -f /tmp/deploy_key /tmp/fix_env.py
 
       - name: Verify fix
         run: |
