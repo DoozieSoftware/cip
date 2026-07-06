@@ -6,6 +6,7 @@ import { apiRequest, type ApiEnvelope } from '../../../auth/api';
 import { Spinner, EmptyState } from '../../moderator/design';
 import { StatusBadge } from '../components/StatusBadge';
 import { getQueue } from '../offline/queue';
+import { normalizeReport } from '../api/client';
 
 interface ReportSummary {
   id: string;
@@ -33,8 +34,8 @@ export default function DashboardPage(): JSX.Element {
   const reports = useQuery({
     queryKey: ['citizen', 'reports', 'recent'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<ReportSummary[]>>('/reports', { query: { mine: '1', per_page: 3 } });
-      return res.data;
+      const res = await apiRequest<ApiEnvelope<ReportSummary[]>>('/citizen/reports', { query: { per_page: 3 } });
+      return res.data.map((report) => normalizeReport(report));
     },
   });
   const queue = useQuery({

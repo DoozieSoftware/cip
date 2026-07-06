@@ -22,11 +22,11 @@ export default function SubmitPage(): JSX.Element {
   const [files, setFiles] = useState<File[]>([]);
   const [showVideo, setShowVideo] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   function onCameraError(err: CameraError): void {
     setError(err.message);
   }
-  const [error, setError] = useState<string | null>(null);
 
   function removeFile(idx: number): void {
     setFiles((prev) => prev.filter((_, i) => i !== idx));
@@ -34,7 +34,7 @@ export default function SubmitPage(): JSX.Element {
 
   /**
    * A `TypeError` (or any non-`ApiError`) from `mutateAsync` means
-   * `fetch` itself failed — no network, not a server rejection. An
+   * `fetch` itself failed - no network, not a server rejection. An
    * `ApiError` means the server was reachable and said no (validation,
    * auth, etc.), which must surface as a real error, not a silent
    * offline-queue save.
@@ -70,7 +70,7 @@ export default function SubmitPage(): JSX.Element {
     } catch (err) {
       if (isNetworkFailure(err)) {
         await getQueue().enqueue({ kind: 'report.create', payload });
-        toast.show("Saved offline — we'll submit it when you're back online.", 'info', 6000);
+        toast.show("Saved offline - we'll submit it when you're back online.", 'info', 6000);
         void navigate('/citizen');
         return;
       }
@@ -96,19 +96,19 @@ export default function SubmitPage(): JSX.Element {
           </button>
           <div className="text-center">
             <h1 className="text-lg font-bold text-slate-950">New Report</h1>
-            <p className="text-xs text-slate-500">Step 2 of 4</p>
+            <p className="text-xs text-slate-500">Issue details, location, and evidence on one screen</p>
           </div>
           <span aria-hidden className="h-9 w-9" />
         </div>
         <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full w-2/3 rounded-full bg-blue-600" />
+          <div className="h-full w-full rounded-full bg-blue-600" />
         </div>
       </header>
 
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-950">Issue details</h2>
-          {selectedType && <span className="text-xs text-slate-500">{selectedType.name}</span>}
+          {selectedType ? <span className="text-xs text-slate-500">{selectedType.name}</span> : null}
         </div>
         {types.isLoading ? (
           <Spinner label="Loading categories" />
@@ -132,11 +132,12 @@ export default function SubmitPage(): JSX.Element {
             ))}
           </div>
         )}
-        {selectedType && (
+        {selectedType ? (
           <p className="mt-2 inline-flex rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
-            {selectedType.requires_photo ? 'Evidence required' : 'Evidence optional'} {selectedType.requires_video ? '· Video required' : ''}
+            {selectedType.requires_photo ? 'Evidence required' : 'Evidence optional'}
+            {selectedType.requires_video ? ' - Video required' : ''}
           </p>
-        )}
+        ) : null}
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -157,17 +158,17 @@ export default function SubmitPage(): JSX.Element {
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-950">Location</h2>
-          {location !== null && (
+          {location !== null ? (
             <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">GPS verified</span>
-          )}
+          ) : null}
         </div>
         <GpsCapture onCapture={setLocation} className="mt-2" />
-        {location !== null && (
+        {location !== null ? (
           <span className="mt-2 block text-xs text-slate-600">
             {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
-            {location.accuracy_m !== null && ` (±${Math.round(location.accuracy_m)} m)`}
+            {location.accuracy_m !== null ? ` (+/-${Math.round(location.accuracy_m)} m)` : ''}
           </span>
-        )}
+        ) : null}
         <input
           value={address}
           onChange={(e) => setAddress(e.target.value)}
@@ -185,7 +186,11 @@ export default function SubmitPage(): JSX.Element {
           <span className="rounded-full border border-red-200 px-2 py-1 text-xs font-semibold text-red-600">Required</span>
         </div>
         <div className="mt-2 space-y-3">
-          <CameraCapture mode="photo" onCapture={(f) => setFiles((prev) => [...prev, f].slice(0, 5))} onError={onCameraError} />
+          <CameraCapture
+            mode="photo"
+            onCapture={(f) => setFiles((prev) => [...prev, f].slice(0, 5))}
+            onError={onCameraError}
+          />
           <button
             type="button"
             onClick={() => setShowVideo((v) => !v)}
@@ -201,7 +206,7 @@ export default function SubmitPage(): JSX.Element {
             />
           ) : null}
         </div>
-        {files.length > 0 && (
+        {files.length > 0 ? (
           <ul className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5">
             {files.map((f, i) => (
               <li key={i} className="relative">
@@ -223,19 +228,19 @@ export default function SubmitPage(): JSX.Element {
               </li>
             ))}
           </ul>
-        )}
+        ) : null}
       </section>
 
-      {error !== null && (
+      {error !== null ? (
         <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
-      )}
+      ) : null}
 
       <button
         type="submit"
         disabled={submitting}
         className="w-full rounded-lg bg-blue-600 px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:bg-blue-300"
       >
-        {submitting ? 'Submitting…' : 'Submit report'}
+        {submitting ? 'Submitting...' : 'Submit report'}
       </button>
     </form>
   );

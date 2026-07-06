@@ -186,6 +186,30 @@ it('citizen cannot view another citizen report via /citizen/reports/{id}', funct
     $this->getJson("/api/v1/citizen/reports/{$report->id}")->assertStatus(403);
 });
 
+it('citizen can read the timeline for their own report', function (): void {
+    $citizen = User::factory()->create();
+    $type = ReportType::query()->firstOrFail();
+    $draft = ReportStatus::query()->where('code', 'draft')->firstOrFail();
+    $priority = ReportPriority::query()->firstOrFail();
+    $location = Location::factory()->create();
+    $report = Report::query()->create([
+        'citizen_id' => $citizen->id,
+        'report_type_id' => $type->id,
+        'current_status_id' => $draft->id,
+        'priority_id' => $priority->id,
+        'location_id' => $location->id,
+        'title' => 'row',
+        'description' => 'row',
+    ]);
+
+    Sanctum::actingAs($citizen);
+    $this->postJson("/api/v1/reports/{$report->id}/submit")->assertOk();
+
+    $response = $this->getJson("/api/v1/reports/{$report->id}/timeline");
+    $response->assertOk();
+    expect(count($response->json('data')))->toBe(1);
+});
+
 it('staff can read any report via /reports/{id}', function (): void {
     $citizen = User::factory()->create();
     $moderator = User::factory()->create();

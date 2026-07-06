@@ -1,7 +1,7 @@
-import { useParams, Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { type JSX } from 'react';
 import { useReportDetail, useReportTimeline } from '../api/client';
-import { Spinner, EmptyState } from '../../moderator/design';
+import { EmptyState, Spinner } from '../../moderator/design';
 import { StatusBadge } from '../components/StatusBadge';
 
 export default function ReportDetailPage(): JSX.Element {
@@ -13,10 +13,10 @@ export default function ReportDetailPage(): JSX.Element {
   if (detail.error || !detail.data) {
     const msg = detail.error instanceof Error ? detail.error.message : "Maybe it was deleted or you don't have access.";
     return (
-        <EmptyState
-          title="Couldn't load this report"
-          description={msg}
-          action={
+      <EmptyState
+        title="Couldn't load this report"
+        description={msg}
+        action={
           <Link to="/citizen" className="mt-2 rounded-md bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white">
             Back to home
           </Link>
@@ -26,12 +26,17 @@ export default function ReportDetailPage(): JSX.Element {
   }
 
   const r = detail.data;
+  const leadMedia = r.media[0];
 
   return (
     <div className="space-y-4">
       <header className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="flex items-center justify-between gap-3">
-          <Link to="/citizen/reports" className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-xl text-blue-700 hover:bg-slate-50" aria-label="Back to reports">
+          <Link
+            to="/citizen/reports"
+            className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-xl text-blue-700 hover:bg-slate-50"
+            aria-label="Back to reports"
+          >
             ‹
           </Link>
           <div className="text-center">
@@ -43,10 +48,10 @@ export default function ReportDetailPage(): JSX.Element {
 
         <div className="mt-4 flex gap-3">
           <div className="grid h-20 w-24 shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-2xl text-slate-400">
-            {r.media[0]?.signed_url || r.media[0]?.url ? (
-              <img src={r.media[0].signed_url ?? r.media[0].url} alt="" className="h-full w-full object-cover" />
+            {leadMedia?.signed_url || leadMedia?.url ? (
+              <img src={leadMedia.signed_url ?? leadMedia.url} alt="" className="h-full w-full object-cover" />
             ) : (
-              <span aria-hidden>▧</span>
+              <span aria-hidden>□</span>
             )}
           </div>
           <div className="min-w-0 flex-1">
@@ -61,18 +66,22 @@ export default function ReportDetailPage(): JSX.Element {
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">{r.type?.name}</span>
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">{r.priority?.name}</span>
-          {r.assigned_department && (
-            <span className="rounded-full bg-cyan-50 px-2 py-0.5 text-cyan-800">Assigned to {r.assigned_department.name}</span>
-          )}
+          {r.type?.name ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">{r.type.name}</span> : null}
+          {r.priority?.name ? (
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">{r.priority.name}</span>
+          ) : null}
+          {r.assigned_department ? (
+            <span className="rounded-full bg-cyan-50 px-2 py-0.5 text-cyan-800">
+              Assigned to {r.assigned_department.name}
+            </span>
+          ) : null}
         </div>
       </header>
 
-      {r.ai_summary && (
+      {r.ai_summary ? (
         <section className="rounded-lg border border-cyan-200 bg-cyan-50/60 p-4">
           <h2 className="text-sm font-semibold text-cyan-950">AI insights</h2>
-          {r.ai_summary.labels && r.ai_summary.labels.length > 0 && (
+          {r.ai_summary.labels && r.ai_summary.labels.length > 0 ? (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {r.ai_summary.labels.map((l) => (
                 <span key={l.name} className="rounded-full bg-white px-2 py-0.5 text-xs text-cyan-800 ring-1 ring-cyan-200">
@@ -80,18 +89,22 @@ export default function ReportDetailPage(): JSX.Element {
                 </span>
               ))}
             </div>
-          )}
-          {r.ai_summary.recommended_department && (
-            <p className="mt-2 text-xs text-cyan-950">Suggested department: <strong>{r.ai_summary.recommended_department.name}</strong></p>
-          )}
-          {typeof r.ai_summary.fraud_score === 'number' && (
-            <p className="mt-1 text-xs text-cyan-950">Evidence review score: <strong>{Math.round(r.ai_summary.fraud_score * 100)}%</strong></p>
-          )}
+          ) : null}
+          {r.ai_summary.recommended_department ? (
+            <p className="mt-2 text-xs text-cyan-950">
+              Suggested department: <strong>{r.ai_summary.recommended_department.name}</strong>
+            </p>
+          ) : null}
+          {typeof r.ai_summary.fraud_score === 'number' ? (
+            <p className="mt-1 text-xs text-cyan-950">
+              Evidence review score: <strong>{Math.round(r.ai_summary.fraud_score * 100)}%</strong>
+            </p>
+          ) : null}
           <p className="mt-3 rounded-md border border-cyan-200 bg-white px-3 py-2 text-xs text-cyan-950">
             AI insights are informational only. A moderator or department officer reviews the report.
           </p>
         </section>
-      )}
+      ) : null}
 
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="grid grid-cols-2 border-b border-slate-200 text-center text-sm font-semibold">
@@ -99,7 +112,9 @@ export default function ReportDetailPage(): JSX.Element {
           <span className="pb-2 text-slate-500">Details</span>
         </div>
         {timeline.isLoading ? (
-          <div className="py-8"><Spinner label="Loading timeline" /></div>
+          <div className="py-8">
+            <Spinner label="Loading timeline" />
+          </div>
         ) : (
           <ol className="mt-4 space-y-5 border-l-2 border-slate-200 pl-5">
             {(timeline.data ?? []).map((t, i) => (
@@ -112,8 +127,8 @@ export default function ReportDetailPage(): JSX.Element {
                   <div className="text-sm font-semibold text-slate-900">{t.event}</div>
                   <div className="shrink-0 text-xs text-slate-400">{new Date(t.at).toLocaleDateString()}</div>
                 </div>
-                {t.actor && <div className="text-xs text-slate-500">{t.actor}</div>}
-                {t.note && <div className="text-sm text-slate-700">{t.note}</div>}
+                {t.actor ? <div className="text-xs text-slate-500">{t.actor}</div> : null}
+                {t.note ? <div className="text-sm text-slate-700">{t.note}</div> : null}
                 <div className="text-xs text-slate-400">{new Date(t.at).toLocaleTimeString()}</div>
               </li>
             ))}
@@ -121,15 +136,15 @@ export default function ReportDetailPage(): JSX.Element {
         )}
       </section>
 
-      {r.location && (
+      {r.location ? (
         <section className="rounded-lg border border-slate-200 bg-white p-4">
           <h2 className="text-sm font-semibold text-slate-950">Location</h2>
           <p className="mt-1 text-sm text-slate-700">
             {r.location.latitude.toFixed(5)}, {r.location.longitude.toFixed(5)}
-            {r.location.address && ` — ${r.location.address}`}
+            {r.location.address ? ` - ${r.location.address}` : ''}
           </p>
         </section>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -26,8 +26,8 @@ export interface ReportSummary {
   title: string;
   description?: string | null;
   status: { code: string; name: string };
-  type: { code: string; name: string; icon?: string | null };
-  priority: { code: string; name: string };
+  type?: { code: string; name: string; icon?: string | null } | null;
+  priority?: { code: string; name: string } | null;
   created_at?: string | null;
   updated_at?: string | null;
   assigned_department?: { id: string; name: string; code: string } | null;
@@ -46,6 +46,22 @@ export interface ReportDetail extends ReportSummary {
   } | null;
 }
 
+interface ApiReportPayload extends Omit<ReportDetail, 'type' | 'media' | 'timeline'> {
+  report_type?: ReportSummary['type'];
+  type?: ReportSummary['type'];
+  media?: ReportDetail['media'];
+  timeline?: ReportDetail['timeline'];
+}
+
+export function normalizeReport(payload: ApiReportPayload): ReportDetail {
+  return {
+    ...payload,
+    type: payload.type ?? payload.report_type ?? null,
+    media: payload.media ?? [],
+    timeline: payload.timeline ?? [],
+  };
+}
+
 export interface NotificationItem {
   id: string;
   title: string;
@@ -54,6 +70,50 @@ export interface NotificationItem {
   read_at?: string | null;
   created_at: string;
   data?: Record<string, unknown> | null;
+}
+
+interface ApiNotificationItem {
+  id: string;
+  subject?: string | null;
+  body: string;
+  channel: string;
+  read_at?: string | null;
+  created_at: string;
+  metadata?: Record<string, unknown> | null;
+}
+
+interface NotificationsInboxResponse {
+  items: ApiNotificationItem[];
+  next_cursor?: string | null;
+  unread_count?: number;
+}
+
+export function normalizeNotification(item: ApiNotificationItem): NotificationItem {
+  return {
+    id: item.id,
+    title: item.subject ?? '',
+    body: item.body,
+    channel: item.channel,
+    read_at: item.read_at,
+    created_at: item.created_at,
+    data: item.metadata ?? null,
+  };
+}
+
+export interface PaginationMeta {
+  page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+}
+
+function normalizePaginationMeta(meta: Record<string, unknown> | undefined, fallbackPerPage: number): PaginationMeta {
+  return {
+    page: typeof meta?.page === 'number' ? meta.page : 1,
+    per_page: typeof meta?.per_page === 'number' ? meta.per_page : fallbackPerPage,
+    total: typeof meta?.total === 'number' ? meta.total : 0,
+    last_page: typeof meta?.last_page === 'number' ? meta.last_page : 1,
+  };
 }
 
 export function useReportTypes() {
@@ -80,8 +140,8 @@ export function useNotifications() {
   return useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<NotificationItem[]>>('/notifications', { query: { per_page: 50 } });
-      return res.data;
+      const res = await apiRequest<ApiEnvelope<NotificationsInboxResponse>>('/notifications', { query: { per_page: 50 } });
+      return (res.data.items ?? []).map((item) => normalizeNotification(item));
     },
   });
 }
@@ -117,7 +177,7 @@ export interface CreateReportInput {
  * re-implementing it.
  */
 export async function submitReportPayload(input: CreateReportInput): Promise<{ id: string; status: string }> {
-  const create = await apiRequest<ApiEnvelope<{ id: string; status: string }>>('/reports', {
+  const create = await apiRequest<ApiEnvelope<ApiReportPayload>>('/reports', {
     method: 'POST',
     body: {
       report_type_id: input.report_type_id,
@@ -163,11 +223,11 @@ export async function submitReportPayload(input: CreateReportInput): Promise<{ i
     }
   }
 
-  // Submit
-  const submitted = await apiRequest<ApiEnvelope<{ id: string; status: string }>>(`/reports/${reportId}/submit`, {
-    method: 'POST',
-  });
-  return submitted.data;
+  const createdReport = normalizeReport(create.data);
+  return {
+    id: createdReport.id,
+    status: createdReport.status?.code ?? 'submitted',
+  };
 }
 
 export function useCreateReport() {
@@ -183,8 +243,24 @@ export function useReportDetail(id: string | undefined) {
     enabled: id !== undefined,
     queryKey: ['report', id],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<ReportDetail>>(`/reports/${id}`);
-      return res.data;
+      const res = await apiRequest<ApiEnvelope<ApiReportPayload>>(`/citizen/reports/${id}`);
+      return normalizeReport(res.data);
+    },
+  });
+}
+
+export function useCitizenReports(page = 1, perPage = 25) {
+  return useQuery({
+    queryKey: ['citizen', 'reports', page, perPage],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<ApiReportPayload[]>>('/citizen/reports', {
+        query: { page, per_page: perPage },
+      });
+
+      return {
+        data: res.data.map((report) => normalizeReport(report)),
+        meta: normalizePaginationMeta(res.meta, perPage),
+      };
     },
   });
 }

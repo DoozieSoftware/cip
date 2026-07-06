@@ -192,11 +192,21 @@ class ReportsController extends BaseController
      */
     public function timeline(Request $request, string $id): JsonResponse
     {
-        $this->ensureStaff($request);
         $report = $this->repository->findById($id);
 
         if ($report === null) {
             throw ApiException::notFound('Report');
+        }
+
+        $user = $request->user();
+        $isOwner = $user !== null
+            && ! $report->is_anonymous
+            && $report->citizen_id !== null
+            && (string) $report->citizen_id === (string) $user->id;
+        $isStaff = $user !== null && $user->hasAnyRole(['moderator', 'department', 'super_admin', 'system']);
+
+        if (! $isOwner && ! $isStaff) {
+            throw ApiException::forbidden('You cannot view this timeline.');
         }
 
         $rows = $this->repository->paginateTimeline($id);
