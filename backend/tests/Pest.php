@@ -47,9 +47,9 @@ if (! function_exists('seedCivicRolesAndStatuses')) {
 if (! function_exists('makeDepartmentOfficer')) {
     function makeDepartmentOfficer(Department $dept): User
     {
-        Role::firstOrCreate(['name' => 'department', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'department_officer', 'guard_name' => 'web']);
         $u = User::factory()->create();
-        $u->assignRole('department');
+        $u->assignRole('department_officer');
         $u->departments()->attach($dept->id);
         return $u;
     }

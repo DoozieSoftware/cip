@@ -33,10 +33,7 @@ class SchedulerController extends BaseController
     {
         $this->ensureAdmin($request);
 
-        return $this->respond(
-            ['jobs' => $this->service->list()],
-            'Scheduler jobs.',
-        );
+        return $this->respond($this->service->list(), 'Scheduler jobs.');
     }
 
     public function runNow(Request $request, string $id): JsonResponse

@@ -118,6 +118,47 @@ it('returns the report detail for a moderator', function (): void {
     expect($response->json('data.report.id'))->toBe($report->id);
 });
 
+it('returns the moderation analytics summary for a moderator', function (): void {
+    $moderator = User::factory()->create();
+    $moderator->assignRole('moderator');
+    Sanctum::actingAs($moderator);
+
+    $report = landReportInPendingModerator();
+    $report->duplicate_score = 85.0;
+    $report->fraud_score = 80.0;
+    $report->save();
+
+    $response = $this->getJson('/api/v1/moderator/analytics/summary');
+    $response->assertOk();
+    expect($response->json('data'))->toHaveKeys([
+        'pending_moderator',
+        'duplicates_pending',
+        'fraud_pending',
+        'approved_today',
+        'rejected_today',
+        'merged_today',
+        'escalated_today',
+        'avg_review_minutes',
+        'ai_accuracy_pct',
+    ]);
+});
+
+it('returns moderator ai performance analytics', function (): void {
+    $moderator = User::factory()->create();
+    $moderator->assignRole('moderator');
+    Sanctum::actingAs($moderator);
+
+    $response = $this->getJson('/api/v1/moderator/analytics/ai-performance?window=7d');
+    $response->assertOk();
+    expect($response->json('data'))->toHaveKeys([
+        'window',
+        'total_ai_decisions',
+        'overridden_by_moderator',
+        'override_rate_pct',
+        'per_provider',
+    ]);
+});
+
 it('the review endpoint applies an approve decision', function (): void {
     $moderator = User::factory()->create();
     $moderator->assignRole('moderator');
@@ -211,6 +252,8 @@ it('a citizen is denied every moderation endpoint', function (): void {
     $this->getJson('/api/v1/moderator/queue')->assertStatus(403);
     $this->getJson('/api/v1/moderator/duplicates')->assertStatus(403);
     $this->getJson('/api/v1/moderator/fraud')->assertStatus(403);
+    $this->getJson('/api/v1/moderator/analytics/summary')->assertStatus(403);
+    $this->getJson('/api/v1/moderator/analytics/ai-performance')->assertStatus(403);
     $this->getJson("/api/v1/moderator/reports/{$report->id}")->assertStatus(403);
     $this->postJson("/api/v1/moderator/reports/{$report->id}/review", ['decision' => 'approve', 'remarks' => 'hi'])->assertStatus(403);
     $this->postJson("/api/v1/moderator/reports/{$report->id}/reject", ['decision' => 'reject', 'remarks' => 'hi'])->assertStatus(403);

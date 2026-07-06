@@ -107,7 +107,7 @@ class ReportsController extends BaseController
         $isOwner = ! $report->is_anonymous
             && $report->citizen_id !== null
             && (string) $report->citizen_id === (string) $user->id;
-        $isStaff = $user->hasAnyRole(['moderator', 'department', 'super_admin', 'system']);
+        $isStaff = $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system']);
 
         if (! $isOwner && ! $isStaff) {
             throw ApiException::forbidden('You cannot submit this report.');
@@ -203,7 +203,7 @@ class ReportsController extends BaseController
             && ! $report->is_anonymous
             && $report->citizen_id !== null
             && (string) $report->citizen_id === (string) $user->id;
-        $isStaff = $user !== null && $user->hasAnyRole(['moderator', 'department', 'super_admin', 'system']);
+        $isStaff = $user !== null && $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system']);
 
         if (! $isOwner && ! $isStaff) {
             throw ApiException::forbidden('You cannot view this timeline.');
@@ -264,7 +264,7 @@ class ReportsController extends BaseController
             && $report->citizen_id !== null
             && (string) $report->citizen_id === (string) $user->id;
 
-        if (! $isOwner && ! $user->hasAnyRole(['moderator', 'department', 'super_admin', 'system'])) {
+        if (! $isOwner && ! $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system'])) {
             throw ApiException::forbidden('You cannot view this report.');
         }
 
@@ -277,7 +277,7 @@ class ReportsController extends BaseController
     {
         $user = $request->user();
 
-        if ($user === null || ! $user->hasAnyRole(['moderator', 'department', 'super_admin', 'system'])) {
+        if ($user === null || ! $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system'])) {
             throw ApiException::forbidden('Staff role is required.');
         }
     }

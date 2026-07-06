@@ -38,14 +38,14 @@ class DepartmentReportListController extends Controller
     {
         $user = $request->user();
         if (! $user instanceof User) {
-            throw new ApiException(401, 'UNAUTHENTICATED', 'Authentication required.');
+            throw ApiException::unauthorized('Authentication required.');
         }
         if ($user->hasAnyRole(['super_admin', 'system']) && $request->filled('department_id')) {
             return (string) $request->string('department_id');
         }
         $dept = $user->departments()->first();
         if (! $dept) {
-            throw new ApiException(403, 'NO_DEPARTMENT', 'User is not a member of any department.');
+            throw ApiException::forbidden('User is not a member of any department.');
         }
         return (string) $dept->getKey();
     }

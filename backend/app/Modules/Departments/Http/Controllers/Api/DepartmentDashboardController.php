@@ -19,14 +19,14 @@ class DepartmentDashboardController extends Controller
     {
         $user = $request->user();
         if (! $user instanceof User) {
-            throw new ApiException(401, 'UNAUTHENTICATED', 'Authentication required.');
+            throw ApiException::unauthorized('Authentication required.');
         }
 
         $deptId = $user->hasAnyRole(['super_admin', 'system']) && $request->filled('department_id')
             ? (string) $request->string('department_id')
             : (string) ($user->departments()->first()?->getKey() ?? '');
         if ($deptId === '') {
-            throw new ApiException(403, 'NO_DEPARTMENT', 'User is not a member of any department.');
+            throw ApiException::forbidden('User is not a member of any department.');
         }
 
         $counts = $this->repo->dashboardCounts($deptId) + ['department_id' => $deptId];

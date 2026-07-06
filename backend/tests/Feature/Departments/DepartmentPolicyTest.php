@@ -73,9 +73,10 @@ it('super_admin bypasses via the base policy', function (): void {
 
 it('viewDashboard requires the department role or super_admin/system', function (): void {
     Role::firstOrCreate(['name' => 'department', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'department_officer', 'guard_name' => 'web']);
     Role::firstOrCreate(['name' => 'moderator', 'guard_name' => 'web']);
     $officer = User::factory()->create();
-    $officer->assignRole('department');
+    $officer->assignRole('department_officer');
     $mod = User::factory()->create();
     $mod->assignRole('moderator');
 

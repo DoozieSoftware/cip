@@ -46,6 +46,20 @@ describe('LoginPage', () => {
     expect(screen.getByText('Super Admin')).toBeTruthy();
   });
 
+  it('highlights the selected demo account card when clicked', () => {
+    renderLoginPage();
+
+    const officerCard = screen.getByRole('button', { name: /Department Officer/i });
+    expect(officerCard).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(officerCard);
+
+    expect(officerCard).toHaveAttribute('aria-pressed', 'true');
+    expect(officerCard.className).toContain('border-brand-500');
+    expect(officerCard.className).toContain('ring-2');
+    expect(screen.getByText('Selected')).toBeTruthy();
+  });
+
   it('switches to the staff password form and submits mobile + password to /auth/login', async () => {
     apiRequestMock.mockImplementation((path: string) => {
       if (path === '/auth/login') {

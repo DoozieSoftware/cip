@@ -35,6 +35,7 @@ export function LoginPage(): JSX.Element {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [debugOtp, setDebugOtp] = useState<string | null>(null);
+  const selectedAccount = DEMO_ACCOUNTS.find((acc) => acc.mobile === mobile) ?? null;
 
   async function loginWithPassword(e: FormEvent): Promise<void> {
     e.preventDefault();
@@ -248,14 +249,28 @@ export function LoginPage(): JSX.Element {
                   <button
                     type="button"
                     onClick={() => { setMobile(acc.mobile); setStage('request'); setAuthMode('otp'); setError(null); }}
-                    className="group block w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-brand-400 hover:shadow"
+                    aria-pressed={selectedAccount?.mobile === acc.mobile}
+                    className={`group block w-full rounded-2xl border p-5 text-left shadow-sm transition ${
+                      selectedAccount?.mobile === acc.mobile
+                        ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200 shadow-md'
+                        : 'border-slate-200 bg-white hover:border-brand-400 hover:shadow'
+                    }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-base font-semibold text-slate-900">{acc.label}</span>
-                      <span className="font-mono text-xs text-slate-400">{acc.mobile}</span>
+                      <span className="flex items-center gap-2">
+                        {selectedAccount?.mobile === acc.mobile && (
+                          <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                            Selected
+                          </span>
+                        )}
+                        <span className="font-mono text-xs text-slate-400">{acc.mobile}</span>
+                      </span>
                     </div>
                     <p className="mt-1 text-sm text-slate-600">{acc.description}</p>
-                    <p className="mt-2 text-xs font-medium text-brand-700 group-hover:underline">Sign in as {acc.label} →</p>
+                    <p className="mt-2 text-xs font-medium text-brand-700 group-hover:underline">
+                      {selectedAccount?.mobile === acc.mobile ? `Ready to sign in as ${acc.label} →` : `Sign in as ${acc.label} →`}
+                    </p>
                   </button>
                 </li>
               ))}

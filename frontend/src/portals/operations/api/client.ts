@@ -2,10 +2,11 @@
  * Fetch wrapper for the operations REST surface.
  *
  * Uses `import.meta.env.VITE_API_BASE_URL` to find the backend; defaults to
- * the Vite dev proxy at `/api/v1`. Attaches the Sanctum bearer token from
- * `localStorage` when present so a logged-in department officer can call
- * the API.
+ * the Vite dev proxy at `/api/v1`. Attaches the shared session bearer token
+ * when present so a logged-in department officer can call the API.
  */
+
+import { getToken } from '../../../auth/api';
 
 export class ApiError extends Error {
   status: number;
@@ -21,8 +22,7 @@ export class ApiError extends Error {
 const BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1';
 
 function authHeader(): Record<string, string> {
-  if (typeof localStorage === 'undefined') return {};
-  const t = localStorage.getItem('cip_token');
+  const t = getToken();
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 

@@ -40,7 +40,7 @@ it('lists the registered jobs', function (): void {
     $r = $this->getJson('/api/v1/admin/scheduler/jobs');
     $r->assertOk();
 
-    $jobs = $r->json('data.jobs');
+    $jobs = $r->json('data');
     expect($jobs)->toBeArray();
     expect(collect($jobs)->pluck('id'))->toContain('workflow:check-sla-breaches');
 });
@@ -53,7 +53,7 @@ it('pauses and resumes a job', function (): void {
     $pause->assertOk()->assertJsonPath('data.paused', true);
 
     $list = $this->getJson('/api/v1/admin/scheduler/jobs');
-    $hit = collect($list->json('data.jobs'))->firstWhere('id', $name);
+    $hit = collect($list->json('data'))->firstWhere('id', $name);
     expect($hit['paused'])->toBeTrue();
 
     $stored = Setting::query()->where('key', 'scheduler_paused_jobs')->first();
@@ -63,7 +63,7 @@ it('pauses and resumes a job', function (): void {
     $resume->assertOk()->assertJsonPath('data.paused', false);
 
     $list = $this->getJson('/api/v1/admin/scheduler/jobs');
-    $hit = collect($list->json('data.jobs'))->firstWhere('id', $name);
+    $hit = collect($list->json('data'))->firstWhere('id', $name);
     expect($hit['paused'])->toBeFalse();
 });
 

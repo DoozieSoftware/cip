@@ -21,7 +21,7 @@ use App\Modules\Users\Models\User;
  */
 class LocationPolicy extends BasePolicy
 {
-    private const STAFF_ROLES = ['moderator', 'department', 'super_admin', 'system'];
+    private const STAFF_ROLES = ['moderator', 'department_officer', 'department', 'super_admin', 'system'];
 
     public function view(User $user, Location $location): bool
     {

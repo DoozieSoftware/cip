@@ -49,4 +49,43 @@ describe('queueApi / actionsApi — report-key unwrapping', () => {
     expect(result.id).toBe('r1');
     expect(result.status_code).toBe('assigned');
   });
+
+  it('queueApi.list normalizes cursor items into paginated queue data', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: {
+            items: [
+              {
+                id: 'r1',
+                tracking_number: 'CIV-2026-000001',
+                title: 'Pothole',
+                ai_confidence: 92,
+                fraud_score: 10,
+                duplicate_score: 5,
+                mock_gps_score: 0.2,
+                submitted_at: '2026-07-06T10:00:00Z',
+                report_type: { id: 't1', code: 'pothole', name: 'Pothole' },
+                status: { code: 'pending_moderator' },
+              },
+            ],
+            next_cursor: null,
+            prev_cursor: null,
+          },
+          code: null,
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+
+    const { queueApi } = await import('../moderator');
+    const result = await queueApi.list();
+
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].category?.name).toBe('Pothole');
+    expect(result.data[0].status_code).toBe('pending_moderator');
+    expect(result.meta.total).toBe(1);
+  });
 });

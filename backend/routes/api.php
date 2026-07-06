@@ -17,6 +17,7 @@ use App\Modules\Departments\Http\Controllers\Api\DepartmentReportListController;
 use App\Modules\Integrations\Http\Controllers\Admin\AdminIntegrationController;
 use App\Modules\Media\Http\Controllers\Admin\AdminStorageController;
 use App\Modules\Media\Http\Controllers\Api\MediaController;
+use App\Modules\Moderation\Http\Controllers\Api\AnalyticsController;
 use App\Modules\Moderation\Http\Controllers\Api\ModerationActionsController;
 use App\Modules\Moderation\Http\Controllers\Api\QueueController;
 use App\Modules\Notifications\Http\Controllers\Admin\AdminNotificationConfigController;
@@ -267,6 +268,8 @@ Route::prefix('v1')->group(function (): void {
         Route::get('fraud', [QueueController::class, 'fraud'])->name('fraud');
         // Per-report moderation detail (companion of the queue endpoints).
         Route::get('reports/{report}', [QueueController::class, 'show'])->name('reports.show');
+        Route::get('analytics/summary', [AnalyticsController::class, 'summary'])->name('analytics.summary');
+        Route::get('analytics/ai-performance', [AnalyticsController::class, 'aiPerformance'])->name('analytics.ai-performance');
         // T-M10-011 — four action endpoints
         Route::post('reports/{report}/review', [ModerationActionsController::class, 'review'])->name('reports.review');
         Route::post('reports/{report}/merge', [ModerationActionsController::class, 'merge'])->name('reports.merge');

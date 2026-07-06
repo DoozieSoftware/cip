@@ -171,7 +171,7 @@ class MediaController extends BaseController
 
         $user = $request->user('sanctum');
 
-        if ($user === null || ! $user->hasAnyRole(['moderator', 'department', 'super_admin', 'system'])) {
+        if ($user === null || ! $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system'])) {
             return $this->respondError('Forbidden', 403, 'FORBIDDEN');
         }
 

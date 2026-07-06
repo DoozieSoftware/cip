@@ -39,7 +39,7 @@ use App\Modules\Users\Models\User;
 class DepartmentPolicy extends BasePolicy
 {
     /** Roles that can act on a department officer's behalf. */
-    private const DEPT_ROLES = ['department', 'department_admin', 'super_admin', 'system'];
+    private const DEPT_ROLES = ['department_officer', 'department', 'department_admin', 'super_admin', 'system'];
 
     /**
      * Determine whether the user is a member of the given department.

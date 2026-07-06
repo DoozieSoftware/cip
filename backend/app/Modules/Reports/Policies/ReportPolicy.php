@@ -26,7 +26,7 @@ use App\Modules\Users\Models\User;
  */
 class ReportPolicy extends BasePolicy
 {
-    private const STAFF_ROLES = ['moderator', 'department', 'super_admin', 'system'];
+    private const STAFF_ROLES = ['moderator', 'department_officer', 'department', 'super_admin', 'system'];
 
     public function view(User $user, Report $report): bool
     {
@@ -63,7 +63,7 @@ class ReportPolicy extends BasePolicy
 
     public function resolve(User $user, Report $report): bool
     {
-        return $user->hasAnyRole(['moderator', 'department', 'super_admin']);
+        return $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin']);
     }
 
     public function export(User $user, Report $report): bool

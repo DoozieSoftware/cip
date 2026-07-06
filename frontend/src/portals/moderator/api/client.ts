@@ -6,6 +6,8 @@
  * `localStorage` when present so a logged-in moderator can call the API.
  */
 
+import { getToken } from '../../../auth/api';
+
 export class ApiError extends Error {
   status: number;
   payload: unknown;
@@ -20,8 +22,7 @@ export class ApiError extends Error {
 const BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1';
 
 function authHeader(): Record<string, string> {
-  if (typeof localStorage === 'undefined') return {};
-  const t = localStorage.getItem('cip_token');
+  const t = getToken();
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 

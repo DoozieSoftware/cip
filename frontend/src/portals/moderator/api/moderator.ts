@@ -2,6 +2,7 @@ import { api } from './client';
 import type {
   AnalyticsSummary,
   AiPerformance,
+  Category,
   MergePayload,
   Paginated,
   ReportDetail,
@@ -22,15 +23,72 @@ export interface QueueFilters {
   per_page?: number;
 }
 
+interface ApiModeratorReport {
+  id: string;
+  tracking_number: string;
+  title: string;
+  description?: string | null;
+  ai_confidence: number | null;
+  fraud_score: number | null;
+  duplicate_score: number | null;
+  mock_gps_score: number | null;
+  submitted_at?: string | null;
+  created_at?: string | null;
+  report_type?: Category | null;
+  status?: { code?: string | null } | null;
+}
+
+interface ApiCursorPage<T> {
+  items: T[];
+  next_cursor?: string | null;
+  prev_cursor?: string | null;
+}
+
+function normalizeQueueItem(report: ApiModeratorReport): ReportListItem {
+  return {
+    id: report.id,
+    tracking_number: report.tracking_number,
+    title: report.title,
+    category: report.report_type ?? null,
+    department: null,
+    status_code: (report.status?.code ?? 'submitted') as ReportListItem['status_code'],
+    ai_confidence: report.ai_confidence,
+    fraud_score: report.fraud_score,
+    duplicate_score: report.duplicate_score,
+    mock_gps_score: report.mock_gps_score,
+    submitted_at: report.submitted_at ?? report.created_at ?? new Date(0).toISOString(),
+    ward: null,
+    district: null,
+    evidence_count: 0,
+  };
+}
+
+function normalizeCursorPage(page: ApiCursorPage<ApiModeratorReport>): Paginated<ReportListItem> {
+  const data = (page.items ?? []).map((report) => normalizeQueueItem(report));
+
+  return {
+    data,
+    meta: {
+      current_page: 1,
+      per_page: data.length,
+      total: data.length,
+      last_page: 1,
+    },
+  };
+}
+
 export const queueApi = {
   list: (filters: QueueFilters = {}) =>
-    api.get<Paginated<ReportListItem>>('/moderator/queue', filters as Record<string, unknown>),
+    api.get<ApiCursorPage<ApiModeratorReport>>('/moderator/queue', filters as Record<string, unknown>)
+      .then((page) => normalizeCursorPage(page)),
 
   duplicates: (filters: QueueFilters = {}) =>
-    api.get<Paginated<ReportListItem>>('/moderator/duplicates', filters as Record<string, unknown>),
+    api.get<ApiCursorPage<ApiModeratorReport>>('/moderator/duplicates', filters as Record<string, unknown>)
+      .then((page) => normalizeCursorPage(page)),
 
   fraud: (filters: QueueFilters = {}) =>
-    api.get<Paginated<ReportListItem>>('/moderator/fraud', filters as Record<string, unknown>),
+    api.get<ApiCursorPage<ApiModeratorReport>>('/moderator/fraud', filters as Record<string, unknown>)
+      .then((page) => normalizeCursorPage(page)),
 
   // QueueController::show() nests the resource under a `report` key
   // (`respond(['report' => ...])`) — one level deeper than the

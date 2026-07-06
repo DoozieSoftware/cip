@@ -56,7 +56,7 @@ class DepartmentAdminService
             throw ApiException::notFound('User');
         }
 
-        if (! $user->hasAnyRole(['department', 'department_admin', 'moderator', 'super_admin'])) {
+        if (! $user->hasAnyRole(['department_officer', 'department', 'department_admin', 'moderator', 'super_admin'])) {
             throw new ApiException(
                 'USER_NOT_STAFF',
                 'User does not have a department-officer or staff role; refusing to attach to the department.',
