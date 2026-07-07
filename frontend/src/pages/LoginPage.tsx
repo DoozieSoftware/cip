@@ -145,10 +145,16 @@ export function LoginPage(): JSX.Element {
                     id="mobile"
                     name="mobile"
                     type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    spellCheck={false}
+                    autoCorrect="off"
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value)}
+                    onFocus={(e) => e.currentTarget.select()}
                     placeholder="9999900001"
-                    className="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                    pattern="[0-9]*"
+                    className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500"
                     required
                   />
                 </div>
@@ -161,10 +167,13 @@ export function LoginPage(): JSX.Element {
                       name="otp"
                       type="text"
                       inputMode="numeric"
+                      autoComplete="one-time-code"
+                      spellCheck={false}
+                      autoCorrect="off"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
                       placeholder="123456"
-                      className="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                      className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500"
                       required
                     />
                     {debugOtp && (
@@ -205,10 +214,16 @@ export function LoginPage(): JSX.Element {
                     id="staff-mobile"
                     name="mobile"
                     type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    spellCheck={false}
+                    autoCorrect="off"
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value)}
+                    onFocus={(e) => e.currentTarget.select()}
                     placeholder="9999900002"
-                    className="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                    pattern="[0-9]*"
+                    className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500"
                     required
                   />
                 </div>
@@ -221,7 +236,7 @@ export function LoginPage(): JSX.Element {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                    className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500"
                     required
                   />
                 </div>
