@@ -26,19 +26,30 @@ return new class extends Migration
         DB::unprepared('DROP TRIGGER IF EXISTS locations_before_insert_geom');
         DB::unprepared('DROP TRIGGER IF EXISTS locations_before_update_geom');
 
-        DB::unprepared("
-            CREATE TRIGGER locations_before_insert_geom
-            BEFORE INSERT ON locations
-            FOR EACH ROW
-            SET NEW.geom = {$geomExpression}
-        ");
+        // Triggers require SUPER privilege to create (binary logging is
+        // enabled). On constrained hosting this fails, but the
+        // application layer (Location model `creating` event) already
+        // populates `geom`, so the trigger is only a belt-and-braces
+        // safety net. Swallow the error so the migration completes and
+        // does not block later migrations.
+        try {
+            DB::unprepared("
+                CREATE TRIGGER locations_before_insert_geom
+                BEFORE INSERT ON locations
+                FOR EACH ROW
+                SET NEW.geom = {$geomExpression}
+            ");
 
-        DB::unprepared("
-            CREATE TRIGGER locations_before_update_geom
-            BEFORE UPDATE ON locations
-            FOR EACH ROW
-            SET NEW.geom = {$geomExpression}
-        ");
+            DB::unprepared("
+                CREATE TRIGGER locations_before_update_geom
+                BEFORE UPDATE ON locations
+                FOR EACH ROW
+                SET NEW.geom = {$geomExpression}
+            ");
+        } catch (Throwable $e) {
+            // No SUPER privilege — rely on the app-layer geom sync.
+            report($e);
+        }
 
         $backfillExpression = $supportsSrid
             ? 'ST_SRID(POINT(longitude, latitude), 4326)'

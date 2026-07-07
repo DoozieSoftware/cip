@@ -12,8 +12,8 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * `locations` row per docs/04 §8 and §24.
@@ -49,7 +49,25 @@ class Location extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (self $location): void {
+            if (DB::connection()->getDriverName() !== 'mysql') {
+                return;
+            }
+
+            // `geom` is a NOT NULL spatial column with no default, and
+            // no BEFORE INSERT trigger (triggers need SUPER privilege
+            // to create). Populate it on INSERT so the row can be
+            // created at all; the `saved` handler keeps it in sync on
+            // subsequent updates.
+            $location->mergeFillable(['geom']);
+            $location->geom = DB::raw(self::geomExpression($location->latitude, $location->longitude));
+        });
+
         static::saved(function (self $location): void {
+            if ($location->wasRecentlyCreated) {
+                return;
+            }
+
             $location->syncGeom();
         });
     }
