@@ -7,6 +7,7 @@ import { CameraCapture, type CameraError } from '../components/CameraCapture';
 import { GpsCapture, type CapturedLocation, type GpsCaptureHandle } from '../components/GpsCapture';
 import { getQueue } from '../offline/queue';
 import { useToast } from '../components/Toast';
+import { evidencePreviewHandlers } from '../security/evidenceGuards';
 import { ApiError } from '../../../auth/api';
 
 export default function SubmitPage(): JSX.Element {
@@ -214,7 +215,12 @@ export default function SubmitPage(): JSX.Element {
               <li key={i} className="relative">
                 <div className="aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
                   {f.type.startsWith('image/') ? (
-                    <img src={URL.createObjectURL(f)} alt="" className="h-full w-full object-cover" />
+                    <img
+                      src={URL.createObjectURL(f)}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      {...evidencePreviewHandlers()}
+                    />
                   ) : (
                     <div className="grid h-full w-full place-items-center text-2xl">🎥</div>
                   )}

@@ -60,9 +60,9 @@ describe('SubmitPage', () => {
         timestamp: 1_700_000_000_000,
       } as GeolocationPosition);
     });
-    Object.defineProperty(navigator, 'geolocation', {
-      configurable: true,
-      value: { getCurrentPosition },
+    vi.stubGlobal('navigator', {
+      ...globalThis.navigator,
+      geolocation: { getCurrentPosition },
     });
 
     renderSubmitPage();
