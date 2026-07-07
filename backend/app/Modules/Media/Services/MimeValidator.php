@@ -56,11 +56,13 @@ class MimeValidator
             ],
         ],
         'VIDEO' => [
-            'mimes' => ['video/mp4', 'video/quicktime'],
-            'extensions' => ['mp4', 'mov', 'm4v'],
+            'mimes' => ['video/mp4', 'video/quicktime', 'video/webm'],
+            'extensions' => ['mp4', 'mov', 'm4v', 'webm'],
             'signatures' => [
                 // MP4 / Quicktime / ISO-BMFF: starts with ....ftyp (offset 4)
                 ['bytes' => [0x66, 0x74, 0x79, 0x70], 'offset' => 4],
+                // WebM / Matroska: EBML header 1A 45 DF A3 (offset 0)
+                ['bytes' => [0x1A, 0x45, 0xDF, 0xA3], 'offset' => 0],
             ],
         ],
         'DOCUMENT' => [

@@ -45,7 +45,7 @@ it('returns 201 with the media array on success (acceptance)', function (): void
 
     $citizen = User::factory()->create();
     Sanctum::actingAs($citizen, ['citizen']);
-    $report = Report::factory()->create();
+    $report = Report::factory()->create(['citizen_id' => $citizen->id]);
 
     $resp = $this->postJson("/api/v1/reports/{$report->id}/photos", [
         'photos' => [upeJpeg(), upeJpeg()],
@@ -64,7 +64,7 @@ it('dispatches ComputeHashesJob + GenerateThumbnailJob for every uploaded photo'
 
     $citizen = User::factory()->create();
     Sanctum::actingAs($citizen, ['citizen']);
-    $report = Report::factory()->create();
+    $report = Report::factory()->create(['citizen_id' => $citizen->id]);
 
     $this->postJson("/api/v1/reports/{$report->id}/photos", [
         'photos' => [upeJpeg(), upeJpeg()],
@@ -77,7 +77,7 @@ it('dispatches ComputeHashesJob + GenerateThumbnailJob for every uploaded photo'
 it('returns 422 when the size cap is hit (acceptance)', function (): void {
     $citizen = User::factory()->create();
     Sanctum::actingAs($citizen, ['citizen']);
-    $report = Report::factory()->create();
+    $report = Report::factory()->create(['citizen_id' => $citizen->id]);
 
     // 16 MB + 1 byte
     $tmp = tempnam(sys_get_temp_dir(), 'cip-up-');
@@ -95,7 +95,7 @@ it('returns 422 when the size cap is hit (acceptance)', function (): void {
 it('returns 422 when the type is wrong (acceptance)', function (): void {
     $citizen = User::factory()->create();
     Sanctum::actingAs($citizen, ['citizen']);
-    $report = Report::factory()->create();
+    $report = Report::factory()->create(['citizen_id' => $citizen->id]);
 
     // Send a plain text file under photos[] — the mime gate
     // (text/plain) is not in the PHOTO allowed set, so the
@@ -126,4 +126,16 @@ it('requires authentication (401 without Sanctum)', function (): void {
     $this->postJson("/api/v1/reports/{$report->id}/photos", [
         'photos' => [upeJpeg()],
     ])->assertStatus(401);
+});
+
+it('returns 403 when the citizen does not own the report (acceptance: IDOR guard)', function (): void {
+    $owner = User::factory()->create();
+    $other = User::factory()->create();
+    Sanctum::actingAs($other, ['citizen']);
+    $report = Report::factory()->create(['citizen_id' => $owner->id]);
+
+    $this->postJson("/api/v1/reports/{$report->id}/photos", [
+        'photos' => [upeJpeg()],
+    ])->assertStatus(403)
+        ->assertJsonPath('code', 'FORBIDDEN');
 });

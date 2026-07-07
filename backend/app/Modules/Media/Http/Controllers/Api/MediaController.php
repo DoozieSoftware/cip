@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Media\Http\Controllers\Api;
 
+use App\Models\User;
 use App\Modules\Media\Http\Requests\UploadMediaRequest;
 use App\Modules\Media\Http\Resources\MediaResource;
 use App\Modules\Media\Models\Media;
@@ -44,7 +45,15 @@ class MediaController extends BaseController
      */
     public function uploadPhotos(string $reportId, UploadMediaRequest $request): JsonResponse
     {
-        $userId = (string) $request->user('sanctum')->id;
+        $denied = $this->assertCanModifyMedia($request, $reportId);
+
+        if ($denied instanceof JsonResponse) {
+            return $denied;
+        }
+
+        /** @var User $user */
+        $user = $request->user('sanctum');
+        $userId = (string) $user->id;
         $files = (array) $request->file('photos', []);
 
         $created = [];
@@ -68,7 +77,15 @@ class MediaController extends BaseController
      */
     public function uploadVideo(string $reportId, UploadMediaRequest $request): JsonResponse
     {
-        $userId = (string) $request->user('sanctum')->id;
+        $denied = $this->assertCanModifyMedia($request, $reportId);
+
+        if ($denied instanceof JsonResponse) {
+            return $denied;
+        }
+
+        /** @var User $user */
+        $user = $request->user('sanctum');
+        $userId = (string) $user->id;
         $file = $request->file('video');
 
         $duration = $request->input('duration_seconds');
@@ -104,6 +121,36 @@ class MediaController extends BaseController
             'Video uploaded',
             201,
         );
+    }
+
+    /**
+     * Ensure the caller is allowed to attach media to the report.
+     *
+     * Media uploads are scoped to the report owner (or staff). A
+     * citizen must not be able to attach evidence to another
+     * citizen's report.
+     */
+    private function assertCanModifyMedia(Request $request, string $reportId): ?JsonResponse
+    {
+        $report = Report::query()->find($reportId);
+
+        if ($report === null) {
+            return $this->respondError('Report not found', 404, 'REPORT_NOT_FOUND');
+        }
+
+        /** @var User $user */
+        $user = $request->user('sanctum');
+        $isOwner = ! $report->is_anonymous
+            && $report->citizen_id !== null
+            && (string) $report->citizen_id === (string) $user->id;
+        $isStaff = method_exists($user, 'hasAnyRole')
+            && $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system']);
+
+        if (! $isOwner && ! $isStaff) {
+            return $this->respondError('You cannot add media to this report.', 403, 'FORBIDDEN');
+        }
+
+        return null;
     }
 
     /**

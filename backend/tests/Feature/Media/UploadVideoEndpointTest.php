@@ -44,7 +44,7 @@ it('returns 201 on first video upload (acceptance)', function (): void {
 
     $citizen = User::factory()->create();
     Sanctum::actingAs($citizen, ['citizen']);
-    $report = Report::factory()->create();
+    $report = Report::factory()->create(['citizen_id' => $citizen->id]);
 
     $this->postJson("/api/v1/reports/{$report->id}/video", [
         'video' => uveMp4(),
@@ -59,7 +59,7 @@ it('returns 201 on first video upload (acceptance)', function (): void {
 it('returns 409 on the second video upload (acceptance: VIDEO_ALREADY_PRESENT)', function (): void {
     $citizen = User::factory()->create();
     Sanctum::actingAs($citizen, ['citizen']);
-    $report = Report::factory()->create();
+    $report = Report::factory()->create(['citizen_id' => $citizen->id]);
 
     // Pre-seed a video row.
     Media::factory()->create([
@@ -77,7 +77,7 @@ it('returns 409 on the second video upload (acceptance: VIDEO_ALREADY_PRESENT)',
 it('returns 422 on duration below the 3s window (acceptance)', function (): void {
     $citizen = User::factory()->create();
     Sanctum::actingAs($citizen, ['citizen']);
-    $report = Report::factory()->create();
+    $report = Report::factory()->create(['citizen_id' => $citizen->id]);
 
     $this->postJson("/api/v1/reports/{$report->id}/video", [
         'video' => uveMp4(),
@@ -89,7 +89,7 @@ it('returns 422 on duration below the 3s window (acceptance)', function (): void
 it('returns 422 on duration above the 300s window', function (): void {
     $citizen = User::factory()->create();
     Sanctum::actingAs($citizen, ['citizen']);
-    $report = Report::factory()->create();
+    $report = Report::factory()->create(['citizen_id' => $citizen->id]);
 
     $this->postJson("/api/v1/reports/{$report->id}/video", [
         'video' => uveMp4(),
@@ -100,7 +100,7 @@ it('returns 422 on duration above the 300s window', function (): void {
 it('returns 422 when the type is not a video', function (): void {
     $citizen = User::factory()->create();
     Sanctum::actingAs($citizen, ['citizen']);
-    $report = Report::factory()->create();
+    $report = Report::factory()->create(['citizen_id' => $citizen->id]);
 
     $tmp = tempnam(sys_get_temp_dir(), 'cip-uv-');
     $new = $tmp.'.jpg';
@@ -113,4 +113,17 @@ it('returns 422 when the type is not a video', function (): void {
         'duration_seconds' => 10,
     ])->assertStatus(422)
         ->assertJsonPath('code', 'MEDIA_INVALID_MIME');
+});
+
+it('returns 403 when the citizen does not own the report (acceptance: IDOR guard)', function (): void {
+    $owner = User::factory()->create();
+    $other = User::factory()->create();
+    Sanctum::actingAs($other, ['citizen']);
+    $report = Report::factory()->create(['citizen_id' => $owner->id]);
+
+    $this->postJson("/api/v1/reports/{$report->id}/video", [
+        'video' => uveMp4(),
+        'duration_seconds' => 10,
+    ])->assertStatus(403)
+        ->assertJsonPath('code', 'FORBIDDEN');
 });
