@@ -60,12 +60,20 @@ export async function subscribeToPush(opts: SubscribeOptions = {}): Promise<Subs
   }
 
   const reg = await navigator.serviceWorker.ready;
-  const sub = await reg.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: opts.applicationServerKey
-      ? (urlBase64ToUint8Array(opts.applicationServerKey) as unknown as BufferSource)
-      : undefined,
-  });
+  let sub: PushSubscription;
+  try {
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: opts.applicationServerKey
+        ? (urlBase64ToUint8Array(opts.applicationServerKey) as unknown as BufferSource)
+        : undefined,
+    });
+  } catch {
+    // No VAPID key supplied, unsupported by the browser, or the
+    // user revoked permission mid-flow. Return a typed result so the
+    // caller can show a toast instead of crashing on an unhandled rejection.
+    return { ok: false, reason: 'subscription_failed' };
+  }
 
   const json = sub.toJSON();
   try {
