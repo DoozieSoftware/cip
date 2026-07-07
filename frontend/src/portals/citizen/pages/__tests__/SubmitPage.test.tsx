@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import type * as ClientApi from '../../api/client';
 import SubmitPage from '../SubmitPage';
 
 const mutateAsyncMock = vi.fn();
 
 vi.mock('../../api/client', async () => {
-  const actual = await vi.importActual<typeof import('../../api/client')>('../../api/client');
+  const actual = await vi.importActual<typeof ClientApi>('../../api/client');
   return {
     ...actual,
     useReportTypes: () => ({
@@ -28,7 +29,21 @@ vi.mock('../../api/client', async () => {
 });
 
 vi.mock('../../components/CameraCapture', () => ({
-  CameraCapture: () => <div data-testid="camera-capture" />,
+  CameraCapture: ({ mode, onCapture }: { mode: string; onCapture: (f: File) => void }) => (
+    <button
+      type="button"
+      data-testid={`camera-${mode}`}
+      onClick={() =>
+        onCapture(
+          new File(['x'], mode === 'video' ? 'clip.webm' : 'photo.jpg', {
+            type: mode === 'video' ? 'video/webm' : 'image/jpeg',
+          }),
+        )
+      }
+    >
+      capture {mode}
+    </button>
+  ),
 }));
 
 function renderSubmitPage(): void {
@@ -43,6 +58,16 @@ describe('SubmitPage', () => {
   beforeEach(() => {
     mutateAsyncMock.mockReset();
     mutateAsyncMock.mockResolvedValue({ id: 'report-1', status: 'submitted' });
+    if (typeof URL.createObjectURL !== 'function') {
+      URL.createObjectURL = vi.fn(() => 'blob:mock');
+    } else {
+      vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
+    }
+    if (typeof URL.revokeObjectURL !== 'function') {
+      URL.revokeObjectURL = vi.fn();
+    } else {
+      vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    }
   });
 
   it('requests browser location permission from the submit action when location is mandatory', async () => {
@@ -68,6 +93,7 @@ describe('SubmitPage', () => {
     renderSubmitPage();
 
     fireEvent.click(screen.getByRole('button', { name: /pothole/i }));
+    fireEvent.click(screen.getByTestId('camera-photo'));
     fireEvent.change(screen.getByPlaceholderText(/Big pothole/i), {
       target: { value: 'Large pothole near metro' },
     });

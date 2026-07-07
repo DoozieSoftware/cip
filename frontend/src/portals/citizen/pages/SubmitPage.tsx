@@ -25,13 +25,39 @@ export default function SubmitPage(): JSX.Element {
   const [showVideo, setShowVideo] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<'type' | 'title' | 'description' | 'location' | 'evidence', string>>>({});
 
   function onCameraError(err: CameraError): void {
     setError(err.message);
   }
 
+  function setFieldError(field: keyof typeof fieldErrors, message: string | null): void {
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      if (message === null) {
+        delete next[field];
+      } else {
+        next[field] = message;
+      }
+      return next;
+    });
+  }
+
   function removeFile(idx: number): void {
     setFiles((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function addPhoto(f: File): void {
+    const photoCount = files.filter((x) => x.type.startsWith('image/')).length;
+    if (photoCount >= 5) {
+      setError('You can attach up to 5 photos.');
+      return;
+    }
+    setFiles((prev) => [...prev, f].slice(0, 6));
+  }
+
+  function addVideo(f: File): void {
+    setFiles((prev) => [...prev.filter((x) => !x.type.startsWith('video/')), f].slice(0, 6));
   }
 
   /**
@@ -48,11 +74,19 @@ export default function SubmitPage(): JSX.Element {
   async function onSubmit(e: FormEvent): Promise<void> {
     e.preventDefault();
     setError(null);
-    if (!typeId) { setError('Pick a category.'); return; }
-    if (title.length < 5) { setError('Title should be at least 5 characters.'); return; }
-    if (description.length < 10) { setError('Description should be at least 10 characters.'); return; }
+    setFieldErrors({});
+    if (!typeId) { setFieldError('type', 'Pick a category.'); }
+    if (title.trim().length < 5) { setFieldError('title', 'Title should be at least 5 characters.'); }
+    if (description.trim().length < 10) { setFieldError('description', 'Description should be at least 10 characters.'); }
+    if (Object.keys(fieldErrors).length > 0) { return; }
+
     const activeLocation = location ?? await gpsRef.current?.requestLocation() ?? null;
-    if (activeLocation === null) { setError('Allow location access to tag the report.'); return; }
+    if (activeLocation === null) { setFieldError('location', 'Allow location access to tag the report.'); return; }
+
+    const hasPhoto = files.some((f) => f.type.startsWith('image/'));
+    const hasVideo = files.some((f) => f.type.startsWith('video/'));
+    if (selectedType?.requires_photo && !hasPhoto) { setFieldError('evidence', 'This category requires at least one photo.'); return; }
+    if (selectedType?.requires_video && !hasVideo) { setFieldError('evidence', 'This category requires a video.'); return; }
 
     const payload: CreateReportInput = {
       report_type_id: typeId,
@@ -84,6 +118,7 @@ export default function SubmitPage(): JSX.Element {
   }
 
   const selectedType: ReportType | undefined = types.data?.find((t) => t.id === typeId);
+  const evidenceRequired = Boolean(selectedType?.requires_photo || selectedType?.requires_video);
 
   return (
     <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
@@ -110,7 +145,9 @@ export default function SubmitPage(): JSX.Element {
 
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-950">Issue details</h2>
+          <h2 className="text-sm font-semibold text-slate-950">
+            Issue details <span className="text-red-500" aria-hidden>*</span>
+          </h2>
           {selectedType ? <span className="text-xs text-slate-500">{selectedType.name}</span> : null}
         </div>
         {types.isLoading ? (
@@ -127,6 +164,7 @@ export default function SubmitPage(): JSX.Element {
                   typeId === t.id
                     ? 'border-blue-500 bg-blue-50 text-blue-800 ring-1 ring-blue-200'
                     : 'border-slate-200 bg-white hover:border-slate-300',
+                  fieldErrors.type ? 'border-red-400' : '',
                 )}
               >
                 <span aria-hidden className="text-xl">{iconForCode(t.code)}</span>
@@ -135,37 +173,71 @@ export default function SubmitPage(): JSX.Element {
             ))}
           </div>
         )}
+        {fieldErrors.type ? (
+          <p role="alert" className="mt-2 text-xs font-medium text-red-600">{fieldErrors.type}</p>
+        ) : null}
         {selectedType ? (
           <p className="mt-2 inline-flex rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
             {selectedType.requires_photo ? 'Evidence required' : 'Evidence optional'}
             {selectedType.requires_video ? ' - Video required' : ''}
           </p>
         ) : null}
+        <label htmlFor="report-title" className="mt-3 block text-xs font-medium text-slate-600">
+          Title <span className="text-red-500" aria-hidden>*</span>
+        </label>
         <input
+          id="report-title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Big pothole near MG Road metro gate 3"
-          className="mt-3 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          aria-invalid={fieldErrors.title ? true : undefined}
+          className={cx(
+            'mt-1 block w-full rounded-md border px-3 py-2 text-base shadow-sm focus:border-blue-500 focus:ring-blue-500',
+            fieldErrors.title ? 'border-red-400' : 'border-slate-300',
+          )}
           required
         />
+        {fieldErrors.title ? (
+          <p role="alert" className="mt-1 text-xs font-medium text-red-600">{fieldErrors.title}</p>
+        ) : null}
+        <label htmlFor="report-description" className="mt-2 block text-xs font-medium text-slate-600">
+          Description <span className="text-red-500" aria-hidden>*</span>
+        </label>
         <textarea
+          id="report-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
           placeholder="Affects traffic; vehicles swerve into the bus lane. Approx 80 cm wide."
-          className="mt-2 block w-full rounded-md border-slate-300 px-3 py-2 text-base shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          aria-invalid={fieldErrors.description ? true : undefined}
+          className={cx(
+            'mt-1 block w-full rounded-md border px-3 py-2 text-base shadow-sm focus:border-blue-500 focus:ring-blue-500',
+            fieldErrors.description ? 'border-red-400' : 'border-slate-300',
+          )}
           required
         />
+        {fieldErrors.description ? (
+          <p role="alert" className="mt-1 text-xs font-medium text-red-600">{fieldErrors.description}</p>
+        ) : null}
       </section>
 
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-950">Location</h2>
-          {location !== null ? (
-            <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">GPS verified</span>
-          ) : null}
+          <h2 className="text-sm font-semibold text-slate-950">
+            Location <span className="text-red-500" aria-hidden>*</span>
+          </h2>
+           {location !== null ? (
+              location.mock_heuristic.likely ? (
+                <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">Location suspicious</span>
+              ) : (
+                <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">GPS verified</span>
+              )
+            ) : null}
         </div>
         <GpsCapture ref={gpsRef} onCapture={setLocation} className="mt-2" />
+        {fieldErrors.location ? (
+          <p role="alert" className="mt-2 text-xs font-medium text-red-600">{fieldErrors.location}</p>
+        ) : null}
         {location !== null ? (
           <span className="mt-2 block text-xs text-slate-600">
             {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
@@ -176,7 +248,7 @@ export default function SubmitPage(): JSX.Element {
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           placeholder="Landmark / address (optional, helps the officer)"
-          className="mt-2 block w-full rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
         />
       </section>
 
@@ -186,12 +258,17 @@ export default function SubmitPage(): JSX.Element {
             <h2 className="text-sm font-semibold text-slate-950">Evidence</h2>
             <p className="text-xs text-slate-500">Up to 5 photos and 1 short video. Each up to 25 MB.</p>
           </div>
-          <span className="rounded-full border border-red-200 px-2 py-1 text-xs font-semibold text-red-600">Required</span>
-        </div>
+           <span className={cx('rounded-full border px-2 py-1 text-xs font-semibold', evidenceRequired ? 'border-red-200 text-red-600' : 'border-slate-200 text-slate-500')}>
+              {evidenceRequired ? 'Required' : 'Optional'}
+            </span>
+         </div>
+        {fieldErrors.evidence ? (
+          <p role="alert" className="mt-2 text-xs font-medium text-red-600">{fieldErrors.evidence}</p>
+        ) : null}
         <div className="mt-2 space-y-3">
           <CameraCapture
             mode="photo"
-            onCapture={(f) => setFiles((prev) => [...prev, f].slice(0, 5))}
+            onCapture={addPhoto}
             onError={onCameraError}
           />
           <button
@@ -204,7 +281,7 @@ export default function SubmitPage(): JSX.Element {
           {showVideo ? (
             <CameraCapture
               mode="video"
-              onCapture={(f) => setFiles((prev) => [...prev, f].slice(0, 5))}
+              onCapture={addVideo}
               onError={onCameraError}
             />
           ) : null}
@@ -246,9 +323,9 @@ export default function SubmitPage(): JSX.Element {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full rounded-lg bg-blue-600 px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:bg-blue-300"
+        className="w-full rounded-lg bg-blue-600 px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
       >
-        {submitting ? 'Submitting...' : 'Submit report'}
+        {submitting ? 'Submitting…' : 'Submit report'}
       </button>
     </form>
   );
