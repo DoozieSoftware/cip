@@ -52,58 +52,162 @@ export function evidencePreviewHandlers(): EvidencePreviewProps {
 
 /* ----- 3. Strip EXIF --------------------------------------------- */
 
-const EXIF_TAGS = new Set([
-  'GPSLatitude', 'GPSLongitude', 'GPSAltitude', 'GPSTimeStamp', 'GPSDateStamp',
-  'Make', 'Model', 'Software', 'DateTime', 'DateTimeOriginal', 'DateTimeDigitized',
-  'Artist', 'Copyright',
+/**
+ * Numeric TIFF/EXIF tag IDs that carry location or device
+ * identity and must be zeroed before upload/display.
+ *
+ * Orientation (0x0112), compression, and color tags are
+ * intentionally NOT stripped.
+ */
+const STRIP_TAGS = new Set<number>([
+  0x0001, // GPSLatitudeRef
+  0x0002, // GPSLatitude
+  0x0003, // GPSLongitudeRef
+  0x0004, // GPSLongitude
+  0x0005, // GPSAltitudeRef
+  0x0006, // GPSAltitude
+  0x0007, // GPSTimeStamp
+  0x0012, // GPSMapDatum
+  0x001b, // GPSProcessingMethod
+  0x001d, // GPSDateStamp
+  0x010f, // Make
+  0x0110, // Model
+  0x0131, // Software
+  0x0132, // DateTime
+  0x013b, // Artist
+  0x8298, // Copyright
+  0x9003, // DateTimeOriginal
+  0x9004, // DateTimeDigitized
 ]);
 
+/** Sub-IFD pointer tags we follow to find more tags to strip. */
+const GPS_INFO_POINTER = 0x8825;
+const EXIF_IFD_POINTER = 0x8769;
+
+/** TIFF field type -> byte size, per the TIFF 6.0 spec. */
+const TIFF_TYPE_SIZE: Record<number, number> = {
+  1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 6: 1, 7: 1, 8: 2, 9: 4, 10: 8, 11: 4, 12: 8,
+};
+
 /**
- * Lightweight EXIF scrubber for a JPEG. We do a streaming
- * byte scan: find the APP1 marker (0xFFE1, "Exif\0\0") and
- * walk the IFD entries, zeroing the bytes for any tag
- * present in `EXIF_TAGS`. The result is still a valid JPEG.
+ * Lightweight EXIF scrubber for a JPEG.
  *
- * For HEIC/HEIF/PNG we return the buffer unchanged (those
- * formats carry metadata in different containers and the
- * backend's media pipeline re-encodes everything anyway).
+ * We locate the APP1 ("Exif\0\0") segment, parse the TIFF
+ * header (handling both "II" little-endian and "MM"
+ * big-endian byte order), walk IFD0 and any GPS/Exif
+ * sub-IFDs, and zero the value bytes of every tag in
+ * `STRIP_TAGS`. Only data bytes inside APP1 are mutated;
+ * segment markers and lengths are never touched, so the
+ * result stays a valid JPEG.
+ *
+ * For HEIC/HEIF/PNG (anything not starting with 0xFFD8) we
+ * return the buffer unchanged — those containers are
+ * re-encoded by the backend media pipeline anyway.
  */
 export function stripExif(buffer: ArrayBuffer): ArrayBuffer {
   const bytes = new Uint8Array(buffer);
   if (bytes.length < 4) return buffer;
   // Quick magic check for JPEG.
   if (bytes[0] !== 0xff || bytes[1] !== 0xd8) return buffer;
+
+  const view = new DataView(buffer);
+
   let i = 2;
   while (i < bytes.length - 1) {
     if (bytes[i] !== 0xff) break;
     const marker = bytes[i + 1] ?? 0;
-    // SOS or EOI — stop walking.
+    // SOS or EOI — real image data starts; stop walking.
     if (marker === 0xda || marker === 0xd9) break;
     const segLen = ((bytes[i + 2] ?? 0) << 8) | (bytes[i + 3] ?? 0);
+    if (segLen <= 0) break;
+
     if (marker === 0xe1) {
-      // APP1 — usually EXIF. Walk IFD0.
       const segStart = i + 4;
-      const exifHeader = String.fromCharCode(...Array.from(bytes.slice(segStart, segStart + 6)));
+      const exifHeader = String.fromCharCode(...bytes.slice(segStart, segStart + 6));
       if (exifHeader.startsWith('Exif')) {
         const tiffStart = segStart + 6;
-        // Skip "MM" or "II" (2 bytes) + 0x2A (2 bytes) + offset (4 bytes)
-        let p = tiffStart + 8;
-        const numEntries = (bytes[p] ?? 0) << 8 | (bytes[p + 1] ?? 0);
-        p += 2;
-        for (let e = 0; e < numEntries; e++) {
-          const tag = String.fromCharCode(bytes[p] ?? 0, bytes[p + 1] ?? 0);
-          if (EXIF_TAGS.has(tag)) {
-            // Zero the value area (12 bytes per IFD entry: tag(2) + type(2) + count(4) + value/offset(4))
-            for (let b = 0; b < 8; b++) bytes[p + 4 + b] = 0;
-          }
-          p += 12;
-          if (p > bytes.length - 12) break;
+        if (tiffStart + 8 <= bytes.length) {
+          const littleEndian =
+            bytes[tiffStart] === 0x49 && bytes[tiffStart + 1] === 0x49;
+          const read16 = (off: number): number => view.getUint16(off, littleEndian);
+          const read32 = (off: number): number => view.getUint32(off, littleEndian);
+
+          const ifd0Offset = read32(tiffStart + 4);
+          walkIfd(bytes, view, tiffStart, ifd0Offset, read16, read32);
         }
       }
     }
+
     i += 2 + segLen;
   }
   return buffer;
+}
+
+/**
+ * Walk a single TIFF IFD (and recurse into GPS/Exif
+ * sub-IFDs). `ifdOffset` is relative to `tiffStart`.
+ */
+function walkIfd(
+  bytes: Uint8Array,
+  view: DataView,
+  tiffStart: number,
+  ifdOffset: number,
+  read16: (off: number) => number,
+  read32: (off: number) => number,
+): void {
+  const base = tiffStart + ifdOffset;
+  if (ifdOffset < 0 || base + 2 > bytes.length) return;
+
+  const entryCount = read16(base);
+  let p = base + 2;
+  const subIfds: number[] = [];
+
+  for (let e = 0; e < entryCount; e++) {
+    if (p + 12 > bytes.length) break;
+    const tag = read16(p);
+
+    if (tag === GPS_INFO_POINTER || tag === EXIF_IFD_POINTER) {
+      subIfds.push(read32(p + 8));
+    } else if (STRIP_TAGS.has(tag)) {
+      zeroEntry(bytes, view, p, tiffStart, read32);
+    }
+
+    p += 12;
+  }
+
+  for (const sub of subIfds) {
+    walkIfd(bytes, view, tiffStart, sub, read16, read32);
+  }
+}
+
+/**
+ * Zero the value bytes for one IFD entry. IFD entries are
+ * 12 bytes: tag(2) + type(2) + count(4) + value/offset(4).
+ * If the value fits in the 4-byte inline slot it is zeroed
+ * there; otherwise the entry holds an offset (relative to
+ * the TIFF start) to the out-of-line value region, which is
+ * zeroed instead.
+ */
+function zeroEntry(
+  bytes: Uint8Array,
+  view: DataView,
+  p: number,
+  tiffStart: number,
+  read32: (off: number) => number,
+): void {
+  const type = view.getUint16(p + 2, true);
+  const count = read32(p + 4);
+  const typeSize = TIFF_TYPE_SIZE[type] ?? 0;
+  const total = count * typeSize;
+
+  if (total <= 4) {
+    for (let k = 0; k < 4; k++) bytes[p + 8 + k] = 0;
+  } else {
+    const valueOffset = tiffStart + read32(p + 8);
+    for (let k = 0; k < total && valueOffset + k < bytes.length; k++) {
+      bytes[valueOffset + k] = 0;
+    }
+  }
 }
 
 /* ----- 4. Convenience: scrub + sign ----------------------------- */
