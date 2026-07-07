@@ -110,8 +110,8 @@ export default function SettingsPage(): JSX.Element {
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-700">Privacy &amp; legal</h2>
         <ul className="mt-2 space-y-1 text-sm text-blue-700">
-          <li><Link to="legal/privacy" className="underline">Privacy policy</Link></li>
-          <li><Link to="legal/terms" className="underline">Terms of use</Link></li>
+          <li><Link to="/citizen/legal/privacy" className="underline">Privacy policy</Link></li>
+          <li><Link to="/citizen/legal/terms" className="underline">Terms of use</Link></li>
         </ul>
       </section>
 

@@ -34,6 +34,20 @@ export interface CameraCaptureProps {
 const DEFAULT_VIDEO_MIN = 3_000;
 const DEFAULT_VIDEO_MAX = 5_000;
 
+const VIDEO_MIME_CANDIDATES = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm'];
+
+function pickVideoMimeType(): string {
+  if (typeof MediaRecorder === 'undefined') return 'video/webm';
+  const supported = VIDEO_MIME_CANDIDATES.find((m) => {
+    try {
+      return MediaRecorder.isTypeSupported(m);
+    } catch {
+      return false;
+    }
+  });
+  return supported ?? 'video/webm';
+}
+
 export function CameraCapture(props: CameraCaptureProps): JSX.Element {
   const { mode, onCapture, onError, videoMinMs = DEFAULT_VIDEO_MIN, videoMaxMs = DEFAULT_VIDEO_MAX, className } = props;
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -119,10 +133,11 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     stopStream();
   }
 
-  function startRecording(): void {
-    if (!streamRef.current) return;
-    chunksRef.current = [];
-    const rec = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' });
+   function startRecording(): void {
+     if (!streamRef.current) return;
+     chunksRef.current = [];
+     const mimeType = pickVideoMimeType();
+     const rec = new MediaRecorder(streamRef.current, { mimeType });
     rec.ondataavailable = (e: BlobEvent) => {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
@@ -139,8 +154,9 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
         stopStream();
         return;
       }
-      const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-      const file = new File([blob], `video-${Date.now()}.webm`, { type: 'video/webm' });
+      const blob = new Blob(chunksRef.current, { type: mimeType });
+      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+      const file = new File([blob], `video-${Date.now()}.${ext}`, { type: mimeType });
       onCapture(file);
       stopStream();
     };
