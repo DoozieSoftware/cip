@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState, type JSX } from 'react';
 import { cx } from '../../moderator/design/cx';
 import { mockGpsLikely, type MockGpsResult } from '../security/mockGps';
 
@@ -26,63 +26,81 @@ export interface GpsCaptureProps {
   maxAccuracyM?: number;
   className?: string;
   watch?: boolean;
+  autoRequest?: boolean;
 }
 
-export function GpsCapture(props: GpsCaptureProps): JSX.Element {
-  const { onCapture, maxAccuracyM = 100, className, watch = false } = props;
+export interface GpsCaptureHandle {
+  requestLocation: () => Promise<CapturedLocation | null>;
+}
+
+export const GpsCapture = forwardRef<GpsCaptureHandle, GpsCaptureProps>(function GpsCapture(props, ref): JSX.Element {
+  const { onCapture, maxAccuracyM = 100, className, watch = false, autoRequest = false } = props;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const historyRef = useRef<Array<{ altitude: number | null }>>([]);
   const [lastResult, setLastResult] = useState<MockGpsResult | null>(null);
 
-  const handlePosition = useCallback((pos: GeolocationPosition): void => {
+  const handlePosition = useCallback((pos: GeolocationPosition): CapturedLocation | null => {
     const hist = [...historyRef.current, { altitude: pos.coords.altitude }].slice(-5);
     historyRef.current = hist;
     const mock = mockGpsLikely(pos, hist.slice(0, -1));
     setLastResult(mock);
     if (pos.coords.accuracy > maxAccuracyM) {
       setError(`GPS accuracy is ±${Math.round(pos.coords.accuracy)} m — try moving to an open area.`);
-      return;
+      return null;
     }
     setError(null);
-    onCapture({
+    const captured: CapturedLocation = {
       latitude: pos.coords.latitude,
       longitude: pos.coords.longitude,
       accuracy_m: pos.coords.accuracy,
       captured_at: pos.timestamp,
       mock_heuristic: mock,
-    });
+    };
+    onCapture(captured);
+    return captured;
   }, [maxAccuracyM, onCapture]);
 
-  const detect = useCallback((): void => {
-    if (!('geolocation' in navigator)) {
+  const requestLocation = useCallback(async (): Promise<CapturedLocation | null> => {
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
       setError('Geolocation not supported in this browser.');
-      return;
+      return null;
     }
+    if (typeof window !== 'undefined' && window.isSecureContext === false) {
+      setError('Location permission requires HTTPS or localhost.');
+      return null;
+    }
+
     setBusy(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        handlePosition(pos);
-        setBusy(false);
-      },
-      (err) => {
-        setError(err.message);
-        setBusy(false);
-      },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
-    );
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const captured = handlePosition(pos);
+          setBusy(false);
+          resolve(captured);
+        },
+        (err) => {
+          setError(err.message || 'Location permission was not granted.');
+          setBusy(false);
+          resolve(null);
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
+      );
+    });
   }, [handlePosition]);
 
+  useImperativeHandle(ref, () => ({ requestLocation }), [requestLocation]);
+
   useEffect(() => {
-    detect();
-  }, [detect]);
+    if (autoRequest) void requestLocation();
+  }, [autoRequest, requestLocation]);
 
   return (
     <div className={cx('space-y-2', className)}>
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={detect}
+          onClick={() => void requestLocation()}
           disabled={busy}
           className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:bg-blue-300"
         >
@@ -109,4 +127,4 @@ export function GpsCapture(props: GpsCaptureProps): JSX.Element {
       ) : null}
     </div>
   );
-}
+});

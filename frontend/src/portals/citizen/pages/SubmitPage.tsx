@@ -1,10 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateReport, useReportTypes, type ReportType, type CreateReportInput } from '../api/client';
 import { Spinner, cx } from '../../moderator/design';
 import { CameraCapture, type CameraError } from '../components/CameraCapture';
-import { GpsCapture, type CapturedLocation } from '../components/GpsCapture';
+import { GpsCapture, type CapturedLocation, type GpsCaptureHandle } from '../components/GpsCapture';
 import { getQueue } from '../offline/queue';
 import { useToast } from '../components/Toast';
 import { ApiError } from '../../../auth/api';
@@ -14,6 +14,7 @@ export default function SubmitPage(): JSX.Element {
   const toast = useToast();
   const types = useReportTypes();
   const create = useCreateReport();
+  const gpsRef = useRef<GpsCaptureHandle | null>(null);
   const [typeId, setTypeId] = useState<string>('');
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
@@ -49,18 +50,19 @@ export default function SubmitPage(): JSX.Element {
     if (!typeId) { setError('Pick a category.'); return; }
     if (title.length < 5) { setError('Title should be at least 5 characters.'); return; }
     if (description.length < 10) { setError('Description should be at least 10 characters.'); return; }
-    if (location === null) { setError('Tap "Use my location" to tag the report.'); return; }
+    const activeLocation = location ?? await gpsRef.current?.requestLocation() ?? null;
+    if (activeLocation === null) { setError('Allow location access to tag the report.'); return; }
 
     const payload: CreateReportInput = {
       report_type_id: typeId,
       title,
       description,
-      latitude: location.latitude,
-      longitude: location.longitude,
-      accuracy_m: location.accuracy_m ?? undefined,
+      latitude: activeLocation.latitude,
+      longitude: activeLocation.longitude,
+      accuracy_m: activeLocation.accuracy_m ?? undefined,
       address,
       media_files: files,
-      mock_gps_score: location.mock_heuristic.score,
+      mock_gps_score: activeLocation.mock_heuristic.score,
     };
 
     setSubmitting(true);
@@ -162,7 +164,7 @@ export default function SubmitPage(): JSX.Element {
             <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">GPS verified</span>
           ) : null}
         </div>
-        <GpsCapture onCapture={setLocation} className="mt-2" />
+        <GpsCapture ref={gpsRef} onCapture={setLocation} className="mt-2" />
         {location !== null ? (
           <span className="mt-2 block text-xs text-slate-600">
             {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
