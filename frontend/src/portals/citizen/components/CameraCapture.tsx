@@ -196,7 +196,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
             onClick={() => void startCamera()}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
           >
-            {mode === 'photo' ? 'Open camera' : 'Open camera'}
+            Open camera
           </button>
         ) : mode === 'photo' ? (
           <button
