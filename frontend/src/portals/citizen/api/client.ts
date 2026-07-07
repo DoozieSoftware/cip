@@ -32,6 +32,7 @@ export interface ReportSummary {
   updated_at?: string | null;
   assigned_department?: { id: string; name: string; code: string } | null;
   location?: { latitude: number; longitude: number; address?: string | null } | null;
+  is_verified?: boolean;
   media_count?: number;
 }
 

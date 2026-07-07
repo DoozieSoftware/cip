@@ -60,7 +60,11 @@ export default function ReportDetailPage(): JSX.Element {
             <p className="mt-1 line-clamp-2 text-sm text-slate-600">{r.description}</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <StatusBadge status={r.status} />
-              <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">GPS verified</span>
+              {r.is_verified ? (
+                <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">
+                  Verified
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
