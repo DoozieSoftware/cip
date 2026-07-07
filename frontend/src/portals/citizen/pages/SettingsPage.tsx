@@ -1,8 +1,12 @@
 import { useEffect, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../auth/AuthContext';
 import { useToast } from '../components/Toast';
 import { pushSupport, subscribeToPush, unsubscribeFromPush } from '../push/subscribe';
+
+/** VAPID public key comes from configuration, never hardcoded. */
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY ?? '';
+const PUSH_SUBSCRIBE_URL = '/notifications/push/subscriptions';
 
 /**
  * T-M13-016 — Citizen settings.
@@ -36,7 +40,10 @@ export default function SettingsPage(): JSX.Element {
         setPushOn(false);
         toast.show('Push notifications off', 'info');
       } else {
-        const res = await subscribeToPush();
+        const res = await subscribeToPush({
+          applicationServerKey: VAPID_PUBLIC_KEY,
+          subscribeUrl: PUSH_SUBSCRIBE_URL,
+        });
         if (res.ok) {
           setPushOn(true);
           toast.show('Push notifications on', 'success');
@@ -103,8 +110,8 @@ export default function SettingsPage(): JSX.Element {
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-700">Privacy &amp; legal</h2>
         <ul className="mt-2 space-y-1 text-sm text-blue-700">
-          <li><a href="/legal/privacy" className="underline">Privacy policy</a></li>
-          <li><a href="/legal/terms" className="underline">Terms of use</a></li>
+          <li><Link to="legal/privacy" className="underline">Privacy policy</Link></li>
+          <li><Link to="legal/terms" className="underline">Terms of use</Link></li>
         </ul>
       </section>
 
