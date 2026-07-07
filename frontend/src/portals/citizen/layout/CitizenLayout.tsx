@@ -7,10 +7,11 @@ import { cx } from '../../moderator/design/cx';
 
 const NAV = [
   { to: '/citizen', label: 'Home', icon: '⌂', end: true },
-  { to: '/citizen/reports', label: 'Reports', icon: '▤' },
+  { to: '/citizen/reports', label: 'My reports', icon: '▤' },
   { to: '/citizen/submit', label: 'New', icon: '◎', primary: true },
   { to: '/citizen/notifications', label: 'Updates', icon: '◉' },
-  { to: '/citizen/settings', label: 'More', icon: '☰' },
+  { to: '/citizen/profile', label: 'Profile', icon: '☻' },
+  { to: '/citizen/settings', label: 'Settings', icon: '☰' },
 ];
 
 export function CitizenLayout(): JSX.Element {
