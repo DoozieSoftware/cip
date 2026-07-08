@@ -5,6 +5,7 @@ describe('operations API surface', () => {
   it('departmentApi exposes the expected methods', () => {
     expect(typeof departmentApi.dashboard).toBe('function');
     expect(typeof departmentApi.listReports).toBe('function');
+    expect(typeof departmentApi.showReport).toBe('function');
     expect(typeof departmentApi.exportUrl).toBe('function');
     expect(typeof departmentApi.action).toBe('function');
     expect(typeof departmentApi.listNotes).toBe('function');

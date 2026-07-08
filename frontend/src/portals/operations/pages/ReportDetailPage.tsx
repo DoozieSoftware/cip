@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -14,32 +14,32 @@ import {
 } from '../design';
 import { departmentApi } from '../api/operations';
 import type { DepartmentReportListItem, InternalNote, WorkflowEvent } from '../types';
+import { useKeyboardShortcuts } from '../../moderator/hooks/useKeyboardShortcuts';
 
 function ActionButton({
   label,
   event,
-  reportId,
-  queryClient,
+  onAction,
+  disabled,
+  working,
+  shortcut,
 }: {
   label: string;
   event: WorkflowEvent;
-  reportId: string;
-  queryClient: ReturnType<typeof useQueryClient>;
+  onAction: (event: WorkflowEvent) => void;
+  disabled: boolean;
+  working: boolean;
+  shortcut?: string;
 }) {
-  const mutation = useMutation({
-    mutationFn: () => departmentApi.action(reportId, event),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['operations', 'reports'] });
-    },
-  });
   return (
     <Button
       variant="primary"
-      onClick={() => { mutation.mutate(); }}
-      disabled={mutation.isPending}
+      onClick={() => onAction(event)}
+      disabled={disabled}
       aria-label={`${label} report`}
+      aria-keyshortcuts={shortcut}
     >
-      {mutation.isPending ? 'Working…' : label}
+      {working ? 'Working...' : label}
     </Button>
   );
 }
@@ -48,10 +48,11 @@ export default function ReportDetailPage() {
   const params = useParams<{ id: string }>();
   const reportId = params.id ?? '';
   const queryClient = useQueryClient();
+  const noteRef = useRef<HTMLTextAreaElement | null>(null);
 
   const { data: report, isLoading, error, refetch } = useQuery<DepartmentReportListItem>({
     queryKey: ['operations', 'report', reportId],
-    queryFn: async () => (await departmentApi.listReports({ page: 1, per_page: 1 })).data.find((r) => r.id === reportId) as DepartmentReportListItem,
+    queryFn: async () => (await departmentApi.showReport(reportId)).data,
     enabled: Boolean(reportId),
   });
 
@@ -62,6 +63,21 @@ export default function ReportDetailPage() {
   });
 
   const [noteBody, setNoteBody] = useState('');
+  const action = useMutation({
+    mutationFn: (event: WorkflowEvent) => departmentApi.action(reportId, event),
+    onSuccess: (response) => {
+      queryClient.setQueryData<DepartmentReportListItem>(
+        ['operations', 'report', reportId],
+        (current) => ({
+          ...response.data,
+          internal_notes: current?.internal_notes ?? response.data.internal_notes,
+        }),
+      );
+      void queryClient.invalidateQueries({ queryKey: ['operations', 'reports'] });
+    },
+  });
+  const actionPending = action.isPending;
+  const activeAction = action.variables;
   const addNote = useMutation({
     mutationFn: () => departmentApi.addNote(reportId, noteBody.trim()),
     onSuccess: () => {
@@ -70,6 +86,32 @@ export default function ReportDetailPage() {
       void queryClient.invalidateQueries({ queryKey: ['operations', 'report', reportId] });
     },
   });
+
+  const runAction = useCallback(
+    (event: WorkflowEvent): void => {
+      if (reportId === '' || actionPending) {
+        return;
+      }
+      action.mutate(event);
+    },
+    [action, actionPending, reportId],
+  );
+
+  const focusNote = useCallback((): void => {
+    noteRef.current?.focus();
+  }, []);
+
+  const shortcuts = useMemo(
+    () => ({
+      a: () => runAction('accept'),
+      s: () => runAction('start'),
+      r: () => runAction('resolve'),
+      c: () => runAction('close'),
+      n: () => focusNote(),
+    }),
+    [focusNote, runAction],
+  );
+  useKeyboardShortcuts(shortcuts, !isLoading && Boolean(report));
 
   if (isLoading) {
     return (
@@ -114,11 +156,45 @@ export default function ReportDetailPage() {
           <CardTitle>Actions</CardTitle>
         </CardHeader>
         <CardBody className="flex flex-wrap gap-2">
-          <ActionButton label="Accept" event="accept" reportId={report.id} queryClient={queryClient} />
-          <ActionButton label="Start" event="start" reportId={report.id} queryClient={queryClient} />
-          <ActionButton label="Progress" event="progress" reportId={report.id} queryClient={queryClient} />
-          <ActionButton label="Resolve" event="resolve" reportId={report.id} queryClient={queryClient} />
-          <ActionButton label="Close" event="close" reportId={report.id} queryClient={queryClient} />
+          <ActionButton
+            label="Accept"
+            event="accept"
+            onAction={runAction}
+            disabled={actionPending}
+            working={actionPending && activeAction === 'accept'}
+            shortcut="A"
+          />
+          <ActionButton
+            label="Start"
+            event="start"
+            onAction={runAction}
+            disabled={actionPending}
+            working={actionPending && activeAction === 'start'}
+            shortcut="S"
+          />
+          <ActionButton
+            label="Progress"
+            event="progress"
+            onAction={runAction}
+            disabled={actionPending}
+            working={actionPending && activeAction === 'progress'}
+          />
+          <ActionButton
+            label="Resolve"
+            event="resolve"
+            onAction={runAction}
+            disabled={actionPending}
+            working={actionPending && activeAction === 'resolve'}
+            shortcut="R"
+          />
+          <ActionButton
+            label="Close"
+            event="close"
+            onAction={runAction}
+            disabled={actionPending}
+            working={actionPending && activeAction === 'close'}
+            shortcut="C"
+          />
           {isTerminal && <p className="text-xs text-slate-500">This report is in a terminal state.</p>}
         </CardBody>
       </Card>
@@ -133,11 +209,13 @@ export default function ReportDetailPage() {
               Add a note (department-private)
             </label>
             <Textarea
+              ref={noteRef}
               id="note-body"
               value={noteBody}
               onChange={(e) => setNoteBody(e.target.value)}
               placeholder="Site visit notes, contact log, etc."
               rows={4}
+              aria-keyshortcuts="N"
             />
             <Button
               variant="primary"

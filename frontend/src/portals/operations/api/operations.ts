@@ -57,6 +57,11 @@ export const departmentApi = {
       filters as Record<string, unknown>,
     ),
 
+  showReport: (id: string) =>
+    api.get<{ success: boolean; data: DepartmentReportListItem }>(
+      `/department/reports/${id}`,
+    ),
+
   /**
    * Returns a download URL the browser can navigate to;
    * the response is a file (csv/xlsx/pdf), not JSON.
@@ -236,4 +241,3 @@ export const auditApi = {
     return `${base.replace(/\/$/, '')}/admin/audit-logs?${params.toString()}`;
   },
 };
-
