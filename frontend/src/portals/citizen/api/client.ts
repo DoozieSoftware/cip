@@ -196,32 +196,17 @@ export async function submitReportPayload(input: CreateReportInput): Promise<{ i
   });
   const reportId = create.data.id;
 
-  // Upload files (best-effort) using the bearer token directly via fetch.
+  // Upload files (best-effort) in the background. The report already
+  // exists at this point, so we must NOT block the submission on media:
+  // a slow or hung video upload over a phone/LAN connection would keep
+  // the submit promise pending forever and leave the button frozen on
+  // "Submitting…". Each upload is bounded by a timeout and failures are
+  // non-fatal — the moderator can still attach evidence later.
   if (input.media_files && input.media_files.length > 0) {
     const token = getToken();
-    for (const file of input.media_files) {
-      const isVideo = file.type.startsWith('video/');
-      const url = isVideo
-        ? `/api/v1/reports/${reportId}/video`
-        : `/api/v1/reports/${reportId}/photos`;
-      const fd = new FormData();
-      if (isVideo) {
-        fd.append('video', file);
-      } else {
-        fd.append('photos[]', file);
-      }
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: fd,
-        credentials: 'same-origin',
-      });
-      if (!res.ok) {
-        // continue on photo failures
-
-        console.warn('media upload failed', file.name, res.status);
-      }
-    }
+    void Promise.all(
+      input.media_files.map((file) => uploadMedia(reportId, file, token)),
+    ).catch(() => undefined);
   }
 
   const createdReport = normalizeReport(create.data);
@@ -229,6 +214,41 @@ export async function submitReportPayload(input: CreateReportInput): Promise<{ i
     id: createdReport.id,
     status: createdReport.status?.code ?? 'submitted',
   };
+}
+
+const MEDIA_UPLOAD_TIMEOUT_MS = 60_000;
+
+async function uploadMedia(reportId: string, file: File, token: string | null): Promise<void> {
+  const isVideo = file.type.startsWith('video/');
+  const url = isVideo
+    ? `/api/v1/reports/${reportId}/video`
+    : `/api/v1/reports/${reportId}/photos`;
+  const fd = new FormData();
+  if (isVideo) {
+    fd.append('video', file);
+  } else {
+    fd.append('photos[]', file);
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), MEDIA_UPLOAD_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+      credentials: 'same-origin',
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      console.warn('media upload failed', file.name, res.status);
+    }
+  } catch (err) {
+    // Network error or timeout — non-fatal, the report is already created.
+    console.warn('media upload error', file.name, err);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export function useCreateReport() {
