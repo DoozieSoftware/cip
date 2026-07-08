@@ -110,17 +110,17 @@ class DefaultWorkflowSeeder extends Seeder
             ['pending_moderator', 'approve',           'assigned',          'moderator',  120],
             ['pending_moderator', 'escalate',          'escalated',         'moderator',  null],
             ['pending_moderator', 'merge',             'merged',            'moderator',  null],
-            ['assigned',          'accept',            'accepted',          'department', 240],
-            ['accepted',          'start',             'in_progress',       'department', 1440],
-            ['in_progress',       'resolve',           'resolved',          'department', 4320],
+            ['assigned',          'accept',            'accepted',          'department_officer', 240],
+            ['accepted',          'start',             'in_progress',       'department_officer', 1440],
+            ['in_progress',       'resolve',           'resolved',          'department_officer', 4320],
             ['resolved',          'verify',            'verified',          'moderator',  1440],
             ['verified',          'close',             'closed',            'moderator',  4320],
 
             // Reject branch — any of the staff-side states.
             ['pending_moderator', 'reject',            'rejected',          'moderator',  null],
-            ['assigned',          'reject',            'rejected',          'department', null],
-            ['accepted',          'reject',            'rejected',          'department', null],
-            ['in_progress',       'reject',            'rejected',          'department', null],
+            ['assigned',          'reject',            'rejected',          'department_officer', null],
+            ['accepted',          'reject',            'rejected',          'department_officer', null],
+            ['in_progress',       'reject',            'rejected',          'department_officer', null],
         ];
 
         foreach ($t as [$from, $event, $to, $role, $slaMinutes]) {
