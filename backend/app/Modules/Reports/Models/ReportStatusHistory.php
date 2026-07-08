@@ -95,4 +95,20 @@ class ReportStatusHistory extends Model
     {
         return $this->belongsTo(User::class, 'actor_id');
     }
+
+    /**
+     * @return BelongsTo<ReportStatus, $this>
+     */
+    public function fromStatus(): BelongsTo
+    {
+        return $this->belongsTo(ReportStatus::class, 'from_status_id');
+    }
+
+    /**
+     * @return BelongsTo<ReportStatus, $this>
+     */
+    public function toStatus(): BelongsTo
+    {
+        return $this->belongsTo(ReportStatus::class, 'to_status_id');
+    }
 }

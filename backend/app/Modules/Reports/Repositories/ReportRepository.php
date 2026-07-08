@@ -111,6 +111,7 @@ class ReportRepository
         return ReportStatusHistory::query()
             ->where('report_id', $reportId)
             ->orderBy('created_at')
+            ->with(['fromStatus', 'toStatus', 'actor'])
             ->get();
     }
 

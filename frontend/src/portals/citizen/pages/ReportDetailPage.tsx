@@ -1,13 +1,30 @@
 import { Link, useParams } from 'react-router-dom';
-import { type JSX } from 'react';
+import { type JSX, useState } from 'react';
 import { useReportDetail, useReportTimeline } from '../api/client';
 import { EmptyState, Spinner } from '../../moderator/design';
 import { StatusBadge } from '../components/StatusBadge';
+
+type Tab = 'timeline' | 'details';
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString();
+}
+
+function formatTime(value: string | null | undefined): string {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString();
+}
 
 export default function ReportDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const detail = useReportDetail(id);
   const timeline = useReportTimeline(id);
+  const [tab, setTab] = useState<Tab>('timeline');
 
   if (detail.isLoading) return <Spinner label="Loading report" />;
   if (detail.error || !detail.data) {
@@ -112,31 +129,89 @@ export default function ReportDetailPage(): JSX.Element {
 
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="grid grid-cols-2 border-b border-slate-200 text-center text-sm font-semibold">
-          <span className="border-b-2 border-blue-600 pb-2 text-blue-700">Timeline</span>
-          <span className="pb-2 text-slate-500">Details</span>
+          <button
+            type="button"
+            onClick={() => setTab('timeline')}
+            className={`border-b-2 pb-2 ${tab === 'timeline' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500'}`}
+          >
+            Timeline
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('details')}
+            className={`border-b-2 pb-2 ${tab === 'details' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500'}`}
+          >
+            Details
+          </button>
         </div>
-        {timeline.isLoading ? (
-          <div className="py-8">
-            <Spinner label="Loading timeline" />
-          </div>
+
+        {tab === 'timeline' ? (
+          timeline.isLoading ? (
+            <div className="py-8">
+              <Spinner label="Loading timeline" />
+            </div>
+          ) : (
+            <ol className="mt-4 space-y-5 border-l-2 border-slate-200 pl-5">
+              {(timeline.data ?? []).map((t, i) => (
+                <li key={i} className="relative">
+                  <span
+                    aria-hidden
+                    className={`absolute -left-[29px] grid h-5 w-5 place-items-center rounded-full ring-4 ring-white ${i === 0 ? 'bg-amber-500' : 'bg-cyan-500'}`}
+                  />
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="text-sm font-semibold text-slate-900">{t.event}</div>
+                    <div className="shrink-0 text-xs text-slate-400">{formatDate(t.at)}</div>
+                  </div>
+                  {t.actor ? <div className="text-xs text-slate-500">{t.actor}</div> : null}
+                  {t.note ? <div className="text-sm text-slate-700">{t.note}</div> : null}
+                  <div className="text-xs text-slate-400">{formatTime(t.at)}</div>
+                </li>
+              ))}
+            </ol>
+          )
         ) : (
-          <ol className="mt-4 space-y-5 border-l-2 border-slate-200 pl-5">
-            {(timeline.data ?? []).map((t, i) => (
-              <li key={i} className="relative">
-                <span
-                  aria-hidden
-                  className={`absolute -left-[29px] grid h-5 w-5 place-items-center rounded-full ring-4 ring-white ${i === 0 ? 'bg-amber-500' : 'bg-cyan-500'}`}
-                />
-                <div className="flex items-start justify-between gap-3">
-                  <div className="text-sm font-semibold text-slate-900">{t.event}</div>
-                  <div className="shrink-0 text-xs text-slate-400">{new Date(t.at).toLocaleDateString()}</div>
-                </div>
-                {t.actor ? <div className="text-xs text-slate-500">{t.actor}</div> : null}
-                {t.note ? <div className="text-sm text-slate-700">{t.note}</div> : null}
-                <div className="text-xs text-slate-400">{new Date(t.at).toLocaleTimeString()}</div>
-              </li>
-            ))}
-          </ol>
+          <dl className="mt-4 space-y-3 text-sm">
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Description</dt>
+              <dd className="mt-0.5 text-slate-700">{r.description ?? '—'}</dd>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <dt className="text-xs font-medium text-slate-500">Category</dt>
+                <dd className="mt-0.5 text-slate-700">{r.type?.name ?? '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-slate-500">Priority</dt>
+                <dd className="mt-0.5 text-slate-700">{r.priority?.name ?? '—'}</dd>
+              </div>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Assigned to</dt>
+              <dd className="mt-0.5 text-slate-700">{r.assigned_department?.name ?? 'Not assigned yet'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Submitted</dt>
+              <dd className="mt-0.5 text-slate-700">{formatDate(r.created_at)}{formatTime(r.created_at) ? ` ${formatTime(r.created_at)}` : ''}</dd>
+            </div>
+            {r.media && r.media.length > 0 ? (
+              <div>
+                <dt className="text-xs font-medium text-slate-500">Evidence ({r.media.length})</dt>
+                <dd className="mt-1 grid grid-cols-3 gap-2 sm:grid-cols-5">
+                  {r.media.map((m, i) => (
+                    <div key={i} className="aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                      {m.kind === 'video' ? (
+                        <div className="grid h-full w-full place-items-center text-2xl">🎥</div>
+                      ) : m.signed_url || m.url ? (
+                        <img src={m.signed_url ?? m.url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="grid h-full w-full place-items-center text-slate-400">□</div>
+                      )}
+                    </div>
+                  ))}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
         )}
       </section>
 

@@ -23,14 +23,32 @@ class ReportStatusHistoryResource extends JsonResource
     {
         $row = $this->resource;
 
+        $fromName = $row->fromStatus?->name;
+        $toName = $row->toStatus?->name ?? 'updated';
+        $event = $fromName !== null
+            ? "Status changed from {$fromName} to {$toName}"
+            : "Report {$toName}";
+
+        // `reason` may carry an internal workflow-transition key
+        // (e.g. "workflow.transition:<uuid>"); the real transition id
+        // already lives in `metadata.transition_id`. Never surface the
+        // machine key to users — only expose genuine human notes.
+        $reason = $row->reason;
+        $note = is_string($reason) && str_starts_with($reason, 'workflow.transition:')
+            ? null
+            : $reason;
+
         return [
             'id' => $row->id,
             'from_status_id' => $row->from_status_id,
             'to_status_id' => $row->to_status_id,
             'actor_id' => $row->actor_id,
-            'reason' => $row->reason,
-            'metadata' => $row->metadata,
+            'actor' => $row->actor?->name ?? ($row->actor_id ? 'Official' : 'System'),
+            'event' => $event,
+            'note' => $note,
+            'at' => $row->created_at?->toIso8601String(),
             'created_at' => $row->created_at?->toIso8601String(),
+            'metadata' => $row->metadata,
         ];
     }
 }
