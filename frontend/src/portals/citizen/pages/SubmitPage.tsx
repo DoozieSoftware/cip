@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, useEffect, type FormEvent } from 'react';
 import { type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateReport, useReportTypes, type ReportType, type CreateReportInput } from '../api/client';
@@ -120,6 +120,15 @@ export default function SubmitPage(): JSX.Element {
   const selectedType: ReportType | undefined = types.data?.find((t) => t.id === typeId);
   const evidenceRequired = Boolean(selectedType?.requires_photo || selectedType?.requires_video);
   const reportTypes = types.data ?? [];
+
+  // If the chosen category requires a video, reveal the recorder and
+  // never let it read as optional — previously the toggle label was
+  // hardcoded "(optional)", so required-video categories looked skippable.
+  useEffect(() => {
+    if (selectedType?.requires_video) {
+      setShowVideo(true);
+    }
+  }, [selectedType?.requires_video]);
 
   return (
     <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
@@ -285,7 +294,9 @@ export default function SubmitPage(): JSX.Element {
             onClick={() => setShowVideo((v) => !v)}
             className="w-full rounded-md border border-blue-600 bg-white px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
           >
-            {showVideo ? 'Hide video recorder' : 'Add a short video (optional)'}
+            {showVideo
+              ? 'Hide video recorder'
+              : `Add a short video (${selectedType?.requires_video ? 'required' : 'optional'})`}
           </button>
           {showVideo ? (
             <CameraCapture
