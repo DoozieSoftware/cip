@@ -22,12 +22,21 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
 SETUP=false
+DEV_HTTP=false
 for arg in "$@"; do
   case "$arg" in
     --setup) SETUP=true ;;
+    --http) DEV_HTTP=true ;;
     -h|--help)
-      echo "Usage: $0 [--setup]"
+      echo "Usage: $0 [--setup] [--http]"
       echo "  --setup   First-time setup: create DB, run migrations + seed"
+      echo "  --http    Serve the frontend over plain HTTP on localhost instead"
+      echo "            of HTTPS with the self-signed .devssl cert. Use this to"
+      echo "            test service workers / push notifications: browsers"
+      echo "            treat http://localhost as a secure context, but do NOT"
+      echo "            trust a clicked-through self-signed cert for service"
+      echo "            worker script fetches, so push subscriptions silently"
+      echo "            fail with 'subscription_failed' over https://<lan-ip>."
       exit 0
       ;;
   esac
@@ -111,6 +120,9 @@ if [ "$SETUP" = true ]; then
   info "Migrations + seeds complete"
 fi
 
+cd "$ROOT/backend"
+$PHP artisan config:clear >/dev/null 2>&1 || true
+$PHP artisan route:clear >/dev/null 2>&1 || true
 cd "$ROOT"
 
 # ── 4. Frontend setup ──────────────────────────────────────────────
@@ -145,7 +157,12 @@ BACKEND_PID=$!
 cd "$ROOT"
 
 cd "$ROOT/frontend"
-npx vite --host --port $FRONTEND_PORT > /tmp/cip-frontend.log 2>&1 &
+if [ "$DEV_HTTP" = true ]; then
+  info "Serving frontend over plain HTTP (--http) — use http://localhost:$FRONTEND_PORT for push/service-worker testing"
+  CIP_DEV_HTTP=1 npx vite --host --port $FRONTEND_PORT > /tmp/cip-frontend.log 2>&1 &
+else
+  npx vite --host --port $FRONTEND_PORT > /tmp/cip-frontend.log 2>&1 &
+fi
 FRONTEND_PID=$!
 cd "$ROOT"
 
@@ -164,8 +181,16 @@ echo -e "${GREEN}═════════════════════
 echo -e "${GREEN}  CIP is running!${NC}"
 echo -e "${GREEN}════════════════════════════════════════════════════════════${NC}"
 echo ""
+FRONTEND_SCHEME="https"
+if [ "$DEV_HTTP" = true ] || [ ! -f "$ROOT/frontend/.devssl/key.pem" ] || [ ! -f "$ROOT/frontend/.devssl/cert.pem" ]; then
+  FRONTEND_SCHEME="http"
+fi
 echo "  Backend API:   http://localhost:$BACKEND_PORT/api/v1"
-echo "  Frontend:      http://localhost:$FRONTEND_PORT"
+echo "  Frontend:      $FRONTEND_SCHEME://localhost:$FRONTEND_PORT"
+if [ "$FRONTEND_SCHEME" = "https" ]; then
+  echo "                 (self-signed cert — service workers/push won't work here;"
+  echo "                 rerun with --http for push/service-worker testing)"
+fi
 echo ""
 echo "  Demo accounts (OTP via response):"
 echo "    Citizen:     9999900001"
