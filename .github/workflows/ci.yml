@@ -57,7 +57,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.BACKEND_DIR }}/vendor
-          key: composer-${{ runner.os }}-${{ hashFiles(env.BACKEND_DIR + '/composer.json') }}
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
           restore-keys: |
             composer-${{ runner.os }}-
 
