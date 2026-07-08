@@ -1,14 +1,21 @@
-import { type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { SidebarLayout, type SidebarNavItem } from '../../moderator/design';
+import { useAuth, type Role } from '../../../auth/AuthContext';
 
-const NAV: SidebarNavItem[] = [
+type OperationsNavItem = SidebarNavItem & {
+  allowedRoles?: Role[];
+};
+
+const AUDIT_SECURITY_ROLES: Role[] = ['super_admin', 'system', 'auditor', 'department_admin'];
+
+const NAV: OperationsNavItem[] = [
   { to: '/operations', label: 'Dashboard', end: true, icon: '📊' },
   { to: '/operations/reports', label: 'Assigned Reports', icon: '📋' },
   { to: '/operations/reports/export', label: 'Export', icon: '📤' },
   { to: '/operations/analytics', label: 'Analytics', icon: '📈' },
   { to: '/operations/map', label: 'GIS Map', icon: '🗺️' },
-  { to: '/operations/audit', label: 'Audit Log', icon: '📜' },
-  { to: '/operations/security', label: 'Security', icon: '🔒' },
+  { to: '/operations/audit', label: 'Audit Log', icon: '📜', allowedRoles: AUDIT_SECURITY_ROLES },
+  { to: '/operations/security', label: 'Security', icon: '🔒', allowedRoles: AUDIT_SECURITY_ROLES },
   { to: '/operations/admin', label: 'Department Admin', icon: '🏢' },
 ];
 
@@ -24,14 +31,21 @@ const SHORTCUTS: ReactNode = (
 );
 
 export function OperationsLayout() {
+  const { user, hasAnyRole } = useAuth();
+  const nav = useMemo<SidebarNavItem[]>(
+    () => NAV.filter((item) => item.allowedRoles === undefined || hasAnyRole(item.allowedRoles)),
+    [hasAnyRole],
+  );
+  const roleLabel = user?.roles[0]?.replace(/_/g, ' ') ?? 'operations';
+
   return (
     <SidebarLayout
       brand="CIP"
       brandSubtitle="Operations Portal"
       brandColor="emerald"
       accent="emerald"
-      nav={NAV}
-      user={{ name: 'Officer', roleLabel: 'operations' }}
+      nav={nav}
+      user={{ name: user?.name, mobile: user?.mobile, roleLabel }}
       keyboardShortcuts={SHORTCUTS}
     />
   );
