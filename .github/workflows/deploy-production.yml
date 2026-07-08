@@ -140,10 +140,18 @@ jobs:
               fi; \
               grep -q '^APP_KEY=base64:' .env || $PHP_BIN artisan key:generate --force"
 
-          # Deploy frontend (public_html/)
+          # Deploy CIP frontend to public_html/cip/ (with --delete so old
+          # assets are cleaned, but scoped to cip/ so root public_html/
+          # files like the company index.html are untouched).
           rsync -az --delete \
             -e "ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes" \
-            deploy/staging/public_html/ $REMOTE:~/public_html/
+            deploy/staging/public_html/cip/ $REMOTE:~/public_html/cip/
+
+          # Deploy .htaccess and index.php to root (no --delete to
+          # preserve existing files like the company site index.html).
+          rsync -az \
+            -e "ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes" \
+            deploy/staging/public_html/.htaccess deploy/staging/public_html/index.php $REMOTE:~/public_html/
 
           # Run post-deploy tasks
           # Use migrate:fresh --seed for demo/pilot — this drops and
