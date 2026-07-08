@@ -23,6 +23,7 @@ use App\Modules\Moderation\Http\Controllers\Api\QueueController;
 use App\Modules\Notifications\Http\Controllers\Admin\AdminNotificationConfigController;
 use App\Modules\Notifications\Http\Controllers\Api\NotificationPreferenceController;
 use App\Modules\Notifications\Http\Controllers\Api\NotificationsController;
+use App\Modules\Notifications\Http\Controllers\Api\PushSubscriptionController;
 use App\Modules\Public\Http\Controllers\PublicDepartmentPerformanceController;
 use App\Modules\Public\Http\Controllers\PublicHeatmapController;
 use App\Modules\Public\Http\Controllers\PublicStatsController;
@@ -88,6 +89,11 @@ Route::prefix('v1')->group(function (): void {
         Route::post('notifications/{id}/read', [NotificationsController::class, 'markRead'])->name('notifications.read');
         Route::get('notifications/preferences', [NotificationPreferenceController::class, 'index'])->name('notifications.preferences.index');
         Route::put('notifications/preferences', [NotificationPreferenceController::class, 'update'])->name('notifications.preferences.update');
+
+        // Web Push subscriptions (T-M13)
+        Route::get('notifications/push/vapid-public-key', [PushSubscriptionController::class, 'vapidPublicKey'])->name('notifications.push.vapid');
+        Route::post('notifications/push/subscriptions', [PushSubscriptionController::class, 'store'])->name('notifications.push.store');
+        Route::delete('notifications/push/subscriptions', [PushSubscriptionController::class, 'destroy'])->name('notifications.push.destroy');
     });
 
     // Super Admin (M3) — gated to super_admin role; rate limited with the admin limiter.
