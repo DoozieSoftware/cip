@@ -7,6 +7,8 @@ namespace App\Modules\AI\Listeners;
 use App\Modules\AI\Jobs\AiPipelineOrchestrator;
 use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Shared\Services\SystemUserService;
+use App\Modules\Workflow\Services\WorkflowEngine;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 
@@ -43,6 +45,11 @@ class ReportSubmittedListener implements ShouldQueue
 
     public int $timeout = 30;
 
+    public function __construct(
+        private readonly WorkflowEngine $workflowEngine,
+        private readonly SystemUserService $systemUser,
+    ) {}
+
     public function handle(ReportStatusChanged $event): void
     {
         $report = Report::query()->find($event->reportId);
@@ -56,6 +63,28 @@ class ReportSubmittedListener implements ShouldQueue
         }
 
         $toStatus = $report->refresh()->status?->code;
+
+        if ($toStatus === 'submitted') {
+            // Nothing else auto-advances a freshly submitted report into
+            // `ai_processing` — the `ai_complete` transition is gated
+            // `required_role: system`, so it needs a real actor with the
+            // `system` role, not a null/guest actor. Applying it here
+            // dispatches ReportStatusChanged again, which re-invokes this
+            // same listener with toStatus === 'ai_processing' below.
+            $systemActor = $this->systemUser->user();
+            $decision = $this->workflowEngine->evaluate($report, 'ai_complete', $systemActor);
+
+            if ($decision->allowed) {
+                $this->workflowEngine->apply($report, $decision, $systemActor);
+            } else {
+                Log::warning('ai.ReportSubmittedListener: could not auto-advance to ai_processing', [
+                    'report_id' => $report->id,
+                    'reasons' => $decision->reasons,
+                ]);
+            }
+
+            return;
+        }
 
         if ($toStatus !== 'ai_processing') {
             return;

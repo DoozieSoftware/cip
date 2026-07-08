@@ -148,12 +148,31 @@ for port in $BACKEND_PORT $FRONTEND_PORT; do
   fi
 done
 
+# The queue worker isn't bound to a port, so the check above can't see
+# it — but it keeps a booted copy of the app in memory, so a leftover
+# worker from a previous run will keep executing stale listener/job
+# code (and double-process jobs alongside the new worker) until it's
+# killed. `queue:restart` only signals a graceful stop; nothing here
+# supervises it back up, so kill any still-running worker directly.
+if pgrep -f "artisan queue:work" >/dev/null 2>&1; then
+  warn "A queue worker from a previous run is still alive — killing it..."
+  pkill -f "artisan queue:work" 2>/dev/null || true
+  sleep 1
+fi
+
 # ── 6. Start servers ──────────────────────────────────────────────
 info "Starting servers..."
 
 cd "$ROOT/backend"
 $PHP artisan serve --port=$BACKEND_PORT --host=0.0.0.0 > /tmp/cip-backend.log 2>&1 &
 BACKEND_PID=$!
+
+# Report submission, moderator queue population (AI processing), and
+# notifications all run as queued jobs (QUEUE_CONNECTION=redis) —
+# without a worker consuming them, reports sit at "Submitted" forever
+# and never reach the moderator queue.
+$PHP artisan queue:work --tries=1 --sleep=1 > /tmp/cip-queue.log 2>&1 &
+QUEUE_PID=$!
 cd "$ROOT"
 
 cd "$ROOT/frontend"
@@ -201,14 +220,15 @@ echo ""
 echo "  Logs:"
 echo "    Backend:    tail -f /tmp/cip-backend.log"
 echo "    Frontend:   tail -f /tmp/cip-frontend.log"
+echo "    Queue:      tail -f /tmp/cip-queue.log"
 echo ""
-echo "  Stop:  kill $BACKEND_PID $FRONTEND_PID"
+echo "  Stop:  kill $BACKEND_PID $FRONTEND_PID $QUEUE_PID"
 echo ""
 
 cleanup() {
   info "Shutting down..."
-  kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+  kill $BACKEND_PID $FRONTEND_PID $QUEUE_PID 2>/dev/null || true
 }
 trap cleanup EXIT INT TERM
 
-wait $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+wait $BACKEND_PID $FRONTEND_PID $QUEUE_PID 2>/dev/null || true
