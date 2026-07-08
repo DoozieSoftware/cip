@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   Badge,
   Button,
@@ -98,6 +98,26 @@ export default function ReportDetailPage() {
   const [canonicalId, setCanonicalId] = useState('');
   const [duplicateIds, setDuplicateIds] = useState('');
 
+  // Every dialog field is scoped to whatever report is currently open.
+  // Without this, jumping to the next report via the `N` shortcut (or
+  // any other navigation) left the previous report's category/department
+  // override, reason code, or merge ids sitting in state — a moderator
+  // could submit report B's decision with report A's leftover values.
+  useEffect(() => {
+    setApproveOpen(false);
+    setRejectOpen(false);
+    setMergeOpen(false);
+    setEscalateOpen(false);
+    setAssignOpen(false);
+    setRemarks('');
+    setCategoryId('');
+    setDepartmentId('');
+    setReasonCode('');
+    setOverrideAi(false);
+    setCanonicalId('');
+    setDuplicateIds('');
+  }, [id]);
+
   const review = useMutation({
     mutationFn: (p: ReviewPayload) => actionsApi.review(id, p),
     onSuccess: (updated) => {
@@ -130,25 +150,33 @@ export default function ReportDetailPage() {
       setEscalateOpen(false);
     },
   });
-  // Reassign goes through the M7 ReassignService on the backend; the dialog
-  // currently POSTs a ReviewReportDto with `decision=approve` so the M6
-  // transition fires and the M7 listener reassigns. The dedicated
-  // `/api/v1/moderator/reports/{id}/reassign` endpoint will be added in M11.
   const assign = useMutation({
-    mutationFn: () => Promise.resolve(),
-    onSuccess: () => setAssignOpen(false),
+    mutationFn: (p: { department_id: string; officer_id?: string; reason: string }) => actionsApi.reassign(id, p),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['moderator', 'reports', id] });
+      void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });
+      setAssignOpen(false);
+    },
   });
 
   const goNext = useCallback(() => {
-    // T-M10-021: N jumps to the next report in the queue.
-    void qc.fetchQuery({ queryKey: ['moderator', 'queue', { page: 1 }] }).then((res) => {
-      const data = (res as { data: { id: string }[] })?.data ?? [];
-      const idx = data.findIndex((r) => r.id === id);
-      const next = data[idx + 1] ?? data[0];
-      if (next) {
-        void navigate(`/moderator/reports/${next.id}`);
-      }
-    });
+    // T-M10-021: N jumps to the next report in the default queue. This
+    // page has no access to whatever filters the moderator had applied
+    // on the Review Queue page, so it always steps through the first
+    // page of the default pending_moderator view.
+    void qc
+      .fetchQuery({
+        queryKey: ['moderator', 'queue', { status: 'pending_moderator', per_page: 20 }],
+        queryFn: () => queueApi.list({ status: 'pending_moderator', per_page: 20 }),
+      })
+      .then((res) => {
+        const data = res.data;
+        const idx = data.findIndex((r) => r.id === id);
+        const next = data[idx + 1] ?? data[0];
+        if (next) {
+          void navigate(`/moderator/reports/${next.id}`);
+        }
+      });
   }, [id, navigate, qc]);
 
   const shortcuts = useMemo(
@@ -492,7 +520,8 @@ export default function ReportDetailPage() {
         open={assignOpen}
         onClose={() => setAssignOpen(false)}
         loading={assign.isPending}
-        onSubmit={(r) => { void assign.mutateAsync(r as never); }}
+        defaultDepartmentId={data.department?.id}
+        onSubmit={(r) => { void assign.mutateAsync(r); }}
       />
     </div>
   );

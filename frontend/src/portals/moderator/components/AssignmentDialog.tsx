@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Dialog, Button, Textarea, Select, Input } from '../design';
+import { Dialog, Button, Textarea, Input } from '../design';
 
 export interface AssignmentResult {
-  assignee_id: string;
+  department_id: string;
+  officer_id?: string;
   reason: string;
 }
 
@@ -11,13 +12,16 @@ export function AssignmentDialog({
   onClose,
   onSubmit,
   loading,
+  defaultDepartmentId,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (r: AssignmentResult) => void;
   loading: boolean;
+  defaultDepartmentId?: string;
 }) {
-  const [assigneeId, setAssigneeId] = useState('');
+  const [departmentId, setDepartmentId] = useState(defaultDepartmentId ?? '');
+  const [officerId, setOfficerId] = useState('');
   const [reason, setReason] = useState('');
 
   return (
@@ -34,8 +38,14 @@ export function AssignmentDialog({
           <Button
             variant="primary"
             loading={loading}
-            disabled={!assigneeId || !reason.trim()}
-            onClick={() => onSubmit({ assignee_id: assigneeId, reason: reason.trim() })}
+            disabled={!departmentId.trim() || !reason.trim()}
+            onClick={() =>
+              onSubmit({
+                department_id: departmentId.trim(),
+                officer_id: officerId.trim() || undefined,
+                reason: reason.trim(),
+              })
+            }
           >
             Reassign
           </Button>
@@ -44,32 +54,26 @@ export function AssignmentDialog({
     >
       <div className="space-y-3">
         <Input
-          label="Assignee user id"
-          name="assignee_id"
-          value={assigneeId}
-          onChange={(e) => setAssigneeId(e.target.value)}
-          placeholder="UUID of a department officer"
-          hint="T-M10-019: this hands off to the M7 ReassignService. Type a UUID or pick from the directory."
+          label="Department id (UUID)"
+          name="department_id"
+          value={departmentId}
+          onChange={(e) => setDepartmentId(e.target.value)}
+          placeholder="Required — the department this report is handed to"
         />
-        <Select
-          label="Reason"
-          name="reason_code"
-          value=""
-          onChange={() => undefined}
-          options={[
-            { value: '', label: '— pick a reason —' },
-            { value: 'workload', label: 'Workload rebalance' },
-            { value: 'expertise', label: 'Subject-matter expertise' },
-            { value: 'escalation', label: 'Escalation follow-up' },
-          ]}
+        <Input
+          label="Officer user id (optional)"
+          name="officer_id"
+          value={officerId}
+          onChange={(e) => setOfficerId(e.target.value)}
+          placeholder="UUID of a specific officer within the department"
         />
         <Textarea
-          label="Notes"
+          label="Reason"
           name="reason"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={3}
-          placeholder="Why is this report being reassigned?"
+          placeholder="Why is this report being reassigned? (required, min 3 characters)"
         />
       </div>
     </Dialog>

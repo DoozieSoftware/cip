@@ -108,6 +108,15 @@ export const actionsApi = {
 
   escalate: (id: string, payload: { reason_code: string; remarks?: string; level?: string }) =>
     api.post<{ report: ReportDetail }>(`/moderator/reports/${id}/escalate`, payload).then((r) => r.report),
+
+  // T-M7-010's endpoint lives under /admin, not /moderator, but
+  // ReassignReportRequest::authorize() already permits the moderator
+  // role — only super_admin's route middleware guards the path prefix.
+  reassign: (id: string, payload: { department_id: string; officer_id?: string; reason: string }) =>
+    api.post<{ id: string; report_id: string; department_id: string; officer_id: string | null }>(
+      `/admin/reports/${id}/reassign`,
+      payload,
+    ),
 };
 
 export const analyticsApi = {
