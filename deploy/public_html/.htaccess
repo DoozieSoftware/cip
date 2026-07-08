@@ -12,7 +12,15 @@
     RewriteCond %{REQUEST_URI} !^/index\.php$ [NC]
     RewriteRule ^ index.php [L]
 
-    # ── CIP SPA subdomain: route non-file requests to cip/index.html ─
+    # ── CIP SPA subdomain: rewrite assets/icons/manifest to cip/ ─────
+    RewriteCond %{HTTP_HOST} ^cip\.dgisipl\.com$ [NC]
+    RewriteRule ^(assets|icons|manifest\.webmanifest|sw\.js)(.*)$ cip/$1$2 [L]
+
+    # ── CIP SPA subdomain: root / → cip/index.html ───────────────────
+    RewriteCond %{HTTP_HOST} ^cip\.dgisipl\.com$ [NC]
+    RewriteRule ^/$ cip/index.html [L]
+
+    # ── CIP SPA subdomain: all other non-file routes → cip/index.html ─
     RewriteCond %{HTTP_HOST} ^cip\.dgisipl\.com$ [NC]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
