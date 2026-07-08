@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Modules\Departments\Models\Department;
 use App\Modules\Users\Models\User;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Database\Seeder;
 
 /**
@@ -48,6 +48,7 @@ class DemoUsersSeeder extends Seeder
             'mobile' => '9999900003',
             'name' => 'Deepa Dept Officer (BBMP)',
             'role' => 'department_officer',
+            'department_code' => 'BBMP',
             'email' => 'deepa@cip.demo',
             'password' => 'demo1234',
         ],
@@ -86,6 +87,21 @@ class DemoUsersSeeder extends Seeder
 
             if (! $user->hasRole($row['role'])) {
                 $user->assignRole($row['role']);
+            }
+
+            if (isset($row['department_code'])) {
+                $department = Department::query()
+                    ->where('code', $row['department_code'])
+                    ->first();
+
+                if ($department !== null) {
+                    $user->departments()->syncWithoutDetaching([
+                        $department->id => [
+                            'is_manager' => false,
+                            'assigned_at' => now(),
+                        ],
+                    ]);
+                }
             }
         }
     }
