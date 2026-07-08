@@ -7,6 +7,7 @@ namespace App\Modules\Moderation\Services;
 use App\Modules\Moderation\DTO\ReviewReportDto;
 use App\Modules\Moderation\Events\ReportModerated;
 use App\Modules\Moderation\Events\ReportsMerged;
+use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Security\Models\AuditLog;
@@ -158,6 +159,22 @@ class ModerationService
                 if ($mergedStatus !== null) {
                     $dup->current_status_id = $mergedStatus->id;
                     $dup->save();
+
+                    // This bypasses WorkflowEngine::apply() (a duplicate can be
+                    // merged from any state, not just the transitions the
+                    // engine's `merge` event is gated to), so it must dispatch
+                    // ReportStatusChanged itself — otherwise no
+                    // report_status_history row is written, ModerationAnalyticsService's
+                    // merged_today count stays permanently 0, and the merged
+                    // report's own timeline is missing its final transition.
+                    ReportStatusChanged::dispatch(
+                        $dup->id,
+                        $fromStatus,
+                        $mergedStatus->id,
+                        $moderator->id,
+                        $reasonCode ?? 'merged_into_canonical',
+                        ['canonical_report_id' => $canonical->id],
+                    );
                 }
                 $this->writeAudit(
                     $dup,
