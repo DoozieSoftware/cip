@@ -72,10 +72,45 @@ async function request<T>(
   return payload as T;
 }
 
+/**
+ * Downloads a file endpoint and saves it via a Blob URL.
+ *
+ * A plain `<a href="...">` / `window.location` navigation to an
+ * `auth:sanctum` bearer-token endpoint has no way to attach the
+ * Authorization header — this app has no cookie session for Sanctum to
+ * fall back to, so that always 401s. Fetch the bytes with the same auth
+ * header every other request uses, then hand the browser a local Blob
+ * URL to save.
+ */
+async function download(path: string, query: Record<string, unknown> | undefined, filename: string): Promise<void> {
+  const res = await fetch(buildUrl(path, query), {
+    headers: { ...authHeader() },
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const payload = await parse(res);
+    const message =
+      (typeof payload === 'object' && payload !== null && 'message' in payload
+        ? String((payload).message)
+        : null) ?? `Request failed (${res.status})`;
+    throw new ApiError(res.status, message, payload);
+  }
+  const blob = await res.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(blobUrl);
+}
+
 export const api = {
   get: <T>(path: string, query?: Record<string, unknown>) => request<T>('GET', path, undefined, query),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),
   patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
   delete: <T>(path: string) => request<T>('DELETE', path),
+  download,
 };

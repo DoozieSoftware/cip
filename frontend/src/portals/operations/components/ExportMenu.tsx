@@ -22,14 +22,10 @@ export function ExportMenu({ filters }: ExportMenuProps) {
   const [open, setOpen] = useState(false);
 
   const triggerDownload = (format: ExportFormat): void => {
-    const url = departmentApi.exportUrl(format, filters);
-    const a = document.createElement('a');
-    a.href = url;
-    const today = new Date().toISOString().slice(0, 10);
-    a.download = `department-reports-${today}.${format}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    departmentApi.exportDownload(format, filters).catch((err: unknown) => {
+      // eslint-disable-next-line no-console
+      console.error('Export download failed', err);
+    });
     setOpen(false);
   };
 

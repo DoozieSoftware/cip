@@ -63,8 +63,11 @@ export const departmentApi = {
     ),
 
   /**
-   * Returns a download URL the browser can navigate to;
-   * the response is a file (csv/xlsx/pdf), not JSON.
+   * Builds the export URL for display only (e.g. showing the caller
+   * what request will be made) — not for navigation/download. The
+   * endpoint requires a bearer Authorization header this app has no
+   * cookie session to supply, so an actual download must go through
+   * exportDownload() below.
    */
   exportUrl: (format: 'csv' | 'xlsx' | 'pdf', filters: ReportListFilters = {}) => {
     const params = new URLSearchParams();
@@ -77,6 +80,15 @@ export const departmentApi = {
     }
     const base = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1';
     return `${base.replace(/\/$/, '')}/department/reports/export?${params.toString()}`;
+  },
+
+  exportDownload: (format: 'csv' | 'xlsx' | 'pdf', filters: ReportListFilters = {}) => {
+    const today = new Date().toISOString().slice(0, 10);
+    return api.download(
+      '/department/reports/export',
+      { ...filters, format } as Record<string, unknown>,
+      `department-reports-${today}.${format}`,
+    );
   },
 
   action: (id: string, event: WorkflowEvent, note?: string) =>

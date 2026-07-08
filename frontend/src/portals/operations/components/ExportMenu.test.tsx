@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import { ExportMenu } from './ExportMenu';
 
 afterEach(() => {
@@ -23,7 +23,7 @@ describe('ExportMenu (T-M11-021)', () => {
     expect(screen.getByText(/PDF/i)).toBeInTheDocument();
   });
 
-  it('triggers a programmatic anchor click for the chosen format', () => {
+  it('fetches the export with an auth header and triggers a blob download', async () => {
     const click = vi.fn();
     const origCreate = document.createElement.bind(document);
     const createSpy = vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
@@ -33,11 +33,26 @@ describe('ExportMenu (T-M11-021)', () => {
       }
       return el;
     });
+    // A plain <a href> navigation can't attach the bearer Authorization
+    // header this API requires — the download must go through fetch()
+    // like every other authenticated request, not a direct URL visit.
+    const fetchSpy = vi.fn().mockResolvedValue(
+      new Response(new Blob(['tracking,title\n'], { type: 'text/csv' }), { status: 200 }),
+    );
+    vi.stubGlobal('fetch', fetchSpy);
+    URL.createObjectURL = vi.fn(() => 'blob:mock');
+    URL.revokeObjectURL = vi.fn();
+
     render(<ExportMenu filters={{ status: 'assigned' }} />);
     fireEvent.click(screen.getByRole('button', { name: 'Export' }));
     const csvItem = screen.getByRole('menuitem', { name: /CSV/i });
     fireEvent.click(csvItem);
-    expect(createSpy).toHaveBeenCalledWith('a');
-    expect(click).toHaveBeenCalled();
+
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    const [url] = fetchSpy.mock.calls[0];
+    expect(String(url)).toContain('/department/reports/export');
+    expect(String(url)).toContain('format=csv');
+    await waitFor(() => expect(createSpy).toHaveBeenCalledWith('a'));
+    await waitFor(() => expect(click).toHaveBeenCalled());
   });
 });

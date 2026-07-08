@@ -10,8 +10,22 @@ export default function ExportPage() {
     status: '',
     search: '',
   });
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const url = departmentApi.exportUrl(format, filters);
+
+  async function handleDownload(): Promise<void> {
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      await departmentApi.exportDownload(format, filters);
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Download failed.');
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -67,14 +81,11 @@ export default function ExportPage() {
               <Badge tone="info">{format.toUpperCase()}</Badge> with current filters.
             </p>
             <p className="font-mono text-xs text-slate-500">{url}</p>
+            {downloadError && <p className="text-xs text-rose-600">{downloadError}</p>}
           </div>
-          <a
-            href={url}
-            className="rounded bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-            download
-          >
+          <Button variant="primary" onClick={() => void handleDownload()} loading={downloading}>
             Download
-          </a>
+          </Button>
         </CardBody>
       </Card>
     </div>
