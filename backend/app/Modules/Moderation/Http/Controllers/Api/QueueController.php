@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Moderation\Http\Controllers\Api;
 
 use App\Modules\Departments\Models\Ward;
+use App\Modules\Moderation\Http\Resources\ModeratorReportDetailResource;
 use App\Modules\Reports\Http\Resources\ReportResource;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
@@ -132,7 +133,7 @@ class QueueController extends BaseController
     public function show(Request $request, string $reportId): JsonResponse
     {
         $report = Report::query()
-            ->with(['status', 'reportType', 'priority', 'location', 'statusHistory'])
+            ->with(['status', 'reportType', 'priority', 'location', 'location.ward', 'location.district', 'department', 'statusHistory.fromStatus', 'statusHistory.toStatus'])
             ->find($reportId);
         if ($report === null) {
             return $this->respondError('Report not found', 404, 'NOT_FOUND');
@@ -140,7 +141,7 @@ class QueueController extends BaseController
         $this->authorize('viewReport', $report);
 
         return $this->respond([
-            'report' => (new ReportResource($report))->resolve(),
+            'report' => (new ModeratorReportDetailResource($report))->resolve(),
         ]);
     }
 

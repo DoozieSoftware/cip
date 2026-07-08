@@ -8,7 +8,7 @@ use App\Modules\Moderation\DTO\ReviewReportDto;
 use App\Modules\Moderation\Http\Requests\StoreBulkMergeRequest;
 use App\Modules\Moderation\Http\Requests\StoreReviewRequest;
 use App\Modules\Moderation\Services\ModerationService;
-use App\Modules\Reports\Http\Resources\ReportResource;
+use App\Modules\Moderation\Http\Resources\ModeratorReportDetailResource;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Shared\Http\Controllers\BaseController;
 use App\Modules\Shared\Exceptions\ApiException;
@@ -58,7 +58,7 @@ class ModerationActionsController extends BaseController
         $updated = $this->service->review($report, $dto, $request->user());
 
         return $this->respond([
-            'report' => (new ReportResource($updated))->resolve(),
+            'report' => (new ModeratorReportDetailResource($updated))->resolve($request),
         ]);
     }
 
@@ -103,7 +103,7 @@ class ModerationActionsController extends BaseController
         $updated = $this->service->review($report, $dto, $request->user());
 
         return $this->respond([
-            'report' => (new ReportResource($updated))->resolve(),
+            'report' => (new ModeratorReportDetailResource($updated))->resolve($request),
         ]);
     }
 
@@ -122,7 +122,7 @@ class ModerationActionsController extends BaseController
         $updated = $this->service->review($report, $dto, $request->user());
 
         return $this->respond([
-            'report' => (new ReportResource($updated))->resolve(),
+            'report' => (new ModeratorReportDetailResource($updated))->resolve($request),
         ]);
     }
 
