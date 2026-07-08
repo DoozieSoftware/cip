@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { type JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../../auth/AuthContext';
@@ -6,8 +5,7 @@ import { apiRequest, type ApiEnvelope } from '../../../auth/api';
 import { Spinner } from '../../moderator/design';
 
 export default function ProfilePage(): JSX.Element {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const me = useQuery({
     queryKey: ['me'],
     queryFn: async () => {
@@ -51,14 +49,6 @@ export default function ProfilePage(): JSX.Element {
           </dl>
         </section>
       )}
-
-      <button
-        type="button"
-        onClick={() => { logout(); void navigate('/'); }}
-        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-      >
-        Sign out
-      </button>
     </div>
   );
 }
