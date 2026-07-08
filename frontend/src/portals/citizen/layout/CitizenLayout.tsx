@@ -90,7 +90,7 @@ export function CitizenLayout(): JSX.Element {
         </header>
 
         <ToastProvider>
-          <main className="mx-auto w-full max-w-5xl px-4 py-6 pb-24 sm:py-10 lg:px-6">
+          <main className="mx-auto w-full max-w-5xl px-4 py-6 pb-32 sm:py-10 lg:px-6">
             <Outlet />
           </main>
           <InstallPrompt />
@@ -98,7 +98,7 @@ export function CitizenLayout(): JSX.Element {
 
         {/* Mobile bottom nav (below lg) */}
         <nav aria-label="Citizen sections" className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white lg:hidden">
-          <ul className="mx-auto grid max-w-5xl grid-cols-5 items-end">
+          <ul className="mx-auto grid max-w-5xl grid-cols-6 items-end">
             {NAV.map((n) => (
               <li key={n.to}>
                 <NavLink
@@ -106,7 +106,7 @@ export function CitizenLayout(): JSX.Element {
                   end={n.end}
                   className={({ isActive }) =>
                     cx(
-                      'flex min-h-16 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[11px] font-medium transition',
+                      'flex min-h-14 flex-col items-center justify-center gap-0.5 px-0.5 py-2 text-[10px] font-medium transition',
                       n.primary ? '-mt-5' : '',
                       isActive ? 'text-blue-700' : 'text-slate-500 hover:text-slate-700',
                     )
@@ -117,13 +117,13 @@ export function CitizenLayout(): JSX.Element {
                     className={cx(
                       'grid place-items-center text-lg',
                       n.primary
-                        ? 'h-13 w-13 rounded-full border-4 border-white bg-blue-600 text-2xl text-white shadow-sm'
-                        : 'h-7 w-7',
+                        ? 'h-12 w-12 rounded-full border-4 border-white bg-blue-600 text-xl text-white shadow-sm'
+                        : 'h-6 w-6',
                     )}
                   >
                     {n.icon}
                   </span>
-                  <span>{n.label}</span>
+                  <span className="max-w-full truncate">{n.label}</span>
                 </NavLink>
               </li>
             ))}
