@@ -120,7 +120,7 @@ export default function SubmitPage(): JSX.Element {
   const selectedType: ReportType | undefined = types.data?.find((t) => t.id === typeId);
   const evidenceRequired = Boolean(selectedType?.requires_photo || selectedType?.requires_video);
   const evidenceRequirementLabel = selectedType === undefined
-    ? 'Select category'
+    ? 'Optional'
     : selectedType.requires_photo && selectedType.requires_video
       ? 'Photo + video required'
       : selectedType.requires_photo
