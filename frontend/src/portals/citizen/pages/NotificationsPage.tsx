@@ -4,6 +4,13 @@ import { Spinner, EmptyState } from '../../moderator/design';
 import { Link } from 'react-router-dom';
 import { cx } from '../../moderator/design/cx';
 
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString();
+}
+
 const CHANNEL_ICON: Record<string, string> = {
   push: '🔔',
   sms: '📱',
@@ -49,7 +56,7 @@ export default function NotificationsPage(): JSX.Element {
                   <div>
                     <h2 className="text-sm font-semibold text-slate-900">{n.title}</h2>
                     <p className="mt-0.5 text-sm text-slate-600">{n.body}</p>
-                    <p className="mt-1 text-xs text-slate-400">{new Date(n.created_at).toLocaleString()}</p>
+                    <p className="mt-1 text-xs text-slate-400">{formatDateTime(n.created_at)}</p>
                   {n.data && typeof n.data === 'object' && 'report_id' in n.data && (
                       <Link
                         to={`/citizen/reports/${String((n.data).report_id)}`}
