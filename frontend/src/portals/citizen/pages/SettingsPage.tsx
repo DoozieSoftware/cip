@@ -29,7 +29,18 @@ export default function SettingsPage(): JSX.Element {
 
   useEffect(() => {
     const s = pushSupport();
-    setPushOn(s.permission === 'granted');
+    if (!s.supported) {
+      setPushOn(false);
+      return;
+    }
+    // Reflect the *actual* push subscription, not just the browser
+    // permission — permission can be "granted" while no subscription
+    // exists, which made the toggle look stuck "on".
+    navigator.serviceWorker
+      .getRegistration()
+      .then((reg) => (reg ? reg.pushManager.getSubscription() : Promise.resolve(null)))
+      .then((sub) => setPushOn(Boolean(sub)))
+      .catch(() => setPushOn(false));
   }, []);
 
   async function togglePush(): Promise<void> {
@@ -52,7 +63,7 @@ export default function SettingsPage(): JSX.Element {
         } else if (res.reason === 'unsupported') {
           toast.show('Push not supported in this browser.', 'error');
         } else {
-          toast.show(`Could not enable push: ${res.reason ?? 'unknown'}`, 'error');
+          toast.show(`Could not enable push: ${res.detail ?? res.reason ?? 'unknown'}`, 'error');
         }
       }
     } finally {
