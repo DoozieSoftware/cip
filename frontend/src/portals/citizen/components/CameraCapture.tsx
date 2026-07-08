@@ -6,8 +6,11 @@ import { guardVideoDuration, scrubFile } from "../security/evidenceGuards";
  * T-M13-008 / T-M13-019 — Camera capture component.
  *
  * Rules:
- *  - Live capture only (MediaDevices.getUserMedia); no file
+  *  - Live capture only (MediaDevices.getUserMedia); no file
  *    picker. The DOM has no <input type="file">.
+ *  - Video capture is camera-only. Audio is intentionally disabled so
+ *    the browser does not block recording when microphone permission is
+ *    denied; civic evidence does not require voice/audio.
  *  - Per `docs/06` §12, videos are clamped to 3..5 s.
  *  - Photos are produced as JPEG with EXIF scrubbed
  *    (see `evidenceGuards.scrubFile`).
@@ -100,7 +103,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' },
-        audio: mode === 'video',
+        audio: false,
       });
       streamRef.current = stream;
       if (videoRef.current) {
@@ -148,10 +151,36 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
 
    function startRecording(): void {
      if (!streamRef.current) return;
+     if (typeof MediaRecorder === 'undefined') {
+       const err: CameraError = {
+         kind: 'not_found',
+         message: 'Video recording is not supported by this browser. Try Chrome or Safari 17+ on HTTPS.',
+       };
+       setError(err);
+       onError?.(err);
+       return;
+     }
      chunksRef.current = [];
      stoppedAtRef.current = 0;
      const mimeType = pickVideoMimeType();
-     const rec = new MediaRecorder(streamRef.current, { mimeType });
+     let rec: MediaRecorder;
+     try {
+       rec = new MediaRecorder(streamRef.current, { mimeType });
+     } catch {
+       // Some mobile browsers expose MediaRecorder but reject explicit
+       // mime hints. Retry with browser defaults before failing.
+       try {
+         rec = new MediaRecorder(streamRef.current);
+       } catch {
+         const err: CameraError = {
+           kind: 'not_found',
+           message: 'Video recording is not supported by this browser. Try Chrome or Safari 17+ on HTTPS.',
+         };
+         setError(err);
+         onError?.(err);
+         return;
+       }
+     }
     rec.ondataavailable = (e: BlobEvent) => {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
@@ -178,9 +207,10 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
         stopStream();
         return;
       }
-      const blob = new Blob(chunksRef.current, { type: mimeType });
-      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-      const file = new File([blob], `video-${Date.now()}.${ext}`, { type: mimeType });
+      const blobType = rec.mimeType || mimeType;
+      const blob = new Blob(chunksRef.current, { type: blobType });
+      const ext = blobType.includes('mp4') ? 'mp4' : 'webm';
+      const file = new File([blob], `video-${Date.now()}.${ext}`, { type: blobType });
       onCapture(file);
       stopStream();
     };
