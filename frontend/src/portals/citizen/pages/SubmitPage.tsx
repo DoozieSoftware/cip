@@ -119,6 +119,7 @@ export default function SubmitPage(): JSX.Element {
 
   const selectedType: ReportType | undefined = types.data?.find((t) => t.id === typeId);
   const evidenceRequired = Boolean(selectedType?.requires_photo || selectedType?.requires_video);
+  const reportTypes = types.data ?? [];
 
   return (
     <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
@@ -152,9 +153,17 @@ export default function SubmitPage(): JSX.Element {
         </div>
         {types.isLoading ? (
           <Spinner label="Loading categories" />
+        ) : types.isError ? (
+          <p role="alert" className="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+            Could not load categories. Your session may have expired. Please log in again.
+          </p>
+        ) : reportTypes.length === 0 ? (
+          <p role="alert" className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
+            No active report categories are available. Please contact an administrator.
+          </p>
         ) : (
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {(types.data ?? []).map((t) => (
+            {reportTypes.map((t) => (
               <button
                 key={t.id}
                 type="button"

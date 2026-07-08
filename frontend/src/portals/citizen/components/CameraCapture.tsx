@@ -82,6 +82,15 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
 
   async function startCamera(): Promise<void> {
     setError(null);
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      const e: CameraError = {
+        kind: 'permission_denied',
+        message: 'Camera access requires HTTPS or localhost. Open the app with https:// and try again.',
+      };
+      setError(e);
+      onError?.(e);
+      return;
+    }
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       const e: CameraError = { kind: 'not_found', message: 'Camera not available in this browser.' };
       setError(e);
@@ -100,9 +109,12 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
       }
       setActive(true);
     } catch (err) {
+      const permissionBlocked = err instanceof DOMException && ['NotAllowedError', 'SecurityError'].includes(err.name);
       const e: CameraError = {
         kind: 'permission_denied',
-        message: err instanceof Error ? err.message : 'Camera access denied.',
+        message: permissionBlocked
+          ? 'Camera permission is blocked. Open browser site settings for this site, allow Camera, then tap Open camera again.'
+          : err instanceof Error ? err.message : 'Camera access denied.',
       };
       setError(e);
       onError?.(e);
