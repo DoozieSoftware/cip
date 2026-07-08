@@ -52,7 +52,7 @@ jobs:
 
       - name: Stage cPanel layout
         run: |
-          mkdir -p deploy/staging/cip deploy/staging/public_html
+          mkdir -p deploy/staging/cip deploy/staging/public_html/cip
 
           # Backend → cip/
           rsync -a \
@@ -67,8 +67,8 @@ jobs:
           # Copy .env.cpanel as .env (will be replaced on server)
           cp ${{ env.BACKEND_DIR }}/.env.cpanel deploy/staging/cip/.env
 
-          # Frontend dist → public_html/
-          cp -r ${{ env.FRONTEND_DIR }}/dist/* deploy/staging/public_html/
+          # Frontend dist → public_html/cip/ (not root — root is dgisipl.com)
+          cp -r ${{ env.FRONTEND_DIR }}/dist/* deploy/staging/public_html/cip/
 
           # cPanel deployment files
           cp deploy/public_html/.htaccess deploy/staging/public_html/.htaccess

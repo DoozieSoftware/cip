@@ -7,48 +7,32 @@
 
     RewriteEngine On
 
-    # ── CIP-specific rules: only for cip.dgisipl.com and cip-api.dgisipl.com ──
-    RewriteCond %{HTTP_HOST} ^(cip|cip-api)\.dgisipl\.com$ [NC]
-
-    # Handle Authorization Header (cPanel/LiteSpeed often strips this)
-    RewriteCond %{HTTP:Authorization} .
-    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}] [N]
-
-    # Handle X-XSRF-Token Header
-    RewriteCond %{HTTP_HOST} ^(cip|cip-api)\.dgisipl\.com$ [NC]
-    RewriteCond %{HTTP:x-xsrf-token} .
-    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}] [N]
-
-    # API subdomain: route all requests to Laravel, not the React SPA.
+    # ── CIP API subdomain: route all to Laravel front controller ──────
     RewriteCond %{HTTP_HOST} ^cip-api\.dgisipl\.com$ [NC]
     RewriteCond %{REQUEST_URI} !^/index\.php$ [NC]
     RewriteRule ^ index.php [L]
 
+    # ── CIP SPA subdomain: route non-file requests to cip/index.html ─
+    RewriteCond %{HTTP_HOST} ^cip\.dgisipl\.com$ [NC]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ cip/index.html [L]
+
     # ─── API routes: /api/* → Laravel front controller ───────────
-    RewriteCond %{HTTP_HOST} ^(cip|cip-api)\.dgisipl\.com$ [NC]
     RewriteCond %{REQUEST_URI} ^/api [NC]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ index.php [L]
 
     # ─── Horizon (if ever enabled) ───────────────────────────────
-    RewriteCond %{HTTP_HOST} ^(cip|cip-api)\.dgisipl\.com$ [NC]
     RewriteCond %{REQUEST_URI} ^/horizon [NC]
     RewriteRule ^ index.php [L]
 
     # ─── Static assets (JS/CSS/images from Vite build) ───────────
-    RewriteCond %{HTTP_HOST} ^(cip|cip-api)\.dgisipl\.com$ [NC]
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 
-    # ─── SPA fallback: all other routes → index.html ─────────────
-    RewriteCond %{HTTP_HOST} ^(cip|cip-api)\.dgisipl\.com$ [NC]
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^ index.html [L]
-
-    # ── Global rules (all domains) ────────────────────────────────
-    # Redirect Trailing Slashes If Not A Folder...
+    # ─── Global: Redirect Trailing Slashes If Not A Folder ───────
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
