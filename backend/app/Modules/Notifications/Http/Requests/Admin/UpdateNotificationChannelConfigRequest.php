@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Notifications\Http\Requests\Admin;
 
-use App\Modules\Notifications\Models\NotificationChannelConfig;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 /**
  * T-M12-009 — partial update for a notification channel config.

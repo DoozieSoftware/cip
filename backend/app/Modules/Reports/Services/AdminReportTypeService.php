@@ -67,6 +67,7 @@ class AdminReportTypeService extends BaseService
             'max_photos' => 5,
             'active' => true,
         ];
+
         foreach ($defaults as $key => $value) {
             if (! array_key_exists($key, $data)) {
                 $data[$key] = $value;

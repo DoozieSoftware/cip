@@ -116,10 +116,12 @@ class AdminNotificationConfigController extends BaseController
     private function find(string $id, bool $withTrashed = false): NotificationChannelConfig
     {
         $q = NotificationChannelConfig::query();
+
         if ($withTrashed) {
             $q->withTrashed();
         }
         $row = $q->where('id', $id)->first();
+
         if ($row === null) {
             throw ApiException::notFound('Notification channel config');
         }
@@ -130,6 +132,7 @@ class AdminNotificationConfigController extends BaseController
     private function ensureAdmin(Request $request): void
     {
         $user = $request->user();
+
         if ($user === null || ! method_exists($user, 'hasRole') || ! $user->hasRole('super_admin')) {
             throw ApiException::forbidden('super_admin role is required.');
         }

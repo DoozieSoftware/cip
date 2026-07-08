@@ -97,6 +97,7 @@ class AdminReportTypeController extends BaseController
     {
         $this->ensureAdmin($request);
         $model = $this->findType($reportType, withTrashed: true);
+
         if ($model->deleted_at === null) {
             throw ApiException::conflict('Report type is not deleted.');
         }
@@ -108,10 +109,12 @@ class AdminReportTypeController extends BaseController
     private function findType(string $id, bool $withTrashed = false): ReportType
     {
         $q = ReportType::query();
+
         if ($withTrashed) {
             $q->withTrashed();
         }
         $model = $q->where('id', $id)->first();
+
         if ($model === null) {
             throw ApiException::notFound('Report type');
         }

@@ -23,7 +23,7 @@ class ReportTypeRepository
         $q = ReportType::query();
 
         if (! empty($filters['q'])) {
-            $needle = '%' . $filters['q'] . '%';
+            $needle = '%'.$filters['q'].'%';
             $q->where(static function ($w) use ($needle): void {
                 $w->where('name', 'like', $needle)
                     ->orWhere('code', 'like', $needle);
