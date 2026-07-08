@@ -119,15 +119,6 @@ export default function SubmitPage(): JSX.Element {
 
   const selectedType: ReportType | undefined = types.data?.find((t) => t.id === typeId);
   const evidenceRequired = Boolean(selectedType?.requires_photo || selectedType?.requires_video);
-  const evidenceRequirementLabel = selectedType === undefined
-    ? 'Optional'
-    : selectedType.requires_photo && selectedType.requires_video
-      ? 'Photo + video required'
-      : selectedType.requires_photo
-        ? 'Photo required · video optional'
-        : selectedType.requires_video
-          ? 'Video required'
-          : 'Optional';
 
   return (
     <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
@@ -268,7 +259,7 @@ export default function SubmitPage(): JSX.Element {
             <p className="text-xs text-slate-500">Up to 5 photos and 1 short video. Each up to 25 MB.</p>
           </div>
            <span className={cx('rounded-full border px-2 py-1 text-xs font-semibold', evidenceRequired ? 'border-red-200 text-red-600' : 'border-slate-200 text-slate-500')}>
-              {evidenceRequirementLabel}
+              {evidenceRequired ? 'Required' : 'Optional'}
             </span>
          </div>
         {fieldErrors.evidence ? (
