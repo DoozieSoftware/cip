@@ -55,6 +55,30 @@ it('returns the list scoped to the officer\'s department', function (): void {
     $r->assertOk()->assertJsonPath('meta.total', 2);
 });
 
+it('returns a scoped report detail by id', function (): void {
+    $dept = Department::factory()->create(['code' => 'BBMP']);
+    $report = landReportInAssigned($dept);
+    $officer = makeDepartmentOfficer($dept);
+
+    Sanctum::actingAs($officer);
+    $r = $this->getJson("/api/v1/department/reports/{$report->id}");
+    $r->assertOk()
+        ->assertJsonPath('data.id', $report->id)
+        ->assertJsonPath('data.current_status_code', 'assigned')
+        ->assertJsonPath('data.internal_notes', []);
+});
+
+it('rejects report detail from another department', function (): void {
+    $deptA = Department::factory()->create(['code' => 'A']);
+    $deptB = Department::factory()->create(['code' => 'B']);
+    $report = landReportInAssigned($deptB);
+    $officer = makeDepartmentOfficer($deptA);
+
+    Sanctum::actingAs($officer);
+    $this->getJson("/api/v1/department/reports/{$report->id}")
+        ->assertStatus(403);
+});
+
 it('accept moves the report to accepted and writes audit', function (): void {
     $dept = Department::factory()->create(['code' => 'BBMP']);
     $report = landReportInAssigned($dept);

@@ -20,6 +20,7 @@ it('exposes every M11 operations endpoint in the OpenAPI document', function ():
         '/api/v1/department/dashboard:',
         '/api/v1/department/reports:',
         '/api/v1/department/reports/export:',
+        '/api/v1/department/reports/{report}:',
         '/api/v1/department/reports/{report}/accept:',
         '/api/v1/department/reports/{report}/start:',
         '/api/v1/department/reports/{report}/progress:',
@@ -68,6 +69,7 @@ it('tags every operations endpoint with the Operations tag', function (): void {
     expect($yaml)->toContain('operationId: department.dashboard.show')
         ->and($yaml)->toContain('operationId: department.reports.index')
         ->and($yaml)->toContain('operationId: department.reports.export')
+        ->and($yaml)->toContain('operationId: department.reports.show')
         ->and($yaml)->toContain('operationId: department.reports.accept')
         ->and($yaml)->toContain('operationId: department.reports.start')
         ->and($yaml)->toContain('operationId: department.reports.progress')

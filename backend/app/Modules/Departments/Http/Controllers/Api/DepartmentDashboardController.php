@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Departments\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Departments\Http\Resources\DashboardResource;
 use App\Modules\Departments\Repositories\DepartmentReportRepository;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
@@ -33,7 +34,7 @@ class DepartmentDashboardController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $counts,
+            'data' => (new DashboardResource($counts))->resolve($request),
             'trace_id' => $request->attributes->get('trace_id'),
         ]);
     }

@@ -153,6 +153,22 @@ paths:
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/department/reports/{report}:
+    get:
+      tags: [Operations]
+      summary: 'Show one report assigned to the officer''s department (M11)'
+      operationId: department.reports.show
+      parameters:
+        - $ref: '#/components/parameters/PathReportId'
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentReportDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/department/reports/{report}/accept:
     post:
       tags: [Operations]

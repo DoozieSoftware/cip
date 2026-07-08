@@ -18,6 +18,7 @@ This document complements `docs/08-Department-Portal-Specification.md` (the M11 
 | `GET`  | `/api/v1/department/dashboard`               | `auth:sanctum` + `can:viewDashboard` | M11 — `T-M11-007` |
 | `GET`  | `/api/v1/department/reports`                | `auth:sanctum` + `can:viewReports`  | M11 — `T-M11-008` |
 | `GET`  | `/api/v1/department/reports/export`         | `auth:sanctum` + `can:viewReports`  | M11 — `T-M11-010` (CSV / XLSX / PDF) |
+| `GET`  | `/api/v1/department/reports/{report}`       | `auth:sanctum` + `can:view,report`  | M11 — report detail |
 | `POST` | `/api/v1/department/reports/{report}/accept`  | `auth:sanctum` + `can:accept,report`  | M11 — `T-M11-006` |
 | `POST` | `/api/v1/department/reports/{report}/start`   | `auth:sanctum` + `can:start,report`   | M11 — `T-M11-006` |
 | `POST` | `/api/v1/department/reports/{report}/progress`| `auth:sanctum` + `can:progress,report`| M11 — `T-M11-006` (no state change) |
@@ -92,7 +93,7 @@ The pivot `department_users` is owned by M3 (T-M3-009) and is reused unchanged f
 | --- | --- | --- |
 | `/operations`                   | `DashboardPage`        | live operational load + by-category breakdown |
 | `/operations/reports`           | `ReportListPage`       | paginated, filterable, status-coded list |
-| `/operations/reports/:id`       | `ReportDetailPage`     | lifecycle actions + internal notes |
+| `/operations/reports/:id`       | `ReportDetailPage`     | direct report detail fetch + lifecycle actions + internal notes |
 | `/operations/reports/export`    | `ExportPage`           | CSV / XLSX / PDF download with current filters |
 | `/operations/admin`             | `AdminPage`            | officer attach / detach, SLA, hours, holidays |
 

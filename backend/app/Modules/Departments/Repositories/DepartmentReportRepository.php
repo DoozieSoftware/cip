@@ -22,8 +22,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
  *   - category (code)
  *   - ward (id)
  *   - date_from / date_to (on `submitted_at`)
- *   - search (tracking_number LIKE, title LIKE, citizen mobile)
- *   - sla_breached (boolean; joins `report_assignments` SLA)
+ *   - search (tracking_number LIKE, title LIKE)
  *
  * Pagination is capped at 500 per `docs/08` §24.
  */
@@ -46,6 +45,18 @@ class DepartmentReportRepository
         $perPage = max(1, min(self::MAX_PER_PAGE, $perPage));
 
         return $query->orderByDesc('submitted_at')->paginate($perPage);
+    }
+
+    public function detail(Report $report): Report
+    {
+        return $report->load([
+            'reportType',
+            'department',
+            'status',
+            'priority',
+            'location',
+            'internalNotes.author',
+        ]);
     }
 
     /**
@@ -92,7 +103,7 @@ class DepartmentReportRepository
             $query->whereHas('priority', fn ($q) => $q->where('code', $filters['priority']));
         }
         if (! empty($filters['category'])) {
-            $query->whereHas('category', fn ($q) => $q->where('code', $filters['category']));
+            $query->whereHas('reportType', fn ($q) => $q->where('code', $filters['category']));
         }
         if (! empty($filters['ward_id'])) {
             $query->whereHas('location', fn ($q) => $q->where('ward_id', $filters['ward_id']));

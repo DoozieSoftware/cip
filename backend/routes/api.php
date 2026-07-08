@@ -302,6 +302,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('reports/export', [DepartmentReportExportController::class, 'export'])
             ->middleware('can:viewReports')
             ->name('reports.export');
+        Route::get('reports/{report}', [DepartmentReportListController::class, 'show'])
+            ->middleware('can:view,report')
+            ->name('reports.show');
         // T-M11-006 — five lifecycle actions + T-M11-005 — internal note
         Route::post('reports/{report}/accept', [DepartmentReportActionsController::class, 'accept'])
             ->middleware('can:accept,report')

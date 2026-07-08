@@ -7,6 +7,7 @@ namespace App\Modules\Departments\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Modules\Departments\Http\Resources\DepartmentReportResource;
 use App\Modules\Departments\Repositories\DepartmentReportRepository;
+use App\Modules\Reports\Models\Report;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -30,6 +31,17 @@ class DepartmentReportListController extends Controller
                 'total' => $page->total(),
                 'last_page' => $page->lastPage(),
             ],
+            'trace_id' => $request->attributes->get('trace_id'),
+        ]);
+    }
+
+    public function show(Report $report, Request $request): JsonResponse
+    {
+        $report = $this->repo->detail($report);
+
+        return response()->json([
+            'success' => true,
+            'data' => (new DepartmentReportResource($report))->resolve($request),
             'trace_id' => $request->attributes->get('trace_id'),
         ]);
     }

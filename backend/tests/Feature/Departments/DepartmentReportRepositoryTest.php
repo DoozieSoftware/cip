@@ -46,6 +46,21 @@ it('filters compose on status + search', function (): void {
     expect($page->items()[0]->title)->toContain('pothole');
 });
 
+it('filters by report type code when category is supplied', function (): void {
+    $deptA = Department::factory()->create(['code' => 'A']);
+    $pothole = ReportType::factory()->create(['code' => 'pothole']);
+    $garbage = ReportType::factory()->create(['code' => 'garbage']);
+    Report::factory()->create(['department_id' => $deptA->id, 'report_type_id' => $pothole->id]);
+    Report::factory()->create(['department_id' => $deptA->id, 'report_type_id' => $garbage->id]);
+
+    $page = app(DepartmentReportRepository::class)->assignedTo($deptA->id, [
+        'category' => 'pothole',
+    ]);
+
+    expect($page->total())->toBe(1);
+    expect($page->items()[0]->report_type_id)->toBe($pothole->id);
+});
+
 it('caps per_page at the documented max of 500', function (): void {
     $deptA = Department::factory()->create(['code' => 'A']);
     $page = app(DepartmentReportRepository::class)->assignedTo($deptA->id, ['per_page' => 9999]);
