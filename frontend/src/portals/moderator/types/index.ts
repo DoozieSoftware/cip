@@ -51,7 +51,10 @@ export interface Category {
 }
 
 export interface Department {
-  id: string;
+  // null when this is an AI-suggested department hint that didn't
+  // resolve to a real department row (see ModeratorReportDetailResource) —
+  // informational only, never a valid id to act on.
+  id: string | null;
   code: string;
   name: string;
 }
@@ -155,8 +158,10 @@ export interface ReviewPayload {
 }
 
 export interface MergePayload {
-  canonical_id: string;
-  duplicate_ids: string[];
+  // The canonical report is always the one whose id is in the URL
+  // (POST /moderator/reports/{report}/merge) — the backend has no
+  // body field for it.
+  duplicate_report_ids: string[];
   reason_code?: string;
   remarks?: string;
 }

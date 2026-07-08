@@ -95,7 +95,6 @@ export default function ReportDetailPage() {
   const [departmentId, setDepartmentId] = useState('');
   const [reasonCode, setReasonCode] = useState('');
   const [overrideAi, setOverrideAi] = useState(false);
-  const [canonicalId, setCanonicalId] = useState('');
   const [duplicateIds, setDuplicateIds] = useState('');
 
   // Every dialog field is scoped to whatever report is currently open.
@@ -114,7 +113,6 @@ export default function ReportDetailPage() {
     setDepartmentId('');
     setReasonCode('');
     setOverrideAi(false);
-    setCanonicalId('');
     setDuplicateIds('');
   }, [id]);
 
@@ -426,11 +424,10 @@ export default function ReportDetailPage() {
             <Button
               variant="primary"
               loading={merge.isPending}
-              disabled={!canonicalId || !duplicateIds.trim()}
+              disabled={!duplicateIds.trim()}
               onClick={() =>
                 merge.mutate({
-                  canonical_id: canonicalId,
-                  duplicate_ids: duplicateIds.split(',').map((s) => s.trim()).filter(Boolean),
+                  duplicate_report_ids: duplicateIds.split(',').map((s) => s.trim()).filter(Boolean),
                   reason_code: reasonCode || undefined,
                   remarks: remarks.trim() || undefined,
                 })
@@ -442,13 +439,10 @@ export default function ReportDetailPage() {
         }
       >
         <div className="space-y-3">
-          <Input
-            label="Canonical report id (UUID)"
-            name="canonical_id"
-            value={canonicalId}
-            onChange={(e) => setCanonicalId(e.target.value)}
-            placeholder="e.g. 9b6c…"
-          />
+          <p className="text-sm text-slate-600">
+            This report (<span className="font-mono">{data.tracking_number}</span>) becomes the canonical report; the
+            ids below are folded into it and marked as merged.
+          </p>
           <Input
             label="Duplicate report ids (comma separated)"
             name="duplicate_ids"
@@ -520,7 +514,7 @@ export default function ReportDetailPage() {
         open={assignOpen}
         onClose={() => setAssignOpen(false)}
         loading={assign.isPending}
-        defaultDepartmentId={data.department?.id}
+        defaultDepartmentId={data.department?.id ?? undefined}
         onSubmit={(r) => { void assign.mutateAsync(r); }}
       />
     </div>
