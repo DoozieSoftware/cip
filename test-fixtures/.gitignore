@@ -1,0 +1,4 @@
+# Third-party images fetched for local testing only — never commit these.
+evidence/*.jpg
+evidence/*.jpeg
+evidence/*.png
