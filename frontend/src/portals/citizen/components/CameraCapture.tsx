@@ -59,6 +59,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
   const [active, setActive] = useState(false);
   const [error, setError] = useState<CameraError | null>(null);
   const [recordingMs, setRecordingMs] = useState(0);
+  const stoppedAtRef = useRef<number>(0);
 
   useEffect(() => {
     return () => {
@@ -136,13 +137,24 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
    function startRecording(): void {
      if (!streamRef.current) return;
      chunksRef.current = [];
+     stoppedAtRef.current = 0;
      const mimeType = pickVideoMimeType();
      const rec = new MediaRecorder(streamRef.current, { mimeType });
     rec.ondataavailable = (e: BlobEvent) => {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
+    // Mark the real start the moment capture actually begins, not when
+    // start() is *called* (MediaRecorder has a short warm-up delay).
+    rec.onstart = () => {
+      startedAtRef.current = Date.now();
+    };
     rec.onstop = () => {
-      const duration = Date.now() - startedAtRef.current;
+      // Measure to the instant stop() was clicked, not to onstop firing
+      // (which happens after the blob is assembled/encoded). Otherwise
+      // encoder overhead is counted as recording time and near-limit
+      // clips get falsely rejected as too_long.
+      const end = stoppedAtRef.current || Date.now();
+      const duration = end - startedAtRef.current;
       const result = guardVideoDuration(duration, videoMinMs, videoMaxMs);
       if (!result.ok) {
         const err: CameraError = {
@@ -167,6 +179,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
 
   function stopRecording(): void {
     if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+      stoppedAtRef.current = Date.now();
       recorderRef.current.stop();
     }
   }
@@ -199,11 +212,15 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
         ) : null}
       </div>
 
-      {error ? (
-        <p role="alert" className="rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800">
-          {error.message}
-        </p>
-      ) : null}
+       {error ? (
+         <p role="alert" className="rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+           {error.message}
+         </p>
+       ) : mode === 'video' && !active ? (
+         <p className="text-xs text-slate-500">
+           Record a short clip between {videoMinMs / 1000} and {videoMaxMs / 1000} seconds.
+         </p>
+       ) : null}
 
       <div className="flex flex-wrap items-center justify-center gap-2">
         {!active ? (
