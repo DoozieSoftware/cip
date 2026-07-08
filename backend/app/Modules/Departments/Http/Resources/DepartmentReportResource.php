@@ -32,6 +32,7 @@ class DepartmentReportResource extends JsonResource
 
         $status = $report->relationLoaded('status') ? $report->status : $report->status()->first();
         $type = $report->relationLoaded('reportType') ? $report->reportType : $report->reportType()->first();
+        $location = $report->relationLoaded('location') ? $report->location : $report->location()->first();
         $notes = $report->relationLoaded('internalNotes')
             ? $report->internalNotes->map(fn ($n) => [
                 'id' => $n->id,
@@ -42,11 +43,20 @@ class DepartmentReportResource extends JsonResource
             ])->all()
             : [];
 
-        return $base + [
+        // array_merge, not `+` — the override array's `location` must win
+        // over the base resource's differently-shaped one (latitude/
+        // longitude vs the operations frontend's GeoPoint lat/lng).
+        return array_merge($base, [
             'current_status_code' => $status?->code,
             'report_type' => $type === null ? null : ['id' => $type->id, 'code' => $type->code, 'name' => $type->name],
             'department_sla_minutes' => $report->department?->default_sla_minutes,
             'internal_notes' => $notes,
-        ];
+            'location' => $location === null ? null : [
+                'lat' => (float) $location->latitude,
+                'lng' => (float) $location->longitude,
+                'accuracy' => $location->accuracy,
+                'address' => $location->address,
+            ],
+        ]);
     }
 }

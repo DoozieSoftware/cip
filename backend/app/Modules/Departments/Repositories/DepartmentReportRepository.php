@@ -37,7 +37,7 @@ class DepartmentReportRepository
     {
         $query = Report::query()
             ->where('department_id', $departmentId)
-            ->with(['reportType', 'department', 'status', 'priority']);
+            ->with(['reportType', 'department', 'status', 'priority', 'location']);
 
         $this->applyFilters($query, $filters);
 
