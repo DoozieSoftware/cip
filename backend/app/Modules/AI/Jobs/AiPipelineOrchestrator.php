@@ -22,6 +22,8 @@ use App\Modules\Media\Models\Media;
 use App\Modules\Media\Support\MediaUrl;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Settings\Models\AppConfig;
+use App\Modules\Shared\Services\SystemUserService;
+use App\Modules\Workflow\Services\WorkflowEngine;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -123,6 +125,18 @@ class AiPipelineOrchestrator implements ShouldQueue
             $result = $this->writeResult($job, $response, $qualityScore, $duplicateResult['score'], $fraudScore);
             $this->writeLabels($result, $response);
 
+            // Mirror onto the reports row: QueueController's
+            // duplicates()/fraud() endpoints and the review queue's
+            // confidence filter/column all read reports.duplicate_score /
+            // reports.fraud_score / reports.ai_confidence directly — the
+            // ai_results row above is not queried by any of them.
+            // ai_results.confidence is 0..1; reports.ai_confidence is the
+            // 0..100 percentage the moderator UI displays/filters on.
+            $report->duplicate_score = $duplicateResult['score'];
+            $report->fraud_score = $fraudScore;
+            $report->ai_confidence = $response->confidence * 100;
+            $report->save();
+
             $this->markJobSucceeded($job, $response, $result, $providerCode, $model);
 
             AiCompleted::dispatch(
@@ -141,6 +155,40 @@ class AiPipelineOrchestrator implements ShouldQueue
             $this->markJobFailed($job, 'pipeline_error', $e);
 
             throw $e;
+        }
+    }
+
+    /**
+     * Laravel's queue worker calls this once the job has exhausted its
+     * retries ($tries = 1, so immediately on the first failure). Without
+     * this, a failed AI call (bad provider response, timeout, etc.)
+     * leaves the report stuck in `ai_processing` forever — nothing else
+     * ever moves it. This is the "AI failure routes to a human" safety
+     * net the pipeline's docblock describes, which was never actually
+     * wired: apply the `moderator_review` transition with the platform's
+     * system actor so the report reaches the moderator queue instead.
+     */
+    public function failed(?Throwable $exception): void
+    {
+        $report = Report::query()->find($this->reportId);
+
+        if ($report === null) {
+            return;
+        }
+
+        $systemActor = app(SystemUserService::class)->user();
+        $workflow = app(WorkflowEngine::class);
+
+        $decision = $workflow->evaluate($report, 'moderator_review', $systemActor);
+
+        if ($decision->allowed) {
+            $workflow->apply($report, $decision, $systemActor);
+        } else {
+            Log::error('AiPipelineOrchestrator: AI job failed and could not fall back to moderator_review', [
+                'report_id' => $this->reportId,
+                'reasons' => $decision->reasons,
+                'exception' => $exception?->getMessage(),
+            ]);
         }
     }
 
