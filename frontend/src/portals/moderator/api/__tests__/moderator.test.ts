@@ -86,6 +86,7 @@ describe('queueApi / actionsApi — report-key unwrapping', () => {
     expect(result.data).toHaveLength(1);
     expect(result.data[0].category?.name).toBe('Pothole');
     expect(result.data[0].status_code).toBe('pending_moderator');
-    expect(result.meta.total).toBe(1);
+    expect(result.next_cursor).toBeNull();
+    expect(result.prev_cursor).toBeNull();
   });
 });

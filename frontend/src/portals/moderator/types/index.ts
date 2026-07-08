@@ -32,6 +32,18 @@ export interface Paginated<T> {
   meta: PaginationMeta;
 }
 
+/**
+ * Queue/duplicates/fraud use cursor pagination on the backend
+ * (`cursorPaginate()`), which does not compute a total/last_page —
+ * that would require a full count scan on every request. Callers get
+ * `next_cursor`/`prev_cursor` to step through pages instead.
+ */
+export interface CursorPaginated<T> {
+  data: T[];
+  next_cursor: string | null;
+  prev_cursor: string | null;
+}
+
 export interface Category {
   id: string;
   code: string;

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Moderation\Http\Controllers\Api;
 
+use App\Modules\Departments\Models\Ward;
 use App\Modules\Reports\Http\Resources\ReportResource;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
+use App\Modules\Reports\Models\ReportType;
 use App\Modules\Shared\Http\Controllers\BaseController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -155,14 +157,19 @@ class QueueController extends BaseController
     private function applyFilters($query, Request $request): void
     {
         if ($category = $request->query('category')) {
-            $query->where('report_type_id', (string) $category);
+            // The moderator UI filters by the human-readable report type
+            // code (e.g. "road_damage"), not the UUID primary key — resolve
+            // it, falling back to treating the value as a raw id.
+            $categoryId = ReportType::query()->where('code', (string) $category)->value('id') ?? (string) $category;
+            $query->where('report_type_id', $categoryId);
         }
         if ($priority = $request->query('priority')) {
             $query->where('priority_id', (string) $priority);
         }
         if ($ward = $request->query('ward')) {
-            $query->whereHas('location', function ($q) use ($ward): void {
-                $q->where('ward_id', (string) $ward);
+            $wardId = Ward::query()->where('code', (string) $ward)->value('id') ?? (string) $ward;
+            $query->whereHas('location', function ($q) use ($wardId): void {
+                $q->where('ward_id', $wardId);
             });
         }
         if ($district = $request->query('district')) {
@@ -170,8 +177,14 @@ class QueueController extends BaseController
                 $q->where('district_id', (string) $district);
             });
         }
+        if ($confidenceMin = $request->query('confidence_min')) {
+            $query->where('ai_confidence', '>=', (float) $confidenceMin);
+        }
+        if ($confidenceMax = $request->query('confidence_max')) {
+            $query->where('ai_confidence', '<=', (float) $confidenceMax);
+        }
         if ($confidence = $request->query('confidence')) {
-            // Confidence is a percentage; allow `>=` and `<=` operators.
+            // Legacy single-value form: allow `>=`/`<=` operator prefixes.
             if (str_starts_with((string) $confidence, '>=')) {
                 $query->where('ai_confidence', '>=', (float) substr((string) $confidence, 2));
             } elseif (str_starts_with((string) $confidence, '<=')) {

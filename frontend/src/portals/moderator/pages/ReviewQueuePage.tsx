@@ -46,9 +46,12 @@ export default function ReviewQueuePage() {
     category: params.get('category') ?? '',
     ward: params.get('ward') ?? '',
     confidence_min: params.get('confidence_min') ? Number(params.get('confidence_min')) : undefined,
-    page: params.get('page') ? Number(params.get('page')) : 1,
     per_page: 20,
   });
+  // Stack of cursors visited so "Previous" can pop back — cursor
+  // pagination (unlike offset pagination) only exposes next/prev from
+  // the current position, not an arbitrary page number.
+  const [cursorStack, setCursorStack] = useState<string[]>([]);
 
   const query = useQuery({
     queryKey: ['moderator', 'queue', filters],
@@ -57,12 +60,26 @@ export default function ReviewQueuePage() {
   });
 
   function update<K extends keyof QueueFilters>(key: K, value: QueueFilters[K]) {
-    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+    setFilters((prev) => ({ ...prev, [key]: value, cursor: undefined }));
+    setCursorStack([]);
     setParams((p) => {
       if (value === undefined || value === '' || value === null) p.delete(key);
       else p.set(key, String(value));
-      p.delete('page');
       return p;
+    });
+  }
+
+  function goToNextPage() {
+    if (!query.data?.next_cursor) return;
+    setCursorStack((stack) => [...stack, filters.cursor ?? '']);
+    setFilters((prev) => ({ ...prev, cursor: query.data?.next_cursor ?? undefined }));
+  }
+
+  function goToPrevPage() {
+    setCursorStack((stack) => {
+      const prevCursor = stack[stack.length - 1];
+      setFilters((prev) => ({ ...prev, cursor: prevCursor || undefined }));
+      return stack.slice(0, -1);
     });
   }
 
@@ -193,9 +210,27 @@ export default function ReviewQueuePage() {
               ))}
             </TBody>
           </Table>
-          <p className="text-right text-xs text-slate-500">
-            {query.data.meta.total} reports · page {query.data.meta.current_page} of {query.data.meta.last_page}
-          </p>
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>{query.data.data.length} reports on this page</span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={goToPrevPage}
+                disabled={cursorStack.length === 0}
+                className="rounded-md border border-slate-300 px-2 py-1 font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                ← Previous
+              </button>
+              <button
+                type="button"
+                onClick={goToNextPage}
+                disabled={!query.data.next_cursor}
+                className="rounded-md border border-slate-300 px-2 py-1 font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
         </>
       )}
     </div>

@@ -3,8 +3,8 @@ import type {
   AnalyticsSummary,
   AiPerformance,
   Category,
+  CursorPaginated,
   MergePayload,
-  Paginated,
   ReportDetail,
   ReportListItem,
   ReviewPayload,
@@ -17,9 +17,10 @@ export interface QueueFilters {
   district?: string;
   confidence_min?: number;
   confidence_max?: number;
-  date_from?: string;
-  date_to?: string;
-  page?: number;
+  // Matches the backend's `from`/`to` query params (see QueueController::applyFilters).
+  from?: string;
+  to?: string;
+  cursor?: string;
   per_page?: number;
 }
 
@@ -63,17 +64,11 @@ function normalizeQueueItem(report: ApiModeratorReport): ReportListItem {
   };
 }
 
-function normalizeCursorPage(page: ApiCursorPage<ApiModeratorReport>): Paginated<ReportListItem> {
-  const data = (page.items ?? []).map((report) => normalizeQueueItem(report));
-
+function normalizeCursorPage(page: ApiCursorPage<ApiModeratorReport>): CursorPaginated<ReportListItem> {
   return {
-    data,
-    meta: {
-      current_page: 1,
-      per_page: data.length,
-      total: data.length,
-      last_page: 1,
-    },
+    data: (page.items ?? []).map((report) => normalizeQueueItem(report)),
+    next_cursor: page.next_cursor ?? null,
+    prev_cursor: page.prev_cursor ?? null,
   };
 }
 
