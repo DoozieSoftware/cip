@@ -51,10 +51,13 @@ class SecurityPoliciesSeeder extends Seeder
             'description' => 'Idle session timeout for authenticated users.',
         ],
         [
+            // TODO(security): PILOT value — revert to 5 before go-live.
+            // The OTP is returned in the send-otp response during the pilot
+            // (CIP_DEBUG_OTP=true), so a low cap only blocks testing.
             'key' => 'ratelimit.otp_per_hour',
-            'value' => ['per_hour' => 5],
+            'value' => ['per_hour' => 1000],
             'type' => 'array',
-            'description' => 'Maximum OTP requests per phone per hour.',
+            'description' => 'Maximum OTP requests per phone per hour. Raised for pilot; revert to 5 before go-live.',
         ],
         [
             'key' => 'media.max_upload_mb',
