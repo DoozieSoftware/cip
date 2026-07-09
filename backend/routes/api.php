@@ -66,36 +66,6 @@ Route::prefix('v1')->group(function (): void {
         Route::get('public/departments/performance', [PublicDepartmentPerformanceController::class, 'index'])->name('api.v1.public.departments.performance');
     });
 
-    // TEMP: one-shot OPcache clear so deploys go live while validate_timestamps
-    // is disabled on the FPM pool. Hit once then removed. Runs inside the FPM
-    // worker, so it clears THAT worker's cache; subsequent requests recompile.
-    Route::get('__opcache_reset', function () {
-        if (function_exists('opcache_reset')) {
-            opcache_reset();
-        }
-
-        return response()->json(['ok' => true, 'opcache_reset' => function_exists('opcache_reset')]);
-    })->name('api.v1.__opcache_reset');
-
-    // TEMP: diagnostics — reset opcache on this worker and dump the tail of
-    // laravel.log so we can see the real exception behind the 500s.
-    Route::get('__diag', function () {
-        if (function_exists('opcache_reset')) {
-            opcache_reset();
-        }
-        $log = storage_path('logs/laravel.log');
-        $full = is_file($log) ? file_get_contents($log) : '(no log file)';
-        $pos = strrpos($full, 'local.ERROR');
-        // The message line sits just BEFORE the 'local.ERROR' timestamp, so
-        // return the 4000 chars preceding it (which hold the exception class
-        // and message) plus a bit after.
-        $tail = $pos !== false
-            ? substr($full, max(0, $pos - 4000), 8000)
-            : substr($full, -4000);
-
-        return response()->json(['ok' => true, 'log_tail' => $tail]);
-    })->name('api.v1.__diag');
-
     // Auth (M2) — rate limited per docs/11 §21.
     Route::middleware('throttle:'.RouteServiceProvider::LIMITER_OTP)
         ->post('auth/send-otp', [AuthController::class, 'sendOtp'])
