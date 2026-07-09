@@ -2,7 +2,7 @@
   "name": "Civic Intelligence Platform",
   "short_name": "CIP",
   "description": "Civic Intelligence Platform — report civic issues with photos, video, and GPS.",
-  "start_url": "/citizen",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
@@ -28,14 +28,14 @@
       "name": "Submit a report",
       "short_name": "Report",
       "description": "Open the camera to submit a new civic report",
-      "url": "/citizen/reports/new",
+      "url": "/reports/new",
       "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     },
     {
       "name": "My reports",
       "short_name": "Reports",
       "description": "View the reports you have submitted",
-      "url": "/citizen/reports",
+      "url": "/reports",
       "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     }
   ]

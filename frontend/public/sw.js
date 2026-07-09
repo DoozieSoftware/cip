@@ -8,7 +8,7 @@
  *  - on fetch:
  *      - /api/v1/* requests are network-first; falls back to cached response
  *        (offline reads of the notification preferences, dashboard, etc.)
- *      - GET navigation requests fall back to the cached /citizen shell when
+ *      - GET navigation requests fall back to the cached app shell when
  *        offline so the SPA still boots
  *      - static assets (Vite bundles, images) are cache-first
  *  - on `sync` (background sync API): ping every open client so its
@@ -30,8 +30,7 @@ const SYNC_TAG = 'cip-queue-drain';
 
 const APP_SHELL = [
   '/',
-  '/citizen',
-  '/citizen/login',
+  '/login',
   '/manifest.webmanifest',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
@@ -132,7 +131,7 @@ self.addEventListener('fetch', (event) => {
       try {
         return await fetch(request);
       } catch (err) {
-        const cached = await caches.match('/citizen');
+        const cached = await caches.match('/');
         if (cached) {
           return cached;
         }
@@ -169,7 +168,7 @@ self.addEventListener('push', (event) => {
   }
   const title = payload.title || 'Civic update';
   const body = payload.body || '';
-  const url = payload.url || '/citizen/notifications';
+  const url = payload.url || '/notifications';
   const tag = payload.tag || 'cip-notification';
 
   event.waitUntil(
@@ -188,7 +187,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/citizen/notifications';
+  const url = (event.notification.data && event.notification.data.url) || '/notifications';
   event.waitUntil(
     (async () => {
       const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });

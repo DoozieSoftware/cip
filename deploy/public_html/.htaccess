@@ -7,33 +7,31 @@
 
     RewriteEngine On
 
-    # ── CIP API subdomain: route all to Laravel front controller ──────
+    # ─── CIP API subdomain: route all to Laravel front controller ──────
     RewriteCond %{HTTP_HOST} ^cip-api\.dgisipl\.com$ [NC]
     RewriteCond %{REQUEST_URI} !^/index\.php$ [NC]
     RewriteRule ^ index.php [L]
 
-    # ── CIP SPA subdomain: redirect root / to /cip/ ──────────────────
-    # This avoids the DirectoryIndex conflict — instead of rewriting
-    # to cip/index.html (which DirectoryIndex intercepts), we redirect
-    # to /cip/ and let Apache serve cip/index.html via DirectoryIndex.
+    # ─── CIP app API: /api/* → Laravel front controller ────────────────
+    # Host-scoped so the main dgisipl.com site is not affected when both
+    # hosts share public_html.
     RewriteCond %{HTTP_HOST} ^cip\.dgisipl\.com$ [NC]
-    RewriteRule ^/$ /cip/ [L,R=302]
-
-    # ── CIP SPA subdomain: SPA fallback inside /cip/ ─────────────────
-    RewriteCond %{HTTP_HOST} ^cip\.dgisipl\.com$ [NC]
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^cip/(.*)$ /cip/index.html [L]
-
-    # ─── API routes: /api/* → Laravel front controller ───────────
     RewriteCond %{REQUEST_URI} ^/api [NC]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ index.php [L]
 
     # ─── Horizon (if ever enabled) ───────────────────────────────
+    RewriteCond %{HTTP_HOST} ^cip\.dgisipl\.com$ [NC]
     RewriteCond %{REQUEST_URI} ^/horizon [NC]
     RewriteRule ^ index.php [L]
+
+    # ─── CIP SPA fallback: serve web-root index.html for client routes ──
+    # Host-scoped so https://dgisipl.com keeps its own root behavior.
+    RewriteCond %{HTTP_HOST} ^cip\.dgisipl\.com$ [NC]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ /index.html [L]
 
     # ─── Static assets (JS/CSS/images from Vite build) ───────────
     RewriteCond %{REQUEST_FILENAME} -f
