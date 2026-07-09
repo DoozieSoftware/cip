@@ -18,6 +18,7 @@ use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -118,6 +119,25 @@ return Application::configure(basePath: dirname(__DIR__))
             $payload = [
                 'success' => false,
                 'message' => $e->getMessage() !== '' ? $e->getMessage() : 'Unauthenticated.',
+                'errors' => (object) [],
+                'code' => 'UNAUTHORIZED',
+                'trace_id' => $traceId,
+            ];
+
+            return response()->json($payload, 401);
+        });
+
+        // Sanctum's auth:sanctum guard throws UnauthorizedHttpException
+        // (not AuthenticationException) when it cannot resolve a user for a
+        // stateless bearer request. Map it to the same 401 envelope so an
+        // expired/missing token yields "please log in" instead of a 500.
+        $exceptions->render(function (UnauthorizedHttpException $e, Request $request) {
+            $traceId = (string) ($request->attributes->get('trace_id')
+                ?? $request->header('X-Request-Id')
+                ?? 'unknown');
+            $payload = [
+                'success' => false,
+                'message' => 'Unauthenticated.',
                 'errors' => (object) [],
                 'code' => 'UNAUTHORIZED',
                 'trace_id' => $traceId,
