@@ -43,6 +43,10 @@ frontend/.nyc_output/
 playwright-report/
 test-results/
 
+# Local tool / session state
+.playwright-mcp/
+.commandcode/
+
 # MinIO data (if mounted locally)
 docker/minio/data/
 
