@@ -177,7 +177,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 ?? 'unknown');
             $payload = [
                 'success' => false,
-                'message' => get_class($e).': '.($e->getMessage() ?: '(no message)'),
+                'message' => config('app.debug') ? $e->getMessage() : 'Internal server error',
                 'errors' => (object) [],
                 'code' => 'INTERNAL_ERROR',
                 'trace_id' => $traceId,

@@ -180,14 +180,16 @@ jobs:
               $PHP_BIN artisan event:cache || true; \
               # The API host runs PHP-FPM with opcache.validate_timestamps
               # disabled, so rsync'd backend code (bootstrap/app.php,
-              # policies, etc.) stays cached until FPM is restarted. A
-              # graceful restart of the account's PHP-FPM pool clears the
-              # OPcache so backend fixes actually go live. cPanel exposes
-              # this via uapi (it restarts the root-owned FPM master for
-              # this account); a bare `pkill -USR2` from a non-root shell
-              # cannot signal the master. Guarded so a restricted
-              # environment never fails the deploy.
-              uapi PHP restart_php_fpm >/dev/null 2>&1 || true; \
+              # policies, etc.) stays cached as stale bytecode until FPM is
+              # restarted. We now also ship ~/cip/public/.user.ini that
+              # re-enables opcache timestamp validation, but the fastest
+              # way to apply BOTH the new .user.ini and a fresh OPcache is
+              # to restart the account's FPM pool. cPanel exposes this via
+              # uapi (restarts the root-owned FPM master for this account);
+              # a bare `pkill -USR2` from a non-root shell cannot signal
+              # the master. We print the result for visibility and guard so
+              # a restricted environment never fails the deploy.
+              echo 'uapi restart_php_fpm:' $(uapi PHP restart_php_fpm 2>&1 || echo FAILED) ; \
               echo 'Post-deploy complete'"
 
           rm -f /tmp/deploy_key
