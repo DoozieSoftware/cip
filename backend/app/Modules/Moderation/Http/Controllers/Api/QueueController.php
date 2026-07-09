@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
  *
  *   GET /api/v1/moderator/queue
  *     - paginated cursor list of reports in
- *       `ai_processing` or `pending_moderator` or `escalated`
+ *       `submitted`, `ai_processing`, `pending_moderator`, or `escalated`
  *     - filters: category, ward, district, confidence, date, priority
  *     - sorts by `submitted_at` desc (oldest unhandled first)
  *
@@ -49,7 +49,7 @@ class QueueController extends BaseController
         $this->authorize('viewQueue', Report::class);
 
         $query = $this->baseQueueQuery()
-            ->whereIn('current_status_id', $this->statusIdsFor(['ai_processing', 'pending_moderator', 'escalated']));
+            ->whereIn('current_status_id', $this->statusIdsFor(['submitted', 'ai_processing', 'pending_moderator', 'escalated']));
 
         $this->applyFilters($query, $request);
         $this->applySort($query, $request);
