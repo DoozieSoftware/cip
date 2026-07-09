@@ -153,15 +153,13 @@ jobs:
             -e "ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes" \
             deploy/staging/public_html/.htaccess deploy/staging/public_html/index.php $REMOTE:~/public_html/
 
-          # Run post-deploy tasks
-          # Use migrate:fresh --seed for demo/pilot — this drops and
-          # recreates all tables, ensuring clean state. The DB is
-          # seeded with demo data every deploy.
+          # Run post-deploy tasks. Production deploys must preserve
+          # existing reports, users, tokens, and audit records; never use
+          # migrate:fresh here.
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             $REMOTE "cd ~/cip && \
               $PHP_BIN artisan config:clear 2>/dev/null || true; \
-              $PHP_BIN artisan migrate:fresh --seed --force; \
-              sleep 5; \
+              $PHP_BIN artisan migrate --force; \
               $PHP_BIN artisan storage:link --force || true; \
               sleep 2; \
               $PHP_BIN artisan config:cache || true; \
