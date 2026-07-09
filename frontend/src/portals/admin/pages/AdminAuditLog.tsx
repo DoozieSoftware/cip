@@ -46,7 +46,7 @@ export default function AdminAuditLog(): JSX.Element {
                   <td className="px-4 py-2 text-xs text-slate-500">{new Date(row.created_at).toLocaleString()}</td>
                   <td className="px-4 py-2 font-mono text-xs text-slate-900">{row.action}</td>
                   <td className="px-4 py-2 text-xs text-slate-700">{row.entity ?? '—'}{row.entity_id ? ` · ${row.entity_id.slice(0, 8)}…` : ''}</td>
-                  <td className="px-4 py-2 text-xs text-slate-700">{row.user_id?.slice(0, 8) ?? '—'}{row.role ? ` · ${row.role}` : ''}</td>
+                  <td className="px-4 py-2 text-xs text-slate-700">{row.user_id?.slice(0, 8) ?? '—'}{row.roles?.length ? ` · ${row.roles.join(', ')}` : ''}</td>
                   <td className="px-4 py-2 font-mono text-xs text-slate-500">{row.ip ?? '—'}</td>
                 </tr>
               ))}

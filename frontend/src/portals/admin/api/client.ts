@@ -9,7 +9,16 @@ export interface AdminUser {
   status?: string | null;
   roles: string[];
   created_at?: string | null;
-  deleted_at?: string | null;
+}
+
+export interface AdminUserInput {
+  name?: string | null;
+  mobile: string;
+  email?: string | null;
+  password?: string | null;
+  status?: string;
+  anonymous_enabled?: boolean;
+  roles?: string[];
 }
 
 export interface AdminRole {
@@ -66,7 +75,8 @@ export interface AppConfigFlag {
 export interface AuditLog {
   id: string;
   user_id?: string | null;
-  role?: string | null;
+  user_name?: string | null;
+  roles: string[];
   action: string;
   entity?: string | null;
   entity_id?: string | null;
@@ -81,6 +91,33 @@ export function useAdminUsers(q: string) {
       const res = await apiRequest<ApiEnvelope<AdminUser[]>>('/admin/users', { query: { q, per_page: 100 } });
       return res.data;
     },
+  });
+}
+
+export function useCreateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: AdminUserInput) =>
+      apiRequest<ApiEnvelope<AdminUser>>('/admin/users', { method: 'POST', body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  });
+}
+
+export function useUpdateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: Partial<AdminUserInput> & { id: string }) =>
+      apiRequest<ApiEnvelope<AdminUser>>(`/admin/users/${encodeURIComponent(id)}`, { method: 'PUT', body: patch }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  });
+}
+
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      apiRequest<unknown>(`/admin/users/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   });
 }
 
@@ -114,6 +151,82 @@ export function useAdminReportTypes() {
   });
 }
 
+export interface AdminRoleInput {
+  name: string;
+  guard_name?: string;
+  permissions?: string[];
+}
+
+export function useCreateRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: AdminRoleInput) =>
+      apiRequest<ApiEnvelope<AdminRole>>('/admin/roles', { method: 'POST', body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'roles'] }),
+  });
+}
+
+export function useUpdateRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: AdminRoleInput & { id: string }) =>
+      apiRequest<ApiEnvelope<AdminRole>>(`/admin/roles/${encodeURIComponent(id)}`, { method: 'PUT', body: patch }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'roles'] }),
+  });
+}
+
+export function useSyncRolePermissions() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, permissions }: { id: string; permissions: string[] }) =>
+      apiRequest<ApiEnvelope<AdminRole>>(`/admin/roles/${encodeURIComponent(id)}/permissions/sync`, {
+        method: 'POST',
+        body: { permissions },
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'roles'] }),
+  });
+}
+
+export interface AdminReportTypeInput {
+  name: string;
+  code: string;
+  description?: string | null;
+  icon?: string | null;
+  color?: string | null;
+  requires_video?: boolean;
+  requires_photo?: boolean;
+  min_photos?: number;
+  max_photos?: number;
+  active?: boolean;
+}
+
+export function useCreateReportType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: AdminReportTypeInput) =>
+      apiRequest<ApiEnvelope<AdminReportType>>('/admin/report-types', { method: 'POST', body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'report-types'] }),
+  });
+}
+
+export function useUpdateReportType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: AdminReportTypeInput & { id: string }) =>
+      apiRequest<ApiEnvelope<AdminReportType>>(`/admin/report-types/${encodeURIComponent(id)}`, { method: 'PUT', body: patch }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'report-types'] }),
+  });
+}
+
+export function useDeleteReportType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      apiRequest<ApiEnvelope<AdminReportType>>(`/admin/report-types/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'report-types'] }),
+  });
+}
+
 export function useSecurityPolicies() {
   return useQuery({
     queryKey: ['admin', 'security-policies'],
@@ -138,7 +251,9 @@ export function useAuditLogs(filters: Record<string, string | undefined>) {
   return useQuery({
     queryKey: ['admin', 'audit', filters],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<AuditLog[]>>('/admin/audit-logs', { query: { ...filters, per_page: 100 } });
+      const res = await apiRequest<ApiEnvelope<AuditLog[]>>('/admin/audit-logs', {
+        query: { ...filters, per_page: filters.per_page ?? '500' },
+      });
       return res.data;
     },
   });
@@ -202,13 +317,12 @@ export interface PlatformHealth {
 
 export interface SchedulerJob {
   id: string;
-  name: string;
-  schedule: string;
-  next_due?: string | null;
-  last_run?: string | null;
+  command: string;
+  expression: string;
+  next_due_at?: string | null;
+  timezone?: string | null;
+  without_overlapping?: boolean;
   paused: boolean;
-  description?: string;
-  command?: string;
 }
 
 export function usePlatformHealth() {
@@ -265,47 +379,58 @@ export function useSchedulerAction() {
 export interface Integration {
   id: string;
   code: string;
-  name: string;
+  display_name: string;
   provider: string;
   status: 'active' | 'degraded' | 'disabled' | 'pending';
   base_url?: string | null;
   credentials: Record<string, unknown>;
   settings: Record<string, unknown>;
-  last_health_at?: string | null;
-  last_health_status?: string | null;
-  description?: string | null;
+  last_check_at?: string | null;
+  last_error?: string | null;
   created_at?: string | null;
-  deleted_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface MediaStorage {
   id: string;
   key: string;
-  value: {
-    disk: string;
-    bucket?: string | null;
-    endpoint?: string | null;
-    region?: string | null;
-    retention_days?: number;
-    max_upload_mb?: number;
-    public_url?: string | null;
-  };
+  disk: string;
+  region?: string | null;
+  bucket?: string | null;
+  endpoint?: string | null;
+  retention_days: number;
+  encryption_at_rest: boolean;
+  max_photo_bytes: number;
+  max_video_bytes: number;
+  max_document_bytes: number;
   updated_at?: string | null;
+}
+
+export interface MediaStorageInput {
+  disk: string;
+  region?: string | null;
+  bucket?: string | null;
+  endpoint?: string | null;
+  retention_days: number;
+  encryption_at_rest: boolean;
+  max_photo_bytes: number;
+  max_video_bytes: number;
+  max_document_bytes: number;
 }
 
 export interface NotificationConfig {
   id: string;
   channel: 'mail' | 'sms' | 'push' | 'webhook' | 'log';
   code: string;
-  name: string;
+  display_name: string;
   active: boolean;
   credentials: Record<string, unknown>;
   retry_policy: {
-    max_attempts: number;
+    tries: number;
     backoff: number[];
   };
-  locale?: string | null;
-  description?: string | null;
+  settings: Record<string, unknown>;
+  per_locale_defaults: Record<string, unknown>;
   created_at?: string | null;
 }
 
@@ -364,7 +489,7 @@ export function useMediaStorage() {
   return useQuery({
     queryKey: ['admin', 'media-storage'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<MediaStorage>>('/admin/media-storage');
+      const res = await apiRequest<ApiEnvelope<MediaStorage>>('/admin/media/storage');
       return res.data;
     },
   });
@@ -373,8 +498,8 @@ export function useMediaStorage() {
 export function useUpdateMediaStorage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: MediaStorage['value']) =>
-      apiRequest<ApiEnvelope<MediaStorage>>('/admin/media-storage', { method: 'PUT', body: { value: input } }),
+    mutationFn: async (input: MediaStorageInput) =>
+      apiRequest<ApiEnvelope<MediaStorage>>('/admin/media/storage', { method: 'PUT', body: input }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'media-storage'] }),
   });
 }
@@ -382,7 +507,7 @@ export function useUpdateMediaStorage() {
 export function useProbeMediaStorage() {
   return useMutation({
     mutationFn: async () => {
-      const res = await apiRequest<ApiEnvelope<{ reachable: boolean; detail: string }>>('/admin/media-storage/probe', { method: 'POST' });
+      const res = await apiRequest<ApiEnvelope<{ reachable: boolean; detail: string }>>('/admin/media/storage/probe', { method: 'POST' });
       return res.data;
     },
   });
@@ -477,9 +602,10 @@ export interface PromptVersion {
   name: string;
   version: number;
   status: 'draft' | 'approved' | 'deprecated';
-  template: string;
-  variables: string[];
-  description?: string | null;
+  purpose?: string | null;
+  provider_code?: string | null;
+  prompt_text: string;
+  expected_json_schema?: unknown;
   approved_at?: string | null;
   approved_by?: string | null;
   created_at?: string | null;
@@ -575,11 +701,43 @@ export interface RoutingRule {
   name: string;
   description?: string | null;
   conditions: Record<string, unknown>;
+  // Required by StoreRoutingRuleRequest/UpdateRoutingRuleRequest — not
+  // optional despite `?`, which only reflects that a new rule being
+  // drafted client-side may not have them filled in yet.
   destination_department_id?: string | null;
+  default_officer_id?: string | null;
+  default_priority_id?: string | null;
+  default_sla_minutes?: number | null;
   priority: number;
   active: boolean;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+export interface WorkflowState {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  is_initial: boolean;
+  is_terminal: boolean;
+  sort_order: number;
+  color?: string | null;
+  active: boolean;
+}
+
+export interface WorkflowTransition {
+  id: string;
+  from_state_id: string;
+  to_state_id: string;
+  event: string;
+  required_role?: string | null;
+  required_permission?: string | null;
+  conditions?: Record<string, unknown> | null;
+  sla_minutes?: number | null;
+  notify_before_minutes?: number | null;
+  priority: number;
+  active: boolean;
 }
 
 export interface WorkflowDefinition {
@@ -587,8 +745,8 @@ export interface WorkflowDefinition {
   code: string;
   name: string;
   description?: string | null;
-  states: Array<{ key: string; name: string; terminal: boolean }>;
-  transitions: Array<{ from: string; to: string; action: string; required_role?: string | null }>;
+  states: WorkflowState[];
+  transitions: WorkflowTransition[];
   active: boolean;
   created_at?: string | null;
   updated_at?: string | null;
@@ -723,8 +881,8 @@ export function useCreateSetting() {
 export function useUpdateSetting() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...patch }: Partial<Setting> & { id: string }) =>
-      apiRequest<ApiEnvelope<Setting>>(`/admin/settings/${encodeURIComponent(id)}`, { method: 'PUT', body: patch }),
+    mutationFn: async ({ key, ...patch }: Partial<Setting> & { key: string }) =>
+      apiRequest<ApiEnvelope<Setting>>(`/admin/settings/${encodeURIComponent(key)}`, { method: 'PUT', body: patch }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'settings'] }),
   });
 }
@@ -732,8 +890,8 @@ export function useUpdateSetting() {
 export function useDeleteSetting() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) =>
-      apiRequest<unknown>(`/admin/settings/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    mutationFn: async (key: string) =>
+      apiRequest<unknown>(`/admin/settings/${encodeURIComponent(key)}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'settings'] }),
   });
 }

@@ -37,19 +37,17 @@ function IntegrationForm({ initial, onSubmit, onCancel, busy }: {
   busy: boolean;
 }): JSX.Element {
   const [code, setCode] = useState(initial?.code ?? '');
-  const [name, setName] = useState(initial?.name ?? '');
+  const [displayName, setDisplayName] = useState(initial?.display_name ?? '');
   const [provider, setProvider] = useState(initial?.provider ?? '');
   const [baseUrl, setBaseUrl] = useState(initial?.base_url ?? '');
-  const [description, setDescription] = useState(initial?.description ?? '');
 
   const handle = (e: FormEvent): void => {
     e.preventDefault();
     onSubmit({
       code: code.trim(),
-      name: name.trim(),
+      display_name: displayName.trim(),
       provider: provider.trim(),
       base_url: baseUrl.trim() || null,
-      description: description.trim() || null,
       credentials: initial?.credentials ?? {},
       settings: initial?.settings ?? {},
       status: initial?.status ?? 'disabled',
@@ -72,11 +70,11 @@ function IntegrationForm({ initial, onSubmit, onCancel, busy }: {
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-slate-700">Name</span>
+          <span className="font-medium text-slate-700">Display name</span>
           <input
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
             required
             className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
             placeholder="BBMP 311"
@@ -104,15 +102,6 @@ function IntegrationForm({ initial, onSubmit, onCancel, busy }: {
           />
         </label>
       </div>
-      <label className="block text-sm">
-        <span className="font-medium text-slate-700">Description</span>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={2}
-          className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
-        />
-      </label>
       <div className="flex justify-end gap-2">
         <button
           type="button"
@@ -232,12 +221,12 @@ export default function AdminIntegrations(): JSX.Element {
                 <tr key={i.id}>
                   <td className="px-5 py-3 text-sm font-mono text-slate-700">{i.code}</td>
                   <td className="px-5 py-3 text-sm">
-                    <div className="font-medium text-slate-900">{i.name}</div>
+                    <div className="font-medium text-slate-900">{i.display_name}</div>
                     <div className="text-xs text-slate-500">{i.provider}</div>
                   </td>
                   <td className="px-5 py-3 text-sm"><StatusPill status={i.status} /></td>
                   <td className="px-5 py-3 text-sm tabular-nums text-slate-700">
-                    {i.last_health_at ? new Date(i.last_health_at).toLocaleString() : '—'}
+                    {i.last_check_at ? new Date(i.last_check_at).toLocaleString() : '—'}
                   </td>
                   <td className="px-5 py-3 text-right">
                     <div className="flex justify-end gap-1.5">

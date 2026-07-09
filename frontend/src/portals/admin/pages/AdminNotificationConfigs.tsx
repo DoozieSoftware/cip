@@ -31,7 +31,7 @@ export default function AdminNotificationConfigs(): JSX.Element {
   const rows = list.data ?? [];
 
   const handleToggle = (cfg: NotificationConfig): void => {
-    upsert.mutate({ id: cfg.id, channel: cfg.channel, code: cfg.code, name: cfg.name, active: !cfg.active, credentials: cfg.credentials, retry_policy: cfg.retry_policy });
+    upsert.mutate({ id: cfg.id, channel: cfg.channel, code: cfg.code, display_name: cfg.display_name, active: !cfg.active, credentials: cfg.credentials, retry_policy: cfg.retry_policy });
   };
 
   return (
@@ -88,7 +88,7 @@ export default function AdminNotificationConfigs(): JSX.Element {
                   <td className="px-5 py-3 text-sm"><ChannelPill channel={c.channel} active={c.active} /></td>
                   <td className="px-5 py-3 text-sm">
                     <div className="font-mono text-xs text-slate-500">{c.code}</div>
-                    <div className="font-medium text-slate-900">{c.name}</div>
+                    <div className="font-medium text-slate-900">{c.display_name}</div>
                   </td>
                   <td className="px-5 py-3 text-sm">
                     <button
@@ -97,14 +97,14 @@ export default function AdminNotificationConfigs(): JSX.Element {
                       disabled={upsert.isPending}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${c.active ? 'bg-emerald-500' : 'bg-slate-300'}`}
                       aria-pressed={c.active}
-                      aria-label={`Toggle ${c.name}`}
+                      aria-label={`Toggle ${c.display_name}`}
                     >
                       <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${c.active ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
                   </td>
                   <td className="px-5 py-3 text-sm text-slate-700">
                     <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">
-                      {c.retry_policy?.max_attempts ?? '—'} attempts · {JSON.stringify(c.retry_policy?.backoff ?? [])}
+                      {c.retry_policy?.tries ?? '—'} attempts · {JSON.stringify(c.retry_policy?.backoff ?? [])}
                     </code>
                   </td>
                   <td className="px-5 py-3 text-right">

@@ -100,11 +100,11 @@ function PromptRow({ p, busy, onApprove, onRollback }: {
           {p.status}
         </span>
       </td>
-      <td className="px-5 py-3 text-sm tabular-nums text-slate-700">
-        {p.variables?.length ?? 0}
+      <td className="px-5 py-3 text-sm text-slate-600">
+        <code className="block max-w-md truncate rounded bg-slate-100 px-1.5 py-0.5 text-xs">{p.purpose ?? '—'}</code>
       </td>
       <td className="px-5 py-3 text-sm text-slate-600">
-        <code className="block max-w-md truncate rounded bg-slate-100 px-1.5 py-0.5 text-xs">{p.template.slice(0, 80)}{p.template.length > 80 ? '…' : ''}</code>
+        <code className="block max-w-md truncate rounded bg-slate-100 px-1.5 py-0.5 text-xs">{p.prompt_text.slice(0, 80)}{p.prompt_text.length > 80 ? '…' : ''}</code>
       </td>
       <td className="px-5 py-3 text-sm tabular-nums text-slate-700">
         {p.approved_at ? new Date(p.approved_at).toLocaleDateString() : '—'}

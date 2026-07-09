@@ -78,7 +78,7 @@ function SettingRow({ s, busy, onSave, onDelete }: {
           <button
             type="button"
             disabled={busy}
-            onClick={() => onSave({ id: s.id, value: coerceValue(value, s.type), type: s.type })}
+            onClick={() => onSave({ key: s.key, value: coerceValue(value, s.type), type: s.type })}
             className="rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
           >
             Save
@@ -211,7 +211,7 @@ export default function AdminSystemConfig(): JSX.Element {
                   key={s.id}
                   s={s}
                   busy={create.isPending || update.isPending || remove.isPending}
-                  onSave={(patch) => update.mutate(patch as Partial<Setting> & { id: string })}
+                  onSave={(patch) => update.mutate(patch as Partial<Setting> & { key: string })}
                   onDelete={() => { if (confirm(`Delete ${s.key}?`)) remove.mutate(s.id); }}
                 />
               ))}

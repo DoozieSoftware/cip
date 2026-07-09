@@ -21,18 +21,14 @@ function JobRow({ job, busy, onAction }: { job: SchedulerJob; busy: boolean; onA
   return (
     <tr>
       <td className="px-5 py-3">
-        <div className="text-sm font-medium text-slate-900">{job.name}</div>
-        <div className="font-mono text-xs text-slate-500">{job.id}</div>
-        {job.description ? <div className="mt-0.5 text-xs text-slate-500">{job.description}</div> : null}
+        <div className="text-sm font-medium text-slate-900">{job.id}</div>
+        {job.command ? <div className="font-mono text-xs text-slate-500">{job.command}</div> : null}
       </td>
       <td className="px-5 py-3 text-sm text-slate-700">
-        <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{job.schedule || '—'}</code>
+        <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{job.expression || '—'}</code>
       </td>
       <td className="px-5 py-3 text-sm tabular-nums text-slate-700">
-        {job.next_due ? new Date(job.next_due).toLocaleString() : '—'}
-      </td>
-      <td className="px-5 py-3 text-sm tabular-nums text-slate-700">
-        {job.last_run ? new Date(job.last_run).toLocaleString() : 'never'}
+        {job.next_due_at ? new Date(job.next_due_at).toLocaleString() : '—'}
       </td>
       <td className="px-5 py-3 text-sm">
         <StatusPill paused={job.paused} />
@@ -44,7 +40,7 @@ function JobRow({ job, busy, onAction }: { job: SchedulerJob; busy: boolean; onA
             disabled={busy}
             onClick={() => onAction('run-now')}
             className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-            aria-label={`Run ${job.name} now`}
+            aria-label={`Run ${job.id} now`}
           >
             Run now
           </button>
@@ -131,9 +127,6 @@ export default function AdminScheduler(): JSX.Element {
                 </th>
                 <th scope="col" className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Next run
-                </th>
-                <th scope="col" className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Last run
                 </th>
                 <th scope="col" className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Status

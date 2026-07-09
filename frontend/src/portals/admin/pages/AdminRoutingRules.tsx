@@ -16,6 +16,8 @@ const blank: Partial<RoutingRule> = {
   destination_department_id: null,
   priority: 50,
   active: true,
+  default_priority_id: null,
+  default_sla_minutes: null,
 };
 
 function RuleForm({ initial, onSubmit, onCancel, busy }: {
@@ -29,6 +31,8 @@ function RuleForm({ initial, onSubmit, onCancel, busy }: {
   const [department, setDepartment] = useState(initial.destination_department_id ?? '');
   const [priority, setPriority] = useState(initial.priority ?? 50);
   const [active, setActive] = useState(initial.active ?? true);
+  const [defaultPriority, setDefaultPriority] = useState(initial.default_priority_id ?? '');
+  const [defaultSla, setDefaultSla] = useState(initial.default_sla_minutes ?? '');
   const [conditionsJson, setConditionsJson] = useState(JSON.stringify(initial.conditions ?? { any_label: [] }, null, 2));
 
   const handle = (e: FormEvent): void => {
@@ -47,6 +51,8 @@ function RuleForm({ initial, onSubmit, onCancel, busy }: {
       destination_department_id: department.trim() || null,
       priority: Number(priority),
       active,
+      default_priority_id: defaultPriority.trim() || null,
+      default_sla_minutes: defaultSla === '' ? null : Number(defaultSla),
       conditions: parsed,
     });
   };
@@ -67,8 +73,16 @@ function RuleForm({ initial, onSubmit, onCancel, busy }: {
           <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm" />
         </label>
         <label className="text-sm sm:col-span-2">
-          <span className="font-medium text-slate-700">Destination department ID</span>
-          <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="UUID (leave empty to skip)" className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm" />
+          <span className="font-medium text-slate-700">Destination department ID <span className="text-rose-600">*</span></span>
+          <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} required placeholder="UUID" className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm" />
+        </label>
+        <label className="text-sm">
+          <span className="font-medium text-slate-700">Default priority ID <span className="text-rose-600">*</span></span>
+          <input type="text" value={defaultPriority} onChange={(e) => setDefaultPriority(e.target.value)} required placeholder="UUID" className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm" />
+        </label>
+        <label className="text-sm">
+          <span className="font-medium text-slate-700">Default SLA (minutes) <span className="text-rose-600">*</span></span>
+          <input type="number" min={0} value={defaultSla} onChange={(e) => setDefaultSla(e.target.value)} required placeholder="e.g. 1440" className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm" />
         </label>
         <label className="text-sm sm:col-span-2">
           <span className="font-medium text-slate-700">Conditions (JSON)</span>

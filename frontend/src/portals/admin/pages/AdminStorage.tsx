@@ -1,23 +1,27 @@
 import { useState, useEffect, type FormEvent, type JSX } from 'react';
-import { useMediaStorage, useUpdateMediaStorage, useProbeMediaStorage } from '../api/client';
+import { useMediaStorage, useUpdateMediaStorage, useProbeMediaStorage, type MediaStorage } from '../api/client';
 import { Spinner } from '../../moderator/design';
 
 const DISKS = ['media_local', 'media_minio', 'media_s3'];
+
+const MB = 1_000_000;
 
 export default function AdminStorage(): JSX.Element {
   const storage = useMediaStorage();
   const update = useUpdateMediaStorage();
   const probe = useProbeMediaStorage();
 
-  const initial = storage.data?.value;
+  const initial = storage.data;
 
   const [disk, setDisk] = useState('media_local');
   const [bucket, setBucket] = useState('');
   const [endpoint, setEndpoint] = useState('');
   const [region, setRegion] = useState('');
   const [retentionDays, setRetentionDays] = useState(90);
-  const [maxUploadMb, setMaxUploadMb] = useState(20);
-  const [publicUrl, setPublicUrl] = useState('');
+  const [encryptionAtRest, setEncryptionAtRest] = useState(false);
+  const [maxPhotoMb, setMaxPhotoMb] = useState(20);
+  const [maxVideoMb, setMaxVideoMb] = useState(200);
+  const [maxDocumentMb, setMaxDocumentMb] = useState(50);
 
   useEffect(() => {
     if (initial) {
@@ -26,23 +30,30 @@ export default function AdminStorage(): JSX.Element {
       setEndpoint(initial.endpoint ?? '');
       setRegion(initial.region ?? '');
       setRetentionDays(initial.retention_days ?? 90);
-      setMaxUploadMb(initial.max_upload_mb ?? 20);
-      setPublicUrl(initial.public_url ?? '');
+      setEncryptionAtRest(Boolean(initial.encryption_at_rest));
+      setMaxPhotoMb(Math.round((initial.max_photo_bytes ?? 0) / MB) || 20);
+      setMaxVideoMb(Math.round((initial.max_video_bytes ?? 0) / MB) || 200);
+      setMaxDocumentMb(Math.round((initial.max_document_bytes ?? 0) / MB) || 50);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storage.data?.id, storage.data?.updated_at]);
 
   const handle = (e: FormEvent): void => {
     e.preventDefault();
-    update.mutate({
+    const payload: MediaStorage = {
+      id: initial?.id ?? 'media_storage',
+      key: initial?.key ?? 'media_storage',
       disk,
+      region: region || null,
       bucket: bucket || null,
       endpoint: endpoint || null,
-      region: region || null,
       retention_days: Number(retentionDays),
-      max_upload_mb: Number(maxUploadMb),
-      public_url: publicUrl || null,
-    });
+      encryption_at_rest: encryptionAtRest,
+      max_photo_bytes: Number(maxPhotoMb) * MB,
+      max_video_bytes: Number(maxVideoMb) * MB,
+      max_document_bytes: Number(maxDocumentMb) * MB,
+    };
+    update.mutate(payload);
   };
 
   return (
@@ -108,23 +119,42 @@ export default function AdminStorage(): JSX.Element {
                 className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
               />
             </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={encryptionAtRest}
+                onChange={(e) => setEncryptionAtRest(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              <span className="font-medium text-slate-700">Encryption at rest</span>
+            </label>
             <label className="text-sm">
-              <span className="block font-medium text-slate-700">Max upload (MB)</span>
+              <span className="block font-medium text-slate-700">Max photo size (MB)</span>
               <input
                 type="number"
-                value={maxUploadMb}
+                value={maxPhotoMb}
                 min={1}
-                onChange={(e) => setMaxUploadMb(Number(e.target.value))}
+                onChange={(e) => setMaxPhotoMb(Number(e.target.value))}
+                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+              />
+            </label>
+            <label className="text-sm">
+              <span className="block font-medium text-slate-700">Max video size (MB)</span>
+              <input
+                type="number"
+                value={maxVideoMb}
+                min={1}
+                onChange={(e) => setMaxVideoMb(Number(e.target.value))}
                 className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
               />
             </label>
             <label className="text-sm sm:col-span-2">
-              <span className="block font-medium text-slate-700">Public URL prefix</span>
+              <span className="block font-medium text-slate-700">Max document size (MB)</span>
               <input
-                type="url"
-                value={publicUrl}
-                onChange={(e) => setPublicUrl(e.target.value)}
-                placeholder="https://cdn.example.in/media"
+                type="number"
+                value={maxDocumentMb}
+                min={1}
+                onChange={(e) => setMaxDocumentMb(Number(e.target.value))}
                 className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
               />
             </label>
@@ -134,7 +164,7 @@ export default function AdminStorage(): JSX.Element {
             <div role="status" className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Storage configuration updated.</div>
           ) : null}
           {update.isError ? (
-            <div role="alert" className="rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800">Update failed: {(update.error)?.message}</div>
+            <div role="alert" className="rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800">Update failed: {update.error?.message}</div>
           ) : null}
 
           <div className="flex flex-wrap items-center justify-between gap-2">
