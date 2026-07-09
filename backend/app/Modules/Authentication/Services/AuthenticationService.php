@@ -9,6 +9,7 @@ use App\Modules\Authentication\Models\LoginHistory;
 use App\Modules\Authentication\Models\Otp;
 use App\Modules\Authentication\Models\RefreshToken;
 use App\Modules\Security\Services\SecurityEventService;
+use App\Modules\Security\Services\SecurityPolicyService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Services\BaseService;
 use App\Modules\Users\Models\User;
@@ -85,6 +86,7 @@ class AuthenticationService extends BaseService
         $token = $user->createToken(
             name: 'citizen-otp',
             abilities: ['*'],
+            expiresAt: $this->accessTokenExpiry(),
         );
 
         $refresh = $this->refreshTokens->issue($user, $ip, $userAgent);
@@ -143,6 +145,7 @@ class AuthenticationService extends BaseService
         $token = $user->createToken(
             name: 'staff-password',
             abilities: ['*'],
+            expiresAt: $this->accessTokenExpiry(),
         );
 
         $refresh = $this->refreshTokens->issue($user, $ip, $userAgent);
@@ -186,6 +189,7 @@ class AuthenticationService extends BaseService
         $token = $user->createToken(
             name: 'refresh',
             abilities: ['*'],
+            expiresAt: $this->accessTokenExpiry(),
         );
 
         return [
@@ -213,6 +217,16 @@ class AuthenticationService extends BaseService
         }
 
         $this->refreshTokens->revokeAllForUser($user);
+    }
+
+    /**
+     * Access token lifetime comes from the `jwt.access_ttl_minutes`
+     * security policy (docs/11 §8). Missing/unmigrated policy falls
+     * back to the service default so token issuance still works.
+     */
+    private function accessTokenExpiry(): \DateTimeInterface
+    {
+        return now()->addMinutes(app(SecurityPolicyService::class)->jwtAccessTtlMinutes());
     }
 
     private function recordLoginHistory(User $user, string $mobile, ?string $ip, ?string $userAgent, ?string $fingerprint, bool $success, ?string $reason = null): void

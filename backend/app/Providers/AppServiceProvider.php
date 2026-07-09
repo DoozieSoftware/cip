@@ -15,6 +15,7 @@ use App\Modules\Reports\Events\ReportAssigned;
 use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Listeners\WriteStatusHistory;
 use App\Modules\Security\Models\SecurityEvent;
+use App\Modules\Security\Services\SecurityPolicyService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -52,5 +53,13 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(ReportStatusChanged::class, ReportStatusChangedListener::class);
         Event::listen(AiCompleted::class, NotificationsAiCompletedListener::class);
         Event::listen(SecurityEvent::class, SecurityEventListener::class);
+
+        // session.timeout_minutes security policy overrides the
+        // framework session lifetime at boot. Defensive: falls back to
+        // the policy default when the row is absent or the table is
+        // not yet migrated (e.g. during `migrate`).
+        config([
+            'session.lifetime' => app(SecurityPolicyService::class)->sessionTimeoutMinutes(),
+        ]);
     }
 }

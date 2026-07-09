@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Modules\Security\Services\SecurityPolicyService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -89,11 +90,15 @@ class RouteServiceProvider extends ServiceProvider
 
     private function configureRateLimiting(): void
     {
-        // 5 requests / hour / IP — keyed by IP because the actor is
-        // pre-authentication (the mobile is the only signal).
+        // OTP requests / hour / IP — keyed by IP because the actor is
+        // pre-authentication (the mobile is the only signal). The cap
+        // comes from the `ratelimit.otp_per_hour` security policy so
+        // the Super Admin can tune it without a code change.
         RateLimiter::for(self::LIMITER_OTP, function (Request $request): array {
+            $perHour = app(SecurityPolicyService::class)->rateLimitOtpPerHour();
+
             return [
-                Limit::perHour(5)->by('otp:'.$this->ipKey($request)),
+                Limit::perHour($perHour)->by('otp:'.$this->ipKey($request)),
             ];
         });
 

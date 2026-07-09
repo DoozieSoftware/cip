@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Authentication\Services;
 
 use App\Modules\Authentication\Models\Otp;
+use App\Modules\Security\Services\SecurityPolicyService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Services\BaseService;
 use Closure;
@@ -39,8 +40,6 @@ class OtpService extends BaseService
      * @var array<string, string>
      */
     private array $latestPlain = [];
-
-    private const MAX_REQUESTS_PER_HOUR = 5;
 
     /**
      * Default SMS dispatcher — writes the OTP to the `sms` log channel
@@ -81,8 +80,7 @@ class OtpService extends BaseService
 
         $plain = $this->generateCode();
         $hash = password_hash($plain, PASSWORD_BCRYPT);
-        $rawExpiry = config('cip.auth.otp_expiry_minutes', 5);
-        $expiryMinutes = is_numeric($rawExpiry) ? (int) $rawExpiry : 5;
+        $expiryMinutes = (int) ceil(app(SecurityPolicyService::class)->otpExpirySeconds() / 60);
 
         $otp = new Otp([
             'mobile' => $mobile,
@@ -172,13 +170,14 @@ class OtpService extends BaseService
     private function assertWithinRateLimit(string $mobile, ?string $ip): void
     {
         $hourAgo = now()->subHour();
+        $cap = app(SecurityPolicyService::class)->rateLimitOtpPerHour();
 
         $perMobile = Otp::query()
             ->where('mobile', $mobile)
             ->where('created_at', '>=', $hourAgo)
             ->count();
 
-        if ($perMobile >= self::MAX_REQUESTS_PER_HOUR) {
+        if ($perMobile >= $cap) {
             throw ApiException::rateLimited('Too many OTP requests for this mobile. Please try again later.');
         }
 
@@ -188,7 +187,7 @@ class OtpService extends BaseService
                 ->where('created_at', '>=', $hourAgo)
                 ->count();
 
-            if ($perIp >= self::MAX_REQUESTS_PER_HOUR) {
+            if ($perIp >= $cap) {
                 throw ApiException::rateLimited('Too many OTP requests from this IP. Please try again later.');
             }
         }

@@ -6,6 +6,7 @@ namespace App\Modules\Authentication\Services;
 
 use App\Modules\Authentication\Models\RefreshToken;
 use App\Modules\Security\Services\SecurityEventService;
+use App\Modules\Security\Services\SecurityPolicyService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Services\BaseService;
 use App\Modules\Users\Models\User;
@@ -35,8 +36,7 @@ class RefreshTokenService extends BaseService
     public function __construct(
         private readonly SecurityEventService $securityEvents,
     ) {
-        $rawConfig = config('cip.auth.refresh_ttl_days', 14);
-        $this->ttlDays = is_numeric($rawConfig) ? (int) $rawConfig : 14;
+        $this->ttlDays = app(SecurityPolicyService::class)->jwtRefreshTtlDays();
     }
 
     /**

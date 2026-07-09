@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Media\Http\Requests;
 
+use App\Modules\Security\Services\SecurityPolicyService;
 use App\Modules\Users\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -65,16 +66,20 @@ class UploadMediaRequest extends FormRequest
      */
     public function rules(): array
     {
+        $policies = app(SecurityPolicyService::class);
+        $maxUploadMb = $policies->mediaMaxUploadMb();
+        $maxUploadKb = $maxUploadMb * 1024;
+
         if ($this->fieldName === 'video') {
             return [
-                'video' => ['required', 'file', 'max:102400'], // 100 MB cap at the request layer (matches MediaService::MAX_BYTES['VIDEO'])
-                'duration_seconds' => ['nullable', 'integer', 'min:0'],
+                'video' => ['required', 'file', 'max:'.$maxUploadKb], // single media upload cap per `media.max_upload_mb`
+                'duration_seconds' => ['nullable', 'integer', 'min:0', 'max:'.$policies->mediaMaxVideoSeconds()],
             ];
         }
 
         return [
-            $this->fieldName => ['required', 'array', 'min:1', 'max:10'],
-            $this->fieldName.'.*' => ['file', 'max:25600'], // 25 MB cap at the request layer
+            $this->fieldName => ['required', 'array', 'min:1', 'max:'.$policies->mediaMaxPhotosPerReport()],
+            $this->fieldName.'.*' => ['file', 'max:'.$maxUploadKb], // single media upload cap per `media.max_upload_mb`
         ];
     }
 }
