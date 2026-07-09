@@ -26,8 +26,8 @@ const PROVIDERS = [
   { id: 'p2', code: 'openai', name: 'OpenAI', driver: 'openai_compatible', model: 'gpt-5-mini', priority: 10, active: false, has_secret: true, created_at: null },
 ];
 const PROMPTS = [
-  { id: 'pv1', name: 'classify_image', version: 1, status: 'approved' as const, template: 'You are an image classifier. {{slot}}', variables: ['slot'], description: null },
-  { id: 'pv2', name: 'classify_image', version: 2, status: 'draft' as const, template: 'You are an image classifier v2. {{slot}}', variables: ['slot'], description: null },
+  { id: 'pv1', name: 'classify_image', version: 1, status: 'approved' as const, purpose: 'Classify an uploaded image', prompt_text: 'You are an image classifier. {{slot}}' },
+  { id: 'pv2', name: 'classify_image', version: 2, status: 'draft' as const, purpose: 'Classify an uploaded image v2', prompt_text: 'You are an image classifier v2. {{slot}}' },
 ];
 
 describe('AdminAi (T-M12-021)', () => {

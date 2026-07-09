@@ -18,8 +18,8 @@ const { useIntegrations } = await import('../../api/client');
 const AdminIntegrations = (await import('../AdminIntegrations')).default;
 
 const ROWS = [
-  { id: 'i1', code: 'bbmp_311', name: 'BBMP 311', provider: 'bbmp', status: 'active' as const, credentials: {}, settings: {}, created_at: null },
-  { id: 'i2', code: 'btp_helpdesk', name: 'BTP Helpdesk', provider: 'btp', status: 'degraded' as const, credentials: {}, settings: {}, created_at: null },
+  { id: 'i1', code: 'bbmp_311', display_name: 'BBMP 311', provider: 'bbmp', status: 'active' as const, credentials: {}, settings: {}, created_at: null },
+  { id: 'i2', code: 'btp_helpdesk', display_name: 'BTP Helpdesk', provider: 'btp', status: 'degraded' as const, credentials: {}, settings: {}, created_at: null },
 ];
 
 describe('AdminIntegrations (T-M12-022)', () => {

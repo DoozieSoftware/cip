@@ -23,8 +23,8 @@ const { useSchedulerJobs } = await import('../../api/client');
 const AdminScheduler = (await import('../AdminScheduler')).default;
 
 const JOBS = [
-  { id: 'send-notifications', name: 'Send queued notifications', schedule: 'everyMinute', next_due: '2026-06-29T10:01:00Z', last_run: '2026-06-29T10:00:00Z', paused: false, description: 'Dispatches pending notification jobs.' },
-  { id: 'cleanup-audit', name: 'Cleanup old audit rows', schedule: 'daily', next_due: '2026-06-30T00:00:00Z', last_run: null, paused: true, description: 'Prune audit logs older than 365 days.' },
+  { id: 'send-notifications', command: 'Send queued notifications', expression: 'everyMinute', next_due_at: '2026-06-29T10:01:00Z', paused: false },
+  { id: 'cleanup-audit', command: 'Cleanup old audit rows', expression: 'daily', next_due_at: '2026-06-30T00:00:00Z', paused: true },
 ];
 
 describe('AdminScheduler (T-M12-026)', () => {

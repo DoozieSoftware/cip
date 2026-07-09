@@ -16,8 +16,8 @@ const { useNotificationConfigs } = await import('../../api/client');
 const AdminNotificationConfigs = (await import('../AdminNotificationConfigs')).default;
 
 const ROWS = [
-  { id: 'c1', channel: 'mail' as const, code: 'default_mail', name: 'Default SMTP', active: true, credentials: {}, retry_policy: { max_attempts: 3, backoff: [60, 300, 900] } },
-  { id: 'c2', channel: 'sms' as const, code: 'log_sms', name: 'Log SMS (dev)', active: false, credentials: {}, retry_policy: { max_attempts: 2, backoff: [60, 300] } },
+  { id: 'c1', channel: 'mail' as const, code: 'default_mail', display_name: 'Default SMTP', active: true, credentials: {}, retry_policy: { tries: 3, backoff: [60, 300, 900] } },
+  { id: 'c2', channel: 'sms' as const, code: 'log_sms', display_name: 'Log SMS (dev)', active: false, credentials: {}, retry_policy: { tries: 2, backoff: [60, 300] } },
 ];
 
 describe('AdminNotificationConfigs (T-M12-022)', () => {

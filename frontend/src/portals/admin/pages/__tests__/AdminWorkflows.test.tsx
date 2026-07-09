@@ -21,13 +21,13 @@ const WFS = [
     id: 'wf1', code: 'report_lifecycle', name: 'Report lifecycle',
     description: null, active: true, created_at: null, updated_at: null,
     states: [
-      { key: 'submitted', name: 'Submitted', terminal: false },
-      { key: 'triaged', name: 'Triaged', terminal: false },
-      { key: 'resolved', name: 'Resolved', terminal: true },
+      { id: 's1', code: 'submitted', name: 'Submitted', is_terminal: false },
+      { id: 's2', code: 'triaged', name: 'Triaged', is_terminal: false },
+      { id: 's3', code: 'resolved', name: 'Resolved', is_terminal: true },
     ],
     transitions: [
-      { from: 'submitted', to: 'triaged', action: 'triage', required_role: 'moderator' },
-      { from: 'triaged', to: 'resolved', action: 'resolve', required_role: 'department_officer' },
+      { id: 't1', from_state_id: 'submitted', to_state_id: 'triaged', event: 'triage', required_role: 'moderator' },
+      { id: 't2', from_state_id: 'triaged', to_state_id: 'resolved', event: 'resolve', required_role: 'department_officer' },
     ],
   },
 ];
