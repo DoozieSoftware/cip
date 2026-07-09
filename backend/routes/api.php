@@ -66,6 +66,17 @@ Route::prefix('v1')->group(function (): void {
         Route::get('public/departments/performance', [PublicDepartmentPerformanceController::class, 'index'])->name('api.v1.public.departments.performance');
     });
 
+    // TEMP: one-shot OPcache clear so deploys go live while validate_timestamps
+    // is disabled on the FPM pool. Hit once then removed. Runs inside the FPM
+    // worker, so it clears THAT worker's cache; subsequent requests recompile.
+    Route::get('__opcache_reset', function () {
+        if (function_exists('opcache_reset')) {
+            opcache_reset();
+        }
+
+        return response()->json(['ok' => true, 'opcache_reset' => function_exists('opcache_reset')]);
+    })->name('api.v1.__opcache_reset');
+
     // Auth (M2) — rate limited per docs/11 §21.
     Route::middleware('throttle:'.RouteServiceProvider::LIMITER_OTP)
         ->post('auth/send-otp', [AuthController::class, 'sendOtp'])
