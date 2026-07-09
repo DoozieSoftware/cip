@@ -42,6 +42,7 @@ class DatabaseSeeder extends Seeder
             PromptsSeeder::class,
             NotificationTemplatesSeeder::class,
             SecurityPoliciesSeeder::class,
+            RetentionSettingsSeeder::class,
             DemoUsersSeeder::class,
         ]);
     }
