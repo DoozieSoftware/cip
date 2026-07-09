@@ -46,6 +46,11 @@ test-results/
 # Local tool / session state
 .playwright-mcp/
 .commandcode/
+.mcp.json
+# Root-level node_modules (local tooling; app deps live in frontend/backend)
+/node_modules/
+# Playwright saved auth/session state (contains login tokens)
+frontend/e2e/.auth/
 
 # MinIO data (if mounted locally)
 docker/minio/data/
