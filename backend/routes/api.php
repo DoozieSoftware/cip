@@ -86,7 +86,12 @@ Route::prefix('v1')->group(function (): void {
         $log = storage_path('logs/laravel.log');
         $full = is_file($log) ? file_get_contents($log) : '(no log file)';
         $pos = strrpos($full, 'local.ERROR');
-        $tail = $pos !== false ? substr($full, $pos, 4000) : substr($full, -4000);
+        // The message line sits just BEFORE the 'local.ERROR' timestamp, so
+        // return the 4000 chars preceding it (which hold the exception class
+        // and message) plus a bit after.
+        $tail = $pos !== false
+            ? substr($full, max(0, $pos - 4000), 8000)
+            : substr($full, -4000);
 
         return response()->json(['ok' => true, 'log_tail' => $tail]);
     })->name('api.v1.__diag');
