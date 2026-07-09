@@ -3,6 +3,7 @@ import { type JSX } from 'react';
 import { EmptyState, Spinner } from '../../moderator/design';
 import { useCitizenReports } from '../api/client';
 import { StatusBadge } from '../components/StatusBadge';
+import { LocationChip } from '../components/LocationMap';
 
 export default function MyReportsPage(): JSX.Element {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -81,8 +82,12 @@ export default function MyReportsPage(): JSX.Element {
                   {report.priority?.name ? (
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">{report.priority.name}</span>
                   ) : null}
-                  {report.location?.address ? (
-                    <span className="rounded-full bg-cyan-50 px-2 py-0.5 text-cyan-800">{report.location.address}</span>
+                  {report.location ? (
+                    <LocationChip
+                      latitude={report.location.latitude}
+                      longitude={report.location.longitude}
+                      label={report.location.address}
+                    />
                   ) : null}
                 </div>
 

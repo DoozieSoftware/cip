@@ -3,6 +3,7 @@ import { type JSX, useState } from 'react';
 import { useReportDetail, useReportTimeline } from '../api/client';
 import { EmptyState, Spinner } from '../../moderator/design';
 import { StatusBadge } from '../components/StatusBadge';
+import LocationMap from '../components/LocationMap';
 
 type Tab = 'timeline' | 'details';
 
@@ -218,10 +219,13 @@ export default function ReportDetailPage(): JSX.Element {
       {r.location ? (
         <section className="rounded-lg border border-slate-200 bg-white p-4">
           <h2 className="text-sm font-semibold text-slate-950">Location</h2>
-          <p className="mt-1 text-sm text-slate-700">
-            {r.location.latitude.toFixed(5)}, {r.location.longitude.toFixed(5)}
-            {r.location.address ? ` - ${r.location.address}` : ''}
-          </p>
+          <div className="mt-2">
+            <LocationMap
+              latitude={r.location.latitude}
+              longitude={r.location.longitude}
+              label={r.location.address}
+            />
+          </div>
         </section>
       ) : null}
     </div>
