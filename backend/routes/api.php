@@ -77,6 +77,18 @@ Route::prefix('v1')->group(function (): void {
         return response()->json(['ok' => true, 'opcache_reset' => function_exists('opcache_reset')]);
     })->name('api.v1.__opcache_reset');
 
+    // TEMP: diagnostics — reset opcache on this worker and dump the tail of
+    // laravel.log so we can see the real exception behind the 500s.
+    Route::get('__diag', function () {
+        if (function_exists('opcache_reset')) {
+            opcache_reset();
+        }
+        $log = storage_path('logs/laravel.log');
+        $tail = is_file($log) ? substr(file_get_contents($log), -6000) : '(no log file)';
+
+        return response()->json(['ok' => true, 'log_tail' => $tail]);
+    })->name('api.v1.__diag');
+
     // Auth (M2) — rate limited per docs/11 §21.
     Route::middleware('throttle:'.RouteServiceProvider::LIMITER_OTP)
         ->post('auth/send-otp', [AuthController::class, 'sendOtp'])
