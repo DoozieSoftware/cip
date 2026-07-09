@@ -178,6 +178,13 @@ jobs:
               $PHP_BIN artisan config:cache || true; \
               $PHP_BIN artisan route:cache || true; \
               $PHP_BIN artisan event:cache || true; \
+              # The API host runs PHP-FPM with opcache.validate_timestamps
+              # disabled, so rsync'd backend code (bootstrap/app.php,
+              # policies, etc.) stays cached until FPM is restarted. A
+              # graceful USR2 restart of the user's FPM workers clears the
+              # OPcache so backend fixes actually go live. Guarded so a
+              # missing/kill-restricted environment never fails the deploy.
+              pkill -USR2 -u \"\$(whoami)\" php-fpm 2>/dev/null || true; \
               echo 'Post-deploy complete'"
 
           rm -f /tmp/deploy_key
