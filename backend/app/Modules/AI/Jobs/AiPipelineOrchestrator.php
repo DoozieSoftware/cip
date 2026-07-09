@@ -21,8 +21,9 @@ use App\Modules\AI\ValueObjects\AiResponse;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Support\MediaUrl;
 use App\Modules\Reports\Models\Report;
-use App\Modules\Settings\Models\AppConfig;
+use App\Modules\Settings\Services\FeatureFlagService;
 use App\Modules\Shared\Services\SystemUserService;
+use App\Modules\Users\Models\User;
 use App\Modules\Workflow\Services\WorkflowEngine;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -85,12 +86,15 @@ class AiPipelineOrchestrator implements ShouldQueue
         DuplicateDetector $duplicate,
         FraudScorer $fraud,
         PiiMaskingService $pii,
+        FeatureFlagService $flags,
     ): void {
         $job = $this->createJobRow();
 
         try {
             $report = Report::query()->findOrFail($this->reportId);
             $media = Media::query()->where('report_id', $this->reportId)->first();
+
+            $actor = $report->citizen;
 
             $qualityScore = $media ? $quality->score($media) : 0;
             $ocrText = ''; // OCR provider not yet wired.
@@ -111,16 +115,21 @@ class AiPipelineOrchestrator implements ShouldQueue
                 metadata: $maskedMetadata,
             );
 
-            [$response, $providerCode, $model] = $this->classify($request, $failover, $validator);
+            [$response, $providerCode, $model] = $this->classify($request, $failover, $validator, $flags, $actor);
 
-            $duplicateResult = $duplicate->detect($report);
-            $fraudScore = $fraud->score($report, [
-                // The citizen PWA's client-side mock-GPS heuristic, captured
-                // at submit time onto reports.mock_gps_score (ReportService::submit).
-                'mock_gps' => (float) ($report->mock_gps_score ?? 0.0),
-                'replay' => 0.0,
-                'ai_synth' => isset($response->raw['synthetic_score']) ? (float) $response->raw['synthetic_score'] : 0.0,
-            ]);
+            $duplicateResult = $flags->enabled('duplicate_detection', $actor)
+                ? $duplicate->detect($report)
+                : ['score' => 0, 'matched_report_id' => null, 'reason' => 'disabled'];
+
+            $fraudScore = $flags->enabled('fraud_detection', $actor)
+                ? $fraud->score($report, [
+                    // The citizen PWA's client-side mock-GPS heuristic, captured
+                    // at submit time onto reports.mock_gps_score (ReportService::submit).
+                    'mock_gps' => (float) ($report->mock_gps_score ?? 0.0),
+                    'replay' => 0.0,
+                    'ai_synth' => isset($response->raw['synthetic_score']) ? (float) $response->raw['synthetic_score'] : 0.0,
+                ])
+            : 0;
 
             $result = $this->writeResult($job, $response, $qualityScore, $duplicateResult['score'], $fraudScore);
             $this->writeLabels($result, $response);
@@ -199,8 +208,10 @@ class AiPipelineOrchestrator implements ShouldQueue
         AiRequest $request,
         ProviderFailoverService $failover,
         AiResponseValidator $validator,
+        FeatureFlagService $flags,
+        ?User $actor,
     ): array {
-        if (! $this->visionEnabled()) {
+        if (! $this->visionEnabled($flags, $actor)) {
             return [$this->disabledResponse(), 'disabled', 'n/a'];
         }
 
@@ -218,13 +229,13 @@ class AiPipelineOrchestrator implements ShouldQueue
      * Admin kill-switch: when off, the pipeline skips the provider
      * call entirely and every report falls through to moderator
      * review via the zero-confidence result below and
-     * ConfidenceAggregator's threshold in AiCompletedListener.
+     * ConfidenceAggregator's threshold in AiCompletedListener. The
+     * flag is evaluated through FeatureFlagService so cohort /
+     * rollout rules are honoured, not just the raw `enabled` column.
      */
-    private function visionEnabled(): bool
+    private function visionEnabled(FeatureFlagService $flags, ?User $actor): bool
     {
-        $flag = AppConfig::query()->where('key', 'ai_enabled')->first();
-
-        return $flag === null || $flag->enabled;
+        return $flags->enabled('ai_enabled', $actor);
     }
 
     private function disabledResponse(): AiResponse

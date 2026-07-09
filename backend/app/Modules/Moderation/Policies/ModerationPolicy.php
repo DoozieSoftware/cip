@@ -45,7 +45,7 @@ class ModerationPolicy extends BasePolicy
      */
     public function viewQueue(User $user): bool
     {
-        return $user->hasAnyRole(self::MOD_ROLES);
+        return $this->hasRoleOrPermission($user, self::MOD_ROLES, 'reports.view');
     }
 
     /**
@@ -106,6 +106,6 @@ class ModerationPolicy extends BasePolicy
      */
     public function viewAnalytics(User $user): bool
     {
-        return $this->viewQueue($user);
+        return $this->hasRoleOrPermission($user, self::MOD_ROLES, 'analytics.view');
     }
 }

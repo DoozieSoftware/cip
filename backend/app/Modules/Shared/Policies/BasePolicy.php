@@ -59,4 +59,37 @@ abstract class BasePolicy
 
         return null;
     }
+
+    /**
+     * Role-or-permission check for abilities that aren't scoped to a
+     * specific owned resource (e.g. "can view the audit log at all",
+     * not "can view *this* department's report"). Spatie permissions
+     * assigned via the Super Admin's Roles & Permissions screen were
+     * previously never consulted by any real authorization check —
+     * this is the seam that makes editing a role's permissions there
+     * actually change what that role's users can do, without touching
+     * the role-based checks other users already rely on.
+     *
+     * Deliberately NOT used for report/department-scoped abilities
+     * (DepartmentPolicy::view/accept/start/... etc.) — a permission
+     * check here has no concept of department membership, so applying
+     * it to those would let any user holding the permission read/act
+     * on every department's reports regardless of assignment.
+     *
+     * @param  list<string>  $roles
+     */
+    protected function hasRoleOrPermission(User $user, array $roles, string $permission): bool
+    {
+        if ($user->hasAnyRole($roles)) {
+            return true;
+        }
+
+        try {
+            return $user->hasPermissionTo($permission);
+        } catch (\Throwable) {
+            // Permission not seeded/registered in this environment —
+            // fail closed rather than erroring the request.
+            return false;
+        }
+    }
 }

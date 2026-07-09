@@ -38,7 +38,16 @@ class AuditLogController extends Controller
         if (! $user instanceof User) {
             throw new ApiException('UNAUTHENTICATED', 'Authentication required.', 401);
         }
-        if (! $user->hasAnyRole(['super_admin', 'system', 'auditor', 'department_admin'])) {
+        // A role from the fixed list, OR the `audit.view` Spatie permission —
+        // the latter is what the Super Admin's Roles & Permissions screen
+        // actually edits, so it needs a real effect here.
+        $hasPermission = false;
+        try {
+            $hasPermission = $user->hasPermissionTo('audit.view');
+        } catch (\Throwable) {
+            // Permission not seeded/registered — fall through to the role check.
+        }
+        if (! $user->hasAnyRole(['super_admin', 'system', 'auditor', 'department_admin']) && ! $hasPermission) {
             throw new ApiException('FORBIDDEN', 'Audit log is read-only for auditors and admins.', 403);
         }
 

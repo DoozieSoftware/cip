@@ -21,14 +21,14 @@ beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();
     (new ReportStatusesSeeder)->run();
     (new DefaultWorkflowSeeder)->run();
-    Role::firstOrCreate(['name' => 'department', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'department_officer', 'guard_name' => 'web']);
 });
 
 it('accept transitions assigned -> accepted and writes audit', function (): void {
     $dept = Department::factory()->create();
     $report = landReportInAssigned($dept);
     $officer = User::factory()->create();
-    $officer->assignRole('department');
+    $officer->assignRole('department_officer');
     $officer->departments()->attach($dept->id);
 
     $updated = app(DepartmentReportService::class)->accept($report, $officer, null);
@@ -45,7 +45,7 @@ it('start transitions accepted -> in_progress', function (): void {
     $report->save();
     $dept = Department::query()->find($report->department_id);
     $officer = User::factory()->create();
-    $officer->assignRole('department');
+    $officer->assignRole('department_officer');
     $officer->departments()->attach($dept->id);
 
     $updated = app(DepartmentReportService::class)->start($report, $officer, null);
@@ -61,7 +61,7 @@ it('resolve transitions in_progress -> resolved', function (): void {
     $report->save();
     $dept = Department::query()->find($report->department_id);
     $officer = User::factory()->create();
-    $officer->assignRole('department');
+    $officer->assignRole('department_officer');
     $officer->departments()->attach($dept->id);
 
     $updated = app(DepartmentReportService::class)->resolve($report, $officer, null, 'fixed it');
@@ -76,7 +76,7 @@ it('progress does NOT transition state, only records the audit', function (): vo
     $dept = Department::factory()->create();
     $report = landReportInAssigned($dept);
     $officer = User::factory()->create();
-    $officer->assignRole('department');
+    $officer->assignRole('department_officer');
     $officer->departments()->attach($dept->id);
 
     $updated = app(DepartmentReportService::class)->progress($report, $officer, null, 'on-site visit done');
@@ -89,7 +89,7 @@ it('close is rejected for a department officer (close is a moderator event)', fu
     $dept = Department::factory()->create();
     $report = landReportInAssigned($dept);
     $officer = User::factory()->create();
-    $officer->assignRole('department');
+    $officer->assignRole('department_officer');
     $officer->departments()->attach($dept->id);
 
     expect(fn () => app(DepartmentReportService::class)->close($report, $officer, null))
@@ -100,7 +100,7 @@ it('addNote creates a department-internal note + audit row', function (): void {
     $dept = Department::factory()->create();
     $report = landReportInAssigned($dept);
     $officer = User::factory()->create();
-    $officer->assignRole('department');
+    $officer->assignRole('department_officer');
     $officer->departments()->attach($dept->id);
 
     $note = app(DepartmentReportService::class)->addNote($report, $officer, 'inspected on 2026-06-29', null);
@@ -114,7 +114,7 @@ it('addNote rejects an empty body with 422', function (): void {
     $dept = Department::factory()->create();
     $report = landReportInAssigned($dept);
     $officer = User::factory()->create();
-    $officer->assignRole('department');
+    $officer->assignRole('department_officer');
     $officer->departments()->attach($dept->id);
 
     expect(fn () => app(DepartmentReportService::class)->addNote($report, $officer, '   ', null))

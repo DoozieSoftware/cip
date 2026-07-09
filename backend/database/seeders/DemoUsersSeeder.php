@@ -59,6 +59,14 @@ class DemoUsersSeeder extends Seeder
             'email' => 'ravi@cip.demo',
             'password' => 'demo1234',
         ],
+        [
+            'mobile' => '9999900005',
+            'name' => 'Anita Dept Admin (BBMP)',
+            'role' => 'department_admin',
+            'department_code' => 'BBMP',
+            'email' => 'anita@cip.demo',
+            'password' => 'demo1234',
+        ],
     ];
 
     public function run(): void

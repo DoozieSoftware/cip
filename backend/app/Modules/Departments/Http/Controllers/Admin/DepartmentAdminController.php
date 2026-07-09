@@ -42,7 +42,7 @@ class DepartmentAdminController extends BaseController
     public function listOfficers(Request $request, string $department): JsonResponse
     {
         $dept = $this->resolveDepartment($department);
-        $this->ensureAdmin($request);
+        $this->ensureCanManage($request, $dept);
 
         $paginator = $dept->users()
             ->orderBy('pivot_is_manager', 'desc')
@@ -79,6 +79,8 @@ class DepartmentAdminController extends BaseController
     public function attachOfficer(AttachOfficerRequest $request, string $department): JsonResponse
     {
         $dept = $this->resolveDepartment($department);
+        $this->ensureCanManage($request, $dept);
+
         $pivotId = $this->service->attachOfficer(
             $dept,
             $request->user(),
@@ -102,7 +104,7 @@ class DepartmentAdminController extends BaseController
     public function detachOfficer(Request $request, string $department, string $user): JsonResponse
     {
         $dept = $this->resolveDepartment($department);
-        $this->ensureAdmin($request);
+        $this->ensureCanManage($request, $dept);
 
         $removed = $this->service->detachOfficer($dept, $request->user(), $user, $request);
 
@@ -124,6 +126,8 @@ class DepartmentAdminController extends BaseController
     public function updateAdmin(UpdateDepartmentAdminRequest $request, string $department): JsonResponse
     {
         $dept = $this->resolveDepartment($department);
+        $this->ensureCanManage($request, $dept);
+
         $updated = $this->service->updateAdmin($dept, $request->user(), $request->validated(), $request);
 
         return $this->respond(
@@ -150,11 +154,35 @@ class DepartmentAdminController extends BaseController
         return $dept;
     }
 
-    private function ensureAdmin(Request $request): void
+    /**
+     * Authorize department-management access.
+     *
+     *  - super_admin / system may manage any department.
+     *  - department_admin may manage ONLY a department they
+     *    belong to (membership via the department_users pivot).
+     *  - everyone else (including regular department_officers)
+     *    is forbidden.
+     */
+    private function ensureCanManage(Request $request, Department $dept): void
     {
         $u = $request->user('sanctum');
-        if (! $u instanceof User || ! $u->hasAnyRole(['super_admin', 'system'])) {
-            throw new ApiException('FORBIDDEN', 'Only super_admin can manage departments.', 403);
+        if (! $u instanceof User) {
+            throw new ApiException('FORBIDDEN', 'Authentication required.', 403);
         }
+
+        if ($u->hasAnyRole(['super_admin', 'system'])) {
+            return;
+        }
+
+        if ($u->hasRole('department_admin')
+            && $u->departments()->whereKey($dept->getKey())->exists()) {
+            return;
+        }
+
+        throw new ApiException(
+            'FORBIDDEN',
+            'You are not allowed to manage this department.',
+            403,
+        );
     }
 }

@@ -59,12 +59,12 @@ class DepartmentPolicy extends BasePolicy
 
     public function viewDashboard(User $user): bool
     {
-        return $user->hasAnyRole(self::DEPT_ROLES);
+        return $this->hasRoleOrPermission($user, self::DEPT_ROLES, 'departments.view');
     }
 
     public function viewReports(User $user): bool
     {
-        return $user->hasAnyRole(self::DEPT_ROLES);
+        return $this->hasRoleOrPermission($user, self::DEPT_ROLES, 'reports.view_department');
     }
 
     public function view(User $user, mixed $report): bool
@@ -115,6 +115,6 @@ class DepartmentPolicy extends BasePolicy
 
     public function viewAudit(User $user): bool
     {
-        return $user->hasAnyRole(['super_admin', 'system', 'auditor', 'department_admin']);
+        return $this->hasRoleOrPermission($user, ['super_admin', 'system', 'auditor', 'department_admin'], 'audit.view');
     }
 }
