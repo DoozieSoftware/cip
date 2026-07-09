@@ -84,7 +84,9 @@ Route::prefix('v1')->group(function (): void {
             opcache_reset();
         }
         $log = storage_path('logs/laravel.log');
-        $tail = is_file($log) ? substr(file_get_contents($log), -6000) : '(no log file)';
+        $full = is_file($log) ? file_get_contents($log) : '(no log file)';
+        $pos = strrpos($full, 'local.ERROR');
+        $tail = $pos !== false ? substr($full, $pos, 4000) : substr($full, -4000);
 
         return response()->json(['ok' => true, 'log_tail' => $tail]);
     })->name('api.v1.__diag');
