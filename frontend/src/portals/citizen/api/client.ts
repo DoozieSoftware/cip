@@ -1,4 +1,4 @@
-import { apiRequest, getToken, type ApiEnvelope } from '../../../auth/api';
+import { apiRequest, buildApiUrl, getToken, type ApiEnvelope } from '../../../auth/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export interface ReportType {
@@ -220,9 +220,9 @@ const MEDIA_UPLOAD_TIMEOUT_MS = 60_000;
 
 async function uploadMedia(reportId: string, file: File, token: string | null): Promise<void> {
   const isVideo = file.type.startsWith('video/');
-  const url = isVideo
-    ? `/api/v1/reports/${reportId}/video`
-    : `/api/v1/reports/${reportId}/photos`;
+  const url = buildApiUrl(isVideo
+    ? `/reports/${reportId}/video`
+    : `/reports/${reportId}/photos`);
   const fd = new FormData();
   if (isVideo) {
     fd.append('video', file);

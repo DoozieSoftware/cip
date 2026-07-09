@@ -2,6 +2,10 @@ import { STORAGE_KEY } from './storage';
 
 const API_BASE = (import.meta.env['VITE_API_BASE'] as string | undefined) ?? '/api/v1';
 
+export function buildApiUrl(path: string): string {
+  return new URL(API_BASE + path, window.location.origin).toString();
+}
+
 export class ApiError extends Error {
   status: number;
   code: string;
@@ -42,7 +46,7 @@ export async function apiRequest<T>(path: string, opts: RequestOptions = {}): Pr
   const method = opts.method ?? 'GET';
   const token = getToken();
 
-  const url = new URL(API_BASE + path, window.location.origin);
+  const url = new URL(buildApiUrl(path));
   if (opts.query) {
     for (const [k, v] of Object.entries(opts.query)) {
       if (v === undefined || v === null || v === '') {

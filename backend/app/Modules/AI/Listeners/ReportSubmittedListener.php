@@ -9,7 +9,6 @@ use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Shared\Services\SystemUserService;
 use App\Modules\Workflow\Services\WorkflowEngine;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -39,12 +38,8 @@ use Illuminate\Support\Facades\Log;
  *    `moderator_review` transition route the report
  *    to a human as the safety net
  */
-class ReportSubmittedListener implements ShouldQueue
+class ReportSubmittedListener
 {
-    public int $tries = 1;
-
-    public int $timeout = 30;
-
     public function __construct(
         private readonly WorkflowEngine $workflowEngine,
         private readonly SystemUserService $systemUser,
