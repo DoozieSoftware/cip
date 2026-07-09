@@ -169,6 +169,15 @@ jobs:
 
           # Run post-deploy tasks. Production deploys must preserve
           # existing reports, users, tokens, and audit records.
+          #
+          # NOTE: the API host runs PHP-FPM with opcache.validate_timestamps
+          # disabled, which would keep rsync'd backend code cached as stale
+          # bytecode. We handle that by shipping ~/cip/public/.user.ini
+          # (opcache.validate_timestamps=1), so deploys go live without an
+          # FPM restart. An earlier `uapi PHP restart_php_fpm` line was
+          # removed: it lived inside this double-quoted SSH string, so its
+          # $(...) was expanded on the GitHub runner (uapi: command not
+          # found) and never ran on the host.
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             $REMOTE "cd ~/cip && \
               $PHP_BIN artisan config:clear 2>/dev/null || true; \
@@ -178,18 +187,6 @@ jobs:
               $PHP_BIN artisan config:cache || true; \
               $PHP_BIN artisan route:cache || true; \
               $PHP_BIN artisan event:cache || true; \
-              # The API host runs PHP-FPM with opcache.validate_timestamps
-              # disabled, so rsync'd backend code (bootstrap/app.php,
-              # policies, etc.) stays cached as stale bytecode until FPM is
-              # restarted. We now also ship ~/cip/public/.user.ini that
-              # re-enables opcache timestamp validation, but the fastest
-              # way to apply BOTH the new .user.ini and a fresh OPcache is
-              # to restart the account's FPM pool. cPanel exposes this via
-              # uapi (restarts the root-owned FPM master for this account);
-              # a bare `pkill -USR2` from a non-root shell cannot signal
-              # the master. We print the result for visibility and guard so
-              # a restricted environment never fails the deploy.
-              echo 'uapi restart_php_fpm:' $(uapi PHP restart_php_fpm 2>&1 || echo FAILED) ; \
               echo 'Post-deploy complete'"
 
           rm -f /tmp/deploy_key
