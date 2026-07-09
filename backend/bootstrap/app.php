@@ -31,6 +31,15 @@ return Application::configure(basePath: dirname(__DIR__))
         \App\Modules\Settings\Console\PurgeRetentionCommand::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
+        // Laravel 12's ApplicationBuilder defaults redirectGuestsTo() to
+        // route('login'), which does not exist for the API. For API
+        // requests an unauthenticated call must throw AuthenticationException
+        // (→ 401 envelope) rather than attempting a redirect to a missing
+        // route (→ 500 "Route [login] not defined"). Return the login path
+        // only for true web/HTML guests; null lets the auth guard raise 401.
+        $middleware->redirectGuestsTo(function (Request $request) {
+            return $request->expectsJson() ? null : '/login';
+        });
         $middleware->append(RequestId::class);
         $middleware->append(IdempotencyKey::class);
         $middleware->append(MediaUploadLimit::class);
@@ -130,17 +139,22 @@ return Application::configure(basePath: dirname(__DIR__))
             return response()->json($payload, 401);
         });
 
-        // Sanctum's auth:sanctum guard throws UnauthorizedHttpException
-        // (not AuthenticationException) when it cannot resolve a user for a
-        // stateless bearer request. Map it to the same 401 envelope so an
-        // expired/missing token yields "please log in" instead of a 500.
+        // auth:sanctum throws UnauthorizedHttpException (wrapping the
+        // underlying AuthenticationException) for API requests. The base
+        // Laravel handler tries to redirect to route('login'), which is
+        // not defined for the API, turning a should-be-401 into a 500
+        // ("Route [login] not defined"). Normalise it to a 401 envelope.
         $exceptions->render(function (UnauthorizedHttpException $e, Request $request) {
             $traceId = (string) ($request->attributes->get('trace_id')
                 ?? $request->header('X-Request-Id')
                 ?? 'unknown');
+            $previous = $e->getPrevious();
+            $message = $previous instanceof AuthenticationException && $previous->getMessage() !== ''
+                ? $previous->getMessage()
+                : 'Unauthenticated.';
             $payload = [
                 'success' => false,
-                'message' => 'Unauthenticated.',
+                'message' => $message,
                 'errors' => (object) [],
                 'code' => 'UNAUTHORIZED',
                 'trace_id' => $traceId,
@@ -180,7 +194,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 ?? 'unknown');
             $payload = [
                 'success' => false,
-                'message' => get_class($e).': '.($e->getMessage() ?: '(no message)'),
+                'message' => config('app.debug') ? $e->getMessage() : 'Internal server error',
                 'errors' => (object) [],
                 'code' => 'INTERNAL_ERROR',
                 'trace_id' => $traceId,
