@@ -3,6 +3,11 @@ name: Deploy to Production
 on:
   push:
     branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "deploy/**"
+      - ".github/workflows/deploy-production.yml"
   workflow_dispatch:
 
 concurrency:
@@ -22,6 +27,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Guard against destructive production DB commands
+        run: |
+          destructive_migrate="migrate:""fresh"
+          destructive_wipe="db:""wipe"
+          if grep -RInE "$destructive_migrate|$destructive_wipe" .github/workflows deploy; then
+            echo "Destructive production database command detected. Use php artisan migrate --force only."
+            exit 1
+          fi
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -154,8 +168,7 @@ jobs:
             deploy/staging/public_html/.htaccess deploy/staging/public_html/index.php $REMOTE:~/public_html/
 
           # Run post-deploy tasks. Production deploys must preserve
-          # existing reports, users, tokens, and audit records; never use
-          # migrate:fresh here.
+          # existing reports, users, tokens, and audit records.
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             $REMOTE "cd ~/cip && \
               $PHP_BIN artisan config:clear 2>/dev/null || true; \
