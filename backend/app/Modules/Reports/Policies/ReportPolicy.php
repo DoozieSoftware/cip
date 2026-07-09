@@ -23,10 +23,33 @@ use App\Modules\Users\Models\User;
  * - assign:  moderator / super_admin
  * - resolve: moderator / department / super_admin
  * - export:  super_admin only
+ * - viewAny / viewQueue: moderator / super_admin (the review queue,
+ *   duplicates and fraud lists are staff-only surfaces).
  */
 class ReportPolicy extends BasePolicy
 {
     private const STAFF_ROLES = ['moderator', 'department_officer', 'department', 'super_admin', 'system'];
+
+    private const QUEUE_ROLES = ['moderator', 'super_admin'];
+
+    /**
+     * Gate for class-string resources (e.g. `authorize('viewQueue', Report::class)`
+     * used by QueueController). Laravel resolves a class-string ability to
+     * `viewAny`, so this is what actually protects the moderator queue.
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->hasAnyRole(self::QUEUE_ROLES);
+    }
+
+    /**
+     * Explicit queue ability, mirroring the moderator staff gate used by
+     * the review / duplicates / fraud queues.
+     */
+    public function viewQueue(User $user): bool
+    {
+        return $user->hasAnyRole(self::QUEUE_ROLES);
+    }
 
     public function view(User $user, Report $report): bool
     {

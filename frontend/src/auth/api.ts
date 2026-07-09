@@ -1,4 +1,4 @@
-import { STORAGE_KEY } from './storage';
+import { STORAGE_KEY, handleUnauthorized } from './storage';
 
 const API_BASE = (import.meta.env['VITE_API_BASE'] as string | undefined) ?? '/api/v1';
 
@@ -80,6 +80,11 @@ export async function apiRequest<T>(path: string, opts: RequestOptions = {}): Pr
   const payload: unknown = isJson ? await res.json() : await res.text();
 
   if (!res.ok) {
+    if (res.status === 401) {
+      // Token missing / expired: clear it and send the user to login
+      // rather than surfacing a generic request failure.
+      handleUnauthorized();
+    }
     const env = (payload ?? {}) as { code?: string; message?: string; data?: unknown };
     throw new ApiError(
       res.status,

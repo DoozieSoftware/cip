@@ -7,6 +7,7 @@
  */
 
 import { getToken } from '../../../auth/api';
+import { handleUnauthorized } from '../../../auth/storage';
 
 export class ApiError extends Error {
   status: number;
@@ -63,6 +64,11 @@ async function request<T>(
   });
   const payload = await parse(res);
   if (!res.ok) {
+    if (res.status === 401) {
+      // Token missing / expired: send the moderator to login instead of
+      // surfacing a bare "could not load the queue" error.
+      handleUnauthorized();
+    }
     const message =
       (typeof payload === 'object' && payload !== null && 'message' in payload
         ? String((payload).message)
