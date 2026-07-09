@@ -60,7 +60,12 @@ async function request<T>(
       ...authHeader(),
     },
     body: body ? JSON.stringify(body) : undefined,
-    credentials: 'include',
+    // Auth is a Bearer token (localStorage), not cookies. Sending
+    // credentials cross-origin ('include') makes the browser reject the
+    // API's `Access-Control-Allow-Origin: *` response, so the fetch fails
+    // with a network error ("did not respond"). Stay same-origin like the
+    // citizen client.
+    credentials: 'same-origin',
   });
   const payload = await parse(res);
   if (!res.ok) {

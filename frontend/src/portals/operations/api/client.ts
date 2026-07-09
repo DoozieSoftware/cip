@@ -59,7 +59,10 @@ async function request<T>(
       ...authHeader(),
     },
     body: body ? JSON.stringify(body) : undefined,
-    credentials: 'include',
+    // Bearer-token auth (no cookie session), so sending credentials
+    // cross-origin makes the browser reject the API's wildcard CORS
+    // response. Stay same-origin.
+    credentials: 'same-origin',
   });
   const payload = await parse(res);
   if (!res.ok) {
@@ -85,7 +88,10 @@ async function request<T>(
 async function download(path: string, query: Record<string, unknown> | undefined, filename: string): Promise<void> {
   const res = await fetch(buildUrl(path, query), {
     headers: { ...authHeader() },
-    credentials: 'include',
+    // Bearer-token auth (no cookie session), so sending credentials
+    // cross-origin makes the browser reject the API's wildcard CORS
+    // response. Stay same-origin.
+    credentials: 'same-origin',
   });
   if (!res.ok) {
     const payload = await parse(res);
