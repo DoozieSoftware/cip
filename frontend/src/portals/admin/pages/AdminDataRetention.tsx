@@ -12,12 +12,28 @@ import { Spinner } from '../../moderator/design';
  * `retention.*` keys).
  */
 
+const PURGE_ENABLED_KEY = 'retention.purge_enabled';
+
+// Keys the daily `settings:purge-retention` scheduled command actually
+// reads (see backend/app/Modules/Settings/Console/PurgeRetentionCommand.php).
+const ENFORCED_KEYS = new Set([
+  'retention.media.days',
+  'retention.audit.days',
+  'retention.notifications.days',
+  'retention.security_events.days',
+  'retention.ai_logs.days',
+]);
+
+// Everything else on this page is configuration-only — stored but not
+// (yet) read by any purge job.
 const RETENTION_KEYS = [
   'retention.media.days',
   'retention.audit.days',
   'retention.audit_export.days',
   'retention.notifications.days',
-  'retribution.anonymized_reports.days',
+  'retention.security_events.days',
+  'retention.ai_logs.days',
+  'retention.anonymized_reports.days',
   'retention.soft_deleted.days',
   'retention.backup.days',
 ];
@@ -45,7 +61,15 @@ export default function AdminDataRetention(): JSX.Element {
   }, [list.data, filter]);
 
   const handleChange = (s: Setting, days: number): void => {
-    update.mutate({ id: s.id, value: days, type: 'int' });
+    // Backend Setting controller keys rows by the dotted `key`, not
+    // the UUID (see plans/admin-portal-bugs.md #6). Send `key`.
+    update.mutate({ key: s.key, value: days, type: 'int' });
+  };
+
+  const purgeEnabledRow = (list.data ?? []).find((s) => s.key === PURGE_ENABLED_KEY);
+  const purgeEnabled = asInt(purgeEnabledRow?.value, 0) === 1;
+  const togglePurgeEnabled = (): void => {
+    update.mutate({ key: PURGE_ENABLED_KEY, value: purgeEnabled ? 0 : 1, type: 'int' });
   };
 
   return (
@@ -53,9 +77,36 @@ export default function AdminDataRetention(): JSX.Element {
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Data retention &amp; backup</h1>
         <p className="mt-1 text-sm text-slate-600">
-          How long the platform keeps media, audit rows, and notifications before purging. Edits apply on the next retention sweep.
+          How long the platform keeps media, audit rows, and notifications before purging. A daily job (`settings:purge-retention`, 03:00) enforces the keys marked below when the master switch is on.
         </p>
       </header>
+
+      <section className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4">
+        <div>
+          <p className="text-sm font-semibold text-slate-900">Enable scheduled purge</p>
+          <p className="text-xs text-slate-500">
+            Master switch for the daily retention sweep. Off by default — no data is deleted until this is on.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={purgeEnabled}
+          disabled={update.isPending || !purgeEnabledRow}
+          onClick={togglePurgeEnabled}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${purgeEnabled ? 'bg-emerald-600' : 'bg-slate-300'} disabled:opacity-50`}
+        >
+          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${purgeEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+        </button>
+      </section>
+
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+        <span className="font-semibold">Partially enforced.</span> The daily purge job reads <code className="rounded bg-white px-1 py-0.5">media</code>,
+        <code className="mx-1 rounded bg-white px-1 py-0.5">audit</code>, <code className="rounded bg-white px-1 py-0.5">notifications</code>,
+        <code className="mx-1 rounded bg-white px-1 py-0.5">security_events</code>, and <code className="rounded bg-white px-1 py-0.5">ai_logs</code> (marked <span className="font-semibold">enforced</span> below)
+        when the switch above is on. The remaining keys (audit export, soft-deleted, backup, anonymized reports) are
+        <span className="font-semibold"> configuration-only</span> — stored but not yet read by any purge target.
+      </div>
 
       <section className="flex flex-wrap items-end gap-2">
         <label className="text-sm">
@@ -81,6 +132,7 @@ export default function AdminDataRetention(): JSX.Element {
               <tr>
                 <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Key</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Description</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Enforced</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Days</th>
                 <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Updated</th>
               </tr>
@@ -88,10 +140,16 @@ export default function AdminDataRetention(): JSX.Element {
             <tbody className="divide-y divide-slate-200">
               {rows.map((s) => {
                 const days = asInt(s.value, 0);
+                const enforced = ENFORCED_KEYS.has(s.key);
                 return (
                   <tr key={s.id}>
                     <td className="px-5 py-3 text-sm font-mono text-slate-700">{s.key}</td>
                     <td className="px-5 py-3 text-sm text-slate-600">{s.description ?? '—'}</td>
+                    <td className="px-5 py-3 text-sm">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${enforced ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}`}>
+                        {enforced ? 'enforced' : 'config only'}
+                      </span>
+                    </td>
                     <td className="px-5 py-3 text-sm">
                       <input
                         type="number"
