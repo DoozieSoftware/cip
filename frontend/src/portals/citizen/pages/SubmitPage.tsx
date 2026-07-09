@@ -8,6 +8,7 @@ import { GpsCapture, type CapturedLocation, type GpsCaptureHandle } from '../com
 import { getQueue } from '../offline/queue';
 import { useToast } from '../components/Toast';
 import { evidencePreviewHandlers } from '../security/evidenceGuards';
+import { useReverseGeocode } from '../utils/useReverseGeocode';
 import { ApiError } from '../../../auth/api';
 
 export default function SubmitPage(): JSX.Element {
@@ -21,6 +22,10 @@ export default function SubmitPage(): JSX.Element {
   const [description, setDescription] = useState<string>('');
   const [location, setLocation] = useState<CapturedLocation | null>(null);
   const [address, setAddress] = useState<string>('');
+  // Human-readable place name for the captured GPS point (e.g. "Kengeri,
+  // Bengaluru"). Empty until the lookup resolves; we show coordinates until
+  // then and if geocoding is unavailable.
+  const placeName = useReverseGeocode(location?.latitude ?? NaN, location?.longitude ?? NaN);
   const [files, setFiles] = useState<File[]>([]);
   const [showVideo, setShowVideo] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -257,10 +262,16 @@ export default function SubmitPage(): JSX.Element {
           <p role="alert" className="mt-2 text-xs font-medium text-red-600">{fieldErrors.location}</p>
         ) : null}
         {location !== null ? (
-          <span className="mt-2 block text-xs text-slate-600">
-            {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
-            {location.accuracy_m !== null ? ` (+/-${Math.round(location.accuracy_m)} m)` : ''}
-          </span>
+          <div className="mt-2 space-y-0.5">
+            <span className="flex items-start gap-1 text-xs font-medium text-slate-700">
+              <span aria-hidden>📍</span>
+              <span>{placeName || `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`}</span>
+            </span>
+            <span className="block text-[11px] text-slate-400">
+              {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
+              {location.accuracy_m !== null ? ` (+/-${Math.round(location.accuracy_m)} m)` : ''}
+            </span>
+          </div>
         ) : null}
         <input
           value={address}

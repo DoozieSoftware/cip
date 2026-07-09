@@ -1,8 +1,8 @@
-import { useEffect, useState, type JSX } from 'react';
+import { type JSX } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { reverseGeocode } from '../utils/reverseGeocode';
+import { useReverseGeocode } from '../utils/useReverseGeocode';
 
 /**
  * Offline-friendly pin: an inline-SVG `divIcon` instead of Leaflet's
@@ -40,23 +40,7 @@ export default function LocationMap({
   label,
   height = 200,
 }: LocationMapProps): JSX.Element {
-  const [placeLabel, setPlaceLabel] = useState<string>(label ?? '');
-
-  useEffect(() => {
-    if (label) {
-      setPlaceLabel(label);
-      return;
-    }
-    const controller = new AbortController();
-    let active = true;
-    void reverseGeocode(latitude, longitude, controller.signal).then((res) => {
-      if (active) setPlaceLabel(res.label);
-    });
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [latitude, longitude, label]);
+  const placeLabel = useReverseGeocode(latitude, longitude, label);
 
   return (
     <div className="space-y-2">
@@ -101,23 +85,7 @@ export interface LocationChipProps {
  * coordinates when geocoding is unavailable.
  */
 export function LocationChip({ latitude, longitude, label }: LocationChipProps): JSX.Element {
-  const [placeLabel, setPlaceLabel] = useState<string>(label ?? '');
-
-  useEffect(() => {
-    if (label) {
-      setPlaceLabel(label);
-      return;
-    }
-    const controller = new AbortController();
-    let active = true;
-    void reverseGeocode(latitude, longitude, controller.signal).then((res) => {
-      if (active) setPlaceLabel(res.label);
-    });
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [latitude, longitude, label]);
+  const placeLabel = useReverseGeocode(latitude, longitude, label);
 
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-cyan-50 px-2 py-0.5 text-cyan-800">
