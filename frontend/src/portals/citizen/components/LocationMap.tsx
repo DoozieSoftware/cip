@@ -34,7 +34,12 @@ export interface LocationMapProps {
  * human-readable place name (reverse-geocoded). Falls back to raw
  * coordinates if geocoding is unavailable so the location is never blank.
  */
-export default function LocationMap({ latitude, longitude, label, height = 200 }: LocationMapProps): JSX.Element {
+export default function LocationMap({
+  latitude,
+  longitude,
+  label,
+  height = 200,
+}: LocationMapProps): JSX.Element {
   const [placeLabel, setPlaceLabel] = useState<string>(label ?? '');
 
   useEffect(() => {
@@ -74,7 +79,9 @@ export default function LocationMap({ latitude, longitude, label, height = 200 }
         </MapContainer>
       </div>
       <p className="flex items-start gap-1.5 text-sm text-slate-700">
-        <span aria-hidden className="mt-0.5 text-blue-600">📍</span>
+        <span aria-hidden className="mt-0.5 text-blue-600">
+          📍
+        </span>
         <span>{placeLabel || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`}</span>
       </p>
     </div>

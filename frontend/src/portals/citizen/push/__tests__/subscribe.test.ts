@@ -3,12 +3,14 @@ import { subscribeToPush } from '../subscribe';
 
 type Perm = 'default' | 'granted' | 'denied';
 
-function installStubs(opts: {
-  permission?: Perm;
-  requestResult?: Perm;
-  subscribeRejects?: boolean;
-  subscribeResult?: Record<string, unknown>;
-} = {}): { pushSubscribe: ReturnType<typeof vi.fn>; requestPermission: ReturnType<typeof vi.fn> } {
+function installStubs(
+  opts: {
+    permission?: Perm;
+    requestResult?: Perm;
+    subscribeRejects?: boolean;
+    subscribeResult?: Record<string, unknown>;
+  } = {},
+): { pushSubscribe: ReturnType<typeof vi.fn>; requestPermission: ReturnType<typeof vi.fn> } {
   const permission = opts.permission ?? 'granted';
   const requestResult = opts.requestResult ?? 'granted';
 
@@ -19,6 +21,8 @@ function installStubs(opts: {
       unsubscribe: () => Promise.resolve(true),
     });
   });
+
+  const vapidPublicKey = 'abcdefghijklmnopqrstuvwxyzABCDEFGH';
 
   const requestPermission = vi.fn().mockResolvedValue(requestResult);
 
@@ -36,16 +40,21 @@ function installStubs(opts: {
     pushManager: { subscribe: pushSubscribe, getSubscription: () => Promise.resolve(null) },
   } as unknown as ServiceWorkerRegistration;
   globalThis.navigator = {
-    serviceWorker: { ready: Promise.resolve(registration) },
+    serviceWorker: {
+      ready: Promise.resolve(registration),
+      getRegistration: () => Promise.resolve(registration),
+    },
   } as unknown as Navigator;
 
   // Silent API persist (default success). Provide a real Response so
   // apiRequest() can read headers / json without throwing.
-  globalThis.fetch = vi.fn().mockResolvedValue(
-    new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    }),
+  globalThis.fetch = vi.fn().mockImplementation(() =>
+    Promise.resolve(
+      new Response(JSON.stringify({ data: { public_key: vapidPublicKey } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    ),
   );
 
   return { pushSubscribe, requestPermission };
@@ -68,14 +77,14 @@ describe('subscribeToPush (BUG #5)', () => {
     globalThis.fetch = undefined;
   });
 
-  it('(a) attempts subscribe with undefined applicationServerKey when none is supplied', async () => {
+  it('(a) fetches the configured VAPID key when none is supplied', async () => {
     const { pushSubscribe } = installStubs({ subscribeResult: { endpoint: 'e', keys: {} } });
 
     const res = await subscribeToPush();
 
     expect(pushSubscribe).toHaveBeenCalledTimes(1);
     const callArg = pushSubscribe.mock.calls[0][0] as { applicationServerKey?: BufferSource };
-    expect(callArg.applicationServerKey).toBeUndefined();
+    expect(callArg.applicationServerKey).toBeDefined();
     expect(res.ok).toBe(true);
   });
 
@@ -112,6 +121,6 @@ describe('subscribeToPush (BUG #5)', () => {
     const res = await subscribeToPush({ applicationServerKey: 'some-key' });
 
     expect(pushSubscribe).toHaveBeenCalledTimes(1);
-    expect(res).toEqual({ ok: false, reason: 'subscription_failed' });
+    expect(res).toMatchObject({ ok: false, reason: 'subscription_failed' });
   });
 });

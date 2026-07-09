@@ -26,7 +26,9 @@ export default function MyReportsPage(): JSX.Element {
       <header className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">My reports</h1>
-          <p className="text-sm text-slate-600">Everything you've reported. Tap a card for the full timeline.</p>
+          <p className="text-sm text-slate-600">
+            Everything you've reported. Tap a card for the full timeline.
+          </p>
         </div>
         <Link
           to="/citizen/submit"
@@ -66,7 +68,9 @@ export default function MyReportsPage(): JSX.Element {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-base font-semibold text-slate-950">{report.title}</h2>
+                    <h2 className="truncate text-base font-semibold text-slate-950">
+                      {report.title}
+                    </h2>
                     <p className="mt-1 text-xs font-semibold text-blue-700">
                       #{report.id.slice(0, 8).toUpperCase()}
                     </p>
@@ -77,10 +81,14 @@ export default function MyReportsPage(): JSX.Element {
 
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
                   {report.type?.name ? (
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">{report.type.name}</span>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
+                      {report.type.name}
+                    </span>
                   ) : null}
                   {report.priority?.name ? (
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">{report.priority.name}</span>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
+                      {report.priority.name}
+                    </span>
                   ) : null}
                   {report.location ? (
                     <LocationChip
@@ -92,7 +100,11 @@ export default function MyReportsPage(): JSX.Element {
                 </div>
 
                 <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-                  <span>{report.created_at ? new Date(report.created_at).toLocaleString() : 'Recently submitted'}</span>
+                  <span>
+                    {report.created_at
+                      ? new Date(report.created_at).toLocaleString()
+                      : 'Recently submitted'}
+                  </span>
                   <span>View timeline</span>
                 </div>
               </Link>

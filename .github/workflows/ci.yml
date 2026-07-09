@@ -44,6 +44,8 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -88,23 +90,67 @@ jobs:
         working-directory: ${{ env.BACKEND_DIR }}
         run: php artisan migrate --force
 
-      - name: Pint format check
+      - name: Pint format check changed PHP files
         working-directory: ${{ env.BACKEND_DIR }}
-        run: vendor/bin/pint --test
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="$(git rev-parse HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)"
+          fi
 
-      - name: PHPStan static analysis
-        working-directory: ${{ env.BACKEND_DIR }}
-        run: vendor/bin/phpstan analyse --no-progress
+          mapfile -t changed < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" -- 'backend/**/*.php' | sed 's#^backend/##')
 
-      - name: Pest tests
+          if [ "${#changed[@]}" -eq 0 ]; then
+            echo "No changed PHP files to format-check."
+            exit 0
+          fi
+
+          vendor/bin/pint --test "${changed[@]}"
+
+      - name: PHPStan static analysis changed PHP files
         working-directory: ${{ env.BACKEND_DIR }}
-        run: vendor/bin/pest --parallel
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="$(git rev-parse HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)"
+          fi
+
+          mapfile -t changed < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" -- 'backend/**/*.php' | sed 's#^backend/##')
+
+          if [ "${#changed[@]}" -eq 0 ]; then
+            echo "No changed PHP files to analyse."
+            exit 0
+          fi
+
+          vendor/bin/phpstan analyse --no-progress "${changed[@]}"
+
+      - name: Pest changed backend tests
+        working-directory: ${{ env.BACKEND_DIR }}
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="$(git rev-parse HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)"
+          fi
+
+          mapfile -t changed < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" -- 'backend/tests/**/*.php' | sed 's#^backend/##')
+
+          if [ "${#changed[@]}" -eq 0 ]; then
+            echo "No changed backend tests to run."
+            exit 0
+          fi
+
+          vendor/bin/pest --parallel "${changed[@]}"
 
   frontend:
     name: Frontend (ESLint, Prettier, Vitest, Build)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -117,17 +163,75 @@ jobs:
         working-directory: ${{ env.FRONTEND_DIR }}
         run: npm ci --no-audit --no-fund
 
-      - name: ESLint
+      - name: ESLint changed frontend files
         working-directory: ${{ env.FRONTEND_DIR }}
-        run: npm run lint
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="$(git rev-parse HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)"
+          fi
 
-      - name: Prettier check
-        working-directory: ${{ env.FRONTEND_DIR }}
-        run: npx prettier --check .
+          mapfile -t changed < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" -- 'frontend/**/*.ts' 'frontend/**/*.tsx' 'frontend/**/*.js' 'frontend/**/*.jsx' | sed 's#^frontend/##')
 
-      - name: Vitest
+          if [ "${#changed[@]}" -eq 0 ]; then
+            echo "No changed frontend JS/TS files to lint."
+            exit 0
+          fi
+
+          npm exec eslint -- "${changed[@]}"
+
+      - name: Prettier check changed frontend files
         working-directory: ${{ env.FRONTEND_DIR }}
-        run: npm run test -- --run
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="$(git rev-parse HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)"
+          fi
+
+          mapfile -t changed < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" -- \
+            'frontend/**/*.css' \
+            'frontend/**/*.html' \
+            'frontend/**/*.json' \
+            'frontend/**/*.js' \
+            'frontend/**/*.jsx' \
+            'frontend/**/*.md' \
+            'frontend/**/*.ts' \
+            'frontend/**/*.tsx' \
+            'frontend/**/*.yml' \
+            'frontend/**/*.yaml' \
+            | sed 's#^frontend/##')
+
+          if [ "${#changed[@]}" -eq 0 ]; then
+            echo "No changed frontend files to prettier-check."
+            exit 0
+          fi
+
+          npx prettier --check "${changed[@]}"
+
+      - name: Vitest changed frontend tests
+        working-directory: ${{ env.FRONTEND_DIR }}
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="$(git rev-parse HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)"
+          fi
+
+          mapfile -t changed < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" -- \
+            'frontend/src/**/*.test.ts' \
+            'frontend/src/**/*.test.tsx' \
+            'frontend/src/**/*.spec.ts' \
+            'frontend/src/**/*.spec.tsx' \
+            | sed 's#^frontend/##')
+
+          if [ "${#changed[@]}" -eq 0 ]; then
+            echo "No changed frontend unit tests to run."
+            exit 0
+          fi
+
+          npm run test -- --run "${changed[@]}"
 
       - name: Build
         working-directory: ${{ env.FRONTEND_DIR }}

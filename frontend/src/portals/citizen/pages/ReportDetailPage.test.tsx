@@ -8,6 +8,12 @@ vi.mock('../api/client', () => ({
   useReportTimeline: vi.fn(() => ({ isLoading: false, error: null, data: [] })),
 }));
 
+vi.mock('../components/LocationMap', () => ({
+  default: ({ label }: { label?: string | null }) => (
+    <div data-testid="location-map">{label ?? 'Location map'}</div>
+  ),
+}));
+
 import ReportDetailPage from './ReportDetailPage';
 import { useReportDetail } from '../api/client';
 
