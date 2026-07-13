@@ -4,4 +4,4 @@
 # The functional value is mirrored into .env as SERVER_PORT (Laravel reads it by default).
 PHP_VERSION=8.4
 SERVE_PORT=7002
-FRONTEND_PORT=4000
+FRONTEND_PORT=4100
