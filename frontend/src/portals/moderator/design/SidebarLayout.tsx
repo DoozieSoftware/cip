@@ -65,7 +65,7 @@ export function SidebarLayout(props: SidebarLayoutProps): JSX.Element {
   const brandAccent = ACCENT_MAP[props.brandColor] ?? ACCENT_MAP.brand;
 
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-900">
+    <div className="flex min-h-screen w-full overflow-x-hidden bg-slate-50 text-slate-900">
       {/* Mobile overlay */}
       {open && (
         <div
@@ -161,7 +161,7 @@ export function SidebarLayout(props: SidebarLayoutProps): JSX.Element {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 w-full flex-1 flex-col">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white shadow-sm">
           <div className="flex items-center gap-3 px-4 py-3 lg:px-6">
             <button
@@ -183,7 +183,7 @@ export function SidebarLayout(props: SidebarLayoutProps): JSX.Element {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-6">
+        <main className="w-full flex-1 overflow-y-auto px-4 py-6 lg:px-6">
           {props.children ?? <Outlet />}
         </main>
       </div>
