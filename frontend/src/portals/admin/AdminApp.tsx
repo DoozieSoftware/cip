@@ -4,7 +4,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AdminLayout } from './layout/AdminLayout';
 import { Spinner } from '../moderator/design';
 
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminDashboard = lazy(() => import('./pages/AdminGovernmentDashboard'));
 const AdminUsers = lazy(() => import('./pages/AdminUsers'));
 const AdminDepartments = lazy(() => import('./pages/AdminDepartments'));
 const AdminOrganizations = lazy(() => import('./pages/AdminOrganizations'));
