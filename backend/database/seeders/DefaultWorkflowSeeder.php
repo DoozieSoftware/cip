@@ -8,6 +8,7 @@ use App\Modules\Workflow\Models\WorkflowDefinition;
 use App\Modules\Workflow\Models\WorkflowState;
 use App\Modules\Workflow\Models\WorkflowTransition;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -26,8 +27,7 @@ use Illuminate\Support\Facades\DB;
  *   assigned       --accept-->        accepted
  *   accepted       --start-->         in_progress
  *   in_progress    --resolve-->       resolved
- *   resolved       --verify-->        verified
- *   verified       --close-->         closed
+ *   resolved       --close-->         closed
  *
  *   pending_moderator --reject-->     rejected   (any of
  *   assigned          --reject-->     rejected    the staff
@@ -59,6 +59,8 @@ class DefaultWorkflowSeeder extends Seeder
 
             $states = $this->seedStates($def->id);
             $this->seedTransitions($def->id, $states);
+            Cache::forget('workflow:def:code:civic_default');
+            Cache::forget("workflow:def:id:{$def->id}");
         });
     }
 
@@ -100,6 +102,21 @@ class DefaultWorkflowSeeder extends Seeder
      */
     private function seedTransitions(string $defId, array $states): void
     {
+        // Remove the obsolete moderator verification path. The Operations API
+        // contract exposes department close directly from resolved.
+        WorkflowTransition::query()
+            ->where('workflow_definition_id', $defId)
+            ->where(function ($query) use ($states): void {
+                $query->where(function ($query) use ($states): void {
+                    $query->where('from_state_id', $states['resolved']->id)
+                        ->where('event', 'verify');
+                })->orWhere(function ($query) use ($states): void {
+                    $query->where('from_state_id', $states['verified']->id)
+                        ->where('event', 'close');
+                });
+            })
+            ->delete();
+
         $t = [
             // from             event              to                    role          sla
             ['draft',             'submit',            'submitted',         null,         null],
@@ -113,8 +130,7 @@ class DefaultWorkflowSeeder extends Seeder
             ['assigned',          'accept',            'accepted',          'department_officer', 240],
             ['accepted',          'start',             'in_progress',       'department_officer', 1440],
             ['in_progress',       'resolve',           'resolved',          'department_officer', 4320],
-            ['resolved',          'verify',            'verified',          'moderator',  1440],
-            ['verified',          'close',             'closed',            'moderator',  4320],
+            ['resolved',          'close',             'closed',            'department_officer', 4320],
 
             // Reject branch — any of the staff-side states.
             ['pending_moderator', 'reject',            'rejected',          'moderator',  null],

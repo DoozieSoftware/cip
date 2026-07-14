@@ -13,7 +13,7 @@ import {
   Badge,
 } from '../design';
 import { departmentApi } from '../api/operations';
-import type { DepartmentReportListItem, InternalNote, WorkflowEvent } from '../types';
+import type { DepartmentReportListItem, InternalNote, ReportStatusCode, WorkflowEvent } from '../types';
 import { useKeyboardShortcuts } from '../../moderator/hooks/useKeyboardShortcuts';
 
 function ActionButton({
@@ -43,6 +43,14 @@ function ActionButton({
     </Button>
   );
 }
+
+const actionStatus: Partial<Record<WorkflowEvent, ReportStatusCode>> = {
+  accept: 'assigned',
+  start: 'accepted',
+  progress: 'in_progress',
+  resolve: 'in_progress',
+  close: 'resolved',
+};
 
 export default function ReportDetailPage() {
   const params = useParams<{ id: string }>();
@@ -89,12 +97,16 @@ export default function ReportDetailPage() {
 
   const runAction = useCallback(
     (event: WorkflowEvent): void => {
-      if (reportId === '' || actionPending) {
+      if (
+        reportId === ''
+        || actionPending
+        || report?.current_status_code !== actionStatus[event]
+      ) {
         return;
       }
       action.mutate(event);
     },
-    [action, actionPending, reportId],
+    [action, actionPending, report?.current_status_code, reportId],
   );
 
   const focusNote = useCallback((): void => {
@@ -160,7 +172,7 @@ export default function ReportDetailPage() {
             label="Accept"
             event="accept"
             onAction={runAction}
-            disabled={actionPending}
+            disabled={actionPending || status !== 'assigned'}
             working={actionPending && activeAction === 'accept'}
             shortcut="A"
           />
@@ -168,7 +180,7 @@ export default function ReportDetailPage() {
             label="Start"
             event="start"
             onAction={runAction}
-            disabled={actionPending}
+            disabled={actionPending || status !== 'accepted'}
             working={actionPending && activeAction === 'start'}
             shortcut="S"
           />
@@ -176,14 +188,14 @@ export default function ReportDetailPage() {
             label="Progress"
             event="progress"
             onAction={runAction}
-            disabled={actionPending}
+            disabled={actionPending || status !== 'in_progress'}
             working={actionPending && activeAction === 'progress'}
           />
           <ActionButton
             label="Resolve"
             event="resolve"
             onAction={runAction}
-            disabled={actionPending}
+            disabled={actionPending || status !== 'in_progress'}
             working={actionPending && activeAction === 'resolve'}
             shortcut="R"
           />
@@ -191,10 +203,15 @@ export default function ReportDetailPage() {
             label="Close"
             event="close"
             onAction={runAction}
-            disabled={actionPending}
+            disabled={actionPending || status !== 'resolved'}
             working={actionPending && activeAction === 'close'}
             shortcut="C"
           />
+          {action.isError && (
+            <p role="alert" className="w-full text-sm text-red-700">
+              {action.error instanceof Error ? action.error.message : 'The report action failed.'}
+            </p>
+          )}
           {isTerminal && <p className="text-xs text-slate-500">This report is in a terminal state.</p>}
         </CardBody>
       </Card>

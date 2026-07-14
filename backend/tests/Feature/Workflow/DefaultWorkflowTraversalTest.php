@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Users\Models\User;
@@ -11,11 +10,10 @@ use App\Modules\Workflow\Services\ConditionEvaluator;
 use App\Modules\Workflow\Services\TransitionGuard;
 use App\Modules\Workflow\Services\WorkflowEngine;
 use Database\Seeders\DefaultWorkflowSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
-
-
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -25,15 +23,15 @@ beforeEach(function (): void {
     $this->repo = new WorkflowRepository;
 });
 
-it('seeds the default civic workflow with 11 states and 14 transitions', function (): void {
+it('seeds the default civic workflow with 13 states and 16 transitions', function (): void {
     $graph = $this->repo->loadGraph('civic_default');
     expect($graph)->not->toBeNull();
     expect($graph['states'])->toHaveCount(13);
-    expect($graph['transitions'])->toHaveCount(17);
+    expect($graph['transitions'])->toHaveCount(16);
     expect(array_keys($graph['states']))->toContain('draft', 'submitted', 'closed', 'rejected');
 });
 
-it('a report can traverse draft -> submitted -> ai_processing -> pending_moderator -> assigned -> accepted -> in_progress -> resolved -> verified -> closed', function (): void {
+it('a report can traverse draft -> submitted -> ai_processing -> pending_moderator -> assigned -> accepted -> in_progress -> resolved -> closed', function (): void {
     // Build a report at draft, then walk the happy path.
     $draftStatus = ReportStatus::query()->where('code', 'draft')->first();
     $report = Report::factory()->create([
@@ -47,7 +45,7 @@ it('a report can traverse draft -> submitted -> ai_processing -> pending_moderat
 
     $system = makeUserWithRole('system');
     $moderator = makeUserWithRole('moderator');
-    $department = makeUserWithRole('department');
+    $department = makeUserWithRole('department_officer');
 
     // The transitions require permissions that don't exist
     // yet in the permission matrix; grant the necessary
@@ -61,8 +59,7 @@ it('a report can traverse draft -> submitted -> ai_processing -> pending_moderat
         ['event' => 'accept',           'actor' => $department, 'expectCode' => 'accepted'],
         ['event' => 'start',            'actor' => $department, 'expectCode' => 'in_progress'],
         ['event' => 'resolve',          'actor' => $department, 'expectCode' => 'resolved'],
-        ['event' => 'verify',           'actor' => $moderator, 'expectCode' => 'verified'],
-        ['event' => 'close',            'actor' => $moderator, 'expectCode' => 'closed'],
+        ['event' => 'close',            'actor' => $department, 'expectCode' => 'closed'],
     ];
 
     foreach ($path as $step) {

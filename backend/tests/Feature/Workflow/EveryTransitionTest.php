@@ -71,15 +71,14 @@ dataset('everyTransition', function () {
         'submitted ai_complete' => ['from' => 'submitted',         'event' => 'ai_complete',       'to' => 'ai_processing',     'role' => 'system'],
         'ai_processing moderator_review' => ['from' => 'ai_processing',     'event' => 'moderator_review',  'to' => 'pending_moderator', 'role' => 'system'],
         'pending_moderator assign' => ['from' => 'pending_moderator', 'event' => 'assign',            'to' => 'assigned',          'role' => 'moderator'],
-        'assigned accept' => ['from' => 'assigned',          'event' => 'accept',            'to' => 'accepted',          'role' => 'department'],
-        'accepted start' => ['from' => 'accepted',          'event' => 'start',             'to' => 'in_progress',       'role' => 'department'],
-        'in_progress resolve' => ['from' => 'in_progress',       'event' => 'resolve',           'to' => 'resolved',          'role' => 'department'],
-        'resolved verify' => ['from' => 'resolved',          'event' => 'verify',            'to' => 'verified',          'role' => 'moderator'],
-        'verified close' => ['from' => 'verified',          'event' => 'close',             'to' => 'closed',            'role' => 'moderator'],
+        'assigned accept' => ['from' => 'assigned',          'event' => 'accept',            'to' => 'accepted',          'role' => 'department_officer'],
+        'accepted start' => ['from' => 'accepted',          'event' => 'start',             'to' => 'in_progress',       'role' => 'department_officer'],
+        'in_progress resolve' => ['from' => 'in_progress',       'event' => 'resolve',           'to' => 'resolved',          'role' => 'department_officer'],
+        'resolved close' => ['from' => 'resolved',          'event' => 'close',             'to' => 'closed',            'role' => 'department_officer'],
         'pending_moderator reject' => ['from' => 'pending_moderator', 'event' => 'reject',            'to' => 'rejected',          'role' => 'moderator'],
-        'assigned reject' => ['from' => 'assigned',          'event' => 'reject',            'to' => 'rejected',          'role' => 'department'],
-        'accepted reject' => ['from' => 'accepted',          'event' => 'reject',            'to' => 'rejected',          'role' => 'department'],
-        'in_progress reject' => ['from' => 'in_progress',       'event' => 'reject',            'to' => 'rejected',          'role' => 'department'],
+        'assigned reject' => ['from' => 'assigned',          'event' => 'reject',            'to' => 'rejected',          'role' => 'department_officer'],
+        'accepted reject' => ['from' => 'accepted',          'event' => 'reject',            'to' => 'rejected',          'role' => 'department_officer'],
+        'in_progress reject' => ['from' => 'in_progress',       'event' => 'reject',            'to' => 'rejected',          'role' => 'department_officer'],
     ];
 });
 

@@ -56,16 +56,8 @@ it('a citizen cannot trigger the assign event from pending_moderator', function 
     expect($decision->reasons[0])->toContain('role');
 });
 
-it('a citizen cannot trigger the verify event from resolved', function (): void {
+it('a citizen cannot trigger the close event from resolved', function (): void {
     $report = makeRoleEnforcementReportAt('resolved', $this->repo);
-    $citizen = userWithRole('citizen');
-
-    $decision = $this->engine->evaluate($report, 'verify', $citizen);
-    expect($decision->allowed)->toBeFalse();
-});
-
-it('a citizen cannot trigger the close event from verified', function (): void {
-    $report = makeRoleEnforcementReportAt('verified', $this->repo);
     $citizen = userWithRole('citizen');
 
     $decision = $this->engine->evaluate($report, 'close', $citizen);
@@ -82,25 +74,9 @@ it('a citizen cannot trigger the accept event from assigned', function (): void 
 
 it('a department officer cannot trigger the moderator-only assign event', function (): void {
     $report = makeRoleEnforcementReportAt('pending_moderator', $this->repo);
-    $dept = userWithRole('department');
+    $dept = userWithRole('department_officer');
 
     $decision = $this->engine->evaluate($report, 'assign', $dept);
-    expect($decision->allowed)->toBeFalse();
-});
-
-it('a department officer cannot trigger the moderator-only verify event', function (): void {
-    $report = makeRoleEnforcementReportAt('resolved', $this->repo);
-    $dept = userWithRole('department');
-
-    $decision = $this->engine->evaluate($report, 'verify', $dept);
-    expect($decision->allowed)->toBeFalse();
-});
-
-it('a department officer cannot trigger the moderator-only close event', function (): void {
-    $report = makeRoleEnforcementReportAt('verified', $this->repo);
-    $dept = userWithRole('department');
-
-    $decision = $this->engine->evaluate($report, 'close', $dept);
     expect($decision->allowed)->toBeFalse();
 });
 
@@ -136,9 +112,9 @@ it('a super_admin can trigger any event the system supports', function (): void 
     // both roles to simulate the production role-hierarchy.
     $admin = userWithRole('super_admin');
     Role::firstOrCreate(['name' => 'moderator', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'department', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'department_officer', 'guard_name' => 'web']);
     $admin->assignRole('moderator');
-    $admin->assignRole('department');
+    $admin->assignRole('department_officer');
 
     $reportAssign = makeRoleEnforcementReportAt('pending_moderator', $this->repo);
     $d1 = $this->engine->evaluate($reportAssign, 'assign', $admin);
@@ -149,21 +125,18 @@ it('a super_admin can trigger any event the system supports', function (): void 
     expect($d2->allowed)->toBeTrue();
 });
 
-it('a moderator can trigger assign, verify, and close (their own events)', function (): void {
+it('a moderator can trigger assign but not department close', function (): void {
     $mod = userWithRole('moderator');
 
     $r1 = makeRoleEnforcementReportAt('pending_moderator', $this->repo);
     expect($this->engine->evaluate($r1, 'assign', $mod)->allowed)->toBeTrue();
 
     $r2 = makeRoleEnforcementReportAt('resolved', $this->repo);
-    expect($this->engine->evaluate($r2, 'verify', $mod)->allowed)->toBeTrue();
-
-    $r3 = makeRoleEnforcementReportAt('verified', $this->repo);
-    expect($this->engine->evaluate($r3, 'close', $mod)->allowed)->toBeTrue();
+    expect($this->engine->evaluate($r2, 'close', $mod)->allowed)->toBeFalse();
 });
 
-it('a department officer can trigger accept, start, and resolve (their own events)', function (): void {
-    $dept = userWithRole('department');
+it('a department officer can trigger accept, start, resolve, and close', function (): void {
+    $dept = userWithRole('department_officer');
 
     $r1 = makeRoleEnforcementReportAt('assigned', $this->repo);
     expect($this->engine->evaluate($r1, 'accept', $dept)->allowed)->toBeTrue();
@@ -173,6 +146,9 @@ it('a department officer can trigger accept, start, and resolve (their own event
 
     $r3 = makeRoleEnforcementReportAt('in_progress', $this->repo);
     expect($this->engine->evaluate($r3, 'resolve', $dept)->allowed)->toBeTrue();
+
+    $r4 = makeRoleEnforcementReportAt('resolved', $this->repo);
+    expect($this->engine->evaluate($r4, 'close', $dept)->allowed)->toBeTrue();
 });
 
 it('a TransitionGuard call without a role throws UnauthorizedTransitionException', function (): void {

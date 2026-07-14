@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 use App\Modules\Departments\Models\Department;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Users\Models\User;
 use Database\Seeders\DefaultWorkflowSeeder;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -18,7 +20,6 @@ beforeEach(function (): void {
     (new ReportStatusesSeeder)->run();
     (new DefaultWorkflowSeeder)->run();
 });
-
 
 it('rejects /api/v1/department/dashboard without auth', function (): void {
     $this->getJson('/api/v1/department/dashboard')->assertStatus(401);
@@ -35,7 +36,7 @@ it('returns the dashboard for a department officer', function (): void {
 });
 
 it('rejects the list for a citizen (no department)', function (): void {
-    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'citizen', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'citizen', 'guard_name' => 'web']);
     $citizen = User::factory()->create();
     $citizen->assignRole('citizen');
     Sanctum::actingAs($citizen);
@@ -97,6 +98,20 @@ it('returns 422 when the transition is not allowed (close from assigned)', funct
 
     $this->postJson("/api/v1/department/reports/{$report->id}/close", [])
         ->assertStatus(422);
+});
+
+it('close moves a resolved report to closed', function (): void {
+    $dept = Department::factory()->create(['code' => 'BBMP']);
+    $report = landReportInAssigned($dept);
+    $resolved = ReportStatus::query()->where('code', 'resolved')->firstOrFail();
+    $report->current_status_id = $resolved->id;
+    $report->save();
+    $officer = makeDepartmentOfficer($dept);
+    Sanctum::actingAs($officer);
+
+    $this->postJson("/api/v1/department/reports/{$report->id}/close", [])
+        ->assertOk()
+        ->assertJsonPath('data.current_status_code', 'closed');
 });
 
 it('addNote creates a 201 and the note body roundtrips', function (): void {

@@ -64,8 +64,7 @@ Seeded by `DefaultWorkflowSeeder`. 11 states, 13 transitions.
 | `assigned`         | `accept`           | `accepted`         | `department`  | 240       |
 | `accepted`         | `start`            | `in_progress`      | `department`  | 1440      |
 | `in_progress`      | `resolve`          | `resolved`         | `department`  | 4320      |
-| `resolved`         | `verify`           | `verified`         | `moderator`   | 1440      |
-| `verified`         | `close`            | `closed`           | `moderator`   | 4320      |
+| `resolved`         | `close`            | `closed`           | `department`  | 4320      |
 | `pending_moderator`| `reject`           | `rejected`         | `moderator`   | -         |
 | `assigned`         | `reject`           | `rejected`         | `department`  | -         |
 | `accepted`         | `reject`           | `rejected`         | `department`  | -         |

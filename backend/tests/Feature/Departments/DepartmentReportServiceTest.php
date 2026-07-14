@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Modules\Departments\Models\Department;
 use App\Modules\Departments\Services\DepartmentReportService;
 use App\Modules\Reports\Models\InternalNote;
-use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Security\Models\AuditLog;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
@@ -40,7 +40,7 @@ it('accept transitions assigned -> accepted and writes audit', function (): void
 it('start transitions accepted -> in_progress', function (): void {
     $dept = Department::factory()->create();
     $report = landReportInAssigned($dept);
-    $accepted = \App\Modules\Reports\Models\ReportStatus::query()->where('code', 'accepted')->firstOrFail();
+    $accepted = ReportStatus::query()->where('code', 'accepted')->firstOrFail();
     $report->current_status_id = $accepted->id;
     $report->save();
     $dept = Department::query()->find($report->department_id);
@@ -56,7 +56,7 @@ it('start transitions accepted -> in_progress', function (): void {
 it('resolve transitions in_progress -> resolved', function (): void {
     $dept = Department::factory()->create();
     $report = landReportInAssigned($dept);
-    $inProgress = \App\Modules\Reports\Models\ReportStatus::query()->where('code', 'in_progress')->firstOrFail();
+    $inProgress = ReportStatus::query()->where('code', 'in_progress')->firstOrFail();
     $report->current_status_id = $inProgress->id;
     $report->save();
     $dept = Department::query()->find($report->department_id);
@@ -85,15 +85,19 @@ it('progress does NOT transition state, only records the audit', function (): vo
     expect(AuditLog::query()->where('action', 'report.department_progress')->count())->toBe(1);
 });
 
-it('close is rejected for a department officer (close is a moderator event)', function (): void {
+it('close transitions resolved -> closed for a department officer', function (): void {
     $dept = Department::factory()->create();
     $report = landReportInAssigned($dept);
+    $resolved = ReportStatus::query()->where('code', 'resolved')->firstOrFail();
+    $report->current_status_id = $resolved->id;
+    $report->save();
     $officer = User::factory()->create();
     $officer->assignRole('department_officer');
     $officer->departments()->attach($dept->id);
 
-    expect(fn () => app(DepartmentReportService::class)->close($report, $officer, null))
-        ->toThrow(ApiException::class);
+    $updated = app(DepartmentReportService::class)->close($report, $officer, null);
+
+    expect($updated->status?->code)->toBe('closed');
 });
 
 it('addNote creates a department-internal note + audit row', function (): void {
