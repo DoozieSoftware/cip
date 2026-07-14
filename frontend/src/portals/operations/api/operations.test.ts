@@ -13,6 +13,7 @@ describe('operations API surface', () => {
   });
 
   it('adminApi exposes the expected methods', () => {
+    expect(typeof adminApi.listDepartments).toBe('function');
     expect(typeof adminApi.listOfficers).toBe('function');
     expect(typeof adminApi.attachOfficer).toBe('function');
     expect(typeof adminApi.detachOfficer).toBe('function');

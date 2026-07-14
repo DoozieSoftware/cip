@@ -13,15 +13,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *
  * Per AGENTS.md ("Never return Models directly") and docs/03 §20
  * (API envelope). Sensitive fields (password, 2FA secret, recovery
- * codes) are NEVER exposed. The `roles` and `permissions` arrays
- * are returned only when the corresponding Spatie Permission
- * relations are eager-loaded; otherwise the key is omitted. This
+ * codes) are NEVER exposed. Role, permission, and safe department
+ * membership data are returned only when their relations are
+ * eager-loaded; otherwise the keys are omitted. This
  * avoids N+1 queries for the common /me endpoint (where a single
  * user is shown) while keeping the resource safe to use in lists
  * (where roles are not needed).
  *
- * Callers that want roles+permissions must call
- *     $user->load('roles')
+ * Callers that want staff portal identity must call
+ *     $user->load(['roles', 'departments'])
  * before serialisation. The auth controller does this on the
  * verify-otp, refresh, and me paths.
  *
@@ -56,6 +56,15 @@ class UserResource extends JsonResource
         if ($user->relationLoaded('roles')) {
             $payload['roles'] = $user->roles->pluck('name')->values()->all();
             $payload['permissions'] = $user->getAllPermissions()->pluck('name')->values()->all();
+        }
+
+        if ($user->relationLoaded('departments')) {
+            $payload['departments'] = $user->departments->map(static fn ($department): array => [
+                'id' => $department->id,
+                'code' => $department->code,
+                'name' => $department->name,
+                'is_manager' => (bool) $department->pivot?->is_manager,
+            ])->values()->all();
         }
 
         return $payload;

@@ -8,6 +8,7 @@ import {
   Spinner,
   EmptyState,
   Input,
+  Select,
   Button,
   Badge,
   Table,
@@ -18,20 +19,27 @@ import {
   TD,
 } from '../design';
 import { adminApi, type AdminUpdatePayload, type AttachOfficerPayload } from '../api/operations';
+import { useAuth } from '../../../auth/AuthContext';
 import type { DepartmentOfficer } from '../types';
 
 const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 type Day = (typeof DAYS)[number];
 
 export default function AdminPage() {
-  // The officer's primary department. In the production
-  // surface this comes from a `me` endpoint; for the
-  // admin page we ask the officer to pick a department
-  // from a department-selector. For the M11 build we
-  // hard-code a single department id (the first one the
-  // user belongs to) and surface a refresh button.
+  const { user, hasAnyRole } = useAuth();
   const queryClient = useQueryClient();
-  const [departmentId, setDepartmentId] = useState('');
+  const canChooseDepartment = hasAnyRole(['super_admin', 'system']);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
+  const departmentsQuery = useQuery({
+    queryKey: ['admin', 'departments'],
+    queryFn: async () => (await adminApi.listDepartments()).data,
+    enabled: canChooseDepartment,
+  });
+  const selectableDepartments = departmentsQuery.data ?? [];
+  const department = canChooseDepartment
+    ? selectableDepartments.find((item) => item.id === selectedDepartmentId) ?? selectableDepartments[0] ?? null
+    : user?.departments?.[0] ?? null;
+  const departmentId = department?.id ?? '';
 
   const { data: officers, isLoading, refetch } = useQuery<DepartmentOfficer[]>({
     queryKey: ['admin', 'officers', departmentId],
@@ -86,24 +94,25 @@ export default function AdminPage() {
     },
   });
 
+  if (canChooseDepartment && departmentsQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20" aria-live="polite">
+        <Spinner label="Loading departments" />
+      </div>
+    );
+  }
+
   if (!departmentId) {
     return (
       <div className="space-y-4">
         <header>
           <h1 className="text-xl font-semibold text-slate-900">Department admin</h1>
-          <p className="text-sm text-slate-500">Enter the department id you want to manage.</p>
+          <p className="text-sm text-slate-500">No department is assigned to this account.</p>
         </header>
         <Card>
-          <CardBody className="space-y-3">
-            <Input
-              label="Department id"
-              placeholder="UUID"
-              value={departmentId}
-              onChange={(e) => setDepartmentId(e.target.value)}
-            />
-            <p className="text-xs text-slate-500">
-              Production deployment: this id comes from a server-side `me` endpoint
-              so the officer only sees their own department.
+          <CardBody>
+            <p className="text-sm text-slate-700">
+              Ask a platform administrator to assign this user to a department before managing officers or settings.
             </p>
           </CardBody>
         </Card>
@@ -122,8 +131,25 @@ export default function AdminPage() {
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-900">Department admin</h1>
-        <Badge tone="info">id: {departmentId.slice(0, 8)}…</Badge>
+        <div>
+          <h1 className="text-xl font-semibold text-slate-900">Department admin</h1>
+          <p className="text-sm text-slate-500">{department?.name}</p>
+        </div>
+        {canChooseDepartment ? (
+          <div className="w-72">
+            <Select
+              label="Department"
+              value={departmentId}
+              options={selectableDepartments.map((item) => ({
+                value: item.id,
+                label: `${item.name} (${item.code})`,
+              }))}
+              onChange={(event) => setSelectedDepartmentId(event.target.value)}
+            />
+          </div>
+        ) : (
+          <Badge tone="info">{department?.code}</Badge>
+        )}
       </header>
 
       <Card>

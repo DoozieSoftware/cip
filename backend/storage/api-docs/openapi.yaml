@@ -2373,7 +2373,7 @@ components:
                 logged_out: { type: boolean, example: true }
     User:
       type: object
-      description: 'UserResource payload (docs/05 §3). Roles and permissions are populated when the relation was eager-loaded.'
+      description: 'UserResource payload (docs/05 §3). Roles, permissions, and safe department memberships are populated when their relations are eager-loaded.'
       properties:
         id: { type: string, format: uuid }
         name: { type: string, nullable: true }
@@ -2390,6 +2390,17 @@ components:
         permissions:
           type: array
           items: { type: string, example: 'reports.submit' }
+        departments:
+          type: array
+          description: 'Department memberships used to scope staff portals. Never includes internal pivot identifiers.'
+          items:
+            type: object
+            required: [id, code, name, is_manager]
+            properties:
+              id: { type: string, format: uuid }
+              code: { type: string, example: 'BBMP-112' }
+              name: { type: string, example: 'BBMP Ward 112' }
+              is_manager: { type: boolean }
     UserResponse:
       allOf:
         - $ref: '#/components/schemas/ApiResponse'

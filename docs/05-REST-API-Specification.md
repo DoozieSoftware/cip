@@ -204,6 +204,11 @@ POST /auth/refresh
 GET /auth/me
 ```
 
+Returns the authenticated user's safe profile, roles, permissions, and
+department memberships (`id`, `code`, `name`, `is_manager`). Staff portals
+use these memberships for department scoping; users are never asked to enter
+department UUIDs manually.
+
 ---
 
 # 6. Citizen APIs

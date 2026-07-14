@@ -45,6 +45,12 @@ export interface AttachOfficerPayload {
   assigned_at?: string;
 }
 
+export interface ManagedDepartment {
+  id: string;
+  code: string;
+  name: string;
+}
+
 export const departmentApi = {
   dashboard: () =>
     api.get<{ success: boolean; data: DepartmentDashboardCounts }>(
@@ -110,6 +116,12 @@ export const departmentApi = {
 };
 
 export const adminApi = {
+  listDepartments: () =>
+    api.get<{ success: boolean; data: ManagedDepartment[] }>(
+      '/admin/departments',
+      { active: true, per_page: 100 },
+    ),
+
   listOfficers: (departmentId: string) =>
     api.get<{ success: boolean; data: DepartmentOfficer[]; meta: { total: number } }>(
       `/admin/departments/${departmentId}/officers`,

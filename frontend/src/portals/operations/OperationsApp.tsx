@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { OperationsLayout } from './layout/OperationsLayout';
 import { Spinner } from './design';
+import { ProtectedRoute } from '../../auth/ProtectedRoute';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ReportListPage = lazy(() => import('./pages/ReportListPage'));
@@ -34,7 +35,14 @@ export function OperationsApp() {
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="audit" element={<AuditLogPage />} />
           <Route path="security" element={<SecurityPage />} />
-          <Route path="admin" element={<AdminPage />} />
+          <Route
+            path="admin"
+            element={(
+              <ProtectedRoute allow={['department_admin', 'super_admin', 'system']}>
+                <AdminPage />
+              </ProtectedRoute>
+            )}
+          />
           <Route path="*" element={<Navigate to="/operations" replace />} />
         </Route>
       </Routes>

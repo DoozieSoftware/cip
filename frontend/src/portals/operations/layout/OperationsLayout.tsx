@@ -7,6 +7,7 @@ type OperationsNavItem = SidebarNavItem & {
 };
 
 const AUDIT_SECURITY_ROLES: Role[] = ['super_admin', 'system', 'auditor', 'department_admin'];
+const DEPARTMENT_ADMIN_ROLES: Role[] = ['super_admin', 'system', 'department_admin'];
 
 const NAV: OperationsNavItem[] = [
   { to: '/operations', label: 'Dashboard', end: true, icon: '📊' },
@@ -16,7 +17,7 @@ const NAV: OperationsNavItem[] = [
   { to: '/operations/map', label: 'GIS Map', icon: '🗺️' },
   { to: '/operations/audit', label: 'Audit Log', icon: '📜', allowedRoles: AUDIT_SECURITY_ROLES },
   { to: '/operations/security', label: 'Security', icon: '🔒', allowedRoles: AUDIT_SECURITY_ROLES },
-  { to: '/operations/admin', label: 'Department Admin', icon: '🏢' },
+  { to: '/operations/admin', label: 'Department Admin', icon: '🏢', allowedRoles: DEPARTMENT_ADMIN_ROLES },
 ];
 
 const SHORTCUTS: ReactNode = (
@@ -36,7 +37,9 @@ export function OperationsLayout() {
     () => NAV.filter((item) => item.allowedRoles === undefined || hasAnyRole(item.allowedRoles)),
     [hasAnyRole],
   );
-  const roleLabel = user?.roles[0]?.replace(/_/g, ' ') ?? 'operations';
+  const portalRole = (['super_admin', 'system', 'department_admin', 'department_officer', 'auditor'] as Role[])
+    .find((role) => user?.roles.includes(role));
+  const roleLabel = portalRole?.replace(/_/g, ' ') ?? 'operations';
 
   return (
     <SidebarLayout

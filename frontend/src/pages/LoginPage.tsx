@@ -10,6 +10,7 @@ interface MeResponse {
   mobile?: string | null;
   email?: string | null;
   roles: Role[];
+  departments?: SessionUser['departments'];
 }
 
 interface OtpResponse {
@@ -48,6 +49,7 @@ export function LoginPage(): JSX.Element {
       });
       login(res.data.token.access_token, res.data.user);
       const me = await apiRequest<ApiEnvelope<MeResponse>>('/auth/me');
+      login(res.data.token.access_token, { ...res.data.user, departments: me.data.departments });
       const target = routeForRoles(me.data.roles);
       void navigate(target, { replace: true });
     } catch (err) {
@@ -90,6 +92,7 @@ export function LoginPage(): JSX.Element {
       login(res.data.token.access_token, res.data.user);
       // Pull /auth/me to confirm roles
       const me = await apiRequest<ApiEnvelope<MeResponse>>('/auth/me');
+      login(res.data.token.access_token, { ...res.data.user, departments: me.data.departments });
       const target = routeForRoles(me.data.roles);
       void navigate(target, { replace: true });
     } catch (err) {

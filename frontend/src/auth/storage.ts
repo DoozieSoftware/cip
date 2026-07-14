@@ -8,6 +8,12 @@ export interface PersistedSession {
     mobile?: string | null;
     email?: string | null;
     roles: string[];
+    departments?: Array<{
+      id: string;
+      code: string;
+      name: string;
+      is_manager: boolean;
+    }>;
   };
 }
 

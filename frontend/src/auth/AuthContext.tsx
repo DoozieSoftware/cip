@@ -10,6 +10,12 @@ export interface SessionUser {
   mobile?: string | null;
   email?: string | null;
   roles: Role[];
+  departments?: Array<{
+    id: string;
+    code: string;
+    name: string;
+    is_manager: boolean;
+  }>;
 }
 
 export interface AuthContextValue {
@@ -39,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
         mobile: persisted.user.mobile ?? null,
         email: persisted.user.email ?? null,
         roles: persisted.user.roles as unknown as Role[],
+        departments: persisted.user.departments,
       });
     }
     setLoading(false);
@@ -53,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       mobile: nextUser.mobile ?? null,
       email: nextUser.email ?? null,
       roles: nextUser.roles,
+      departments: nextUser.departments,
     };
     writeSession({ token: nextToken, user: persistedUser });
   }, []);

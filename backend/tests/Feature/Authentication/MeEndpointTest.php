@@ -3,9 +3,10 @@
 declare(strict_types=1);
 
 use App\Modules\Authentication\Services\AuthenticationService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Authentication\Services\OtpService;
+use App\Modules\Departments\Models\Department;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
@@ -66,9 +67,24 @@ it('returns 200 with the authenticated user envelope', function (): void {
                 'last_login_at',
                 'roles',
                 'permissions',
+                'departments',
                 'created_at',
             ],
         ]);
+});
+
+it('includes safe department memberships for staff portal scoping', function (): void {
+    [$user, $access] = obtainUserAndToken();
+    $department = Department::factory()->create(['code' => 'BBMP', 'name' => 'BBMP Ward 112']);
+    $user->departments()->attach($department->id, ['is_manager' => true]);
+
+    $this->withToken($access)
+        ->getJson('/api/v1/auth/me')
+        ->assertOk()
+        ->assertJsonPath('data.departments.0.id', $department->id)
+        ->assertJsonPath('data.departments.0.code', 'BBMP')
+        ->assertJsonPath('data.departments.0.name', 'BBMP Ward 112')
+        ->assertJsonPath('data.departments.0.is_manager', true);
 });
 
 it('includes the citizen role for an OTP-verified user', function (): void {
