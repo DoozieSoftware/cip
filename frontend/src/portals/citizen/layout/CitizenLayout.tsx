@@ -5,13 +5,15 @@ import { InstallPrompt } from '../../../pwa/InstallPrompt';
 import { ToastProvider } from '../components/Toast';
 import { cx } from '../../moderator/design/cx';
 
-const NAV = [
-  { to: '/citizen', label: 'Home', icon: '⌂', end: true },
-  { to: '/citizen/reports', label: 'My reports', icon: '▤' },
-  { to: '/citizen/submit', label: 'New', icon: '◎', primary: true },
-  { to: '/citizen/notifications', label: 'Updates', icon: '◉' },
-  { to: '/citizen/profile', label: 'Profile', icon: '☻' },
-  { to: '/citizen/settings', label: 'Settings', icon: '☰' },
+type CitizenIconName = 'home' | 'reports' | 'add' | 'updates' | 'profile' | 'settings';
+
+const NAV: Array<{ to: string; label: string; icon: CitizenIconName; end?: boolean; primary?: boolean }> = [
+  { to: '/citizen', label: 'Home', icon: 'home', end: true },
+  { to: '/citizen/reports', label: 'My reports', icon: 'reports' },
+  { to: '/citizen/submit', label: 'New', icon: 'add', primary: true },
+  { to: '/citizen/notifications', label: 'Updates', icon: 'updates' },
+  { to: '/citizen/profile', label: 'Profile', icon: 'profile' },
+  { to: '/citizen/settings', label: 'Settings', icon: 'settings' },
 ];
 
 export function CitizenLayout(): JSX.Element {
@@ -47,7 +49,7 @@ export function CitizenLayout(): JSX.Element {
                     )
                   }
                 >
-                  <span aria-hidden className="text-base">{n.icon}</span>
+                  <span aria-hidden className="grid h-5 w-5 place-items-center"><CitizenIcon name={n.icon} /></span>
                   <span>{n.label}</span>
                 </NavLink>
               </li>
@@ -121,7 +123,7 @@ export function CitizenLayout(): JSX.Element {
                         : 'h-6 w-6',
                     )}
                   >
-                    {n.icon}
+                    <CitizenIcon name={n.icon} />
                   </span>
                   <span className="max-w-full truncate">{n.label}</span>
                 </NavLink>
@@ -132,4 +134,16 @@ export function CitizenLayout(): JSX.Element {
       </div>
     </div>
   );
+}
+
+function CitizenIcon({ name }: { name: CitizenIconName }): JSX.Element {
+  const paths: Record<CitizenIconName, JSX.Element> = {
+    home: <><path d="m3 11 9-8 9 8" /><path d="M5 10v10h14V10M9 20v-6h6v6" /></>,
+    reports: <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
+    add: <><circle cx="12" cy="12" r="9" /><path d="M12 8v8M8 12h8" /></>,
+    updates: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></>,
+    profile: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
+    settings: <><circle cx="12" cy="12" r="3" /><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a7 7 0 0 0-1.7-1L14.5 3h-5l-.4 3.1a7 7 0 0 0-1.7 1l-2.4-1-2 3.4L5.1 11a7 7 0 0 0 0 2L3 14.5l2 3.4 2.4-1a7 7 0 0 0 1.7 1l.4 3.1h5l.4-3.1a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2.1-1.5c.1-.3.1-.7.1-1Z" /></>,
+  };
+  return <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
