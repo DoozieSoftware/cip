@@ -391,6 +391,18 @@ GET /reports/{id}/ai
 
 Moderator+
 
+The AI result includes the visual category, calibrated confidence, quality,
+duplicate and fraud scores, plus evidence consistency fields:
+
+```json
+{
+  "claim_matches_evidence": false,
+  "consistency_score": 0,
+  "mismatch_reason": "The image shows illegal dumping, not a pothole.",
+  "synthetic_score": 0.0
+}
+```
+
 ---
 
 ## Assignments

@@ -115,5 +115,19 @@ class AiResponseValidator
                 'reason' => 'summary_empty',
             ]);
         }
+
+        if ($resp->consistencyScore !== null && ($resp->consistencyScore < 0 || $resp->consistencyScore > 100)) {
+            throw new InvalidAiResponseException('consistencyScore must be an int in [0, 100]', [
+                'reason' => 'consistency_score_out_of_range',
+                'value' => $resp->consistencyScore,
+            ]);
+        }
+
+        if ($resp->syntheticScore !== null && ($resp->syntheticScore < 0.0 || $resp->syntheticScore > 1.0)) {
+            throw new InvalidAiResponseException('syntheticScore must be in [0, 1]', [
+                'reason' => 'synthetic_score_out_of_range',
+                'value' => $resp->syntheticScore,
+            ]);
+        }
     }
 }

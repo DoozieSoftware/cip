@@ -37,16 +37,20 @@ it('AiProvidersSeeder is idempotent (re-running does not duplicate rows)', funct
     expect(AiProviderConfig::query()->whereIn('code', ['mock', 'openai', 'qwen-vl'])->count())->toBe(3);
 });
 
-it('PromptsSeeder inserts the 3 base system prompts as approved v1', function (): void {
+it('PromptsSeeder inserts visual-first category v2 and the two base v1 prompts', function (): void {
     (new PromptsSeeder)->run();
 
     $names = ['category_classifier', 'severity_estimator', 'ai_labeller'];
 
-    foreach ($names as $name) {
+    $category = PromptVersion::query()->where('name', 'category_classifier')->where('version', 2)->first();
+    expect($category)->not->toBeNull()
+        ->and($category->status)->toBe(PromptVersion::STATUS_APPROVED)
+        ->and($category->prompt_text)->toContain('image is authoritative evidence');
+
+    foreach (['severity_estimator', 'ai_labeller'] as $name) {
         $p = PromptVersion::query()->where('name', $name)->where('version', 1)->first();
         expect($p)->not->toBeNull("missing prompt: {$name}")
-            ->and($p->status)->toBe(PromptVersion::STATUS_APPROVED)
-            ->and($p->provider_code)->toBe('mock');
+            ->and($p->status)->toBe(PromptVersion::STATUS_APPROVED);
     }
 
     expect(PromptVersion::query()->whereIn('name', $names)->count())->toBe(3);

@@ -10,6 +10,7 @@ use App\Modules\AI\Models\AiJob;
 use App\Modules\AI\Models\AiLabel;
 use App\Modules\AI\Models\AiResult;
 use App\Modules\AI\Models\PromptVersion;
+use App\Modules\AI\Services\AiMediaReferenceResolver;
 use App\Modules\AI\Services\AiResponseValidator;
 use App\Modules\AI\Services\DuplicateDetector;
 use App\Modules\AI\Services\FraudScorer;
@@ -19,7 +20,6 @@ use App\Modules\AI\Services\ProviderFailoverService;
 use App\Modules\AI\ValueObjects\AiRequest;
 use App\Modules\AI\ValueObjects\AiResponse;
 use App\Modules\Media\Models\Media;
-use App\Modules\Media\Support\MediaUrl;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Settings\Services\FeatureFlagService;
 use App\Modules\Shared\Services\SystemUserService;
@@ -32,6 +32,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -73,7 +74,10 @@ class AiPipelineOrchestrator implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    public int $tries = 1;
+    public int $tries = 5;
+
+    /** @var list<int> */
+    public array $backoff = [3, 5, 10, 20];
 
     public int $timeout = 120;
 
@@ -87,12 +91,22 @@ class AiPipelineOrchestrator implements ShouldQueue
         FraudScorer $fraud,
         PiiMaskingService $pii,
         FeatureFlagService $flags,
+        AiMediaReferenceResolver $mediaReferences,
     ): void {
-        $job = $this->createJobRow();
+        $job = null;
 
         try {
             $report = Report::query()->findOrFail($this->reportId);
             $media = Media::query()->where('report_id', $this->reportId)->first();
+
+            // Report creation and evidence upload are separate API calls. A
+            // fast queue worker may receive this job before the photo request
+            // completes; retry rather than running a text-only "vision" job.
+            if ($media === null) {
+                throw new RuntimeException('ai_evidence_not_ready');
+            }
+
+            $job = $this->createJobRow();
 
             $actor = $report->citizen;
 
@@ -109,30 +123,60 @@ class AiPipelineOrchestrator implements ShouldQueue
 
             $request = new AiRequest(
                 promptName: 'category_classifier',
-                mediaUrls: $media ? [$this->mediaUrl($media)] : [],
-                mediaTypes: $media ? [$media->mime] : [],
+                mediaUrls: [$mediaReferences->resolve($media)],
+                mediaTypes: [$media->mime],
                 text: $maskedText,
                 metadata: $maskedMetadata,
             );
 
-            [$response, $providerCode, $model] = $this->classify($request, $failover, $validator, $flags, $actor);
+            if ($quality->shouldFlagForModerator($qualityScore)) {
+                $response = $this->lowQualityResponse($qualityScore);
+                $providerCode = 'quality-gate';
+                $model = 'deterministic-image-quality';
+            } else {
+                [$response, $providerCode, $model] = $this->classify($request, $failover, $validator, $flags, $actor);
+            }
 
             $duplicateResult = $flags->enabled('duplicate_detection', $actor)
                 ? $duplicate->detect($report)
                 : ['score' => 0, 'matched_report_id' => null, 'reason' => 'disabled'];
+
+            $recentReports = $report->citizen_id === null
+                ? 0
+                : Report::query()
+                    ->where('citizen_id', $report->citizen_id)
+                    ->where('created_at', '>=', now()->subDay())
+                    ->count();
+            $repeatedUploaderRisk = min(1.0, max(0, $recentReports - 5) / 5);
 
             $fraudScore = $flags->enabled('fraud_detection', $actor)
                 ? $fraud->score($report, [
                     // The citizen PWA's client-side mock-GPS heuristic, captured
                     // at submit time onto reports.mock_gps_score (ReportService::submit).
                     'mock_gps' => (float) ($report->mock_gps_score ?? 0.0),
-                    'replay' => 0.0,
-                    'ai_synth' => isset($response->raw['synthetic_score']) ? (float) $response->raw['synthetic_score'] : 0.0,
+                    'replay' => ((int) $duplicateResult['score']) / 100,
+                    'ai_synth' => $response->syntheticScore ?? 0.0,
+                    'repeated_device' => $repeatedUploaderRisk,
                 ])
             : 0;
 
-            $result = $this->writeResult($job, $response, $qualityScore, $duplicateResult['score'], $fraudScore);
-            $this->writeLabels($result, $response);
+            // The provider assesses visible manipulation/synthetic risk while
+            // FraudScorer handles platform signals (GPS, replay, device). Keep
+            // the more conservative of the two instead of discarding either.
+            $fraudScore = max($fraudScore, $response->fraudScore);
+
+            $effectiveQualityScore = $this->effectiveQualityScore($qualityScore, $response);
+            $calibratedConfidence = min($response->confidence, $effectiveQualityScore / 100);
+
+            $result = $this->writeResult(
+                $job,
+                $response,
+                $effectiveQualityScore,
+                $duplicateResult['score'],
+                $fraudScore,
+                $calibratedConfidence,
+            );
+            $this->writeLabels($result, $response, $calibratedConfidence);
 
             // Mirror onto the reports row: QueueController's
             // duplicates()/fraud() endpoints and the review queue's
@@ -143,7 +187,7 @@ class AiPipelineOrchestrator implements ShouldQueue
             // 0..100 percentage the moderator UI displays/filters on.
             $report->duplicate_score = $duplicateResult['score'];
             $report->fraud_score = $fraudScore;
-            $report->ai_confidence = $response->confidence * 100;
+            $report->ai_confidence = $calibratedConfidence * 100;
             $report->save();
 
             $this->markJobSucceeded($job, $response, $result, $providerCode, $model);
@@ -154,14 +198,18 @@ class AiPipelineOrchestrator implements ShouldQueue
                 $response->severity,
                 $response->primaryLabel() ?? $response->predictedType,
                 $response->licensePlate,
-                $response->toArray(),
+                array_replace($response->toArray(), ['confidence' => $calibratedConfidence]),
             );
         } catch (InvalidAiResponseException $e) {
-            $this->markJobFailed($job, 'invalid_ai_response', $e);
+            if ($job !== null) {
+                $this->markJobFailed($job, 'invalid_ai_response', $e);
+            }
 
             throw $e;
         } catch (Throwable $e) {
-            $this->markJobFailed($job, 'pipeline_error', $e);
+            if ($job !== null) {
+                $this->markJobFailed($job, 'pipeline_error', $e);
+            }
 
             throw $e;
         }
@@ -254,6 +302,26 @@ class AiPipelineOrchestrator implements ShouldQueue
         );
     }
 
+    private function lowQualityResponse(int $qualityScore): AiResponse
+    {
+        return new AiResponse(
+            labels: [[
+                'label' => 'unclassified',
+                'confidence' => 0.0,
+                'is_primary' => true,
+            ]],
+            predictedType: 'unclassified',
+            confidence: 0.0,
+            recommendedDepartment: '',
+            severity: 'low',
+            qualityScore: $qualityScore,
+            duplicateScore: 0,
+            fraudScore: 0,
+            summary: 'Evidence quality is too low for reliable visual classification; manual review is required.',
+            raw: ['quality_gate' => true],
+        );
+    }
+
     private function createJobRow(): AiJob
     {
         $promptVersion = PromptVersion::query()
@@ -277,29 +345,18 @@ class AiPipelineOrchestrator implements ShouldQueue
         ]);
     }
 
-    private function mediaUrl(Media $media): string
-    {
-        // The AI provider (e.g. a Modal.com-hosted vLLM endpoint)
-        // needs a publicly-reachable URL to fetch the photo.
-        // MediaUrl::temporary() generates either an S3 presigned
-        // URL (MinIO/production) or a Laravel signed route
-        // (api.v1.media.serve) that the endpoint can fetch. The
-        // signed route includes an expiry and signature so the
-        // URL is self-authenticating — no auth header needed.
-        return app(MediaUrl::class)->temporary($media);
-    }
-
     private function writeResult(
         AiJob $job,
         AiResponse $response,
         int $qualityScore,
         int $duplicateScore,
         int $fraudScore,
+        float $calibratedConfidence,
     ): AiResult {
         return AiResult::query()->create([
             'job_id' => $job->id,
             'predicted_type' => $response->predictedType,
-            'confidence' => $response->confidence,
+            'confidence' => $calibratedConfidence,
             'recommended_department' => $response->recommendedDepartment,
             'severity' => $response->severity,
             'quality_score' => $qualityScore,
@@ -308,6 +365,10 @@ class AiPipelineOrchestrator implements ShouldQueue
             'summary' => $response->summary,
             'license_plate' => $response->licensePlate,
             'plate_confidence' => $response->plateConfidence,
+            'claim_matches_evidence' => $response->claimMatchesEvidence,
+            'consistency_score' => $response->consistencyScore,
+            'mismatch_reason' => $response->mismatchReason,
+            'synthetic_score' => $response->syntheticScore,
             'raw_response' => $response->raw,
             'created_at' => now(),
         ]);
@@ -316,17 +377,24 @@ class AiPipelineOrchestrator implements ShouldQueue
     /**
      * @param  array<int, array{label: string, confidence: float, is_primary: bool}>  $labels
      */
-    private function writeLabels(AiResult $result, AiResponse $response): void
+    private function writeLabels(AiResult $result, AiResponse $response, float $calibratedConfidence): void
     {
         foreach ($response->labels as $l) {
             AiLabel::query()->create([
                 'result_id' => $result->id,
                 'label' => $l['label'],
-                'confidence' => $l['confidence'],
+                'confidence' => min($l['confidence'], $calibratedConfidence),
                 'is_primary' => $l['is_primary'],
                 'created_at' => now(),
             ]);
         }
+    }
+
+    private function effectiveQualityScore(int $localQualityScore, AiResponse $response): int
+    {
+        return $response->qualityScore > 0
+            ? min($localQualityScore, $response->qualityScore)
+            : $localQualityScore;
     }
 
     private function markJobSucceeded(

@@ -28,6 +28,10 @@ use Illuminate\Support\Carbon;
  * @property int $quality_score
  * @property int $duplicate_score
  * @property int $fraud_score
+ * @property bool|null $claim_matches_evidence
+ * @property int|null $consistency_score
+ * @property string|null $mismatch_reason
+ * @property float|null $synthetic_score
  * @property string $summary
  * @property string|null $license_plate
  * @property float|null $plate_confidence
@@ -47,6 +51,7 @@ class AiResult extends Model
         'job_id', 'predicted_type', 'confidence', 'recommended_department',
         'severity', 'quality_score', 'duplicate_score', 'fraud_score',
         'summary', 'license_plate', 'plate_confidence', 'raw_response', 'created_at',
+        'claim_matches_evidence', 'consistency_score', 'mismatch_reason', 'synthetic_score',
     ];
 
     protected $casts = [
@@ -55,6 +60,9 @@ class AiResult extends Model
         'duplicate_score' => 'integer',
         'fraud_score' => 'integer',
         'plate_confidence' => 'float',
+        'claim_matches_evidence' => 'boolean',
+        'consistency_score' => 'integer',
+        'synthetic_score' => 'float',
         'raw_response' => 'array',
         'created_at' => 'datetime',
     ];

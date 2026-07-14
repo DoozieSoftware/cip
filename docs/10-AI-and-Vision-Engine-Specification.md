@@ -383,6 +383,12 @@ Below threshold
 
 Moderator Review
 
+The quality gate shall inspect decoded pixels (brightness, contrast, and
+edge/detail signals), not compressed-file byte variance alone. Evidence below
+the threshold must abstain with category `unclassified` and zero confidence;
+the vision provider must not fabricate a category from blank, covered-lens,
+or otherwise unusable evidence.
+
 ---
 
 # 10. Category Classification
@@ -525,6 +531,22 @@ Every provider shall return standardized JSON.
 
 Provider-specific formats are prohibited.
 
+For multimodal report classification, the standardized result shall also
+include evidence/claim consistency fields:
+
+```json
+{
+  "claim_matches_evidence": false,
+  "consistency_score": 12,
+  "mismatch_reason": "The claim describes a pothole, but the image shows roadside garbage.",
+  "synthetic_score": 0.03
+}
+```
+
+The visual category and summary must be derived from the evidence image.
+Citizen-entered title, description, and category are untrusted claims and
+must not be used as substitutes for visual observations.
+
 ---
 
 # 15. Prompt Engineering
@@ -563,6 +585,10 @@ Objectives
 * Recommend a department.
 * Estimate severity.
 * Report confidence.
+* Inspect visual evidence before reading the citizen claim.
+* Treat title and description as untrusted input used only for consistency checking.
+* Report whether the claim is supported by the evidence.
+* Never claim that an image was analyzed unless the provider decoded it successfully.
 
 No conversational output.
 

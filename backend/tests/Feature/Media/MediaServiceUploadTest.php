@@ -134,6 +134,8 @@ it('persists the bytes into evidence/{report}/{type}/{uuid}.{ext} and never over
     expect($m1->storage_path)->toStartWith("evidence/{$report->id}/photo/")
         ->and($m2->storage_path)->toStartWith("evidence/{$report->id}/photo/")
         ->and($m1->storage_path)->not->toBe($m2->storage_path)
+        ->and($m1->width)->toBe(1)
+        ->and($m1->height)->toBe(1)
         ->and(Storage::disk('local')->exists($m1->storage_path))->toBeTrue()
         ->and(Storage::disk('local')->exists($m2->storage_path))->toBeTrue();
 });

@@ -189,6 +189,38 @@ particular) don't expose an OpenAI-style model listing. Use the
 "Test" button on the admin screen to verify connectivity before
 flipping a new row `active`.
 
+### Modal vision input receipt
+
+The bundled Modal deployment in `scripts/modal_vision_vllm.py` accepts both
+base64 `data:image/...` references and HTTPS image URLs. It must return
+`usage.image_count` and `usage.image_sizes` with every multimodal response.
+The backend rejects a `modal-vision` result when the acknowledged image count
+does not equal the number sent. This is deliberate fail-closed behaviour: a
+text-only hallucination must reach moderator review rather than being stored
+as a successful visual classification.
+
+Local-disk evidence is embedded as a data URI by
+`AiMediaReferenceResolver`, because a cloud model cannot fetch a signed URL
+whose host is `localhost`. S3/MinIO evidence continues to use a temporary
+presigned URL.
+
+Before provider inference, `ImageQualityAnalyzer` checks decoded pixel
+brightness, contrast, and edge detail in addition to size and resolution.
+Evidence below the configured quality threshold is persisted as
+`unclassified` with zero confidence and sent to manual review without calling
+the vision provider. Provider confidence is capped by the effective evidence
+quality score so a habitual model value such as `0.95` is not stored unchanged
+for every report.
+
+Deploy the current endpoint with:
+
+```bash
+modal deploy scripts/modal_vision_vllm.py
+```
+
+The health response must report service version
+`2026-07-14-vision-receipt-v1` before enabling `modal-vision`.
+
 If a provider's wire format is genuinely **not**
 chat-completions-shaped, write a small class implementing
 `AIProviderInterface` (typically < 100 lines), add a new driver

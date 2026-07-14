@@ -57,6 +57,33 @@ class DepartmentController extends BaseController
     }
 
     /**
+     * GET /api/v1/moderator/departments
+     *
+     * Slim, moderator-safe list of active departments used to populate
+     * the approve-override dropdown (per docs/05 §6 the moderator may
+     * override the AI-suggested department). Unlike `index()` this does
+     * NOT require the `super_admin` gate — any authenticated moderator
+     * may read the active department list.
+     *
+     * @return array<int, array{id: string, name: string, code: string}>
+     */
+    public function moderatorIndex(Request $request): JsonResponse
+    {
+        $departments = Department::query()
+            ->where('active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
+
+        return $this->respond(
+            $departments->map(static fn (Department $d): array => [
+                'id' => $d->id,
+                'name' => $d->name,
+                'code' => $d->code,
+            ])->all(),
+        );
+    }
+
+    /**
      * POST /api/v1/admin/departments
      */
     public function store(StoreDepartmentRequest $request): JsonResponse

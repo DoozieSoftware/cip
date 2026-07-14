@@ -44,7 +44,7 @@ class ModeratorReportDetailResource extends JsonResource
         $location = $report->relationLoaded('location') ? $report->location : $report->location()->first();
 
         $media = Media::query()->where('report_id', $report->id)->orderBy('captured_at')->get();
-        $mediaUrl = new MediaUrl();
+        $mediaUrl = new MediaUrl;
 
         $latestJob = AiJob::query()
             ->where('report_id', $report->id)
@@ -192,6 +192,10 @@ class ModeratorReportDetailResource extends JsonResource
             'notes' => $result->summary,
             'license_plate' => $result->license_plate,
             'plate_confidence' => $result->plate_confidence,
+            'claim_matches_evidence' => $result->claim_matches_evidence,
+            'consistency_score' => $result->consistency_score,
+            'mismatch_reason' => $result->mismatch_reason,
+            'synthetic_score' => $result->synthetic_score,
             'created_at' => $result->created_at?->toIso8601String(),
         ];
     }

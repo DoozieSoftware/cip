@@ -26,6 +26,7 @@ APP_NAME = "cip-vision-v3"
 MODEL_ID = "Qwen/Qwen2.5-VL-7B-Instruct"
 GPU_TYPE = "A10G"
 MAX_IMAGE_SIZE = 1024  # max dimension for resizing images
+SERVICE_VERSION = "2026-07-14-vision-receipt-v1"
 
 
 def _download_model():
@@ -71,6 +72,7 @@ def serve():
     import time
     from io import BytesIO
 
+    import httpx
     import torch
     from PIL import Image
     from qwen_vl_utils import process_vision_info
@@ -112,6 +114,7 @@ def serve():
         # Convert OpenAI messages to Qwen-VL format
         qwen_messages = []
         images = []
+        requested_images = 0
 
         for msg in messages:
             role = msg.get("role", "user")
@@ -125,26 +128,62 @@ def serve():
                     if part.get("type") == "text":
                         qwen_content.append({"type": "text", "text": part["text"]})
                     elif part.get("type") == "image_url":
+                        requested_images += 1
                         url = part["image_url"]["url"]
-                        if url.startswith("data:"):
-                            # Extract base64 data
-                            match = re.match(r"data:image/[^;]+;base64,(.+)", url)
-                            if match:
-                                img_bytes = base64.b64decode(match.group(1))
-                                img = Image.open(BytesIO(img_bytes)).convert("RGB")
-                                # Resize if too large
-                                w, h = img.size
-                                if max(w, h) > MAX_IMAGE_SIZE:
-                                    scale = MAX_IMAGE_SIZE / max(w, h)
-                                    img = img.resize(
-                                        (int(w * scale), int(h * scale)),
-                                        Image.LANCZOS,
-                                    )
-                                images.append(img)
-                                qwen_content.append(
-                                    {"type": "image", "image": img}
+                        try:
+                            if url.startswith("data:"):
+                                match = re.fullmatch(
+                                    r"data:image/[^;]+;base64,(.+)", url, re.DOTALL
                                 )
+                                if not match:
+                                    raise ValueError("Malformed image data URI")
+                                img_bytes = base64.b64decode(
+                                    match.group(1), validate=True
+                                )
+                            else:
+                                async with httpx.AsyncClient(
+                                    follow_redirects=True, timeout=30
+                                ) as client:
+                                    image_response = await client.get(url)
+                                    image_response.raise_for_status()
+                                    img_bytes = image_response.content
+
+                            img = Image.open(BytesIO(img_bytes)).convert("RGB")
+                            w, h = img.size
+                            if max(w, h) > MAX_IMAGE_SIZE:
+                                scale = MAX_IMAGE_SIZE / max(w, h)
+                                img = img.resize(
+                                    (int(w * scale), int(h * scale)),
+                                    Image.Resampling.LANCZOS,
+                                )
+                            images.append(img)
+                            qwen_content.append({"type": "image", "image": img})
+                        except Exception as exc:
+                            await _json_response(
+                                send,
+                                422,
+                                {
+                                    "error": {
+                                        "message": f"Unable to decode image input: {exc}",
+                                        "type": "invalid_image",
+                                    }
+                                },
+                            )
+                            return
                 qwen_messages.append({"role": role, "content": qwen_content})
+
+        if requested_images > 0 and len(images) != requested_images:
+            await _json_response(
+                send,
+                422,
+                {
+                    "error": {
+                        "message": "Not all requested images were decoded",
+                        "type": "invalid_image",
+                    }
+                },
+            )
+            return
 
         # Prepare inputs
         text = processor.apply_chat_template(
@@ -199,6 +238,7 @@ def serve():
             "object": "chat.completion",
             "created": int(time.time()),
             "model": MODEL_ID,
+            "service_version": SERVICE_VERSION,
             "choices": [
                 {
                     "index": 0,
@@ -210,6 +250,8 @@ def serve():
                 "prompt_tokens": inputs["input_ids"].shape[1],
                 "completion_tokens": len(text_out),
                 "total_tokens": inputs["input_ids"].shape[1] + len(text_out),
+                "image_count": len(images),
+                "image_sizes": [list(img.size) for img in images],
             },
         }
 
@@ -234,7 +276,11 @@ def serve():
         )
 
     async def health(receive, send):
-        await _json_response(send, 200, {"status": "ok"})
+        await _json_response(
+            send,
+            200,
+            {"status": "ok", "service_version": SERVICE_VERSION},
+        )
 
     async def app_handler(scope, receive, send):
         if scope["type"] != "http":

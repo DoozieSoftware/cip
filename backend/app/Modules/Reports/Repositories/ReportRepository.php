@@ -127,17 +127,20 @@ class ReportRepository
         $q = Report::query()->where('citizen_id', $citizenId);
         $total = (int) (clone $q)->count();
 
-        $openStatusIds = ReportStatus::query()
-            ->whereIn('code', ['submitted', 'ai_processing', 'ai_completed', 'under_review', 'assigned', 'in_progress'])
-            ->pluck('id')
-            ->all();
-
+        // "open" = any status that is neither terminal nor the explicit
+        // rejected state. Driven by `is_terminal` so the count stays
+        // correct as workflow states evolve (covers pending_moderator,
+        // assigned, in_progress, escalated, etc.).
         $resolvedStatusIds = ReportStatus::query()
             ->whereIn('code', ['resolved', 'closed'])
             ->pluck('id')
             ->all();
 
-        $open = $openStatusIds === [] ? 0 : (int) (clone $q)->whereIn('current_status_id', $openStatusIds)->count();
+        $open = (int) (clone $q)
+            ->whereHas('status', static function ($qq): void {
+                $qq->where('is_terminal', false)->where('code', '!=', 'rejected');
+            })
+            ->count();
         $resolved = $resolvedStatusIds === [] ? 0 : (int) (clone $q)->whereIn('current_status_id', $resolvedStatusIds)->count();
         $rejected = (int) (clone $q)->whereHas('status', static function ($qq): void {
             $qq->where('code', 'rejected');

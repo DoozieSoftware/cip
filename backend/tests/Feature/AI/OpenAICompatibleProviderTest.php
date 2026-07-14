@@ -114,10 +114,15 @@ it('classify() posts to /v1/chat/completions with bearer auth and parses the JSO
         ->and($resp->raw['usage'])->toBe(['prompt_tokens' => 100, 'completion_tokens' => 50]);
 
     Http::assertSent(function ($request): bool {
+        $content = $request['messages'][1]['content'];
+
         return $request->url() === 'https://api.openai.com/v1/chat/completions'
             && $request->hasHeader('Authorization', 'Bearer sk-test')
             && $request['model'] === 'gpt-4o'
-            && $request['response_format'] === ['type' => 'json_object'];
+            && $request['response_format'] === ['type' => 'json_object']
+            && $content[0]['type'] === 'image_url'
+            && $content[1]['type'] === 'text'
+            && str_contains($content[1]['text'], 'UNTRUSTED CITIZEN CLAIM');
     });
 });
 
@@ -135,6 +140,76 @@ it('classify() throws on a 5xx so the failover service can retry', function (): 
 
     expect(fn () => $p->classify(new AiRequest(promptName: 'category_classifier')))
         ->toThrow(RuntimeException::class);
+});
+
+it('rejects a Modal vision response that does not prove it decoded the supplied image', function (): void {
+    Http::fake([
+        'my-model.modal.run/v1/chat/completions' => Http::response([
+            'choices' => [['message' => ['content' => json_encode([
+                'labels' => [['label' => 'pothole', 'confidence' => 0.95, 'is_primary' => true]],
+                'predicted_type' => 'pothole',
+                'confidence' => 0.95,
+                'recommended_department' => 'BBMP',
+                'severity' => 'high',
+                'quality_score' => 90,
+                'duplicate_score' => 0,
+                'fraud_score' => 0,
+                'summary' => 'Pothole.',
+            ])]]],
+            'usage' => ['prompt_tokens' => 100],
+        ], 200),
+    ]);
+
+    $provider = new OpenAICompatibleProvider(
+        name: 'modal-vision',
+        model: 'qwen-vl',
+        baseUrl: 'https://my-model.modal.run',
+        apiKey: '',
+    );
+
+    expect(fn () => $provider->classify(new AiRequest(
+        promptName: 'category_classifier',
+        mediaUrls: ['https://storage.example.com/image.jpg'],
+    )))->toThrow(RuntimeException::class, 'vision_image_not_processed');
+});
+
+it('accepts and maps Modal evidence consistency when every image is acknowledged', function (): void {
+    Http::fake([
+        'my-model.modal.run/v1/chat/completions' => Http::response([
+            'choices' => [['message' => ['content' => json_encode([
+                'labels' => [['label' => 'garbage', 'confidence' => 0.88, 'is_primary' => true]],
+                'predicted_type' => 'garbage',
+                'confidence' => 0.88,
+                'recommended_department' => 'BBMP',
+                'severity' => 'medium',
+                'quality_score' => 82,
+                'duplicate_score' => 0,
+                'fraud_score' => 5,
+                'summary' => 'Visible roadside garbage.',
+                'claim_matches_evidence' => false,
+                'consistency_score' => 10,
+                'mismatch_reason' => 'The claim says pothole but the image shows garbage.',
+                'synthetic_score' => 0.03,
+            ])]]],
+            'usage' => ['image_count' => 1],
+        ], 200),
+    ]);
+
+    $provider = new OpenAICompatibleProvider(
+        name: 'modal-vision',
+        model: 'qwen-vl',
+        baseUrl: 'https://my-model.modal.run',
+        apiKey: '',
+    );
+    $response = $provider->classify(new AiRequest(
+        promptName: 'category_classifier',
+        mediaUrls: ['data:image/jpeg;base64,'.base64_encode('image')],
+    ));
+
+    expect($response->predictedType)->toBe('garbage')
+        ->and($response->claimMatchesEvidence)->toBeFalse()
+        ->and($response->consistencyScore)->toBe(10)
+        ->and($response->syntheticScore)->toBe(0.03);
 });
 
 it('classify() throws on non-JSON content (defensive against prompt drift)', function (): void {

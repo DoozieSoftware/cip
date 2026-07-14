@@ -570,6 +570,14 @@ duplicate_score
 fraud_score
 
 summary
+
+claim_matches_evidence
+
+consistency_score
+
+mismatch_reason
+
+synthetic_score
 ```
 
 ---

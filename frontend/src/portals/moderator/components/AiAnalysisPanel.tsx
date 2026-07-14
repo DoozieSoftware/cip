@@ -58,7 +58,23 @@ export function AiAnalysisPanel({ ai, mockGpsScore }: AiAnalysisPanelProps) {
           {mockGpsScore !== null && mockGpsScore !== undefined && (
             <Stat label="Mock GPS score" value={mockGpsPct(mockGpsScore)} tone={scoreTone(mockGpsScore * 100)} />
           )}
+          {ai.consistency_score !== null && ai.consistency_score !== undefined && (
+            <Stat
+              label="Claim consistency"
+              value={pct(ai.consistency_score)}
+              tone={ai.consistency_score < 50 ? 'danger' : ai.consistency_score < 80 ? 'warning' : 'success'}
+            />
+          )}
         </div>
+
+        {ai.claim_matches_evidence === false && (
+          <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-red-700">Evidence does not match the claim</p>
+            <p className="mt-1 text-sm text-red-800">
+              {ai.mismatch_reason || 'The visual evidence does not support the submitted title or description.'}
+            </p>
+          </div>
+        )}
 
         <div>
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">Recommendation</p>

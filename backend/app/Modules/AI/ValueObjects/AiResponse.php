@@ -52,6 +52,10 @@ final class AiResponse
         public readonly array $raw = [],
         public readonly ?string $licensePlate = null,
         public readonly ?float $plateConfidence = null,
+        public readonly ?bool $claimMatchesEvidence = null,
+        public readonly ?int $consistencyScore = null,
+        public readonly ?string $mismatchReason = null,
+        public readonly ?float $syntheticScore = null,
     ) {}
 
     /**
@@ -100,6 +104,10 @@ final class AiResponse
             'summary' => $this->summary,
             'license_plate' => $this->licensePlate,
             'plate_confidence' => $this->plateConfidence,
+            'claim_matches_evidence' => $this->claimMatchesEvidence,
+            'consistency_score' => $this->consistencyScore,
+            'mismatch_reason' => $this->mismatchReason,
+            'synthetic_score' => $this->syntheticScore,
             'raw' => $this->raw,
         ];
     }

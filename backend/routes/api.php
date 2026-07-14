@@ -272,6 +272,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('duplicates', [QueueController::class, 'duplicates'])->name('duplicates');
         // T-M10-010 — fraud queue
         Route::get('fraud', [QueueController::class, 'fraud'])->name('fraud');
+        // Active departments for the moderator approve-override dropdown
+        // (per docs/05 §6 the moderator may override the AI department).
+        Route::get('departments', [DepartmentController::class, 'moderatorIndex'])->name('departments.index');
         // Per-report moderation detail (companion of the queue endpoints).
         Route::get('reports/{report}', [QueueController::class, 'show'])->name('reports.show');
         Route::get('analytics/summary', [AnalyticsController::class, 'summary'])->name('analytics.summary');

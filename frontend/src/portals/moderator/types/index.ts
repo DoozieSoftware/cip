@@ -82,6 +82,10 @@ export interface AiResult {
   license_plate: string | null;
   /** VLM confidence in the plate read (0..1), or null. */
   plate_confidence: number | null;
+  claim_matches_evidence: boolean | null;
+  consistency_score: number | null;
+  mismatch_reason: string | null;
+  synthetic_score: number | null;
   created_at: string;
 }
 

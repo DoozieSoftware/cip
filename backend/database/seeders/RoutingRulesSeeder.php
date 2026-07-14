@@ -7,6 +7,9 @@ namespace Database\Seeders;
 use App\Modules\Departments\Models\Department;
 use App\Modules\Reports\Models\ReportPriority;
 use App\Modules\Routing\Models\RoutingRule;
+use App\Modules\Routing\Repositories\RoutingRepository;
+use App\Modules\Routing\Services\RoutingFallbackService;
+use App\Modules\Settings\Models\AppConfig;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -75,7 +78,20 @@ class RoutingRulesSeeder extends Seeder
                 defaultPriority: $high,
                 defaultSlaMinutes: 480,
             );
+
+            AppConfig::query()->updateOrCreate(
+                ['key' => RoutingFallbackService::APP_CONFIG_KEY],
+                [
+                    'value' => ['department_id' => $bbmp->id],
+                    'enabled' => true,
+                    'rollout_percentage' => 100,
+                    'cohort' => null,
+                    'description' => 'Default destination for reports that do not match an active routing rule.',
+                ],
+            );
         });
+
+        app(RoutingRepository::class)->invalidate();
     }
 
     private function ensureDepartment(string $code, string $name, string $jurisdiction): Department

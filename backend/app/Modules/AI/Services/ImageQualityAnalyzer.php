@@ -85,6 +85,26 @@ class ImageQualityAnalyzer
             $score -= 5;
         }
 
+        $pixels = $this->pixelSignals($media);
+
+        if ($pixels !== null) {
+            if ($pixels['contrast'] < 3.0) {
+                $score -= 60;
+            } elseif ($pixels['contrast'] < 10.0) {
+                $score -= 30;
+            }
+
+            if ($pixels['brightness'] < 20.0 || $pixels['brightness'] > 235.0) {
+                $score -= 30;
+            }
+
+            if ($pixels['edge'] < 2.0) {
+                $score -= 30;
+            } elseif ($pixels['edge'] < 5.0) {
+                $score -= 10;
+            }
+        }
+
         return max(0, min(100, $score));
     }
 
@@ -128,5 +148,87 @@ class ImageQualityAnalyzer
         }
 
         return sqrt($sq / $len);
+    }
+
+    /**
+     * Analyze decoded pixels rather than JPEG container bytes. The latter
+     * vary even for a featureless image and cannot detect a covered lens or
+     * blank upload.
+     *
+     * @return array{brightness: float, contrast: float, edge: float}|null
+     */
+    private function pixelSignals(Media $media): ?array
+    {
+        try {
+            $bytes = Storage::disk($media->storage_disk ?: 'local')->get($media->storage_path);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if (! is_string($bytes) || $bytes === '' || ! function_exists('imagecreatefromstring')) {
+            return null;
+        }
+
+        $source = @imagecreatefromstring($bytes);
+
+        if ($source === false) {
+            return null;
+        }
+
+        $size = 32;
+        $sample = imagecreatetruecolor($size, $size);
+        imagecopyresampled(
+            $sample,
+            $source,
+            0,
+            0,
+            0,
+            0,
+            $size,
+            $size,
+            imagesx($source),
+            imagesy($source),
+        );
+        $values = [];
+        $sum = 0.0;
+        $edgeSum = 0.0;
+        $edgeCount = 0;
+
+        for ($y = 0; $y < $size; $y++) {
+            for ($x = 0; $x < $size; $x++) {
+                $rgb = imagecolorat($sample, $x, $y);
+                $r = ($rgb >> 16) & 0xFF;
+                $g = ($rgb >> 8) & 0xFF;
+                $b = $rgb & 0xFF;
+                $luminance = (0.2126 * $r) + (0.7152 * $g) + (0.0722 * $b);
+                $values[$y][$x] = $luminance;
+                $sum += $luminance;
+
+                if ($x > 0) {
+                    $edgeSum += abs($luminance - $values[$y][$x - 1]);
+                    $edgeCount++;
+                }
+
+                if ($y > 0) {
+                    $edgeSum += abs($luminance - $values[$y - 1][$x]);
+                    $edgeCount++;
+                }
+            }
+        }
+        $count = $size * $size;
+        $mean = $sum / $count;
+        $variance = 0.0;
+
+        foreach ($values as $row) {
+            foreach ($row as $value) {
+                $variance += ($value - $mean) ** 2;
+            }
+        }
+
+        return [
+            'brightness' => $mean,
+            'contrast' => sqrt($variance / $count),
+            'edge' => $edgeCount > 0 ? $edgeSum / $edgeCount : 0.0,
+        ];
     }
 }

@@ -167,6 +167,18 @@ class MediaService
             );
         }
 
+        $width = null;
+        $height = null;
+
+        if ($type === 'PHOTO') {
+            $dimensions = @getimagesizefromstring($bytes);
+
+            if (is_array($dimensions)) {
+                $width = isset($dimensions[0]) && (int) $dimensions[0] > 0 ? (int) $dimensions[0] : null;
+                $height = isset($dimensions[1]) && (int) $dimensions[1] > 0 ? (int) $dimensions[1] : null;
+            }
+        }
+
         return Media::query()->create([
             'id' => $id,
             'report_id' => $reportId,
@@ -176,8 +188,8 @@ class MediaService
             'mime' => (string) $file->getMimeType(),
             'size' => (int) $file->getSize(),
             'duration' => null,
-            'width' => null,
-            'height' => null,
+            'width' => $width,
+            'height' => $height,
             'checksum' => '', // filled by ComputeHashesJob
             'captured_at' => null,
             'uploaded_at' => now(),

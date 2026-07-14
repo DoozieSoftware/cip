@@ -6,7 +6,6 @@ namespace App\Modules\Media\Support;
 
 use App\Modules\Media\Models\Media;
 use Illuminate\Filesystem\AwsS3V3Adapter;
-use Illuminate\Filesystem\LocalFilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 

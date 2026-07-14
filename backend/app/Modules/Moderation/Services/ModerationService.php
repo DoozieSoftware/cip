@@ -10,6 +10,9 @@ use App\Modules\Moderation\Events\ReportsMerged;
 use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
+use App\Modules\Routing\Services\AssignmentService;
+use App\Modules\Routing\Services\RoutingEngine;
+use App\Modules\Routing\Services\RoutingFallbackService;
 use App\Modules\Security\Models\AuditLog;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
@@ -40,6 +43,9 @@ class ModerationService
 {
     public function __construct(
         private readonly WorkflowEngine $engine,
+        private readonly RoutingEngine $routing,
+        private readonly AssignmentService $assignments,
+        private readonly RoutingFallbackService $routingFallback,
     ) {}
 
     /**
@@ -77,7 +83,21 @@ class ModerationService
             $this->applyCategoryOverride($report, $dto);
             $this->applyDepartmentOverride($report, $dto);
 
+            $routingDecision = null;
+            if (
+                $dto->decision === ReviewReportDto::DECISION_APPROVE
+                && $report->department_id === null
+                && ! $report->assignments()->whereNull('completed_at')->exists()
+            ) {
+                $routingDecision = $this->routing->resolve($report)
+                    ?? $this->routingFallback->decisionFor($report);
+            }
+
             $this->engine->apply($report, $decision, $moderator);
+
+            if ($routingDecision !== null) {
+                $this->assignments->assign($report, $routingDecision, $moderator, reason: 'moderator_approve_routing');
+            }
 
             $toStatusId = $report->current_status_id;
             $toCategoryId = $report->report_type_id ?? null;

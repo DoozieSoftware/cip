@@ -72,10 +72,20 @@ function normalizeCursorPage(page: ApiCursorPage<ApiModeratorReport>): CursorPag
   };
 }
 
+export interface SimpleOption {
+  id: string;
+  name: string;
+  code: string;
+}
+
 export const queueApi = {
   list: (filters: QueueFilters = {}) =>
     api.get<ApiCursorPage<ApiModeratorReport>>('/moderator/queue', filters as Record<string, unknown>)
       .then((page) => normalizeCursorPage(page)),
+
+  departments: () => api.get<SimpleOption[]>('/moderator/departments'),
+
+  reportTypes: () => api.get<{ id: string; code: string; name: string }[]>('/report-types'),
 
   duplicates: (filters: QueueFilters = {}) =>
     api.get<ApiCursorPage<ApiModeratorReport>>('/moderator/duplicates', filters as Record<string, unknown>)

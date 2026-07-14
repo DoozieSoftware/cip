@@ -26,6 +26,38 @@ it('accepts a well-formed AiResponse (passes validation)', function (): void {
     expect(true)->toBeTrue();
 });
 
+it('rejects out-of-range evidence consistency and synthetic scores', function (): void {
+    $badConsistency = new AiResponse(
+        labels: [['label' => 'pothole', 'confidence' => 0.9, 'is_primary' => true]],
+        predictedType: 'pothole',
+        confidence: 0.9,
+        recommendedDepartment: 'BBMP',
+        severity: 'high',
+        qualityScore: 80,
+        duplicateScore: 0,
+        fraudScore: 0,
+        summary: 'Pothole.',
+        consistencyScore: 101,
+    );
+    $badSynthetic = new AiResponse(
+        labels: [['label' => 'pothole', 'confidence' => 0.9, 'is_primary' => true]],
+        predictedType: 'pothole',
+        confidence: 0.9,
+        recommendedDepartment: 'BBMP',
+        severity: 'high',
+        qualityScore: 80,
+        duplicateScore: 0,
+        fraudScore: 0,
+        summary: 'Pothole.',
+        syntheticScore: 1.1,
+    );
+
+    expect(fn () => (new AiResponseValidator)->validate($badConsistency))
+        ->toThrow(InvalidAiResponseException::class, 'consistencyScore')
+        ->and(fn () => (new AiResponseValidator)->validate($badSynthetic))
+        ->toThrow(InvalidAiResponseException::class, 'syntheticScore');
+});
+
 it('throws when labels is empty', function (): void {
     $r = new AiResponse(
         labels: [],

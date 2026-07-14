@@ -69,7 +69,8 @@ it('creates the ai_results table with the expected columns', function (): void {
     foreach ([
         'id', 'job_id', 'predicted_type', 'confidence', 'recommended_department',
         'severity', 'quality_score', 'duplicate_score', 'fraud_score',
-        'summary', 'raw_response', 'created_at',
+        'summary', 'claim_matches_evidence', 'consistency_score',
+        'mismatch_reason', 'synthetic_score', 'raw_response', 'created_at',
     ] as $col) {
         expect(Schema::hasColumn('ai_results', $col))->toBeTrue("missing column: {$col}");
     }

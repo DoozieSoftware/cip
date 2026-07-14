@@ -18,6 +18,17 @@ import {
 import { actionsApi, queueApi } from '../api/moderator';
 import type { MergePayload, ReportDetail, ReviewPayload } from '../types';
 import { EvidenceViewer } from '../components/EvidenceViewer';
+import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
+
+/**
+ * Renders a report location as a reverse-geocoded place name (e.g.
+ * "Kengeri, Bengaluru"), falling back to coordinates until the lookup
+ * resolves or if geocoding is unavailable.
+ */
+function LocationText({ lat, lng }: { lat: number; lng: number }): JSX.Element {
+  const place = useReverseGeocode(lat, lng);
+  return <>{place || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}</>;
+}
 import { AiAnalysisPanel } from '../components/AiAnalysisPanel';
 import { AssignmentDialog } from '../components/AssignmentDialog';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -96,6 +107,26 @@ export default function ReportDetailPage() {
   const [reasonCode, setReasonCode] = useState('');
   const [overrideAi, setOverrideAi] = useState(false);
   const [duplicateIds, setDuplicateIds] = useState('');
+
+  // Dropdown sources for the approve-override fields. These replace the
+  // raw-UUID text inputs: a moderator picks a human-readable
+  // department/category instead of pasting an opaque identifier.
+  const departmentsQuery = useQuery({
+    queryKey: ['moderator', 'departments'],
+    queryFn: () => queueApi.departments(),
+  });
+  const reportTypesQuery = useQuery({
+    queryKey: ['moderator', 'report-types'],
+    queryFn: () => queueApi.reportTypes(),
+  });
+  const departmentOptions = (departmentsQuery.data ?? []).map((d) => ({
+    value: d.id,
+    label: d.name,
+  }));
+  const categoryOptions = (reportTypesQuery.data ?? []).map((t) => ({
+    value: t.id,
+    label: t.name,
+  }));
 
   // Every dialog field is scoped to whatever report is currently open.
   // Without this, jumping to the next report via the `N` shortcut (or
@@ -244,7 +275,11 @@ export default function ReportDetailPage() {
             <div>
               <dt className="text-xs uppercase tracking-wide text-slate-500">Location</dt>
               <dd>
-                {data.location ? `${data.location.lat.toFixed(4)}, ${data.location.lng.toFixed(4)}` : '—'}
+                {data.location ? (
+                  <LocationText lat={data.location.lat} lng={data.location.lng} />
+                ) : (
+                  '—'
+                )}
                 {data.ward && ` · ${data.ward}`}
                 {data.district && ` · ${data.district}`}
               </dd>
@@ -344,19 +379,21 @@ export default function ReportDetailPage() {
             placeholder="Briefly note the rationale for the audit trail."
           />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <Input
-              label="Category override (UUID, optional)"
+            <Select
+              label="Category override (optional)"
               name="category_id"
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              placeholder="Leave blank to keep the AI suggestion"
+              placeholder="Keep AI suggestion"
+              options={categoryOptions}
             />
-            <Input
-              label="Department override (UUID, optional)"
+            <Select
+              label="Department override (optional)"
               name="department_id"
               value={departmentId}
               onChange={(e) => setDepartmentId(e.target.value)}
-              placeholder="Leave blank to keep the AI suggestion"
+              placeholder="Keep AI suggestion"
+              options={departmentOptions}
             />
           </div>
           <label className="flex items-center gap-2 text-sm text-slate-700">

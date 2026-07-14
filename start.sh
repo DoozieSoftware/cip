@@ -178,7 +178,7 @@ BACKEND_PID=$!
 # notifications all run as queued jobs (QUEUE_CONNECTION=redis) —
 # without a worker consuming them, reports sit at "Submitted" forever
 # and never reach the moderator queue.
-$PHP artisan queue:work --tries=1 --sleep=1 > /tmp/cip-queue.log 2>&1 &
+$PHP artisan queue:work --queue=media,default --tries=3 --sleep=1 > /tmp/cip-queue.log 2>&1 &
 QUEUE_PID=$!
 cd "$ROOT"
 

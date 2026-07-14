@@ -36,6 +36,7 @@ class DatabaseSeeder extends Seeder
             ReportStatusesSeeder::class,
             ReportPrioritiesSeeder::class,
             ReportTypesSeeder::class,
+            RoutingRulesSeeder::class,
             DefaultWorkflowSeeder::class,
             // M8: AI default providers + system prompts (idempotent).
             AiProvidersSeeder::class,
