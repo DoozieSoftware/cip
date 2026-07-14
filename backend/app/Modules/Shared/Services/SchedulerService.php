@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Schedule;
  * T-M12-012 — Scheduler admin surface per `docs/09` §23.
  *
  * The platform's scheduled events are registered in
- * `routes/console.php`. This service reads them via
+ * `bootstrap/app.php`. This service reads them via
  * `Schedule::events()`, and persists pause / resume
  * state in a single canonical settings row
  * (`scheduler_paused_jobs`) holding a JSON array of
@@ -33,6 +33,10 @@ class SchedulerService
      */
     public function list(): array
     {
+        // withSchedule callbacks run when Artisan starts. HTTP admin requests
+        // initialize the console registry here before reading scheduled events.
+        Artisan::all();
+
         $paused = $this->paused();
         $rows = [];
 
@@ -58,10 +62,12 @@ class SchedulerService
     public function paused(): array
     {
         $row = Setting::query()->where('key', self::PAUSED_KEY)->first();
+
         if ($row === null) {
             return [];
         }
         $value = $row->value;
+
         if (! is_array($value)) {
             return [];
         }
@@ -72,6 +78,7 @@ class SchedulerService
     public function pause(string $name): void
     {
         $current = $this->paused();
+
         if (in_array($name, $current, true)) {
             return;
         }
@@ -110,11 +117,13 @@ class SchedulerService
 
             // Job-class scheduled events expose the job instance.
             $job = $event->job ?? null;
+
             if (is_object($job)) {
                 $jobClass = $job::class;
                 $jobInstance = is_string($jobClass) && class_exists($jobClass)
-                    ? new $jobClass()
+                    ? new $jobClass
                     : null;
+
                 if ($jobInstance !== null) {
                     dispatch_sync($jobInstance);
 
@@ -136,8 +145,10 @@ class SchedulerService
     private function commandFor(Event $event): string
     {
         $command = (string) $event->command;
+
         if ($command === '' || $command === 'NULL') {
             $description = (string) ($event->description ?? '');
+
             if ($description !== '') {
                 return $description;
             }

@@ -52,7 +52,7 @@ function ProviderRow({ p, busy, testResult, onTest, onActivate, onEdit }: {
         </span>
       </td>
       <td className="px-5 py-3 text-sm text-slate-700">
-        {p.has_secret ? 'set' : <span className="text-rose-700">missing</span>}
+        {p.has_secret ? 'set' : <span className="text-slate-500">not set</span>}
       </td>
       <td className="px-5 py-3 text-sm text-slate-700">
         {testResult === null ? (

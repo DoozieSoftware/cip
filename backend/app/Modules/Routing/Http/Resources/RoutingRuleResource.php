@@ -35,8 +35,18 @@ class RoutingRuleResource extends JsonResource
             'priority' => (int) $rule->priority,
             'conditions' => $rule->conditions ?? [],
             'destination_department_id' => $rule->destination_department_id,
+            'destination_department' => $rule->destinationDepartment === null ? null : [
+                'id' => $rule->destinationDepartment->id,
+                'code' => $rule->destinationDepartment->code,
+                'name' => $rule->destinationDepartment->name,
+            ],
             'default_officer_id' => $rule->default_officer_id,
             'default_priority_id' => $rule->default_priority_id,
+            'default_priority' => $rule->defaultPriority === null ? null : [
+                'id' => $rule->defaultPriority->id,
+                'code' => $rule->defaultPriority->code,
+                'name' => $rule->defaultPriority->name,
+            ],
             'default_sla_minutes' => (int) $rule->default_sla_minutes,
             'active' => (bool) $rule->active,
             'created_at' => $rule->created_at?->toIso8601String(),

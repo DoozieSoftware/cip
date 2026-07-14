@@ -52,6 +52,33 @@ export interface AdminReportType {
   created_at?: string | null;
 }
 
+export interface AdminDepartment {
+  id: string;
+  name: string;
+  code: string;
+  parent_id?: string | null;
+  jurisdiction?: string | null;
+  address?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  default_sla_minutes?: number | null;
+  active: boolean;
+}
+
+export type AdminDepartmentInput = Omit<AdminDepartment, 'id'>;
+
+export interface AdminOrganization {
+  id: string;
+  code: string;
+  name: string;
+  legal_name?: string | null;
+  domain?: string | null;
+  storage_quota_mb: number;
+  active: boolean;
+}
+
+export type AdminOrganizationInput = Omit<AdminOrganization, 'id'>;
+
 export interface SecurityPolicy {
   id: string;
   key: string;
@@ -91,6 +118,74 @@ export function useAdminUsers(q: string) {
       const res = await apiRequest<ApiEnvelope<AdminUser[]>>('/admin/users', { query: { q, per_page: 100 } });
       return res.data;
     },
+  });
+}
+
+export function useAdminDepartments() {
+  return useQuery({
+    queryKey: ['admin', 'departments'],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<AdminDepartment[]>>('/admin/departments', { query: { per_page: 100 } });
+      return res.data;
+    },
+  });
+}
+
+export function useCreateDepartment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AdminDepartmentInput) => apiRequest<ApiEnvelope<AdminDepartment>>('/admin/departments', { method: 'POST', body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'departments'] }),
+  });
+}
+
+export function useUpdateDepartment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...input }: AdminDepartmentInput & { id: string }) => apiRequest<ApiEnvelope<AdminDepartment>>(`/admin/departments/${encodeURIComponent(id)}`, { method: 'PUT', body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'departments'] }),
+  });
+}
+
+export function useDeleteDepartment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiRequest<unknown>(`/admin/departments/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'departments'] }),
+  });
+}
+
+export function useAdminOrganizations() {
+  return useQuery({
+    queryKey: ['admin', 'organizations'],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<AdminOrganization[]>>('/admin/organizations', { query: { per_page: 100 } });
+      return res.data;
+    },
+  });
+}
+
+export function useCreateOrganization() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AdminOrganizationInput) => apiRequest<ApiEnvelope<AdminOrganization>>('/admin/organizations', { method: 'POST', body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'organizations'] }),
+  });
+}
+
+export function useUpdateOrganization() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...input }: AdminOrganizationInput & { id: string }) => apiRequest<ApiEnvelope<AdminOrganization>>(`/admin/organizations/${encodeURIComponent(id)}`, { method: 'PUT', body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'organizations'] }),
+  });
+}
+
+export function useDeleteOrganization() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiRequest<unknown>(`/admin/organizations/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'organizations'] }),
   });
 }
 
@@ -420,7 +515,7 @@ export interface MediaStorageInput {
 
 export interface NotificationConfig {
   id: string;
-  channel: 'mail' | 'sms' | 'push' | 'webhook' | 'log';
+  channel: 'mail' | 'sms' | 'push' | 'webhook';
   code: string;
   display_name: string;
   active: boolean;
@@ -705,13 +800,20 @@ export interface RoutingRule {
   // optional despite `?`, which only reflects that a new rule being
   // drafted client-side may not have them filled in yet.
   destination_department_id?: string | null;
+  destination_department?: { id: string; code: string; name: string } | null;
   default_officer_id?: string | null;
   default_priority_id?: string | null;
+  default_priority?: { id: string; code: string; name: string } | null;
   default_sla_minutes?: number | null;
   priority: number;
   active: boolean;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+export interface RoutingFormOptions {
+  departments: Array<{ id: string; code: string; name: string }>;
+  priorities: Array<{ id: string; code: string; name: string; sla_minutes: number }>;
 }
 
 export interface WorkflowState {
@@ -759,6 +861,16 @@ export function useRoutingRules(params: { q?: string; active?: boolean } = {}) {
       const res = await apiRequest<ApiEnvelope<RoutingRule[]>>('/admin/routing-rules', {
         query: { ...params, per_page: 100 },
       });
+      return res.data;
+    },
+  });
+}
+
+export function useRoutingFormOptions() {
+  return useQuery({
+    queryKey: ['admin', 'routing-rules', 'options'],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<RoutingFormOptions>>('/admin/routing-rules/options');
       return res.data;
     },
   });

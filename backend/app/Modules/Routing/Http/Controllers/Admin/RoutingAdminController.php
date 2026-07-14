@@ -24,6 +24,7 @@ use Illuminate\Http\Request;
  *  - PUT    /api/v1/admin/routing-rules/{rule}
  *  - DELETE /api/v1/admin/routing-rules/{rule}
  *  - POST   /api/v1/admin/routing-rules/reorder
+ *  - GET    /api/v1/admin/routing-rules/options
  *
  * Per AGENTS.md - no business logic here. All writes go
  * through `RoutingAdminService` which is the only place
@@ -59,6 +60,16 @@ class RoutingAdminController extends BaseController
         );
 
         return $this->respondPaginated($transformed);
+    }
+
+    /**
+     * GET /api/v1/admin/routing-rules/options
+     */
+    public function options(Request $request): JsonResponse
+    {
+        $this->ensureAdmin($request);
+
+        return $this->respond($this->service->formOptions());
     }
 
     /**

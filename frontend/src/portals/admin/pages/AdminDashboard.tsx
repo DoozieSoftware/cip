@@ -5,6 +5,8 @@ import { Spinner } from '../../moderator/design';
 import { Link } from 'react-router-dom';
 
 interface Counts {
+  organizations: number;
+  departments: number;
   users: number;
   roles: number;
   report_types: number;
@@ -16,7 +18,9 @@ export default function AdminDashboard(): JSX.Element {
   const counts = useQuery({
     queryKey: ['admin', 'dashboard-counts'],
     queryFn: async () => {
-      const [u, r, rt, sp, ff] = await Promise.all([
+      const [o, d, u, r, rt, sp, ff] = await Promise.all([
+        apiRequest<ApiEnvelope<unknown[]>>('/admin/organizations', { query: { per_page: 1 } }),
+        apiRequest<ApiEnvelope<unknown[]>>('/admin/departments', { query: { per_page: 1 } }),
         apiRequest<ApiEnvelope<unknown[]>>('/admin/users', { query: { per_page: 1 } }),
         apiRequest<ApiEnvelope<unknown[]>>('/admin/roles', { query: { per_page: 1 } }),
         apiRequest<ApiEnvelope<unknown[]>>('/admin/report-types', { query: { per_page: 1 } }),
@@ -24,6 +28,8 @@ export default function AdminDashboard(): JSX.Element {
         apiRequest<ApiEnvelope<unknown[]>>('/admin/app-configs', { query: { per_page: 1 } }),
       ]);
       const c: Counts = {
+        organizations: (o as unknown as { meta?: { total?: number } }).meta?.total ?? 0,
+        departments: (d as unknown as { meta?: { total?: number } }).meta?.total ?? 0,
         users: (u as unknown as { meta?: { total?: number } }).meta?.total ?? 0,
         roles: (r as unknown as { meta?: { total?: number } }).meta?.total ?? 0,
         report_types: (rt as unknown as { meta?: { total?: number } }).meta?.total ?? 0,
@@ -44,8 +50,10 @@ export default function AdminDashboard(): JSX.Element {
       {counts.isLoading ? (
         <Spinner label="Loading" />
       ) : counts.data ? (
-        <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-7">
           {[
+            { label: 'Organizations', value: counts.data.organizations, to: '/admin/organizations' },
+            { label: 'Departments', value: counts.data.departments, to: '/admin/departments' },
             { label: 'Users', value: counts.data.users, to: '/admin/users' },
             { label: 'Roles', value: counts.data.roles, to: '/admin/roles' },
             { label: 'Report types', value: counts.data.report_types, to: '/admin/report-types' },

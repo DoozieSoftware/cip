@@ -7,6 +7,13 @@ const mutateMock = vi.fn();
 
 vi.mock('../../api/client', () => ({
   useRoutingRules: vi.fn(),
+  useRoutingFormOptions: vi.fn(() => ({
+    data: {
+      departments: [{ id: 'd-bbmp-w112', code: 'BBMP-112', name: 'BBMP Ward 112' }],
+      priorities: [{ id: 'p-medium', code: 'medium', name: 'Medium', sla_minutes: 1440 }],
+    },
+    isLoading: false,
+  })),
   useCreateRoutingRule: vi.fn(() => ({ mutate: mutateMock, isPending: false })),
   useUpdateRoutingRule: vi.fn(() => ({ mutate: mutateMock, isPending: false })),
   useDeleteRoutingRule: vi.fn(() => ({ mutate: mutateMock, isPending: false })),
@@ -18,7 +25,7 @@ const { useRoutingRules } = await import('../../api/client');
 const AdminRoutingRules = (await import('../AdminRoutingRules')).default;
 
 const ROWS = [
-  { id: 'r1', name: 'Garbage to BBMP', description: 'Ward 112', conditions: { any_label: ['garbage'] }, destination_department_id: 'd-bbmp-w112', priority: 10, active: true, created_at: null, updated_at: null },
+  { id: 'r1', name: 'Garbage to BBMP', description: 'Ward 112', conditions: { any_label: ['garbage'] }, destination_department_id: 'd-bbmp-w112', destination_department: { id: 'd-bbmp-w112', code: 'BBMP-112', name: 'BBMP Ward 112' }, priority: 10, active: true, created_at: null, updated_at: null },
   { id: 'r2', name: 'Illegal parking', description: 'BTP', conditions: { any_label: ['parking'] }, destination_department_id: 'd-btp', priority: 20, active: true, created_at: null, updated_at: null },
   { id: 'r3', name: 'Disabled rule', description: '', conditions: { any_label: [] }, destination_department_id: null, priority: 99, active: false, created_at: null, updated_at: null },
 ];
@@ -72,5 +79,16 @@ describe('AdminRoutingRules (T-M12-020)', () => {
       </QueryClientProvider>,
     );
     expect(await screen.findByRole('button', { name: 'New rule' })).toBeTruthy();
+  });
+
+  it('renders department names instead of UUIDs', async () => {
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter><AdminRoutingRules /></MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText('BBMP Ward 112')).toBeTruthy();
+    expect(screen.queryByText('d-bbmp-w112')).toBeNull();
   });
 });

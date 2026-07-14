@@ -7,9 +7,12 @@ namespace App\Modules\Shared\Services;
 use App\Modules\AI\Models\AiProviderConfig;
 use App\Modules\Media\Services\MediaStorageService;
 use App\Modules\Settings\Models\Setting;
+use Illuminate\Redis\RedisManager;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
@@ -53,14 +56,17 @@ class PlatformHealthService
         $status = 'ok';
         $down = 0;
         $degraded = 0;
+
         foreach ($components as $row) {
             $value = $row['status'] ?? 'down';
+
             if ($value === 'down') {
                 $down++;
             } elseif ($value === 'degraded') {
                 $degraded++;
             }
         }
+
         if ($down > 0) {
             $status = 'down';
         } elseif ($degraded > 0) {
@@ -80,6 +86,7 @@ class PlatformHealthService
     private function probeDatabase(): array
     {
         $start = microtime(true);
+
         try {
             $value = DB::select('select 1 as ok');
             $latency = (int) round((microtime(true) - $start) * 1000);
@@ -104,7 +111,7 @@ class PlatformHealthService
     {
         if (! in_array((string) config('cache.default'), ['redis', 'predis'], true)
             && ! in_array((string) config('queue.default'), ['redis', 'predis'], true)
-            && ! class_exists(\Illuminate\Redis\RedisManager::class)) {
+            && ! class_exists(RedisManager::class)) {
             return [
                 'status' => 'ok',
                 'latency_ms' => 0,
@@ -114,6 +121,7 @@ class PlatformHealthService
         }
 
         $start = microtime(true);
+
         try {
             Redis::connection()->ping();
             $latency = (int) round((microtime(true) - $start) * 1000);
@@ -141,6 +149,7 @@ class PlatformHealthService
     private function probeQueue(): array
     {
         $start = microtime(true);
+
         try {
             $size = Queue::size();
             $latency = (int) round((microtime(true) - $start) * 1000);
@@ -164,6 +173,7 @@ class PlatformHealthService
     private function probeAi(): array
     {
         $start = microtime(true);
+
         try {
             if (! Schema::hasTable('ai_provider_configs')) {
                 return [
@@ -194,10 +204,12 @@ class PlatformHealthService
     private function probeStorage(): array
     {
         $start = microtime(true);
+
         try {
             $disk = Setting::query()->where('key', MediaStorageService::SETTINGS_KEY)->first();
             $current = $disk !== null && is_array($disk->value) ? $disk->value : [];
             $name = (string) ($current['disk'] ?? (string) config('cip.media.disk', 'local'));
+
             if ($name === 'local') {
                 $name = 'media_local';
             }
@@ -223,8 +235,10 @@ class PlatformHealthService
     private function probeScheduler(): array
     {
         $start = microtime(true);
+
         try {
-            $events = \Illuminate\Support\Facades\Schedule::events();
+            Artisan::all();
+            $events = Schedule::events();
             $latency = (int) round((microtime(true) - $start) * 1000);
             $count = is_array($events) ? count($events) : iterator_count($events);
 

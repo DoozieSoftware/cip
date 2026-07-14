@@ -827,6 +827,43 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/admin/routing-rules/options:
+    get:
+      tags: [Routing]
+      summary: 'List active departments and priorities for the routing-rule editor'
+      operationId: admin.routing-rules.options
+      responses:
+        '200':
+          description: 'Human-readable routing editor options.'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          departments:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id: { type: string, format: uuid }
+                                code: { type: string }
+                                name: { type: string }
+                          priorities:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id: { type: string, format: uuid }
+                                code: { type: string }
+                                name: { type: string }
+                                sla_minutes: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /api/v1/admin/routing-rules/{rule}:
     parameters:
       - in: path
@@ -4208,8 +4245,22 @@ components:
         conditions:
           $ref: '#/components/schemas/RoutingConditions'
         destination_department_id: { type: string, format: uuid }
+        destination_department:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string, format: uuid }
+            code: { type: string }
+            name: { type: string }
         default_officer_id: { type: string, format: uuid, nullable: true }
         default_priority_id: { type: string, format: uuid }
+        default_priority:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string, format: uuid }
+            code: { type: string }
+            name: { type: string }
         default_sla_minutes: { type: integer, minimum: 1, maximum: 525600 }
         active: { type: boolean }
         created_at: { type: string, format: date-time, nullable: true }

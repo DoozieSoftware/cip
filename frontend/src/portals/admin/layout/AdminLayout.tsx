@@ -3,6 +3,8 @@ import { SidebarLayout, type SidebarNavItem } from '../../moderator/design';
 
 const NAV: SidebarNavItem[] = [
   { to: '/admin', label: 'Dashboard', end: true, icon: '📊' },
+  { to: '/admin/organizations', label: 'Organizations', icon: '🏛️' },
+  { to: '/admin/departments', label: 'Departments', icon: '🏢' },
   { to: '/admin/users', label: 'Users', icon: '👥' },
   { to: '/admin/roles', label: 'Roles & perms', icon: '🛡️' },
   { to: '/admin/report-types', label: 'Report types', icon: '🏷️' },

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -60,5 +60,17 @@ describe('AdminNotificationConfigs (T-M12-022)', () => {
     const toggles = await screen.findAllByRole('button', { name: /Toggle/ });
     expect(toggles.length).toBe(2);
     expect(screen.getAllByRole('button', { name: 'Delete' }).length).toBe(2);
+  });
+
+  it('offers only backend-supported channels when creating a config', async () => {
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter><AdminNotificationConfigs /></MemoryRouter>
+      </QueryClientProvider>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: '+ New config' }));
+    const dialog = screen.getByRole('dialog');
+    const channel = within(dialog).getByLabelText('Channel');
+    expect(within(channel).getAllByRole('option').map((option) => option.textContent)).toEqual(['mail', 'sms', 'push', 'webhook']);
   });
 });

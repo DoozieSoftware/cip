@@ -2,13 +2,17 @@
 
 declare(strict_types=1);
 
-use App\Modules\Security\Http\Middleware\AuditMiddleware;
-use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Media\Http\Middleware\MediaUploadLimit;
+use App\Modules\Security\Http\Middleware\AuditMiddleware;
+use App\Modules\Settings\Console\PurgeRetentionCommand;
+use App\Modules\Settings\Models\Setting;
+use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Middleware\IdempotencyKey;
 use App\Modules\Shared\Http\Middleware\RequestId;
+use App\Modules\Workflow\Jobs\CheckSlaBreaches;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -28,8 +32,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withCommands([
-        \App\Modules\Settings\Console\PurgeRetentionCommand::class,
+        PurgeRetentionCommand::class,
     ])
+    ->withSchedule(function (Schedule $schedule): void {
+        $schedule->job(new CheckSlaBreaches)
+            ->everyFiveMinutes()
+            ->name('workflow:check-sla-breaches')
+            ->withoutOverlapping();
+
+        $schedule->command(PurgeRetentionCommand::class)
+            ->dailyAt('03:00')
+            ->name('settings:purge-retention')
+            ->withoutOverlapping()
+            ->when(fn (): bool => (bool) Setting::get('retention.purge_enabled', false));
+    })
     ->withMiddleware(function (Middleware $middleware): void {
         // Laravel 12's ApplicationBuilder defaults redirectGuestsTo() to
         // route('login'), which does not exist for the API. For API

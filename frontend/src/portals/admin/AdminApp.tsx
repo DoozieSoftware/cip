@@ -6,6 +6,8 @@ import { Spinner } from '../moderator/design';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AdminUsers = lazy(() => import('./pages/AdminUsers'));
+const AdminDepartments = lazy(() => import('./pages/AdminDepartments'));
+const AdminOrganizations = lazy(() => import('./pages/AdminOrganizations'));
 const AdminRoles = lazy(() => import('./pages/AdminRoles'));
 const AdminReportTypes = lazy(() => import('./pages/AdminReportTypes'));
 const AdminSecurityPolicies = lazy(() => import('./pages/AdminSecurityPolicies'));
@@ -37,6 +39,8 @@ export function AdminApp(): JSX.Element {
         <Route element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
+          <Route path="departments" element={<AdminDepartments />} />
+          <Route path="organizations" element={<AdminOrganizations />} />
           <Route path="roles" element={<AdminRoles />} />
           <Route path="report-types" element={<AdminReportTypes />} />
           <Route path="security-policies" element={<AdminSecurityPolicies />} />

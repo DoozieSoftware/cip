@@ -215,6 +215,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('routing-rules', [RoutingAdminController::class, 'index'])->name('routing-rules.index');
         Route::post('routing-rules', [RoutingAdminController::class, 'store'])->name('routing-rules.store');
         Route::post('routing-rules/reorder', [RoutingAdminController::class, 'reorder'])->name('routing-rules.reorder');
+        Route::get('routing-rules/options', [RoutingAdminController::class, 'options'])->name('routing-rules.options');
         Route::get('routing-rules/{rule}', [RoutingAdminController::class, 'show'])->name('routing-rules.show');
         Route::put('routing-rules/{rule}', [RoutingAdminController::class, 'update'])->name('routing-rules.update');
         Route::delete('routing-rules/{rule}', [RoutingAdminController::class, 'destroy'])->name('routing-rules.destroy');

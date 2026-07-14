@@ -4,7 +4,9 @@ import {
   useCreateRoutingRule,
   useUpdateRoutingRule,
   useDeleteRoutingRule,
+  useRoutingFormOptions,
   type RoutingRule,
+  type RoutingFormOptions,
 } from '../api/client';
 import { Spinner } from '../../moderator/design';
 import { cx } from '../../moderator/design/cx';
@@ -20,8 +22,9 @@ const blank: Partial<RoutingRule> = {
   default_sla_minutes: null,
 };
 
-function RuleForm({ initial, onSubmit, onCancel, busy }: {
+function RuleForm({ initial, options, onSubmit, onCancel, busy }: {
   initial: Partial<RoutingRule>;
+  options: RoutingFormOptions;
   onSubmit: (v: Partial<RoutingRule>) => void;
   onCancel: () => void;
   busy: boolean;
@@ -73,12 +76,18 @@ function RuleForm({ initial, onSubmit, onCancel, busy }: {
           <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm" />
         </label>
         <label className="text-sm sm:col-span-2">
-          <span className="font-medium text-slate-700">Destination department ID <span className="text-rose-600">*</span></span>
-          <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} required placeholder="UUID" className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm" />
+          <span className="font-medium text-slate-700">Destination department <span className="text-rose-600">*</span></span>
+          <select value={department} onChange={(e) => setDepartment(e.target.value)} required className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm">
+            <option value="">Select a department</option>
+            {options.departments.map((item) => <option key={item.id} value={item.id}>{item.name} ({item.code})</option>)}
+          </select>
         </label>
         <label className="text-sm">
-          <span className="font-medium text-slate-700">Default priority ID <span className="text-rose-600">*</span></span>
-          <input type="text" value={defaultPriority} onChange={(e) => setDefaultPriority(e.target.value)} required placeholder="UUID" className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm" />
+          <span className="font-medium text-slate-700">Default priority <span className="text-rose-600">*</span></span>
+          <select value={defaultPriority} onChange={(e) => setDefaultPriority(e.target.value)} required className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm">
+            <option value="">Select a priority</option>
+            {options.priorities.map((item) => <option key={item.id} value={item.id}>{item.name} ({item.code})</option>)}
+          </select>
         </label>
         <label className="text-sm">
           <span className="font-medium text-slate-700">Default SLA (minutes) <span className="text-rose-600">*</span></span>
@@ -107,6 +116,7 @@ export default function AdminRoutingRules(): JSX.Element {
   const [editing, setEditing] = useState<RoutingRule | null>(null);
   const [creating, setCreating] = useState(false);
   const list = useRoutingRules();
+  const options = useRoutingFormOptions();
   const create = useCreateRoutingRule();
   const update = useUpdateRoutingRule();
   const remove = useDeleteRoutingRule();
@@ -130,11 +140,11 @@ export default function AdminRoutingRules(): JSX.Element {
       </header>
 
       {creating ? (
-        <RuleForm initial={blank} busy={create.isPending} onCancel={() => setCreating(false)} onSubmit={(v) => create.mutate(v, { onSuccess: () => setCreating(false) })} />
+        <RuleForm initial={blank} options={options.data ?? { departments: [], priorities: [] }} busy={create.isPending} onCancel={() => setCreating(false)} onSubmit={(v) => create.mutate(v, { onSuccess: () => setCreating(false) })} />
       ) : null}
 
       {editing ? (
-        <RuleForm initial={editing} busy={update.isPending} onCancel={() => setEditing(null)} onSubmit={(v) => update.mutate({ id: editing.id, ...v }, { onSuccess: () => setEditing(null) })} />
+        <RuleForm initial={editing} options={options.data ?? { departments: [], priorities: [] }} busy={update.isPending} onCancel={() => setEditing(null)} onSubmit={(v) => update.mutate({ id: editing.id, ...v }, { onSuccess: () => setEditing(null) })} />
       ) : null}
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -161,8 +171,9 @@ export default function AdminRoutingRules(): JSX.Element {
                     <div className="font-medium text-slate-900">{r.name}</div>
                     {r.description ? <div className="text-xs text-slate-500">{r.description}</div> : null}
                   </td>
-                  <td className="px-5 py-3 text-sm font-mono text-xs text-slate-500">
-                    {r.destination_department_id ? r.destination_department_id.slice(0, 8) + '…' : '—'}
+                  <td className="px-5 py-3 text-sm text-slate-700">
+                    {r.destination_department?.name ?? '—'}
+                    {r.destination_department?.code ? <div className="text-xs text-slate-500">{r.destination_department.code}</div> : null}
                   </td>
                   <td className="px-5 py-3 text-sm">
                     <span className={cx('inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide',

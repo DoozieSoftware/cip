@@ -1,13 +1,62 @@
-import { useState, type JSX } from 'react';
+import { useState, type FormEvent, type JSX } from 'react';
 import {
   useNotificationConfigs,
   useUpsertNotificationConfig,
   useDeleteNotificationConfig,
   type NotificationConfig,
 } from '../api/client';
-import { Spinner } from '../../moderator/design';
+import { Button, Dialog, Spinner } from '../../moderator/design';
 
-const CHANNELS: NotificationConfig['channel'][] = ['mail', 'sms', 'push', 'webhook', 'log'];
+const CHANNELS: NotificationConfig['channel'][] = ['mail', 'sms', 'push', 'webhook'];
+
+function ConfigForm({ busy, onCancel, onSubmit }: {
+  busy: boolean;
+  onCancel: () => void;
+  onSubmit: (input: Partial<NotificationConfig>) => void;
+}): JSX.Element {
+  const [channel, setChannel] = useState<NotificationConfig['channel']>('mail');
+  const [code, setCode] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [credentials, setCredentials] = useState('{\n  "host": "smtp.example.in"\n}');
+  const [tries, setTries] = useState(3);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = (event: FormEvent): void => {
+    event.preventDefault();
+    try {
+      const parsed = JSON.parse(credentials) as unknown;
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed) || Object.keys(parsed).length === 0) {
+        setError('Credentials must be a non-empty JSON object.');
+        return;
+      }
+      setError(null);
+      onSubmit({
+        channel,
+        code: code.trim(),
+        display_name: displayName.trim(),
+        credentials: parsed as Record<string, unknown>,
+        retry_policy: { tries, backoff: [30, 120, 600].slice(0, tries) },
+        settings: {},
+        per_locale_defaults: {},
+        active: false,
+      });
+    } catch {
+      setError('Credentials must be valid JSON.');
+    }
+  };
+
+  return <form onSubmit={submit} className="space-y-3">
+    <div className="grid gap-3 sm:grid-cols-2">
+      <label className="text-sm"><span className="font-medium text-slate-700">Channel</span><select value={channel} onChange={(event) => setChannel(event.target.value as NotificationConfig['channel'])} className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2">{CHANNELS.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+      <label className="text-sm"><span className="font-medium text-slate-700">Code</span><input value={code} onChange={(event) => setCode(event.target.value)} required pattern="[a-z0-9_-]+" className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2" /></label>
+      <label className="text-sm"><span className="font-medium text-slate-700">Display name</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} required className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2" /></label>
+      <label className="text-sm"><span className="font-medium text-slate-700">Retry attempts</span><input type="number" min={1} max={10} value={tries} onChange={(event) => setTries(Number(event.target.value))} className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2" /></label>
+    </div>
+    <label className="block text-sm"><span className="font-medium text-slate-700">Credentials (JSON)</span><textarea value={credentials} onChange={(event) => setCredentials(event.target.value)} rows={6} className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs" /></label>
+    {error ? <p role="alert" className="text-sm text-rose-700">{error}</p> : null}
+    <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button><Button type="submit" disabled={busy}>{busy ? 'Saving...' : 'Create config'}</Button></div>
+  </form>;
+}
 
 function ChannelPill({ channel, active }: { channel: NotificationConfig['channel']; active: boolean }): JSX.Element {
   return (
@@ -24,6 +73,7 @@ function ChannelPill({ channel, active }: { channel: NotificationConfig['channel
 export default function AdminNotificationConfigs(): JSX.Element {
   const [channel, setChannel] = useState<string>('');
   const [activeOnly, setActiveOnly] = useState(false);
+  const [creating, setCreating] = useState(false);
   const list = useNotificationConfigs({ channel: channel || undefined, active: activeOnly || undefined });
   const upsert = useUpsertNotificationConfig();
   const remove = useDeleteNotificationConfig();
@@ -36,11 +86,10 @@ export default function AdminNotificationConfigs(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-900">Notification configs</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Channel credentials, retry policy, and per-locale template defaults. Credentials are masked on every read.
-        </p>
+      <header className="flex items-end justify-between gap-3">
+        <div><h1 className="text-2xl font-bold text-slate-900">Notification configs</h1>
+        <p className="mt-1 text-sm text-slate-600">Channel credentials, retry policy, and per-locale template defaults. Credentials are masked on every read.</p></div>
+        <Button onClick={() => setCreating(true)}>+ New config</Button>
       </header>
 
       <section className="flex flex-wrap items-end gap-3">
@@ -123,6 +172,10 @@ export default function AdminNotificationConfigs(): JSX.Element {
           </table>
         )}
       </section>
+      <Dialog open={creating} onClose={() => setCreating(false)} title="New notification config">
+        <ConfigForm busy={upsert.isPending} onCancel={() => setCreating(false)} onSubmit={(input) => upsert.mutate(input, { onSuccess: () => setCreating(false) })} />
+        {upsert.isError ? <p role="alert" className="mt-2 text-sm text-rose-700">{upsert.error.message}</p> : null}
+      </Dialog>
     </div>
   );
 }

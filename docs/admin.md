@@ -19,6 +19,8 @@ React portal.
         ▼
    /admin                                          ← dashboard counts
         │
+   /admin/organizations, /admin/departments
+        │
    /admin/users, /admin/roles, /admin/permissions
         │
    /admin/report-types                             ← category & schema config
@@ -61,6 +63,10 @@ Form-Request `authorize()` layer and at each controller's
 
 | Method | Path | Notes |
 | ------ | ---- | ----- |
+| GET    | `/api/v1/admin/departments` | paginated, human-readable department management |
+| POST   | `/api/v1/admin/departments` | create department |
+| PUT    | `/api/v1/admin/departments/{department}` | update hierarchy, jurisdiction, SLA |
+| DELETE | `/api/v1/admin/departments/{department}` | deactivate/delete per policy |
 | GET    | `/api/v1/admin/users` | paginated, filter `q`, `role`, `status` |
 | POST   | `/api/v1/admin/users` | create (mobile unique) |
 | GET    | `/api/v1/admin/users/{user}` | detail |
@@ -79,6 +85,7 @@ Form-Request `authorize()` layer and at each controller's
 | POST   | `/api/v1/admin/workflows` | create definition |
 | PUT    | `/api/v1/admin/workflows/{wf}` | update + add/remove states/transitions |
 | GET    | `/api/v1/admin/routing-rules` | paginated |
+| GET    | `/api/v1/admin/routing-rules/options` | active department + priority options for editors |
 | POST   | `/api/v1/admin/routing-rules` | create (department + conditions) |
 | PUT    | `/api/v1/admin/routing-rules/{rule}` | update (active toggle) |
 | DELETE | `/api/v1/admin/routing-rules/{rule}` | soft delete |
@@ -96,9 +103,9 @@ Form-Request `authorize()` layer and at each controller's
 | PUT    | `/api/v1/admin/integrations/{id}` | update (credentials masked) |
 | DELETE | `/api/v1/admin/integrations/{id}` | soft delete |
 | POST   | `/api/v1/admin/integrations/{id}/health` | probe + flip status |
-| GET    | `/api/v1/admin/media-storage` | current disk + retention |
-| PUT    | `/api/v1/admin/media-storage` | flip disk + retention at runtime |
-| POST   | `/api/v1/admin/media-storage/probe` | reachability test |
+| GET    | `/api/v1/admin/media/storage` | current disk + retention |
+| PUT    | `/api/v1/admin/media/storage` | flip disk + retention at runtime |
+| POST   | `/api/v1/admin/media/storage/probe` | reachability test |
 | GET    | `/api/v1/admin/notification-configs` | paginated, filter `channel`, `active` |
 | POST   | `/api/v1/admin/notification-configs` | create (channel + code unique) |
 | PUT    | `/api/v1/admin/notification-configs/{id}` | update (credentials masked) |

@@ -31,6 +31,32 @@ it('super_admin can list routing rules', function (): void {
     expect(count($response->json('data')))->toBe(3);
 });
 
+it('returns human-readable options for the routing editor', function (): void {
+    $admin = User::factory()->create();
+    $admin->assignRole('super_admin');
+    Sanctum::actingAs($admin);
+
+    $department = Department::factory()->create([
+        'name' => 'BBMP Ward 112',
+        'code' => 'BBMP-112',
+        'active' => true,
+    ]);
+    $priority = ReportPriority::query()->where('active', true)->firstOrFail();
+
+    $this->getJson('/api/v1/admin/routing-rules/options')
+        ->assertOk()
+        ->assertJsonFragment([
+            'id' => $department->id,
+            'name' => 'BBMP Ward 112',
+            'code' => 'BBMP-112',
+        ])
+        ->assertJsonFragment([
+            'id' => $priority->id,
+            'name' => $priority->name,
+            'code' => $priority->code,
+        ]);
+});
+
 it('non-admin gets 403 on index', function (): void {
     $user = User::factory()->create();
     Sanctum::actingAs($user);

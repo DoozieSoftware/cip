@@ -166,6 +166,10 @@ if pgrep -f "artisan queue:work" >/dev/null 2>&1; then
   pkill -f "artisan queue:work" 2>/dev/null || true
   sleep 1
 fi
+if pgrep -f "artisan schedule:work" >/dev/null 2>&1; then
+  warn "A scheduler from a previous run is still alive — killing it..."
+  pkill -f "artisan schedule:work" 2>/dev/null || true
+fi
 
 # ── 6. Start servers ──────────────────────────────────────────────
 info "Starting servers..."
@@ -180,6 +184,8 @@ BACKEND_PID=$!
 # and never reach the moderator queue.
 $PHP artisan queue:work --queue=media,default --tries=3 --sleep=1 > /tmp/cip-queue.log 2>&1 &
 QUEUE_PID=$!
+$PHP artisan schedule:work > /tmp/cip-scheduler.log 2>&1 &
+SCHEDULER_PID=$!
 cd "$ROOT"
 
 cd "$ROOT/frontend"
@@ -228,14 +234,15 @@ echo "  Logs:"
 echo "    Backend:    tail -f /tmp/cip-backend.log"
 echo "    Frontend:   tail -f /tmp/cip-frontend.log"
 echo "    Queue:      tail -f /tmp/cip-queue.log"
+echo "    Scheduler:  tail -f /tmp/cip-scheduler.log"
 echo ""
-echo "  Stop:  kill $BACKEND_PID $FRONTEND_PID $QUEUE_PID"
+echo "  Stop:  kill $BACKEND_PID $FRONTEND_PID $QUEUE_PID $SCHEDULER_PID"
 echo ""
 
 cleanup() {
   info "Shutting down..."
-  kill $BACKEND_PID $FRONTEND_PID $QUEUE_PID 2>/dev/null || true
+  kill $BACKEND_PID $FRONTEND_PID $QUEUE_PID $SCHEDULER_PID 2>/dev/null || true
 }
 trap cleanup EXIT INT TERM
 
-wait $BACKEND_PID $FRONTEND_PID $QUEUE_PID 2>/dev/null || true
+wait $BACKEND_PID $FRONTEND_PID $QUEUE_PID $SCHEDULER_PID 2>/dev/null || true

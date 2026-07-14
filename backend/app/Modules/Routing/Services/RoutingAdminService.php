@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Routing\Services;
 
+use App\Modules\Departments\Models\Department;
+use App\Modules\Reports\Models\ReportPriority;
 use App\Modules\Routing\Models\RoutingRule;
 use App\Modules\Routing\Repositories\RoutingRepository;
 use App\Modules\Security\Models\AuditLog;
@@ -157,7 +159,7 @@ class RoutingAdminService
      */
     public function buildSearchQuery(array $filters): Builder
     {
-        $q = RoutingRule::query();
+        $q = RoutingRule::query()->with(['destinationDepartment', 'defaultPriority']);
 
         if (isset($filters['q']) && is_string($filters['q']) && $filters['q'] !== '') {
             $needle = '%'.$filters['q'].'%';
@@ -171,6 +173,34 @@ class RoutingAdminService
         }
 
         return $q->orderBy('priority')->orderBy('id');
+    }
+
+    /**
+     * @return array{departments: list<array{id: string, code: string, name: string}>, priorities: list<array{id: string, code: string, name: string, sla_minutes: int}>}
+     */
+    public function formOptions(): array
+    {
+        return [
+            'departments' => Department::query()
+                ->where('active', true)
+                ->orderBy('name')
+                ->get(['id', 'code', 'name'])
+                ->map(static fn (Department $department): array => [
+                    'id' => $department->id,
+                    'code' => $department->code,
+                    'name' => $department->name,
+                ])->all(),
+            'priorities' => ReportPriority::query()
+                ->where('active', true)
+                ->orderBy('sort_order')
+                ->get(['id', 'code', 'name', 'sla_minutes'])
+                ->map(static fn (ReportPriority $priority): array => [
+                    'id' => $priority->id,
+                    'code' => $priority->code,
+                    'name' => $priority->name,
+                    'sla_minutes' => (int) $priority->sla_minutes,
+                ])->all(),
+        ];
     }
 
     /**

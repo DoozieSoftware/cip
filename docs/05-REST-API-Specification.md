@@ -1038,6 +1038,7 @@ CRUD /admin/report-types
 CRUD /admin/workflows
 CRUD /admin/settings
 CRUD /admin/routing
+GET  /admin/routing-rules/options
 CRUD /admin/ai/providers
 ```
 
