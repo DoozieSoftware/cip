@@ -189,6 +189,7 @@ jobs:
               $PHP_BIN artisan config:cache || true; \
               $PHP_BIN artisan route:cache || true; \
               $PHP_BIN artisan event:cache || true; \
+              $PHP_BIN artisan queue:work --stop-when-empty --tries=1 --timeout=180 --max-time=300 -v; \
               echo 'Post-deploy complete'"
 
           rm -f /tmp/deploy_key
