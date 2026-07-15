@@ -124,3 +124,48 @@ it('addNote rejects an empty body with 422', function (): void {
     expect(fn () => app(DepartmentReportService::class)->addNote($report, $officer, '   ', null))
         ->toThrow(ApiException::class);
 });
+
+it('accept writes a status-history row with correct from/to (no X -> X no-op)', function (): void {
+    $dept = Department::factory()->create();
+    $report = landReportInAssigned($dept); // starts in `assigned`
+    $officer = User::factory()->create();
+    $officer->assignRole('department_officer');
+    $officer->departments()->attach($dept->id);
+
+    app(DepartmentReportService::class)->accept($report, $officer, null);
+
+    $history = $report->statusHistory()->orderBy('created_at')->get();
+    // Exactly one transition row, and it must be assigned -> accepted,
+    // never the buggy "accepted -> accepted" self-transition.
+    expect($history)->toHaveCount(1);
+    expect($history->first()->fromStatus?->code)->toBe('assigned');
+    expect($history->first()->toStatus?->code)->toBe('accepted');
+});
+
+it('Start, Resolve and Close each write a single correct status-history row', function (): void {
+    $dept = Department::factory()->create();
+    $report = landReportInAssigned($dept);
+    $officer = User::factory()->create();
+    $officer->assignRole('department_officer');
+    $officer->departments()->attach($dept->id);
+
+    $service = app(DepartmentReportService::class);
+    $service->accept($report, $officer, null);
+    $service->start($report->refresh(), $officer, null);
+    $service->resolve($report->refresh(), $officer, null, 'fixed');
+    $service->close($report->refresh(), $officer, null);
+
+    $rows = $report->statusHistory()->orderBy('created_at')->get();
+    $transitions = $rows->map(fn ($h) => "{$h->fromStatus?->code}->{$h->toStatus?->code}")->all();
+
+    // No self-transitions anywhere in the timeline.
+    foreach ($rows as $row) {
+        expect($row->fromStatus?->code)->not->toBe($row->toStatus?->code);
+    }
+    expect($transitions)->toBe([
+        'assigned->accepted',
+        'accepted->in_progress',
+        'in_progress->resolved',
+        'resolved->closed',
+    ]);
+});

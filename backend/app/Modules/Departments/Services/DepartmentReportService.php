@@ -75,6 +75,7 @@ class DepartmentReportService
                 'request_id' => is_string($requestId) ? $requestId : null,
                 'created_at' => now(),
             ]);
+
             return $report->refresh()->load(['status', 'reportType', 'department', 'priority']);
         });
     }
@@ -102,9 +103,11 @@ class DepartmentReportService
         if (! $report->department_id) {
             throw new ApiException('REPORT_HAS_NO_DEPARTMENT', 'Report has no department; cannot add a department note.', 422);
         }
+
         if (trim($body) === '') {
             throw new ApiException('EMPTY_NOTE', 'Note body cannot be empty.', 422);
         }
+
         if (mb_strlen($body) > 4000) {
             throw new ApiException('NOTE_TOO_LONG', 'Note body cannot exceed 4000 characters.', 422);
         }
@@ -145,10 +148,11 @@ class DepartmentReportService
     private function run(Report $report, string $event, User $actor, ?Request $request, array $payload): Report
     {
         $decision = $this->engine->evaluate($report, $event, $actor);
+
         if (! $decision->allowed) {
             throw new ApiException(
                 'TRANSITION_NOT_ALLOWED',
-                'Transition not allowed: ' . implode('; ', $decision->reasons),
+                'Transition not allowed: '.implode('; ', $decision->reasons),
                 422,
                 ['event' => $event, 'current_status' => $report->status?->code],
             );
@@ -156,6 +160,11 @@ class DepartmentReportService
 
         return DB::transaction(function () use ($report, $event, $actor, $request, $decision, $payload): Report {
             $before = $report->status?->code;
+            // Capture the pre-apply status id BEFORE WorkflowEngine::apply()
+            // mutates $report->current_status_id in memory. Dispatching
+            // with $report->current_status_id here would read the
+            // post-change value and produce an "X -> X" no-op history row.
+            $fromStatusId = $report->current_status_id;
             $updated = $this->engine->apply($report, $decision, $actor);
             $after = $updated->status?->code;
 
@@ -179,7 +188,7 @@ class DepartmentReportService
             if ($before !== $after) {
                 ReportStatusChanged::dispatch(
                     reportId: $updated->getKey(),
-                    fromStatusId: $report->current_status_id,
+                    fromStatusId: $fromStatusId,
                     toStatusId: $updated->current_status_id,
                     actorId: $actor->getKey(),
                     reason: $event,
