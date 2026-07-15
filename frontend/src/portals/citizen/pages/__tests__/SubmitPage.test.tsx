@@ -70,7 +70,7 @@ describe('SubmitPage', () => {
     }
   });
 
-  it('requests browser location permission from the submit action when location is mandatory', async () => {
+  it('submits an optional-video category without a video after capturing required location and photo', async () => {
     const getCurrentPosition = vi.fn((success: PositionCallback) => {
       success({
         coords: {
@@ -104,12 +104,16 @@ describe('SubmitPage', () => {
 
     await waitFor(() => expect(getCurrentPosition).toHaveBeenCalledTimes(1));
     await waitFor(() => {
-      expect(mutateAsyncMock).toHaveBeenCalledWith(expect.objectContaining({
-        report_type_id: 'type-pothole',
-        latitude: 12.9716,
-        longitude: 77.5946,
-        accuracy_m: 25,
-      }));
+      expect(mutateAsyncMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          report_type_id: 'type-pothole',
+          latitude: 12.9716,
+          longitude: 77.5946,
+          accuracy_m: 25,
+          media_files: [expect.objectContaining({ type: 'image/jpeg' })],
+        }),
+      );
     });
+    expect(screen.queryByText('This category requires a video.')).toBeNull();
   });
 });

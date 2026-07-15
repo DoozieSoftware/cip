@@ -11,7 +11,7 @@ use Illuminate\Database\Seeder;
  * Seeds the 10 default report types per docs/04 §7.
  *
  * Each row carries the platform-wide defaults:
- *  - `requires_video = true` (citizens must attach a video)
+ *  - `requires_video = false` (video is optional by default)
  *  - `requires_photo = true` (citizens must attach a photo)
  *  - `min_photos = 1`, `max_photos = 5`
  *
@@ -49,7 +49,7 @@ class ReportTypesSeeder extends Seeder
                     'description' => 'Default seeded report type for '.$row['name'].'.',
                     'icon' => $row['icon'],
                     'color' => $row['color'],
-                    'requires_video' => true,
+                    'requires_video' => false,
                     'requires_photo' => true,
                     'min_photos' => 1,
                     'max_photos' => 5,

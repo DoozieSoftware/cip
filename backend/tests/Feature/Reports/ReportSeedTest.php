@@ -34,7 +34,7 @@ it('seeds the 5 priority levels with sensible SLAs', function (): void {
         ->and($low->sla_minutes)->toBeGreaterThanOrEqual(7 * 24 * 60);
 });
 
-it('seeds the 10 default report types with photo + video required', function (): void {
+it('seeds the 10 default report types with a required photo and optional video', function (): void {
     (new ReportTypesSeeder)->run();
 
     expect(ReportType::query()->count())->toBe(10);
@@ -43,7 +43,7 @@ it('seeds the 10 default report types with photo + video required', function ():
 
     ReportType::query()->each(function (ReportType $type): void {
         expect($type->requires_photo)->toBeTrue()
-            ->and($type->requires_video)->toBeTrue()
+            ->and($type->requires_video)->toBeFalse()
             ->and($type->min_photos)->toBeGreaterThanOrEqual(1)
             ->and($type->max_photos)->toBeGreaterThan($type->min_photos);
     });

@@ -402,7 +402,7 @@ The application shall:
 * Capture EXIF metadata
 * Attach timestamp
 * Attach GPS
-* Record exactly one video between 3 and 5 seconds
+* Optionally record one video between 3 and 5 seconds
 * Support multiple photographs
 
 ---

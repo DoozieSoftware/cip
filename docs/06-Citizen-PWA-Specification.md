@@ -336,7 +336,11 @@ Delete allowed before submission only.
 
 # 12. Video Capture
 
-Exactly one video.
+Video is optional by default.
+
+Maximum one video.
+
+A configured report type may require one video.
 
 Duration
 

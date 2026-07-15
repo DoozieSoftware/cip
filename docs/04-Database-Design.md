@@ -1075,7 +1075,7 @@ wards.boundary_polygon
 * No orphan AI results.
 * Every report must have one location.
 * Every report must have at least one photograph.
-* Every report must have one video.
+* A report may have one video when supplied or required by its report type.
 * Every report must have a workflow.
 * Every report must have a status.
 * Every report must have an audit trail.
