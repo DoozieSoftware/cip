@@ -11,9 +11,9 @@ use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Reports\Models\ReportType;
 use App\Modules\Shared\Http\Controllers\BaseController;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * The moderator's review queue.
@@ -41,15 +41,20 @@ class QueueController extends BaseController
 
     /**
      * GET /api/v1/moderator/queue
-     *
-     * @return array<string, mixed>
      */
     public function queue(Request $request): JsonResponse
     {
         $this->authorize('viewQueue', Report::class);
 
-        $query = $this->baseQueueQuery()
-            ->whereIn('current_status_id', $this->statusIdsFor(['submitted', 'ai_processing', 'pending_moderator', 'escalated']));
+        $query = $this->baseQueueQuery();
+
+        // Only restrict to the default open-status set when the caller
+        // has not asked for a specific status. This lets the moderator
+        // UI filter by statuses outside the default queue (e.g. assigned)
+        // without the default restriction silently emptying the result.
+        if (! $request->has('status')) {
+            $query->whereIn('current_status_id', $this->statusIdsFor(['submitted', 'ai_processing', 'pending_moderator', 'escalated']));
+        }
 
         $this->applyFilters($query, $request);
         $this->applySort($query, $request);
@@ -68,8 +73,6 @@ class QueueController extends BaseController
 
     /**
      * GET /api/v1/moderator/duplicates
-     *
-     * @return array<string, mixed>
      */
     public function duplicates(Request $request): JsonResponse
     {
@@ -97,8 +100,6 @@ class QueueController extends BaseController
 
     /**
      * GET /api/v1/moderator/fraud
-     *
-     * @return array<string, mixed>
      */
     public function fraud(Request $request): JsonResponse
     {
@@ -127,14 +128,13 @@ class QueueController extends BaseController
     /**
      * GET /api/v1/moderator/reports/{report}
      * The single-report moderation detail view.
-     *
-     * @return array<string, mixed>
      */
     public function show(Request $request, string $reportId): JsonResponse
     {
         $report = Report::query()
             ->with(['status', 'reportType', 'priority', 'location', 'location.ward', 'location.district', 'department', 'statusHistory.fromStatus', 'statusHistory.toStatus'])
             ->find($reportId);
+
         if ($report === null) {
             return $this->respondError('Report not found', 404, 'NOT_FOUND');
         }
@@ -145,7 +145,10 @@ class QueueController extends BaseController
         ]);
     }
 
-    private function baseQueueQuery()
+    /**
+     * @return Builder<Report>
+     */
+    private function baseQueueQuery(): Builder
     {
         return Report::query()
             ->with(['status', 'reportType', 'priority', 'location'])
@@ -153,10 +156,23 @@ class QueueController extends BaseController
     }
 
     /**
-     * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $query
+     * @param  Builder<Report>  $query
      */
     private function applyFilters($query, Request $request): void
     {
+        if ($status = $request->query('status')) {
+            // The moderator UI filters by the human-readable status code
+            // (e.g. "pending_moderator"), optionally as a comma-separated list.
+            // When absent, the caller's own status restriction (e.g. the queue's
+            // default open-status set) remains in effect.
+            $codes = array_values(array_filter(array_map('trim', explode(',', (string) $status))));
+
+            if ($codes !== []) {
+                $statusIds = $this->statusIdsFor($codes);
+                $query->whereIn('current_status_id', $statusIds);
+            }
+        }
+
         if ($category = $request->query('category')) {
             // The moderator UI filters by the human-readable report type
             // code (e.g. "road_damage"), not the UUID primary key — resolve
@@ -164,26 +180,50 @@ class QueueController extends BaseController
             $categoryId = ReportType::query()->where('code', (string) $category)->value('id') ?? (string) $category;
             $query->where('report_type_id', $categoryId);
         }
+
         if ($priority = $request->query('priority')) {
             $query->where('priority_id', (string) $priority);
         }
+
         if ($ward = $request->query('ward')) {
-            $wardId = Ward::query()->where('code', (string) $ward)->value('id') ?? (string) $ward;
-            $query->whereHas('location', function ($q) use ($wardId): void {
-                $q->where('ward_id', $wardId);
-            });
+            // Wards do not have a `code` column; they are identified by
+            // `ward_number` (and name). Accept "12", "W-12", or a raw UUID.
+            $wardValue = (string) $ward;
+            $wardNumber = is_numeric($wardValue) ? (int) $wardValue : null;
+
+            if ($wardNumber === null && preg_match('/^W-?(\d+)$/i', $wardValue, $matches)) {
+                $wardNumber = (int) $matches[1];
+            }
+
+            if ($wardNumber !== null) {
+                $wardIds = Ward::query()->where('ward_number', $wardNumber)->pluck('id')->all();
+
+                if ($wardIds !== []) {
+                    $query->whereHas('location', function ($q) use ($wardIds): void {
+                        $q->whereIn('ward_id', $wardIds);
+                    });
+                }
+            } else {
+                $query->whereHas('location', function ($q) use ($wardValue): void {
+                    $q->where('ward_id', $wardValue);
+                });
+            }
         }
+
         if ($district = $request->query('district')) {
             $query->whereHas('location', function ($q) use ($district): void {
                 $q->where('district_id', (string) $district);
             });
         }
-        if ($confidenceMin = $request->query('confidence_min')) {
-            $query->where('ai_confidence', '>=', (float) $confidenceMin);
+
+        if ($request->has('confidence_min')) {
+            $query->where('ai_confidence', '>=', (float) $request->query('confidence_min'));
         }
-        if ($confidenceMax = $request->query('confidence_max')) {
-            $query->where('ai_confidence', '<=', (float) $confidenceMax);
+
+        if ($request->has('confidence_max')) {
+            $query->where('ai_confidence', '<=', (float) $request->query('confidence_max'));
         }
+
         if ($confidence = $request->query('confidence')) {
             // Legacy single-value form: allow `>=`/`<=` operator prefixes.
             if (str_starts_with((string) $confidence, '>=')) {
@@ -194,16 +234,18 @@ class QueueController extends BaseController
                 $query->where('ai_confidence', '=', (float) $confidence);
             }
         }
+
         if ($from = $request->query('from')) {
             $query->where('submitted_at', '>=', (string) $from);
         }
+
         if ($to = $request->query('to')) {
             $query->where('submitted_at', '<=', (string) $to);
         }
     }
 
     /**
-     * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $query
+     * @param  Builder<Report>  $query
      */
     private function applySort($query, Request $request): void
     {
@@ -226,6 +268,7 @@ class QueueController extends BaseController
     private function statusIdsFor(array $codes): array
     {
         $ids = ReportStatus::query()->whereIn('code', $codes)->pluck('id')->all();
+
         /** @var list<string> $ids */
         return $ids;
     }

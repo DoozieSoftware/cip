@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, type Mock } from 'vitest';
 
 /**
  * `QueueController::show/review/reject/escalate` all nest the report
@@ -48,6 +48,38 @@ describe('queueApi / actionsApi — report-key unwrapping', () => {
 
     expect(result.id).toBe('r1');
     expect(result.status_code).toBe('assigned');
+  });
+
+  it('queueApi.list serializes filters as query parameters', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: { items: [], next_cursor: null, prev_cursor: null },
+          code: null,
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+
+    const { queueApi } = await import('../moderator');
+    await queueApi.list({
+      status: 'pending_moderator',
+      category: 'pothole',
+      ward: 'W-12',
+      confidence_min: 80,
+      per_page: 20,
+    });
+
+    const requestUrl = String((globalThis.fetch as Mock).mock.calls[0][0]);
+    const url = new URL(requestUrl);
+    expect(url.pathname).toBe('/api/v1/moderator/queue');
+    expect(url.searchParams.get('status')).toBe('pending_moderator');
+    expect(url.searchParams.get('category')).toBe('pothole');
+    expect(url.searchParams.get('ward')).toBe('W-12');
+    expect(url.searchParams.get('confidence_min')).toBe('80');
+    expect(url.searchParams.get('per_page')).toBe('20');
   });
 
   it('queueApi.list normalizes cursor items into paginated queue data', async () => {

@@ -89,7 +89,9 @@ export default function ReviewQueuePage() {
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Review Queue</h1>
           <p className="text-sm text-slate-500">
-            Reports awaiting moderator action. Use <kbd className="rounded bg-slate-100 px-1">N</kbd> in a detail page to jump to the next item.
+            Reports awaiting moderator action. Use{' '}
+            <kbd className="rounded bg-slate-100 px-1">N</kbd> in a detail page to jump to the next
+            item.
           </p>
         </div>
         <Badge tone="info">Auto-refresh 15 s</Badge>
@@ -122,7 +124,7 @@ export default function ReviewQueuePage() {
             name="ward"
             value={filters.ward ?? ''}
             onChange={(e) => update('ward', e.target.value)}
-            placeholder="e.g. W-12"
+            placeholder="e.g. 12 or W-12"
           />
           <Input
             label="Min confidence"
@@ -144,9 +146,15 @@ export default function ReviewQueuePage() {
           <Spinner label="Loading queue" />
         </div>
       ) : query.isError || !query.data ? (
-        <EmptyState title="Could not load the queue" description="The /api/v1/moderator/queue endpoint did not respond." />
+        <EmptyState
+          title="Could not load the queue"
+          description="The /api/v1/moderator/queue endpoint did not respond."
+        />
       ) : query.data.data.length === 0 ? (
-        <EmptyState title="No reports match these filters" description="Try widening the filters or check back in a few minutes." />
+        <EmptyState
+          title="No reports match these filters"
+          description="Try widening the filters or check back in a few minutes."
+        />
       ) : (
         <>
           <Table>
@@ -165,7 +173,9 @@ export default function ReviewQueuePage() {
               {query.data.data.map((r: ReportListItem) => (
                 <TR
                   key={r.id}
-                  onClick={() => { void navigate(`/moderator/reports/${r.id}`); }}
+                  onClick={() => {
+                    void navigate(`/moderator/reports/${r.id}`);
+                  }}
                 >
                   <TD className="font-mono text-xs">
                     <Link
@@ -179,12 +189,8 @@ export default function ReviewQueuePage() {
                   <TD className="whitespace-nowrap text-xs text-slate-500">
                     {new Date(r.submitted_at).toLocaleString()}
                   </TD>
-                  <TD>
-                    {r.category?.name ?? <span className="text-slate-400">—</span>}
-                  </TD>
-                  <TD>
-                    {r.ai_confidence !== null ? `${r.ai_confidence.toFixed(0)}%` : '—'}
-                  </TD>
+                  <TD>{r.category?.name ?? <span className="text-slate-400">—</span>}</TD>
+                  <TD>{r.ai_confidence !== null ? `${r.ai_confidence.toFixed(0)}%` : '—'}</TD>
                   <TD>
                     {r.fraud_score !== null && r.fraud_score > 60 ? (
                       <Badge tone="danger">Fraud {r.fraud_score.toFixed(0)}</Badge>
@@ -195,7 +201,9 @@ export default function ReviewQueuePage() {
                     )}
                   </TD>
                   <TD>
-                    <Badge tone={statusTone(r.status_code)}>{r.status_code.replace(/_/g, ' ')}</Badge>
+                    <Badge tone={statusTone(r.status_code)}>
+                      {r.status_code.replace(/_/g, ' ')}
+                    </Badge>
                   </TD>
                   <TD className="text-right">
                     <Link
