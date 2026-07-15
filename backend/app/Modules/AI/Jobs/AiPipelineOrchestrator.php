@@ -397,7 +397,7 @@ class AiPipelineOrchestrator implements ShouldQueue
             severity: 'low',
             qualityScore: $response->qualityScore,
             duplicateScore: $response->duplicateScore,
-            fraudScore: $response->fraudScore,
+            fraudScore: max($response->fraudScore, 80),
             summary: 'Evidence does not match the citizen claim; manual review is required.',
             raw: array_replace($response->raw, ['claim_mismatch_gate' => true]),
             licensePlate: $response->licensePlate,

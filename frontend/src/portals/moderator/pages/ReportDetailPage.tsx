@@ -63,7 +63,11 @@ function ActionFooter({
   busy: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2" role="group" aria-label="Moderation actions">
+    <div
+      className="flex flex-wrap items-center justify-end gap-2"
+      role="group"
+      aria-label="Moderation actions"
+    >
       <Button variant="success" onClick={onApprove} disabled={busy} aria-keyshortcuts="A">
         Approve
       </Button>
@@ -180,7 +184,8 @@ export default function ReportDetailPage() {
     },
   });
   const assign = useMutation({
-    mutationFn: (p: { department_id: string; officer_id?: string; reason: string }) => actionsApi.reassign(id, p),
+    mutationFn: (p: { department_id: string; officer_id?: string; reason: string }) =>
+      actionsApi.reassign(id, p),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['moderator', 'reports', id] });
       void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });
@@ -233,7 +238,10 @@ export default function ReportDetailPage() {
         title="Report not found"
         description="The report may have been merged or rejected, or you may not have access to it."
         action={
-          <Link to="/moderator/queue" className="text-sm font-medium text-brand-700 hover:underline">
+          <Link
+            to="/moderator/queue"
+            className="text-sm font-medium text-brand-700 hover:underline"
+          >
             ← Back to queue
           </Link>
         }
@@ -290,15 +298,21 @@ export default function ReportDetailPage() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <EvidenceViewer media={data.media} />
-        <AiAnalysisPanel ai={data.ai_result} mockGpsScore={data.mock_gps_score} />
+        <AiAnalysisPanel
+          ai={data.ai_result}
+          statusCode={data.status_code}
+          mockGpsScore={data.mock_gps_score}
+        />
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Moderation actions</CardTitle>
           <span className="text-xs text-slate-500">
-            Shortcuts: <kbd className="rounded bg-slate-100 px-1">A</kbd> <kbd className="rounded bg-slate-100 px-1">R</kbd>{' '}
-            <kbd className="rounded bg-slate-100 px-1">M</kbd> <kbd className="rounded bg-slate-100 px-1">E</kbd>{' '}
+            Shortcuts: <kbd className="rounded bg-slate-100 px-1">A</kbd>{' '}
+            <kbd className="rounded bg-slate-100 px-1">R</kbd>{' '}
+            <kbd className="rounded bg-slate-100 px-1">M</kbd>{' '}
+            <kbd className="rounded bg-slate-100 px-1">E</kbd>{' '}
             <kbd className="rounded bg-slate-100 px-1">N</kbd>
           </span>
         </CardHeader>
@@ -326,9 +340,12 @@ export default function ReportDetailPage() {
               {data.audit_log.map((a) => (
                 <li key={a.id} className="rounded-md border border-slate-200 px-3 py-2 text-sm">
                   <p className="font-medium text-slate-800">
-                    {a.action} <span className="font-normal text-slate-500">— {a.actor_name ?? 'system'}</span>
+                    {a.action}{' '}
+                    <span className="font-normal text-slate-500">— {a.actor_name ?? 'system'}</span>
                   </p>
-                  <p className="text-xs text-slate-500">{new Date(a.created_at).toLocaleString()}</p>
+                  <p className="text-xs text-slate-500">
+                    {new Date(a.created_at).toLocaleString()}
+                  </p>
                 </li>
               ))}
             </ol>
@@ -344,7 +361,11 @@ export default function ReportDetailPage() {
         size="lg"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setApproveOpen(false)} disabled={review.isPending}>
+            <Button
+              variant="secondary"
+              onClick={() => setApproveOpen(false)}
+              disabled={review.isPending}
+            >
               Cancel
             </Button>
             <Button
@@ -367,8 +388,8 @@ export default function ReportDetailPage() {
       >
         <div className="space-y-3">
           <p className="text-sm text-slate-600">
-            Approving moves the report to the next state in the workflow. Tick the override box if you are correcting
-            the AI recommendation.
+            Approving moves the report to the next state in the workflow. Tick the override box if
+            you are correcting the AI recommendation.
           </p>
           <Textarea
             label="Remarks (optional)"
@@ -415,14 +436,23 @@ export default function ReportDetailPage() {
         size="md"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setRejectOpen(false)} disabled={reject.isPending}>
+            <Button
+              variant="secondary"
+              onClick={() => setRejectOpen(false)}
+              disabled={reject.isPending}
+            >
               Cancel
             </Button>
             <Button
               variant="danger"
               loading={reject.isPending}
               disabled={!reasonCode}
-              onClick={() => { void reject.mutate({ reason_code: reasonCode, remarks: remarks.trim() || undefined }); }}
+              onClick={() => {
+                void reject.mutate({
+                  reason_code: reasonCode,
+                  remarks: remarks.trim() || undefined,
+                });
+              }}
             >
               Reject
             </Button>
@@ -455,7 +485,11 @@ export default function ReportDetailPage() {
         size="lg"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setMergeOpen(false)} disabled={merge.isPending}>
+            <Button
+              variant="secondary"
+              onClick={() => setMergeOpen(false)}
+              disabled={merge.isPending}
+            >
               Cancel
             </Button>
             <Button
@@ -464,7 +498,10 @@ export default function ReportDetailPage() {
               disabled={!duplicateIds.trim()}
               onClick={() =>
                 merge.mutate({
-                  duplicate_report_ids: duplicateIds.split(',').map((s) => s.trim()).filter(Boolean),
+                  duplicate_report_ids: duplicateIds
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean),
                   reason_code: reasonCode || undefined,
                   remarks: remarks.trim() || undefined,
                 })
@@ -477,8 +514,8 @@ export default function ReportDetailPage() {
       >
         <div className="space-y-3">
           <p className="text-sm text-slate-600">
-            This report (<span className="font-mono">{data.tracking_number}</span>) becomes the canonical report; the
-            ids below are folded into it and marked as merged.
+            This report (<span className="font-mono">{data.tracking_number}</span>) becomes the
+            canonical report; the ids below are folded into it and marked as merged.
           </p>
           <Input
             label="Duplicate report ids (comma separated)"
@@ -515,14 +552,23 @@ export default function ReportDetailPage() {
         size="md"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setEscalateOpen(false)} disabled={escalate.isPending}>
+            <Button
+              variant="secondary"
+              onClick={() => setEscalateOpen(false)}
+              disabled={escalate.isPending}
+            >
               Cancel
             </Button>
             <Button
               variant="primary"
               loading={escalate.isPending}
               disabled={!reasonCode}
-              onClick={() => { void escalate.mutate({ reason_code: reasonCode, remarks: remarks.trim() || undefined }); }}
+              onClick={() => {
+                void escalate.mutate({
+                  reason_code: reasonCode,
+                  remarks: remarks.trim() || undefined,
+                });
+              }}
             >
               Escalate
             </Button>
@@ -552,7 +598,9 @@ export default function ReportDetailPage() {
         onClose={() => setAssignOpen(false)}
         loading={assign.isPending}
         defaultDepartmentId={data.department?.id ?? undefined}
-        onSubmit={(r) => { void assign.mutateAsync(r); }}
+        onSubmit={(r) => {
+          void assign.mutateAsync(r);
+        }}
       />
     </div>
   );
