@@ -3,33 +3,36 @@
 declare(strict_types=1);
 
 use App\Modules\AI\Services\ConfidenceAggregator;
+use Tests\TestCase;
 
-it('confidence > 95 returns auto_route', function (): void {
+uses(TestCase::class);
+
+it('confidence > 90 returns auto_route', function (): void {
     $agg = new ConfidenceAggregator;
-    expect($agg->decide(96))->toBe('auto_route')
-        ->and($agg->decide(99))->toBe('auto_route')
+    expect($agg->decide(91))->toBe('auto_route')
+        ->and($agg->decide(95))->toBe('auto_route')
         ->and($agg->decide(100))->toBe('auto_route');
 });
 
-it('confidence = 95 returns moderator_review (boundary)', function (): void {
+it('confidence = 90 returns moderator_review (boundary)', function (): void {
     $agg = new ConfidenceAggregator;
-    expect($agg->decide(95))->toBe('moderator_review');
+    expect($agg->decide(90))->toBe('moderator_review');
 });
 
-it('confidence in 80..95 returns moderator_review', function (): void {
+it('confidence in 75..90 returns moderator_review', function (): void {
     $agg = new ConfidenceAggregator;
-    expect($agg->decide(80))->toBe('moderator_review')
-        ->and($agg->decide(85))->toBe('moderator_review')
-        ->and($agg->decide(90))->toBe('moderator_review');
+    expect($agg->decide(75))->toBe('moderator_review')
+        ->and($agg->decide(80))->toBe('moderator_review')
+        ->and($agg->decide(85))->toBe('moderator_review');
 });
 
-it('confidence = 80 returns moderator_review (lower boundary inclusive)', function (): void {
-    expect((new ConfidenceAggregator)->decide(80))->toBe('moderator_review');
+it('confidence = 75 returns moderator_review (lower boundary inclusive)', function (): void {
+    expect((new ConfidenceAggregator)->decide(75))->toBe('moderator_review');
 });
 
-it('confidence < 80 returns manual_classification', function (): void {
+it('confidence < 75 returns manual_classification', function (): void {
     $agg = new ConfidenceAggregator;
-    expect($agg->decide(79))->toBe('manual_classification')
+    expect($agg->decide(74))->toBe('manual_classification')
         ->and($agg->decide(50))->toBe('manual_classification')
         ->and($agg->decide(0))->toBe('manual_classification');
 });

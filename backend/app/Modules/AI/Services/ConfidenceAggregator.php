@@ -8,25 +8,25 @@ namespace App\Modules\AI\Services;
  * Maps the AI provider's overall confidence to a routing
  * decision per docs/10 §13.
  *
- *   confidence > 95  →  auto_route
+ *   confidence > 90  →  auto_route
  *                       the orchestrator trusts the
  *                       prediction enough to route
  *                       directly to the recommended
  *                       department (M7 routing rules
  *                       win)
- *   80 ≤ confidence ≤ 95  →  moderator_review
+ *   75 ≤ confidence ≤ 90  →  moderator_review
  *                       the AI's prediction is shown
  *                       to a moderator as a strong
  *                       recommendation, but a human
  *                       always has the final say
- *   confidence < 80  →  manual_classification
+ *   confidence < 75  →  manual_classification
  *                       the AI's prediction is shown
  *                       only as a hint; the moderator
  *                       must classify from scratch
  *
  * Thresholds are config-driven via
  * `config('cip.ai.confidence.*')` with safe defaults
- * of 95 and 80.
+ * of 90 and 75.
  */
 class ConfidenceAggregator
 {
