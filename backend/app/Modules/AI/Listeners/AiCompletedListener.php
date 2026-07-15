@@ -93,7 +93,21 @@ class AiCompletedListener
         // ConfidenceAggregator's thresholds are on a 0-100 scale.
         $confidencePct = ((float) ($event->visionResult['confidence'] ?? 0.0)) * 100;
 
-        if ($this->confidence->decide($confidencePct) !== ConfidenceAggregator::DECISION_AUTO_ROUTE) {
+        // Claim-mismatch gate: even when confidence is high enough
+        // to auto-route, a claim that doesn't match the evidence
+        // must go through a human moderator. The AI may have
+        // hallucinated a category that looks plausible but isn't
+        // actually visible in the image. The moderator can verify
+        // the visual classification before committing it.
+        $claimMatches = $event->visionResult['claim_matches_evidence'] ?? true;
+        $consistencyScore = $event->visionResult['consistency_score'] ?? 100;
+        $hasMismatch = $claimMatches === false
+            || ($consistencyScore !== null && (int) $consistencyScore < 50);
+
+        $autoRoute = $this->confidence->decide($confidencePct) === ConfidenceAggregator::DECISION_AUTO_ROUTE
+            && ! $hasMismatch;
+
+        if (! $autoRoute) {
             $reviewDecision = $this->workflow->evaluate($report, 'moderator_review', $systemActor);
 
             if ($reviewDecision->allowed) {

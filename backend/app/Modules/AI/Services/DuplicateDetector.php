@@ -76,6 +76,9 @@ class DuplicateDetector
             $distance = $this->hammingHex((string) $hash->perceptual_hash, (string) $candidate->perceptual_hash);
 
             if ($distance > $hammingThreshold) {
+                // Visually distinct media — recency alone does NOT make
+                // a duplicate. Skip so an unrelated recent report cannot
+                // inflate the duplicate score to 100.
                 continue;
             }
 
@@ -84,7 +87,7 @@ class DuplicateDetector
             $timeBoost = max(0, 100 - (int) (($ageDays / max(1, $windowDays)) * 100));
 
             // Combined: take the higher of perceptual match and
-            // time-window recency, then floor to whichever is smaller.
+            // time-window recency — but only for a genuine hash match.
             $combined = (int) round(max($score, $timeBoost));
             $combined = max(0, min(100, $combined));
 

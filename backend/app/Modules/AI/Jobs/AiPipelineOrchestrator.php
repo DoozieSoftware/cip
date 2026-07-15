@@ -182,10 +182,16 @@ class AiPipelineOrchestrator implements ShouldQueue
                 ])
             : 0;
 
-            // The provider assesses visible manipulation/synthetic risk while
-            // FraudScorer handles platform signals (GPS, replay, device). Keep
-            // the more conservative of the two instead of discarding either.
-            $fraudScore = max($fraudScore, $response->fraudScore);
+            // FraudScorer already folds the provider's synthetic-image signal
+            // in via the `ai_synth` key (response->syntheticScore). The
+            // provider's own `fraud_score` field is an unreliable aggregate
+            // (the vision model frequently returns 100 for genuine images),
+            // so we do NOT let it override the platform-computed score. Only
+            // elevate when the model explicitly reports visual manipulation
+            // through synthetic_score, which FraudScorer weights separately.
+            if ($response->syntheticScore !== null && $response->syntheticScore >= 0.5) {
+                $fraudScore = max($fraudScore, (int) round($response->syntheticScore * 100));
+            }
 
             $effectiveQualityScore = $this->effectiveQualityScore($qualityScore, $response);
             $calibratedConfidence = min($response->confidence, $effectiveQualityScore / 100);
@@ -376,37 +382,28 @@ class AiPipelineOrchestrator implements ShouldQueue
         );
     }
 
+    /**
+     * Do NOT destroy the AI's visual classification when the citizen
+     * claim doesn't fully match what the image shows.
+     *
+     * Previous behaviour forced confidence to 0 and the category to
+     * "unclassified" whenever the model set claim_matches_evidence
+     * to false. This was wrong: a pothole photo where the citizen
+     * mentions two-wheelers that aren't visible IS a pothole — the
+     * AI just can't confirm every detail of the claim. Destroying
+     * the classification threw away the valuable visual signal and
+     * left the moderator with no AI recommendation.
+     *
+     * New behaviour: preserve the AI's visual classification (type,
+     * confidence, department, severity) as-is. The claim-mismatch
+     * metadata (claimMatchesEvidence=false, consistencyScore,
+     * mismatchReason) is kept so the moderator can see WHY the
+     * model flagged the inconsistency, but the visual result is
+     * not altered.
+     */
     private function guardAgainstClaimMismatch(AiResponse $response): AiResponse
     {
-        $isMismatch = $response->claimMatchesEvidence === false
-            || ($response->consistencyScore !== null && $response->consistencyScore < 50);
-
-        if (! $isMismatch) {
-            return $response;
-        }
-
-        return new AiResponse(
-            labels: [[
-                'label' => 'unclassified',
-                'confidence' => 0.0,
-                'is_primary' => true,
-            ]],
-            predictedType: 'unclassified',
-            confidence: 0.0,
-            recommendedDepartment: '',
-            severity: 'low',
-            qualityScore: $response->qualityScore,
-            duplicateScore: $response->duplicateScore,
-            fraudScore: max($response->fraudScore, 80),
-            summary: 'Evidence does not match the citizen claim; manual review is required.',
-            raw: array_replace($response->raw, ['claim_mismatch_gate' => true]),
-            licensePlate: $response->licensePlate,
-            plateConfidence: $response->plateConfidence,
-            claimMatchesEvidence: $response->claimMatchesEvidence,
-            consistencyScore: $response->consistencyScore,
-            mismatchReason: $response->mismatchReason,
-            syntheticScore: $response->syntheticScore,
-        );
+        return $response;
     }
 
     private function createJobRow(): AiJob
