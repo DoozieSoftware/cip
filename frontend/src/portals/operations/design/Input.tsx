@@ -2,17 +2,22 @@ import type { InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
 import { forwardRef } from 'react';
 import { cx } from './cx';
 
+// Monotonic counter so every Input/Textarea rendered without an
+// explicit id/name still gets a stable, unique id that its
+// <label htmlFor> can reference (a11y: a labelled control must be
+// programmatically associated with its label).
+let fieldSeq = 0;
+
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   hint?: string;
   error?: string;
 }
-
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   { label, hint, error, className, id, ...rest },
   ref,
 ) {
-  const inputId = id ?? rest.name;
+  const inputId = id ?? rest.name ?? `cip-field-${++fieldSeq}`;
   return (
     <div className="space-y-1">
       {label && (
@@ -50,12 +55,11 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   hint?: string;
   error?: string;
 }
-
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
   { label, hint, error, className, id, ...rest },
   ref,
 ) {
-  const inputId = id ?? rest.name;
+  const inputId = id ?? rest.name ?? `cip-field-${++fieldSeq}`;
   return (
     <div className="space-y-1">
       {label && (

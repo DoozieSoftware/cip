@@ -151,11 +151,17 @@ test.describe('Operations portal — accept → start → resolve → close', ()
     await expect(page.getByRole('heading', { name: /department at a glance/i })).toBeVisible();
 
     // Open the assigned reports list.
-    await page.getByRole('link', { name: /assigned reports/i }).first().click();
+    await page
+      .getByRole('link', { name: /assigned reports/i })
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/operations\/reports$/);
 
     // Open the report.
-    await page.getByRole('link', { name: /CIP-2026-0001/ }).first().click();
+    await page
+      .getByRole('link', { name: /CIP-2026-0001/ })
+      .first()
+      .click();
     await expect(page).toHaveURL(new RegExp(`/operations/reports/${REPORT_ID}$`));
     await expect(page.getByRole('heading', { name: /pothole on main st/i })).toBeVisible();
 

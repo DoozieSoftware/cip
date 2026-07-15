@@ -21,21 +21,30 @@ test.describe('Operations portal — shell', () => {
 
   test('navigates to the assigned reports list', async ({ page }) => {
     await page.goto('/operations');
-    await page.getByRole('link', { name: /assigned reports/i }).first().click();
+    await page
+      .getByRole('link', { name: /assigned reports/i })
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/operations\/reports$/);
     await expect(page.getByRole('heading', { name: /assigned reports/i })).toBeVisible();
   });
 
   test('navigates to the export page', async ({ page }) => {
     await page.goto('/operations');
-    await page.getByRole('link', { name: /^export$/i }).first().click();
+    await page
+      .getByRole('link', { name: /^export$/i })
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/operations\/reports\/export$/);
     await expect(page.getByRole('heading', { name: /export reports/i })).toBeVisible();
   });
 
   test('navigates to the department admin page', async ({ page }) => {
     await page.goto('/operations');
-    await page.getByRole('link', { name: /department admin/i }).first().click();
+    await page
+      .getByRole('link', { name: /department admin/i })
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/operations\/admin$/);
     await expect(page.getByRole('heading', { name: /department admin/i })).toBeVisible();
   });
