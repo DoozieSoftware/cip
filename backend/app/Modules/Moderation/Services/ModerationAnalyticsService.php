@@ -97,17 +97,29 @@ class ModerationAnalyticsService
         /** @var array<string, array{provider_code: string, total: int, overridden: int, confidence_sum: float}> $perProvider */
         $perProvider = [];
 
-        foreach ($actions as $action) {
-            $job = $jobsByReport->get((string) $action->report_id);
+        // Count one outcome per report: the final moderation action in the
+        // window. Otherwise a report that is approved then escalated would be
+        // counted as two separate "AI decisions" and distort the override rate.
+        $actionsByReport = $actions->groupBy('report_id');
+
+        foreach ($actionsByReport as $reportId => $reportActions) {
+            /** @var object{report_id: string, to_code: string, created_at: Carbon} $action */
+            $action = $reportActions->last();
+
+            $job = $jobsByReport->get((string) $reportId);
+
             if (! $job instanceof AiJob) {
                 continue;
             }
 
             $providerCode = (string) $job->provider_code;
             $isOverridden = $action->to_code !== 'assigned';
-            $confidence = (float) ($reports->get((string) $action->report_id)?->ai_confidence ?? 0.0);
+            // reports.ai_confidence is the canonical 0–100 value the orchestrator
+            // writes (result.confidence * 100), so it is the correct display unit.
+            $confidence = (float) ($reports->get((string) $reportId)?->ai_confidence ?? 0.0);
 
             $totals++;
+
             if ($isOverridden) {
                 $overridden++;
             }
@@ -123,6 +135,7 @@ class ModerationAnalyticsService
 
             $perProvider[$providerCode]['total']++;
             $perProvider[$providerCode]['confidence_sum'] += $confidence;
+
             if ($isOverridden) {
                 $perProvider[$providerCode]['overridden']++;
             }
@@ -168,6 +181,7 @@ class ModerationAnalyticsService
     private function averageReviewMinutes(Collection $actions): float
     {
         $reportIds = $actions->pluck('report_id')->unique()->values()->all();
+
         if ($reportIds === []) {
             return 0.0;
         }

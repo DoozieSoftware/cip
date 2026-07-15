@@ -2,16 +2,21 @@
 
 declare(strict_types=1);
 
+use App\Modules\AI\Models\AiJob;
+use App\Modules\AI\Models\AiResult;
+use App\Modules\AI\Models\PromptVersion;
 use App\Modules\Departments\Models\Ward;
 use App\Modules\Reports\Models\Location;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
+use App\Modules\Reports\Models\ReportStatusHistory;
 use App\Modules\Reports\Models\ReportType;
 use App\Modules\Users\Models\User;
 use App\Modules\Workflow\Models\WorkflowDefinition;
 use App\Modules\Workflow\Services\WorkflowEngine;
 use Database\Seeders\DefaultWorkflowSeeder;
 use Database\Seeders\GeographySeeder;
+use Database\Seeders\PromptsSeeder;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -26,6 +31,7 @@ beforeEach(function (): void {
     (new ReportTypesSeeder)->run();
     (new DefaultWorkflowSeeder)->run();
     (new GeographySeeder)->run();
+    (new PromptsSeeder)->run();
 });
 
 if (! function_exists('landReportInPendingModerator')) {
@@ -236,6 +242,72 @@ it('returns moderator ai performance analytics', function (): void {
         'override_rate_pct',
         'per_provider',
     ]);
+});
+
+it('counts one ai decision per report despite multiple moderation actions', function (): void {
+    $moderator = User::factory()->create();
+    $moderator->assignRole('moderator');
+    Sanctum::actingAs($moderator);
+
+    $report = landReportInPendingModerator();
+
+    // A successful AI job (with a 0..1 result confidence) for the report.
+    $promptVersion = PromptVersion::query()->firstOrFail();
+    $job = AiJob::create([
+        'report_id' => $report->id,
+        'prompt_version_id' => $promptVersion->id,
+        'provider_code' => 'modal-vision',
+        'model' => 'test-model',
+        'status' => AiJob::STATUS_SUCCEEDED,
+        'requested_at' => now()->subHours(2),
+        'completed_at' => now()->subHours(2),
+    ]);
+    AiResult::create([
+        'job_id' => $job->id,
+        'predicted_type' => 'pothole',
+        'confidence' => 0.92,
+        'recommended_department' => 'BBMP',
+        'severity' => 'medium',
+        'quality_score' => 80,
+        'duplicate_score' => 0,
+        'fraud_score' => 0,
+        'summary' => 'test',
+        'raw_response' => ['labels' => []],
+        'created_at' => now()->subHours(2),
+    ]);
+
+    $assigned = ReportStatus::query()->where('code', 'assigned')->firstOrFail();
+    $escalated = ReportStatus::query()->where('code', 'escalated')->firstOrFail();
+
+    // Two moderation actions on the same report in the window: approve
+    // (not an override) then escalate (an override). Before the fix this
+    // counted as two separate "AI decisions" and distorted the rate.
+    ReportStatusHistory::create([
+        'report_id' => $report->id,
+        'from_status_id' => $assigned->id,
+        'to_status_id' => $assigned->id,
+        'created_at' => now()->subHours(1),
+    ]);
+    ReportStatusHistory::create([
+        'report_id' => $report->id,
+        'from_status_id' => $assigned->id,
+        'to_status_id' => $escalated->id,
+        'created_at' => now()->subMinutes(30),
+    ]);
+
+    $response = $this->getJson('/api/v1/moderator/analytics/ai-performance?window=7d');
+    $response->assertOk();
+
+    // One report => one decision (the final escalation), counted as overridden.
+    expect($response->json('data.total_ai_decisions'))->toBe(1);
+    expect($response->json('data.overridden_by_moderator'))->toBe(1);
+    expect($response->json('data.override_rate_pct'))->toBe(100.0);
+
+    $perProvider = $response->json('data.per_provider');
+    expect($perProvider)->toHaveCount(1);
+    expect($perProvider[0]['provider_code'])->toBe('modal-vision');
+    expect($perProvider[0]['total'])->toBe(1);
+    expect($perProvider[0]['overridden'])->toBe(1);
 });
 
 it('the review endpoint applies an approve decision', function (): void {
