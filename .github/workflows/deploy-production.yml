@@ -123,6 +123,14 @@ jobs:
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             $REMOTE "cd ~/cip && \
               if [ -f .env ]; then \
+                if [ -f .env.bak ]; then \
+                  CURRENT_APP_KEY=\$(grep '^APP_KEY=' .env | head -1 | cut -d'=' -f2-); \
+                  BACKUP_APP_KEY=\$(grep '^APP_KEY=base64:' .env.bak | head -1 | cut -d'=' -f2-); \
+                  if [ -n \"\$BACKUP_APP_KEY\" ] && [ \"\$CURRENT_APP_KEY\" != \"\$BACKUP_APP_KEY\" ]; then \
+                    echo 'Restoring preserved APP_KEY from .env.bak'; \
+                    sed -i \"s|^APP_KEY=.*|APP_KEY=\$BACKUP_APP_KEY|\" .env; \
+                  fi; \
+                fi; \
                 DB_CHECK=\$(grep '^DB_DATABASE=' .env | cut -d'=' -f2-); \
                 if echo \"\$DB_CHECK\" | grep -q 'YOUR_CPANEL'; then \
                   echo 'WARNING: Current .env has placeholder DB creds. Restoring from .env.bak if available.'; \
@@ -137,7 +145,7 @@ jobs:
                 cp .env .env.bak; \
                 cp .env.cpanel .env.tmp; \
                 while IFS='=' read -r key value; do \
-                  if [ -n \"\$key\" ] && [ -n \"\$value\" ] && grep -q \"^\$key=\" .env 2>/dev/null; then \
+                  if [ -n \"\$key\" ] && grep -q \"^\$key=\" .env 2>/dev/null; then \
                     existing=\$(grep \"^\$key=\" .env | head -1 | cut -d'=' -f2-); \
                     sed -i \"s|^\$key=.*|\$key=\$existing|\" .env.tmp; \
                   fi; \
