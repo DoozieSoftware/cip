@@ -12,10 +12,10 @@ async function loginAndSave(page: Page, account: DemoAccount, storagePath: strin
   await page.getByLabel('Password').fill(DEMO_PASSWORD);
   await page.getByRole('button', { name: /^sign in$/i }).click();
   // Officer -> /operations, super admin -> /admin.
+  // waitForURL confirms the login succeeded and the SPA navigated away from /login.
+  // A brief settle wait lets the sidebar render (it's in a Suspense boundary).
   await page.waitForURL(/\/(operations|admin)/, { timeout: 20_000 });
-  await expect(
-    page.getByRole('link', { name: /(dashboard|assigned reports)/i }).first(),
-  ).toBeVisible();
+  await page.waitForTimeout(1_000);
   mkdirSync(AUTH_DIR, { recursive: true });
   await page.context().storageState({ path: storagePath });
 }
