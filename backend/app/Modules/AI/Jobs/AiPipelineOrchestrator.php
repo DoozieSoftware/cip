@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\AI\Jobs;
 
 use App\Modules\AI\Events\AiCompleted;
+use App\Modules\AI\Exceptions\AiEvidenceNotReadyException;
 use App\Modules\AI\Exceptions\InvalidAiResponseException;
 use App\Modules\AI\Models\AiJob;
 use App\Modules\AI\Models\AiLabel;
@@ -74,12 +75,15 @@ class AiPipelineOrchestrator implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    public int $tries = 5;
+    public int $tries = 40;
 
     /** @var list<int> */
-    public array $backoff = [3, 5, 10, 20];
+    public array $backoff = [5, 10, 20, 40, 80, 160, 300, 300, 300, 300];
 
     public int $timeout = 120;
+
+    /** @var AiJob|null the row created at the start of a successful attempt */
+    private ?AiJob $jobRow = null;
 
     public function __construct(public readonly string $reportId) {}
 
@@ -93,20 +97,25 @@ class AiPipelineOrchestrator implements ShouldQueue
         FeatureFlagService $flags,
         AiMediaReferenceResolver $mediaReferences,
     ): void {
-        $job = null;
+        $this->jobRow = null;
 
         try {
             $report = Report::query()->findOrFail($this->reportId);
-            $media = Media::query()->where('report_id', $this->reportId)->first();
+            $media = Media::query()->where('report_id', $this->reportId)
+                ->whereIn('type', ['PHOTO', 'VIDEO'])
+                ->first();
 
             // Report creation and evidence upload are separate API calls. A
             // fast queue worker may receive this job before the photo request
-            // completes; retry rather than running a text-only "vision" job.
+            // completes. ReportMediaUploaded re-dispatches this job the moment
+            // the asset lands, but we also retry on a long backoff here so a
+            // late or out-of-order upload still reaches the pipeline instead
+            // of being marked failed after a few seconds.
             if ($media === null) {
-                throw new RuntimeException('ai_evidence_not_ready');
+                throw new AiEvidenceNotReadyException;
             }
 
-            $job = $this->createJobRow();
+            $this->jobRow = $this->createJobRow();
 
             $actor = $report->citizen;
 
@@ -169,7 +178,7 @@ class AiPipelineOrchestrator implements ShouldQueue
             $calibratedConfidence = min($response->confidence, $effectiveQualityScore / 100);
 
             $result = $this->writeResult(
-                $job,
+                $this->jobRow,
                 $response,
                 $effectiveQualityScore,
                 $duplicateResult['score'],
@@ -190,7 +199,7 @@ class AiPipelineOrchestrator implements ShouldQueue
             $report->ai_confidence = $calibratedConfidence * 100;
             $report->save();
 
-            $this->markJobSucceeded($job, $response, $result, $providerCode, $model);
+            $this->markJobSucceeded($this->jobRow, $response, $result, $providerCode, $model);
 
             AiCompleted::dispatch(
                 $report->id,
@@ -201,14 +210,14 @@ class AiPipelineOrchestrator implements ShouldQueue
                 array_replace($response->toArray(), ['confidence' => $calibratedConfidence]),
             );
         } catch (InvalidAiResponseException $e) {
-            if ($job !== null) {
-                $this->markJobFailed($job, 'invalid_ai_response', $e);
+            if ($this->jobRow !== null) {
+                $this->markJobFailed($this->jobRow, 'invalid_ai_response', $e);
             }
 
             throw $e;
         } catch (Throwable $e) {
-            if ($job !== null) {
-                $this->markJobFailed($job, 'pipeline_error', $e);
+            if ($this->jobRow !== null) {
+                $this->markJobFailed($this->jobRow, 'pipeline_error', $e);
             }
 
             throw $e;
@@ -231,6 +240,18 @@ class AiPipelineOrchestrator implements ShouldQueue
 
         if ($report === null) {
             return;
+        }
+
+        // The job row is created only after the media check passes, so a
+        // missing-evidence failure (or any pre-row throw) leaves $job null
+        // and must not strand the report. Always attempt the human fallback
+        // regardless of whether an ai_jobs row exists.
+        if ($exception instanceof AiEvidenceNotReadyException) {
+            Log::warning('AiPipelineOrchestrator: exhausted retries waiting for evidence', [
+                'report_id' => $this->reportId,
+            ]);
+        } elseif ($this->jobRow !== null) {
+            $this->markJobFailed($this->jobRow, 'pipeline_error', $exception ?? new RuntimeException('unknown'));
         }
 
         $systemActor = app(SystemUserService::class)->user();

@@ -6,7 +6,9 @@ namespace App\Providers;
 
 use App\Modules\AI\Events\AiCompleted;
 use App\Modules\AI\Listeners\AiCompletedListener;
+use App\Modules\AI\Listeners\ReportMediaUploadedListener;
 use App\Modules\AI\Listeners\ReportSubmittedListener;
+use App\Modules\Media\Events\ReportMediaUploaded;
 use App\Modules\Notifications\Listeners\AiCompletedListener as NotificationsAiCompletedListener;
 use App\Modules\Notifications\Listeners\ReportAssignedListener;
 use App\Modules\Notifications\Listeners\ReportStatusChangedListener;
@@ -43,6 +45,9 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(AiCompleted::class, AiCompletedListener::class);
         // M8: wire report submission (status -> ai_processing) -> vision pipeline.
         Event::listen(ReportStatusChanged::class, ReportSubmittedListener::class);
+        // M8: re-arm the vision pipeline once evidence is uploaded (report may
+        // have entered ai_processing before its photo/video landed).
+        Event::listen(ReportMediaUploaded::class, ReportMediaUploadedListener::class);
 
         // M9: notification fan-out for platform events. The
         // ReportStatusChanged event is shared with the AI
