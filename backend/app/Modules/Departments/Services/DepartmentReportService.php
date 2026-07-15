@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Departments\Services;
 
-use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Models\InternalNote;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Security\Models\AuditLog;
@@ -160,11 +159,6 @@ class DepartmentReportService
 
         return DB::transaction(function () use ($report, $event, $actor, $request, $decision, $payload): Report {
             $before = $report->status?->code;
-            // Capture the pre-apply status id BEFORE WorkflowEngine::apply()
-            // mutates $report->current_status_id in memory. Dispatching
-            // with $report->current_status_id here would read the
-            // post-change value and produce an "X -> X" no-op history row.
-            $fromStatusId = $report->current_status_id;
             $updated = $this->engine->apply($report, $decision, $actor);
             $after = $updated->status?->code;
 
@@ -185,15 +179,12 @@ class DepartmentReportService
                 'created_at' => now(),
             ]);
 
-            if ($before !== $after) {
-                ReportStatusChanged::dispatch(
-                    reportId: $updated->getKey(),
-                    fromStatusId: $fromStatusId,
-                    toStatusId: $updated->current_status_id,
-                    actorId: $actor->getKey(),
-                    reason: $event,
-                );
-            }
+            // WorkflowEngine::apply() already dispatches
+            // ReportStatusChanged with the correct from/to and the
+            // transition id. Do NOT dispatch a second event here —
+            // doing so wrote a duplicate history row for every
+            // officer action (e.g. "Accepted → Accepted" alongside
+            // the real "Assigned → Accepted").
 
             return $updated->refresh()->load(['status', 'reportType', 'department', 'priority']);
         });
