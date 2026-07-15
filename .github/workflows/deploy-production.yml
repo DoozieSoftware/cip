@@ -180,6 +180,7 @@ jobs:
           # found) and never ran on the host.
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             $REMOTE "cd ~/cip && \
+              mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views; \
               $PHP_BIN artisan config:clear 2>/dev/null || true; \
               $PHP_BIN artisan migrate --force; \
               $PHP_BIN artisan storage:link --force || true; \

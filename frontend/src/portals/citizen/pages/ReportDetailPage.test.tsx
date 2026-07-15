@@ -29,7 +29,7 @@ function baseReport(overrides: Partial<ReportDetail>): ReportDetail {
   };
 }
 
-describe('ReportDetailPage verification badge', () => {
+describe('ReportDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -80,5 +80,23 @@ describe('ReportDetailPage verification badge', () => {
     );
     expect(screen.queryByText('Verified')).toBeNull();
     expect(screen.queryByText('GPS verified')).toBeNull();
+  });
+
+  it('renders video evidence with a video element instead of an image placeholder', () => {
+    (useReportDetail as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: baseReport({
+        media: [{ id: 'video-1', kind: 'video', signed_url: 'https://example.test/evidence.mp4' }],
+      }),
+    });
+    render(
+      <MemoryRouter initialEntries={['/citizen/reports/11111111-1111-1111-1111-111111111111']}>
+        <ReportDetailPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByLabelText('Video evidence').tagName).toBe('VIDEO');
+    expect(screen.queryByText('No evidence')).toBeNull();
   });
 });

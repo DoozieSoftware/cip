@@ -22,7 +22,7 @@ const https = process.env['CIP_DEV_HTTP'] !== '1' && fs.existsSync(keyPath) && f
   : undefined;
 
 export default defineConfig({
-  base: './',
+  base: '/',
   plugins: [react(), tailwindcss()],
   server: {
     host: true,

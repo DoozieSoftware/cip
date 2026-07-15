@@ -1,11 +1,58 @@
 import { Link, useParams } from 'react-router-dom';
 import { type JSX, useState } from 'react';
-import { useReportDetail, useReportTimeline } from '../api/client';
+import { type ReportDetail, useReportDetail, useReportTimeline } from '../api/client';
 import { EmptyState, Spinner } from '../../moderator/design';
 import { StatusBadge } from '../components/StatusBadge';
 import LocationMap from '../components/LocationMap';
 
 type Tab = 'timeline' | 'details';
+type ReportMedia = ReportDetail['media'][number];
+
+function EvidencePreview({ media, compact = false }: { media: ReportMedia; compact?: boolean }): JSX.Element {
+  const [failed, setFailed] = useState(false);
+  const url = media.signed_url ?? media.url;
+
+  if (!url || failed) {
+    return (
+      <div className="grid h-full w-full place-items-center px-2 text-center text-xs text-slate-500">
+        Evidence unavailable
+      </div>
+    );
+  }
+
+  if (media.kind === 'video') {
+    return (
+      <div className="relative h-full w-full bg-slate-950">
+        {/* Citizen evidence capture disables audio, so this video has no captions track. */}
+        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+        <video
+          src={url}
+          aria-label="Video evidence"
+          className="h-full w-full object-cover"
+          controls={!compact}
+          muted={compact}
+          playsInline
+          preload="metadata"
+          onError={() => setFailed(true)}
+        />
+        {compact ? (
+          <span className="pointer-events-none absolute bottom-1.5 left-1.5 rounded bg-slate-950/80 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+            Video
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={url}
+      alt="Report evidence"
+      className="h-full w-full object-cover"
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return '—';
@@ -72,14 +119,10 @@ export default function ReportDetailPage(): JSX.Element {
 
         <div className="mt-4 flex gap-3">
           <div className="grid h-20 w-24 shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-2xl text-slate-400">
-            {leadMedia?.signed_url || leadMedia?.url ? (
-              <img
-                src={leadMedia.signed_url ?? leadMedia.url}
-                alt=""
-                className="h-full w-full object-cover"
-              />
+            {leadMedia ? (
+              <EvidencePreview media={leadMedia} compact />
             ) : (
-              <span aria-hidden>□</span>
+              <span className="px-2 text-center text-xs">No evidence</span>
             )}
           </div>
           <div className="min-w-0 flex-1">
@@ -225,24 +268,12 @@ export default function ReportDetailPage(): JSX.Element {
               <div>
                 <dt className="text-xs font-medium text-slate-500">Evidence ({r.media.length})</dt>
                 <dd className="mt-1 grid grid-cols-3 gap-2 sm:grid-cols-5">
-                  {r.media.map((m, i) => (
+                  {r.media.map((m) => (
                     <div
-                      key={i}
+                      key={m.id}
                       className="aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100"
                     >
-                      {m.kind === 'video' ? (
-                        <div className="grid h-full w-full place-items-center text-2xl">🎥</div>
-                      ) : m.signed_url || m.url ? (
-                        <img
-                          src={m.signed_url ?? m.url}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="grid h-full w-full place-items-center text-slate-400">
-                          □
-                        </div>
-                      )}
+                      <EvidencePreview media={m} />
                     </div>
                   ))}
                 </dd>

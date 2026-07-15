@@ -54,6 +54,12 @@ interface ApiReportPayload extends Omit<ReportDetail, 'type' | 'media' | 'timeli
   timeline?: ReportDetail['timeline'];
 }
 
+interface ApiMediaPayload {
+  id: string;
+  type: string;
+  signed_url?: string;
+}
+
 export function normalizeReport(payload: ApiReportPayload): ReportDetail {
   return {
     ...payload,
@@ -264,8 +270,19 @@ export function useReportDetail(id: string | undefined) {
     enabled: id !== undefined,
     queryKey: ['report', id],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<ApiReportPayload>>(`/citizen/reports/${id}`);
-      return normalizeReport(res.data);
+      const [report, media] = await Promise.all([
+        apiRequest<ApiEnvelope<ApiReportPayload>>(`/citizen/reports/${id}`),
+        apiRequest<ApiEnvelope<{ media: ApiMediaPayload[] }>>(`/reports/${id}/media`),
+      ]);
+
+      return normalizeReport({
+        ...report.data,
+        media: media.data.media.map((item) => ({
+          id: item.id,
+          kind: item.type.toUpperCase() === 'VIDEO' ? 'video' : 'photo',
+          signed_url: item.signed_url,
+        })),
+      });
     },
   });
 }
