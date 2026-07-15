@@ -107,6 +107,7 @@ jobs:
           rsync -az --delete \
             --exclude='storage/' \
             --exclude='.env' \
+            --exclude='.env.bak' \
             -e "ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes" \
             deploy/staging/cip/ $REMOTE:~/cip/
 

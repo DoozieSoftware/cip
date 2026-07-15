@@ -101,9 +101,14 @@ class AiPipelineOrchestrator implements ShouldQueue
 
         try {
             $report = Report::query()->findOrFail($this->reportId);
-            $media = Media::query()->where('report_id', $this->reportId)
-                ->whereIn('type', ['PHOTO', 'VIDEO'])
-                ->first();
+            $media = Media::query()
+                ->where('report_id', $this->reportId)
+                ->where('type', 'PHOTO')
+                ->first()
+                ?? Media::query()
+                    ->where('report_id', $this->reportId)
+                    ->where('type', 'VIDEO')
+                    ->first();
 
             // Report creation and evidence upload are separate API calls. A
             // fast queue worker may receive this job before the photo request
@@ -130,19 +135,26 @@ class AiPipelineOrchestrator implements ShouldQueue
                 'district' => null,
             ]);
 
-            $request = new AiRequest(
-                promptName: 'category_classifier',
-                mediaUrls: [$mediaReferences->resolve($media)],
-                mediaTypes: [$media->mime],
-                text: $maskedText,
-                metadata: $maskedMetadata,
-            );
-
-            if ($quality->shouldFlagForModerator($qualityScore)) {
+            if ($media->type === 'VIDEO') {
+                // The configured OpenAI-compatible provider accepts image_url
+                // inputs, not raw MP4 data. Video-only reports must still
+                // reach moderators instead of repeatedly failing as an
+                // invalid image request.
+                $response = $this->videoReviewResponse($qualityScore);
+                $providerCode = 'video-review';
+                $model = 'deterministic-video-routing';
+            } elseif ($quality->shouldFlagForModerator($qualityScore)) {
                 $response = $this->lowQualityResponse($qualityScore);
                 $providerCode = 'quality-gate';
                 $model = 'deterministic-image-quality';
             } else {
+                $request = new AiRequest(
+                    promptName: 'category_classifier',
+                    mediaUrls: [$mediaReferences->resolve($media)],
+                    mediaTypes: [$media->mime],
+                    text: $maskedText,
+                    metadata: $maskedMetadata,
+                );
                 [$response, $providerCode, $model] = $this->classify($request, $failover, $validator, $flags, $actor);
             }
 
@@ -340,6 +352,26 @@ class AiPipelineOrchestrator implements ShouldQueue
             fraudScore: 0,
             summary: 'Evidence quality is too low for reliable visual classification; manual review is required.',
             raw: ['quality_gate' => true],
+        );
+    }
+
+    private function videoReviewResponse(int $qualityScore): AiResponse
+    {
+        return new AiResponse(
+            labels: [[
+                'label' => 'unclassified',
+                'confidence' => 0.0,
+                'is_primary' => true,
+            ]],
+            predictedType: 'unclassified',
+            confidence: 0.0,
+            recommendedDepartment: '',
+            severity: 'low',
+            qualityScore: $qualityScore,
+            duplicateScore: 0,
+            fraudScore: 0,
+            summary: 'Video evidence requires manual review because the configured vision provider accepts image inputs only.',
+            raw: ['video_review' => true],
         );
     }
 
