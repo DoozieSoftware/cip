@@ -88,6 +88,33 @@ final class AiResponse
     }
 
     /**
+     * Return a new instance with claim_matches_evidence overridden.
+     * Used by the orchestrator when consistency_score >= 70 indicates
+     * the primary issue matches, even though the model's boolean is false.
+     */
+    public function withClaimMatches(bool $matches): self
+    {
+        return new self(
+            labels: $this->labels,
+            predictedType: $this->predictedType,
+            confidence: $this->confidence,
+            recommendedDepartment: $this->recommendedDepartment,
+            severity: $this->severity,
+            qualityScore: $this->qualityScore,
+            duplicateScore: $this->duplicateScore,
+            fraudScore: $this->fraudScore,
+            summary: $this->summary,
+            raw: $this->raw,
+            licensePlate: $this->licensePlate,
+            plateConfidence: $this->plateConfidence,
+            claimMatchesEvidence: $matches,
+            consistencyScore: $this->consistencyScore,
+            mismatchReason: $this->mismatchReason,
+            syntheticScore: $this->syntheticScore,
+        );
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(): array

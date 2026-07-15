@@ -400,9 +400,25 @@ class AiPipelineOrchestrator implements ShouldQueue
      * mismatchReason) is kept so the moderator can see WHY the
      * model flagged the inconsistency, but the visual result is
      * not altered.
+     *
+     * Additionally, override claim_matches_evidence based on
+     * consistency_score: if consistency >= 70, the primary civic
+     * issue matches (the model just can't verify secondary details
+     * like hazard descriptions), so the claim is treated as matching.
+     * This prevents the model's unreliable boolean from blocking
+     * auto-routing when the actual classification is correct.
      */
     private function guardAgainstClaimMismatch(AiResponse $response): AiResponse
     {
+        // The model's claim_matches_evidence boolean is unreliable —
+        // it rejects valid reports over unverifiable hazard descriptions.
+        // Use consistency_score as the source of truth instead: if the
+        // primary issue matches (consistency >= 70), override to true.
+        if ($response->consistencyScore !== null && $response->consistencyScore >= 70
+            && $response->claimMatchesEvidence === false) {
+            return $response->withClaimMatches(true);
+        }
+
         return $response;
     }
 
