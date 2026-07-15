@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Services\LogScanner;
 use App\Modules\Media\Services\MediaService;
@@ -10,14 +9,13 @@ use App\Modules\Media\Services\MimeValidator;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
-
-
 
 beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();
@@ -62,6 +60,17 @@ it('hides storage_path from non-staff (citizen)', function (): void {
     $this->getJson("/api/v1/reports/{$report->id}/media")
         ->assertStatus(200)
         ->assertJsonMissingPath('data.media.0.storage_path');
+});
+
+it('blocks a citizen from viewing another citizens report media', function (): void {
+    $owner = User::factory()->create();
+    $otherCitizen = User::factory()->create();
+    Sanctum::actingAs($otherCitizen, ['citizen']);
+    $report = Report::factory()->create(['citizen_id' => $owner->id]);
+    Media::factory()->create(['report_id' => $report->id, 'type' => 'PHOTO', 'storage_disk' => 'local']);
+
+    $this->getJson("/api/v1/reports/{$report->id}/media")
+        ->assertForbidden();
 });
 
 it('exposes storage_path to super_admin with include_storage_path=true', function (): void {

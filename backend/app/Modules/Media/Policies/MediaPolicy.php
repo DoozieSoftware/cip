@@ -33,15 +33,12 @@ class MediaPolicy extends BasePolicy
     {
         $report = Report::query()->find($media->report_id);
 
-        if ($report === null) {
-            return false;
-        }
+        return $report !== null && $this->viewReport($user, $report);
+    }
 
-        if ($this->isOwner($user, $report)) {
-            return true;
-        }
-
-        return $user->hasAnyRole(self::STAFF_ROLES);
+    public function viewReport(User $user, Report $report): bool
+    {
+        return $this->isOwner($user, $report) || $user->hasAnyRole(self::STAFF_ROLES);
     }
 
     public function download(User $user, Media $media): bool

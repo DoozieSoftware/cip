@@ -270,14 +270,19 @@ export function useReportDetail(id: string | undefined) {
     enabled: id !== undefined,
     queryKey: ['report', id],
     queryFn: async () => {
-      const [report, media] = await Promise.all([
-        apiRequest<ApiEnvelope<ApiReportPayload>>(`/citizen/reports/${id}`),
-        apiRequest<ApiEnvelope<{ media: ApiMediaPayload[] }>>(`/reports/${id}/media`),
-      ]);
+      const report = await apiRequest<ApiEnvelope<ApiReportPayload>>(`/citizen/reports/${id}`);
+      let media: ApiMediaPayload[] = [];
+
+      try {
+        const response = await apiRequest<ApiEnvelope<{ media: ApiMediaPayload[] }>>(`/reports/${id}/media`);
+        media = response.data.media;
+      } catch {
+        // Report details remain useful when evidence storage is temporarily unavailable.
+      }
 
       return normalizeReport({
         ...report.data,
-        media: media.data.media.map((item) => ({
+        media: media.map((item) => ({
           id: item.id,
           kind: item.type.toUpperCase() === 'VIDEO' ? 'video' : 'photo',
           signed_url: item.signed_url,

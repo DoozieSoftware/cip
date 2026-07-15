@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Media\Http\Controllers\Api;
 
-use App\Models\User;
 use App\Modules\Media\Http\Requests\UploadMediaRequest;
 use App\Modules\Media\Http\Resources\MediaResource;
 use App\Modules\Media\Models\Media;
@@ -13,8 +12,11 @@ use App\Modules\Media\Services\ChainOfCustodyWriter;
 use App\Modules\Media\Services\MediaService;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Shared\Http\Controllers\BaseController;
+use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -59,6 +61,10 @@ class MediaController extends BaseController
         $created = [];
 
         foreach ($files as $file) {
+            if (! $file instanceof UploadedFile) {
+                continue;
+            }
+
             $created[] = new MediaResource(
                 $this->service->uploadPhoto($reportId, $file, $userId)
             );
@@ -143,8 +149,7 @@ class MediaController extends BaseController
         $isOwner = ! $report->is_anonymous
             && $report->citizen_id !== null
             && (string) $report->citizen_id === (string) $user->id;
-        $isStaff = method_exists($user, 'hasAnyRole')
-            && $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system']);
+        $isStaff = $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system']);
 
         if (! $isOwner && ! $isStaff) {
             return $this->respondError('You cannot add media to this report.', 403, 'FORBIDDEN');
@@ -158,6 +163,7 @@ class MediaController extends BaseController
      */
     public function index(string $reportId, Request $request): JsonResponse
     {
+        /** @var User|null $user */
         $user = $request->user('sanctum');
         $report = Report::query()->find($reportId);
 
@@ -165,14 +171,14 @@ class MediaController extends BaseController
             return $this->respondError('Report not found', 404, 'REPORT_NOT_FOUND');
         }
 
-        $this->authorize('view', $report);
+        $this->authorize('viewReportMedia', $report);
 
         $media = Media::query()
             ->where('report_id', $reportId)
             ->orderBy('created_at')
             ->get();
 
-        $isStaff = method_exists($user, 'hasRole') && $user->hasRole('super_admin');
+        $isStaff = $user?->hasRole('super_admin') ?? false;
         $includePath = $isStaff && $request->boolean('include_storage_path');
 
         // Chain-of-custody: write a VIEW row for every
@@ -216,6 +222,7 @@ class MediaController extends BaseController
             return $this->respondError('Media not found', 404, 'NOT_FOUND');
         }
 
+        /** @var User|null $user */
         $user = $request->user('sanctum');
 
         if ($user === null || ! $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system'])) {
@@ -233,7 +240,7 @@ class MediaController extends BaseController
                 'ip' => $r->ip,
                 'user_agent' => $r->user_agent,
                 'metadata' => $r->metadata,
-                'created_at' => optional($r->created_at)->toIso8601String(),
+                'created_at' => $r->created_at instanceof Carbon ? $r->created_at->toIso8601String() : null,
             ])->all(),
         ], 'OK', 200, ['count' => $history->count()]);
     }

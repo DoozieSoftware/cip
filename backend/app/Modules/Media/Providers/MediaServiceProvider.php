@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace App\Modules\Media\Providers;
 
 use App\Modules\Media\Contracts\VirusScanServiceInterface;
+use App\Modules\Media\Policies\MediaPolicy;
 use App\Modules\Media\Services\ClamAvScanner;
 use App\Modules\Media\Services\NullScanner;
+use App\Modules\Reports\Models\Report;
+use App\Modules\Users\Models\User;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -37,5 +41,13 @@ class MediaServiceProvider extends ServiceProvider
 
             return new $class;
         });
+    }
+
+    public function boot(): void
+    {
+        Gate::define(
+            'viewReportMedia',
+            static fn (User $user, Report $report): bool => app(MediaPolicy::class)->viewReport($user, $report),
+        );
     }
 }
