@@ -137,15 +137,8 @@ fi
 cd "$ROOT"
 
 # ── 5. Check ports ────────────────────────────────────────────────
-# Read per-project ports from backend/.phpenv (SERVE_PORT / FRONTEND_PORT) so
-# parallel projects don't collide. Fall back to defaults if .phpenv is absent.
-if [ -f "$ROOT/backend/.phpenv" ]; then
-  set -a
-  . "$ROOT/backend/.phpenv"
-  set +a
-fi
-BACKEND_PORT="${SERVE_PORT:-8000}"
-FRONTEND_PORT="${FRONTEND_PORT:-5173}"
+BACKEND_PORT=8000
+FRONTEND_PORT=5173
 
 for port in $BACKEND_PORT $FRONTEND_PORT; do
   if lsof -i :$port -sTCP:LISTEN >/dev/null 2>&1; then

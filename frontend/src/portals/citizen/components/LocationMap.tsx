@@ -2,7 +2,7 @@ import { type JSX } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { useReverseGeocode } from '../utils/useReverseGeocode';
+import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 
 /**
  * Offline-friendly pin: an inline-SVG `divIcon` instead of Leaflet's
