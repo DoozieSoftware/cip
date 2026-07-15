@@ -156,6 +156,7 @@ class AiPipelineOrchestrator implements ShouldQueue
                     metadata: $maskedMetadata,
                 );
                 [$response, $providerCode, $model] = $this->classify($request, $failover, $validator, $flags, $actor);
+                $response = $this->guardAgainstClaimMismatch($response);
             }
 
             $duplicateResult = $flags->enabled('duplicate_detection', $actor)
@@ -372,6 +373,39 @@ class AiPipelineOrchestrator implements ShouldQueue
             fraudScore: 0,
             summary: 'Video evidence requires manual review because the configured vision provider accepts image inputs only.',
             raw: ['video_review' => true],
+        );
+    }
+
+    private function guardAgainstClaimMismatch(AiResponse $response): AiResponse
+    {
+        $isMismatch = $response->claimMatchesEvidence === false
+            || ($response->consistencyScore !== null && $response->consistencyScore < 50);
+
+        if (! $isMismatch) {
+            return $response;
+        }
+
+        return new AiResponse(
+            labels: [[
+                'label' => 'unclassified',
+                'confidence' => 0.0,
+                'is_primary' => true,
+            ]],
+            predictedType: 'unclassified',
+            confidence: 0.0,
+            recommendedDepartment: '',
+            severity: 'low',
+            qualityScore: $response->qualityScore,
+            duplicateScore: $response->duplicateScore,
+            fraudScore: $response->fraudScore,
+            summary: 'Evidence does not match the citizen claim; manual review is required.',
+            raw: array_replace($response->raw, ['claim_mismatch_gate' => true]),
+            licensePlate: $response->licensePlate,
+            plateConfidence: $response->plateConfidence,
+            claimMatchesEvidence: $response->claimMatchesEvidence,
+            consistencyScore: $response->consistencyScore,
+            mismatchReason: $response->mismatchReason,
+            syntheticScore: $response->syntheticScore,
         );
     }
 

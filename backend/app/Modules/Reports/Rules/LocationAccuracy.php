@@ -26,7 +26,7 @@ class LocationAccuracy implements ValidationRule
         }
 
         if (! is_numeric($value)) {
-            $fail('The :attribute must be a number (metres).');
+            $fail('GPS accuracy value is invalid. Please try again.');
 
             return;
         }
@@ -34,17 +34,13 @@ class LocationAccuracy implements ValidationRule
         $accuracy = (float) $value;
 
         if ($accuracy < 0.0) {
-            $fail('The :attribute must be non-negative.');
+            $fail('GPS accuracy value is invalid. Please try again.');
 
             return;
         }
 
         if ($accuracy > self::MAX_ACCURACY_METERS) {
-            $fail(sprintf(
-                'The :attribute must be <= %s metres; current reading is %s.',
-                (string) self::MAX_ACCURACY_METERS,
-                (string) $accuracy,
-            ));
+            $fail('GPS signal is too weak. Please move outdoors and try again.');
         }
     }
 }
