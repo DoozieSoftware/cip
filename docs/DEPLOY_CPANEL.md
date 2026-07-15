@@ -187,12 +187,12 @@ In cPanel → **Cron Jobs**, add these two jobs:
 ### Queue worker (runs every minute)
 
 ```
-* * * * * cd /home/USERNAME/cip && php artisan queue:work --stop-when-empty --tries=1 --timeout=60 >> /dev/null 2>&1
+* * * * * cd /home/USERNAME/cip && php artisan queue:work --stop-when-empty --tries=1 --timeout=180 >> /dev/null 2>&1
 ```
 
 This processes any pending background jobs (AI pipeline, notifications,
-thumbnails) and exits immediately if the queue is empty. The `--timeout=60`
-ensures it never exceeds cPanel's process time limit.
+thumbnails) and exits immediately if the queue is empty. The `--timeout=180`
+allows enough headroom for the AI pipeline's 120-second job timeout.
 
 ### Scheduler (runs every minute)
 
@@ -236,7 +236,7 @@ Submit a test report via the citizen portal, then:
 
 ```bash
 cd /home/USERNAME/cip
-php artisan queue:work --stop-when-empty --tries=1 --timeout=60
+php artisan queue:work --stop-when-empty --tries=1 --timeout=180
 # You should see the AI pipeline job process
 ```
 
@@ -344,7 +344,7 @@ The `.htaccess` is not routing `/api/*` to Laravel. Verify:
 
 1. Check the cron job is running:
    ```bash
-   cd /home/USERNAME/cip && php artisan queue:work --stop-when-empty --tries=1 --timeout=60
+   cd /home/USERNAME/cip && php artisan queue:work --stop-when-empty --tries=1 --timeout=180
    ```
 2. Check the `jobs` table has rows:
    ```bash
