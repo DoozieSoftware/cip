@@ -16,7 +16,7 @@ import {
   Textarea,
 } from '../design';
 import { actionsApi, queueApi } from '../api/moderator';
-import type { MergePayload, ReportDetail, ReviewPayload } from '../types';
+import type { MergePayload, ReportDetail, ReportStatusCode, ReviewPayload } from '../types';
 import { EvidenceViewer } from '../components/EvidenceViewer';
 import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 
@@ -47,7 +47,20 @@ const ESCALATE_REASONS = [
   { value: 'media_attention', label: 'Media / political attention' },
 ];
 
+// Moderation lifecycle actions are only valid from the "open" states.
+// Once a report leaves pending_moderator / ai_processing / escalated it
+// is already routed (assigned) or closed, so the decision buttons must
+// disappear — otherwise the UI looks unresponsive after a click and
+// stale actions can be re-submitted (and 422 on the backend).
+const MODERATION_OPEN_STATES: ReportStatusCode[] = [
+  'submitted',
+  'ai_processing',
+  'pending_moderator',
+  'escalated',
+];
+
 function ActionFooter({
+  statusCode,
   onApprove,
   onReject,
   onMerge,
@@ -55,6 +68,7 @@ function ActionFooter({
   onAssign,
   busy,
 }: {
+  statusCode: ReportStatusCode;
   onApprove: () => void;
   onReject: () => void;
   onMerge: () => void;
@@ -62,22 +76,44 @@ function ActionFooter({
   onAssign: () => void;
   busy: boolean;
 }) {
+  const decisionsEnabled = MODERATION_OPEN_STATES.includes(statusCode);
+
   return (
     <div
       className="flex flex-wrap items-center justify-end gap-2"
       role="group"
       aria-label="Moderation actions"
     >
-      <Button variant="success" onClick={onApprove} disabled={busy} aria-keyshortcuts="A">
+      <Button
+        variant="success"
+        onClick={onApprove}
+        disabled={busy || !decisionsEnabled}
+        aria-keyshortcuts="A"
+      >
         Approve
       </Button>
-      <Button variant="danger" onClick={onReject} disabled={busy} aria-keyshortcuts="R">
+      <Button
+        variant="danger"
+        onClick={onReject}
+        disabled={busy || !decisionsEnabled}
+        aria-keyshortcuts="R"
+      >
         Reject
       </Button>
-      <Button variant="secondary" onClick={onMerge} disabled={busy} aria-keyshortcuts="M">
+      <Button
+        variant="secondary"
+        onClick={onMerge}
+        disabled={busy || !decisionsEnabled}
+        aria-keyshortcuts="M"
+      >
         Merge…
       </Button>
-      <Button variant="ghost" onClick={onEscalate} disabled={busy} aria-keyshortcuts="E">
+      <Button
+        variant="ghost"
+        onClick={onEscalate}
+        disabled={busy || !decisionsEnabled}
+        aria-keyshortcuts="E"
+      >
         Escalate
       </Button>
       <Button variant="secondary" onClick={onAssign} disabled={busy} aria-keyshortcuts="T">
@@ -318,6 +354,7 @@ export default function ReportDetailPage() {
         </CardHeader>
         <CardBody>
           <ActionFooter
+            statusCode={data.status_code}
             onApprove={() => setApproveOpen(true)}
             onReject={() => setRejectOpen(true)}
             onMerge={() => setMergeOpen(true)}
