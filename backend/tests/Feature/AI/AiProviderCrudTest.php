@@ -50,6 +50,34 @@ it('the resource hides credentials and surfaces has_secret', function (): void {
         ->assertJsonMissing(['credentials' => ['api_key' => 'sk-super-secret']]);
 });
 
+it('the resource masks header-based secrets but keeps non-secret headers', function (): void {
+    Sanctum::actingAs(aiProviderSuperAdmin());
+    $cfg = AiProviderConfig::query()->create([
+        'code' => 'modal', 'driver' => 'openai_compatible', 'name' => 'Modal', 'base_url' => 'http://x', 'auth_type' => 'header',
+        'credentials' => null,
+        'extra_headers' => [
+            'Modal-Key' => 'wk-super-secret',
+            'Modal-Secret' => 'ws-super-secret',
+            'X-Title' => 'Civic Intelligence Platform',
+        ],
+        'model' => 'm', 'temperature' => 0.2, 'timeout_ms' => 5000, 'retry_count' => 1,
+        'is_fallback' => false, 'priority' => 1, 'active' => true,
+    ]);
+
+    $response = $this->getJson('/api/v1/admin/ai/providers/'.$cfg->id)
+        ->assertOk()
+        // Header secrets count toward has_secret even without credentials.api_key.
+        ->assertJsonPath('data.has_secret', true)
+        // Non-sensitive header names/values are preserved.
+        ->assertJsonPath('data.extra_headers.X-Title', 'Civic Intelligence Platform');
+
+    expect($response->json('data.extra_headers.Modal-Key'))->not->toBe('wk-super-secret');
+    expect($response->json('data.extra_headers.Modal-Secret'))->not->toBe('ws-super-secret');
+    // The raw secret must not appear anywhere in the response body.
+    expect($response->getContent())->not->toContain('wk-super-secret');
+    expect($response->getContent())->not->toContain('ws-super-secret');
+});
+
 it('POST /admin/ai/providers creates a custom OpenAI-compatible provider (e.g. OpenRouter)', function (): void {
     Sanctum::actingAs(aiProviderSuperAdmin());
 

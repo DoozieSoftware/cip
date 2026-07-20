@@ -11,6 +11,8 @@ backend/public/hot/
 .env
 .env.local
 .env.*.local
+.env.bak
+*.env.bak
 backend/.env
 !backend/.env.example
 
