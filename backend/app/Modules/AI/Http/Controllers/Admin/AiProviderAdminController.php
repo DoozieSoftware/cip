@@ -10,7 +10,7 @@ use App\Modules\AI\Http\Requests\UpdateAiProviderRequest;
 use App\Modules\AI\Http\Resources\AiProviderConfigResource;
 use App\Modules\AI\Models\AiProviderConfig;
 use App\Modules\AI\Support\AiProviderFactory;
-use App\Modules\Shared\Exceptions\ApiException;
+use App\Modules\Shared\Http\Controllers\Concerns\AuthorizesSuperAdmin;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -27,6 +27,8 @@ use Throwable;
  */
 class AiProviderAdminController extends Controller
 {
+    use AuthorizesSuperAdmin;
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->ensureAdmin($request);
@@ -134,14 +136,5 @@ class AiProviderAdminController extends Controller
         $cfg->update(['active' => true]);
 
         return new AiProviderConfigResource($cfg->refresh());
-    }
-
-    private function ensureAdmin(Request $request): void
-    {
-        $user = $request->user();
-
-        if ($user === null || ! $user->hasRole('super_admin')) {
-            throw ApiException::forbidden('super_admin role is required.');
-        }
     }
 }

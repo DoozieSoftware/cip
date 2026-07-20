@@ -126,13 +126,4 @@ class WorkflowAdminController extends BaseController
 
         return $this->respond(['deleted' => true], 'Workflow deleted.');
     }
-
-    private function ensureAdmin(Request $request): void
-    {
-        $user = $request->user();
-
-        if ($user === null || ! $user->hasRole('super_admin')) {
-            throw ApiException::forbidden('super_admin role is required.');
-        }
-    }
 }

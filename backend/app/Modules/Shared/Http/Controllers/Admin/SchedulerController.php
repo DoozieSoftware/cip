@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Shared\Http\Controllers\Admin;
 
-use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Controllers\BaseController;
 use App\Modules\Shared\Services\SchedulerService;
 use Illuminate\Http\JsonResponse;
@@ -58,13 +57,5 @@ class SchedulerController extends BaseController
         $this->service->resume($id);
 
         return $this->respond(['job' => $id, 'paused' => false], 'Job resumed.');
-    }
-
-    private function ensureAdmin(Request $request): void
-    {
-        $user = $request->user();
-        if ($user === null || ! method_exists($user, 'hasRole') || ! $user->hasRole('super_admin')) {
-            throw ApiException::forbidden('super_admin role is required.');
-        }
     }
 }

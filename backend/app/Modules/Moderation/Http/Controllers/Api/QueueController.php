@@ -60,7 +60,7 @@ class QueueController extends BaseController
         $this->applySort($query, $request);
 
         $paginator = $query->cursorPaginate(
-            perPage: (int) min(100, max(1, (int) $request->query('per_page', 20))),
+            perPage: $this->perPage($request, 20, 100),
             cursor: $request->query('cursor'),
         );
 
@@ -87,7 +87,7 @@ class QueueController extends BaseController
         $query->orderByDesc('duplicate_score')->orderByDesc('submitted_at');
 
         $paginator = $query->cursorPaginate(
-            perPage: (int) min(100, max(1, (int) $request->query('per_page', 20))),
+            perPage: $this->perPage($request, 20, 100),
             cursor: $request->query('cursor'),
         );
 
@@ -114,7 +114,7 @@ class QueueController extends BaseController
         $query->orderByDesc('fraud_score')->orderByDesc('submitted_at');
 
         $paginator = $query->cursorPaginate(
-            perPage: (int) min(100, max(1, (int) $request->query('per_page', 20))),
+            perPage: $this->perPage($request, 20, 100),
             cursor: $request->query('cursor'),
         );
 

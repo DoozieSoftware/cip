@@ -9,7 +9,7 @@ use App\Modules\AI\Http\Requests\StorePromptRequest;
 use App\Modules\AI\Http\Requests\UpdatePromptRequest;
 use App\Modules\AI\Http\Resources\PromptVersionResource;
 use App\Modules\AI\Models\PromptVersion;
-use App\Modules\Shared\Exceptions\ApiException;
+use App\Modules\Shared\Http\Controllers\Concerns\AuthorizesSuperAdmin;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -26,6 +26,8 @@ use Illuminate\Support\Facades\DB;
  */
 class AiPromptAdminController extends Controller
 {
+    use AuthorizesSuperAdmin;
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->ensureAdmin($request);
@@ -148,14 +150,5 @@ class AiPromptAdminController extends Controller
         });
 
         return $result;
-    }
-
-    private function ensureAdmin(Request $request): void
-    {
-        $user = $request->user();
-
-        if ($user === null || ! $user->hasRole('super_admin')) {
-            throw ApiException::forbidden('super_admin role is required.');
-        }
     }
 }

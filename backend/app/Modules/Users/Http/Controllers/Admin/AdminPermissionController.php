@@ -33,14 +33,16 @@ class AdminPermissionController extends BaseController
         $this->ensureAdmin($request);
 
         $q = Permission::query();
+
         if ($search = $request->query('q')) {
-            $q->where('name', 'like', '%' . $search . '%');
+            $q->where('name', 'like', '%'.$search.'%');
         }
         $guard = $request->query('guard_name');
+
         if (is_string($guard) && $guard !== '') {
             $q->where('guard_name', $guard);
         }
-        $perPage = max(1, min(200, (int) $request->query('per_page', 50)));
+        $perPage = $this->perPage($request, 50, 200);
         $page = $q->orderBy('name')->paginate($perPage);
         $transformed = $page->through(static fn (Permission $p): array => [
             'id' => $p->id,
@@ -103,19 +105,11 @@ class AdminPermissionController extends BaseController
         $perm = is_numeric($id)
             ? Permission::query()->where('id', (int) $id)->first()
             : Permission::query()->where('name', $id)->first();
+
         if ($perm === null) {
             throw ApiException::notFound('Permission');
         }
 
         return $perm;
-    }
-
-    private function ensureAdmin(Request $request): void
-    {
-        $user = $request->user();
-
-        if ($user === null || ! method_exists($user, 'hasRole') || ! $user->hasRole('super_admin')) {
-            throw ApiException::forbidden('super_admin role is required.');
-        }
     }
 }
