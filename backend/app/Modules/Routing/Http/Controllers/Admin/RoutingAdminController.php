@@ -146,13 +146,4 @@ class RoutingAdminController extends BaseController
 
         return $this->respond(['reordered' => true], 'Routing rules reordered.');
     }
-
-    private function ensureAdmin(Request $request): void
-    {
-        $user = $request->user();
-
-        if ($user === null || ! $user->hasRole('super_admin')) {
-            throw ApiException::forbidden('super_admin role is required.');
-        }
-    }
 }

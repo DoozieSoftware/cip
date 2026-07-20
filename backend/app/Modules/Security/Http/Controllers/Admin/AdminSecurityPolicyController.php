@@ -33,14 +33,15 @@ class AdminSecurityPolicyController extends BaseController
         $this->ensureAdmin($request);
 
         $q = SecurityPolicy::query();
+
         if ($search = $request->query('q')) {
-            $needle = '%' . $search . '%';
+            $needle = '%'.$search.'%';
             $q->where(static function ($w) use ($needle): void {
                 $w->where('key', 'like', $needle)
                     ->orWhere('description', 'like', $needle);
             });
         }
-        $perPage = max(1, min(200, (int) $request->query('per_page', 50)));
+        $perPage = $this->perPage($request, 50, 200);
         $page = $q->orderBy('key')->paginate($perPage);
         $transformed = $page->through(static fn (SecurityPolicy $p): array => (new SecurityPolicyResource($p))->toArray($request));
 
@@ -95,19 +96,11 @@ class AdminSecurityPolicyController extends BaseController
     private function findByKey(string $key): SecurityPolicy
     {
         $model = SecurityPolicy::query()->where('key', $key)->first();
+
         if ($model === null) {
             throw ApiException::notFound('Security policy');
         }
 
         return $model;
-    }
-
-    private function ensureAdmin(Request $request): void
-    {
-        $user = $request->user();
-
-        if ($user === null || ! method_exists($user, 'hasRole') || ! $user->hasRole('super_admin')) {
-            throw ApiException::forbidden('super_admin role is required.');
-        }
     }
 }

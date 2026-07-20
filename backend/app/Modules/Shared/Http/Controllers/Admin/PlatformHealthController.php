@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Shared\Http\Controllers\Admin;
 
-use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Controllers\BaseController;
 use App\Modules\Shared\Services\PlatformHealthService;
 use Illuminate\Http\JsonResponse;
@@ -49,13 +48,5 @@ class PlatformHealthController extends BaseController
             ['components' => $this->service->snapshot(), 'checked_at' => now()->toIso8601String()],
             'Platform health components.',
         );
-    }
-
-    private function ensureAdmin(Request $request): void
-    {
-        $user = $request->user();
-        if ($user === null || ! method_exists($user, 'hasRole') || ! $user->hasRole('super_admin')) {
-            throw ApiException::forbidden('super_admin role is required.');
-        }
     }
 }

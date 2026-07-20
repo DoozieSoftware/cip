@@ -35,7 +35,7 @@ class NotificationsController extends BaseController
             return $this->respondError('Unauthenticated.', 401, 'UNAUTHORIZED');
         }
 
-        $perPage = max(1, min(100, (int) $request->query('per_page', 20)));
+        $perPage = $this->perPage($request, 20, 100);
         $cursor = $request->query('cursor');
 
         $query = Notification::query()

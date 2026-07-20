@@ -112,22 +112,16 @@ class AdminOrganizationController extends BaseController
     private function find(string $id, bool $withTrashed = false): Organization
     {
         $q = Organization::query();
+
         if ($withTrashed) {
             $q->withTrashed();
         }
         $row = $q->where('id', $id)->first();
+
         if ($row === null) {
             throw ApiException::notFound('Organization');
         }
 
         return $row;
-    }
-
-    private function ensureAdmin(Request $request): void
-    {
-        $user = $request->user();
-        if ($user === null || ! method_exists($user, 'hasRole') || ! $user->hasRole('super_admin')) {
-            throw ApiException::forbidden('super_admin role is required.');
-        }
     }
 }

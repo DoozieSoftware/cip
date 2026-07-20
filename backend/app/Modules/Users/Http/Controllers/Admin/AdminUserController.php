@@ -97,6 +97,7 @@ class AdminUserController extends BaseController
     {
         $this->ensureAdmin($request);
         $model = $this->findUser($user, withTrashed: true);
+
         if ($model->deleted_at === null) {
             return $this->respond((new UserResource($model))->toArray($request), 'User was not deleted.');
         }
@@ -105,19 +106,11 @@ class AdminUserController extends BaseController
         return $this->respond((new UserResource($restored))->toArray($request), 'User restored.');
     }
 
-    private function ensureAdmin(Request $request): void
-    {
-        $user = $request->user();
-
-        if ($user === null || ! method_exists($user, 'hasRole') || ! $user->hasRole('super_admin')) {
-            throw ApiException::forbidden('super_admin role is required.');
-        }
-    }
-
     private function findUser(string $id, bool $withTrashed = false): User
     {
         $query = $withTrashed ? User::query()->withTrashed() : User::query();
         $user = $query->where('id', $id)->first();
+
         if ($user === null) {
             throw ApiException::notFound('User');
         }

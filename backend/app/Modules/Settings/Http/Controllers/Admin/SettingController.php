@@ -176,13 +176,4 @@ class SettingController extends BaseController
 
         return $query->paginate($perPage);
     }
-
-    private function ensureAdmin(Request $request): void
-    {
-        $user = $request->user();
-
-        if ($user === null || ! $user->hasRole('super_admin')) {
-            throw ApiException::forbidden('super_admin role is required.');
-        }
-    }
 }
