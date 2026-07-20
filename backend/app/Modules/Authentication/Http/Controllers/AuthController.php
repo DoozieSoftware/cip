@@ -16,6 +16,7 @@ use App\Modules\Shared\Http\Controllers\BaseController;
 use App\Modules\Users\Http\Resources\UserResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Auth-facing endpoints.
@@ -61,7 +62,8 @@ class AuthController extends BaseController
 
         if (app()->environment('local') || config('cip.auth.debug_otp', false)) {
             $payload['debug_otp'] = $this->otpService->latestCodeFor($mobile);
-            $payload['expires_in'] = (int) config('cip.auth.otp_expiry_minutes', 5) * 60;
+            $expiryMinutes = config('cip.auth.otp_expiry_minutes', 5);
+            $payload['expires_in'] = (is_numeric($expiryMinutes) ? (int) $expiryMinutes : 5) * 60;
         }
 
         return $this->respond($payload);
@@ -207,8 +209,16 @@ class AuthController extends BaseController
                 'failure_reason' => $reason,
                 'login_at' => now(),
             ]);
-        } catch (\Throwable) {
-            // Audit must not break the user-facing flow. Swallow.
+        } catch (\Throwable $e) {
+            // Audit must not break the user-facing flow, but a silently
+            // dropped attempt row blinds the failed-attempt lockout and
+            // security review, so surface it in the logs.
+            Log::warning('login_history.write_failed', [
+                'mobile' => $mobile,
+                'success' => $success,
+                'reason' => $reason,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }
