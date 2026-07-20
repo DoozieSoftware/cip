@@ -17,6 +17,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\NewAccessToken;
 
 /**
@@ -242,8 +243,16 @@ class AuthenticationService extends BaseService
                 'failure_reason' => $reason,
                 'login_at' => now(),
             ]);
-        } catch (\Throwable) {
-            // Audit must not break the user-facing flow. Swallow.
+        } catch (\Throwable $e) {
+            // Audit must not break the user-facing flow, but a silently
+            // dropped login row blinds the failed-attempt lockout and
+            // security review, so surface it in the logs.
+            Log::warning('login_history.write_failed', [
+                'user_id' => $user->id,
+                'success' => $success,
+                'reason' => $reason,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -266,8 +275,16 @@ class AuthenticationService extends BaseService
                 'failure_reason' => $reason,
                 'login_at' => now(),
             ]);
-        } catch (\Throwable) {
-            // Audit must not break the user-facing flow. Swallow.
+        } catch (\Throwable $e) {
+            // Audit must not break the user-facing flow, but a silently
+            // dropped login row blinds the failed-attempt lockout and
+            // security review, so surface it in the logs.
+            Log::warning('login_history.write_failed', [
+                'user_id' => $user?->id,
+                'success' => $success,
+                'reason' => $reason,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
