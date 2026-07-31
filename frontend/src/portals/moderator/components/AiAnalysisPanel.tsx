@@ -41,7 +41,7 @@ export function AiAnalysisPanel({ ai, statusCode, mockGpsScore }: AiAnalysisPane
           <p className="text-sm text-slate-500">{message}</p>
           {mockGpsScore !== null && mockGpsScore !== undefined && (
             <Stat
-              label="Mock GPS score"
+              label="Fake location risk"
               value={mockGpsPct(mockGpsScore)}
               tone={scoreTone(mockGpsScore * 100)}
             />
@@ -73,14 +73,14 @@ export function AiAnalysisPanel({ ai, statusCode, mockGpsScore }: AiAnalysisPane
           <Stat label="Image quality" value={pct(ai.quality_score)} />
           {mockGpsScore !== null && mockGpsScore !== undefined && (
             <Stat
-              label="Mock GPS score"
+              label="Fake location risk"
               value={mockGpsPct(mockGpsScore)}
               tone={scoreTone(mockGpsScore * 100)}
             />
           )}
           {ai.consistency_score !== null && ai.consistency_score !== undefined && (
             <Stat
-              label="Claim consistency"
+              label="Description match"
               value={pct(ai.consistency_score)}
               tone={
                 ai.consistency_score < 50
