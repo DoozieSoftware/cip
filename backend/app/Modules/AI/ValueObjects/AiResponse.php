@@ -114,6 +114,28 @@ final class AiResponse
         );
     }
 
+    public function withConsistencyScore(int $score): self
+    {
+        return new self(
+            labels: $this->labels,
+            predictedType: $this->predictedType,
+            confidence: $this->confidence,
+            recommendedDepartment: $this->recommendedDepartment,
+            severity: $this->severity,
+            qualityScore: $this->qualityScore,
+            duplicateScore: $this->duplicateScore,
+            fraudScore: $this->fraudScore,
+            summary: $this->summary,
+            raw: $this->raw,
+            licensePlate: $this->licensePlate,
+            plateConfidence: $this->plateConfidence,
+            claimMatchesEvidence: $this->claimMatchesEvidence,
+            consistencyScore: max(0, min(100, $score)),
+            mismatchReason: $this->mismatchReason,
+            syntheticScore: $this->syntheticScore,
+        );
+    }
+
     /**
      * @return array<string, mixed>
      */

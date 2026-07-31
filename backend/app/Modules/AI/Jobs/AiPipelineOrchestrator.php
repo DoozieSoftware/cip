@@ -157,6 +157,7 @@ class AiPipelineOrchestrator implements ShouldQueue
                 );
                 [$response, $providerCode, $model] = $this->classify($request, $failover, $validator, $flags, $actor);
                 $response = $this->guardAgainstClaimMismatch($response);
+                $response = $this->capUnverifiedParkingZoneClaim($response, $report);
             }
 
             $duplicateResult = $flags->enabled('duplicate_detection', $actor)
@@ -421,6 +422,38 @@ class AiPipelineOrchestrator implements ShouldQueue
         }
 
         return $response;
+    }
+
+    /**
+     * A photo can prove obstruction (vehicle on a sidewalk/lane) but usually
+     * cannot prove a legal-zone claim like "non-parking zone" unless a
+     * no-parking sign or road marking is visible. Vision models tend to treat
+     * any visibly improper parking as a full match and score 90+, which is too
+     * strong when the legal restriction itself is not shown.
+     */
+    private function capUnverifiedParkingZoneClaim(AiResponse $response, Report $report): AiResponse
+    {
+        if ($response->predictedType !== 'illegal_parking') {
+            return $response;
+        }
+
+        if ($response->consistencyScore === null || $response->consistencyScore <= 80) {
+            return $response;
+        }
+
+        $claim = strtolower($report->title.' '.$report->description);
+
+        if (! preg_match('/\b(?:no[-\s]?parking|non[-\s]?parking)\b/', $claim)) {
+            return $response;
+        }
+
+        $evidence = strtolower($response->summary.' '.($response->mismatchReason ?? ''));
+
+        if (preg_match('/\b(?:no[-\s]?parking|non[-\s]?parking|parking sign|road marking|signboard|tow[-\s]?away|parking restriction|restricted parking)\b/', $evidence)) {
+            return $response;
+        }
+
+        return $response->withConsistencyScore(80);
     }
 
     private function createJobRow(): AiJob
