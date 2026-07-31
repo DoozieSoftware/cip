@@ -38,7 +38,13 @@ export interface ReportSummary {
 
 export interface ReportDetail extends ReportSummary {
   timeline: Array<{ at: string; actor?: string | null; event: string; note?: string | null }>;
-  media: Array<{ id: string; kind: 'photo' | 'video'; url?: string; signed_url?: string; audit?: unknown }>;
+  media: Array<{
+    id: string;
+    kind: 'photo' | 'video';
+    url?: string;
+    signed_url?: string;
+    audit?: unknown;
+  }>;
   ai_summary?: {
     labels: Array<{ name: string; confidence: number }>;
     fraud_score: number;
@@ -67,6 +73,17 @@ export function normalizeReport(payload: ApiReportPayload): ReportDetail {
     media: payload.media ?? [],
     timeline: payload.timeline ?? [],
   };
+}
+
+export function shouldRefreshSubmittedReport(report: ReportDetail | undefined): boolean {
+  if (!report) return true;
+
+  const status = report.status?.code;
+  const expectedMedia = report.media_count ?? 0;
+
+  return (
+    status === 'submitted' || status === 'ai_processing' || expectedMedia > report.media.length
+  );
 }
 
 export interface NotificationItem {
@@ -114,7 +131,10 @@ export interface PaginationMeta {
   last_page: number;
 }
 
-function normalizePaginationMeta(meta: Record<string, unknown> | undefined, fallbackPerPage: number): PaginationMeta {
+function normalizePaginationMeta(
+  meta: Record<string, unknown> | undefined,
+  fallbackPerPage: number,
+): PaginationMeta {
   return {
     page: typeof meta?.page === 'number' ? meta.page : 1,
     per_page: typeof meta?.per_page === 'number' ? meta.per_page : fallbackPerPage,
@@ -137,7 +157,9 @@ export function useDepartments() {
   return useQuery({
     queryKey: ['departments'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<Department[]>>('/departments', { query: { per_page: 100 } });
+      const res = await apiRequest<ApiEnvelope<Department[]>>('/departments', {
+        query: { per_page: 100 },
+      });
       return res.data;
     },
   });
@@ -147,7 +169,9 @@ export function useNotifications() {
   return useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<NotificationsInboxResponse>>('/notifications', { query: { per_page: 50 } });
+      const res = await apiRequest<ApiEnvelope<NotificationsInboxResponse>>('/notifications', {
+        query: { per_page: 50 },
+      });
       return (res.data.items ?? []).map((item) => normalizeNotification(item));
     },
   });
@@ -183,7 +207,9 @@ export interface CreateReportInput {
  * exact same submission after the device reconnects, instead of
  * re-implementing it.
  */
-export async function submitReportPayload(input: CreateReportInput): Promise<{ id: string; status: string }> {
+export async function submitReportPayload(
+  input: CreateReportInput,
+): Promise<{ id: string; status: string }> {
   const create = await apiRequest<ApiEnvelope<ApiReportPayload>>('/reports', {
     method: 'POST',
     body: {
@@ -210,9 +236,9 @@ export async function submitReportPayload(input: CreateReportInput): Promise<{ i
   // non-fatal — the moderator can still attach evidence later.
   if (input.media_files && input.media_files.length > 0) {
     const token = getToken();
-    void Promise.all(
-      input.media_files.map((file) => uploadMedia(reportId, file, token)),
-    ).catch(() => undefined);
+    void Promise.all(input.media_files.map((file) => uploadMedia(reportId, file, token))).catch(
+      () => undefined,
+    );
   }
 
   const createdReport = normalizeReport(create.data);
@@ -226,9 +252,7 @@ const MEDIA_UPLOAD_TIMEOUT_MS = 60_000;
 
 async function uploadMedia(reportId: string, file: File, token: string | null): Promise<void> {
   const isVideo = file.type.startsWith('video/');
-  const url = buildApiUrl(isVideo
-    ? `/reports/${reportId}/video`
-    : `/reports/${reportId}/photos`);
+  const url = buildApiUrl(isVideo ? `/reports/${reportId}/video` : `/reports/${reportId}/photos`);
   const fd = new FormData();
   if (isVideo) {
     fd.append('video', file);
@@ -261,7 +285,11 @@ export function useCreateReport() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: submitReportPayload,
-    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['notifications'] }); },
+    onSuccess: (report) => {
+      void qc.invalidateQueries({ queryKey: ['notifications'] });
+      void qc.invalidateQueries({ queryKey: ['citizen', 'reports'] });
+      void qc.invalidateQueries({ queryKey: ['report', report.id] });
+    },
   });
 }
 
@@ -269,12 +297,15 @@ export function useReportDetail(id: string | undefined) {
   return useQuery({
     enabled: id !== undefined,
     queryKey: ['report', id],
+    refetchInterval: (query) => (shouldRefreshSubmittedReport(query.state.data) ? 3_000 : false),
     queryFn: async () => {
       const report = await apiRequest<ApiEnvelope<ApiReportPayload>>(`/citizen/reports/${id}`);
       let media: ApiMediaPayload[] = [];
 
       try {
-        const response = await apiRequest<ApiEnvelope<{ media: ApiMediaPayload[] }>>(`/reports/${id}/media`);
+        const response = await apiRequest<ApiEnvelope<{ media: ApiMediaPayload[] }>>(
+          `/reports/${id}/media`,
+        );
         media = response.data.media;
       } catch {
         // Report details remain useful when evidence storage is temporarily unavailable.
@@ -313,7 +344,9 @@ export function useReportTimeline(id: string | undefined) {
     enabled: id !== undefined,
     queryKey: ['report', id, 'timeline'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<ReportDetail['timeline']>>(`/reports/${id}/timeline`);
+      const res = await apiRequest<ApiEnvelope<ReportDetail['timeline']>>(
+        `/reports/${id}/timeline`,
+      );
       return res.data;
     },
   });
