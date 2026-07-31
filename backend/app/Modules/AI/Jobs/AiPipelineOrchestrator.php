@@ -195,6 +195,7 @@ class AiPipelineOrchestrator implements ShouldQueue
 
             $effectiveQualityScore = $this->effectiveQualityScore($qualityScore, $response);
             $calibratedConfidence = min($response->confidence, $effectiveQualityScore / 100);
+            $calibratedConfidence = $this->applyMismatchPenalty($calibratedConfidence, $response);
 
             $result = $this->writeResult(
                 $this->jobRow,
@@ -495,6 +496,50 @@ class AiPipelineOrchestrator implements ShouldQueue
         return $response->qualityScore > 0
             ? min($localQualityScore, $response->qualityScore)
             : $localQualityScore;
+    }
+
+    /**
+     * Penalise calibrated confidence when the claim does not match
+     * the visual evidence. Image quality is a technical metric
+     * (resolution, brightness, contrast) and cannot detect wrong
+     * data: a sharp, well-lit photo of garbage submitted as a
+     * "pothole" still scores high on quality. Without this penalty
+     * the quality ceiling never caps a good photo, so a wrong
+     * claim rides through with the AI's raw confidence untouched.
+     *
+     * guardAgainstClaimMismatch() already overrides the boolean to
+     * true when consistency_score >= 70 (the primary issue matches
+     * and the model is just uncertain about secondary details), so
+     * by the time we reach this method a remaining false value is a
+     * genuine mismatch.
+     *
+     * The penalty scales with how badly the claim conflicts:
+     *
+     *   claim_matches_evidence === false
+     *       → confidence × max(0.1, consistency_score / 100)
+     *         a total mismatch (consistency 0) collapses confidence
+     *         toward the 0.1 floor (~8% of the visual confidence);
+     *         a mild conflict (consistency 40) keeps ~40%. A flat
+     *         factor would let a completely wrong claim still read
+     *         ~32%, which is misleadingly high.
+     *   consistency_score < 50 (no explicit mismatch flag)
+     *       → confidence × 0.5
+     *   neither
+     *       → no change
+     */
+    private function applyMismatchPenalty(float $confidence, AiResponse $response): float
+    {
+        if ($response->claimMatchesEvidence === false) {
+            $factor = max(0.1, ($response->consistencyScore ?? 0) / 100);
+
+            return $confidence * $factor;
+        }
+
+        if ($response->consistencyScore !== null && $response->consistencyScore < 50) {
+            return $confidence * 0.5;
+        }
+
+        return $confidence;
     }
 
     private function markJobSucceeded(
