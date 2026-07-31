@@ -102,6 +102,14 @@ jobs:
           SSH_PORT="${SSH_PORT:-7822}"
           REMOTE="${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
           PHP_BIN="/opt/alt/php84/usr/bin/php"
+          VERTEX_SA_LOCAL="/tmp/cip-vertex-ai.json"
+
+          if [ -z "${{ secrets.VERTEX_SERVICE_ACCOUNT_JSON_B64 }}" ]; then
+            echo "Missing GitHub secret VERTEX_SERVICE_ACCOUNT_JSON_B64."
+            exit 1
+          fi
+
+          printf '%s' "${{ secrets.VERTEX_SERVICE_ACCOUNT_JSON_B64 }}" | base64 -d > "$VERTEX_SA_LOCAL"
 
           # Deploy backend (cip/)
           rsync -az --delete \
@@ -120,6 +128,12 @@ jobs:
           # propagate on every deploy.
           scp -P $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             deploy/staging/cip/.env.cpanel $REMOTE:~/cip/.env.cpanel
+
+          scp -P $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            "$VERTEX_SA_LOCAL" $REMOTE:~/cip-vertex-ai.json.tmp
+
+          ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            $REMOTE "mkdir -p ~/private && mv ~/cip-vertex-ai.json.tmp ~/private/cip-vertex-ai.json && chmod 600 ~/private/cip-vertex-ai.json"
 
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             $REMOTE "cd ~/cip && \
@@ -160,6 +174,12 @@ jobs:
                 cp .env.tmp .env; \
               else \
                 cp .env.cpanel .env; \
+              fi; \
+              VERTEX_SA_PATH=\"\$HOME/private/cip-vertex-ai.json\"; \
+              if grep -q '^GOOGLE_APPLICATION_CREDENTIALS=' .env 2>/dev/null; then \
+                sed -i \"s|^GOOGLE_APPLICATION_CREDENTIALS=.*|GOOGLE_APPLICATION_CREDENTIALS=\$VERTEX_SA_PATH|\" .env; \
+              else \
+                echo \"GOOGLE_APPLICATION_CREDENTIALS=\$VERTEX_SA_PATH\" >> .env; \
               fi; \
               grep -q '^APP_KEY=base64:' .env || $PHP_BIN artisan key:generate --force"
 
@@ -204,7 +224,7 @@ jobs:
               $PHP_BIN artisan queue:work --stop-when-empty --tries=1 --timeout=180 --max-time=300 -v; \
               echo 'Post-deploy complete'"
 
-          rm -f /tmp/deploy_key
+          rm -f /tmp/deploy_key "$VERTEX_SA_LOCAL"
 
       - name: Deployment status
         if: always()
