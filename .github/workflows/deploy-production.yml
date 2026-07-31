@@ -151,7 +151,7 @@ jobs:
                     sed -i \"s|^\$key=.*|\$key=\$existing|\" .env.tmp; \
                   fi; \
                 done < .env.cpanel; \
-                for force_key in AI_MODAL_BASE_URL AI_MODAL_MODEL AI_DEFAULT_PROVIDER CIP_DEBUG_OTP; do \
+                for force_key in AI_MODAL_BASE_URL AI_MODAL_MODEL GOOGLE_CLOUD_PROJECT AI_VERTEX_LOCATION AI_VERTEX_MODEL AI_DEFAULT_PROVIDER CIP_DEBUG_OTP; do \
                   if grep -q \"^\$force_key=\" .env.cpanel 2>/dev/null; then \
                     new_val=\$(grep \"^\$force_key=\" .env.cpanel | head -1 | cut -d'=' -f2-); \
                     sed -i \"s|^\$force_key=.*|\$force_key=\$new_val|\" .env.tmp; \

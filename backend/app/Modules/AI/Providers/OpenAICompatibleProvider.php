@@ -8,6 +8,7 @@ use App\Modules\AI\Contracts\AIProviderInterface;
 use App\Modules\AI\Models\PromptVersion;
 use App\Modules\AI\ValueObjects\AiRequest;
 use App\Modules\AI\ValueObjects\AiResponse;
+use Closure;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
@@ -53,6 +54,7 @@ class OpenAICompatibleProvider implements AIProviderInterface
         private readonly ?HttpFactory $http = null,
         private readonly float $temperature = 0.2,
         private readonly array $extraHeaders = [],
+        private readonly ?Closure $bearerTokenResolver = null,
     ) {}
 
     public function getName(): string
@@ -69,7 +71,7 @@ class OpenAICompatibleProvider implements AIProviderInterface
     {
         try {
             $client = $this->authenticatedClient()->timeout($this->timeoutMs / 1000);
-            $response = $client->get(rtrim($this->baseUrl, '/').'/v1/models');
+            $response = $client->get($this->endpoint('models'));
 
             if ($response->successful()) {
                 return true;
@@ -98,7 +100,7 @@ class OpenAICompatibleProvider implements AIProviderInterface
 
         $response = $this->authenticatedClient()
             ->timeout($this->timeoutMs / 1000)
-            ->post(rtrim($this->baseUrl, '/').'/v1/chat/completions', [
+            ->post($this->endpoint('chat/completions'), [
                 'model' => $this->model,
                 'temperature' => $this->temperature,
                 'messages' => $messages,
@@ -113,10 +115,11 @@ class OpenAICompatibleProvider implements AIProviderInterface
             ));
         }
 
-        $payload = $response->json();
+        $payload = $this->arrayPayload($response->json());
 
         if ($this->name === 'modal-vision' && $request->mediaUrls !== []) {
-            $processedImages = $payload['usage']['image_count'] ?? null;
+            $usage = $payload['usage'] ?? null;
+            $processedImages = is_array($usage) ? ($usage['image_count'] ?? null) : null;
             $allEmbedded = collect($request->mediaUrls)
                 ->every(static fn (string $url): bool => str_starts_with($url, 'data:image/'));
 
@@ -135,7 +138,7 @@ class OpenAICompatibleProvider implements AIProviderInterface
             }
         }
 
-        $content = $payload['choices'][0]['message']['content'] ?? null;
+        $content = $this->messageContent($payload);
 
         if (! is_string($content)) {
             throw new RuntimeException('openai_compatible_error: missing message content');
@@ -147,9 +150,9 @@ class OpenAICompatibleProvider implements AIProviderInterface
             $content = $m[1];
         }
 
-        $decoded = json_decode($content, true);
+        $decoded = $this->arrayPayload(json_decode($content, true));
 
-        if (! is_array($decoded)) {
+        if ($decoded === []) {
             throw new RuntimeException('invalid_ai_response: content is not valid JSON');
         }
 
@@ -158,19 +161,83 @@ class OpenAICompatibleProvider implements AIProviderInterface
 
     private function authenticatedClient(): PendingRequest
     {
-        $http = $this->http ?? Http::getFacadeRoot();
-
-        $client = $http->withHeaders($this->extraHeaders);
+        $client = $this->http instanceof HttpFactory
+            ? $this->http->withHeaders($this->extraHeaders)
+            : Http::withHeaders($this->extraHeaders);
 
         // Only send a Bearer token when an API key is configured.
         // Modal.com endpoints authenticate via `Modal-Key`/`Modal-Secret`
         // headers (passed in extraHeaders) and an empty `Authorization:
         // Bearer` header can cause some gateways to reject the request.
-        if ($this->apiKey !== '') {
-            $client = $client->withToken($this->apiKey);
+        $resolvedToken = $this->bearerTokenResolver instanceof Closure
+            ? ($this->bearerTokenResolver)()
+            : $this->apiKey;
+        $token = is_string($resolvedToken) ? $resolvedToken : '';
+
+        if ($token !== '') {
+            $client = $client->withToken($token);
         }
 
         return $client;
+    }
+
+    private function endpoint(string $path): string
+    {
+        $baseUrl = rtrim($this->baseUrl, '/');
+
+        if (str_ends_with($baseUrl, '/openapi')) {
+            return $baseUrl.'/'.$path;
+        }
+
+        return $baseUrl.'/v1/'.$path;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function arrayPayload(mixed $payload): array
+    {
+        if (! is_array($payload)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($payload as $key => $value) {
+            if (is_string($key)) {
+                $normalized[$key] = $value;
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function messageContent(array $payload): ?string
+    {
+        $choices = $payload['choices'] ?? null;
+
+        if (! is_array($choices)) {
+            return null;
+        }
+
+        $firstChoice = $choices[0] ?? null;
+
+        if (! is_array($firstChoice)) {
+            return null;
+        }
+
+        $message = $firstChoice['message'] ?? null;
+
+        if (! is_array($message)) {
+            return null;
+        }
+
+        $content = $message['content'] ?? null;
+
+        return is_string($content) ? $content : null;
     }
 
     /**
@@ -228,24 +295,34 @@ class OpenAICompatibleProvider implements AIProviderInterface
         $labels = $decoded['labels'] ?? [];
         $normalized = [];
 
+        if (! is_array($labels)) {
+            $labels = [];
+        }
+
         foreach ($labels as $l) {
+            if (! is_array($l)) {
+                continue;
+            }
+
+            $label = $this->arrayPayload($l);
+
             $normalized[] = [
-                'label' => (string) ($l['label'] ?? ''),
-                'confidence' => (float) ($l['confidence'] ?? 0.0),
-                'is_primary' => (bool) ($l['is_primary'] ?? false),
+                'label' => $this->stringField($label, 'label'),
+                'confidence' => $this->floatField($label, 'confidence'),
+                'is_primary' => $this->boolField($label, 'is_primary'),
             ];
         }
 
         return new AiResponse(
             labels: $normalized,
-            predictedType: (string) ($decoded['predicted_type'] ?? ''),
-            confidence: (float) ($decoded['confidence'] ?? 0.0),
-            recommendedDepartment: (string) ($decoded['recommended_department'] ?? ''),
-            severity: (string) ($decoded['severity'] ?? 'low'),
-            qualityScore: (int) ($decoded['quality_score'] ?? 0),
-            duplicateScore: (int) ($decoded['duplicate_score'] ?? 0),
-            fraudScore: (int) ($decoded['fraud_score'] ?? 0),
-            summary: (string) ($decoded['summary'] ?? ''),
+            predictedType: $this->stringField($decoded, 'predicted_type'),
+            confidence: $this->floatField($decoded, 'confidence'),
+            recommendedDepartment: $this->stringField($decoded, 'recommended_department'),
+            severity: $this->stringField($decoded, 'severity', 'low'),
+            qualityScore: $this->intField($decoded, 'quality_score'),
+            duplicateScore: $this->intField($decoded, 'duplicate_score'),
+            fraudScore: $this->intField($decoded, 'fraud_score'),
+            summary: $this->stringField($decoded, 'summary'),
             raw: $raw,
             licensePlate: isset($decoded['license_plate']) && is_string($decoded['license_plate']) && $decoded['license_plate'] !== ''
                 ? strtoupper(trim($decoded['license_plate']))
@@ -266,5 +343,43 @@ class OpenAICompatibleProvider implements AIProviderInterface
                 ? (float) $decoded['synthetic_score']
                 : null,
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    private function stringField(array $values, string $key, string $default = ''): string
+    {
+        $value = $values[$key] ?? null;
+
+        return is_scalar($value) ? (string) $value : $default;
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    private function floatField(array $values, string $key): float
+    {
+        $value = $values[$key] ?? null;
+
+        return is_numeric($value) ? (float) $value : 0.0;
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    private function intField(array $values, string $key): int
+    {
+        $value = $values[$key] ?? null;
+
+        return is_numeric($value) ? (int) $value : 0;
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    private function boolField(array $values, string $key): bool
+    {
+        return ($values[$key] ?? null) === true;
     }
 }

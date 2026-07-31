@@ -29,20 +29,38 @@ class AiProvidersSeeder extends Seeder
     public function run(): void
     {
         $now = now();
+        $vertexCredentialsPath = $this->configString('ai.vertex.credentials_path');
+        $modalKey = $this->configString('ai.modal.key');
+        $modalSecret = $this->configString('ai.modal.secret');
 
         $providers = [
+            [
+                'code' => 'vertex-gemini-flash',
+                'driver' => 'openai_compatible',
+                'name' => 'Vertex AI Gemini Flash',
+                'base_url' => $this->vertexOpenAiBaseUrl(),
+                'auth_type' => 'oauth_service_account',
+                'credentials' => $this->nonEmptyMap(['service_account_path' => $vertexCredentialsPath]),
+                'model' => $this->configString('ai.vertex.model'),
+                'temperature' => 0.2,
+                'timeout_ms' => 60000,
+                'retry_count' => 2,
+                'is_fallback' => false,
+                'priority' => 5,
+                'active' => true,
+            ],
             [
                 'code' => 'modal-vision',
                 'driver' => 'openai_compatible',
                 'name' => 'Modal Vision (vLLM)',
-                'base_url' => env('AI_MODAL_BASE_URL', 'https://akshayjoshi999--cip-vision-v3-serve.modal.run'),
+                'base_url' => $this->configString('ai.modal.base_url'),
                 'auth_type' => 'header',
                 'credentials' => null,
-                'extra_headers' => array_filter([
-                    'Modal-Key' => env('AI_MODAL_KEY'),
-                    'Modal-Secret' => env('AI_MODAL_SECRET'),
-                ], static fn ($v) => is_string($v) && $v !== ''),
-                'model' => env('AI_MODAL_MODEL', 'Qwen/Qwen2.5-VL-7B-Instruct'),
+                'extra_headers' => $this->nonEmptyMap([
+                    'Modal-Key' => $modalKey,
+                    'Modal-Secret' => $modalSecret,
+                ]),
+                'model' => $this->configString('ai.modal.model'),
                 'temperature' => 0.2,
                 'timeout_ms' => 60000,
                 'retry_count' => 2,
@@ -88,5 +106,44 @@ class AiProvidersSeeder extends Seeder
                 array_merge($p, ['updated_at' => $now, 'created_at' => $now]),
             );
         }
+
+        AiProviderConfig::query()
+            ->where('code', 'gemini-flash')
+            ->update([
+                'active' => false,
+                'is_fallback' => true,
+                'priority' => 900,
+                'updated_at' => $now,
+            ]);
+    }
+
+    private function configString(string $key): string
+    {
+        $value = config($key);
+
+        return is_string($value) ? $value : '';
+    }
+
+    private function vertexOpenAiBaseUrl(): string
+    {
+        $projectId = $this->configString('ai.vertex.project_id');
+        $location = $this->configString('ai.vertex.location') ?: 'global';
+
+        return sprintf(
+            'https://aiplatform.googleapis.com/v1/projects/%s/locations/%s/endpoints/openapi',
+            $projectId,
+            $location,
+        );
+    }
+
+    /**
+     * @param  array<string, string>  $values
+     * @return array<string, string>|null
+     */
+    private function nonEmptyMap(array $values): ?array
+    {
+        $filtered = array_filter($values, static fn (string $value): bool => $value !== '');
+
+        return $filtered === [] ? null : $filtered;
     }
 }

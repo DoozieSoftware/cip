@@ -59,6 +59,16 @@ const MODERATION_OPEN_STATES: ReportStatusCode[] = [
   'escalated',
 ];
 
+function shouldRefreshReport(data: ReportDetail | undefined): boolean {
+  if (!data) return true;
+
+  return (
+    data.status_code === 'submitted' ||
+    data.status_code === 'ai_processing' ||
+    (data.status_code === 'pending_moderator' && data.ai_result === null)
+  );
+}
+
 function ActionFooter({
   statusCode,
   onApprove,
@@ -132,7 +142,7 @@ export default function ReportDetailPage() {
     queryKey: ['moderator', 'reports', id],
     queryFn: () => queueApi.show(id),
     enabled: Boolean(id),
-    refetchInterval: 10_000,
+    refetchInterval: (query) => (shouldRefreshReport(query.state.data) ? 3_000 : false),
   });
 
   const [approveOpen, setApproveOpen] = useState(false);

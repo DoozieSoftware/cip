@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeReport } from './client';
+import { normalizeReport, shouldRefreshSubmittedReport } from './client';
 
 describe('citizen api client - report normalization', () => {
   it('maps backend report_type to the frontend type field and defaults missing collections', () => {
@@ -18,5 +18,28 @@ describe('citizen api client - report normalization', () => {
     expect(report.type?.name).toBe('Pothole');
     expect(report.media).toEqual([]);
     expect(report.timeline).toEqual([]);
+  });
+
+  it('keeps newly submitted reports refreshing until media/status catches up', () => {
+    const submitted = normalizeReport({
+      id: 'rep-1',
+      title: 'Pothole on MG Road',
+      status: { code: 'submitted', name: 'Submitted' },
+      media_count: 1,
+      media: [],
+    });
+    const mediaStillUploading = normalizeReport({
+      ...submitted,
+      status: { code: 'pending_moderator', name: 'Pending moderator' },
+    });
+    const ready = normalizeReport({
+      ...mediaStillUploading,
+      media: [{ id: 'photo-1', kind: 'photo', signed_url: 'https://example.test/photo.jpg' }],
+    });
+
+    expect(shouldRefreshSubmittedReport(undefined)).toBe(true);
+    expect(shouldRefreshSubmittedReport(submitted)).toBe(true);
+    expect(shouldRefreshSubmittedReport(mediaStillUploading)).toBe(true);
+    expect(shouldRefreshSubmittedReport(ready)).toBe(false);
   });
 });
