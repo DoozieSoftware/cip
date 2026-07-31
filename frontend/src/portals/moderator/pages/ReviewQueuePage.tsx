@@ -192,9 +192,7 @@ export default function ReviewQueuePage() {
                   <TD>{r.category?.name ?? <span className="text-slate-400">—</span>}</TD>
                   <TD>{r.ai_confidence !== null ? `${r.ai_confidence.toFixed(0)}%` : '—'}</TD>
                   <TD>
-                    {r.fraud_score !== null && r.fraud_score > 60 ? (
-                      <Badge tone="danger">Fraud {r.fraud_score.toFixed(0)}</Badge>
-                    ) : r.duplicate_score !== null && r.duplicate_score > 60 ? (
+                    {r.duplicate_score !== null && r.duplicate_score > 60 ? (
                       <Badge tone="warning">Dup {r.duplicate_score.toFixed(0)}</Badge>
                     ) : (
                       <span className="text-slate-400">—</span>
