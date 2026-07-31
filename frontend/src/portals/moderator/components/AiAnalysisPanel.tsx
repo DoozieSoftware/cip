@@ -28,8 +28,8 @@ function mockGpsPct(n: number | null | undefined): string {
 export function AiAnalysisPanel({ ai, statusCode, mockGpsScore }: AiAnalysisPanelProps) {
   if (!ai) {
     const message =
-      statusCode === 'ai_processing'
-        ? 'AI analysis is still processing. This can take a few minutes while the vision provider warms up.'
+      statusCode === 'submitted' || statusCode === 'ai_processing'
+        ? 'AI analysis is queued or still processing. This can take a few minutes while the vision provider completes the review.'
         : 'No AI result is available for this report.';
 
     return (
