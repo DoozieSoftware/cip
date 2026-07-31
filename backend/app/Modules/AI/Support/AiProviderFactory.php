@@ -41,6 +41,7 @@ class AiProviderFactory
                 timeoutMs: $cfg->timeout_ms,
                 temperature: $cfg->temperature,
                 extraHeaders: $cfg->extra_headers ?? [],
+                bearerTokenResolver: $this->bearerTokenResolver($cfg),
             ),
             default => throw new RuntimeException("ai.provider.unknown_driver: {$cfg->driver}"),
         };
@@ -48,6 +49,27 @@ class AiProviderFactory
 
     private function apiKey(AiProviderConfig $cfg): string
     {
-        return (string) ($cfg->credentials['api_key'] ?? '');
+        return $this->stringCredential($cfg, 'api_key');
+    }
+
+    private function bearerTokenResolver(AiProviderConfig $cfg): ?\Closure
+    {
+        if ($cfg->auth_type !== 'oauth_service_account') {
+            return null;
+        }
+
+        $provider = new GoogleServiceAccountTokenProvider(
+            credentialsPath: $this->stringCredential($cfg, 'service_account_path'),
+        );
+
+        return static fn (): string => $provider->token();
+    }
+
+    private function stringCredential(AiProviderConfig $cfg, string $key): string
+    {
+        $credentials = $cfg->credentials;
+        $value = is_array($credentials) ? ($credentials[$key] ?? null) : null;
+
+        return is_string($value) ? $value : '';
     }
 }

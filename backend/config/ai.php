@@ -3,10 +3,11 @@
 declare(strict_types=1);
 
 return [
-    'gemini' => [
-        'base_url' => env('AI_GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta/openai'),
-        'model' => env('AI_GEMINI_MODEL', 'gemini-3.6-flash'),
-        'key' => env('AI_GEMINI_KEY'),
+    'vertex' => [
+        'project_id' => env('GOOGLE_CLOUD_PROJECT', env('GCLOUD_PROJECT', '')),
+        'location' => env('AI_VERTEX_LOCATION', 'global'),
+        'model' => env('AI_VERTEX_MODEL', 'google/gemini-3.6-flash'),
+        'credentials_path' => env('GOOGLE_APPLICATION_CREDENTIALS'),
     ],
 
     'modal' => [

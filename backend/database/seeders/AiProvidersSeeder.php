@@ -29,19 +29,19 @@ class AiProvidersSeeder extends Seeder
     public function run(): void
     {
         $now = now();
-        $geminiKey = $this->configString('ai.gemini.key');
+        $vertexCredentialsPath = $this->configString('ai.vertex.credentials_path');
         $modalKey = $this->configString('ai.modal.key');
         $modalSecret = $this->configString('ai.modal.secret');
 
         $providers = [
             [
-                'code' => 'gemini-flash',
+                'code' => 'vertex-gemini-flash',
                 'driver' => 'openai_compatible',
-                'name' => 'Google Gemini Flash',
-                'base_url' => $this->configString('ai.gemini.base_url'),
-                'auth_type' => 'bearer',
-                'credentials' => $this->nonEmptyMap(['api_key' => $geminiKey]),
-                'model' => $this->configString('ai.gemini.model'),
+                'name' => 'Vertex AI Gemini Flash',
+                'base_url' => $this->vertexOpenAiBaseUrl(),
+                'auth_type' => 'oauth_service_account',
+                'credentials' => $this->nonEmptyMap(['service_account_path' => $vertexCredentialsPath]),
+                'model' => $this->configString('ai.vertex.model'),
                 'temperature' => 0.2,
                 'timeout_ms' => 60000,
                 'retry_count' => 2,
@@ -106,6 +106,15 @@ class AiProvidersSeeder extends Seeder
                 array_merge($p, ['updated_at' => $now, 'created_at' => $now]),
             );
         }
+
+        AiProviderConfig::query()
+            ->where('code', 'gemini-flash')
+            ->update([
+                'active' => false,
+                'is_fallback' => true,
+                'priority' => 900,
+                'updated_at' => $now,
+            ]);
     }
 
     private function configString(string $key): string
@@ -113,6 +122,18 @@ class AiProvidersSeeder extends Seeder
         $value = config($key);
 
         return is_string($value) ? $value : '';
+    }
+
+    private function vertexOpenAiBaseUrl(): string
+    {
+        $projectId = $this->configString('ai.vertex.project_id');
+        $location = $this->configString('ai.vertex.location') ?: 'global';
+
+        return sprintf(
+            'https://aiplatform.googleapis.com/v1/projects/%s/locations/%s/endpoints/openapi',
+            $projectId,
+            $location,
+        );
     }
 
     /**
