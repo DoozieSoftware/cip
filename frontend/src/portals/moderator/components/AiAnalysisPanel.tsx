@@ -64,7 +64,6 @@ export function AiAnalysisPanel({ ai, statusCode, mockGpsScore }: AiAnalysisPane
       <CardBody className="space-y-4">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Stat label="AI confidence" value={pct(ai.confidence)} />
-          <Stat label="Fraud risk" value={pct(ai.fraud_score)} tone={scoreTone(ai.fraud_score)} />
           <Stat
             label="Duplicate risk"
             value={pct(ai.duplicate_score)}
