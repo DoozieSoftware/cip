@@ -168,6 +168,18 @@ export default function ReportDetailPage() {
     label: t.name,
   }));
 
+  // Show the AI's actual recommendation inside the override dropdowns so the
+  // moderator knows exactly what "keep" means without scrolling to the AI
+  // Analysis panel. When the AI made no suggestion, fall back to plain wording.
+  const aiCategoryName = data?.ai_result?.recommended_category?.name;
+  const aiDepartmentName = data?.ai_result?.recommended_department?.name;
+  const categoryPlaceholder = aiCategoryName
+    ? `Keep AI suggestion: ${aiCategoryName}`
+    : 'Keep current category';
+  const departmentPlaceholder = aiDepartmentName
+    ? `Keep AI suggestion: ${aiDepartmentName}`
+    : 'Keep current department';
+
   // Every dialog field is scoped to whatever report is currently open.
   // Without this, jumping to the next report via the `N` shortcut (or
   // any other navigation) left the previous report's category/department
@@ -442,7 +454,7 @@ export default function ReportDetailPage() {
               name="category_id"
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              placeholder="Keep AI suggestion"
+              placeholder={categoryPlaceholder}
               options={categoryOptions}
             />
             <Select
@@ -450,7 +462,7 @@ export default function ReportDetailPage() {
               name="department_id"
               value={departmentId}
               onChange={(e) => setDepartmentId(e.target.value)}
-              placeholder="Keep AI suggestion"
+              placeholder={departmentPlaceholder}
               options={departmentOptions}
             />
           </div>
