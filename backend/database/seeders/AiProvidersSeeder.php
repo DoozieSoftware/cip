@@ -29,20 +29,38 @@ class AiProvidersSeeder extends Seeder
     public function run(): void
     {
         $now = now();
+        $geminiKey = $this->configString('ai.gemini.key');
+        $modalKey = $this->configString('ai.modal.key');
+        $modalSecret = $this->configString('ai.modal.secret');
 
         $providers = [
+            [
+                'code' => 'gemini-flash',
+                'driver' => 'openai_compatible',
+                'name' => 'Google Gemini Flash',
+                'base_url' => $this->configString('ai.gemini.base_url'),
+                'auth_type' => 'bearer',
+                'credentials' => $this->nonEmptyMap(['api_key' => $geminiKey]),
+                'model' => $this->configString('ai.gemini.model'),
+                'temperature' => 0.2,
+                'timeout_ms' => 60000,
+                'retry_count' => 2,
+                'is_fallback' => false,
+                'priority' => 5,
+                'active' => true,
+            ],
             [
                 'code' => 'modal-vision',
                 'driver' => 'openai_compatible',
                 'name' => 'Modal Vision (vLLM)',
-                'base_url' => env('AI_MODAL_BASE_URL', 'https://akshayjoshi999--cip-vision-v3-serve.modal.run'),
+                'base_url' => $this->configString('ai.modal.base_url'),
                 'auth_type' => 'header',
                 'credentials' => null,
-                'extra_headers' => array_filter([
-                    'Modal-Key' => env('AI_MODAL_KEY'),
-                    'Modal-Secret' => env('AI_MODAL_SECRET'),
-                ], static fn ($v) => is_string($v) && $v !== ''),
-                'model' => env('AI_MODAL_MODEL', 'Qwen/Qwen2.5-VL-7B-Instruct'),
+                'extra_headers' => $this->nonEmptyMap([
+                    'Modal-Key' => $modalKey,
+                    'Modal-Secret' => $modalSecret,
+                ]),
+                'model' => $this->configString('ai.modal.model'),
                 'temperature' => 0.2,
                 'timeout_ms' => 60000,
                 'retry_count' => 2,
@@ -88,5 +106,23 @@ class AiProvidersSeeder extends Seeder
                 array_merge($p, ['updated_at' => $now, 'created_at' => $now]),
             );
         }
+    }
+
+    private function configString(string $key): string
+    {
+        $value = config($key);
+
+        return is_string($value) ? $value : '';
+    }
+
+    /**
+     * @param  array<string, string>  $values
+     * @return array<string, string>|null
+     */
+    private function nonEmptyMap(array $values): ?array
+    {
+        $filtered = array_filter($values, static fn (string $value): bool => $value !== '');
+
+        return $filtered === [] ? null : $filtered;
     }
 }
