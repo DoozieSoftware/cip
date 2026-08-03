@@ -364,6 +364,10 @@ export default function SubmitPage(): JSX.Element {
             {fieldErrors.evidence}
           </p>
         ) : null}
+        <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+          Safety first: never take photos or use this app while driving. Pull over somewhere safe
+          before capturing evidence.
+        </p>
         <div className="mt-2 space-y-3">
           <CameraCapture mode="photo" onCapture={addPhoto} onError={onCameraError} />
           <button
