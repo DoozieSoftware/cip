@@ -215,7 +215,7 @@ export default function ReportListPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <ExportMenu filters={filters} />
+          <ExportMenu filters={scopedFilters} />
         </div>
       </div>
 
