@@ -297,49 +297,49 @@ Route::prefix('v1')->group(function (): void {
     ])->prefix('department')->name('api.v1.department.')->group(function (): void {
         // T-M11-007 — dashboard summary
         Route::get('dashboard', [DepartmentDashboardController::class, 'show'])
-            ->middleware('can:viewDashboard')
+            ->middleware('can:department.view_dashboard')
             ->name('dashboard');
         // Active memberships for the department switcher
         Route::get('memberships', [DepartmentMembershipController::class, 'index'])
-            ->middleware('can:viewDashboard')
+            ->middleware('can:department.view_dashboard')
             ->name('memberships.index');
         // T-M11-008 — paginated list
         Route::get('reports', [DepartmentReportListController::class, 'index'])
-            ->middleware('can:viewReports')
+            ->middleware('can:department.view_reports')
             ->name('reports.index');
         // T-M11-010 — CSV / XLSX / PDF export
         Route::get('reports/export', [DepartmentReportExportController::class, 'export'])
-            ->middleware('can:viewReports')
+            ->middleware('can:department.view_reports')
             ->name('reports.export');
         Route::get('reports/{report}', [DepartmentReportListController::class, 'show'])
-            ->middleware('can:view,report')
+            ->middleware('can:department.view,report')
             ->name('reports.show');
         // T-M11-006 — five lifecycle actions + T-M11-005 — internal note
         Route::post('reports/{report}/accept', [DepartmentReportActionsController::class, 'accept'])
-            ->middleware('can:accept,report')
+            ->middleware('can:department.accept,report')
             ->name('reports.accept');
         Route::post('reports/{report}/start', [DepartmentReportActionsController::class, 'start'])
-            ->middleware('can:start,report')
+            ->middleware('can:department.start,report')
             ->name('reports.start');
         Route::post('reports/{report}/progress', [DepartmentReportActionsController::class, 'progress'])
-            ->middleware('can:progress,report')
+            ->middleware('can:department.progress,report')
             ->name('reports.progress');
         Route::post('reports/{report}/resolve', [DepartmentReportActionsController::class, 'resolve'])
-            ->middleware('can:resolve,report')
+            ->middleware('can:department.resolve,report')
             ->name('reports.resolve');
         Route::post('reports/{report}/close', [DepartmentReportActionsController::class, 'close'])
-            ->middleware('can:close,report')
+            ->middleware('can:department.close,report')
             ->name('reports.close');
         // T-M11-005 — internal note (department-private)
         Route::post('reports/{report}/note', [DepartmentReportActionsController::class, 'addNote'])
-            ->middleware('can:addNote,report')
+            ->middleware('can:department.add_note,report')
             ->name('reports.note');
         // Proof-of-completion photos (role `proof`; department-private)
         Route::post('reports/{report}/photos', [DepartmentReportActionsController::class, 'uploadProof'])
-            ->middleware('can:attachProof,report')
+            ->middleware('can:department.attach_proof,report')
             ->name('reports.photos.store');
         Route::get('reports/{report}/notes', [DepartmentReportActionsController::class, 'listNotes'])
-            ->middleware('can:view,report')
+            ->middleware('can:department.view,report')
             ->name('reports.notes.index');
     });
 

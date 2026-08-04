@@ -3,19 +3,20 @@
 declare(strict_types=1);
 
 use App\Modules\Departments\Models\Department;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Departments\Policies\DepartmentPolicy;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Users\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
-
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
+    $this->seed(RolesAndPermissionsSeeder::class);
 });
 
 it('a non-member department officer is denied view, accept, addNote', function (): void {
@@ -67,8 +68,8 @@ it('super_admin bypasses via the base policy', function (): void {
     $admin->assignRole('super_admin');
     $report = Report::factory()->create(['department_id' => $deptA->id]);
 
-    expect(\Illuminate\Support\Facades\Gate::forUser($admin)->allows('view', $report))->toBeTrue();
-    expect(\Illuminate\Support\Facades\Gate::forUser($admin)->allows('viewDashboard'))->toBeTrue();
+    expect(Gate::forUser($admin)->allows('department.view', $report))->toBeTrue();
+    expect(Gate::forUser($admin)->allows('department.view_dashboard'))->toBeTrue();
 });
 
 it('viewDashboard requires the department role or super_admin/system', function (): void {

@@ -41,7 +41,7 @@ class DepartmentServiceProvider extends ServiceProvider
      * Mirror the BasePolicy::before() checks at the Gate level so
      * the M11 abilities (registered as Gate::define callbacks)
      * honor the platform-wide bypass. Without this hook the
-     * `can:view,report` middleware would not let a `super_admin`
+     * `can:department.view,report` middleware would not let a `super_admin`
      * through because the underlying callback only checks the
      * department-membership predicate.
      */
@@ -81,18 +81,18 @@ class DepartmentServiceProvider extends ServiceProvider
         $policy = static fn (): DepartmentPolicy => app(DepartmentPolicy::class);
 
         // No-arg abilities
-        Gate::define('viewDashboard', static fn (User $user): bool => $policy()->viewDashboard($user));
-        Gate::define('viewReports', static fn (User $user): bool => $policy()->viewReports($user));
-        Gate::define('viewAudit', static fn (User $user): bool => $policy()->viewAudit($user));
+        Gate::define('department.view_dashboard', static fn (User $user): bool => $policy()->viewDashboard($user));
+        Gate::define('department.view_reports', static fn (User $user): bool => $policy()->viewReports($user));
+        Gate::define('department.view_audit', static fn (User $user): bool => $policy()->viewAudit($user));
 
         // Report-bound abilities
-        Gate::define('view', static fn (User $user, Report $report): bool => $policy()->view($user, $report));
-        Gate::define('accept', static fn (User $user, Report $report): bool => $policy()->accept($user, $report));
-        Gate::define('start', static fn (User $user, Report $report): bool => $policy()->start($user, $report));
-        Gate::define('progress', static fn (User $user, Report $report): bool => $policy()->progress($user, $report));
-        Gate::define('resolve', static fn (User $user, Report $report): bool => $policy()->resolve($user, $report));
-        Gate::define('close', static fn (User $user, Report $report): bool => $policy()->close($user, $report));
-        Gate::define('addNote', static fn (User $user, Report $report): bool => $policy()->addNote($user, $report));
-        Gate::define('attachProof', static fn (User $user, Report $report): bool => $policy()->attachProof($user, $report));
+        Gate::define('department.view', static fn (User $user, Report $report): bool => $policy()->view($user, $report));
+        Gate::define('department.accept', static fn (User $user, Report $report): bool => $policy()->accept($user, $report));
+        Gate::define('department.start', static fn (User $user, Report $report): bool => $policy()->start($user, $report));
+        Gate::define('department.progress', static fn (User $user, Report $report): bool => $policy()->progress($user, $report));
+        Gate::define('department.resolve', static fn (User $user, Report $report): bool => $policy()->resolve($user, $report));
+        Gate::define('department.close', static fn (User $user, Report $report): bool => $policy()->close($user, $report));
+        Gate::define('department.add_note', static fn (User $user, Report $report): bool => $policy()->addNote($user, $report));
+        Gate::define('department.attach_proof', static fn (User $user, Report $report): bool => $policy()->attachProof($user, $report));
     }
 }
