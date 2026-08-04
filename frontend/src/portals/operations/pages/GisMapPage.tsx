@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
@@ -39,26 +39,11 @@ const STATUS_OPTIONS = [
   { value: 'escalated', label: 'Escalated' },
 ];
 
-function statusColor(code: string | null | undefined): string {
-  switch (code) {
-    case 'assigned':
-      return '#2563eb'; // blue-600
-    case 'accepted':
-      return '#0d9488'; // teal-600
-    case 'in_progress':
-      return '#7c3aed'; // violet-600
-    case 'resolved':
-      return '#16a34a'; // green-600
-    case 'verified':
-      return '#15803d';
-    case 'closed':
-      return '#64748b'; // slate-500
-    case 'rejected':
-      return '#dc2626';
-    default:
-      return '#0f172a';
-  }
-}
+const BENGALURU_CENTER: [number, number] = [12.9716, 77.5946];
+const KARNATAKA_BOUNDS: [[number, number], [number, number]] = [
+  [11.5, 74.0],
+  [18.7, 78.9],
+];
 
 function statusTone(
   code: string | null | undefined,
@@ -83,6 +68,25 @@ function statusTone(
   }
 }
 
+/** Heuristic: seeders sometimes store the lat/lng string as the address. */
+function looksLikeCoords(address: string): boolean {
+  return /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(address.trim());
+}
+
+function locationLabel(location: DepartmentReportListItem['location']): string {
+  if (location?.address && !looksLikeCoords(location.address)) return location.address;
+  return location ? 'Pinned map location' : '—';
+}
+
+function isInsideKarnataka(lat: number, lng: number): boolean {
+  return (
+    lat >= KARNATAKA_BOUNDS[0][0] &&
+    lat <= KARNATAKA_BOUNDS[1][0] &&
+    lng >= KARNATAKA_BOUNDS[0][1] &&
+    lng <= KARNATAKA_BOUNDS[1][1]
+  );
+}
+
 function priorityTone(code: string | null | undefined): 'warning' | 'danger' | 'neutral' {
   switch (code) {
     case 'high':
@@ -92,6 +96,51 @@ function priorityTone(code: string | null | undefined): 'warning' | 'danger' | '
     default:
       return 'neutral';
   }
+}
+
+interface MapPoint {
+  report: DepartmentReportListItem;
+  lat: number;
+  lng: number;
+}
+
+interface ReportCluster {
+  id: string;
+  lat: number;
+  lng: number;
+  reports: DepartmentReportListItem[];
+}
+
+const CLUSTER_CELL_DEGREES = 0.01;
+
+function clusterPoints(points: MapPoint[]): ReportCluster[] {
+  const groups = new Map<string, MapPoint[]>();
+
+  for (const point of points) {
+    const key = `${Math.floor(point.lat / CLUSTER_CELL_DEGREES)}:${Math.floor(point.lng / CLUSTER_CELL_DEGREES)}`;
+    const group = groups.get(key) ?? [];
+    group.push(point);
+    groups.set(key, group);
+  }
+
+  return Array.from(groups.entries()).map(([id, group]) => ({
+    id,
+    lat: group.reduce((sum, point) => sum + point.lat, 0) / group.length,
+    lng: group.reduce((sum, point) => sum + point.lng, 0) / group.length,
+    reports: group.map((point) => point.report),
+  }));
+}
+
+function clusterIcon(count: number): L.DivIcon {
+  const size = Math.min(64, Math.max(34, 30 + Math.sqrt(count) * 12));
+  const color = count >= 10 ? '#991b1b' : count >= 4 ? '#dc2626' : '#ef4444';
+
+  return L.divIcon({
+    className: 'cip-report-cluster',
+    html: `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;background:${color};border:3px solid rgba(255,255,255,.92);border-radius:9999px;color:#fff;font-size:14px;font-weight:700;box-shadow:0 2px 8px rgba(15,23,42,.25)">${count}</span>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
 }
 
 export default function GisMapPage() {
@@ -117,6 +166,7 @@ export default function GisMapPage() {
         const lat = loc.lat;
         const lng = loc.lng;
         if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+        if (!isInsideKarnataka(lat, lng)) return null;
         return { report: r, lat, lng };
       })
       .filter(
@@ -129,14 +179,16 @@ export default function GisMapPage() {
     [points, selectedId],
   );
 
+  const clusters = useMemo(() => clusterPoints(points), [points]);
+
   useEffect(() => {
     setSelectedId(null);
   }, [filters]);
 
-  // Compute a sensible initial center: average of points,
+  // Compute a sensible initial center: average of in-state points,
   // or Bengaluru (BBMP) if no points.
   const center: [number, number] = useMemo(() => {
-    if (points.length === 0) return [12.9716, 77.5946];
+    if (points.length === 0) return BENGALURU_CENTER;
     const sum = points.reduce((acc, p) => ({ lat: acc.lat + p.lat, lng: acc.lng + p.lng }), {
       lat: 0,
       lng: 0,
@@ -202,6 +254,9 @@ export default function GisMapPage() {
               <MapContainer
                 center={center}
                 zoom={12}
+                minZoom={7}
+                maxBounds={KARNATAKA_BOUNDS}
+                maxBoundsViscosity={1}
                 style={{ height: '100%', width: '100%' }}
                 aria-label="Department reports on a map"
               >
@@ -209,43 +264,62 @@ export default function GisMapPage() {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                {points.map(({ report, lat, lng }) => (
+                {clusters.map((cluster) => (
                   <Marker
-                    key={report.id}
-                    position={[lat, lng]}
-                    eventHandlers={{ click: () => setSelectedId(report.id) }}
+                    key={cluster.id}
+                    position={[cluster.lat, cluster.lng]}
+                    icon={clusterIcon(cluster.reports.length)}
+                    eventHandlers={{
+                      click: () => {
+                        if (cluster.reports.length === 1) {
+                          setSelectedId(cluster.reports[0].id);
+                        }
+                      },
+                    }}
                   >
                     <Popup>
-                      <div className="space-y-1 text-xs">
-                        <p className="font-mono font-semibold">{report.tracking_number}</p>
-                        <p className="font-medium">{report.title}</p>
-                        <p>
-                          <Badge tone={statusTone(report.current_status_code)}>
-                            {report.current_status_code ?? '—'}
-                          </Badge>
+                      <div className="max-w-64 space-y-2 text-xs">
+                        <p className="font-semibold text-slate-900">
+                          {cluster.reports.length} report
+                          {cluster.reports.length === 1 ? '' : 's'} in this area
                         </p>
-                        <p>{report.report_type?.name ?? report.report_type?.code ?? '—'}</p>
+                        {cluster.reports.slice(0, 5).map((report) => (
+                          <Link
+                            key={report.id}
+                            to={`/operations/reports/${report.id}`}
+                            className="block rounded-md p-1 text-slate-700 hover:bg-slate-100"
+                          >
+                            <span className="block font-mono font-semibold">
+                              {report.tracking_number}
+                            </span>
+                            <span className="block truncate">{report.title}</span>
+                          </Link>
+                        ))}
+                        {cluster.reports.length > 5 && (
+                          <p className="text-slate-500">
+                            + {cluster.reports.length - 5} more reports
+                          </p>
+                        )}
                       </div>
                     </Popup>
                   </Marker>
                 ))}
-                {/* Heatmap-style circles: larger and translucent
-                    around clustered reports so the user can see
-                    density at a glance. */}
-                {points.map(({ report, lat, lng }) => (
-                  <CircleMarker
-                    key={`heat-${report.id}`}
-                    center={[lat, lng]}
-                    radius={28}
-                    pathOptions={{
-                      color: statusColor(report.current_status_code),
-                      fillColor: statusColor(report.current_status_code),
-                      fillOpacity: 0.15,
-                      weight: 0,
-                    }}
-                  />
-                ))}
               </MapContainer>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-200 px-3 py-2 text-[11px] text-slate-500">
+              <span className="font-semibold text-slate-700">Reports by area</span>
+              <span className="flex items-center gap-1">
+                <i className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                  1
+                </i>
+                One report
+              </span>
+              <span className="flex items-center gap-1">
+                <i className="inline-grid h-5 min-w-5 place-items-center rounded-full bg-red-800 px-1 text-[9px] font-bold text-white">
+                  5+
+                </i>
+                More reports
+              </span>
             </div>
           </CardBody>
         </Card>
@@ -286,18 +360,9 @@ export default function GisMapPage() {
               </p>
               <p>
                 <span className="block text-xs uppercase tracking-wide text-slate-500">
-                  Address
+                  Location
                 </span>
-                {selected.location?.address ?? '—'}
-              </p>
-              <p>
-                <span className="block text-xs uppercase tracking-wide text-slate-500">
-                  Coordinates
-                </span>
-                <span className="font-mono text-xs">
-                  {points.find((p) => p.report.id === selected.id)?.lat.toFixed(5)},{' '}
-                  {points.find((p) => p.report.id === selected.id)?.lng.toFixed(5)}
-                </span>
+                {locationLabel(selected.location)}
               </p>
               <p>
                 <span className="block text-xs uppercase tracking-wide text-slate-500">
