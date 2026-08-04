@@ -117,7 +117,7 @@ it('filters the queue by ward, category, and confidence', function (): void {
     $moderator->assignRole('moderator');
     Sanctum::actingAs($moderator);
 
-    $pothole = ReportType::query()->where('code', 'pothole')->firstOrFail();
+    $pothole = ReportType::query()->where('code', 'roads')->firstOrFail();
     $garbage = ReportType::query()->where('code', 'garbage')->firstOrFail();
     $ward12 = Ward::query()->where('ward_number', 12)->firstOrFail();
     $ward50 = Ward::query()->where('ward_number', 50)->firstOrFail();
@@ -147,8 +147,8 @@ it('filters the queue by ward, category, and confidence', function (): void {
         ->and($idsFor('/api/v1/moderator/queue?ward=12'))->toContain($match->id);
 
     // Category filter resolves report-type code to id.
-    expect($idsFor('/api/v1/moderator/queue?category=pothole'))->toContain($match->id)
-        ->and($idsFor('/api/v1/moderator/queue?category=pothole'))->not->toContain($other->id);
+    expect($idsFor('/api/v1/moderator/queue?category=roads'))->toContain($match->id)
+        ->and($idsFor('/api/v1/moderator/queue?category=roads'))->not->toContain($other->id);
 
     // Confidence filter works for non-zero and zero minimums.
     expect($idsFor('/api/v1/moderator/queue?confidence_min=80'))->toContain($match->id)
@@ -157,8 +157,8 @@ it('filters the queue by ward, category, and confidence', function (): void {
         ->and($idsFor('/api/v1/moderator/queue?confidence_min=90'))->not->toContain($match->id);
 
     // Combined filters narrow the result.
-    expect($idsFor('/api/v1/moderator/queue?category=pothole&ward=12&confidence_min=80'))->toContain($match->id)
-        ->and($idsFor('/api/v1/moderator/queue?category=pothole&ward=12&confidence_min=80'))->not->toContain($other->id);
+    expect($idsFor('/api/v1/moderator/queue?category=roads&ward=12&confidence_min=80'))->toContain($match->id)
+        ->and($idsFor('/api/v1/moderator/queue?category=roads&ward=12&confidence_min=80'))->not->toContain($other->id);
 });
 
 it('returns the duplicate queue when duplicate_score is set', function (): void {

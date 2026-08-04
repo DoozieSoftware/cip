@@ -14,23 +14,21 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Seeds the three documented sample routing rules
- * per docs/02 sec 12:
+ * Seeds the Bengaluru routing rules per docs/02 sec 12:
  *
- *   1. Garbage  -> BBMP Ward 112
- *   2. Pothole  -> BBMP Ward 112
- *   3. Illegal Parking -> Bangalore Traffic Police (BTP)
+ *   1. Garbage & Dumping          -> BBMP Ward 112
+ *   2. Roads, Water & Electricity -> BBMP Ward 112
+ *   3. Traffic & Parking          -> Bangalore Traffic Police (BTP)
+ *   4. Dead Animal                -> BBMP Ward 112
  *
- * The two BBMP rules share the same destination so a
- * citizen's complaint lands with the right ward officer
- * regardless of whether it is garbage or a pothole.
- * Illegal parking is a different department (BTP) because
- * parking enforcement is a separate municipal body.
+ * The BBMP rules share the same destination so a citizen's complaint
+ * lands with the right ward officer regardless of the exact issue.
+ * Traffic, parking, and encroachment go to BTP because enforcement is
+ * a separate municipal body.
  *
- * The seeder is idempotent: every rule is matched on
- * `(name)` via `updateOrCreate` so re-running the seeder
- * is a no-op. The two destination departments are
- * upserted by `(code)` for the same reason.
+ * The seeder is idempotent: every rule is matched on `(name)` via
+ * `updateOrCreate` so re-running the seeder is a no-op. The two
+ * destination departments are upserted by `(code)` for the same reason.
  */
 class RoutingRulesSeeder extends Seeder
 {
@@ -55,29 +53,43 @@ class RoutingRulesSeeder extends Seeder
             $this->ensureRule(
                 name: 'Garbage -> BBMP Ward 112',
                 priority: 10,
-                conditions: ['category_in' => ['garbage', 'illegal_dumping', 'dead_animal', 'open_drain']],
+                conditions: ['category_in' => ['garbage']],
                 destinationDepartment: $bbmp,
                 defaultPriority: $medium,
                 defaultSlaMinutes: 1440,
             );
 
             $this->ensureRule(
-                name: 'Pothole -> BBMP Ward 112',
+                name: 'Roads, Water & Electricity -> BBMP Ward 112',
                 priority: 20,
-                conditions: ['category_in' => ['pothole', 'road_damage']],
+                conditions: ['category_in' => ['roads', 'water_sewage', 'electricity']],
                 destinationDepartment: $bbmp,
                 defaultPriority: $medium,
                 defaultSlaMinutes: 1440,
             );
 
             $this->ensureRule(
-                name: 'Illegal Parking -> BTP',
+                name: 'Traffic & Parking -> BTP',
                 priority: 30,
-                conditions: ['category_in' => ['illegal_parking', 'encroachment']],
+                conditions: ['category_in' => ['traffic_violation', 'illegal_parking', 'encroachment']],
                 destinationDepartment: $btp,
                 defaultPriority: $high,
                 defaultSlaMinutes: 480,
             );
+
+            $this->ensureRule(
+                name: 'Dead Animal -> BBMP Ward 112',
+                priority: 40,
+                conditions: ['category_in' => ['dead_animal']],
+                destinationDepartment: $bbmp,
+                defaultPriority: $medium,
+                defaultSlaMinutes: 1440,
+            );
+
+            // Deactivate legacy rules whose conditions reference merged codes.
+            RoutingRule::query()
+                ->whereIn('name', ['Pothole -> BBMP Ward 112', 'Illegal Parking -> BTP'])
+                ->update(['active' => false]);
 
             AppConfig::query()->updateOrCreate(
                 ['key' => RoutingFallbackService::APP_CONFIG_KEY],

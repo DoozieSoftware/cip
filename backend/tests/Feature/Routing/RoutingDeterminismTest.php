@@ -32,7 +32,7 @@ beforeEach(function (): void {
     $this->medium = ReportPriority::query()->where('code', 'medium')->firstOrFail();
 
     $this->garbage = ReportType::query()->where('code', 'garbage')->firstOrFail();
-    $this->pothole = ReportType::query()->where('code', 'pothole')->firstOrFail();
+    $this->pothole = ReportType::query()->where('code', 'roads')->firstOrFail();
 
     $workflow = WorkflowDefinition::query()->where('code', 'civic_default')->firstOrFail();
 

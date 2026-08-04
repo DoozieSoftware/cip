@@ -28,14 +28,15 @@ beforeEach(function (): void {
     (new DefaultWorkflowSeeder)->run();
 });
 
-it('seeds the three Bangalore sample routing rules', function (): void {
+it('seeds the four Bangalore routing rules', function (): void {
     (new RoutingRulesSeeder)->run();
 
-    expect(RoutingRule::query()->count())->toBe(3);
+    expect(RoutingRule::query()->count())->toBe(4);
 
     $this->assertDatabaseHas('routing_rules', ['name' => 'Garbage -> BBMP Ward 112', 'priority' => 10]);
-    $this->assertDatabaseHas('routing_rules', ['name' => 'Pothole -> BBMP Ward 112', 'priority' => 20]);
-    $this->assertDatabaseHas('routing_rules', ['name' => 'Illegal Parking -> BTP', 'priority' => 30]);
+    $this->assertDatabaseHas('routing_rules', ['name' => 'Roads, Water & Electricity -> BBMP Ward 112', 'priority' => 20]);
+    $this->assertDatabaseHas('routing_rules', ['name' => 'Traffic & Parking -> BTP', 'priority' => 30]);
+    $this->assertDatabaseHas('routing_rules', ['name' => 'Dead Animal -> BBMP Ward 112', 'priority' => 40]);
 });
 
 it('upserts the BBMP Ward 112 and BTP destination departments', function (): void {
@@ -49,7 +50,7 @@ it('is idempotent (re-running does not duplicate rules)', function (): void {
     (new RoutingRulesSeeder)->run();
     (new RoutingRulesSeeder)->run();
 
-    expect(RoutingRule::query()->count())->toBe(3);
+    expect(RoutingRule::query()->count())->toBe(4);
 });
 
 it('routes a garbage report to BBMP Ward 112 via the seeder', function (): void {

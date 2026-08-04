@@ -117,7 +117,7 @@ export default function ReviewQueuePage() {
             name="category"
             value={filters.category ?? ''}
             onChange={(e) => update('category', e.target.value)}
-            placeholder="e.g. road_damage"
+            placeholder="e.g. roads"
           />
           <Input
             label="Ward"

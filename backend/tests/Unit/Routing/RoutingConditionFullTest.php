@@ -66,7 +66,7 @@ beforeEach(function (): void {
     ]);
 
     $this->garbage = ReportType::query()->where('code', 'garbage')->firstOrFail();
-    $this->pothole = ReportType::query()->where('code', 'pothole')->firstOrFail();
+    $this->pothole = ReportType::query()->where('code', 'roads')->firstOrFail();
     $this->high = ReportPriority::query()->where('code', 'high')->firstOrFail();
     $this->medium = ReportPriority::query()->where('code', 'medium')->firstOrFail();
 

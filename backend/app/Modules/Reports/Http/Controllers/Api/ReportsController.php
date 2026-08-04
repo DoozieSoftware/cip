@@ -51,6 +51,7 @@ class ReportsController extends BaseController
     {
         $types = ReportType::query()
             ->where('active', true)
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 

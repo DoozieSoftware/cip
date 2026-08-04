@@ -35,7 +35,7 @@ beforeEach(function (): void {
 function submitReportWithGpsScore(User $citizen, ?float $score): TestResponse
 {
     Sanctum::actingAs($citizen);
-    $type = ReportType::query()->where('code', 'pothole')->firstOrFail();
+    $type = ReportType::query()->where('code', 'roads')->firstOrFail();
 
     $payload = [
         'report_type_id' => $type->id,

@@ -34,12 +34,14 @@ it('seeds the 5 priority levels with sensible SLAs', function (): void {
         ->and($low->sla_minutes)->toBeGreaterThanOrEqual(7 * 24 * 60);
 });
 
-it('seeds the 10 default report types with a required photo and optional video', function (): void {
+it('seeds the 8 Bengaluru report types with a required photo and optional video', function (): void {
     (new ReportTypesSeeder)->run();
 
-    expect(ReportType::query()->count())->toBe(10);
-    expect(ReportType::query()->where('code', 'pothole')->exists())->toBeTrue()
-        ->and(ReportType::query()->where('code', 'garbage')->exists())->toBeTrue();
+    expect(ReportType::query()->count())->toBe(8);
+    expect(ReportType::query()->where('code', 'roads')->exists())->toBeTrue()
+        ->and(ReportType::query()->where('code', 'garbage')->exists())->toBeTrue()
+        ->and(ReportType::query()->where('code', 'traffic_violation')->exists())->toBeTrue()
+        ->and(ReportType::query()->where('code', 'pothole')->exists())->toBeFalse();
 
     ReportType::query()->each(function (ReportType $type): void {
         expect($type->requires_photo)->toBeTrue()
@@ -60,5 +62,5 @@ it('is idempotent — re-running each seeder does not duplicate rows', function 
 
     (new ReportTypesSeeder)->run();
     (new ReportTypesSeeder)->run();
-    expect(ReportType::query()->count())->toBe(10);
+    expect(ReportType::query()->count())->toBe(8);
 });

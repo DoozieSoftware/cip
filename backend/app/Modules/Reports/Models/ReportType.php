@@ -63,6 +63,7 @@ class ReportType extends Model
         'workflow_definition_id',
         'validation_rules',
         'active',
+        'sort_order',
     ];
 
     /**

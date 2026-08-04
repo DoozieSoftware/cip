@@ -14,9 +14,9 @@ vi.mock('../../api/client', async () => {
       isLoading: false,
       data: [
         {
-          id: 'type-pothole',
-          code: 'pothole',
-          name: 'Pothole',
+          id: 'type-roads',
+          code: 'roads',
+          name: 'Roads',
           requires_photo: true,
           requires_video: false,
         },
@@ -92,7 +92,7 @@ describe('SubmitPage', () => {
 
     renderSubmitPage();
 
-    fireEvent.click(screen.getByRole('button', { name: /pothole/i }));
+    fireEvent.click(screen.getByRole('button', { name: /roads/i }));
     fireEvent.click(screen.getByTestId('camera-photo'));
     fireEvent.change(screen.getByPlaceholderText(/Big pothole/i), {
       target: { value: 'Large pothole near metro' },
@@ -106,7 +106,7 @@ describe('SubmitPage', () => {
     await waitFor(() => {
       expect(mutateAsyncMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          report_type_id: 'type-pothole',
+          report_type_id: 'type-roads',
           latitude: 12.9716,
           longitude: 77.5946,
           accuracy_m: 25,

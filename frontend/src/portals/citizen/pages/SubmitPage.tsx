@@ -432,16 +432,14 @@ export default function SubmitPage(): JSX.Element {
 
 function iconForCode(code: string): string {
   const map: Record<string, string> = {
-    illegal_parking: '🅿️',
+    roads: '🛣️',
+    water_sewage: '💧',
+    electricity: '⚡',
     garbage: '🗑️',
-    pothole: '🚧',
-    streetlight: '💡',
-    water_leakage: '💧',
-    road_damage: '🛣️',
-    illegal_dumping: '🚯',
+    traffic_violation: '🚦',
+    illegal_parking: '🅿️',
     encroachment: '🚧',
     dead_animal: '🐾',
-    open_drain: '🌊',
   };
   return map[code] ?? '📌';
 }

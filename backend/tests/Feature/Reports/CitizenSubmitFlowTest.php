@@ -34,7 +34,7 @@ it('citizen can submit a new report end-to-end', function (): void {
     $citizen = User::factory()->create();
     Sanctum::actingAs($citizen);
 
-    $type = ReportType::query()->where('code', 'pothole')->firstOrFail();
+    $type = ReportType::query()->where('code', 'roads')->firstOrFail();
 
     $payload = [
         'report_type_id' => $type->id,
@@ -63,7 +63,7 @@ it('citizen can submit a draft then move it to submitted via the 2-step endpoint
     $citizen = User::factory()->create();
     Sanctum::actingAs($citizen);
 
-    $type = ReportType::query()->where('code', 'pothole')->firstOrFail();
+    $type = ReportType::query()->where('code', 'roads')->firstOrFail();
     $draft = ReportStatus::query()->where('code', 'draft')->firstOrFail();
     $priority = ReportPriority::query()->where('code', 'medium')->firstOrFail();
     $location = Location::factory()->create();

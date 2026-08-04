@@ -17,13 +17,15 @@ class ReportTypeRepository
 {
     /**
      * @param  array<string, mixed>  $filters
+     * @return LengthAwarePaginator<int, ReportType>
      */
     public function search(array $filters, int $perPage = 25): LengthAwarePaginator
     {
         $q = ReportType::query();
 
         if (! empty($filters['q'])) {
-            $needle = '%'.$filters['q'].'%';
+            $search = is_string($filters['q']) ? $filters['q'] : '';
+            $needle = '%'.$search.'%';
             $q->where(static function ($w) use ($needle): void {
                 $w->where('name', 'like', $needle)
                     ->orWhere('code', 'like', $needle);
@@ -42,6 +44,6 @@ class ReportTypeRepository
             $q->onlyTrashed();
         }
 
-        return $q->orderBy('name')->paginate(max(1, min(200, $perPage)));
+        return $q->orderBy('sort_order')->orderBy('name')->paginate(max(1, min(200, $perPage)));
     }
 }
