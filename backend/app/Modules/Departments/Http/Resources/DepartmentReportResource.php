@@ -83,6 +83,11 @@ class DepartmentReportResource extends JsonResource
         return array_merge($base, [
             'current_status_code' => $status?->code,
             'report_type' => $type === null ? null : ['id' => $type->id, 'code' => $type->code, 'name' => $type->name],
+            'department' => $report->department === null ? null : [
+                'id' => $report->department->id,
+                'code' => $report->department->code,
+                'name' => $report->department->name,
+            ],
             'department_sla_minutes' => $report->department?->default_sla_minutes,
             'internal_notes' => $notes,
             'location' => $location === null ? null : [

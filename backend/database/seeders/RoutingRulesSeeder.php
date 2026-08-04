@@ -80,27 +80,30 @@ class RoutingRulesSeeder extends Seeder
                 );
             }
 
-            // Deactivate legacy ward-112 and merged-category rules that the
-            // canonical set above replaces. ('Illegal Parking -> BTP' is NOT
-            // listed here because the canonical set reuses that exact name.)
+            // Keep the historical demo rules as inactive records for
+            // migration/test compatibility. They are not part of the active
+            // Phase 1 taxonomy.
+            $legacyNames = [
+                'Garbage -> BBMP Ward 112',
+                'Roads, Water & Electricity -> BBMP Ward 112',
+                'Traffic & Parking -> BTP',
+                'Dead Animal -> BBMP Ward 112',
+                'Pothole -> BBMP Ward 112',
+            ];
+
             RoutingRule::query()
-                ->whereIn('name', [
-                    'Garbage -> BBMP Ward 112',
-                    'Roads, Water & Electricity -> BBMP Ward 112',
-                    'Traffic & Parking -> BTP',
-                    'Dead Animal -> BBMP Ward 112',
-                    'Pothole -> BBMP Ward 112',
-                ])
+                ->whereIn('name', $legacyNames)
                 ->update(['active' => false]);
 
-            // Collapse any duplicates left over from earlier naming
-            // iterations: at most one active rule per approved category.
+            // Remove duplicate category rules left by the taxonomy migration.
+            // The canonical rules above are the single active source of truth;
+            // legacy demo rules remain inactive, while migration-era duplicates
+            // are deleted rather than retained as confusing dead records.
             $canonicalNames = array_column($rules, 'name');
             $approvedCategories = array_column($rules, 'category');
 
             RoutingRule::query()
-                ->where('active', true)
-                ->whereNotIn('name', $canonicalNames)
+                ->whereNotIn('name', array_merge($canonicalNames, $legacyNames))
                 ->get()
                 ->each(function (RoutingRule $rule) use ($approvedCategories): void {
                     $conditions = $rule->conditions;
@@ -110,7 +113,7 @@ class RoutingRulesSeeder extends Seeder
                         : [];
 
                     if ($categories !== [] && array_intersect($categories, $approvedCategories) !== []) {
-                        $rule->update(['active' => false]);
+                        $rule->delete();
                     }
                 });
 
