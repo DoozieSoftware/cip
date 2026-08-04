@@ -3,13 +3,12 @@
 declare(strict_types=1);
 
 use App\Modules\AI\Models\AiProviderConfig;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\AI\Models\PromptVersion;
 use Database\Seeders\AiProvidersSeeder;
 use Database\Seeders\PromptsSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
-
 
 it('AiProvidersSeeder inserts mock as the highest-priority active provider', function (): void {
     (new AiProvidersSeeder)->run();
@@ -37,15 +36,19 @@ it('AiProvidersSeeder is idempotent (re-running does not duplicate rows)', funct
     expect(AiProviderConfig::query()->whereIn('code', ['mock', 'openai', 'qwen-vl'])->count())->toBe(3);
 });
 
-it('PromptsSeeder inserts visual-first category v2 and the two base v1 prompts', function (): void {
+it('PromptsSeeder inserts the phase one category prompt and the two base v1 prompts', function (): void {
     (new PromptsSeeder)->run();
 
     $names = ['category_classifier', 'severity_estimator', 'ai_labeller'];
 
-    $category = PromptVersion::query()->where('name', 'category_classifier')->where('version', 2)->first();
+    $category = PromptVersion::query()->where('name', 'category_classifier')->where('version', 6)->first();
     expect($category)->not->toBeNull()
         ->and($category->status)->toBe(PromptVersion::STATUS_APPROVED)
-        ->and($category->prompt_text)->toContain('image is authoritative evidence');
+        ->and($category->prompt_text)->toContain('image is authoritative evidence')
+        ->and($category->prompt_text)->toContain('emergency_flag')
+        ->and($category->prompt_text)->toContain('secondary_triggers')
+        ->and($category->expected_json_schema['required'])->toContain('emergency_flag')
+        ->and($category->expected_json_schema['required'])->toContain('secondary_triggers');
 
     foreach (['severity_estimator', 'ai_labeller'] as $name) {
         $p = PromptVersion::query()->where('name', $name)->where('version', 1)->first();

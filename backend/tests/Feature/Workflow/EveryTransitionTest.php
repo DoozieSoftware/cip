@@ -97,6 +97,27 @@ it('every seeded transition is allowed by the engine', function (string $from, s
     expect(ReportStatusHistory::query()->where('report_id', $report->id)->count())->toBe(1);
 })->with('everyTransition');
 
+it('persists AI routing signals in moderator-visible status history metadata', function (): void {
+    $report = makeReportAt('ai_processing', $this->repo);
+    $actor = actorFor('system');
+
+    $decision = $this->engine->evaluate($report, 'moderator_review', $actor);
+    expect($decision->allowed)->toBeTrue();
+
+    $this->engine->apply($report, $decision, $actor, [
+        'ai_emergency_flag' => true,
+        'ai_secondary_triggers' => ['cable_hazard'],
+    ]);
+
+    $history = ReportStatusHistory::query()->where('report_id', $report->id)->sole();
+
+    expect($history->metadata)
+        ->toMatchArray([
+            'ai_emergency_flag' => true,
+            'ai_secondary_triggers' => ['cable_hazard'],
+        ]);
+});
+
 it('rejects an event that has no outgoing transition from the current state', function (): void {
     $report = makeReportAt('draft', $this->repo);
     // No 'verify' transition from draft.
