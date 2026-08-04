@@ -79,11 +79,12 @@ class AiCompletedListener
             return;
         }
 
-        // If the report already has an active assignment
-        // (re-runs, retries) skip the routing step. The
-        // workflow may have already advanced.
+        // If the report already has an active PRIMARY assignment
+        // (re-runs, retries) skip the routing step. The workflow
+        // may have already advanced. Secondary (linked) tasks must
+        // not block routing.
         if ($report->department_id !== null
-            && $report->assignments()->whereNull('completed_at')->exists()) {
+            && $report->assignments()->openPrimary()->exists()) {
             return;
         }
 
@@ -91,7 +92,8 @@ class AiCompletedListener
 
         // `confidence` on AiResponse/visionResult is [0.0, 1.0];
         // ConfidenceAggregator's thresholds are on a 0-100 scale.
-        $confidencePct = ((float) ($event->visionResult['confidence'] ?? 0.0)) * 100;
+        $confidenceRaw = $event->visionResult['confidence'] ?? 0.0;
+        $confidencePct = is_numeric($confidenceRaw) ? ((float) $confidenceRaw) * 100 : 0.0;
 
         // Claim-mismatch gate: even when confidence is high enough
         // to auto-route, a claim that doesn't match the evidence
@@ -100,9 +102,9 @@ class AiCompletedListener
         // actually visible in the image. The moderator can verify
         // the visual classification before committing it.
         $claimMatches = $event->visionResult['claim_matches_evidence'] ?? true;
-        $consistencyScore = $event->visionResult['consistency_score'] ?? 100;
-        $hasMismatch = $claimMatches === false
-            || ($consistencyScore !== null && (int) $consistencyScore < 50);
+        $consistencyRaw = $event->visionResult['consistency_score'] ?? null;
+        $lowConsistency = is_numeric($consistencyRaw) && ((int) $consistencyRaw) < 50;
+        $hasMismatch = $claimMatches === false || $lowConsistency;
 
         $autoRoute = $this->confidence->decide($confidencePct) === ConfidenceAggregator::DECISION_AUTO_ROUTE
             && ! $hasMismatch;

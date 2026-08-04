@@ -42,8 +42,10 @@ class ReassignService
         ?Request $request,
     ): ReportAssignment {
         return DB::transaction(function () use ($report, $department, $officer, $priority, $reason, $actor, $request): ReportAssignment {
+            // Reassignment replaces the PRIMARY ownership only — secondary
+            // (linked) tasks created for other departments are untouched.
             $previous = $report->assignments()
-                ->whereNull('completed_at')
+                ->openPrimary()
                 ->whereNull('reassigned_at')
                 ->orderByDesc('assigned_at')
                 ->first();
@@ -57,12 +59,16 @@ class ReassignService
             $assignment = ReportAssignment::query()->create([
                 'report_id' => $report->id,
                 'department_id' => $department->id,
+                'is_primary' => true,
+                'kind' => ReportAssignment::KIND_PRIMARY,
                 'officer_id' => $officer?->id,
                 'assigned_by' => $actor?->id,
                 'assigned_at' => now(),
                 'accepted_at' => null,
                 'completed_at' => null,
                 'reassignment_reason' => null,
+                'task_status' => ReportAssignment::TASK_STATUS_OPEN,
+                'sla_minutes' => null,
             ]);
 
             $report->department_id = $department->id;

@@ -7,6 +7,7 @@ namespace App\Modules\Reports\Models;
 use App\Modules\Departments\Models\Department;
 use App\Modules\Users\Models\User;
 use Database\Factories\Modules\Reports\Models\ReportAssignmentFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,6 +25,8 @@ use Illuminate\Support\Carbon;
  * @property string $id
  * @property string $report_id
  * @property string $department_id
+ * @property bool $is_primary
+ * @property string $kind
  * @property string|null $officer_id
  * @property string|null $assigned_by
  * @property Carbon $assigned_at
@@ -31,11 +34,23 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $completed_at
  * @property string|null $reassignment_reason
  * @property Carbon|null $reassigned_at
+ * @property string $task_status
+ * @property int|null $sla_minutes
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
 class ReportAssignment extends Model
 {
+    public const KIND_PRIMARY = 'primary';
+
+    public const KIND_SECONDARY = 'secondary';
+
+    public const TASK_STATUS_OPEN = 'open';
+
+    public const TASK_STATUS_COMPLETED = 'completed';
+
+    public const TASK_STATUS_CANCELLED = 'cancelled';
+
     /** @use HasFactory<ReportAssignmentFactory> */
     use HasFactory;
 
@@ -45,15 +60,18 @@ class ReportAssignment extends Model
 
     /** @var list<string> */
     protected $fillable = [
-        'report_id', 'department_id', 'officer_id',
+        'report_id', 'department_id', 'is_primary', 'kind', 'officer_id',
         'assigned_by', 'assigned_at', 'accepted_at',
         'completed_at', 'reassignment_reason', 'reassigned_at',
+        'task_status', 'sla_minutes',
     ];
 
     /** @return array<string, string> */
     protected function casts(): array
     {
         return [
+            'is_primary' => 'boolean',
+            'sla_minutes' => 'integer',
             'assigned_at' => 'datetime',
             'accepted_at' => 'datetime',
             'completed_at' => 'datetime',
@@ -64,6 +82,32 @@ class ReportAssignment extends Model
     public function report(): BelongsTo
     {
         return $this->belongsTo(Report::class, 'report_id');
+    }
+
+    /**
+     * Open assignments: not completed, not cancelled.
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeOpen(Builder $query): Builder
+    {
+        return $query
+            ->whereNull('completed_at')
+            ->where('task_status', '!=', self::TASK_STATUS_CANCELLED);
+    }
+
+    /**
+     * Open PRIMARY assignments — the report's root-cause owner. Guards that
+     * previously asked "any open assignment" must use this scope so secondary
+     * (linked) tasks never block routing decisions.
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeOpenPrimary(Builder $query): Builder
+    {
+        return $query->open()->where('is_primary', true);
     }
 
     /** @return BelongsTo<Department, $this> */

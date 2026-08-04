@@ -49,12 +49,16 @@ class AssignmentService
             $assignment = ReportAssignment::query()->create([
                 'report_id' => $report->id,
                 'department_id' => $department->id,
+                'is_primary' => true,
+                'kind' => ReportAssignment::KIND_PRIMARY,
                 'officer_id' => $officer?->id,
                 'assigned_by' => $actor?->id,
                 'assigned_at' => now(),
                 'accepted_at' => null,
                 'completed_at' => null,
                 'reassignment_reason' => null,
+                'task_status' => ReportAssignment::TASK_STATUS_OPEN,
+                'sla_minutes' => $decision->defaultSlaMinutes,
             ]);
 
             // Mirror the routing decision onto the report
@@ -93,7 +97,8 @@ class AssignmentService
         }
 
         $key = self::ROUND_ROBIN_CACHE_PREFIX.$departmentId;
-        $index = (int) Cache::get($key, 0);
+        $cached = Cache::get($key, 0);
+        $index = is_numeric($cached) ? (int) $cached : 0;
         $picked = $candidates[$index % count($candidates)];
 
         Cache::put($key, ($index + 1) % count($candidates), now()->addDay());
@@ -115,10 +120,12 @@ class AssignmentService
             return [];
         }
 
-        return User::query()
-            ->whereIn('id', $rows->all())
-            ->orderBy('id')
-            ->get()
-            ->all();
+        return array_values(
+            User::query()
+                ->whereIn('id', $rows->all())
+                ->orderBy('id')
+                ->get()
+                ->all(),
+        );
     }
 }

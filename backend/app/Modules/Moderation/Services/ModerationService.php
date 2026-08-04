@@ -69,8 +69,11 @@ class ModerationService
         $decision = $this->engine->evaluate($report, $event, $moderator);
 
         if (! $decision->allowed) {
+            $status = $report->status()->first();
+            $statusCode = $status !== null ? $status->code : 'unknown';
+
             throw ApiException::validation(
-                "Cannot {$dto->decision} report from state '{$report->currentStatus?->code}'.",
+                "Cannot {$dto->decision} report from state '{$statusCode}'.",
                 ['decision' => $decision->reasons],
             );
         }
@@ -84,10 +87,11 @@ class ModerationService
             $this->applyDepartmentOverride($report, $dto);
 
             $routingDecision = null;
+
             if (
                 $dto->decision === ReviewReportDto::DECISION_APPROVE
                 && $report->department_id === null
-                && ! $report->assignments()->whereNull('completed_at')->exists()
+                && ! $report->assignments()->openPrimary()->exists()
             ) {
                 $routingDecision = $this->routing->resolve($report)
                     ?? $this->routingFallback->decisionFor($report);
@@ -153,12 +157,14 @@ class ModerationService
      * page surfaces the merge on the duplicate row.
      *
      * @param  list<string>  $duplicateIds
+     * @return list<string> ids of the duplicates actually merged
      */
     public function merge(string $canonicalId, array $duplicateIds, ?string $remarks, ?string $reasonCode, User $moderator): array
     {
         $this->assertCanModerate($moderator);
 
         $canonical = Report::query()->find($canonicalId);
+
         if ($canonical === null) {
             throw ApiException::validation("Canonical report '{$canonicalId}' not found.", ['canonical_id' => [$canonicalId]]);
         }
@@ -172,10 +178,12 @@ class ModerationService
                     continue;
                 }
                 $dup = Report::query()->find($dupId);
+
                 if ($dup === null) {
                     continue;
                 }
                 $fromStatus = $dup->current_status_id;
+
                 if ($mergedStatus !== null) {
                     $dup->current_status_id = $mergedStatus->id;
                     $dup->save();
@@ -244,6 +252,7 @@ class ModerationService
         if ($dto->mergeIntoReportId === null || $dto->mergeIntoReportId === '') {
             throw ApiException::validation('merge requires merge_into_report_id.', ['merge_into_report_id' => []]);
         }
+
         if ($dto->mergeIntoReportId === $report->id) {
             throw ApiException::validation('a report cannot be merged into itself.', ['merge_into_report_id' => [$report->id]]);
         }
