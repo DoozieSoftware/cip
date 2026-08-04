@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { OperationsLayout } from './layout/OperationsLayout';
+import { DepartmentSelectionProvider } from './context/DepartmentSelectionContext';
 import { Spinner } from './design';
 import { ProtectedRoute } from '../../auth/ProtectedRoute';
 
@@ -24,28 +25,30 @@ function Fallback() {
 
 export function OperationsApp() {
   return (
-    <Suspense fallback={<Fallback />}>
-      <Routes>
-        <Route element={<OperationsLayout />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="reports" element={<ReportListPage />} />
-          <Route path="reports/export" element={<ExportPage />} />
-          <Route path="reports/:id" element={<ReportDetailPage />} />
-          <Route path="map" element={<GisMapPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="audit" element={<AuditLogPage />} />
-          <Route path="security" element={<SecurityPage />} />
-          <Route
-            path="admin"
-            element={(
-              <ProtectedRoute allow={['department_admin', 'super_admin', 'system']}>
-                <AdminPage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route path="*" element={<Navigate to="/operations" replace />} />
-        </Route>
-      </Routes>
-    </Suspense>
+    <DepartmentSelectionProvider>
+      <Suspense fallback={<Fallback />}>
+        <Routes>
+          <Route element={<OperationsLayout />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="reports" element={<ReportListPage />} />
+            <Route path="reports/export" element={<ExportPage />} />
+            <Route path="reports/:id" element={<ReportDetailPage />} />
+            <Route path="map" element={<GisMapPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="audit" element={<AuditLogPage />} />
+            <Route path="security" element={<SecurityPage />} />
+            <Route
+              path="admin"
+              element={
+                <ProtectedRoute allow={['department_admin', 'super_admin', 'system']}>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/operations" replace />} />
+          </Route>
+        </Routes>
+      </Suspense>
+    </DepartmentSelectionProvider>
   );
 }

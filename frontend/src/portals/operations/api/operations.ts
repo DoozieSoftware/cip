@@ -32,6 +32,14 @@ export interface ReportListFilters {
   search?: string;
   page?: number;
   per_page?: number;
+  /** Scoped department for multi-membership staff (resolver-validated). */
+  department_id?: string;
+}
+
+export interface Membership {
+  id: string;
+  code: string;
+  name: string;
 }
 
 export interface AdminUpdatePayload {
@@ -54,8 +62,10 @@ export interface ManagedDepartment {
 }
 
 export const departmentApi = {
-  dashboard: () =>
-    api.get<{ success: boolean; data: DepartmentDashboardCounts }>('/department/dashboard'),
+  dashboard: (params: Record<string, unknown> = {}) =>
+    api.get<{ success: boolean; data: DepartmentDashboardCounts }>('/department/dashboard', params),
+
+  memberships: () => api.get<{ success: boolean; data: Membership[] }>('/department/memberships'),
 
   listReports: (filters: ReportListFilters = {}) =>
     api.get<Paginated<DepartmentReportListItem>>(

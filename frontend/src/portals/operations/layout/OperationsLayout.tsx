@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { SidebarLayout, type SidebarNavItem } from '../../moderator/design';
 import { useAuth, type Role } from '../../../auth/AuthContext';
+import { DepartmentSwitcher } from '../components/DepartmentSwitcher';
 
 type OperationsNavItem = SidebarNavItem & {
   allowedRoles?: Role[];
@@ -17,13 +18,17 @@ const NAV: OperationsNavItem[] = [
   { to: '/operations/map', label: 'GIS Map', icon: '🗺️' },
   { to: '/operations/audit', label: 'Audit Log', icon: '📜', allowedRoles: AUDIT_SECURITY_ROLES },
   { to: '/operations/security', label: 'Security', icon: '🔒', allowedRoles: AUDIT_SECURITY_ROLES },
-  { to: '/operations/admin', label: 'Department Admin', icon: '🏢', allowedRoles: DEPARTMENT_ADMIN_ROLES },
+  {
+    to: '/operations/admin',
+    label: 'Department Admin',
+    icon: '🏢',
+    allowedRoles: DEPARTMENT_ADMIN_ROLES,
+  },
 ];
 
 const SHORTCUTS: ReactNode = (
   <>
-    v1.0 — keyboard:{' '}
-    <kbd className="rounded bg-slate-100 px-1">A</kbd> accept ·{' '}
+    v1.0 — keyboard: <kbd className="rounded bg-slate-100 px-1">A</kbd> accept ·{' '}
     <kbd className="rounded bg-slate-100 px-1">S</kbd> start ·{' '}
     <kbd className="rounded bg-slate-100 px-1">R</kbd> resolve ·{' '}
     <kbd className="rounded bg-slate-100 px-1">C</kbd> close ·{' '}
@@ -37,8 +42,9 @@ export function OperationsLayout() {
     () => NAV.filter((item) => item.allowedRoles === undefined || hasAnyRole(item.allowedRoles)),
     [hasAnyRole],
   );
-  const portalRole = (['super_admin', 'system', 'department_admin', 'department_officer', 'auditor'] as Role[])
-    .find((role) => user?.roles.includes(role));
+  const portalRole = (
+    ['super_admin', 'system', 'department_admin', 'department_officer', 'auditor'] as Role[]
+  ).find((role) => user?.roles.includes(role));
   const roleLabel = portalRole?.replace(/_/g, ' ') ?? 'operations';
 
   return (
@@ -50,6 +56,12 @@ export function OperationsLayout() {
       nav={nav}
       user={{ name: user?.name, mobile: user?.mobile, roleLabel }}
       keyboardShortcuts={SHORTCUTS}
+      headerContent={
+        <>
+          <DepartmentSwitcher />
+          <div className="hidden text-xs text-slate-500 sm:block">{SHORTCUTS}</div>
+        </>
+      }
     />
   );
 }

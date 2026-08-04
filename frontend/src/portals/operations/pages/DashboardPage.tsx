@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardBody, Spinner, Badge, EmptyState } from '../design';
 import { departmentApi } from '../api/operations';
+import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 import type { DepartmentDashboardCounts } from '../types';
 
 function MetricCard({ label, value, hint }: { label: string; value: number; hint?: string }) {
@@ -16,9 +17,12 @@ function MetricCard({ label, value, hint }: { label: string; value: number; hint
 }
 
 export default function DashboardPage() {
+  const { selectedId, ready, memberships } = useDepartmentSelection();
   const { data, isLoading, error, refetch } = useQuery<DepartmentDashboardCounts>({
-    queryKey: ['operations', 'dashboard'],
-    queryFn: async () => (await departmentApi.dashboard()).data,
+    queryKey: ['operations', 'dashboard', selectedId],
+    queryFn: async () =>
+      (await departmentApi.dashboard({ department_id: selectedId ?? undefined })).data,
+    enabled: ready && memberships.length > 0,
     refetchInterval: 30_000,
   });
 
@@ -37,7 +41,9 @@ export default function DashboardPage() {
         action={
           <button
             type="button"
-            onClick={() => { void refetch(); }}
+            onClick={() => {
+              void refetch();
+            }}
             className="text-sm font-medium text-emerald-600 hover:underline"
           >
             Retry
@@ -54,12 +60,17 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Department at a glance</h1>
-          <p className="text-sm text-slate-500">Live operational load for the officer's department</p>
+          <p className="text-sm text-slate-500">
+            Live operational load for the officer's department
+          </p>
         </div>
         <Badge tone="info">Auto-refresh 30 s</Badge>
       </div>
 
-      <section aria-label="Operational metrics" className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <section
+        aria-label="Operational metrics"
+        className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+      >
         <MetricCard label="Open reports" value={data.open} hint="Not yet closed" />
         <MetricCard label="Due today" value={data.due_today} hint="Submitted today, still open" />
         <MetricCard label="SLA breached" value={data.sla_breached} hint="Open more than a day" />
@@ -75,7 +86,9 @@ export default function DashboardPage() {
               <ul className="space-y-1 text-sm text-slate-700">
                 {categoryEntries.map(([code, count]) => (
                   <li key={code} className="flex items-center justify-between">
-                    <span className="font-mono text-xs uppercase tracking-wide text-slate-500">{code}</span>
+                    <span className="font-mono text-xs uppercase tracking-wide text-slate-500">
+                      {code}
+                    </span>
                     <span className="font-semibold">{count}</span>
                   </li>
                 ))}

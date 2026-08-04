@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Input, Button, Badge } from '../design';
 import { departmentApi, type ReportListFilters } from '../api/operations';
+import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 
 type ExportFormat = 'csv' | 'xlsx' | 'pdf';
 
 export default function ExportPage() {
+  const { selectedId } = useDepartmentSelection();
   const [format, setFormat] = useState<ExportFormat>('csv');
   const [filters, setFilters] = useState<ReportListFilters>({
     status: '',
@@ -13,13 +15,14 @@ export default function ExportPage() {
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
-  const url = departmentApi.exportUrl(format, filters);
+  const scopedFilters: ReportListFilters = { ...filters, department_id: selectedId ?? undefined };
+  const url = departmentApi.exportUrl(format, scopedFilters);
 
   async function handleDownload(): Promise<void> {
     setDownloading(true);
     setDownloadError(null);
     try {
-      await departmentApi.exportDownload(format, filters);
+      await departmentApi.exportDownload(format, scopedFilters);
     } catch (err) {
       setDownloadError(err instanceof Error ? err.message : 'Download failed.');
     } finally {

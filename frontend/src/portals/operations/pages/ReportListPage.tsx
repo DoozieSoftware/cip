@@ -8,6 +8,7 @@ import { ExportMenu } from '../components/ExportMenu';
 import { SlaBadge } from '../components/SlaBadge';
 import { statusLabel, statusTone } from '../components/statusMeta';
 import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
+import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 import type { DepartmentReportListItem, Paginated, ReportType } from '../types';
 
 const STATUS_OPTIONS = [
@@ -92,6 +93,7 @@ function useReportTypeOptions() {
 }
 
 export default function ReportListPage() {
+  const { selectedId, ready, memberships } = useDepartmentSelection();
   const [params, setParams] = useSearchParams();
   const [filters, setFilters] = useState<ReportListFilters>(() => ({
     status: params.get('status') ?? '',
@@ -107,9 +109,12 @@ export default function ReportListPage() {
 
   const reportTypes = useReportTypeOptions();
 
+  const scopedFilters: ReportListFilters = { ...filters, department_id: selectedId ?? undefined };
+
   const { data, isLoading, error, refetch } = useQuery<Paginated<DepartmentReportListItem>>({
-    queryKey: ['operations', 'reports', filters],
-    queryFn: () => departmentApi.listReports(filters),
+    queryKey: ['operations', 'reports', scopedFilters],
+    queryFn: () => departmentApi.listReports(scopedFilters),
+    enabled: ready && memberships.length > 0,
   });
 
   function updateFilter<K extends keyof ReportListFilters>(key: K, value: ReportListFilters[K]) {

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import ReactECharts from 'echarts-for-react';
 import { Card, CardBody, CardHeader, CardTitle, Spinner, EmptyState } from '../design';
 import { departmentApi } from '../api/operations';
+import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 import type { DepartmentDashboardCounts, DepartmentReportListItem } from '../types';
 
 interface SeriesDatum {
@@ -10,19 +11,21 @@ interface SeriesDatum {
 }
 
 export default function AnalyticsPage() {
+  const { selectedId, ready, memberships } = useDepartmentSelection();
   const dashboard = useQuery<DepartmentDashboardCounts>({
-    queryKey: ['operations', 'dashboard', 'analytics'],
-    queryFn: async () => (await departmentApi.dashboard()).data,
+    queryKey: ['operations', 'dashboard', 'analytics', selectedId],
+    queryFn: async () =>
+      (await departmentApi.dashboard({ department_id: selectedId ?? undefined })).data,
+    enabled: ready && memberships.length > 0,
   });
 
-  // Pull a page of recent reports to compute by-status
-  // and by-type breakdowns for the analytics widgets.
   const recent = useQuery<{ data: DepartmentReportListItem[] }>({
-    queryKey: ['operations', 'analytics', 'recent'],
+    queryKey: ['operations', 'analytics', 'recent', selectedId],
     queryFn: () =>
       departmentApi
-        .listReports({ per_page: 500 })
+        .listReports({ per_page: 500, department_id: selectedId ?? undefined })
         .then((p) => ({ data: (p as { data: DepartmentReportListItem[] }).data })),
+    enabled: ready && memberships.length > 0,
   });
 
   const isLoading = dashboard.isLoading || recent.isLoading;
@@ -159,7 +162,9 @@ export default function AnalyticsPage() {
               tooltip: { trigger: 'axis' },
               xAxis: { type: 'category', data: dayKeys },
               yAxis: { type: 'value' },
-              series: [{ type: 'line', data: daySeries.map((d) => d[1]), smooth: true, areaStyle: {} }],
+              series: [
+                { type: 'line', data: daySeries.map((d) => d[1]), smooth: true, areaStyle: {} },
+              ],
             }}
             style={{ height: 320 }}
             aria-label="Reports submitted per day"

@@ -15,6 +15,7 @@ import {
   Badge,
 } from '../design';
 import { departmentApi, type ReportListFilters } from '../api/operations';
+import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 import type { DepartmentReportListItem } from '../types';
 
 // Default Leaflet marker icons are not bundled by
@@ -149,13 +150,17 @@ export default function GisMapPage() {
     per_page: 500,
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { selectedId: deptId, ready, memberships } = useDepartmentSelection();
+
+  const scopedFilters: ReportListFilters = { ...filters, department_id: deptId ?? undefined };
 
   const { data, isLoading, error, refetch } = useQuery<{ data: DepartmentReportListItem[] }>({
-    queryKey: ['operations', 'reports', 'gis', filters],
+    queryKey: ['operations', 'reports', 'gis', scopedFilters],
     queryFn: () =>
       departmentApi
-        .listReports(filters)
+        .listReports(scopedFilters)
         .then((p) => ({ data: (p as { data: DepartmentReportListItem[] }).data })),
+    enabled: ready && memberships.length > 0,
   });
 
   const points = useMemo(() => {
