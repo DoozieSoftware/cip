@@ -54,16 +54,21 @@ class InternalNote extends Model
         'created_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Report, $this> */
     public function report(): BelongsTo
     {
         return $this->belongsTo(Report::class, 'report_id');
     }
 
+    /** @return BelongsTo<Department, $this> */
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'department_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');

@@ -31,7 +31,7 @@ function buildUrl(path: string, query?: Record<string, unknown>): string {
   if (query) {
     for (const [k, v] of Object.entries(query)) {
       if (v === undefined || v === null || v === '') continue;
-      if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+      if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
         url.searchParams.set(k, String(v));
       }
     }
@@ -68,7 +68,7 @@ async function request<T>(
   if (!res.ok) {
     const message =
       (typeof payload === 'object' && payload !== null && 'message' in payload
-        ? String((payload).message)
+        ? String(payload.message)
         : null) ?? `Request failed (${res.status})`;
     throw new ApiError(res.status, message, payload);
   }
@@ -85,7 +85,11 @@ async function request<T>(
  * header every other request uses, then hand the browser a local Blob
  * URL to save.
  */
-async function download(path: string, query: Record<string, unknown> | undefined, filename: string): Promise<void> {
+async function download(
+  path: string,
+  query: Record<string, unknown> | undefined,
+  filename: string,
+): Promise<void> {
   const res = await fetch(buildUrl(path, query), {
     headers: { ...authHeader() },
     // Bearer-token auth (no cookie session), so sending credentials
@@ -97,7 +101,7 @@ async function download(path: string, query: Record<string, unknown> | undefined
     const payload = await parse(res);
     const message =
       (typeof payload === 'object' && payload !== null && 'message' in payload
-        ? String((payload).message)
+        ? String(payload.message)
         : null) ?? `Request failed (${res.status})`;
     throw new ApiError(res.status, message, payload);
   }
@@ -112,11 +116,43 @@ async function download(path: string, query: Record<string, unknown> | undefined
   URL.revokeObjectURL(blobUrl);
 }
 
+/**
+ * Multipart upload for endpoints that accept form-data (e.g. proof photo
+ * uploads). Unlike `request()`, the body is passed through untouched and no
+ * `Content-Type` header is set, so the browser can attach the multipart
+ * boundary itself.
+ */
+async function upload<T>(path: string, body: FormData): Promise<T> {
+  const res = await fetch(buildUrl(path), {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      ...authHeader(),
+    },
+    body,
+    // Bearer-token auth (no cookie session), so sending credentials
+    // cross-origin makes the browser reject the API's wildcard CORS
+    // response. Stay same-origin.
+    credentials: 'same-origin',
+  });
+  const payload = await parse(res);
+  if (!res.ok) {
+    const message =
+      (typeof payload === 'object' && payload !== null && 'message' in payload
+        ? String(payload.message)
+        : null) ?? `Request failed (${res.status})`;
+    throw new ApiError(res.status, message, payload);
+  }
+  return payload as T;
+}
+
 export const api = {
-  get: <T>(path: string, query?: Record<string, unknown>) => request<T>('GET', path, undefined, query),
+  get: <T>(path: string, query?: Record<string, unknown>) =>
+    request<T>('GET', path, undefined, query),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),
   patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
   delete: <T>(path: string) => request<T>('DELETE', path),
   download,
+  upload,
 };

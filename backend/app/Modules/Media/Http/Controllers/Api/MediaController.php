@@ -173,10 +173,19 @@ class MediaController extends BaseController
 
         $this->authorize('viewReportMedia', $report);
 
-        $media = Media::query()
+        $isStaffReader = $user?->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system']) ?? false;
+
+        $query = Media::query()
             ->where('report_id', $reportId)
-            ->orderBy('created_at')
-            ->get();
+            ->orderBy('created_at');
+
+        // Officer proof-of-completion media is department-private —
+        // citizens (and anonymous viewers) only ever see evidence.
+        if (! $isStaffReader) {
+            $query->where('role', 'evidence');
+        }
+
+        $media = $query->get();
 
         $isStaff = $user?->hasRole('super_admin') ?? false;
         $includePath = $isStaff && $request->boolean('include_storage_path');

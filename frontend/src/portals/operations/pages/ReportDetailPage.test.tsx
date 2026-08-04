@@ -1,0 +1,246 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { ReactElement } from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { departmentApi } from '../api/operations';
+import { computeSlaLabel } from '../components/SlaChip';
+import type { DepartmentReportDetail } from '../types';
+import ReportDetailPage from './ReportDetailPage';
+
+vi.mock('../api/operations', () => ({
+  departmentApi: {
+    showReport: vi.fn(),
+    action: vi.fn(),
+    listNotes: vi.fn(),
+    addNote: vi.fn(),
+    uploadProof: vi.fn(),
+  },
+}));
+
+const REPORT_ID = '11111111-1111-1111-1111-111111111111';
+
+function baseReport(overrides: Partial<DepartmentReportDetail> = {}): DepartmentReportDetail {
+  return {
+    id: REPORT_ID,
+    tracking_number: 'CIP-2026-0001',
+    title: 'Pothole on Main St',
+    description: 'Deep pothole near the junction',
+    is_anonymous: false,
+    is_verified: false,
+    ai_confidence: null,
+    fraud_score: null,
+    duplicate_score: null,
+    submitted_at: '2026-08-01T09:00:00+05:30',
+    closed_at: null,
+    created_at: '2026-08-01T09:00:00+05:30',
+    updated_at: '2026-08-01T09:00:00+05:30',
+    report_type: { id: 'rt-1', code: 'road', name: 'Roads' },
+    status: null,
+    priority: { id: 'p-1', code: 'high', name: 'High', sla_minutes: 120 },
+    location: { lat: 12.9716, lng: 77.5946, accuracy: 12, address: 'Main St, Bengaluru' },
+    department: null,
+    current_status_code: 'assigned',
+    department_sla_minutes: 120,
+    internal_notes: [],
+    media: [],
+    status_history: [],
+    assigned_to: null,
+    ...overrides,
+  };
+}
+
+function renderWithClient(ui: ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[`/operations/reports/${REPORT_ID}`]}>
+        <Routes>
+          <Route path="/operations/reports/:id" element={ui} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
+function renderPage(report: DepartmentReportDetail) {
+  vi.mocked(departmentApi.showReport).mockResolvedValue({ success: true, data: report });
+  vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
+  vi.mocked(departmentApi.action).mockResolvedValue({ success: true, data: report });
+  renderWithClient(<ReportDetailPage />);
+}
+
+beforeEach(() => {
+  vi.resetAllMocks();
+});
+
+describe('ReportDetailPage', () => {
+  it('shows a loading state while the report is being fetched', () => {
+    vi.mocked(departmentApi.showReport).mockReturnValue(new Promise(() => {}));
+    vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
+    renderWithClient(<ReportDetailPage />);
+    expect(screen.getByLabelText('Loading report')).toBeInTheDocument();
+  });
+
+  it('shows an error state with retry when the report fails to load', async () => {
+    vi.mocked(departmentApi.showReport).mockRejectedValue(new Error('backend unreachable'));
+    vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
+    renderWithClient(<ReportDetailPage />);
+    expect(await screen.findByText('Report not found')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+  });
+
+  it('shows an empty state when the citizen attached no evidence', async () => {
+    renderPage(baseReport());
+    expect(await screen.findByText('No evidence')).toBeInTheDocument();
+    expect(screen.getByText('No proof photos uploaded yet.')).toBeInTheDocument();
+  });
+
+  it('renders evidence and proof media in separate galleries', async () => {
+    renderPage(
+      baseReport({
+        media: [
+          {
+            id: 'm1',
+            type: 'image',
+            role: 'evidence',
+            mime: 'image/jpeg',
+            url: 'https://example.test/e1.jpg',
+            width: 800,
+            height: 600,
+            created_at: '2026-08-01T10:00:00+05:30',
+          },
+          {
+            id: 'm2',
+            type: 'video',
+            role: 'evidence',
+            mime: 'video/mp4',
+            url: 'https://example.test/e2.mp4',
+            width: null,
+            height: null,
+            created_at: null,
+          },
+          {
+            id: 'm3',
+            type: 'image',
+            role: 'proof',
+            mime: 'image/png',
+            url: 'https://example.test/p1.png',
+            width: 800,
+            height: 600,
+            created_at: '2026-08-02T10:00:00+05:30',
+          },
+        ],
+      }),
+    );
+
+    const evidenceImg = await screen.findByRole('img', { name: 'Citizen evidence 1' });
+    expect(evidenceImg).toHaveAttribute('src', 'https://example.test/e1.jpg');
+
+    const videoLink = screen.getByRole('link', { name: /video\/mp4/ });
+    expect(videoLink).toHaveAttribute('href', 'https://example.test/e2.mp4');
+    expect(videoLink).toHaveAttribute('target', '_blank');
+    expect(videoLink).toHaveAttribute('rel', 'noreferrer');
+
+    const proofImg = screen.getByRole('img', { name: 'Proof of completion 1' });
+    expect(proofImg).toHaveAttribute('src', 'https://example.test/p1.png');
+    expect(screen.queryByRole('img', { name: 'Citizen evidence 2' })).toBeNull();
+  });
+
+  it('shows the SLA chip when the department SLA is configured', async () => {
+    renderPage(baseReport());
+    expect(await screen.findByText(/SLA: overdue by \d+h/)).toBeInTheDocument();
+  });
+
+  it('hides the proof upload control for terminal reports', async () => {
+    renderPage(baseReport({ current_status_code: 'closed' }));
+    expect(await screen.findByRole('heading', { name: 'Pothole on Main St' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Proof photo input')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Upload proof photos' })).toBeNull();
+  });
+
+  it('requires a note before confirming progress, then passes it to the action', async () => {
+    renderPage(baseReport({ current_status_code: 'in_progress' }));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Progress report' }));
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
+    const confirm = screen.getByRole('button', { name: 'Progress' });
+    expect(confirm).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Note (required)'), {
+      target: { value: 'On site, crew dispatched to fill the pothole' },
+    });
+    expect(confirm).toBeEnabled();
+
+    fireEvent.click(confirm);
+    await waitFor(() =>
+      expect(departmentApi.action).toHaveBeenCalledWith(
+        REPORT_ID,
+        'progress',
+        'On site, crew dispatched to fill the pothole',
+      ),
+    );
+  });
+
+  it('lets accept confirm instantly without a note', async () => {
+    renderPage(baseReport());
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Accept report' }));
+    const confirm = await screen.findByRole('button', { name: 'Accept' });
+    expect(confirm).toBeEnabled();
+    expect(screen.queryByLabelText('Note (required)')).toBeNull();
+
+    fireEvent.click(confirm);
+    await waitFor(() =>
+      expect(departmentApi.action).toHaveBeenCalledWith(REPORT_ID, 'accept', undefined),
+    );
+  });
+
+  it('uploads proof photos and refetches the report', async () => {
+    renderPage(baseReport());
+    const file = new File(['x'], 'after-fix.jpg', { type: 'image/jpeg' });
+    vi.mocked(departmentApi.uploadProof).mockResolvedValue({ success: true, data: { media: [] } });
+
+    const input = await screen.findByLabelText('Proof photo input');
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(departmentApi.uploadProof).toHaveBeenCalledWith(REPORT_ID, [file]));
+    await waitFor(() => expect(departmentApi.showReport).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe('computeSlaLabel', () => {
+  const now = new Date('2026-08-01T12:00:00+05:30').getTime();
+
+  it('returns null when no SLA is configured', () => {
+    expect(computeSlaLabel('2026-08-01T09:00:00+05:30', null, 'assigned', now)).toBeNull();
+    expect(computeSlaLabel(null, 120, 'assigned', now)).toBeNull();
+    expect(computeSlaLabel('2026-08-01T09:00:00+05:30', 0, 'assigned', now)).toBeNull();
+  });
+
+  it('reports full hours left while the deadline is ahead', () => {
+    expect(computeSlaLabel('2026-08-01T09:00:00+05:30', 120, 'assigned', now)).toBe(
+      'SLA: overdue by 1h',
+    );
+    expect(
+      computeSlaLabel(
+        '2026-08-01T09:00:00+05:30',
+        120,
+        'assigned',
+        new Date('2026-08-01T09:30:00+05:30').getTime(),
+      ),
+    ).toBe('SLA: 2h left');
+  });
+
+  it('reports overdue hours once the deadline has passed', () => {
+    expect(computeSlaLabel('2026-08-01T07:00:00+05:30', 120, 'in_progress', now)).toBe(
+      'SLA: overdue by 3h',
+    );
+  });
+
+  it('treats resolved and closed reports as meeting the SLA', () => {
+    expect(computeSlaLabel('2026-08-01T07:00:00+05:30', 120, 'resolved', now)).toBe('SLA met');
+    expect(computeSlaLabel('2026-08-01T07:00:00+05:30', 120, 'closed', now)).toBe('SLA met');
+  });
+});

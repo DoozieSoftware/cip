@@ -73,11 +73,14 @@ class MediaService
         private readonly VirusScanServiceInterface $scanner,
     ) {}
 
-    public function uploadPhoto(string $reportId, UploadedFile $file, string $uploaderId): Media
+    public function uploadPhoto(string $reportId, UploadedFile $file, string $uploaderId, string $role = 'evidence'): Media
     {
-        return $this->upload($reportId, $file, $uploaderId, 'PHOTO');
+        return $this->upload($reportId, $file, $uploaderId, 'PHOTO', null, $role);
     }
 
+    /**
+     * @param  array<string, int>|null  $hints
+     */
     public function uploadVideo(
         string $reportId,
         UploadedFile $file,
@@ -87,21 +90,23 @@ class MediaService
         return $this->upload($reportId, $file, $uploaderId, 'VIDEO', $hints);
     }
 
-    public function uploadDocument(string $reportId, UploadedFile $file, string $uploaderId): Media
+    public function uploadDocument(string $reportId, UploadedFile $file, string $uploaderId, string $role = 'evidence'): Media
     {
-        return $this->upload($reportId, $file, $uploaderId, 'DOCUMENT');
+        return $this->upload($reportId, $file, $uploaderId, 'DOCUMENT', null, $role);
     }
 
     /**
      * The core upload pipeline. Validates, scans, writes, and
      * dispatches the post-processing jobs.
+     *
+     * @param  array<string, int>|null  $hints
      */
-    private function upload(string $reportId, UploadedFile $file, string $uploaderId, string $type, ?array $hints = null): Media
+    private function upload(string $reportId, UploadedFile $file, string $uploaderId, string $type, ?array $hints = null, string $role = 'evidence'): Media
     {
         $this->mimeValidator->validate($file, $type);
 
         $this->assertReportExists($reportId);
-        $this->assertCountUnderLimit($reportId, $type);
+        $this->assertCountUnderLimit($reportId, $type, $role);
         $this->assertSizeUnderLimit($file, $type);
 
         $clean = $this->scanner->scan($file->getRealPath() ?: '');
@@ -115,7 +120,7 @@ class MediaService
             );
         }
 
-        $media = $this->persist($reportId, $file, $uploaderId, $type, $hints);
+        $media = $this->persist($reportId, $file, $uploaderId, $type, $hints, $role);
 
         // Dispatch the post-processing jobs.
         ComputeHashesJob::dispatch($media->id);
@@ -133,14 +138,19 @@ class MediaService
         // `ai_processing` before the upload in the standard submit
         // flow), so signal it to (re)run. Documents are not used by
         // the vision classifier, so they don't trigger a re-arm.
-        if ($type === 'PHOTO' || $type === 'VIDEO') {
+        // Officer proof-of-completion uploads never re-arm the AI
+        // pipeline — the report is past moderation by then.
+        if ($role === 'evidence' && ($type === 'PHOTO' || $type === 'VIDEO')) {
             ReportMediaUploaded::dispatch($reportId, $media->id, $type);
         }
 
         return $media;
     }
 
-    private function persist(string $reportId, UploadedFile $file, string $uploaderId, string $type, ?array $hints = null): Media
+    /**
+     * @param  array<string, int>|null  $hints
+     */
+    private function persist(string $reportId, UploadedFile $file, string $uploaderId, string $type, ?array $hints = null, string $role = 'evidence'): Media
     {
         $id = (string) Str::uuid();
         $ext = strtolower((string) $file->getClientOriginalExtension());
@@ -149,8 +159,9 @@ class MediaService
             $ext = $this->extFromMime($file->getMimeType() ?? '');
         }
 
-        $disk = (string) config('cip.media.disk', 'local');
-        $path = sprintf('evidence/%s/%s/%s.%s', $reportId, strtolower($type), $id, $ext);
+        $configuredDisk = config('cip.media.disk', 'local');
+        $disk = is_string($configuredDisk) ? $configuredDisk : 'local';
+        $path = sprintf('%s/%s/%s/%s.%s', $role === 'proof' ? 'proof' : 'evidence', $reportId, strtolower($type), $id, $ext);
 
         try {
             $bytes = file_get_contents($file->getRealPath() ?: '');
@@ -184,8 +195,8 @@ class MediaService
             $dimensions = @getimagesizefromstring($bytes);
 
             if (is_array($dimensions)) {
-                $width = isset($dimensions[0]) && (int) $dimensions[0] > 0 ? (int) $dimensions[0] : null;
-                $height = isset($dimensions[1]) && (int) $dimensions[1] > 0 ? (int) $dimensions[1] : null;
+                $width = $dimensions[0] > 0 ? $dimensions[0] : null;
+                $height = $dimensions[1] > 0 ? $dimensions[1] : null;
             }
         }
 
@@ -193,6 +204,7 @@ class MediaService
             'id' => $id,
             'report_id' => $reportId,
             'type' => $type,
+            'role' => $role,
             'storage_disk' => $disk,
             'storage_path' => $path,
             'mime' => (string) $file->getMimeType(),
@@ -219,11 +231,14 @@ class MediaService
         }
     }
 
-    private function assertCountUnderLimit(string $reportId, string $type): void
+    private function assertCountUnderLimit(string $reportId, string $type, string $role = 'evidence'): void
     {
+        // Limit is scoped per role so officer proof photos never
+        // collide with the citizen evidence quota (and vice versa).
         $existing = Media::query()
             ->where('report_id', $reportId)
             ->where('type', $type)
+            ->where('role', $role)
             ->count();
         $limit = self::MAX_COUNT[$type] ?? 0;
 

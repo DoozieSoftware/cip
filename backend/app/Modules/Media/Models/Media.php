@@ -68,6 +68,7 @@ class Media extends Model
     protected $fillable = [
         'report_id',
         'type',
+        'role',
         'storage_disk',
         'storage_path',
         'mime',

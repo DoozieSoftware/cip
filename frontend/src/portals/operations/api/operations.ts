@@ -2,7 +2,9 @@ import { api } from './client';
 import type {
   PaginationMeta,
   DepartmentDashboardCounts,
+  DepartmentReportDetail,
   DepartmentReportListItem,
+  DepartmentReportMedia,
   DepartmentOfficer,
   InternalNote,
   Paginated,
@@ -53,9 +55,7 @@ export interface ManagedDepartment {
 
 export const departmentApi = {
   dashboard: () =>
-    api.get<{ success: boolean; data: DepartmentDashboardCounts }>(
-      '/department/dashboard',
-    ),
+    api.get<{ success: boolean; data: DepartmentDashboardCounts }>('/department/dashboard'),
 
   listReports: (filters: ReportListFilters = {}) =>
     api.get<Paginated<DepartmentReportListItem>>(
@@ -64,9 +64,26 @@ export const departmentApi = {
     ),
 
   showReport: (id: string) =>
-    api.get<{ success: boolean; data: DepartmentReportListItem }>(
-      `/department/reports/${id}`,
-    ),
+    api.get<{ success: boolean; data: DepartmentReportDetail }>(`/department/reports/${id}`),
+
+  /**
+   * Uploads proof photos to a department report. The endpoint expects
+   * multipart form-data with the files under `photos[]` and an optional
+   * `note` string; uploaded media comes back with role "proof".
+   */
+  uploadProof: (id: string, files: File[], note?: string) => {
+    const form = new FormData();
+    for (const file of files) {
+      form.append('photos[]', file);
+    }
+    if (note) {
+      form.append('note', note);
+    }
+    return api.upload<{ success: boolean; data: { media: DepartmentReportMedia[] } }>(
+      `/department/reports/${id}/photos`,
+      form,
+    );
+  },
 
   /**
    * Builds the export URL for display only (e.g. showing the caller
@@ -92,7 +109,7 @@ export const departmentApi = {
     const today = new Date().toISOString().slice(0, 10);
     return api.download(
       '/department/reports/export',
-      { ...filters, format } as Record<string, unknown>,
+      { ...filters, format },
       `department-reports-${today}.${format}`,
     );
   },
@@ -104,23 +121,18 @@ export const departmentApi = {
     ),
 
   listNotes: (id: string) =>
-    api.get<{ success: boolean; data: InternalNote[] }>(
-      `/department/reports/${id}/notes`,
-    ),
+    api.get<{ success: boolean; data: InternalNote[] }>(`/department/reports/${id}/notes`),
 
   addNote: (id: string, body: string) =>
-    api.post<{ success: boolean; data: InternalNote }>(
-      `/department/reports/${id}/note`,
-      { body },
-    ),
+    api.post<{ success: boolean; data: InternalNote }>(`/department/reports/${id}/note`, { body }),
 };
 
 export const adminApi = {
   listDepartments: () =>
-    api.get<{ success: boolean; data: ManagedDepartment[] }>(
-      '/admin/departments',
-      { active: true, per_page: 100 },
-    ),
+    api.get<{ success: boolean; data: ManagedDepartment[] }>('/admin/departments', {
+      active: true,
+      per_page: 100,
+    }),
 
   listOfficers: (departmentId: string) =>
     api.get<{ success: boolean; data: DepartmentOfficer[]; meta: { total: number } }>(
@@ -144,7 +156,6 @@ export const adminApi = {
       payload,
     ),
 };
-
 
 // --- Security dashboard (T-M11-020) ---------------------------------
 // Per docs/08 §19. Read-only aggregator for the operations portal.
@@ -198,15 +209,12 @@ export interface SecurityDashboardSnapshot {
 
 export const securityApi = {
   dashboard: () =>
-    api.get<{ success: boolean; data: SecurityDashboardSnapshot }>(
-      '/admin/security/dashboard',
-    ),
+    api.get<{ success: boolean; data: SecurityDashboardSnapshot }>('/admin/security/dashboard'),
 };
 
 // Re-export the shared ReportListItem for callers that
 // only need the operations portal.
 export type { ReportListItem };
-
 
 // --- Audit log search (T-M11-019) ----------------------------------
 // Per docs/08 §18 — the read-only auditor surface.

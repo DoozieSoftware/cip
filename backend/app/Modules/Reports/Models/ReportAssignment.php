@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Reports\Models;
 
+use App\Modules\Departments\Models\Department;
+use App\Modules\Users\Models\User;
 use Database\Factories\Modules\Reports\Models\ReportAssignmentFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -67,12 +69,12 @@ class ReportAssignment extends Model
     /** @return BelongsTo<Department, $this> */
     public function department(): BelongsTo
     {
-        return $this->belongsTo(\App\Modules\Departments\Models\Department::class, 'department_id');
+        return $this->belongsTo(Department::class, 'department_id');
     }
 
     /** @return BelongsTo<User, $this> */
     public function officer(): BelongsTo
     {
-        return $this->belongsTo(\App\Modules\Users\Models\User::class, 'officer_id');
+        return $this->belongsTo(User::class, 'officer_id');
     }
 }

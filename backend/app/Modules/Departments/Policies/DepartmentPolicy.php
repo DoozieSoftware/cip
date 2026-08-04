@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Departments\Policies;
 
 use App\Modules\Departments\Models\Department;
+use App\Modules\Reports\Models\Report;
 use App\Modules\Shared\Policies\BasePolicy;
 use App\Modules\Users\Models\User;
 
@@ -34,6 +35,7 @@ use App\Modules\Users\Models\User;
  * @method bool resolve(User $user, mixed $report)
  * @method bool close(User $user, mixed $report)
  * @method bool addNote(User $user, mixed $report)
+ * @method bool attachProof(User $user, mixed $report)
  * @method bool viewAudit(User $user)
  */
 class DepartmentPolicy extends BasePolicy
@@ -69,13 +71,19 @@ class DepartmentPolicy extends BasePolicy
 
     public function view(User $user, mixed $report): bool
     {
+        if (! $report instanceof Report) {
+            return false;
+        }
+
         $deptId = $report->department_id ?? null;
+
         if (! $deptId) {
             // An unassigned report cannot be read by a department
             // officer — only the moderator or super_admin can.
             return false;
         }
-        $dept = Department::query()->find($deptId);
+        $dept = Department::query()->whereKey($deptId)->first();
+
         if (! $dept) {
             return false;
         }
@@ -109,6 +117,16 @@ class DepartmentPolicy extends BasePolicy
     }
 
     public function addNote(User $user, mixed $report): bool
+    {
+        return $this->view($user, $report);
+    }
+
+    /**
+     * Attaching proof-of-completion media has the same scoping as an
+     * internal note: the caller must already be a member of the
+     * department the report was assigned to.
+     */
+    public function attachProof(User $user, mixed $report): bool
     {
         return $this->view($user, $report);
     }

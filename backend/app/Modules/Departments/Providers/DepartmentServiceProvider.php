@@ -29,9 +29,7 @@ use Illuminate\Support\ServiceProvider;
  */
 class DepartmentServiceProvider extends ServiceProvider
 {
-    public function register(): void
-    {
-    }
+    public function register(): void {}
 
     public function boot(): void
     {
@@ -53,17 +51,20 @@ class DepartmentServiceProvider extends ServiceProvider
             if (! $user instanceof User) {
                 return false;
             }
-            if (method_exists($user, 'trashed') && $user->trashed()) {
+
+            if ($user->trashed()) {
                 return false;
             }
             $denied = ['suspended', 'disabled', 'pending'];
+
             if (isset($user->status) && in_array((string) $user->status, $denied, true)) {
                 return false;
             }
-            if (method_exists($user, 'hasAnyRole')
-                && $user->hasAnyRole(['super_admin', 'system'])) {
+
+            if ($user->hasAnyRole(['super_admin', 'system'])) {
                 return true;
             }
+
             return null;
         });
     }
@@ -92,5 +93,6 @@ class DepartmentServiceProvider extends ServiceProvider
         Gate::define('resolve', static fn (User $user, Report $report): bool => $policy()->resolve($user, $report));
         Gate::define('close', static fn (User $user, Report $report): bool => $policy()->close($user, $report));
         Gate::define('addNote', static fn (User $user, Report $report): bool => $policy()->addNote($user, $report));
+        Gate::define('attachProof', static fn (User $user, Report $report): bool => $policy()->attachProof($user, $report));
     }
 }

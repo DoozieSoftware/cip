@@ -119,6 +119,39 @@ export interface InternalNote {
   created_at: string | null;
 }
 
+export interface DepartmentReportMedia {
+  id: string;
+  type: string;
+  role: 'evidence' | 'proof';
+  mime: string;
+  url: string;
+  width: number | null;
+  height: number | null;
+  created_at: string | null;
+}
+
+export interface StatusHistoryEntry {
+  from_code: string | null;
+  to_code: string | null;
+  actor_id: string | null;
+  reason: string | null;
+  created_at: string | null;
+}
+
+export interface AssignedOfficer {
+  id: string;
+  name: string | null;
+}
+
+export interface DepartmentReportDetail extends DepartmentReportListItem {
+  report_type: ReportType | null;
+  department_sla_minutes: number | null;
+  location: GeoPoint | null;
+  media: DepartmentReportMedia[];
+  status_history: StatusHistoryEntry[];
+  assigned_to: AssignedOfficer | null;
+}
+
 export interface DepartmentDashboardCounts {
   open: number;
   due_today: number;

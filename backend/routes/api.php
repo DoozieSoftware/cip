@@ -329,6 +329,10 @@ Route::prefix('v1')->group(function (): void {
         Route::post('reports/{report}/note', [DepartmentReportActionsController::class, 'addNote'])
             ->middleware('can:addNote,report')
             ->name('reports.note');
+        // Proof-of-completion photos (role `proof`; department-private)
+        Route::post('reports/{report}/photos', [DepartmentReportActionsController::class, 'uploadProof'])
+            ->middleware('can:attachProof,report')
+            ->name('reports.photos.store');
         Route::get('reports/{report}/notes', [DepartmentReportActionsController::class, 'listNotes'])
             ->middleware('can:view,report')
             ->name('reports.notes.index');

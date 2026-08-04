@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * `report_status_history` row per docs/04 §7.
@@ -23,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $actor_id
  * @property string|null $reason
  * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $created_at
  */
 class ReportStatusHistory extends Model
 {
@@ -35,14 +37,8 @@ class ReportStatusHistory extends Model
 
     protected $table = 'report_status_history';
 
-    /**
-     * @var list<string>
-     */
     public $timestamps = false;
 
-    /**
-     * @var list<string>
-     */
     protected $fillable = [
         'report_id',
         'from_status_id',
