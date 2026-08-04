@@ -88,6 +88,18 @@ class AuthenticationService extends BaseService
             $user->assignRole('citizen');
         }
 
+        // Recover demo or legacy staff accounts that retain department
+        // memberships but lost their officer role during an old seed/login
+        // flow. Membership is the authoritative staff signal here.
+        $hasDepartmentRole = $user->roles()
+            ->whereIn('name', ['department_officer', 'department_admin'])
+            ->exists();
+
+        if ($user->departments()->exists() && ! $hasDepartmentRole) {
+            Role::query()->firstOrCreate(['name' => 'department_officer', 'guard_name' => 'web']);
+            $user->assignRole('department_officer');
+        }
+
         $token = $user->createToken(
             name: 'citizen-otp',
             abilities: ['*'],

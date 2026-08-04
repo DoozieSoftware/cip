@@ -7,6 +7,7 @@ use App\Modules\Authentication\Models\LoginHistory;
 use App\Modules\Authentication\Models\Otp;
 use App\Modules\Authentication\Models\RefreshToken;
 use App\Modules\Authentication\Services\OtpService;
+use App\Modules\Departments\Models\Department;
 use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -163,6 +164,27 @@ it('preserves an existing department role when staff authenticate with OTP', fun
     $roles = $staff->fresh()->getRoleNames()->all();
     expect($roles)->toContain('department_officer')
         ->not->toContain('citizen');
+});
+
+it('restores the department officer role for a membership-only staff account', function (): void {
+    $department = Department::factory()->create();
+    $staff = User::factory()->create(['mobile' => '9876543210']);
+    $staff->departments()->attach($department->id);
+
+    $captured = null;
+    $service = new OtpService(static function (string $mobile, string $message) use (&$captured): void {
+        $captured = $message;
+    });
+    $this->app->instance(OtpService::class, $service);
+    $service->request('9876543210', '10.0.0.1');
+    preg_match('/verification code is (\d{6})/', $captured, $m);
+
+    $this->postJson('/api/v1/auth/verify-otp', [
+        'mobile' => '9876543210',
+        'code' => $m[1],
+    ])->assertOk();
+
+    expect($staff->fresh()->getRoleNames()->all())->toContain('department_officer');
 });
 
 it('issues a Sanctum personal access token + a refresh token on success', function (): void {
