@@ -96,9 +96,10 @@ class DemoUsersSeeder extends Seeder
                 $user->save();
             }
 
-            if (! $user->hasRole($row['role'])) {
-                $user->assignRole($row['role']);
-            }
+            // Demo accounts are canonical fixtures. Replace stale roles
+            // from previous local runs so the account routes to the portal
+            // represented by this row.
+            $user->syncRoles([$row['role']]);
 
             if (isset($row['department_codes'])) {
                 $departments = Department::query()

@@ -45,6 +45,7 @@ class DatabaseSeeder extends Seeder
             SecurityPoliciesSeeder::class,
             RetentionSettingsSeeder::class,
             DemoUsersSeeder::class,
+            DemoReportsSeeder::class,
         ]);
     }
 }
