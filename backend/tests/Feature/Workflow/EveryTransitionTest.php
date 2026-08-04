@@ -91,10 +91,12 @@ it('every seeded transition is allowed by the engine', function (string $from, s
 
     $report = $this->engine->apply($report, $decision, $actor);
     $newCode = ReportStatus::query()->find($report->current_status_id)->code;
-    expect($newCode)->toBe($to);
+    $expectedCode = $from === 'draft' && $event === 'submit' ? 'ai_processing' : $to;
+    expect($newCode)->toBe($expectedCode);
 
     // One status-history row written per transition.
-    expect(ReportStatusHistory::query()->where('report_id', $report->id)->count())->toBe(1);
+    $expectedHistoryRows = $from === 'draft' && $event === 'submit' ? 2 : 1;
+    expect(ReportStatusHistory::query()->where('report_id', $report->id)->count())->toBe($expectedHistoryRows);
 })->with('everyTransition');
 
 it('persists AI routing signals in moderator-visible status history metadata', function (): void {

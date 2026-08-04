@@ -28,7 +28,8 @@ it('rejects /api/v1/department/dashboard without auth', function (): void {
 it('returns the dashboard for a department officer', function (): void {
     $dept = Department::factory()->create(['code' => 'BBMP']);
     $officer = makeDepartmentOfficer($dept);
-    Report::factory()->count(2)->create(['department_id' => $dept->id]);
+    $assigned = ReportStatus::query()->where('code', 'assigned')->firstOrFail();
+    Report::factory()->count(2)->create(['department_id' => $dept->id, 'current_status_id' => $assigned->id]);
 
     Sanctum::actingAs($officer);
     $r = $this->getJson('/api/v1/department/dashboard');
@@ -47,7 +48,8 @@ it('rejects the list for a citizen (no department)', function (): void {
 it('returns the list scoped to the officer\'s department', function (): void {
     $deptA = Department::factory()->create(['code' => 'A']);
     $deptB = Department::factory()->create(['code' => 'B']);
-    Report::factory()->count(2)->create(['department_id' => $deptA->id]);
+    $assigned = ReportStatus::query()->where('code', 'assigned')->firstOrFail();
+    Report::factory()->count(2)->create(['department_id' => $deptA->id, 'current_status_id' => $assigned->id]);
     Report::factory()->count(3)->create(['department_id' => $deptB->id]);
     $officer = makeDepartmentOfficer($deptA);
 

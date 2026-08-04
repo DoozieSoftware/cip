@@ -46,15 +46,36 @@ not configuration. Estimates below reflect that.
 ## 3. Phase 1 Scope
 
 ### 3.1 Departments seed — 17 departments ✅ feasible, low risk
-- 10 BBMP wings (`BBMP_ENG`, `BBMP_SWM`, `BBMP_ELEC`, `BBMP_SWD`, `BBMP_HLTH`,
-  `BBMP_AH`, `BBMP_FOR`, `BBMP_TP`, `BBMP_PRK`, `BBMP_LAKE`) seeded as children of
-  BBMP via existing `parent_id` (C14).
-- External: BWSSB, BESCOM, BTP already seeded; add KSPCB, BMTC, PWD, BDA.
+- 10 BBMP wings seeded as children of BBMP via existing `parent_id` (C14).
+
+| Code | Official full form | Helpline |
+|---|---|---|
+| `BBMP` | Bruhat Bengaluru Mahanagara Palike (under Greater Bengaluru Authority, GBA) | 1533 |
+| `BBMP_ENG` | Department of Roads & Infrastructure (BBMP Engineering) | 1533 |
+| `BBMP_SWM` | Solid Waste Management Dept. (ops: BSWML — Bengaluru Solid Waste Management Ltd) | 1533 |
+| `BBMP_ELEC` | Electrical Dept. — Streetlight & Park Lighting section | 1533 |
+| `BBMP_SWD` | Dept. of Storm Water Drains & Lakes | 1533 |
+| `BBMP_HLTH` | Health Dept. (Public Health & Clinical Health) | 1533 |
+| `BBMP_AH` | Animal Husbandry Dept. (Veterinary services, stray-animal control) | 1533 |
+| `BBMP_FOR` | Forest Cell / Forest & Horticulture section | 1533 |
+| `BBMP_TP` | Town Planning Dept. (JDTP zonal offices) | 1533 |
+| `BBMP_PRK` | Parks & Playgrounds Dept. (Horticulture) | 1533 |
+| `BBMP_LAKE` | Lakes Dept. | 1533 |
+
+- External agencies (BWSSB, BESCOM, BTP already seeded; rest to add):
+
+| Code | Official full form | Helpline | Verified |
+|---|---|---|---|
+| `BWSSB` | Bangalore Water Supply and Sewerage Board | 1916 | ✅ official site |
+| `BESCOM` | Bangalore Electricity Supply Company Limited | 1912 | ✅ official site |
+| `BTP` | Bengaluru City Traffic Police | 1095 / 112 | ✅ official site |
+| `KSPCB` | Karnataka State Pollution Control Board | 080-25589112 | ❓ needs verification |
+| `BMTC` | Bangalore Metropolitan Transport Corporation Limited | 1800-425-1663 | ✅ official site |
+| `PWD` | Public Works Department, Government of Karnataka | 080-22211283 | ❓ needs verification |
+| `BDA` | Bangalore Development Authority | 080-23360825 | ❓ needs verification |
+
 - ⚠️ Cleanup: retire demo `BBMP_WARD_112`/`BTP_TRAFFIC` inconsistency (C9) in the
   same seeder change; SLA values are **provisional defaults** ❓ (O1).
-- Helplines in mapping doc: BBMP 1533, BWSSB 1916, BESCOM 1912, BTP 1095/112,
-  BMTC 1800-425-1663 verified from official pages; **KSPCB/PWD/BDA numbers need
-  verification before display** ❓.
 
 ### 3.2 Report categories — 15 approved codes ✅ with safe migration
 - Add the 15 new `report_types` active; move current 8 to inactive — same
@@ -66,6 +87,20 @@ not configuration. Estimates below reflect that.
   beyond copy).
 
 ### 3.3 Routing rules ⚠️ engine change required
+- ✅ Admin surface already exists and is sufficient for primary routing:
+  `/admin/routing-rules` offers full rule CRUD (name, priority order, conditions
+  JSON in the M7 DSL, destination department, default priority, default SLA,
+  active toggle, reorder endpoint) — `RoutingAdminController` (super_admin only),
+  `StoreRoutingRuleRequest`.
+- Currently seeded rules (all category-based): Garbage→BBMP_WARD_112 (1440m),
+  Roads/Water/Electricity→BBMP_WARD_112 (1440m), Traffic/Parking/Encroachment→BTP
+  (480m, high), Dead Animal→BBMP_WARD_112 (1440m); 2 legacy rules inactive;
+  fallback `routing_default_department_id` → BBMP_WARD_112.
+- ⚠️ Phase 1 work: replace these with 15 category rules per approved mapping
+  (e.g. `streetlight`→BBMP_ELEC, `power_outage`→BESCOM, `water_leakage`→BWSSB,
+  `drain_blockage`→BBMP_SWD, `noise_pollution`→KSPCB, etc.), update seeds +
+  migration, re-point fallback config. Existing rules stay editable in the admin
+  UI afterwards (C13) — no UI change needed.
 - Primary routing: one rule per category (condition DSL already supports
   `category_in`) ✅ C13.
 - ⚠️ Secondary routing is **not** expressible today (C2: first-match-only, single
@@ -135,19 +170,30 @@ One complaint, one tracking number; internal split hidden (matches workbook
 
 ---
 
-## 5. Effort (rough range, single dev; estimates only, not commitments)
+## 5. Effort — two tracks (single dev; estimates only, not commitments)
 
+**Track A — Core routing (ship first): ~8–10 working days**
 | Workstream | Range |
 |---|---|
-| Dept/category seeders + demo-data cleanup | 1–2 d |
-| Assignment migration + guards (C4) | 1–2 d |
-| SecondaryRoutingService + repository/policy scoping (C5) | 3–4 d |
-| AI prompt + trigger mapping + versioning | 2–3 d |
-| Access leak fixes + dept switcher (C6, C7, C8) | 2–3 d |
-| Super Admin filters (C10) | 2 d |
-| Ops-portal secondary queue + coordinated close | 2–3 d |
+| 17 departments + 15 categories + 15 rules seeders, fallback re-point, demo cleanup | 1–2 d |
+| Assignment migration + primary-guard fixes (C4) | 1–2 d |
+| Access-isolation fixes + dept resolver/switcher (C6–C8) | 3–4 d |
+| AI prompt update (15 categories, secondary-trigger flags, emergency flag) | 2–3 d |
+| Focused tests | 1 d |
+
+Outcome: every complaint lands with the correct department, strict per-department
+logins, AI categories per approved mapping, rules stay admin-editable.
+
+**Track B — Multi-department (after A): +7–9 working days**
+| Workstream | Range |
+|---|---|
+| SecondaryRoutingService + trigger wiring | 3–4 d |
+| Ops-portal secondary-task queue + coordinated closure | 2–3 d |
+| Super Admin all-reports filters (C10) | 2 d |
 | Acceptance suite from workbook T001–T020 | 1–2 d |
-| **Total** | **~14–21 working days** |
+
+**Answer to "do we need 21 days?":** No — 21 was the everything-included upper
+bound. Track A alone (~2 weeks) delivers the core promise; Track B follows.
 
 ---
 

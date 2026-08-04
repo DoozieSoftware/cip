@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\AI\Events\AiCompleted;
 use App\Modules\AI\Listeners\AiCompletedListener;
 use App\Modules\Reports\Models\Report;
@@ -12,11 +11,10 @@ use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\RoutingRulesSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 
 uses(RefreshDatabase::class);
-
-
 
 beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();
@@ -47,7 +45,7 @@ it('the event class is final and serializable (the queue contract)', function ()
     $reflection = new ReflectionClass(AiCompleted::class);
     expect($reflection->isFinal())->toBeTrue();
 
-    $r = new AiCompleted('a', 'b', 'c', 'd', ['e' => 1]);
+    $r = new AiCompleted('a', 'b', 'c', 'd', visionResult: ['e' => 1]);
     $serialized = serialize($r);
     $unserialized = unserialize($serialized);
 
@@ -65,11 +63,11 @@ it('the event can be dispatched and the listener receives the payload (E2E proof
     $report = Report::factory()->create();
 
     AiCompleted::dispatch(
-        $report->id,
-        'pothole',
-        'high',
-        'pothole',
-        ['confidence' => 0.9, 'department' => 'public_works'],
+        reportId: $report->id,
+        categoryCode: 'pothole',
+        severityCode: 'high',
+        aiLabel: 'pothole',
+        visionResult: ['confidence' => 0.9, 'department' => 'public_works'],
     );
 
     Event::assertDispatched(AiCompleted::class, function (AiCompleted $e) use ($report): bool {

@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\NewAccessToken;
+use Spatie\Permission\Models\Role;
 
 /**
  * End-to-end authentication flows.
@@ -53,7 +54,9 @@ class AuthenticationService extends BaseService
     {
         $otp = $this->otpService->verify($mobile, $code);
 
-        $user = DB::transaction(function () use ($mobile, $ip): User {
+        $created = false;
+
+        $user = DB::transaction(function () use ($mobile, $ip, &$created): User {
             $user = User::query()->where('mobile', $mobile)->first();
 
             if ($user === null) {
@@ -66,6 +69,7 @@ class AuthenticationService extends BaseService
                 $user->status = 'active';
                 $user->otp_verified_at = now();
                 $user->save();
+                $created = true;
             } else {
                 $user->otp_verified_at = now();
                 $user->save();
@@ -76,10 +80,11 @@ class AuthenticationService extends BaseService
             return $user;
         });
 
-        // The citizen role is assigned on first contact and never
-        // removed. Additional staff roles are added by the
-        // super-admin portal (T-M12-xxx).
-        if (! $user->hasRole('citizen')) {
+        // OTP is also a valid login channel for existing staff accounts.
+        // Do not add a citizen role to a staff account; only first-contact
+        // users (or orphaned users with no roles) need the citizen role.
+        if ($created || ! $user->roles()->exists()) {
+            Role::query()->firstOrCreate(['name' => 'citizen', 'guard_name' => 'web']);
             $user->assignRole('citizen');
         }
 

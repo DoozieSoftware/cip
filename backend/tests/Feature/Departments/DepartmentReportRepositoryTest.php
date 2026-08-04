@@ -21,8 +21,9 @@ beforeEach(function (): void {
 it('returns only the requested department\'s reports', function (): void {
     $deptA = Department::factory()->create(['code' => 'A']);
     $deptB = Department::factory()->create(['code' => 'B']);
-    Report::factory()->count(3)->create(['department_id' => $deptA->id]);
-    Report::factory()->count(2)->create(['department_id' => $deptB->id]);
+    $assigned = ReportStatus::query()->where('code', 'assigned')->firstOrFail();
+    Report::factory()->count(3)->create(['department_id' => $deptA->id, 'current_status_id' => $assigned->id]);
+    Report::factory()->count(2)->create(['department_id' => $deptB->id, 'current_status_id' => $assigned->id]);
 
     $page = app(DepartmentReportRepository::class)->assignedTo($deptA->id);
 
@@ -48,10 +49,11 @@ it('filters compose on status + search', function (): void {
 
 it('filters by report type code when category is supplied', function (): void {
     $deptA = Department::factory()->create(['code' => 'A']);
-    $pothole = ReportType::factory()->create(['code' => 'pothole']);
-    $garbage = ReportType::factory()->create(['code' => 'garbage']);
-    Report::factory()->create(['department_id' => $deptA->id, 'report_type_id' => $pothole->id]);
-    Report::factory()->create(['department_id' => $deptA->id, 'report_type_id' => $garbage->id]);
+    $pothole = ReportType::query()->where('code', 'pothole')->firstOrFail();
+    $garbage = ReportType::query()->where('code', 'garbage')->firstOrFail();
+    $assigned = ReportStatus::query()->where('code', 'assigned')->firstOrFail();
+    Report::factory()->create(['department_id' => $deptA->id, 'report_type_id' => $pothole->id, 'current_status_id' => $assigned->id]);
+    Report::factory()->create(['department_id' => $deptA->id, 'report_type_id' => $garbage->id, 'current_status_id' => $assigned->id]);
 
     $page = app(DepartmentReportRepository::class)->assignedTo($deptA->id, [
         'category' => 'pothole',

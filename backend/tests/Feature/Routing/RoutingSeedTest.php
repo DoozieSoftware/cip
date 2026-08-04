@@ -11,6 +11,7 @@ use App\Modules\Routing\Models\RoutingRule;
 use App\Modules\Routing\Services\RoutingEngine;
 use App\Modules\Workflow\Models\WorkflowDefinition;
 use Database\Seeders\DefaultWorkflowSeeder;
+use Database\Seeders\DepartmentsSeeder;
 use Database\Seeders\ReportPrioritiesSeeder;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
@@ -22,38 +23,40 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();
+    $this->seed(DepartmentsSeeder::class);
     (new ReportStatusesSeeder)->run();
     (new ReportPrioritiesSeeder)->run();
     (new ReportTypesSeeder)->run();
     (new DefaultWorkflowSeeder)->run();
 });
 
-it('seeds the four Bangalore routing rules', function (): void {
+it('seeds the fifteen approved Bangalore routing rules', function (): void {
     (new RoutingRulesSeeder)->run();
 
-    expect(RoutingRule::query()->count())->toBe(4);
+    expect(RoutingRule::query()->where('active', true)->count())->toBe(15);
 
-    $this->assertDatabaseHas('routing_rules', ['name' => 'Garbage -> BBMP Ward 112', 'priority' => 10]);
-    $this->assertDatabaseHas('routing_rules', ['name' => 'Roads, Water & Electricity -> BBMP Ward 112', 'priority' => 20]);
-    $this->assertDatabaseHas('routing_rules', ['name' => 'Traffic & Parking -> BTP', 'priority' => 30]);
-    $this->assertDatabaseHas('routing_rules', ['name' => 'Dead Animal -> BBMP Ward 112', 'priority' => 40]);
+    $this->assertDatabaseHas('routing_rules', ['name' => 'Garbage -> BBMP SWM', 'priority' => 12]);
+    $this->assertDatabaseHas('routing_rules', ['name' => 'Streetlight -> BBMP Electrical', 'priority' => 14]);
+    $this->assertDatabaseHas('routing_rules', ['name' => 'Illegal Parking -> BTP', 'priority' => 20]);
+    $this->assertDatabaseHas('routing_rules', ['name' => 'Noise Pollution -> KSPCB', 'priority' => 24]);
 });
 
-it('upserts the BBMP Ward 112 and BTP destination departments', function (): void {
+it('upserts the approved routing destination departments', function (): void {
     (new RoutingRulesSeeder)->run();
 
-    expect(Department::query()->where('code', 'BBMP_WARD_112')->exists())->toBeTrue()
-        ->and(Department::query()->where('code', 'BTP_TRAFFIC')->exists())->toBeTrue();
+    expect(Department::query()->where('code', 'BBMP_ENG')->exists())->toBeTrue()
+        ->and(Department::query()->where('code', 'BTP')->exists())->toBeTrue()
+        ->and(Department::query()->where('code', 'KSPCB')->exists())->toBeTrue();
 });
 
 it('is idempotent (re-running does not duplicate rules)', function (): void {
     (new RoutingRulesSeeder)->run();
     (new RoutingRulesSeeder)->run();
 
-    expect(RoutingRule::query()->count())->toBe(4);
+    expect(RoutingRule::query()->where('active', true)->count())->toBe(15);
 });
 
-it('routes a garbage report to BBMP Ward 112 via the seeder', function (): void {
+it('routes a garbage report to BBMP SWM via the seeder', function (): void {
     (new RoutingRulesSeeder)->run();
 
     $garbage = ReportType::query()->where('code', 'garbage')->firstOrFail();
@@ -69,7 +72,7 @@ it('routes a garbage report to BBMP Ward 112 via the seeder', function (): void 
     $decision = $engine->resolve($report);
 
     expect($decision)->not->toBeNull()
-        ->and($decision->destinationDepartment->code)->toBe('BBMP_WARD_112');
+        ->and($decision->destinationDepartment->code)->toBe('BBMP_SWM');
 });
 
 it('routes an illegal parking report to BTP via the seeder', function (): void {
@@ -88,5 +91,5 @@ it('routes an illegal parking report to BTP via the seeder', function (): void {
     $decision = $engine->resolve($report);
 
     expect($decision)->not->toBeNull()
-        ->and($decision->destinationDepartment->code)->toBe('BTP_TRAFFIC');
+        ->and($decision->destinationDepartment->code)->toBe('BTP');
 });

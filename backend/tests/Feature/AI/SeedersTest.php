@@ -10,14 +10,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-it('AiProvidersSeeder inserts mock as the highest-priority active provider', function (): void {
+it('AiProvidersSeeder inserts the configured active and fallback providers', function (): void {
     (new AiProvidersSeeder)->run();
 
-    $mock = AiProviderConfig::query()->where('code', 'mock')->first();
-    expect($mock)->not->toBeNull()
-        ->and($mock->active)->toBeTrue()
-        ->and($mock->is_fallback)->toBeFalse()
-        ->and($mock->priority)->toBeLessThan(100);
+    $vertex = AiProviderConfig::query()->where('code', 'vertex-gemini-flash')->first();
+    expect($vertex)->not->toBeNull()
+        ->and($vertex->active)->toBeTrue()
+        ->and($vertex->is_fallback)->toBeFalse()
+        ->and($vertex->priority)->toBeLessThan(10);
 
     $openai = AiProviderConfig::query()->where('code', 'openai')->first();
     expect($openai)->not->toBeNull()
@@ -27,13 +27,15 @@ it('AiProvidersSeeder inserts mock as the highest-priority active provider', fun
     expect($qwen)->not->toBeNull()
         ->and($qwen->active)->toBeFalse()
         ->and($qwen->is_fallback)->toBeTrue();
+
+    expect(AiProviderConfig::query()->where('code', 'modal-vision')->exists())->toBeTrue();
 });
 
 it('AiProvidersSeeder is idempotent (re-running does not duplicate rows)', function (): void {
     (new AiProvidersSeeder)->run();
     (new AiProvidersSeeder)->run();
 
-    expect(AiProviderConfig::query()->whereIn('code', ['mock', 'openai', 'qwen-vl'])->count())->toBe(3);
+    expect(AiProviderConfig::query()->whereIn('code', ['vertex-gemini-flash', 'modal-vision', 'openai', 'qwen-vl'])->count())->toBe(4);
 });
 
 it('PromptsSeeder inserts the phase one category prompt and the two base v1 prompts', function (): void {
