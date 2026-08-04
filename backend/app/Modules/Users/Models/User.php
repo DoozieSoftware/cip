@@ -6,7 +6,9 @@ namespace App\Modules\Users\Models;
 
 use App\Modules\Authentication\Models\LoginHistory;
 use App\Modules\Authentication\Models\RefreshToken;
+use App\Modules\Departments\Models\Department;
 use App\Modules\Security\Models\SecurityEvent;
+use App\Modules\Users\DepartmentUserPivot;
 use Carbon\CarbonInterface;
 use Database\Factories\Modules\Users\Models\UserFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -151,18 +153,18 @@ class User extends Authenticatable
      * M11 — M:N relation to the departments this user is a member of.
      * Backed by the `department_users` pivot populated by the M3 seeders.
      *
-     * @return BelongsToMany<Department, $this>
+     * @return BelongsToMany<Department, $this, DepartmentUserPivot>
      */
     public function departments(): BelongsToMany
     {
         return $this->belongsToMany(
-            \App\Modules\Departments\Models\Department::class,
+            Department::class,
             'department_users',
             'user_id',
             'department_id',
-        )->using(\App\Modules\Users\DepartmentUserPivot::class)
-          ->withPivot(['id', 'is_manager', 'assigned_at'])
-          ->withTimestamps();
+        )->using(DepartmentUserPivot::class)
+            ->withPivot(['id', 'is_manager', 'assigned_at'])
+            ->withTimestamps();
     }
 
     /**

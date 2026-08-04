@@ -7,6 +7,7 @@ namespace App\Modules\Departments\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Modules\Departments\Exports\DepartmentReportsExport;
 use App\Modules\Departments\Repositories\DepartmentReportRepository;
+use App\Modules\Departments\Services\OperationDepartmentResolver;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
 use Illuminate\Http\Request;
@@ -31,22 +32,27 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class DepartmentReportExportController extends Controller
 {
-    public function __construct(private readonly DepartmentReportRepository $repo) {}
+    public function __construct(
+        private readonly DepartmentReportRepository $repo,
+        private readonly OperationDepartmentResolver $departments,
+    ) {}
 
     public function export(Request $request): Response
     {
         $departmentId = $this->resolveDepartmentId($request);
 
         $format = strtolower((string) $request->query('format', DepartmentReportsExport::FORMAT_CSV));
+
         if (! in_array($format, DepartmentReportsExport::ALLOWED_FORMATS, true)) {
             throw new ApiException(
                 'EXPORT_FORMAT_UNSUPPORTED',
-                "Unsupported export format '{$format}'. Allowed: " . implode(', ', DepartmentReportsExport::ALLOWED_FORMATS),
+                "Unsupported export format '{$format}'. Allowed: ".implode(', ', DepartmentReportsExport::ALLOWED_FORMATS),
                 400,
             );
         }
 
         $filters = $request->query();
+        $filters = is_array($filters) ? $filters : [];
         // Cap at the repository maximum to keep the export
         // bounded — the list endpoint already enforces this
         // for the paginated view.
@@ -58,7 +64,7 @@ class DepartmentReportExportController extends Controller
         // filtered set.
         $page = $this->repo->assignedTo($departmentId, $filters);
 
-        $filename = 'department-reports-' . now()->format('Ymd-His') . '-' . substr($departmentId, 0, 8);
+        $filename = 'department-reports-'.now()->format('Ymd-His').'-'.substr($departmentId, 0, 8);
 
         return DepartmentReportsExport::build($format, $page->getCollection(), $filename);
     }
@@ -66,16 +72,15 @@ class DepartmentReportExportController extends Controller
     private function resolveDepartmentId(Request $request): string
     {
         $user = $request->user();
+
         if (! $user instanceof User) {
             throw ApiException::unauthorized('Authentication required.');
         }
-        if ($user->hasAnyRole(['super_admin', 'system']) && $request->filled('department_id')) {
-            return (string) $request->string('department_id');
-        }
-        $dept = $user->departments()->first();
-        if (! $dept) {
-            throw ApiException::forbidden('User is not a member of any department.');
-        }
-        return (string) $dept->getKey();
+
+        $requested = $request->query('department_id');
+
+        return $this->departments
+            ->resolve($user, is_string($requested) && $requested !== '' ? $requested : null)
+            ->id;
     }
 }

@@ -11,6 +11,7 @@ use App\Modules\Departments\Http\Controllers\Admin\AdminOrganizationController;
 use App\Modules\Departments\Http\Controllers\Admin\DepartmentAdminController;
 use App\Modules\Departments\Http\Controllers\Admin\DepartmentController;
 use App\Modules\Departments\Http\Controllers\Api\DepartmentDashboardController;
+use App\Modules\Departments\Http\Controllers\Api\DepartmentMembershipController;
 use App\Modules\Departments\Http\Controllers\Api\DepartmentReportActionsController;
 use App\Modules\Departments\Http\Controllers\Api\DepartmentReportExportController;
 use App\Modules\Departments\Http\Controllers\Api\DepartmentReportListController;
@@ -298,6 +299,10 @@ Route::prefix('v1')->group(function (): void {
         Route::get('dashboard', [DepartmentDashboardController::class, 'show'])
             ->middleware('can:viewDashboard')
             ->name('dashboard');
+        // Active memberships for the department switcher
+        Route::get('memberships', [DepartmentMembershipController::class, 'index'])
+            ->middleware('can:viewDashboard')
+            ->name('memberships.index');
         // T-M11-008 — paginated list
         Route::get('reports', [DepartmentReportListController::class, 'index'])
             ->middleware('can:viewReports')

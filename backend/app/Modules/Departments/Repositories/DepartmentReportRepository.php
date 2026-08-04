@@ -52,7 +52,7 @@ class DepartmentReportRepository
     ];
 
     /**
-     * @param  array<string, mixed>  $filters
+     * @param  array<array-key, mixed>  $filters
      * @return LengthAwarePaginator<int, Report>
      */
     public function assignedTo(string $departmentId, array $filters = []): LengthAwarePaginator
@@ -117,7 +117,7 @@ class DepartmentReportRepository
     }
 
     /**
-     * @param  array<string, mixed>  $filters
+     * @param  array<array-key, mixed>  $filters
      * @param  Builder<Report>  $query
      */
     private function applyFilters(Builder $query, array $filters): void
