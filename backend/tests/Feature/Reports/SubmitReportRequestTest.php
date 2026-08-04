@@ -51,6 +51,21 @@ it('accepts a valid submit payload', function (): void {
     expect($validator->fails())->toBeFalse();
 });
 
+it('accepts a road-level address with the submit payload', function (): void {
+    $user = User::factory()->create();
+    Sanctum::actingAs($user);
+
+    $request = SubmitReportRequest::create('/api/v1/reports', 'POST', buildPayload(null, [
+        'address' => '8th Main Road near BESCOM office, Jayanagar 4th Block',
+    ]));
+    $request->setContainer(app());
+    $request->setRedirector(app('redirect'));
+
+    $validator = Validator::make($request->all(), $request->rules(), $request->messages());
+
+    expect($validator->fails())->toBeFalse();
+});
+
 it('rejects out-of-range latitude and longitude', function (): void {
     $user = User::factory()->create();
     Sanctum::actingAs($user);

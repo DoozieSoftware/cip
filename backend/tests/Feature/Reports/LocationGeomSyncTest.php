@@ -50,3 +50,39 @@ it('syncs locations.geom from latitude and longitude on mysql', function (): voi
     expect($row)->not->toBeNull()
         ->and($row->wkt)->toBe('POINT(77.5946 12.9716)');
 });
+
+it('stores submitted road-level address instead of raw coordinates', function (): void {
+    $citizen = User::factory()->create();
+    $type = ReportType::query()->firstOrFail();
+
+    $location = app(LocationService::class)->createFromSubmission(new SubmitReportDto(
+        citizenId: $citizen->id,
+        reportTypeId: $type->id,
+        latitude: 12.926,
+        longitude: 77.583,
+        accuracy: 8.0,
+        address: '4th Block Main Road near Jayanagar signal',
+        title: 'Pothole',
+        description: 'Large pothole near the signal.',
+    ));
+
+    expect($location->address)->toBe('4th Block Main Road near Jayanagar signal');
+});
+
+it('does not store coordinates as an address', function (): void {
+    $citizen = User::factory()->create();
+    $type = ReportType::query()->firstOrFail();
+
+    $location = app(LocationService::class)->createFromSubmission(new SubmitReportDto(
+        citizenId: $citizen->id,
+        reportTypeId: $type->id,
+        latitude: 12.926,
+        longitude: 77.583,
+        accuracy: 8.0,
+        address: '12.9260, 77.5830',
+        title: 'Pothole',
+        description: 'Large pothole near the signal.',
+    ));
+
+    expect($location->address)->toBeNull();
+});

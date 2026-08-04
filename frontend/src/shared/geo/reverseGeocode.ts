@@ -4,13 +4,13 @@
  *
  * The backend stores only lat/lng for a report location, so to show
  * "which location" in text we reverse-geocode the coordinates to a
- * place name. We use the public OpenStreetMap Nominatim endpoint; if it
- * is unreachable, rate-limited, or returns nothing, we fall back to a
- * stable, readable coordinate label so the UI never shows a blank
- * location.
+ * place name. We use the OpenStreetMap road network through Overpass; if
+ * it is unreachable or returns nothing, callers receive an empty label
+ * rather than a raw coordinate pretending to be an address.
  */
 
-const NOMINATIM_ENDPOINT = 'https://nominatim.openstreetmap.org/reverse';
+const OVERPASS_ENDPOINT = 'https://overpass.kumi.systems/api/interpreter';
+const resultCache = new Map<string, ReverseGeocodeResult>();
 
 export function formatCoordinates(lat: number, lng: number): string {
   return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -24,78 +24,80 @@ export interface ReverseGeocodeResult {
 }
 
 /**
- * Reverse-geocode a coordinate into a short place description.
+ * Resolve a coordinate to its nearest named road.
  *
- * Resolves even on failure (never throws) — returns a coordinate-based
- * fallback so callers can always render a label.
+ * Resolves even on failure (never throws). A blank label means no usable
+ * road/place text was found.
  */
 export async function reverseGeocode(
   lat: number,
   lng: number,
   signal?: AbortSignal,
 ): Promise<ReverseGeocodeResult> {
-  const fallback: ReverseGeocodeResult = { label: formatCoordinates(lat, lng), geocoded: false };
+  const fallback: ReverseGeocodeResult = { label: '', geocoded: false };
 
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return fallback;
 
+  const cacheKey = `${lat.toFixed(5)},${lng.toFixed(5)}`;
+  const cached = resultCache.get(cacheKey);
+  if (cached) return cached;
+
   try {
-    const url = `${NOMINATIM_ENDPOINT}?format=jsonv2&zoom=18&addressdetails=1&lat=${lat}&lon=${lng}`;
+    const query = `[out:json][timeout:10];way(around:120,${lat},${lng})[highway][name];out tags center;`;
+    const url = `${OVERPASS_ENDPOINT}?data=${encodeURIComponent(query)}`;
     const res = await fetch(url, {
       signal,
       headers: { Accept: 'application/json' },
     });
     if (!res.ok) return fallback;
 
-    const data = (await res.json()) as {
-      display_name?: string;
-      address?: Record<string, string>;
-    };
-    const label = buildLabel(data, lat, lng);
-    return { label, geocoded: Boolean(label && label !== fallback.label) };
+    const data = (await res.json()) as OverpassResponse;
+    const result = buildRoadLabel(data, lat, lng);
+    resultCache.set(cacheKey, result);
+    return result;
   } catch {
     return fallback;
   }
 }
 
 /**
- * Build a concise but street-level place label from a Nominatim
- * response. Prefers the most specific parts available — a named place
- * (building/amenity), the road (with house number), the neighbourhood,
- * then the wider area and city — e.g. "8th Cross Road, Kengeri Satellite
- * Town, Kengeri, Bengaluru". Falls back through the long display_name to
- * raw coordinates so a label is always produced.
+ * Pick the closest named road from the nearby OpenStreetMap ways. The GPS
+ * point remains the exact location; this label tells the officer which road
+ * to look for without pretending that the road name is a house address.
  */
-function buildLabel(
-  data: { display_name?: string; address?: Record<string, string> },
-  lat: number,
-  lng: number,
-): string {
-  const a = data.address ?? {};
-  const road = a.road || a.pedestrian || a.cycleway || a.footway || a.residential;
-  const roadPart = road && a.house_number ? `${a.house_number} ${road}` : road;
+interface OverpassElement {
+  center?: { lat?: number; lon?: number };
+  tags?: { name?: string };
+}
 
-  const parts = [
-    a.amenity || a.building || a.shop || a.office || a.tourism,
-    roadPart,
-    a.neighbourhood || a.quarter || a.block || a.hamlet,
-    a.suburb || a.village,
-    a.city || a.town || a.municipality || a.city_district || a.county,
-  ].filter((p): p is string => Boolean(p));
+interface OverpassResponse {
+  elements?: OverpassElement[];
+}
 
-  // Drop duplicates (e.g. suburb === city_district) while keeping order.
-  const seen = new Set<string>();
-  const unique = parts.filter((p) => {
-    const key = p.toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+interface NamedRoad {
+  center: { lat: number; lon: number };
+  tags: { name: string };
+}
 
-  if (unique.length > 0) {
-    return unique.slice(0, 4).join(', ');
-  }
-  if (data.display_name) {
-    return data.display_name.split(',').slice(0, 3).join(',').trim();
-  }
-  return formatCoordinates(lat, lng);
+function buildRoadLabel(data: OverpassResponse, lat: number, lng: number): ReverseGeocodeResult {
+  const nearest = (data.elements ?? [])
+    .filter(
+      (element): element is NamedRoad =>
+        typeof element.center?.lat === 'number' &&
+        typeof element.center?.lon === 'number' &&
+        typeof element.tags?.name === 'string' &&
+        element.tags.name.trim().length > 0,
+    )
+    .sort(
+      (a, b) =>
+        distanceSquared(a.center.lat, a.center.lon, lat, lng) -
+        distanceSquared(b.center.lat, b.center.lon, lat, lng),
+    )[0];
+
+  if (!nearest) return { label: '', geocoded: false };
+  return { label: `${nearest.tags.name}, Bengaluru`, geocoded: true };
+}
+
+function distanceSquared(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  return (aLat - bLat) ** 2 + (aLng - bLng) ** 2;
 }

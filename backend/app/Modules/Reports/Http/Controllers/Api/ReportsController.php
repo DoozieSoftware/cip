@@ -77,6 +77,7 @@ class ReportsController extends BaseController
             speed: $request->validated('speed') === null ? null : (float) $request->validated('speed'),
             gpsProvider: $request->validated('gps_provider'),
             capturedAt: $request->validated('captured_at'),
+            address: $request->validated('address'),
             title: (string) $request->validated('title'),
             description: (string) $request->validated('description'),
             isAnonymous: (bool) $request->validated('is_anonymous', false),

@@ -23,6 +23,7 @@ final readonly class SubmitReportDto
         public ?float $speed = null,
         public ?string $gpsProvider = null,
         public ?\DateTimeInterface $capturedAt = null,
+        public ?string $address = null,
         public string $title = '',
         public string $description = '',
         public bool $isAnonymous = false,
@@ -58,6 +59,9 @@ final readonly class SubmitReportDto
                 ? $validated['gps_provider']
                 : null,
             capturedAt: $capturedAt,
+            address: isset($validated['address']) && is_string($validated['address'])
+                ? trim($validated['address'])
+                : null,
             title: (string) ($validated['title'] ?? ''),
             description: (string) ($validated['description'] ?? ''),
             isAnonymous: (bool) ($validated['is_anonymous'] ?? false),

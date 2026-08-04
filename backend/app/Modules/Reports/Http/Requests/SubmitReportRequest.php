@@ -50,6 +50,7 @@ class SubmitReportRequest extends FormRequest
             'speed' => ['nullable', 'numeric', 'between:0,200'],
             'gps_provider' => ['nullable', 'string', 'max:64'],
             'captured_at' => ['nullable', 'date'],
+            'address' => ['nullable', 'string', 'max:512'],
 
             'priority_id' => ['nullable', 'uuid', 'exists:report_priorities,id'],
             'idempotency_key' => ['nullable', 'string', 'max:128'],

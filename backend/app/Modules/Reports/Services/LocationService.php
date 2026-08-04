@@ -7,6 +7,7 @@ namespace App\Modules\Reports\Services;
 use App\Modules\Reports\DTO\SubmitReportDto;
 use App\Modules\Reports\Models\Location;
 use App\Modules\Shared\Exceptions\ApiException;
+use Illuminate\Support\Carbon;
 
 /**
  * LocationService per docs/11 §12.
@@ -16,8 +17,8 @@ use App\Modules\Shared\Exceptions\ApiException;
  *  - accuracy threshold (we accept any non-null accuracy ≤ 100m
  *    without flagging; > 100m triggers INVALID_GPS_LOW_ACCURACY)
  *  - speed sanity (we flag speeds > 200 m/s as IMPOSSIBLE_SPEED)
- *  - reverse-geocoding: stores coordinates as the address until
- *    a real reverse-geocoding provider is wired
+ *  - address: stores citizen/client-provided road-level text when available;
+ *    never stores raw coordinates as a fake address
  *
  * The service is the only path that should mutate `locations`
  * in production. Controllers and seeders both go through it.
@@ -42,8 +43,10 @@ class LocationService
         $location->heading = $dto->heading;
         $location->speed = $dto->speed;
         $location->gps_provider = $dto->gpsProvider;
-        $location->captured_at = $dto->capturedAt ?? now();
-        $location->address = $this->reverseGeocode($dto->latitude, $dto->longitude);
+        $location->captured_at = $dto->capturedAt === null
+            ? now()
+            : Carbon::parse($dto->capturedAt->format(DATE_ATOM));
+        $location->address = $this->cleanAddress($dto->address);
         $location->save();
 
         return $location;
@@ -98,8 +101,18 @@ class LocationService
         }
     }
 
-    private function reverseGeocode(float $lat, float $lng): string
+    private function cleanAddress(?string $address): ?string
     {
-        return sprintf('%.4f, %.4f', $lat, $lng);
+        if ($address === null) {
+            return null;
+        }
+
+        $trimmed = trim($address);
+
+        if ($trimmed === '' || preg_match('/^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/', $trimmed) === 1) {
+            return null;
+        }
+
+        return $trimmed;
     }
 }

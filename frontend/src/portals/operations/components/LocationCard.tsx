@@ -1,4 +1,5 @@
 import { Card, CardBody, CardHeader, CardTitle, EmptyState } from '../design';
+import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 
 export interface DepartmentReportLocation {
   lat: number;
@@ -11,11 +12,24 @@ const MAPS_QUERY = (lat: number, lng: number) => `https://www.google.com/maps?q=
 const MAPS_DIRECTIONS = (lat: number, lng: number) =>
   `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
+/** Heuristic: seeders sometimes store the lat/lng string as the address. */
+function looksLikeCoords(address: string): boolean {
+  return /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(address.trim());
+}
+
 /**
  * Field-work card: where the incident happened, plus one-tap links to
  * open the location in Google Maps and get directions to it.
  */
 export function LocationCard({ location }: { location: DepartmentReportLocation | null }) {
+  const address = location?.address && !looksLikeCoords(location.address) ? location.address : null;
+  const resolvedAddress = useReverseGeocode(
+    location?.lat ?? Number.NaN,
+    location?.lng ?? Number.NaN,
+    address,
+  );
+  const displayAddress = address ?? resolvedAddress;
+
   return (
     <Card>
       <CardHeader>
@@ -29,10 +43,12 @@ export function LocationCard({ location }: { location: DepartmentReportLocation 
           />
         ) : (
           <div className="space-y-3">
-            {location.address && <p className="text-sm text-slate-800">{location.address}</p>}
-            <p className="font-mono text-xs text-slate-500">
-              {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
-              {location.accuracy != null && ` · ±${location.accuracy}m`}
+            <p className="text-sm font-medium leading-6 text-slate-900">
+              {displayAddress || 'Road address unavailable'}
+            </p>
+            <p className="text-xs text-slate-500">
+              {displayAddress ? 'Readable road location' : 'Exact point is available on the map'}
+              {location.accuracy != null && ` · GPS accuracy ±${location.accuracy}m`}
             </p>
             <div className="flex flex-wrap gap-2">
               <a

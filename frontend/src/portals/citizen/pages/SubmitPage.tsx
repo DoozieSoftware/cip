@@ -117,6 +117,7 @@ export default function SubmitPage(): JSX.Element {
       return;
     }
 
+    const preciseAddress = address.trim() || placeName.trim();
     const payload: CreateReportInput = {
       report_type_id: typeId,
       title,
@@ -124,7 +125,7 @@ export default function SubmitPage(): JSX.Element {
       latitude: activeLocation.latitude,
       longitude: activeLocation.longitude,
       accuracy_m: activeLocation.accuracy_m ?? undefined,
-      address,
+      address: preciseAddress || undefined,
       media_files: files,
       mock_gps_score: activeLocation.mock_heuristic.score,
     };
@@ -173,9 +174,7 @@ export default function SubmitPage(): JSX.Element {
           </button>
           <div className="text-center">
             <h1 className="text-lg font-bold text-slate-950">New Report</h1>
-            <p className="text-xs text-slate-500">
-              Issue details, location, and evidence on one screen
-            </p>
+            <p className="text-xs text-slate-500">Issue details, exact road, and evidence</p>
           </div>
           <span aria-hidden className="h-9 w-9" />
         </div>
@@ -337,9 +336,12 @@ export default function SubmitPage(): JSX.Element {
         <input
           value={address}
           onChange={(e) => setAddress(e.target.value)}
-          placeholder="Landmark / address (optional, helps the officer)"
+          placeholder="Exact road / landmark, e.g. 8th Main Road near BESCOM office"
           className="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
         />
+        <p className="mt-1 text-[11px] text-slate-500">
+          GPS pins the spot; road name or landmark helps officers find the same side of the road.
+        </p>
       </section>
 
       <section className="rounded-lg border border-slate-200 bg-white p-4">
