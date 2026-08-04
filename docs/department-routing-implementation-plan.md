@@ -1,227 +1,173 @@
-# Department-Wise Routing — Implementation Plan
+# Department-Wise Routing — Implementation Plan (v2, code-audited)
 
-Status: **Proposed plan for CTO review**
-Date: 2026-08-04
-Depends on: `docs/department-routing-mapping.md` (approved routing reference),
-`Bengaluru_Civic_Issue_Department_Routing_Matrix_2026-08-04.xlsx` (research workbook)
+Status: **Proposed — audited against current codebase on 2026-08-04.**
+Every claim below marked ✅ verified in code, ⚠️ needs change, or ❓ needs external/governance input.
+Depends on: `docs/department-routing-mapping.md` (approved mapping),
+`Bengaluru_Civic_Issue_Department_Routing_Matrix_2026-08-04.xlsx` (research workbook).
 
 ---
 
 ## 1. Executive Summary
 
-We will make CIP route every Bengaluru civic complaint to the **correct department**
-using AI categorization, enforce **per-department data isolation**, and support
-**multi-department coordination** for issues that involve two agencies.
+Phase 1 ships the approved model: 15 AI categories → primary department routing,
+conditional secondary tasks, strict department-scoped logins, Super Admin
+cross-department filters. Phase 2 (later) adds master/child-task dependencies,
+asset-owner-first routing, and emergency triage.
 
-**Recommendation: deliver in 2 phases.**
-
-- **Phase 1 (build now):** the approved model — 15 complaint categories,
-  10 BBMP wings + external agencies as departments, AI classification to a
-  primary department, optional secondary (CC) department, strict department
-  logins, Super Admin cross-department filters.
-- **Phase 2 (next):** upgrade multi-department handling to the Excel workbook's
-  full model — master ticket + per-department child tasks with dependency
-  ordering, emergency triage, and coordinated closure. Phase 1's schema is
-  designed to be forward-compatible with this.
-
-Why phased: Phase 1 matches the approved reference doc and can be shipped and
-demoed to GBA/agencies quickly. Phase 2 needs governance decisions that are
-still open (closure authority, SLA matrix, emergency dispatch policy — see §6).
+**Honest risk statement:** the current data model is strictly one-department-per-report.
+Secondary-task support is achievable but touches the routing engine, assignment
+guards, visibility policies and the operations query — it is real engineering,
+not configuration. Estimates below reflect that.
 
 ---
 
-## 2. Goals / Non-Goals
+## 2. Verified current-state constraints (code audit)
 
-### Goals
-1. AI categorizes each complaint into one of 15 approved categories.
-2. Complaint is routed to exactly one **primary department** (root-cause owner).
-3. When a secondary trigger applies (e.g. traffic obstruction), a **linked
-   secondary task** goes to the second department.
-4. Each department login sees **only its own** complaints/tasks.
-5. Super Admin sees everything, filterable by department / status / category / date.
-6. Category → department mapping is admin-configurable (routing rules), not hardcoded.
-
-### Non-Goals (deferred)
-- Ward-level / zone-level assignment and location geofencing.
-- Asset-owner verification against road/lake/pole registries (Phase 2+;
-  requires government asset data we do not yet have — see Validation Gaps).
-- Automated emergency dispatch (101/112 calling) — Phase 2, needs policy sign-off.
-
----
-
-## 3. Phase 1 Scope (approved model)
-
-### 3.1 Departments seed (17 departments)
-
-BBMP wings (all under BBMP organization, code prefix `BBMP_`):
-
-| Code | Wing | Handles |
+| # | Fact | Evidence |
 |---|---|---|
-| `BBMP_ENG` | Road Maintenance | roads, potholes, footpaths, stagnation |
-| `BBMP_SWM` | Solid Waste | garbage, sweeping, dead animals, burning |
-| `BBMP_ELEC` | Electrical / Streetlight | streetlights, park lights, junction boxes |
-| `BBMP_SWD` | Storm Water Drain | SWD blockage, desilting, drain damage |
-| `BBMP_HLTH` | Health | fogging, unhygienic premises, toilets |
-| `BBMP_AH` | Animal Husbandry | stray dogs/cattle, bites, licensing |
-| `BBMP_FOR` | Forest & Horticulture | trees, branches, wildlife coordination |
-| `BBMP_TP` | Town Planning | bye-law violations, illegal construction |
-| `BBMP_PRK` | Parks & Playgrounds | parks, equipment, playgrounds |
-| `BBMP_LAKE` | Lakes | lake encroachment, fencing, sewage inflow |
+| C1 | ⚠️ `reports.department_id` is a single nullable UUID column — one department per report | `2026_06_27_050400_create_reports_table.php` |
+| C2 | ⚠️ `routing_rules.destination_department_id` is single; engine stops at **first match** | `routing_rules` migration; `RoutingEngine.php` lines 37–48 |
+| C3 | ⚠️ One global status per report (`reports.current_status_id`); workflow advances report-level state only | `DefaultWorkflowSeeder.php` |
+| C4 | ⚠️ Assignment guards treat **any** open assignment as "already routed" (blocks secondary creation) | `AiCompletedListener.php` lines 85–88; `ModerationService.php` line ~90 |
+| C5 | ⚠️ Department visibility keys on `reports.department_id` equality only | `DepartmentReportRepository::assignedTo`; `DepartmentPolicy::view` lines 78–91 |
+| C6 | ⚠️ Staff report search/media endpoints are **not** department-scoped (visibility leak) | `ReportPolicy::view` STAFF_ROLES; `ReportsController` lines 153–173; `MediaController` |
+| C7 | ⚠️ Operations portal picks department via `departments()->first()` heuristic in 3 controllers | `DepartmentReportListController.php` lines 49–63; dashboard + export controllers |
+| C8 | ⚠️ Legacy role `'department'` referenced in code but never seeded | `DepartmentPolicy.php` line 44 et al. |
+| C9 | ⚠️ Demo data inconsistent: rules route to `BBMP_WARD_112`, demo staff attached to `BBMP` | `RoutingRulesSeeder.php`; `DemoUsersSeeder.php` |
+| C10 | ⚠️ No admin all-reports endpoint exists; no category filter in staff search | `routes/api.php` admin group; `ReportRepository::baseSearch` |
+| C11 | ✅ `department_users` pivot already supports users in many departments; `is_manager` flag exists (unused) | `2026_06_27_020000_create_department_users_table.php` |
+| C12 | ✅ `report_assignments` already stores `department_id`, `officer_id`, timestamps, reassignment fields — extendable by **new migration only** (per AGENTS.md) | `2026_06_27_050600_create_report_assignments_table.php` |
+| C13 | ✅ Routing rules are DB-configurable + cache-invalidated (admin CRUD exists) | `RoutingRepository.php` lines 26–47 |
+| C14 | ✅ Departments table already has `default_sla_minutes`, `escalation_matrix`, `working_hours`, hierarchy `parent_id` — but escalation matrix is **stored, never consumed** | departments migration lines 60–61 |
+| C15 | ✅ Role model ready: `department_officer`, `department_admin`, `moderator`, `super_admin` | `RolesAndPermissionsSeeder.php` |
 
-External agencies:
+---
 
-| Code | Agency |
-|---|---|
-| `BWSSB` | Water supply & sewerage |
-| `BESCOM` | Power distribution |
-| `BTP` | Traffic Police |
-| `KSPCB` | Pollution Control Board |
-| `BMTC` | Transport corporation |
-| `PWD` | Public Works (state roads) |
-| `BDA` | Development Authority |
+## 3. Phase 1 Scope
 
-Each department gets: `default_sla_minutes`, `escalation_matrix` (JSON),
-working hours, jurisdiction text. SLA values are **provisional defaults** until
-official SLA matrix is procured (open item O1).
+### 3.1 Departments seed — 17 departments ✅ feasible, low risk
+- 10 BBMP wings (`BBMP_ENG`, `BBMP_SWM`, `BBMP_ELEC`, `BBMP_SWD`, `BBMP_HLTH`,
+  `BBMP_AH`, `BBMP_FOR`, `BBMP_TP`, `BBMP_PRK`, `BBMP_LAKE`) seeded as children of
+  BBMP via existing `parent_id` (C14).
+- External: BWSSB, BESCOM, BTP already seeded; add KSPCB, BMTC, PWD, BDA.
+- ⚠️ Cleanup: retire demo `BBMP_WARD_112`/`BTP_TRAFFIC` inconsistency (C9) in the
+  same seeder change; SLA values are **provisional defaults** ❓ (O1).
+- Helplines in mapping doc: BBMP 1533, BWSSB 1916, BESCOM 1912, BTP 1095/112,
+  BMTC 1800-425-1663 verified from official pages; **KSPCB/PWD/BDA numbers need
+  verification before display** ❓.
 
-### 3.2 Report types (15 approved categories)
+### 3.2 Report categories — 15 approved codes ✅ with safe migration
+- Add the 15 new `report_types` active; move current 8 to inactive — same
+  mechanism already used for deprecated types (precedent: `pothole`, `streetlight` etc.).
+- ⚠️ Rejected idea from v1 plan (AI reclassification of open reports) — too risky.
+  Safe strategy: historical rows keep old codes (UI shows names); routing rules
+  cover both old and new codes during transition.
+- Citizen PWA category grid auto-shows active types ✅ (no frontend change needed
+  beyond copy).
 
-Replace the current 8 active categories with the approved set:
+### 3.3 Routing rules ⚠️ engine change required
+- Primary routing: one rule per category (condition DSL already supports
+  `category_in`) ✅ C13.
+- ⚠️ Secondary routing is **not** expressible today (C2: first-match-only, single
+  destination). Two options:
+  - **(A) recommended:** AI returns `secondary_triggers[]` alongside category; a
+    new `SecondaryRoutingService` maps trigger → department and creates secondary
+    assignments after the primary assignment. No change to first-match engine.
+  - (B): extend engine to multi-match rules. Larger blast radius (C2, cached
+    rule shape), not recommended.
+- Secondary assignment = own `report_assignments` row with `kind='secondary'`
+  and its own SLA countdown stored on the assignment (C12).
 
-`pothole`, `footpath_damage`, `garbage`, `dead_animal`, `streetlight`,
-`power_outage`, `water_leakage`, `sewage_overflow`, `drain_blockage`,
-`traffic_violation`, `illegal_parking`, `tree_fall`, `stray_animal`,
-`encroachment`, `noise_pollution`
-
-Migration strategy: old categories remap to new ones (`roads`→`pothole`
-family handled by AI reclassification of open reports; existing historical
-reports keep their type code, marked inactive in UI).
-
-### 3.3 Routing rules
-
-- One rule per category: condition `{category_in: [code]}` → **primary
-  department** + `default_sla`.
-- **Secondary routing is conditional**, not automatic: a report gets a
-  secondary department only when the AI flags a secondary trigger (see §3.5)
-  or a moderator/super admin adds one manually.
-- Rules remain admin-editable in Super Admin portal (existing CRUD).
-
-### 3.4 Data model (forward-compatible with Phase 2)
-
+### 3.4 Data model ⚠️ (additive migrations only)
 ```
-reports                          (existing, unchanged)
-  department_id  → primary department only
-
-report_assignments               (existing)
-  + is_primary      bool default true
-  + kind            enum: 'primary' | 'secondary'
-  + linked_report_id nullable   ← Phase 2 master link (null in Phase 1)
-  + dependency      enum: 'none' | 'blocked_by_primary' | 'parallel'
-                    default 'none'  ← Phase 2 dependency order
+report_assignments  + is_primary bool default true
+                    + kind enum('primary','secondary') default 'primary'
+                    + sla_minutes int nullable     (per-task SLA)
+                    + status enum('open','completed','cancelled') — task-level
+reports             unchanged in Phase 1 (keeps single department_id = primary)
 ```
+Required guard fixes (C4, C5):
+- `AiCompletedListener` / `ModerationService` guards must check **open primary
+  assignment** only.
+- `DepartmentReportRepository::assignedTo` / `dashboardCounts` must include
+  reports where this department holds any open assignment (primary or secondary),
+  with a column/filter distinguishing them in the queue UI.
+- `DepartmentPolicy::view` extended: member of primary dept OR holds assignment.
+- ✅ No workflow engine rewrite (C3): report keeps one global status; secondary
+  tasks track progress via assignment `status` + internal notes. **Known
+  limitation:** a secondary dept cannot independently "resolve" the complaint —
+  acceptable for Phase 1, formalized in Phase 2.
 
-Phase 1 behavior: a report may have **one open primary assignment and 0..n
-open secondary assignments** (each secondary = own officer, own SLA countdown,
-own queue entry in that department's portal). Primary department owns the
-report status; secondary tasks do not block primary resolution but primary
-cannot move to `closed` while secondary tasks are open (coordinated closure,
-simplified version).
+### 3.5 AI categorization ⚠️ prompt + listener update
+- Vision/text prompt returns: `category` (1 of 15) + confidence,
+  `secondary_triggers[]` (8 approved scenarios), `emergency_flag`.
+- Existing confidence threshold + moderator-review fallback already exists ✅.
+- ⚠️ Store taxonomy version used per decision (new report metadata column or
+  existing JSON field — to confirm during implementation).
+- Emergency handling in Phase 1 = **advisory only**: surface helpline to citizen
+  and flag for moderator; no automated dispatch ❓ (O4).
 
-Existing single-status workflow stays intact — no workflow engine rewrite in Phase 1.
+### 3.6 Access control ⚠️ (fixes known leaks)
+- Scope `GET /reports` staff search + media endpoints to caller's departments (C6).
+- Replace `departments()->first()` heuristic with explicit department selection;
+  add switcher for multi-members in operations portal (C7).
+- Remove unseeded `'department'` role references (C8).
+- Roles unchanged (C15); `department_admin` already limited to own departments ✅.
 
-### 3.5 AI categorization update
+### 3.7 Super Admin ⚠️ new endpoint + page (C10)
+- All-reports index with filters: department, status, category, date, officer.
+- Multi-department badge; secondary-task add/remove via extension of existing
+  reassign endpoint (super_admin/moderator).
 
-- Vision/text prompt returns:
-  - `category` (1 of 15 codes) + confidence
-  - `primary_suggestion` (department code) — advisory; rule engine has final say
-  - `secondary_triggers[]` — from approved matrix:
-    - `traffic_obstruction` → BTP
-    - `road_damage_by_utility_work` → BBMP_ENG (when BWSSB/BESCOM primary)
-    - `sewage_in_drain` → BBMP_SWD
-    - `cable_hazard` → BESCOM
-    - etc. (8 approved scenarios)
-  - `emergency_flag` bool + reason (display helpline; no auto-dispatch in Phase 1)
-- Low confidence → moderator review (existing path), no blind auto-assign.
-- Mapping table + keyword list live in the prompt config (admin-editable),
-  versioned per decision (`source_rule_version` stored on report meta).
-
-### 3.6 Access control (department isolation)
-
-- Fix current leak: staff report search scoped to the caller's departments
-  (membership via existing `department_users` pivot).
-- Operations portal: department switcher when user belongs to >1 department
-  (replaces the current `departments()->first()` heuristic).
-- Roles unchanged (`department_officer`, `department_admin`, `moderator`,
-  `super_admin`); `department_admin` manages users inside own department only
-  (already enforced), plus can view own department's secondary tasks.
-
-### 3.7 Super Admin views
-
-- All-reports table with filters: **department, status, category, date range,
-  officer** (existing admin portal; new page + backend endpoint).
-- Multi-department complaints flagged (badge: "2 departments").
-- Existing reassign endpoint extended to add/remove secondary tasks.
-
-### 3.8 Citizen experience (unchanged flow)
-
-Citizen sees one complaint, one tracking number, consolidated status. Internal
-task split is hidden (mirrors Excel `citizen_visibility` rule).
+### 3.8 Citizen experience ✅ unchanged
+One complaint, one tracking number; internal split hidden (matches workbook
+`citizen_visibility` rule).
 
 ---
 
-## 4. Phase 2 Scope (future — after Phase 1 stabilizes)
-
-1. Master ticket / child task formalization with dependency graph
-   (`blocked-by`, sequential ordering, e.g. utility repair → road restoration).
-2. Emergency triage pipeline: phrase-based detection → 101/112/1912 guidance
-   shown/called before routine routing (needs policy sign-off, open item O4).
-3. Asset-owner resolution: road/lake/pole ownership registry integration;
-   owner overrides category (needs govt asset data, open items O2–O3).
-4. Corp/ward derivation from GIS boundaries once official boundary data procured.
-5. Official SLA + escalation matrix per category once agencies provide it.
+## 4. Phase 2 (future, gated on external inputs)
+1. Master/child-task dependency ordering (`blocked-by`, utility → road restore).
+2. Asset-owner-first routing (owner overrides category) — needs road/lake/pole
+   ownership registries ❓ (O2).
+3. Emergency triage pipeline — needs dispatch policy ❓ (O4).
+4. Corp/ward GIS derivation ❓ (O3).
+5. Official SLA + escalation matrix wiring (C14: matrix stored but unused today) ❓ (O1).
 
 ---
 
-## 5. Effort Estimate (Phase 1)
+## 5. Effort (rough range, single dev; estimates only, not commitments)
 
-| Workstream | Estimate |
+| Workstream | Range |
 |---|---|
-| Dept + category seeders & migration | 1–2 days |
-| Assignment schema extension + migration | 1 day |
-| Routing engine secondary support + rule CRUD update | 2–3 days |
-| AI prompt update (15 categories, secondary triggers, emergency flag) | 2 days |
-| Access control fixes + department switcher | 2 days |
-| Super Admin filters page + endpoint | 2 days |
-| Operations portal secondary-task queue + coordinated closure | 2–3 days |
-| Tests (routing matrix acceptance suite from Excel T001–T020) | 2 days |
-| **Total** | **~2.5 weeks (single dev)** |
+| Dept/category seeders + demo-data cleanup | 1–2 d |
+| Assignment migration + guards (C4) | 1–2 d |
+| SecondaryRoutingService + repository/policy scoping (C5) | 3–4 d |
+| AI prompt + trigger mapping + versioning | 2–3 d |
+| Access leak fixes + dept switcher (C6, C7, C8) | 2–3 d |
+| Super Admin filters (C10) | 2 d |
+| Ops-portal secondary queue + coordinated close | 2–3 d |
+| Acceptance suite from workbook T001–T020 | 1–2 d |
+| **Total** | **~14–21 working days** |
 
 ---
 
-## 6. Open Decisions / Risks (need governance answers)
+## 6. Open items (need governance answers — plan pauses here if unresolved)
 
-| ID | Item | Impact |
-|---|---|---|
-| O1 | Official SLA & escalation matrix per department/category | Provisional SLAs used until then |
-| O2 | Asset ownership data (roads, lakes, poles) from agencies | Phase 2 blocker; Phase 1 uses category routing only |
-| O3 | Ward/corporation GIS boundaries | Phase 2 blocker |
-| O4 | Emergency dispatch policy (when to show/call 101/112/1912) | Phase 2 blocker; Phase 1 shows helpline only |
-| O5 | Master-complaint closure authority (primary dept vs Super Admin) | Decided: Phase 1 = Super Admin closes multi-dept; primary dept closes single-dept |
-| O6 | Department user hierarchy (zone/division/officer levels) | Phase 1 uses flat officer/admin per department |
-| O7 | Government sign-off on routing taxonomy | Workbook states it is research, not a statutory order — agencies must validate before production |
+| ID | Item | Why it matters | Default if silent |
+|---|---|---|---|
+| O1 | Official SLA/escalation matrix | SLA alerts & escalation (C14 unused today) | provisional defaults, admin-tunable |
+| O2 | Asset ownership datasets (roads/lakes/poles) | Phase 2 blocker | category routing only |
+| O3 | Ward/corporation GIS boundaries | Phase 2 blocker | no geo routing |
+| O4 | Emergency dispatch policy | AI must not delay life-safety response | advisory helpline display only |
+| O5 | Master-complaint closure authority | **proposal, not decided:** single-dept complaint closed by primary dept; multi-dept complaint closed by Super Admin | as proposed |
+| O6 | Department user hierarchy (zone/division levels) | flat model today (C11 `is_manager` unused) | flat officer/admin |
+| O7 | Government sign-off on taxonomy | workbook is research, not statutory order | rules stay admin-configurable (C13) so changes need no deploy |
 
 ---
 
-## 7. Recommendation Recap (for CTO discussion)
-
-1. **Adopt the approved 15-category → department mapping now** (already
-   documented and sourced from official BBMP/Sahaaya, BWSSB, BESCOM, BTP pages).
-2. **Phase 1 = primary + conditional secondary model** on an assignment schema
-   already shaped for Phase 2's master/child tasks.
-3. **Asset-owner-first routing is the correct end-state** (Excel finding:
-   "category must not override a verified owner"), but is deferred to Phase 2
-   because the ownership datasets don't exist yet (Validation Gap register).
-4. **Emergency handling stays advisory in Phase 1** (show helpline, flag for
-   moderator) — no automated dispatch until policy O4 is signed off.
-5. Everything remains config-driven so agencies/Government can adjust mappings
-   without code changes, satisfying O7's versioning requirement.
+## 7. Recommendation Recap
+1. Ship Phase 1 approved model; schema is already shaped for Phase 2 (C12).
+2. Secondary routing via AI triggers + service (option A), not engine rewrite.
+3. Fix the four verified leaks/guards (C4–C8) — they are correctness issues, not polish.
+4. Everything category/department stays DB-configurable (C13) — but SLA values,
+   helplines and the taxonomy itself remain research-grade until O1/O7 close.
