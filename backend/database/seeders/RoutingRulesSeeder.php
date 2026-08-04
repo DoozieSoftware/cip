@@ -14,108 +14,123 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Seeds the Bengaluru routing rules per docs/02 sec 12:
+ * Seeds the Phase 1 Bengaluru routing rules per
+ * docs/department-routing-mapping.md §4 (approved taxonomy):
  *
- *   1. Garbage & Dumping          -> BBMP Ward 112
- *   2. Roads, Water & Electricity -> BBMP Ward 112
- *   3. Traffic & Parking          -> Bangalore Traffic Police (BTP)
- *   4. Dead Animal                -> BBMP Ward 112
- *
- * The BBMP rules share the same destination so a citizen's complaint
- * lands with the right ward officer regardless of the exact issue.
- * Traffic, parking, and encroachment go to BTP because enforcement is
- * a separate municipal body.
+ *   - 15 category_in rules, one per approved category, targeting the
+ *     responsible BBMP wing or external agency
+ *   - legacy demo rules (BBMP_WARD_112 / merged categories) deactivated
+ *   - fallback `routing_default_department_id` -> BBMP_ENG
  *
  * The seeder is idempotent: every rule is matched on `(name)` via
- * `updateOrCreate` so re-running the seeder is a no-op. The two
- * destination departments are upserted by `(code)` for the same reason.
+ * `updateOrCreate` so re-running is a no-op. Destination departments must
+ * already exist (DepartmentsSeeder runs first in DatabaseSeeder).
  */
 class RoutingRulesSeeder extends Seeder
 {
     public function run(): void
     {
         DB::transaction(function (): void {
-            $bbmp = $this->ensureDepartment(
-                code: 'BBMP_WARD_112',
-                name: 'BBMP Ward 112',
-                jurisdiction: 'BBMP Ward 112, Bengaluru',
-            );
-
-            $btp = $this->ensureDepartment(
-                code: 'BTP_TRAFFIC',
-                name: 'Bangalore Traffic Police (BTP)',
-                jurisdiction: 'Bengaluru Urban',
-            );
-
             $medium = ReportPriority::query()->where('code', 'medium')->firstOrFail();
             $high = ReportPriority::query()->where('code', 'high')->firstOrFail();
 
-            $this->ensureRule(
-                name: 'Garbage -> BBMP Ward 112',
-                priority: 10,
-                conditions: ['category_in' => ['garbage']],
-                destinationDepartment: $bbmp,
-                defaultPriority: $medium,
-                defaultSlaMinutes: 1440,
-            );
+            $departments = Department::query()
+                ->whereIn('code', [
+                    'BBMP_ENG', 'BBMP_SWM', 'BBMP_ELEC', 'BBMP_SWD', 'BBMP_TP',
+                    'BBMP_FOR', 'BBMP_AH', 'BTP', 'BWSSB', 'BESCOM', 'KSPCB',
+                ])
+                ->get()
+                ->keyBy('code');
 
-            $this->ensureRule(
-                name: 'Roads, Water & Electricity -> BBMP Ward 112',
-                priority: 20,
-                conditions: ['category_in' => ['roads', 'water_sewage', 'electricity']],
-                destinationDepartment: $bbmp,
-                defaultPriority: $medium,
-                defaultSlaMinutes: 1440,
-            );
+            // Approved taxonomy (docs/department-routing-mapping.md §4).
+            // Names match the taxonomy migration exactly (case-insensitive
+            // collation makes divergent names collide with migration rows).
+            $rules = [
+                ['name' => 'Pothole -> BBMP Roads', 'category' => 'pothole', 'code' => 'BBMP_ENG', 'priority' => $medium, 'sla' => 1440, 'order' => 10],
+                ['name' => 'Footpath -> BBMP Roads', 'category' => 'footpath_damage', 'code' => 'BBMP_ENG', 'priority' => $medium, 'sla' => 1440, 'order' => 11],
+                ['name' => 'Garbage -> BBMP SWM', 'category' => 'garbage', 'code' => 'BBMP_SWM', 'priority' => $medium, 'sla' => 1440, 'order' => 12],
+                ['name' => 'Dead Animal -> BBMP SWM', 'category' => 'dead_animal', 'code' => 'BBMP_SWM', 'priority' => $medium, 'sla' => 1440, 'order' => 13],
+                ['name' => 'Streetlight -> BBMP Electrical', 'category' => 'streetlight', 'code' => 'BBMP_ELEC', 'priority' => $medium, 'sla' => 1440, 'order' => 14],
+                ['name' => 'Power Outage -> BESCOM', 'category' => 'power_outage', 'code' => 'BESCOM', 'priority' => $high, 'sla' => 720, 'order' => 15],
+                ['name' => 'Water Leak -> BWSSB', 'category' => 'water_leakage', 'code' => 'BWSSB', 'priority' => $high, 'sla' => 720, 'order' => 16],
+                ['name' => 'Sewage Overflow -> BWSSB', 'category' => 'sewage_overflow', 'code' => 'BWSSB', 'priority' => $high, 'sla' => 720, 'order' => 17],
+                ['name' => 'Drain Blockage -> BBMP SWD', 'category' => 'drain_blockage', 'code' => 'BBMP_SWD', 'priority' => $medium, 'sla' => 1440, 'order' => 18],
+                ['name' => 'Traffic Violation -> BTP', 'category' => 'traffic_violation', 'code' => 'BTP', 'priority' => $high, 'sla' => 480, 'order' => 19],
+                ['name' => 'Illegal Parking -> BTP', 'category' => 'illegal_parking', 'code' => 'BTP', 'priority' => $high, 'sla' => 480, 'order' => 20],
+                ['name' => 'Tree Fall -> BBMP Forest', 'category' => 'tree_fall', 'code' => 'BBMP_FOR', 'priority' => $high, 'sla' => 720, 'order' => 21],
+                ['name' => 'Stray Animal -> BBMP Animal Husbandry', 'category' => 'stray_animal', 'code' => 'BBMP_AH', 'priority' => $medium, 'sla' => 1440, 'order' => 22],
+                ['name' => 'Encroachment -> BBMP Town Planning', 'category' => 'encroachment', 'code' => 'BBMP_TP', 'priority' => $medium, 'sla' => 2880, 'order' => 23],
+                ['name' => 'Noise Pollution -> KSPCB', 'category' => 'noise_pollution', 'code' => 'KSPCB', 'priority' => $medium, 'sla' => 2880, 'order' => 24],
+            ];
 
-            $this->ensureRule(
-                name: 'Traffic & Parking -> BTP',
-                priority: 30,
-                conditions: ['category_in' => ['traffic_violation', 'illegal_parking', 'encroachment']],
-                destinationDepartment: $btp,
-                defaultPriority: $high,
-                defaultSlaMinutes: 480,
-            );
+            foreach ($rules as $rule) {
+                $department = $departments->get($rule['code']);
 
-            $this->ensureRule(
-                name: 'Dead Animal -> BBMP Ward 112',
-                priority: 40,
-                conditions: ['category_in' => ['dead_animal']],
-                destinationDepartment: $bbmp,
-                defaultPriority: $medium,
-                defaultSlaMinutes: 1440,
-            );
+                if ($department === null) {
+                    continue;
+                }
 
-            // Deactivate legacy rules whose conditions reference merged codes.
+                $this->ensureRule(
+                    name: $rule['name'],
+                    priority: $rule['order'],
+                    conditions: ['category_in' => [$rule['category']]],
+                    destinationDepartment: $department,
+                    defaultPriority: $rule['priority'],
+                    defaultSlaMinutes: $rule['sla'],
+                );
+            }
+
+            // Deactivate legacy ward-112 and merged-category rules that the
+            // canonical set above replaces. ('Illegal Parking -> BTP' is NOT
+            // listed here because the canonical set reuses that exact name.)
             RoutingRule::query()
-                ->whereIn('name', ['Pothole -> BBMP Ward 112', 'Illegal Parking -> BTP'])
+                ->whereIn('name', [
+                    'Garbage -> BBMP Ward 112',
+                    'Roads, Water & Electricity -> BBMP Ward 112',
+                    'Traffic & Parking -> BTP',
+                    'Dead Animal -> BBMP Ward 112',
+                    'Pothole -> BBMP Ward 112',
+                ])
                 ->update(['active' => false]);
 
-            AppConfig::query()->updateOrCreate(
-                ['key' => RoutingFallbackService::APP_CONFIG_KEY],
-                [
-                    'value' => ['department_id' => $bbmp->id],
-                    'enabled' => true,
-                    'rollout_percentage' => 100,
-                    'cohort' => null,
-                    'description' => 'Default destination for reports that do not match an active routing rule.',
-                ],
-            );
+            // Collapse any duplicates left over from earlier naming
+            // iterations: at most one active rule per approved category.
+            $canonicalNames = array_column($rules, 'name');
+            $approvedCategories = array_column($rules, 'category');
+
+            RoutingRule::query()
+                ->where('active', true)
+                ->whereNotIn('name', $canonicalNames)
+                ->get()
+                ->each(function (RoutingRule $rule) use ($approvedCategories): void {
+                    $conditions = $rule->conditions;
+                    $categories = is_array($conditions) ? ($conditions['category_in'] ?? []) : [];
+                    $categories = is_array($categories)
+                        ? array_values(array_filter($categories, 'is_string'))
+                        : [];
+
+                    if ($categories !== [] && array_intersect($categories, $approvedCategories) !== []) {
+                        $rule->update(['active' => false]);
+                    }
+                });
+
+            $fallback = $departments->get('BBMP_ENG');
+
+            if ($fallback !== null) {
+                AppConfig::query()->updateOrCreate(
+                    ['key' => RoutingFallbackService::APP_CONFIG_KEY],
+                    [
+                        'value' => ['department_id' => $fallback->id],
+                        'enabled' => true,
+                        'rollout_percentage' => 100,
+                        'cohort' => null,
+                        'description' => 'Default destination for reports that do not match an active routing rule.',
+                    ],
+                );
+            }
         });
 
         app(RoutingRepository::class)->invalidate();
-    }
-
-    private function ensureDepartment(string $code, string $name, string $jurisdiction): Department
-    {
-        return Department::query()->updateOrCreate(
-            ['code' => $code],
-            [
-                'name' => $name,
-                'jurisdiction' => $jurisdiction,
-                'active' => true,
-            ],
-        );
     }
 
     /**

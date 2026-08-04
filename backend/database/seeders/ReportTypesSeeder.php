@@ -8,25 +8,19 @@ use App\Modules\Reports\Models\ReportType;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeds the default report types for Bengaluru (BBMP) per docs/04 §7.
+ * Seeds the approved Phase 1 report categories for Bengaluru per
+ * docs/department-routing-mapping.md §4 — 15 fine-grained codes that map
+ * 1:1 to the responsible department (BBMP wing or external agency):
  *
- * The set is deliberately small and citizen-friendly — categories
- * are grouped the way citizens describe issues, and ordered by civic
- * priority (most common/urgent first):
+ *   pothole/footpath_damage -> BBMP Roads      streetlight -> BBMP Electrical
+ *   garbage/dead_animal     -> BBMP SWM        power_outage -> BESCOM
+ *   water_leakage/sewage_overflow -> BWSSB     drain_blockage -> BBMP SWD
+ *   traffic_violation/illegal_parking -> BTP   tree_fall -> BBMP Forest
+ *   stray_animal -> BBMP Animal Husbandry      encroachment -> BBMP Town Planning
+ *   noise_pollution -> KSPCB
  *
- *   1. Roads              (potholes, road damage)
- *   2. Water & Sewage     (leakages, open drains, sewer overflows)
- *   3. Electricity        (streetlights, power issues)
- *   4. Garbage & Dumping  (household + bulk/illegal dumping)
- *   5. Traffic Violation  (routed to BTP)
- *   6. Illegal Parking    (routed to BTP)
- *   7. Encroachment
- *   8. Dead Animal        (routed to BBMP SWM, rarer — listed last)
- *
- * Legacy codes that were merged into the new set (pothole,
- * road_damage, water_leakage, streetlight, open_drain,
- * illegal_dumping) are explicitly deactivated so new submissions only
- * see the active set while existing reports keep their history.
+ * Superseded broad codes (roads, water_sewage, electricity) are
+ * deactivated — historical reports keep their codes.
  *
  * Each row carries the platform-wide defaults:
  *  - `requires_video = false` (video is optional by default)
@@ -45,24 +39,31 @@ class ReportTypesSeeder extends Seeder
      * @var list<array<string, int|string>>
      */
     private const TYPES = [
-        ['name' => 'Roads', 'code' => 'roads', 'icon' => 'road', 'color' => '#3F51B5', 'sort_order' => 1],
-        ['name' => 'Water & Sewage', 'code' => 'water_sewage', 'icon' => 'droplet', 'color' => '#03A9F4', 'sort_order' => 2],
-        ['name' => 'Electricity', 'code' => 'electricity', 'icon' => 'bulb', 'color' => '#FFC107', 'sort_order' => 3],
-        ['name' => 'Garbage & Dumping', 'code' => 'garbage', 'icon' => 'trash', 'color' => '#795548', 'sort_order' => 4],
-        ['name' => 'Traffic Violation', 'code' => 'traffic_violation', 'icon' => 'traffic', 'color' => '#D32F2F', 'sort_order' => 5],
-        ['name' => 'Illegal Parking', 'code' => 'illegal_parking', 'icon' => 'parking', 'color' => '#FF5722', 'sort_order' => 6],
-        ['name' => 'Encroachment', 'code' => 'encroachment', 'icon' => 'fence', 'color' => '#6A1B9A', 'sort_order' => 7],
-        ['name' => 'Dead Animal', 'code' => 'dead_animal', 'icon' => 'alert', 'color' => '#212121', 'sort_order' => 8],
+        ['name' => 'Road Pothole / Damage', 'code' => 'pothole', 'icon' => 'road', 'color' => '#3F51B5', 'sort_order' => 1],
+        ['name' => 'Damaged Footpath', 'code' => 'footpath_damage', 'icon' => 'walk', 'color' => '#455A64', 'sort_order' => 2],
+        ['name' => 'Uncollected / Open Garbage', 'code' => 'garbage', 'icon' => 'trash', 'color' => '#795548', 'sort_order' => 3],
+        ['name' => 'Dead Animal Disposal', 'code' => 'dead_animal', 'icon' => 'alert', 'color' => '#212121', 'sort_order' => 4],
+        ['name' => 'Non-Functional Streetlight', 'code' => 'streetlight', 'icon' => 'bulb', 'color' => '#FFC107', 'sort_order' => 5],
+        ['name' => 'Power Outage / Transformer', 'code' => 'power_outage', 'icon' => 'zap', 'color' => '#F4511E', 'sort_order' => 6],
+        ['name' => 'Water Pipeline Burst / Leak', 'code' => 'water_leakage', 'icon' => 'droplet', 'color' => '#03A9F4', 'sort_order' => 7],
+        ['name' => 'Sewage Overflow / Manhole', 'code' => 'sewage_overflow', 'icon' => 'droplet', 'color' => '#01579B', 'sort_order' => 8],
+        ['name' => 'Storm Water Drain Blockage', 'code' => 'drain_blockage', 'icon' => 'droplet', 'color' => '#00838F', 'sort_order' => 9],
+        ['name' => 'Traffic Violation / Congestion', 'code' => 'traffic_violation', 'icon' => 'traffic', 'color' => '#D32F2F', 'sort_order' => 10],
+        ['name' => 'Illegal / Footpath Parking', 'code' => 'illegal_parking', 'icon' => 'parking', 'color' => '#FF5722', 'sort_order' => 11],
+        ['name' => 'Fallen Tree / Overhanging Branch', 'code' => 'tree_fall', 'icon' => 'tree', 'color' => '#2E7D32', 'sort_order' => 12],
+        ['name' => 'Stray Dog / Animal Menace', 'code' => 'stray_animal', 'icon' => 'alert', 'color' => '#6D4C41', 'sort_order' => 13],
+        ['name' => 'Public Property Encroachment', 'code' => 'encroachment', 'icon' => 'fence', 'color' => '#6A1B9A', 'sort_order' => 14],
+        ['name' => 'Industrial / Commercial Noise', 'code' => 'noise_pollution', 'icon' => 'volume', 'color' => '#5C6BC0', 'sort_order' => 15],
     ];
 
     /**
-     * Codes that were merged into the active set. Deactivated (not
+     * Codes superseded by the approved taxonomy. Deactivated (not
      * deleted) so existing reports keep their history.
      *
      * @var list<string>
      */
     private const DEPRECATED_CODES = [
-        'pothole', 'road_damage', 'water_leakage', 'streetlight',
+        'roads', 'water_sewage', 'electricity', 'road_damage',
         'open_drain', 'illegal_dumping',
     ];
 
@@ -73,7 +74,7 @@ class ReportTypesSeeder extends Seeder
                 ['code' => $row['code']],
                 [
                     'name' => $row['name'],
-                    'description' => 'Default seeded report type for '.$row['name'].'.',
+                    'description' => 'Approved Bengaluru routing category for '.$row['name'].'.',
                     'icon' => $row['icon'],
                     'color' => $row['color'],
                     'sort_order' => $row['sort_order'],

@@ -9,17 +9,14 @@ use App\Modules\Departments\Services\DepartmentService;
 use Illuminate\Database\Seeder;
 
 /**
- * Master data: the four departments every Bengaluru civic
- * report routes to (per docs/04 §8 + docs/09 §7).
+ * Master data: Bengaluru civic departments per the approved Phase 1
+ * routing taxonomy (docs/department-routing-mapping.md):
  *
- *  - BBMP  — Bruhat Bengaluru Mahanagara Palike (roads,
- *    solid-waste, streetlights, footpaths, parks)
- *  - BTP   — Bengaluru Traffic Police (signals, signs, traffic
- *    enforcement, accident reporting)
- *  - BWSSB — Bangalore Water Supply and Sewerage Board
- *    (water supply, sewerage, drainage)
- *  - BESCOM — Bangalore Electricity Supply Company
- *    (streetlight power, electrical hazards, outages)
+ *  - BBMP  — Bruhat Bengaluru Mahanagara Palike (parent; umbrella)
+ *  - 10 BBMP wings — Roads, SWM, Electrical, SWD, Health, Animal
+ *    Husbandry, Forest, Town Planning, Parks, Lakes
+ *  - BTP / BWSSB / BESCOM — enforcement + utilities
+ *  - KSPCB / BMTC / PWD / BDA — added for Phase 1 routing coverage
  *
  * Every row carries:
  *  - a jurisdiction string the Routing engine can match on
@@ -141,6 +138,38 @@ class DepartmentsSeeder extends Seeder
         ],
     ];
 
+    /**
+     * Phase 1 BBMP wings — children of BBMP (approved taxonomy,
+     * docs/department-routing-mapping.md §2).
+     *
+     * @var list<array<string, int|string>>
+     */
+    private const BBMP_WINGS = [
+        ['code' => 'BBMP_ENG', 'name' => 'BBMP Roads & Infrastructure (Engineering)', 'sla' => 1440],
+        ['code' => 'BBMP_SWM', 'name' => 'BBMP Solid Waste Management (BSWML)', 'sla' => 1440],
+        ['code' => 'BBMP_ELEC', 'name' => 'BBMP Electrical — Streetlight & Park Lighting', 'sla' => 1440],
+        ['code' => 'BBMP_SWD', 'name' => 'BBMP Storm Water Drains & Lakes', 'sla' => 1440],
+        ['code' => 'BBMP_HLTH', 'name' => 'BBMP Health Department', 'sla' => 1440],
+        ['code' => 'BBMP_AH', 'name' => 'BBMP Animal Husbandry', 'sla' => 1440],
+        ['code' => 'BBMP_FOR', 'name' => 'BBMP Forest Cell / Forest & Horticulture', 'sla' => 1440],
+        ['code' => 'BBMP_TP', 'name' => 'BBMP Town Planning', 'sla' => 2880],
+        ['code' => 'BBMP_PRK', 'name' => 'BBMP Parks & Playgrounds (Horticulture)', 'sla' => 1440],
+        ['code' => 'BBMP_LAKE', 'name' => 'BBMP Lakes Department', 'sla' => 2880],
+    ];
+
+    /**
+     * External agencies added in Phase 1. Helplines marked provisional
+     * must be verified before public display (plan open item O1).
+     *
+     * @var list<array<string, int|string>>
+     */
+    private const EXTERNAL_AGENCIES = [
+        ['code' => 'KSPCB', 'name' => 'Karnataka State Pollution Control Board', 'sla' => 2880, 'phone' => '080-25589112'],
+        ['code' => 'BMTC', 'name' => 'Bangalore Metropolitan Transport Corporation Limited', 'sla' => 1440, 'phone' => '1800-425-1663'],
+        ['code' => 'PWD', 'name' => 'Public Works Department, Government of Karnataka', 'sla' => 2880, 'phone' => '080-22211283'],
+        ['code' => 'BDA', 'name' => 'Bangalore Development Authority', 'sla' => 2880, 'phone' => '080-23360825'],
+    ];
+
     public function run(): void
     {
         foreach (self::DEPARTMENTS as $row) {
@@ -148,7 +177,7 @@ class DepartmentsSeeder extends Seeder
                 ->where('code', $row['code'])
                 ->first();
 
-            $attributes = array_filter($row, static fn ($v): bool => $v !== null);
+            $attributes = $row;
 
             if ($existing === null) {
                 $this->service->create($attributes);
@@ -158,5 +187,67 @@ class DepartmentsSeeder extends Seeder
 
             $this->service->update($existing, $attributes);
         }
+
+        $bbmp = Department::query()->where('code', 'BBMP')->first();
+
+        foreach (self::BBMP_WINGS as $wing) {
+            $this->upsertDepartment([
+                'code' => $wing['code'],
+                'name' => $wing['name'],
+                'jurisdiction' => 'BBMP, Bengaluru',
+                'parent_id' => $bbmp?->id,
+                'default_sla_minutes' => $wing['sla'],
+                'escalation_matrix' => [
+                    ['after_minutes' => 1440, 'escalate_to' => 'BBMP-ZONAL'],
+                    ['after_minutes' => 4320, 'escalate_to' => 'BBMP-COMMISSIONER'],
+                ],
+            ]);
+        }
+
+        foreach (self::EXTERNAL_AGENCIES as $agency) {
+            $this->upsertDepartment([
+                'code' => $agency['code'],
+                'name' => $agency['name'],
+                'jurisdiction' => 'Bengaluru Urban',
+                'parent_id' => null,
+                'phone' => $agency['phone'],
+                'default_sla_minutes' => $agency['sla'],
+                'escalation_matrix' => [],
+            ]);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function upsertDepartment(array $attributes): void
+    {
+        $workingHours = [
+            'mon' => ['09:00', '17:30'],
+            'tue' => ['09:00', '17:30'],
+            'wed' => ['09:00', '17:30'],
+            'thu' => ['09:00', '17:30'],
+            'fri' => ['09:00', '17:30'],
+            'sat' => ['09:00', '13:00'],
+        ];
+        $holidayCalendar = [
+            '2026-01-26', '2026-08-15', '2026-10-02',
+            '2026-11-01', '2026-11-08', '2026-12-25',
+        ];
+
+        $attributes = array_merge([
+            'working_hours' => $workingHours,
+            'holiday_calendar' => $holidayCalendar,
+        ], $attributes);
+
+        $existing = Department::query()->where('code', $attributes['code'])->first();
+
+        if ($existing === null) {
+            $this->service->create($attributes);
+
+            return;
+        }
+
+        $this->service->update($existing, $attributes);
     }
 }

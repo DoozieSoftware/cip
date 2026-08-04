@@ -17,8 +17,9 @@ use Illuminate\Database\Seeder;
  * Mobile numbers (E.164):
  *   +919999900001  — Citizen
  *   +919999900002  — Moderator
- *   +919999900003  — Department officer (BBMP)
+ *   +919999900003  — Department officer (BBMP Roads + BTP)
  *   +919999900004  — Super admin
+ *   +919999900005  — Department admin (BBMP Roads + BBMP SWM)
  *
  * The OTP in dev is deterministic and printed in the
  * `auth/send-otp` response (see docs/11 §21 and the
@@ -27,7 +28,7 @@ use Illuminate\Database\Seeder;
 class DemoUsersSeeder extends Seeder
 {
     /**
-     * @var list<array<string, string>>
+     * @var list<array<string, mixed>>
      */
     private const ACCOUNTS = [
         [
@@ -48,7 +49,7 @@ class DemoUsersSeeder extends Seeder
             'mobile' => '9999900003',
             'name' => 'Deepa Dept Officer (BBMP)',
             'role' => 'department_officer',
-            'department_code' => 'BBMP',
+            'department_codes' => ['BBMP_ENG', 'BTP'],
             'email' => 'deepa@cip.demo',
             'password' => 'demo1234',
         ],
@@ -63,7 +64,7 @@ class DemoUsersSeeder extends Seeder
             'mobile' => '9999900005',
             'name' => 'Anita Dept Admin (BBMP)',
             'role' => 'department_admin',
-            'department_code' => 'BBMP',
+            'department_codes' => ['BBMP_ENG', 'BBMP_SWM'],
             'email' => 'anita@cip.demo',
             'password' => 'demo1234',
         ],
@@ -84,12 +85,14 @@ class DemoUsersSeeder extends Seeder
                 ],
             );
 
-            if (isset($row['password']) && $row['password'] !== null) {
+            $password = $row['password'] ?? null;
+
+            if (is_string($password)) {
                 // The User model has a 'hashed' cast on the password
                 // attribute, so assigning the plain value is enough —
                 // the model will bcrypt it on save. Calling Hash::make()
                 // here would double-hash and break password login.
-                $user->password = $row['password'];
+                $user->password = $password;
                 $user->save();
             }
 
@@ -97,18 +100,29 @@ class DemoUsersSeeder extends Seeder
                 $user->assignRole($row['role']);
             }
 
-            if (isset($row['department_code'])) {
-                $department = Department::query()
-                    ->where('code', $row['department_code'])
-                    ->first();
+            if (isset($row['department_codes'])) {
+                $departments = Department::query()
+                    ->whereIn('code', $row['department_codes'])
+                    ->get();
 
-                if ($department !== null) {
+                foreach ($departments as $department) {
                     $user->departments()->syncWithoutDetaching([
                         $department->id => [
                             'is_manager' => false,
                             'assigned_at' => now(),
                         ],
                     ]);
+                }
+
+                // Demo staff must not stay attached to retired departments
+                // (they would resolve to an inactive queue otherwise).
+                $retired = Department::query()
+                    ->where('active', false)
+                    ->pluck('id')
+                    ->all();
+
+                if ($retired !== []) {
+                    $user->departments()->detach($retired);
                 }
             }
         }
