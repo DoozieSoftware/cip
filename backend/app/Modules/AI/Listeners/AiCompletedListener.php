@@ -109,11 +109,42 @@ class AiCompletedListener
         $autoRoute = $this->confidence->decide($confidencePct) === ConfidenceAggregator::DECISION_AUTO_ROUTE
             && ! $hasMismatch;
 
+        // Phase 1: read the emergency flag and secondary triggers so the
+        // assignment reason carries them for Track B's
+        // SecondaryRoutingService and the moderator's emergency review.
+        // No auto-dispatch in Phase 1 (blocked on governance policy O4).
+        $emergencyFlag = $event->visionResult['emergency_flag'] ?? false;
+        $emergencyFlag = $emergencyFlag === true || $emergencyFlag === 1 || $emergencyFlag === 'true';
+
+        $rawTriggers = $event->visionResult['secondary_triggers'] ?? [];
+        $secondaryTriggers = is_array($rawTriggers)
+            ? array_values(array_filter($rawTriggers, 'is_string'))
+            : [];
+        $secondaryTriggers = array_values(array_intersect($secondaryTriggers, [
+            'traffic_obstruction',
+            'road_damage_by_utility_work',
+            'sewage_in_drain',
+            'cable_hazard',
+            'footpath_damage_by_parking',
+        ]));
+
+        $signalMetadata = [
+            'ai_emergency_flag' => $emergencyFlag,
+            'ai_secondary_triggers' => $secondaryTriggers,
+        ];
+
+        if ($emergencyFlag) {
+            Log::warning('AiCompletedListener: emergency flag raised on report', [
+                'report_id' => $report->id,
+                'category' => $event->visionResult['predicted_type'] ?? 'unknown',
+            ]);
+        }
+
         if (! $autoRoute) {
             $reviewDecision = $this->workflow->evaluate($report, 'moderator_review', $systemActor);
 
             if ($reviewDecision->allowed) {
-                $this->workflow->apply($report, $reviewDecision, $systemActor);
+                $this->workflow->apply($report, $reviewDecision, $systemActor, $signalMetadata);
             }
 
             return;
@@ -128,12 +159,23 @@ class AiCompletedListener
             $decision = $this->fallback->decisionFor($report);
         }
 
-        $this->assignments->assign($report, $decision, $systemActor, reason: 'ai_auto_routing');
+        // Build the assignment reason with Phase 1 signals appended.
+        $reason = 'ai_auto_routing';
+
+        if ($emergencyFlag) {
+            $reason .= ' [EMERGENCY]';
+        }
+
+        if ($secondaryTriggers !== []) {
+            $reason .= ' [secondary: '.implode(',', $secondaryTriggers).']';
+        }
+
+        $this->assignments->assign($report, $decision, $systemActor, reason: $reason);
 
         $wfDecision = $this->workflow->evaluate($report, 'ai_auto_assign', $systemActor);
 
         if ($wfDecision->allowed) {
-            $this->workflow->apply($report, $wfDecision, $systemActor);
+            $this->workflow->apply($report, $wfDecision, $systemActor, $signalMetadata);
         }
     }
 }

@@ -108,7 +108,7 @@ class WorkflowEngine
             }
         }
 
-        if ($reasons === []) {
+        if (count($reasons) === 0) {
             $reasons[] = 'No transition matched the guard.';
         }
 
@@ -122,10 +122,12 @@ class WorkflowEngine
      * row by code), writes the audit row, and dispatches
      * `ReportStatusChanged`.
      *
+     * @param  array<string, mixed>  $metadata
+     *
      * @throws \InvalidArgumentException when the decision
      *                                   is not a positive one
      */
-    public function apply(Report $report, WorkflowDecision $decision, ?User $actor): Report
+    public function apply(Report $report, WorkflowDecision $decision, ?User $actor, array $metadata = []): Report
     {
         if (! $decision->allowed) {
             throw new \InvalidArgumentException('Cannot apply a denied decision.');
@@ -143,7 +145,7 @@ class WorkflowEngine
 
         $fromStateId = $report->current_status_id;
 
-        DB::transaction(function () use ($report, $toState, $decision, $actor, $fromStateId): void {
+        DB::transaction(function () use ($report, $toState, $decision, $actor, $fromStateId, $metadata): void {
             // Bridge the M4/M6 gap: the destination workflow
             // state's code matches a `report_statuses` row.
             $toStatus = ReportStatus::query()->where('code', $toState->code)->first();
@@ -156,16 +158,19 @@ class WorkflowEngine
             // The WriteStatusHistory listener (M4) is auto-wired
             // and appends a status-history row when this event
             // fires. Do not write twice.
+            $toStatusId = $toStatus === null ? $toState->id : $toStatus->id;
+
             ReportStatusChanged::dispatch(
                 reportId: $report->id,
                 fromStatusId: $fromStateId,
-                toStatusId: $toStatus?->id ?? $toState->id,
+                toStatusId: $toStatusId,
                 actorId: $actor?->id,
                 reason: 'workflow.transition:'.$decision->matchedTransitionId,
                 metadata: [
                     'transition_id' => $decision->matchedTransitionId,
                     'sla_minutes' => $decision->slaMinutes,
                     'notify_before_minutes' => $decision->notifyBeforeMinutes,
+                    ...$metadata,
                 ],
             );
 
@@ -175,7 +180,7 @@ class WorkflowEngine
             // request_id is read from the container so background
             // jobs (no request) get a null rather than crashing.
             $request = request();
-            $requestId = $request?->attributes->get('trace_id');
+            $requestId = $request->attributes->get('trace_id');
 
             AuditLog::query()->create([
                 'user_id' => $actor?->id,
@@ -187,10 +192,10 @@ class WorkflowEngine
                     'workflow_id' => $report->workflow_id,
                 ],
                 'after' => [
-                    'current_status_id' => $toStatus?->id ?? $toState->id,
+                    'current_status_id' => $toStatusId,
                     'workflow_id' => $report->workflow_id,
                 ],
-                'ip' => $request?->ip(),
+                'ip' => $request->ip(),
                 'device_fingerprint' => null,
                 'request_id' => is_string($requestId) ? $requestId : null,
                 'created_at' => now(),
@@ -229,7 +234,7 @@ class WorkflowEngine
     }
 
     /**
-     * @return list<WorkflowTransition>
+     * @return array<int, WorkflowTransition>
      */
     private function candidates(WorkflowDefinition $def, WorkflowState $from, string $event): array
     {
@@ -241,6 +246,7 @@ class WorkflowEngine
             ->orderByDesc('priority')
             ->orderBy('created_at')
             ->get()
+            ->values()
             ->all();
     }
 
