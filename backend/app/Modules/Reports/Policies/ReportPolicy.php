@@ -6,6 +6,7 @@ namespace App\Modules\Reports\Policies;
 
 use App\Modules\Reports\Models\Report;
 use App\Modules\Shared\Policies\BasePolicy;
+use App\Modules\Shared\Support\DepartmentScope;
 use App\Modules\Users\Models\User;
 
 /**
@@ -57,7 +58,13 @@ class ReportPolicy extends BasePolicy
             return true;
         }
 
-        return $user->hasAnyRole(self::STAFF_ROLES);
+        if (! $user->hasAnyRole(self::STAFF_ROLES)) {
+            return false;
+        }
+
+        // Department staff only see their own departments' reports;
+        // moderator / super_admin / system see everything.
+        return DepartmentScope::canViewReport($user, $report);
     }
 
     public function update(User $user, Report $report): bool

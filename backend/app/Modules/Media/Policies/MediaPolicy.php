@@ -7,6 +7,7 @@ namespace App\Modules\Media\Policies;
 use App\Modules\Media\Models\Media;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Shared\Policies\BasePolicy;
+use App\Modules\Shared\Support\DepartmentScope;
 use App\Modules\Users\Models\User;
 
 /**
@@ -38,7 +39,17 @@ class MediaPolicy extends BasePolicy
 
     public function viewReport(User $user, Report $report): bool
     {
-        return $this->isOwner($user, $report) || $user->hasAnyRole(self::STAFF_ROLES);
+        if ($this->isOwner($user, $report)) {
+            return true;
+        }
+
+        if (! $user->hasAnyRole(self::STAFF_ROLES)) {
+            return false;
+        }
+
+        // Department staff only see media of their own departments'
+        // reports; moderator / super_admin / system see everything.
+        return DepartmentScope::canViewReport($user, $report);
     }
 
     public function download(User $user, Media $media): bool

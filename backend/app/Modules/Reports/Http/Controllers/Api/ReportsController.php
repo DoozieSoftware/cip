@@ -16,6 +16,8 @@ use App\Modules\Reports\Repositories\ReportRepository;
 use App\Modules\Reports\Services\ReportService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Controllers\BaseController;
+use App\Modules\Shared\Support\DepartmentScope;
+use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -66,29 +68,39 @@ class ReportsController extends BaseController
     public function store(SubmitReportRequest $request): JsonResponse
     {
         $user = $request->user();
+
+        if (! $user instanceof User) {
+            throw ApiException::forbidden('Authentication is required.');
+        }
+
         $dto = new SubmitReportDto(
             citizenId: (string) $user->id,
-            reportTypeId: (string) $request->validated('report_type_id'),
-            latitude: (float) $request->validated('latitude'),
-            longitude: (float) $request->validated('longitude'),
-            accuracy: $request->validated('accuracy') === null ? null : (float) $request->validated('accuracy'),
-            altitude: $request->validated('altitude') === null ? null : (float) $request->validated('altitude'),
-            heading: $request->validated('heading') === null ? null : (float) $request->validated('heading'),
-            speed: $request->validated('speed') === null ? null : (float) $request->validated('speed'),
-            gpsProvider: $request->validated('gps_provider'),
-            capturedAt: $request->validated('captured_at'),
-            address: $request->validated('address'),
-            title: (string) $request->validated('title'),
-            description: (string) $request->validated('description'),
+            reportTypeId: $this->requiredString($request, 'report_type_id'),
+            latitude: $this->requiredFloat($request, 'latitude'),
+            longitude: $this->requiredFloat($request, 'longitude'),
+            accuracy: $this->nullableFloat($request, 'accuracy'),
+            altitude: $this->nullableFloat($request, 'altitude'),
+            heading: $this->nullableFloat($request, 'heading'),
+            speed: $this->nullableFloat($request, 'speed'),
+            gpsProvider: $this->nullableString($request, 'gps_provider'),
+            capturedAt: $this->nullableDateTime($request, 'captured_at'),
+            address: $this->nullableString($request, 'address'),
+            title: $this->requiredString($request, 'title'),
+            description: $this->requiredString($request, 'description'),
             isAnonymous: (bool) $request->validated('is_anonymous', false),
-            priorityId: $request->validated('priority_id'),
-            mockGpsScore: $request->validated('mock_gps_score') === null ? null : (float) $request->validated('mock_gps_score'),
+            priorityId: $this->nullableString($request, 'priority_id'),
+            mockGpsScore: $this->nullableFloat($request, 'mock_gps_score'),
         );
 
         $report = $this->service->submit($dto);
+        $fresh = $report->fresh();
+
+        if ($fresh === null) {
+            throw ApiException::notFound('Report');
+        }
 
         return $this->respond(
-            (new ReportResource($report->fresh()->load(['location', 'status', 'priority', 'reportType'])))->toArray($request),
+            (new ReportResource($fresh->load(['location', 'status', 'priority', 'reportType'])))->toArray($request),
             'Report submitted.',
             201,
         );
@@ -100,6 +112,11 @@ class ReportsController extends BaseController
     public function submit(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
+
+        if (! $user instanceof User) {
+            throw ApiException::forbidden('Authentication is required.');
+        }
+
         $report = $this->repository->findById($id);
 
         if ($report === null) {
@@ -113,6 +130,10 @@ class ReportsController extends BaseController
 
         if (! $isOwner && ! $isStaff) {
             throw ApiException::forbidden('You cannot submit this report.');
+        }
+
+        if (! $isOwner) {
+            $this->assertDepartmentScopeAllows($user, $report);
         }
 
         $submittedStatusId = ReportStatus::query()
@@ -141,8 +162,14 @@ class ReportsController extends BaseController
         $report->submitted_at = now();
         $report->save();
 
+        $fresh = $report->fresh();
+
+        if ($fresh === null) {
+            throw ApiException::notFound('Report');
+        }
+
         return $this->respond(
-            (new ReportResource($report->fresh()->load(['location', 'status', 'priority', 'reportType'])))->toArray($request),
+            (new ReportResource($fresh->load(['location', 'status', 'priority', 'reportType'])))->toArray($request),
             'Report submitted.',
         );
     }
@@ -153,6 +180,13 @@ class ReportsController extends BaseController
     public function index(Request $request): JsonResponse
     {
         $this->ensureStaff($request);
+
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            throw ApiException::forbidden('Authentication is required.');
+        }
+
         $filters = [
             'status' => $request->query('status'),
             'department' => $request->query('department'),
@@ -166,10 +200,29 @@ class ReportsController extends BaseController
         ];
         $filters = array_filter($filters, static fn ($v): bool => $v !== null && $v !== '');
 
-        $page = $this->repository->searchByRole($filters, perPage: (int) $request->query('per_page', 25));
-        $transformed = $page->through(static fn (Report $r): array => (new ReportResource($r))->toArray($request));
+        // Phase 1 isolation: department staff only see their own
+        // departments' reports; unrestricted staff see everything.
+        $scope = DepartmentScope::isDepartmentScopedStaff($user)
+            ? DepartmentScope::memberDepartmentIds($user)
+            : null;
 
-        return $this->respondPaginated($transformed);
+        $page = $this->repository->searchByRole(
+            $filters,
+            perPage: (int) $request->query('per_page', 25),
+            departmentScope: $scope,
+        );
+
+        $items = $page->getCollection()
+            ->map(static fn (Report $r): array => (new ReportResource($r))->toArray($request))
+            ->values()
+            ->all();
+
+        return $this->respond($items, 'OK', 200, [
+            'page' => $page->currentPage(),
+            'per_page' => $page->perPage(),
+            'total' => $page->total(),
+            'last_page' => $page->lastPage(),
+        ]);
     }
 
     /**
@@ -183,6 +236,14 @@ class ReportsController extends BaseController
         if ($report === null) {
             throw ApiException::notFound('Report');
         }
+
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            throw ApiException::forbidden('Authentication is required.');
+        }
+
+        $this->assertDepartmentScopeAllows($user, $report);
 
         return $this->respond(
             (new ReportResource($report->load(['location', 'status', 'priority', 'reportType'])))->toArray($request),
@@ -211,6 +272,10 @@ class ReportsController extends BaseController
             throw ApiException::forbidden('You cannot view this timeline.');
         }
 
+        if (! $isOwner && $user !== null) {
+            $this->assertDepartmentScopeAllows($user, $report);
+        }
+
         $rows = $this->repository->paginateTimeline($id);
         $payload = $rows->map(static fn ($row): array => (new ReportStatusHistoryResource($row))->toArray($request))->values()->all();
 
@@ -223,9 +288,12 @@ class ReportsController extends BaseController
     public function citizenDashboard(Request $request): JsonResponse
     {
         $user = $request->user();
-        $citizenId = (string) $user->id;
 
-        $counts = $this->repository->citizenDashboardCounts($citizenId);
+        if (! $user instanceof User) {
+            throw ApiException::forbidden('Authentication is required.');
+        }
+
+        $counts = $this->repository->citizenDashboardCounts((string) $user->id);
 
         return $this->respond($counts);
     }
@@ -236,6 +304,11 @@ class ReportsController extends BaseController
     public function citizenIndex(Request $request): JsonResponse
     {
         $user = $request->user();
+
+        if (! $user instanceof User) {
+            throw ApiException::forbidden('Authentication is required.');
+        }
+
         $filters = [
             'status' => $request->query('status'),
             'date_from' => $request->query('date_from'),
@@ -245,9 +318,18 @@ class ReportsController extends BaseController
         $filters = array_filter($filters, static fn ($v): bool => $v !== null && $v !== '');
 
         $page = $this->repository->searchForCitizen($user, $filters, perPage: (int) $request->query('per_page', 25));
-        $transformed = $page->through(static fn (Report $r): array => (new ReportResource($r))->toArray($request));
 
-        return $this->respondPaginated($transformed);
+        $items = $page->getCollection()
+            ->map(static fn (Report $r): array => (new ReportResource($r))->toArray($request))
+            ->values()
+            ->all();
+
+        return $this->respond($items, 'OK', 200, [
+            'page' => $page->currentPage(),
+            'per_page' => $page->perPage(),
+            'total' => $page->total(),
+            'last_page' => $page->lastPage(),
+        ]);
     }
 
     /**
@@ -262,12 +344,21 @@ class ReportsController extends BaseController
         }
 
         $user = $request->user();
+
+        if (! $user instanceof User) {
+            throw ApiException::forbidden('Authentication is required.');
+        }
+
         $isOwner = ! $report->is_anonymous
             && $report->citizen_id !== null
             && (string) $report->citizen_id === (string) $user->id;
 
         if (! $isOwner && ! $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system'])) {
             throw ApiException::forbidden('You cannot view this report.');
+        }
+
+        if (! $isOwner) {
+            $this->assertDepartmentScopeAllows($user, $report);
         }
 
         return $this->respond(
@@ -281,6 +372,66 @@ class ReportsController extends BaseController
 
         if ($user === null || ! $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system'])) {
             throw ApiException::forbidden('Staff role is required.');
+        }
+    }
+
+    /**
+     * Phase 1 isolation: department-scoped staff may only read reports
+     * their departments own (or hold an open assignment on). Unrestricted
+     * staff pass through.
+     */
+    private function assertDepartmentScopeAllows(User $user, Report $report): void
+    {
+        if (! DepartmentScope::canViewReport($user, $report)) {
+            throw ApiException::forbidden('This report is outside your department scope.');
+        }
+    }
+
+    /**
+     * Typed accessors for validated request values. Form-request validation
+     * has already enforced presence/type; these helpers keep DTO
+     * construction type-safe.
+     */
+    private function requiredString(SubmitReportRequest $request, string $key): string
+    {
+        $value = $request->validated($key);
+
+        return is_string($value) ? $value : '';
+    }
+
+    private function requiredFloat(SubmitReportRequest $request, string $key): float
+    {
+        $value = $request->validated($key);
+
+        return is_numeric($value) ? (float) $value : 0.0;
+    }
+
+    private function nullableString(SubmitReportRequest $request, string $key): ?string
+    {
+        $value = $request->validated($key);
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    private function nullableFloat(SubmitReportRequest $request, string $key): ?float
+    {
+        $value = $request->validated($key);
+
+        return is_numeric($value) ? (float) $value : null;
+    }
+
+    private function nullableDateTime(SubmitReportRequest $request, string $key): ?\DateTimeInterface
+    {
+        $value = $request->validated($key);
+
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+
+        try {
+            return new \DateTimeImmutable($value);
+        } catch (\Exception) {
+            return null;
         }
     }
 }

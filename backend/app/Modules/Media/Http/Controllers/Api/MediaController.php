@@ -12,6 +12,7 @@ use App\Modules\Media\Services\ChainOfCustodyWriter;
 use App\Modules\Media\Services\MediaService;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Shared\Http\Controllers\BaseController;
+use App\Modules\Shared\Support\DepartmentScope;
 use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -149,9 +150,10 @@ class MediaController extends BaseController
         $isOwner = ! $report->is_anonymous
             && $report->citizen_id !== null
             && (string) $report->citizen_id === (string) $user->id;
-        $isStaff = $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system']);
 
-        if (! $isOwner && ! $isStaff) {
+        // Department staff may only add media to reports inside their
+        // scope; moderator / super_admin / system pass through.
+        if (! $isOwner && ! DepartmentScope::canViewReport($user, $report)) {
             return $this->respondError('You cannot add media to this report.', 403, 'FORBIDDEN');
         }
 
@@ -235,6 +237,12 @@ class MediaController extends BaseController
         $user = $request->user('sanctum');
 
         if ($user === null || ! $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system'])) {
+            return $this->respondError('Forbidden', 403, 'FORBIDDEN');
+        }
+
+        $report = Report::query()->find($reportId);
+
+        if ($report !== null && ! DepartmentScope::canViewReport($user, $report)) {
             return $this->respondError('Forbidden', 403, 'FORBIDDEN');
         }
 

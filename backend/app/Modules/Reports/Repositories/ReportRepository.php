@@ -11,6 +11,7 @@ use App\Modules\Users\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator as ConcreteLengthAwarePaginator;
 
 /**
  * Read/write access to the `reports` table and the
@@ -58,9 +59,12 @@ class ReportRepository
     }
 
     /**
-     * Staff-side search: every filter is optional; the result
-     * is paginated. The caller is expected to be a moderator /
-     * department officer / super_admin.
+     * Staff search. `$departmentScope` enforces Phase 1 data isolation:
+     *  - null                → unrestricted staff (sees everything)
+     *  - list<string> (any)  → department-scoped staff; only reports owned
+     *                          by, or with an open assignment in, one of
+     *                          the given departments
+     *  - [] empty list       → scoped user with no memberships → no rows
      *
      * @param  array{
      *     status?: string|null,
@@ -73,11 +77,21 @@ class ReportRepository
      *     sort?: string|null,
      *     dir?: string|null,
      * }  $filters
-     * @return LengthAwarePaginator<int, Report>
+     * @param  list<string>|null  $departmentScope
+     * @return ConcreteLengthAwarePaginator<int, Report>
      */
-    public function searchByRole(array $filters, int $perPage = 25): LengthAwarePaginator
+    public function searchByRole(array $filters, int $perPage = 25, ?array $departmentScope = null): LengthAwarePaginator
     {
         $q = $this->baseSearch($filters);
+
+        if ($departmentScope !== null) {
+            $q->where(function (Builder $w) use ($departmentScope): void {
+                $w->whereIn('department_id', $departmentScope)
+                    ->orWhereHas('assignments', function (Builder $a) use ($departmentScope): void {
+                        $a->whereNull('completed_at')->whereIn('department_id', $departmentScope);
+                    });
+            });
+        }
 
         $sort = in_array($filters['sort'] ?? null, ['created_at', 'submitted_at', 'priority_id', 'current_status_id'], true)
             ? $filters['sort']
@@ -92,7 +106,7 @@ class ReportRepository
      * reports are returned. `is_anonymous` rows are excluded.
      *
      * @param  array<string, mixed>  $filters
-     * @return LengthAwarePaginator<int, Report>
+     * @return ConcreteLengthAwarePaginator<int, Report>
      */
     public function searchForCitizen(User $citizen, array $filters, int $perPage = 25): LengthAwarePaginator
     {
