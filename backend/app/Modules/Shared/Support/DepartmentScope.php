@@ -44,7 +44,7 @@ final class DepartmentScope
      */
     public static function memberDepartmentIds(User $user): array
     {
-        $ids = $user->departments()->pluck('id')->all();
+        $ids = $user->departments()->pluck('departments.id')->all();
 
         return array_values(array_filter($ids, 'is_string'));
     }
