@@ -184,9 +184,9 @@ cd "$ROOT"
 cd "$ROOT/frontend"
 if [ "$DEV_HTTP" = true ]; then
   info "Serving frontend over plain HTTP (--http) — use http://localhost:$FRONTEND_PORT for push/service-worker testing"
-  CIP_DEV_HTTP=1 npx vite --host --port $FRONTEND_PORT > /tmp/cip-frontend.log 2>&1 &
+  VITE_API_BASE=/api/v1 VITE_API_BASE_URL=/api/v1 CIP_DEV_HTTP=1 npx vite --host 0.0.0.0 --port $FRONTEND_PORT > /tmp/cip-frontend.log 2>&1 &
 else
-  npx vite --host --port $FRONTEND_PORT > /tmp/cip-frontend.log 2>&1 &
+  VITE_API_BASE=/api/v1 VITE_API_BASE_URL=/api/v1 npx vite --host 0.0.0.0 --port $FRONTEND_PORT > /tmp/cip-frontend.log 2>&1 &
 fi
 FRONTEND_PID=$!
 cd "$ROOT"
@@ -212,6 +212,11 @@ if [ "$DEV_HTTP" = true ] || [ ! -f "$ROOT/frontend/.devssl/key.pem" ] || [ ! -f
 fi
 echo "  Backend API:   http://localhost:$BACKEND_PORT/api/v1"
 echo "  Frontend:      $FRONTEND_SCHEME://localhost:$FRONTEND_PORT"
+LAN_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+if [ -n "$LAN_IP" ]; then
+  echo "  LAN frontend:  $FRONTEND_SCHEME://$LAN_IP:$FRONTEND_PORT"
+  echo "  LAN API proxy: $FRONTEND_SCHEME://$LAN_IP:$FRONTEND_PORT/api/v1"
+fi
 if [ "$FRONTEND_SCHEME" = "https" ]; then
   echo "                 (self-signed cert — service workers/push won't work here;"
   echo "                 rerun with --http for push/service-worker testing)"
