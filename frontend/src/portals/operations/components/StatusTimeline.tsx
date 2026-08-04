@@ -1,42 +1,6 @@
 import { Badge } from '../design';
 import type { StatusHistoryEntry } from '../types';
-
-export type StatusTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
-
-/**
- * Human label for a status code, shared by the header Badge and the
- * timeline (mirrors the list page convention: underscore -> space).
- */
-export function statusLabel(code: string | null | undefined): string {
-  if (!code) return '—';
-  return code.replace(/_/g, ' ');
-}
-
-/**
- * Badge tone per status code, matching the ReportListPage convention
- * (assigned/accepted/in_progress = info, resolved/verified = success,
- * closed = neutral, rejected/merged = warning, escalated = danger).
- */
-export function statusTone(code: string | null | undefined): StatusTone {
-  switch (code) {
-    case 'assigned':
-    case 'accepted':
-    case 'in_progress':
-      return 'info';
-    case 'resolved':
-    case 'verified':
-      return 'success';
-    case 'closed':
-      return 'neutral';
-    case 'rejected':
-    case 'merged':
-      return 'warning';
-    case 'escalated':
-      return 'danger';
-    default:
-      return 'neutral';
-  }
-}
+import { statusLabel, statusTone } from './statusMeta';
 
 /** Vertical lifecycle trail, oldest -> newest, as returned by the API. */
 export function StatusTimeline({ entries }: { entries: StatusHistoryEntry[] }) {
@@ -58,7 +22,9 @@ export function StatusTimeline({ entries }: { entries: StatusHistoryEntry[] }) {
             </span>
             <Badge tone={statusTone(entry.to_code)}>{statusLabel(entry.to_code)}</Badge>
           </p>
-          {entry.reason && <p className="mt-1 text-sm text-slate-600">{entry.reason}</p>}
+          {entry.reason && !isSystemReason(entry.reason) && (
+            <p className="mt-1 text-sm text-slate-600">{entry.reason}</p>
+          )}
           {entry.created_at && (
             <p className="mt-0.5 text-xs text-slate-500">
               {new Date(entry.created_at).toLocaleString()}
@@ -68,4 +34,12 @@ export function StatusTimeline({ entries }: { entries: StatusHistoryEntry[] }) {
       ))}
     </ol>
   );
+}
+
+/**
+ * System transitions (e.g. "workflow.transition:<uuid>") carry no
+ * human-readable reason — hide them instead of cluttering the timeline.
+ */
+function isSystemReason(reason: string): boolean {
+  return /^(workflow\.|job\.|system\.)/i.test(reason) || /^[0-9a-f]{8}-/i.test(reason);
 }

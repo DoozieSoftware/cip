@@ -4,7 +4,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { departmentApi } from '../api/operations';
-import { computeSlaLabel } from '../components/SlaChip';
+import { computeSlaLabel } from '../components/slaInfo';
 import type { DepartmentReportDetail } from '../types';
 import ReportDetailPage from './ReportDetailPage';
 
@@ -93,7 +93,9 @@ describe('ReportDetailPage', () => {
   it('shows an empty state when the citizen attached no evidence', async () => {
     renderPage(baseReport());
     expect(await screen.findByText('No evidence')).toBeInTheDocument();
-    expect(screen.getByText('No proof photos uploaded yet.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Upload proof photos after the field crew completes the work.'),
+    ).toBeInTheDocument();
   });
 
   it('renders evidence and proof media in separate galleries', async () => {
@@ -149,7 +151,7 @@ describe('ReportDetailPage', () => {
 
   it('shows the SLA chip when the department SLA is configured', async () => {
     renderPage(baseReport());
-    expect(await screen.findByText(/SLA: overdue by \d+h/)).toBeInTheDocument();
+    expect(await screen.findAllByText(/Overdue by/)).not.toHaveLength(0);
   });
 
   it('hides the proof upload control for terminal reports', async () => {
@@ -162,10 +164,10 @@ describe('ReportDetailPage', () => {
   it('requires a note before confirming progress, then passes it to the action', async () => {
     renderPage(baseReport({ current_status_code: 'in_progress' }));
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Progress report' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Add progress update' }));
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
 
-    const confirm = screen.getByRole('button', { name: 'Progress' });
+    const confirm = screen.getByRole('button', { name: 'Save update' });
     expect(confirm).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText('Note (required)'), {
@@ -186,7 +188,7 @@ describe('ReportDetailPage', () => {
   it('lets accept confirm instantly without a note', async () => {
     renderPage(baseReport());
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Accept report' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Accept assignment' }));
     const confirm = await screen.findByRole('button', { name: 'Accept' });
     expect(confirm).toBeEnabled();
     expect(screen.queryByLabelText('Note (required)')).toBeNull();
@@ -195,6 +197,16 @@ describe('ReportDetailPage', () => {
     await waitFor(() =>
       expect(departmentApi.action).toHaveBeenCalledWith(REPORT_ID, 'accept', undefined),
     );
+  });
+
+  it('only shows actions valid for the current workflow stage', async () => {
+    renderPage(baseReport({ current_status_code: 'in_progress' }));
+
+    expect(await screen.findByRole('button', { name: 'Add progress update' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mark as resolved' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Accept assignment' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start field work' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Close report' })).toBeNull();
   });
 
   it('uploads proof photos and refetches the report', async () => {
@@ -221,7 +233,7 @@ describe('computeSlaLabel', () => {
 
   it('reports full hours left while the deadline is ahead', () => {
     expect(computeSlaLabel('2026-08-01T09:00:00+05:30', 120, 'assigned', now)).toBe(
-      'SLA: overdue by 1h',
+      'Overdue by 1 hour',
     );
     expect(
       computeSlaLabel(
@@ -230,12 +242,12 @@ describe('computeSlaLabel', () => {
         'assigned',
         new Date('2026-08-01T09:30:00+05:30').getTime(),
       ),
-    ).toBe('SLA: 2h left');
+    ).toBe('Due in 2 hours');
   });
 
   it('reports overdue hours once the deadline has passed', () => {
     expect(computeSlaLabel('2026-08-01T07:00:00+05:30', 120, 'in_progress', now)).toBe(
-      'SLA: overdue by 3h',
+      'Overdue by 3 hours',
     );
   });
 

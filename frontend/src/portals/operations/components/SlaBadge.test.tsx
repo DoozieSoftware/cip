@@ -44,28 +44,42 @@ describe('slaInfo', () => {
 describe('SlaBadge', () => {
   it('renders nothing when the report carries no SLA data', () => {
     const { container } = render(
-      <SlaBadge report={{ created_at: null, department_sla_minutes: null }} />,
+      <SlaBadge
+        report={{ created_at: null, department_sla_minutes: null, current_status_code: null }}
+      />,
     );
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders "SLA overdue" for a report past its deadline', () => {
+  it('renders an overdue badge for a report past its deadline', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-01T12:00:00Z'));
     render(
-      <SlaBadge report={{ created_at: '2026-08-01T10:00:00Z', department_sla_minutes: 60 }} />,
+      <SlaBadge
+        report={{
+          created_at: '2026-08-01T10:00:00Z',
+          department_sla_minutes: 60,
+          current_status_code: 'assigned',
+        }}
+      />,
     );
-    expect(screen.getByText('SLA overdue')).toBeInTheDocument();
+    expect(screen.getByText(/Overdue by 1 hour/)).toBeInTheDocument();
     vi.useRealTimers();
   });
 
-  it('renders "On time" for a report inside its SLA window', () => {
+  it('renders a due badge for a report inside its SLA window', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-01T10:30:00Z'));
     render(
-      <SlaBadge report={{ created_at: '2026-08-01T10:00:00Z', department_sla_minutes: 60 }} />,
+      <SlaBadge
+        report={{
+          created_at: '2026-08-01T10:00:00Z',
+          department_sla_minutes: 60,
+          current_status_code: 'assigned',
+        }}
+      />,
     );
-    expect(screen.getByText('On time')).toBeInTheDocument();
+    expect(screen.getByText(/Due in 1 hour/)).toBeInTheDocument();
     vi.useRealTimers();
   });
 });

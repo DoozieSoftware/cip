@@ -31,7 +31,29 @@ class DepartmentReportRepository
     public const MAX_PER_PAGE = 500;
 
     /**
+     * Statuses that are actually in the department's hands and
+     * therefore visible in the operations portal. Reports sitting
+     * in the moderation/AI pipeline (`submitted`, `ai_processing`,
+     * `pending_moderator`) or rejected before dispatch are
+     * excluded — even if a `department_id` has been set on them
+     * (e.g. by a bulk reroute), they are not the officer's to act
+     * on yet. Terminal department states (closed/merged) stay
+     * visible as history.
+     */
+    private const IN_HAND_STATUSES = [
+        'assigned',
+        'accepted',
+        'in_progress',
+        'resolved',
+        'verified',
+        'closed',
+        'escalated',
+        'merged',
+    ];
+
+    /**
      * @param  array<string, mixed>  $filters
+     * @return LengthAwarePaginator<int, Report>
      */
     public function assignedTo(string $departmentId, array $filters = []): LengthAwarePaginator
     {
@@ -39,9 +61,11 @@ class DepartmentReportRepository
             ->where('department_id', $departmentId)
             ->with(['reportType', 'department', 'status', 'priority', 'location']);
 
+        $this->applyInHandScope($query);
         $this->applyFilters($query, $filters);
 
-        $perPage = (int) ($filters['per_page'] ?? 20);
+        $rawPerPage = $filters['per_page'] ?? 20;
+        $perPage = is_numeric($rawPerPage) ? (int) $rawPerPage : 20;
         $perPage = max(1, min(self::MAX_PER_PAGE, $perPage));
 
         return $query->orderByDesc('submitted_at')->paginate($perPage);
@@ -60,11 +84,12 @@ class DepartmentReportRepository
     }
 
     /**
-     * @param  array<string, mixed>  $filters
+     * @return array<string, array<int<0, max>>|int<0, max>>
      */
     public function dashboardCounts(string $departmentId): array
     {
         $base = Report::query()->where('department_id', $departmentId);
+        $base->whereHas('status', fn ($q) => $q->whereIn('code', self::IN_HAND_STATUSES));
 
         $open = (clone $base)->whereHas('status', fn ($q) => $q->where('is_terminal', false))->count();
         $dueToday = (clone $base)
@@ -79,7 +104,7 @@ class DepartmentReportRepository
         $byCategory = (clone $base)
             ->with('reportType')
             ->get()
-            ->groupBy(fn (Report $r) => $r->reportType?->code ?? 'uncategorized')
+            ->groupBy(fn (Report $r) => $r->reportType->code ?? 'uncategorized')
             ->map->count()
             ->all();
 
@@ -93,33 +118,52 @@ class DepartmentReportRepository
 
     /**
      * @param  array<string, mixed>  $filters
+     * @param  Builder<Report>  $query
      */
     private function applyFilters(Builder $query, array $filters): void
     {
         if (! empty($filters['status'])) {
             $query->whereHas('status', fn ($q) => $q->where('code', $filters['status']));
         }
+
         if (! empty($filters['priority'])) {
             $query->whereHas('priority', fn ($q) => $q->where('code', $filters['priority']));
         }
+
         if (! empty($filters['category'])) {
             $query->whereHas('reportType', fn ($q) => $q->where('code', $filters['category']));
         }
+
         if (! empty($filters['ward_id'])) {
             $query->whereHas('location', fn ($q) => $q->where('ward_id', $filters['ward_id']));
         }
+
         if (! empty($filters['date_from'])) {
             $query->where('submitted_at', '>=', $filters['date_from']);
         }
+
         if (! empty($filters['date_to'])) {
             $query->where('submitted_at', '<=', $filters['date_to']);
         }
-        if (! empty($filters['search'])) {
-            $term = '%' . $filters['search'] . '%';
+
+        if (! empty($filters['search']) && is_string($filters['search'])) {
+            $term = '%'.$filters['search'].'%';
             $query->where(function (Builder $q) use ($term): void {
                 $q->where('tracking_number', 'like', $term)
                     ->orWhere('title', 'like', $term);
             });
         }
+    }
+
+    /**
+     * Restrict the query to statuses the department actually owns
+     * (see IN_HAND_STATUSES) so the officer queue is not polluted
+     * by reports that are still in moderation or were rejected.
+     *
+     * @param  Builder<Report>  $query
+     */
+    private function applyInHandScope(Builder $query): void
+    {
+        $query->whereHas('status', fn ($q) => $q->whereIn('code', self::IN_HAND_STATUSES));
     }
 }
