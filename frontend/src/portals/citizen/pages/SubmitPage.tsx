@@ -220,8 +220,12 @@ export default function SubmitPage(): JSX.Element {
                   fieldErrors.type ? 'border-red-400' : '',
                 )}
               >
-                <span aria-hidden className="text-xl">
-                  {iconForCode(t.code)}
+                <span
+                  aria-hidden
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-slate-50"
+                  style={{ color: t.color ?? '#2563eb' }}
+                >
+                  <IssueIcon code={t.code} />
                 </span>
                 <span className="font-medium">{t.name}</span>
               </button>
@@ -432,16 +436,64 @@ export default function SubmitPage(): JSX.Element {
   );
 }
 
-function iconForCode(code: string): string {
-  const map: Record<string, string> = {
-    roads: '🛣️',
-    water_sewage: '💧',
-    electricity: '⚡',
-    garbage: '🗑️',
-    traffic_violation: '🚦',
-    illegal_parking: '🅿️',
-    encroachment: '🚧',
-    dead_animal: '🐾',
+function IssueIcon({ code }: { code: string }): JSX.Element {
+  const paths: Record<string, JSX.Element> = {
+    roads: (
+      <>
+        <path d="M7 21 10 3h4l3 18" />
+        <path d="M12 5v3M12 11v3M12 17v2" />
+      </>
+    ),
+    water_sewage: <path d="M12 3s6 6.2 6 11a6 6 0 0 1-12 0c0-4.8 6-11 6-11Z" />,
+    electricity: <path d="m13 2-8 11h6l-1 9 8-12h-6l1-8Z" />,
+    garbage: (
+      <>
+        <path d="M5 7h14M10 4h4l1 3H9l1-3ZM7 7l1 14h8l1-14" />
+        <path d="M10 11v6M14 11v6" />
+      </>
+    ),
+    traffic_violation: (
+      <>
+        <rect x="7" y="3" width="10" height="18" rx="2" />
+        <circle cx="12" cy="8" r="1.5" />
+        <circle cx="12" cy="12" r="1.5" />
+        <circle cx="12" cy="16" r="1.5" />
+      </>
+    ),
+    illegal_parking: (
+      <>
+        <rect x="4" y="4" width="16" height="16" rx="3" />
+        <path d="M10 17V7h3.5a3 3 0 0 1 0 6H10" />
+      </>
+    ),
+    encroachment: (
+      <>
+        <path d="M4 20h16M6 20V9l6-5 6 5v11M9 20v-5h6v5" />
+        <path d="M3 11h18" />
+      </>
+    ),
+    dead_animal: (
+      <>
+        <circle cx="8" cy="8" r="2" />
+        <circle cx="16" cy="8" r="2" />
+        <circle cx="6" cy="13" r="2" />
+        <circle cx="18" cy="13" r="2" />
+        <path d="M12 12c-3 0-5 2-5 4 0 2 2 3 5 3s5-1 5-3c0-2-2-4-5-4Z" />
+      </>
+    ),
   };
-  return map[code] ?? '📌';
+
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-5 w-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {paths[code] ?? <circle cx="12" cy="12" r="8" />}
+    </svg>
+  );
 }
