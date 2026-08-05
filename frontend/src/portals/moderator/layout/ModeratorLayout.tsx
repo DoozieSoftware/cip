@@ -20,7 +20,7 @@ const NAV: Array<{
   end?: boolean;
 }> = [
   { to: '/moderator', label: 'Dashboard', icon: IconGauge, end: true },
-  { to: '/moderator/queue', label: 'Queue', icon: IconClipboardCheck },
+  { to: '/moderator/queue', label: 'Review reports', icon: IconClipboardCheck },
   { to: '/moderator/duplicates', label: 'Duplicates', icon: IconLink },
   { to: '/moderator/fraud', label: 'Fraud', icon: IconFingerprint },
   { to: '/moderator/analytics', label: 'Analytics', icon: IconReportAnalytics },
@@ -57,18 +57,18 @@ export function ModeratorLayout(): JSX.Element {
       <aside
         className={cx(
           'fixed inset-y-0 left-0 z-40 flex w-64 transform flex-col transition-transform duration-200 lg:static lg:translate-x-0',
-          'bg-[#1d1d1b] text-white',
+          'border-r border-[#d9d7d0] bg-white text-[#1d1d1b]',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="border-b border-white/10 px-5 py-6">
+        <div className="border-b border-[#e4e2dc] px-5 py-6">
           <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-white text-[#1d1d1b]">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#1d1d1b] text-white">
               <IconBuildingCommunity className="h-5 w-5" stroke={1.7} />
             </span>
             <div className="min-w-0">
               <div className="truncate text-sm font-semibold tracking-[-0.01em]">CIP Karnataka</div>
-              <div className="truncate text-xs text-white/50">Moderator</div>
+              <div className="truncate text-xs text-[#777670]">Moderator</div>
             </div>
           </div>
         </div>
@@ -87,8 +87,8 @@ export function ModeratorLayout(): JSX.Element {
                       cx(
                         'flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors duration-150',
                         isActive
-                          ? 'bg-white text-[#1d1d1b]'
-                          : 'text-white/60 hover:bg-white/8 hover:text-white',
+                          ? 'bg-[#1d1d1b] text-white'
+                          : 'text-[#6f6e69] hover:bg-[#f3f2ed] hover:text-[#1d1d1b]',
                       )
                     }
                   >
@@ -101,20 +101,20 @@ export function ModeratorLayout(): JSX.Element {
           </ul>
         </nav>
 
-        <div className="border-t border-white/10 px-3 py-4">
+        <div className="border-t border-[#e4e2dc] px-3 py-4">
           <div className="mb-3 flex items-center gap-3 px-2">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-xs font-semibold">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#efeee9] text-xs font-semibold text-[#1d1d1b]">
               {initials}
             </span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-xs font-medium">{displayName}</div>
-              <div className="truncate text-[10px] text-white/40">Moderator</div>
+              <div className="truncate text-[10px] text-[#85847f]">Moderator</div>
             </div>
           </div>
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium text-white/60 transition-colors hover:bg-white/8 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium text-[#6f6e69] transition-colors hover:bg-[#f3f2ed] hover:text-[#1d1d1b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d1d1b]"
           >
             <IconLogout className="h-4 w-4" stroke={1.7} />
             Sign out

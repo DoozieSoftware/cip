@@ -95,7 +95,7 @@ export default function ReviewQueuePage() {
               Moderator · Queue
             </p>
             <h1 className="mt-2 text-2xl font-medium tracking-[-0.02em] text-[#1d1d1b]">
-              Review Queue
+              Reports awaiting review
             </h1>
             <p className="mt-1 text-sm text-[#6f6e69]">
               Reports awaiting moderator action. Use{' '}
@@ -179,11 +179,11 @@ export default function ReviewQueuePage() {
 
         {query.isLoading ? (
           <div className="flex items-center justify-center py-16" aria-live="polite">
-            <Spinner label="Loading queue" />
+            <Spinner label="Loading reports awaiting review" />
           </div>
         ) : query.isError || !query.data ? (
           <EmptyState
-            title="Could not load the queue"
+            title="Could not load reports awaiting review"
             description="The /api/v1/moderator/queue endpoint did not respond."
           />
         ) : query.data.data.length === 0 ? (

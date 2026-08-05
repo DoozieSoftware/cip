@@ -300,7 +300,7 @@ export default function ReportDetailPage() {
               className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#1d1d1b] px-5 text-sm text-white transition hover:bg-black"
             >
               <IconArrowLeft className="h-4 w-4" stroke={1.6} />
-              Back to queue
+              Back to review reports
             </Link>
           }
         />
@@ -317,7 +317,7 @@ export default function ReportDetailPage() {
             className="inline-flex min-h-[44px] items-center gap-2 text-sm text-[#6f6e69] transition hover:text-[#1d1d1b]"
           >
             <IconArrowLeft className="h-4 w-4" stroke={1.6} />
-            Back to queue
+            Back to review reports
           </Link>
           <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
@@ -693,7 +693,7 @@ export default function ReportDetailPage() {
         <Dialog
           open={escalateOpen}
           onClose={() => setEscalateOpen(false)}
-          title="Escalate to senior queue"
+          title="Escalate for senior review"
           size="md"
           footer={
             <>

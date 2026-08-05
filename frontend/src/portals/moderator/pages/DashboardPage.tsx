@@ -42,8 +42,7 @@ function StatCard({
 
 function QueueRow({ item, onSelect }: { item: ReportListItem; onSelect: (id: string) => void }) {
   const category = item.category?.name ?? 'Uncategorized';
-  const aiConfidence =
-    item.ai_confidence != null ? `${(item.ai_confidence * 100).toFixed(0)}%` : '—';
+  const aiConfidence = item.ai_confidence != null ? `${item.ai_confidence.toFixed(0)}%` : '—';
 
   return (
     <button
@@ -130,7 +129,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">Dashboard</h1>
-          <p className="mt-0.5 text-sm text-[#6f6e69]">Live moderator queue health</p>
+          <p className="mt-0.5 text-sm text-[#6f6e69]">Live report review workload</p>
         </div>
         <span className="hidden items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#6f6e69] shadow-sm ring-1 ring-black/5 sm:inline-flex">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
@@ -139,9 +138,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Queue stats */}
-      <section aria-label="Queue sizes">
+      <section aria-label="Pending review counts">
         <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
-          Queue sizes
+          Pending review
         </h2>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatCard label="Pending" value={stats.pending_moderator} icon={IconClock} />
@@ -189,11 +188,11 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Recent queue + Review CTA */}
-      <section aria-label="Recent queue">
+      {/* Recent reports + Review CTA */}
+      <section aria-label="Reports awaiting review">
         <div className="flex items-center justify-between">
           <h2 className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
-            Recent queue
+            Awaiting review
           </h2>
           <button
             type="button"
@@ -207,20 +206,23 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        <div className="mt-3 space-y-2">
+        <div className="mt-3 overflow-hidden rounded-xl bg-white p-2 shadow-sm ring-1 ring-black/5">
           {recentQueue && recentQueue.length > 0 ? (
-            recentQueue.map((item) => (
-              <QueueRow
-                key={item.id}
-                item={item}
-                onSelect={(id) => {
-                  void navigate(`/moderator/queue/${id}`);
-                }}
-              />
-            ))
+            <ul className="divide-y divide-[#e4e2dc]">
+              {recentQueue.map((item) => (
+                <li key={item.id}>
+                  <QueueRow
+                    item={item}
+                    onSelect={(id) => {
+                      void navigate(`/moderator/reports/${id}`);
+                    }}
+                  />
+                </li>
+              ))}
+            </ul>
           ) : (
-            <div className="rounded-xl bg-white p-6 text-center shadow-sm ring-1 ring-black/5">
-              <p className="text-sm text-[#6f6e69]">No items in the queue</p>
+            <div className="p-6 text-center">
+              <p className="text-sm text-[#6f6e69]">No reports are awaiting review</p>
             </div>
           )}
         </div>
@@ -234,7 +236,7 @@ export default function DashboardPage() {
             className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#2d2d2b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d1d1b] focus-visible:ring-offset-2 sm:w-auto"
           >
             <IconEye className="h-4 w-4" stroke={1.6} />
-            Review Queue
+            Review reports
           </button>
         </div>
       </section>

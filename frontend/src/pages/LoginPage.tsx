@@ -27,24 +27,78 @@ interface OtpResponse {
   expires_in?: number;
 }
 
-const DEMO_ACCOUNTS: { label: string; mobile: string; description: string; icon: typeof IconUsers }[] = [
-  { label: 'Citizen', mobile: '9999900001', description: 'Submit a new report, see notifications, track status.', icon: IconUsers },
-  { label: 'Moderator', mobile: '9999900002', description: 'Triage the AI-classified queue, merge duplicates, reject fraud.', icon: IconShieldCheck },
-  { label: 'Department Officer', mobile: '9999900003', description: 'Accept, progress, resolve assigned reports in the BBMP zone.', icon: IconClipboardList },
-  { label: 'Super Admin', mobile: '9999900004', description: 'Configure report types, security policies, feature flags, audit log.', icon: IconSettings },
+const DEMO_ACCOUNTS: {
+  label: string;
+  mobile: string;
+  description: string;
+  icon: typeof IconUsers;
+}[] = [
+  {
+    label: 'Citizen',
+    mobile: '9999900001',
+    description: 'Submit a new report, see notifications, track status.',
+    icon: IconUsers,
+  },
+  {
+    label: 'Moderator',
+    mobile: '9999900002',
+    description: 'Triage the AI-classified queue, merge duplicates, reject fraud.',
+    icon: IconShieldCheck,
+  },
+  {
+    label: 'Department Officer',
+    mobile: '9999900003',
+    description: 'Accept, progress, resolve assigned reports in the BBMP zone.',
+    icon: IconClipboardList,
+  },
+  {
+    label: 'Super Admin',
+    mobile: '9999900004',
+    description: 'Configure report types, security policies, feature flags, audit log.',
+    icon: IconSettings,
+  },
 ];
 
 export function LoginPage(): JSX.Element {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [authMode, setAuthMode] = useState<'otp' | 'password'>('otp');
   const [mobile, setMobile] = useState<string>('9999900001');
   const [otp, setOtp] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
 
   const [stage, setStage] = useState<'request' | 'verify'>('request');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [debugOtp, setDebugOtp] = useState<string | null>(null);
   const selectedAccount = DEMO_ACCOUNTS.find((acc) => acc.mobile === mobile) ?? null;
+
+  async function loginWithPassword(e: FormEvent): Promise<void> {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await apiRequest<
+        ApiEnvelope<{
+          token: { access_token: string; type: string; expires_at?: string };
+          refresh_token: string;
+          refresh_expires_at: string;
+          user: SessionUser;
+        }>
+      >('/auth/login', {
+        method: 'POST',
+        body: { mobile, password },
+      });
+      login(res.data.token.access_token, res.data.user);
+      const me = await apiRequest<ApiEnvelope<MeResponse>>('/auth/me');
+      login(res.data.token.access_token, { ...res.data.user, departments: me.data.departments });
+      void navigate(routeForRoles(me.data.roles), { replace: true });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Invalid mobile or password');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function requestOtp(e: FormEvent): Promise<void> {
     e.preventDefault();
@@ -72,7 +126,14 @@ export function LoginPage(): JSX.Element {
     setError(null);
     setLoading(true);
     try {
-      const res = await apiRequest<ApiEnvelope<{ token: { access_token: string; type: string; expires_at?: string }; refresh_token: string; refresh_expires_at: string; user: SessionUser }>>('/auth/verify-otp', {
+      const res = await apiRequest<
+        ApiEnvelope<{
+          token: { access_token: string; type: string; expires_at?: string };
+          refresh_token: string;
+          refresh_expires_at: string;
+          user: SessionUser;
+        }>
+      >('/auth/verify-otp', {
         method: 'POST',
         body: { mobile, code: otp },
       });
@@ -95,98 +156,208 @@ export function LoginPage(): JSX.Element {
           <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[#1d1d1b] text-white">
             <IconBuildingCommunity className="h-5 w-5" stroke={1.7} />
           </span>
-          <span className="text-sm font-semibold tracking-[-0.01em] text-[#1d1d1b]">CIP Karnataka</span>
+          <span className="text-sm font-semibold tracking-[-0.01em] text-[#1d1d1b]">
+            CIP Karnataka
+          </span>
         </Link>
 
         <div className="mt-10 grid flex-1 grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
           <section>
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#777670]">Citizen services</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#777670]">
+              Citizen services
+            </p>
             <h1 className="mt-3 text-3xl font-normal leading-[1.1] tracking-[-0.035em] text-[#1d1d1b] sm:text-4xl">
               Sign in to your account.
             </h1>
             <p className="mt-4 text-[15px] leading-6 text-[#6f6e69]">
-              Choose a demo role or enter your mobile number. The demo uses a one-time code printed in the response so you can sign in without a phone.
+              {authMode === 'otp'
+                ? 'Choose a demo role or enter your mobile number. The demo uses a one-time code printed in the response so you can sign in without a phone.'
+                : 'Staff accounts can use their registered mobile number and password.'}
             </p>
 
-            <form onSubmit={(e) => { e.preventDefault(); if (stage === 'request') { void requestOtp(e); } else { void verifyOtp(e); } }} className="mt-8 space-y-4">
-              <div>
-                <label htmlFor="mobile" className="text-sm font-medium text-[#1d1d1b]">Mobile number</label>
-                <input
-                  id="mobile"
-                  name="mobile"
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel-national"
-                  spellCheck={false}
-                  autoCorrect="off"
-                  value={mobile}
-                  onChange={(e) => setMobile(e.target.value)}
-                  onFocus={(e) => e.currentTarget.select()}
-                  placeholder="9999900001"
-                  pattern="[0-9]*"
-                  className="mt-2 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base shadow-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
-                  required
-                />
-              </div>
+            <div className="mt-8 grid grid-cols-2 rounded-xl border border-[#d0cec8] bg-[#e9e7e1] p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('otp');
+                  setError(null);
+                }}
+                className={`min-h-11 rounded-lg px-3 text-sm font-medium transition ${authMode === 'otp' ? 'bg-white text-[#1d1d1b] shadow-sm' : 'text-[#6f6e69] hover:text-[#1d1d1b]'}`}
+              >
+                Sign in with OTP
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('password');
+                  setError(null);
+                }}
+                className={`min-h-11 rounded-lg px-3 text-sm font-medium transition ${authMode === 'password' ? 'bg-white text-[#1d1d1b] shadow-sm' : 'text-[#6f6e69] hover:text-[#1d1d1b]'}`}
+              >
+                Staff password login
+              </button>
+            </div>
 
-              {stage === 'verify' && (
+            {authMode === 'otp' ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (stage === 'request') {
+                    void requestOtp(e);
+                  } else {
+                    void verifyOtp(e);
+                  }
+                }}
+                className="mt-4 space-y-4"
+              >
                 <div>
-                  <label htmlFor="otp" className="text-sm font-medium text-[#1d1d1b]">One-time code</label>
+                  <label htmlFor="mobile" className="text-sm font-medium text-[#1d1d1b]">
+                    Mobile number
+                  </label>
                   <input
-                    id="otp"
-                    name="otp"
-                    type="text"
+                    id="mobile"
+                    name="mobile"
+                    type="tel"
                     inputMode="numeric"
-                    autoComplete="one-time-code"
+                    autoComplete="tel-national"
                     spellCheck={false}
                     autoCorrect="off"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    placeholder="123456"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    onFocus={(e) => e.currentTarget.select()}
+                    placeholder="9999900001"
+                    pattern="[0-9]*"
                     className="mt-2 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base shadow-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
                     required
                   />
-                  {debugOtp && (
-                    <p className="mt-2 text-xs text-[#5a5955]">
-                      Demo code: <span className="font-mono text-[#1d1d1b]">{debugOtp}</span>
-                    </p>
-                  )}
                 </div>
-              )}
 
-              {error !== null && (
-                <p role="alert" className="rounded-xl bg-[#f6e6e6] px-4 py-3 text-sm text-[#9b2c2c]">{error}</p>
-              )}
+                {stage === 'verify' && (
+                  <div>
+                    <label htmlFor="otp" className="text-sm font-medium text-[#1d1d1b]">
+                      One-time code
+                    </label>
+                    <input
+                      id="otp"
+                      name="otp"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      spellCheck={false}
+                      autoCorrect="off"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      placeholder="123456"
+                      className="mt-2 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base shadow-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                      required
+                    />
+                    {debugOtp && (
+                      <p className="mt-2 text-xs text-[#5a5955]">
+                        Demo code: <span className="font-mono text-[#1d1d1b]">{debugOtp}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 text-sm font-medium text-white transition hover:bg-black disabled:opacity-50"
-              >
-                {loading ? 'Working…' : stage === 'request' ? 'Send code' : 'Verify and continue'}
-              </button>
+                {error !== null && (
+                  <p
+                    role="alert"
+                    className="rounded-xl bg-[#f6e6e6] px-4 py-3 text-sm text-[#9b2c2c]"
+                  >
+                    {error}
+                  </p>
+                )}
 
-              {stage === 'verify' && (
                 <button
-                  type="button"
-                  onClick={() => { setStage('request'); setError(null); }}
-                  className="w-full text-sm text-[#686762] hover:text-[#1d1d1b]"
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 text-sm font-medium text-white transition hover:bg-black disabled:opacity-50"
                 >
-                  ← Use a different number
+                  {loading ? 'Working…' : stage === 'request' ? 'Send code' : 'Verify and continue'}
                 </button>
-              )}
-            </form>
 
-            <div className="mt-8 border-t border-[#d9d7d0] pt-6">
-              <p className="text-xs text-[#777670]">
-                Staff accounts (moderator, department, super admin) can sign in with a password at the API level. This demo uses OTP for all roles.
-              </p>
-            </div>
+                {stage === 'verify' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStage('request');
+                      setError(null);
+                    }}
+                    className="w-full text-sm text-[#686762] hover:text-[#1d1d1b]"
+                  >
+                    ← Use a different number
+                  </button>
+                )}
+              </form>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  void loginWithPassword(e);
+                }}
+                className="mt-4 space-y-4"
+              >
+                <div>
+                  <label htmlFor="staff-mobile" className="text-sm font-medium text-[#1d1d1b]">
+                    Mobile number
+                  </label>
+                  <input
+                    id="staff-mobile"
+                    name="mobile"
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    spellCheck={false}
+                    autoCorrect="off"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    onFocus={(e) => e.currentTarget.select()}
+                    placeholder="9999900002"
+                    pattern="[0-9]*"
+                    className="mt-2 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base shadow-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="staff-password" className="text-sm font-medium text-[#1d1d1b]">
+                    Password
+                  </label>
+                  <input
+                    id="staff-password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="mt-2 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base shadow-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                    required
+                  />
+                </div>
+                {error !== null && (
+                  <p
+                    role="alert"
+                    className="rounded-xl bg-[#f6e6e6] px-4 py-3 text-sm text-[#9b2c2c]"
+                  >
+                    {error}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 text-sm font-medium text-white transition hover:bg-black disabled:opacity-50"
+                >
+                  {loading ? 'Working…' : 'Sign in'}
+                </button>
+              </form>
+            )}
           </section>
 
           <section>
-            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#85847f]">Demo accounts</p>
-            <h2 className="mt-3 text-lg font-medium tracking-[-0.015em] text-[#1d1d1b]">Choose a role</h2>
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#85847f]">
+              Demo accounts
+            </p>
+            <h2 className="mt-3 text-lg font-medium tracking-[-0.015em] text-[#1d1d1b]">
+              Choose a role
+            </h2>
             <ul className="mt-5 space-y-3">
               {DEMO_ACCOUNTS.map((acc) => {
                 const Icon = acc.icon;
@@ -195,7 +366,12 @@ export function LoginPage(): JSX.Element {
                   <li key={acc.mobile}>
                     <button
                       type="button"
-                      onClick={() => { setMobile(acc.mobile); setStage('request'); setError(null); }}
+                      onClick={() => {
+                        setMobile(acc.mobile);
+                        setStage('request');
+                        setAuthMode('otp');
+                        setError(null);
+                      }}
                       aria-pressed={isActive}
                       className={`group flex min-h-20 w-full items-center gap-4 rounded-2xl border p-5 text-left transition ${
                         isActive
@@ -203,8 +379,14 @@ export function LoginPage(): JSX.Element {
                           : 'border-[#d9d7d0] bg-white hover:border-[#1d1d1b]/60'
                       }`}
                     >
-                      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${isActive ? 'bg-[#1d1d1b] text-white' : 'bg-[#efeee9]'}`}>
-                        {isActive ? <IconCheck className="h-5 w-5" stroke={1.8} /> : <Icon className="h-5 w-5" stroke={1.7} />}
+                      <span
+                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${isActive ? 'bg-[#1d1d1b] text-white' : 'bg-[#efeee9]'}`}
+                      >
+                        {isActive ? (
+                          <IconCheck className="h-5 w-5" stroke={1.8} />
+                        ) : (
+                          <Icon className="h-5 w-5" stroke={1.7} />
+                        )}
                       </span>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
@@ -229,6 +411,7 @@ export function LoginPage(): JSX.Element {
 export function routeForRoles(roles: Role[]): string {
   if (roles.includes('super_admin') || roles.includes('system')) return '/admin';
   if (roles.includes('moderator') || roles.includes('auditor')) return '/moderator';
-  if (roles.includes('department_officer') || roles.includes('department_admin')) return '/operations';
+  if (roles.includes('department_officer') || roles.includes('department_admin'))
+    return '/operations';
   return '/citizen';
 }

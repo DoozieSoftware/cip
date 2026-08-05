@@ -133,7 +133,7 @@ export default function AnalyticsPage() {
       <header>
         <h1 className="text-xl font-semibold text-[#1d1d1b]">Moderator analytics</h1>
         <p className="text-sm text-[#6f6e69]">
-          Throughput, queue health, and AI agreement for the last 24 h.
+          Throughput, review workload, and AI agreement for the last 24 h.
         </p>
       </header>
 
@@ -181,7 +181,7 @@ export default function AnalyticsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Queue health</CardTitle>
+            <CardTitle>Review workload</CardTitle>
             <Badge tone={a.pending_moderator > 50 ? 'warning' : 'success'}>
               {a.pending_moderator} pending
             </Badge>

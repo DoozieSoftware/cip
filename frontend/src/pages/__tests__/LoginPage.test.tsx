@@ -36,13 +36,64 @@ describe('LoginPage', () => {
     apiRequestMock.mockReset();
   });
 
-  it('shows the OTP form with demo accounts visible', () => {
+  it('defaults to OTP mode with the demo accounts visible', () => {
     renderLoginPage();
 
+    expect(screen.getByRole('button', { name: 'Sign in with OTP' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Staff password login' })).toBeTruthy();
     expect(screen.getByLabelText('Mobile number')).toBeTruthy();
+    expect(screen.queryByLabelText('Password')).toBeNull();
     expect(screen.getByRole('button', { name: 'Send code' })).toBeTruthy();
     expect(screen.getByText('Citizen')).toBeTruthy();
     expect(screen.getByText('Super Admin')).toBeTruthy();
+  });
+
+  it('submits staff credentials to the password login endpoint', async () => {
+    apiRequestMock.mockImplementation((path: string) => {
+      if (path === '/auth/login') {
+        return Promise.resolve({
+          data: {
+            token: { access_token: 'staff-token', type: 'Bearer' },
+            refresh_token: 'refresh',
+            refresh_expires_at: '2026-01-01T00:00:00Z',
+            user: { id: 'u1', mobile: '9999900002', roles: ['moderator'] },
+          },
+        });
+      }
+      if (path === '/auth/me') {
+        return Promise.resolve({ data: { id: 'u1', roles: ['moderator'] } });
+      }
+      return Promise.reject(new Error(`unexpected path ${path}`));
+    });
+
+    renderLoginPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Staff password login' }));
+    fireEvent.change(screen.getByLabelText('Mobile number'), { target: { value: '9999900002' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Correct-Horse9' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    await waitFor(() => {
+      expect(apiRequestMock).toHaveBeenCalledWith('/auth/login', {
+        method: 'POST',
+        body: { mobile: '9999900002', password: 'Correct-Horse9' },
+      });
+    });
+  });
+
+  it('shows the server error when staff password login fails', async () => {
+    const { ApiError } = await import('../../auth/api');
+    apiRequestMock.mockImplementation(() =>
+      Promise.reject(new ApiError(401, 'UNAUTHORIZED', 'Invalid mobile or password.', null)),
+    );
+
+    renderLoginPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Staff password login' }));
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'wrong' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Invalid mobile or password.')).toBeTruthy();
+    });
   });
 
   it('highlights the selected demo account card when clicked', () => {
@@ -94,7 +145,9 @@ describe('LoginPage', () => {
 
   it('shows error message when OTP request fails', async () => {
     const { ApiError } = await import('../../auth/api');
-    apiRequestMock.mockImplementation(() => Promise.reject(new ApiError(400, 'BAD_REQUEST', 'Failed to send OTP', null)));
+    apiRequestMock.mockImplementation(() =>
+      Promise.reject(new ApiError(400, 'BAD_REQUEST', 'Failed to send OTP', null)),
+    );
 
     renderLoginPage();
     fireEvent.change(screen.getByLabelText('Mobile number'), { target: { value: '9999900001' } });

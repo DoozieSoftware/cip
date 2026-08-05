@@ -20,14 +20,14 @@ export default function FraudQueuePage() {
   if (q.isLoading) {
     return (
       <div className="flex items-center justify-center py-20" aria-live="polite">
-        <Spinner label="Loading fraud queue" />
+        <Spinner label="Loading fraud review" />
       </div>
     );
   }
   if (q.isError || !q.data) {
     return (
       <EmptyState
-        title="Could not load the fraud queue"
+        title="Could not load fraud review"
         description="The /moderator/fraud endpoint did not respond."
       />
     );
@@ -35,7 +35,7 @@ export default function FraudQueuePage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-xl font-semibold text-[#1d1d1b]">Fraud queue</h1>
+        <h1 className="text-xl font-semibold text-[#1d1d1b]">Fraud review</h1>
         <p className="text-sm text-[#6f6e69]">
           Reports flagged as likely spam, repeat offenders, or synthetic media. Reject the clear
           cases; escalate the ambiguous ones.
