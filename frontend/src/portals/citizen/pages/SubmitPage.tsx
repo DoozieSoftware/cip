@@ -37,6 +37,39 @@ function currentStep(typeId: string, location: CapturedLocation | null): Step {
   return 'Evidence';
 }
 
+const CATEGORY_PRIORITY: Record<string, number> = {
+  garbage: 1,
+  roads: 2,
+  electricity: 3,
+  water_sewage: 4,
+  sewage: 5,
+  drainage: 5,
+  stray_animal: 6,
+  dead_animal: 6,
+  tree: 7,
+  vegetation: 7,
+  air_pollution: 8,
+  burning: 8,
+  noise_pollution: 9,
+  encroachment: 10,
+  illegal_construction: 10,
+  public_property: 11,
+  traffic_signal: 12,
+  traffic_signage: 12,
+  traffic_violation: 12,
+  illegal_parking: 12,
+  other: 99,
+};
+
+function sortByPracticalOrder(types: ReportType[]): ReportType[] {
+  return [...types].sort((a, b) => {
+    const pa = CATEGORY_PRIORITY[a.code] ?? 50;
+    const pb = CATEGORY_PRIORITY[b.code] ?? 50;
+    if (pa !== pb) return pa - pb;
+    return a.name.localeCompare(b.name);
+  });
+}
+
 export default function SubmitPage(): JSX.Element {
   const navigate = useNavigate();
   const toast = useToast();
@@ -230,7 +263,7 @@ export default function SubmitPage(): JSX.Element {
 
   const selectedType: ReportType | undefined = types.data?.find((t) => t.id === typeId);
   const evidenceRequired = Boolean(selectedType?.requires_photo || selectedType?.requires_video);
-  const reportTypes = types.data ?? [];
+  const reportTypes = sortByPracticalOrder(types.data ?? []);
   const activeStep = currentStep(typeId, location);
   const stepIndex = FORM_STEPS.indexOf(currentViewStep);
 
@@ -248,9 +281,9 @@ export default function SubmitPage(): JSX.Element {
   }, [selectedType?.requires_video]);
 
   return (
-    <form onSubmit={(e) => void onSubmit(e)} className="min-h-screen bg-slate-50 pb-32">
+    <form onSubmit={(e) => void onSubmit(e)} className="min-h-screen bg-[#f3f2ed] pb-32">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-[#d9d7d0] bg-white shadow-sm">
+      <header className="sticky top-0 z-40 border-b border-[#d9d7d0] bg-[#f3f2ed]">
         <div className="mx-auto max-w-3xl px-4">
           <div className="flex items-center gap-3 py-3">
             <button
@@ -306,7 +339,11 @@ export default function SubmitPage(): JSX.Element {
                   <span
                     className={cx(
                       'hidden text-xs font-medium sm:block',
-                      isActive ? 'text-[#1d1d1b]' : isComplete ? 'text-[#1d1d1b]' : 'text-[#85847f]',
+                      isActive
+                        ? 'text-[#1d1d1b]'
+                        : isComplete
+                          ? 'text-[#1d1d1b]'
+                          : 'text-[#85847f]',
                     )}
                   >
                     {step}
@@ -319,44 +356,44 @@ export default function SubmitPage(): JSX.Element {
       </header>
 
       {/* Content */}
-      <div className="mx-auto max-w-3xl px-4 pt-6">
+      <div className="mx-auto max-w-3xl px-4 pt-6 space-y-4">
         {/* Step 1: Category Selection */}
         {currentViewStep === 'Category' && (
           <section className="space-y-4">
-            <div>
-              <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">Report Category</h2>
+            <div className="rounded-xl bg-white p-4">
+              <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">
+                Report Category
+              </h2>
               <p className="mt-1 text-sm text-[#6f6e69]">
                 Select the category that best describes the civic issue you wish to report.
               </p>
             </div>
 
             {types.isLoading ? (
-              <div className="flex items-center justify-center rounded-xl bg-white p-12 shadow-sm ring-1 ring-slate-200">
+              <div className="rounded-xl bg-white p-12 flex items-center justify-center">
                 <Spinner label="Loading categories" />
               </div>
             ) : types.isError ? (
-              <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <div role="alert" className="rounded-xl bg-white p-4">
                 <p className="text-sm font-medium text-red-800">
                   Could not load categories. Your session may have expired. Please log in again.
                 </p>
               </div>
             ) : reportTypes.length === 0 ? (
-              <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <div role="alert" className="rounded-xl bg-white p-4">
                 <p className="text-sm font-medium text-amber-800">
                   No active report categories are available. Please contact an administrator.
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="rounded-xl bg-white divide-y divide-[#e4e2dc]">
                 {reportTypes.map((t) => (
                   <label
                     key={t.id}
                     className={cx(
-                      'flex cursor-pointer items-center gap-4 rounded-xl bg-white p-4 shadow-sm ring-1 transition',
-                      typeId === t.id
-                        ? 'ring-2 ring-[#1d1d1b] shadow-md'
-                        : 'ring-slate-200 hover:ring-slate-300',
-                      fieldErrors.type && !typeId ? 'ring-2 ring-red-400 bg-red-50' : '',
+                      'flex cursor-pointer items-center gap-4 p-4 transition',
+                      typeId === t.id ? 'bg-[#efeee9]' : 'hover:bg-[#faf9f6]',
+                      fieldErrors.type && !typeId ? 'bg-red-50' : '',
                     )}
                   >
                     <input
@@ -385,8 +422,8 @@ export default function SubmitPage(): JSX.Element {
                       </span>
                     </span>
                     {typeId === t.id && (
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white">
-                        <IconCheck className="h-3.5 w-3.5 text-[#1d1d1b]" stroke={1.8} />
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1d1d1b]">
+                        <IconCheck className="h-3.5 w-3.5 text-white" stroke={1.8} />
                       </span>
                     )}
                   </label>
@@ -402,7 +439,7 @@ export default function SubmitPage(): JSX.Element {
             <button
               type="button"
               onClick={handleCategoryNext}
-              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#1d1d1b] px-6 text-base font-medium text-white shadow-sm transition hover:bg-black active:scale-[0.98]"
+              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
             >
               Continue
               <IconArrowRight className="h-4 w-4" stroke={1.6} />
@@ -413,14 +450,16 @@ export default function SubmitPage(): JSX.Element {
         {/* Step 2: Issue Details */}
         {currentViewStep === 'Details' && (
           <section className="space-y-4">
-            <div>
-              <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">Issue Details</h2>
+            <div className="rounded-xl bg-white p-4">
+              <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">
+                Issue Details
+              </h2>
               <p className="mt-1 text-sm text-[#6f6e69]">
                 Provide a clear description of the issue to help officials address it promptly.
               </p>
             </div>
 
-            <div className="space-y-4 rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <div className="rounded-xl bg-white p-4 space-y-4">
               <div>
                 <label htmlFor="report-title" className="text-sm font-medium text-[#1d1d1b]">
                   Report Title <span className="text-red-500">*</span>
@@ -436,7 +475,7 @@ export default function SubmitPage(): JSX.Element {
                   aria-invalid={fieldErrors.title ? true : undefined}
                   aria-describedby={fieldErrors.title ? 'title-error' : undefined}
                   className={cx(
-                    'mt-2 block w-full rounded-lg border border-slate-300 bg-white px-4 py-3.5 min-h-12 text-base placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]',
+                    'mt-2 block w-full rounded-lg border border-[#d8d6cf] bg-[#faf9f6] px-4 py-3.5 min-h-12 text-base placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]',
                     fieldErrors.title ? 'border-red-400 bg-red-50' : '',
                   )}
                   required
@@ -468,7 +507,7 @@ export default function SubmitPage(): JSX.Element {
                   aria-invalid={fieldErrors.description ? true : undefined}
                   aria-describedby={fieldErrors.description ? 'desc-error' : undefined}
                   className={cx(
-                    'mt-2 block w-full resize-y rounded-lg border border-slate-300 bg-white px-4 py-3.5 min-h-24 text-base placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]',
+                    'mt-2 block w-full resize-y rounded-lg border border-[#d8d6cf] bg-[#faf9f6] px-4 py-3.5 min-h-24 text-base placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]',
                     fieldErrors.description ? 'border-red-400 bg-red-50' : '',
                   )}
                   required
@@ -485,7 +524,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => goToStep('Category')}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 text-base font-medium text-[#1d1d1b] shadow-sm transition hover:bg-slate-50 active:scale-[0.98]"
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[#1d1d1b] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconArrowLeft className="h-4 w-4" stroke={1.6} />
                 Back
@@ -493,7 +532,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={handleDetailsNext}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-xl bg-[#1d1d1b] px-6 text-base font-medium text-white shadow-sm transition hover:bg-black active:scale-[0.98]"
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
               >
                 Continue
                 <IconArrowRight className="h-4 w-4" stroke={1.6} />
@@ -502,18 +541,20 @@ export default function SubmitPage(): JSX.Element {
           </section>
         )}
 
-        {/* Step 3: Location Verification */}
+         {/* Step 3: Location Verification */}
         {currentViewStep === 'Location' && (
           <section className="space-y-4">
-            <div>
-              <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">Location Verification</h2>
+            <div className="rounded-xl bg-white p-4">
+              <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">
+                Location Verification
+              </h2>
               <p className="mt-1 text-sm text-[#6f6e69]">
                 Your precise location is required to route this report to the correct department.
               </p>
             </div>
 
             {/* Privacy notice */}
-            <div className="flex items-start gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+            <div className="rounded-xl bg-white p-4 flex items-start gap-3">
               <IconShield className="mt-0.5 h-5 w-5 shrink-0 text-[#6f6e69]" stroke={1.6} />
               <p className="text-sm leading-relaxed text-[#6f6e69]">
                 <strong className="font-medium text-[#1d1d1b]">Privacy notice:</strong> Your GPS
@@ -522,7 +563,7 @@ export default function SubmitPage(): JSX.Element {
             </div>
 
             {/* GPS capture */}
-            <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <div className="rounded-xl bg-white p-4">
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#efeee9]">
                   <IconMapPin className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
@@ -542,7 +583,7 @@ export default function SubmitPage(): JSX.Element {
             ) : null}
 
             {location !== null ? (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <div className="rounded-xl bg-emerald-50 p-4 ring-1 ring-emerald-200">
                 <div className="flex items-start gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500">
                     <IconCheck className="h-5 w-5 text-white" stroke={1.8} />
@@ -571,7 +612,7 @@ export default function SubmitPage(): JSX.Element {
               </div>
             ) : null}
 
-            <div>
+            <div className="rounded-xl bg-white p-4">
               <label htmlFor="report-address" className="text-sm font-medium text-[#1d1d1b]">
                 Nearest Landmark or Address
                 <span className="text-[#85847f] font-normal"> (optional)</span>
@@ -584,7 +625,7 @@ export default function SubmitPage(): JSX.Element {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="e.g. Near BESCOM office, 8th Main Road"
-                className="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-4 py-3.5 min-h-12 text-base placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+                className="mt-2 block w-full rounded-lg border border-[#d8d6cf] bg-[#faf9f6] px-4 py-3.5 min-h-12 text-base placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
               />
             </div>
 
@@ -592,7 +633,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => goToStep('Details')}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 text-base font-medium text-[#1d1d1b] shadow-sm transition hover:bg-slate-50 active:scale-[0.98]"
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[#1d1d1b] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconArrowLeft className="h-4 w-4" stroke={1.6} />
                 Back
@@ -600,7 +641,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={handleLocationNext}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-xl bg-[#1d1d1b] px-6 text-base font-medium text-white shadow-sm transition hover:bg-black active:scale-[0.98]"
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
               >
                 Continue
                 <IconArrowRight className="h-4 w-4" stroke={1.6} />
@@ -609,35 +650,41 @@ export default function SubmitPage(): JSX.Element {
           </section>
         )}
 
-        {/* Step 4: Evidence Upload */}
+         {/* Step 4: Evidence Upload */}
         {currentViewStep === 'Evidence' && (
           <section className="space-y-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">Attach Evidence</h2>
-                <p className="mt-1 text-sm text-[#6f6e69]">
-                  Up to 5 photos and 1 short video (3–5 seconds). Max 25 MB per file.
-                </p>
+            <div className="rounded-xl bg-white p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">
+                    Attach Evidence
+                  </h2>
+                  <p className="mt-1 text-sm text-[#6f6e69]">
+                    Up to 5 photos and 1 short video (3–5 seconds). Max 25 MB per file.
+                  </p>
+                </div>
+                <span
+                  className={cx(
+                    'shrink-0 rounded-full px-3 py-1 text-xs font-semibold',
+                    evidenceRequired ? 'bg-red-100 text-red-700' : 'bg-[#efeee9] text-[#6f6e69]',
+                  )}
+                >
+                  {evidenceRequired ? 'Required' : 'Optional'}
+                </span>
               </div>
-              <span
-                className={cx(
-                  'shrink-0 rounded-full px-3 py-1 text-xs font-semibold',
-                  evidenceRequired ? 'bg-red-100 text-red-700' : 'bg-[#efeee9] text-[#6f6e69]',
-                )}
-              >
-                {evidenceRequired ? 'Required' : 'Optional'}
-              </span>
             </div>
 
             {/* Safety advisory */}
-            <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <IconAlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" stroke={1.6} />
-              <div className="text-sm leading-relaxed text-amber-800">
-                <p className="font-semibold text-amber-900">Safety First</p>
-                <p className="mt-0.5">
-                  Never capture evidence while operating a vehicle. Pull over to a safe location
-                  first.
-                </p>
+            <div className="rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200">
+              <div className="flex items-start gap-3">
+                <IconAlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" stroke={1.6} />
+                <div className="text-sm leading-relaxed text-amber-800">
+                  <p className="font-semibold text-amber-900">Safety First</p>
+                  <p className="mt-0.5">
+                    Never capture evidence while operating a vehicle. Pull over to a safe location
+                    first.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -648,7 +695,7 @@ export default function SubmitPage(): JSX.Element {
             ) : null}
 
             {/* Camera controls */}
-            <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 space-y-4">
+            <div className="rounded-xl bg-white p-4 space-y-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#efeee9]">
                   <IconCamera className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
@@ -662,7 +709,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => setShowVideo((v) => !v)}
-                className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-[#1d1d1b] transition hover:bg-slate-50 active:scale-[0.98]"
+                className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-4 text-sm font-medium text-[#1d1d1b] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconCamera className="h-4 w-4" stroke={1.6} />
                 {showVideo
@@ -676,7 +723,7 @@ export default function SubmitPage(): JSX.Element {
 
             {/* File previews */}
             {files.length > 0 ? (
-              <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+              <div className="rounded-xl bg-white p-4">
                 <div className="flex items-center gap-2 mb-4">
                   <IconUpload className="h-4 w-4 text-[#6f6e69]" stroke={1.6} />
                   <p className="text-sm font-medium text-[#1d1d1b]">
@@ -686,7 +733,7 @@ export default function SubmitPage(): JSX.Element {
                 <div className="grid grid-cols-3 gap-2">
                   {files.map((f, i) => (
                     <div key={i} className="relative">
-                      <div className="aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                      <div className="aspect-square overflow-hidden rounded-lg border border-[#e4e2dc] bg-[#efeee9]">
                         {f.type.startsWith('image/') ? (
                           <img
                             src={URL.createObjectURL(f)}
@@ -695,7 +742,7 @@ export default function SubmitPage(): JSX.Element {
                             {...evidencePreviewHandlers()}
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-slate-100">
+                          <div className="flex h-full w-full items-center justify-center bg-[#efeee9]">
                             <IconCamera className="h-8 w-8 text-[#85847f]" stroke={1.6} />
                           </div>
                         )}
@@ -703,7 +750,7 @@ export default function SubmitPage(): JSX.Element {
                       <button
                         type="button"
                         onClick={() => removeFile(i)}
-                        className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[#1d1d1b] text-xs font-medium text-white shadow-sm transition hover:bg-red-600"
+                        className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[#1d1d1b] text-xs font-medium text-white transition hover:bg-red-600"
                         aria-label={`Remove ${f.name}`}
                       >
                         ×
@@ -718,7 +765,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => goToStep('Location')}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 text-base font-medium text-[#1d1d1b] shadow-sm transition hover:bg-slate-50 active:scale-[0.98]"
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[#1d1d1b] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconArrowLeft className="h-4 w-4" stroke={1.6} />
                 Back
@@ -726,7 +773,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={handleEvidenceNext}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-xl bg-[#1d1d1b] px-6 text-base font-medium text-white shadow-sm transition hover:bg-black active:scale-[0.98]"
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
               >
                 Review
                 <IconArrowRight className="h-4 w-4" stroke={1.6} />
@@ -735,19 +782,21 @@ export default function SubmitPage(): JSX.Element {
           </section>
         )}
 
-        {/* Step 5: Review & Submit */}
+         {/* Step 5: Review & Submit */}
         {currentViewStep === 'Review' && (
           <section className="space-y-4">
-            <div>
-              <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">Review Your Report</h2>
+            <div className="rounded-xl bg-white p-4">
+              <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">
+                Review Your Report
+              </h2>
               <p className="mt-1 text-sm text-[#6f6e69]">
                 Please review all details before submitting your official report.
               </p>
             </div>
 
             {/* Review cards */}
-            <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-              <div className="flex items-center justify-between border-b border-[#e4e2dc] p-4">
+            <div className="rounded-xl bg-white divide-y divide-[#e4e2dc]">
+              <div className="flex items-center justify-between p-4">
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
                     Category
@@ -766,7 +815,7 @@ export default function SubmitPage(): JSX.Element {
                 </button>
               </div>
 
-              <div className="flex items-center justify-between border-b border-[#e4e2dc] p-4">
+              <div className="flex items-center justify-between p-4">
                 <div className="flex-1 min-w-0">
                   <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
                     Title
@@ -783,7 +832,7 @@ export default function SubmitPage(): JSX.Element {
                 </button>
               </div>
 
-              <div className="border-b border-[#e4e2dc] p-4">
+              <div className="p-4">
                 <div className="flex items-start justify-between">
                   <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
                     Description
@@ -800,15 +849,13 @@ export default function SubmitPage(): JSX.Element {
                 <p className="mt-1 text-sm text-[#6f6e69] whitespace-pre-wrap">{description}</p>
               </div>
 
-              <div className="flex items-center justify-between border-b border-[#e4e2dc] p-4">
+              <div className="flex items-center justify-between p-4">
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
                     Location
                   </p>
                   <p className="mt-1 text-sm font-medium text-[#1d1d1b]">
-                    {location
-                      ? (placeName || address || 'Location captured')
-                      : 'Not captured'}
+                    {location ? placeName || address || 'Location captured' : 'Not captured'}
                   </p>
                 </div>
                 <button
@@ -843,16 +890,19 @@ export default function SubmitPage(): JSX.Element {
 
             {/* Error summary */}
             {error !== null ? (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <div className="rounded-xl bg-red-50 p-4 ring-1 ring-red-200">
                 <div className="flex items-start gap-3">
-                  <IconAlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" stroke={1.6} />
+                  <IconAlertTriangle
+                    className="mt-0.5 h-5 w-5 shrink-0 text-red-500"
+                    stroke={1.6}
+                  />
                   <p className="text-sm font-medium text-red-800">{error}</p>
                 </div>
               </div>
             ) : null}
 
             {/* Submit section */}
-            <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 space-y-4">
+            <div className="rounded-xl bg-white p-4 space-y-4">
               <p className="text-center text-sm text-[#6f6e69]">
                 By submitting, you confirm the information is accurate to the best of your
                 knowledge.
@@ -860,7 +910,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-xl bg-[#1d1d1b] px-6 text-base font-medium text-white shadow-sm transition hover:bg-black active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-400"
+                className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#85847f]"
               >
                 <IconFileText className="h-5 w-5" stroke={1.6} />
                 {submitting ? 'Submitting…' : 'File Report'}
@@ -870,7 +920,7 @@ export default function SubmitPage(): JSX.Element {
             <button
               type="button"
               onClick={() => goToStep('Evidence')}
-              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 text-base font-medium text-[#1d1d1b] shadow-sm transition hover:bg-slate-50 active:scale-[0.98]"
+              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[#1d1d1b] transition hover:bg-white active:scale-[0.98]"
             >
               <IconArrowLeft className="h-4 w-4" stroke={1.6} />
               Back to Evidence

@@ -5,22 +5,20 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-  Spinner,
-  EmptyState,
-  Select,
-  Badge,
-} from '../design';
+  IconMap,
+  IconMapPin,
+  IconFilter,
+  IconX,
+  IconArrowRight,
+  IconAlertCircle,
+  IconCategory,
+  IconCalendar,
+} from '@tabler/icons-react';
+import { Spinner, Select, Badge } from '../design';
 import { departmentApi, type ReportListFilters } from '../api/operations';
 import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 import type { DepartmentReportListItem } from '../types';
 
-// Default Leaflet marker icons are not bundled by
-// react-leaflet out of the box; substitute with the
-// CDN-hosted PNGs so markers appear on the map.
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -69,7 +67,6 @@ function statusTone(
   }
 }
 
-/** Heuristic: seeders sometimes store the lat/lng string as the address. */
 function looksLikeCoords(address: string): boolean {
   return /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(address.trim());
 }
@@ -190,8 +187,6 @@ export default function GisMapPage() {
     setSelectedId(null);
   }, [filters]);
 
-  // Compute a sensible initial center: average of in-state points,
-  // or Bengaluru (BBMP) if no points.
   const center: [number, number] = useMemo(() => {
     if (points.length === 0) return BENGALURU_CENTER;
     const sum = points.reduce((acc, p) => ({ lat: acc.lat + p.lat, lng: acc.lng + p.lng }), {
@@ -208,40 +203,54 @@ export default function GisMapPage() {
       </div>
     );
   }
+
   if (error) {
     return (
-      <EmptyState
-        title="Could not load reports"
-        description="The reports endpoint did not respond."
-        action={
-          <button
-            type="button"
-            onClick={() => {
-              void refetch();
-            }}
-            className="text-sm font-medium text-emerald-600 hover:underline"
-          >
-            Retry
-          </button>
-        }
-      />
+      <div className="rounded-xl bg-white p-12 text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+          <IconAlertCircle className="h-6 w-6 text-red-500" stroke={1.6} />
+        </div>
+        <h3 className="text-base font-semibold text-[#1d1d1b]">Could not load reports</h3>
+        <p className="mt-1 text-sm text-[#6f6e69]">The reports endpoint did not respond.</p>
+        <button
+          type="button"
+          onClick={() => {
+            void refetch();
+          }}
+          className="mt-4 text-sm font-medium text-[#1d1d1b] underline underline-offset-2 hover:text-[#6f6e69]"
+        >
+          Retry
+        </button>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-900">GIS map</h1>
-        <p className="text-sm text-slate-500">
-          {points.length} report{points.length === 1 ? '' : 's'} on the map
-        </p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1d1d1b]">
+            <IconMap className="h-5 w-5 text-white" stroke={1.6} />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold text-[#1d1d1b]">GIS map</h1>
+            <p className="text-xs text-[#85847f]">Geospatial view of department reports</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#6f6e69] shadow-sm ring-1 ring-black/5">
+          <IconMapPin className="h-3.5 w-3.5" stroke={1.6} />
+          {points.length} report{points.length === 1 ? '' : 's'} on map
+        </div>
       </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardBody className="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="flex items-center gap-2 mb-3">
+          <IconFilter className="h-4 w-4 text-[#85847f]" stroke={1.6} />
+          <span className="text-xs font-medium uppercase tracking-wide text-[#85847f]">
+            Filters
+          </span>
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <Select
             label="Status"
             name="status"
@@ -249,106 +258,102 @@ export default function GisMapPage() {
             onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
             options={STATUS_OPTIONS}
           />
-        </CardBody>
-      </Card>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardBody className="p-0">
-            <div className="h-[520px] w-full overflow-hidden rounded-b-md">
-              <MapContainer
-                center={center}
-                zoom={12}
-                minZoom={7}
-                maxBounds={KARNATAKA_BOUNDS}
-                maxBoundsViscosity={1}
-                style={{ height: '100%', width: '100%' }}
-                aria-label="Department reports on a map"
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                {clusters.map((cluster) => (
-                  <Marker
-                    key={cluster.id}
-                    position={[cluster.lat, cluster.lng]}
-                    icon={clusterIcon(cluster.reports.length)}
-                    eventHandlers={{
-                      click: () => {
-                        if (cluster.reports.length === 1) {
-                          setSelectedId(cluster.reports[0].id);
-                        }
-                      },
-                    }}
-                  >
-                    <Popup>
-                      <div className="max-w-64 space-y-2 text-xs">
-                        <p className="font-semibold text-slate-900">
-                          {cluster.reports.length} report
-                          {cluster.reports.length === 1 ? '' : 's'} in this area
+        <div className="rounded-xl bg-white p-0 shadow-sm ring-1 ring-black/5 lg:col-span-2 overflow-hidden">
+          <div className="h-[520px] w-full">
+            <MapContainer
+              center={center}
+              zoom={12}
+              minZoom={7}
+              maxBounds={KARNATAKA_BOUNDS}
+              maxBoundsViscosity={1}
+              style={{ height: '100%', width: '100%' }}
+              aria-label="Department reports on a map"
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {clusters.map((cluster) => (
+                <Marker
+                  key={cluster.id}
+                  position={[cluster.lat, cluster.lng]}
+                  icon={clusterIcon(cluster.reports.length)}
+                  eventHandlers={{
+                    click: () => {
+                      if (cluster.reports.length === 1) {
+                        setSelectedId(cluster.reports[0].id);
+                      }
+                    },
+                  }}
+                >
+                  <Popup>
+                    <div className="max-w-64 space-y-2 text-xs">
+                      <p className="font-semibold text-[#1d1d1b]">
+                        {cluster.reports.length} report
+                        {cluster.reports.length === 1 ? '' : 's'} in this area
+                      </p>
+                      {cluster.reports.slice(0, 5).map((report) => (
+                        <Link
+                          key={report.id}
+                          to={`/operations/reports/${report.id}`}
+                          className="block rounded-md p-1 text-[#6f6e69] hover:bg-[#f3f2ed]"
+                        >
+                          <span className="block font-mono font-semibold text-[#1d1d1b]">
+                            {report.tracking_number}
+                          </span>
+                          <span className="block truncate">{report.title}</span>
+                        </Link>
+                      ))}
+                      {cluster.reports.length > 5 && (
+                        <p className="text-[#85847f]">
+                          + {cluster.reports.length - 5} more reports
                         </p>
-                        {cluster.reports.slice(0, 5).map((report) => (
-                          <Link
-                            key={report.id}
-                            to={`/operations/reports/${report.id}`}
-                            className="block rounded-md p-1 text-slate-700 hover:bg-slate-100"
-                          >
-                            <span className="block font-mono font-semibold">
-                              {report.tracking_number}
-                            </span>
-                            <span className="block truncate">{report.title}</span>
-                          </Link>
-                        ))}
-                        {cluster.reports.length > 5 && (
-                          <p className="text-slate-500">
-                            + {cluster.reports.length - 5} more reports
-                          </p>
-                        )}
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
-            </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-200 px-3 py-2 text-[11px] text-slate-500">
-              <span className="font-semibold text-slate-700">Reports by area</span>
-              <span className="flex items-center gap-1">
-                <i className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
-                  1
-                </i>
-                One report
-              </span>
-              <span className="flex items-center gap-1">
-                <i className="inline-grid h-5 min-w-5 place-items-center rounded-full bg-red-800 px-1 text-[9px] font-bold text-white">
-                  5+
-                </i>
-                More reports
-              </span>
-            </div>
-          </CardBody>
-        </Card>
+                      )}
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-black/5 px-4 py-2.5 text-[11px] text-[#6f6e69]">
+            <span className="font-medium text-[#1d1d1b]">Reports by area</span>
+            <span className="flex items-center gap-1.5">
+              <i className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                1
+              </i>
+              One report
+            </span>
+            <span className="flex items-center gap-1.5">
+              <i className="inline-grid h-5 min-w-5 place-items-center rounded-full bg-red-800 px-1 text-[9px] font-bold text-white">
+                5+
+              </i>
+              More reports
+            </span>
+          </div>
+        </div>
 
         {selected && (
           <aside
             aria-label="Selected report details"
-            className="fixed inset-x-0 bottom-0 z-10 max-h-[75vh] overflow-y-auto rounded-t-2xl border-t border-slate-200 bg-white p-5 shadow-xl lg:static lg:z-auto lg:col-span-1 lg:max-h-none lg:rounded-none lg:border lg:shadow-sm"
+            className="fixed inset-x-0 bottom-0 z-10 max-h-[75vh] overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl ring-1 ring-black/10 lg:static lg:z-auto lg:col-span-1 lg:max-h-none lg:rounded-xl lg:ring-1 lg:ring-black/5"
           >
-            <div className="mb-3 flex items-start justify-between gap-2">
-              <p className="font-mono text-xs text-slate-500">{selected.tracking_number}</p>
+            <div className="mb-4 flex items-start justify-between gap-2">
+              <p className="font-mono text-xs text-[#85847f]">{selected.tracking_number}</p>
               <button
                 type="button"
                 onClick={() => setSelectedId(null)}
                 aria-label="Close report details"
-                className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                className="rounded-md p-1 text-[#85847f] hover:bg-[#f3f2ed] hover:text-[#1d1d1b]"
               >
-                <span aria-hidden className="text-sm">
-                  ×
-                </span>
+                <IconX className="h-4 w-4" stroke={1.6} />
               </button>
             </div>
-            <h2 className="text-base font-semibold text-slate-900">{selected.title}</h2>
-            <div className="mt-3 space-y-3 text-sm">
+            <h2 className="text-base font-semibold text-[#1d1d1b]">{selected.title}</h2>
+            <div className="mt-4 space-y-4 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={statusTone(selected.current_status_code)}>
                   {selected.current_status_code ?? '—'}
@@ -357,40 +362,61 @@ export default function GisMapPage() {
                   {selected.priority?.name ?? selected.priority?.code ?? '—'} priority
                 </Badge>
               </div>
-              <p>
-                <span className="block text-xs uppercase tracking-wide text-slate-500">
-                  Category
-                </span>
-                {selected.report_type?.name ?? selected.report_type?.code ?? '—'}
-              </p>
-              <p>
-                <span className="block text-xs uppercase tracking-wide text-slate-500">
-                  Location
-                </span>
-                {locationLabel(selected.location)}
-              </p>
-              <p>
-                <span className="block text-xs uppercase tracking-wide text-slate-500">
-                  Reference
-                </span>
-                <span className="font-mono text-xs">{selected.tracking_number}</span>
-              </p>
+              <div className="space-y-3">
+                <div className="flex items-start gap-2.5">
+                  <IconCategory className="mt-0.5 h-4 w-4 shrink-0 text-[#85847f]" stroke={1.6} />
+                  <div>
+                    <span className="block text-[10px] uppercase tracking-wider text-[#85847f]">
+                      Category
+                    </span>
+                    <span className="text-[#1d1d1b]">
+                      {selected.report_type?.name ?? selected.report_type?.code ?? '—'}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <IconMapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#85847f]" stroke={1.6} />
+                  <div>
+                    <span className="block text-[10px] uppercase tracking-wider text-[#85847f]">
+                      Location
+                    </span>
+                    <span className="text-[#1d1d1b]">{locationLabel(selected.location)}</span>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <IconCalendar className="mt-0.5 h-4 w-4 shrink-0 text-[#85847f]" stroke={1.6} />
+                  <div>
+                    <span className="block text-[10px] uppercase tracking-wider text-[#85847f]">
+                      Reference
+                    </span>
+                    <span className="font-mono text-xs text-[#1d1d1b]">
+                      {selected.tracking_number}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
             <Link
               to={`/operations/reports/${selected.id}`}
-              className="mt-4 inline-flex items-center justify-center rounded-md bg-brand-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-brand-700"
+              className="mt-5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#1d1d1b] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#2d2d28]"
             >
               Open report
+              <IconArrowRight className="h-4 w-4" stroke={1.6} />
             </Link>
           </aside>
         )}
       </div>
 
       {points.length === 0 && (
-        <EmptyState
-          title="No reports on the map"
-          description="Try clearing the status filter or check that your reports have a location."
-        />
+        <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-black/5">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#f3f2ed]">
+            <IconMapPin className="h-6 w-6 text-[#85847f]" stroke={1.6} />
+          </div>
+          <h3 className="text-base font-semibold text-[#1d1d1b]">No reports on the map</h3>
+          <p className="mt-1 text-sm text-[#6f6e69]">
+            Try clearing the status filter or check that your reports have a location.
+          </p>
+        </div>
       )}
     </div>
   );

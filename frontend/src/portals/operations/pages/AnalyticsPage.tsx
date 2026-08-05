@@ -1,6 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import ReactECharts from 'echarts-for-react';
-import { Card, CardBody, CardHeader, CardTitle, Spinner, EmptyState } from '../design';
+import {
+  IconChartBar,
+  IconChartPie,
+  IconChartLine,
+  IconClock,
+  IconAlertTriangle,
+  IconChecklist,
+} from '@tabler/icons-react';
+import { Spinner } from '../design';
 import { departmentApi } from '../api/operations';
 import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 import type { DepartmentDashboardCounts, DepartmentReportListItem } from '../types';
@@ -8,6 +16,68 @@ import type { DepartmentDashboardCounts, DepartmentReportListItem } from '../typ
 interface SeriesDatum {
   name: string;
   value: number;
+}
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  tone = 'default',
+}: {
+  label: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string; stroke?: number }>;
+  tone?: 'default' | 'danger' | 'warning';
+}) {
+  const tones = {
+    default: 'bg-[#f3f2ed] text-[#1d1d1b]',
+    danger: 'bg-red-50 text-red-700',
+    warning: 'bg-amber-50 text-amber-700',
+  };
+  const valueColors = {
+    default: 'text-[#1d1d1b]',
+    danger: 'text-red-700',
+    warning: 'text-amber-700',
+  };
+
+  return (
+    <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium uppercase tracking-wide text-[#85847f]">{label}</span>
+        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${tones[tone]}`}>
+          <Icon className="h-4 w-4" stroke={1.6} />
+        </div>
+      </div>
+      <p className={`mt-3 text-3xl font-semibold ${valueColors[tone]}`}>{value}</p>
+    </div>
+  );
+}
+
+function ChartCard({
+  title,
+  subtitle,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  icon: React.ComponentType<{ className?: string; stroke?: number }>;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+      <div className="mb-4 flex items-center gap-2.5">
+        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#f3f2ed]">
+          <Icon className="h-4 w-4 text-[#6f6e69]" stroke={1.6} />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-[#1d1d1b]">{title}</h3>
+          {subtitle && <p className="text-[11px] text-[#85847f]">{subtitle}</p>}
+        </div>
+      </div>
+      {children}
+    </div>
+  );
 }
 
 export default function AnalyticsPage() {
@@ -38,17 +108,21 @@ export default function AnalyticsPage() {
   }
   if (dashboard.error || recent.error) {
     return (
-      <EmptyState
-        title="Could not load analytics"
-        description="The dashboard or reports endpoint did not respond."
-      />
+      <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-black/5">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+          <IconAlertTriangle className="h-6 w-6 text-red-500" stroke={1.6} />
+        </div>
+        <h3 className="text-base font-semibold text-[#1d1d1b]">Could not load analytics</h3>
+        <p className="mt-1 text-sm text-[#6f6e69]">
+          The dashboard or reports endpoint did not respond.
+        </p>
+      </div>
     );
   }
 
   const counts = dashboard.data ?? { open: 0, due_today: 0, sla_breached: 0, by_category: {} };
   const reports = recent.data?.data ?? [];
 
-  // By-status pie
   const byStatus: SeriesDatum[] = Object.entries(
     reports.reduce<Record<string, number>>((acc, r) => {
       const code = r.current_status_code ?? 'unknown';
@@ -57,7 +131,6 @@ export default function AnalyticsPage() {
     }, {}),
   ).map(([name, value]) => ({ name, value }));
 
-  // By-type bar
   const byType: SeriesDatum[] = Object.entries(
     reports.reduce<Record<string, number>>((acc, r) => {
       const code = r.report_type?.code ?? 'uncategorized';
@@ -66,7 +139,6 @@ export default function AnalyticsPage() {
     }, {}),
   ).map(([name, value]) => ({ name, value }));
 
-  // Daily submissions line
   const byDay: Record<string, number> = reports.reduce<Record<string, number>>((acc, r) => {
     const day = r.submitted_at ? r.submitted_at.slice(0, 10) : null;
     if (!day) return acc;
@@ -77,100 +149,119 @@ export default function AnalyticsPage() {
   const daySeries = dayKeys.map((k) => [k, byDay[k]]);
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-xl font-semibold text-slate-900">Analytics</h1>
-        <p className="text-sm text-slate-500">Live operational load for the officer's department</p>
+    <div className="space-y-5">
+      <header className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1d1d1b]">
+          <IconChartBar className="h-5 w-5 text-white" stroke={1.6} />
+        </div>
+        <div>
+          <h1 className="text-lg font-semibold text-[#1d1d1b]">Analytics</h1>
+          <p className="text-xs text-[#85847f]">
+            Live operational load for the officer's department
+          </p>
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Open reports</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <p className="text-3xl font-semibold text-slate-900">{counts.open}</p>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Due today</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <p className="text-3xl font-semibold text-slate-900">{counts.due_today}</p>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>SLA breached</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <p className="text-3xl font-semibold text-red-600">{counts.sla_breached}</p>
-          </CardBody>
-        </Card>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard label="Open reports" value={counts.open} icon={IconChecklist} />
+        <StatCard label="Due today" value={counts.due_today} icon={IconClock} tone="warning" />
+        <StatCard
+          label="SLA breached"
+          value={counts.sla_breached}
+          icon={IconAlertTriangle}
+          tone="danger"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>By status</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <ReactECharts
-              option={{
-                tooltip: { trigger: 'item' },
-                legend: { bottom: 0 },
-                series: [
-                  {
-                    type: 'pie',
-                    radius: ['40%', '70%'],
-                    data: byStatus,
-                  },
-                ],
-              }}
-              style={{ height: 320 }}
-              aria-label="Open reports by status"
-            />
-          </CardBody>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>By report type</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <ReactECharts
-              option={{
-                tooltip: { trigger: 'axis' },
-                xAxis: { type: 'category', data: byType.map((d) => d.name) },
-                yAxis: { type: 'value' },
-                series: [{ type: 'bar', data: byType.map((d) => d.value) }],
-              }}
-              style={{ height: 320 }}
-              aria-label="Open reports by report type"
-            />
-          </CardBody>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Submissions per day</CardTitle>
-        </CardHeader>
-        <CardBody>
+        <ChartCard
+          title="By status"
+          subtitle="Distribution across workflow states"
+          icon={IconChartPie}
+        >
           <ReactECharts
             option={{
-              tooltip: { trigger: 'axis' },
-              xAxis: { type: 'category', data: dayKeys },
-              yAxis: { type: 'value' },
+              tooltip: { trigger: 'item' },
+              legend: { bottom: 0, textStyle: { color: '#6f6e69', fontSize: 11 } },
               series: [
-                { type: 'line', data: daySeries.map((d) => d[1]), smooth: true, areaStyle: {} },
+                {
+                  type: 'pie',
+                  radius: ['40%', '70%'],
+                  data: byStatus,
+                  label: { color: '#1d1d1b', fontSize: 11 },
+                  itemStyle: { borderColor: '#fff', borderWidth: 2 },
+                },
               ],
             }}
             style={{ height: 320 }}
-            aria-label="Reports submitted per day"
+            aria-label="Open reports by status"
           />
-        </CardBody>
-      </Card>
+        </ChartCard>
+        <ChartCard title="By report type" subtitle="Category breakdown" icon={IconChartBar}>
+          <ReactECharts
+            option={{
+              tooltip: { trigger: 'axis' },
+              grid: { left: 50, right: 16, top: 16, bottom: 24 },
+              xAxis: {
+                type: 'category',
+                data: byType.map((d) => d.name),
+                axisLabel: { color: '#6f6e69', fontSize: 10 },
+                axisLine: { lineStyle: { color: '#e5e5e0' } },
+              },
+              yAxis: {
+                type: 'value',
+                axisLabel: { color: '#85847f', fontSize: 10 },
+                splitLine: { lineStyle: { color: '#f3f2ed' } },
+              },
+              series: [
+                {
+                  type: 'bar',
+                  data: byType.map((d) => d.value),
+                  itemStyle: { borderRadius: [4, 4, 0, 0], color: '#1d1d1b' },
+                },
+              ],
+            }}
+            style={{ height: 320 }}
+            aria-label="Open reports by report type"
+          />
+        </ChartCard>
+      </div>
+
+      <ChartCard
+        title="Submissions per day"
+        subtitle="Trend over the selected period"
+        icon={IconChartLine}
+      >
+        <ReactECharts
+          option={{
+            tooltip: { trigger: 'axis' },
+            grid: { left: 50, right: 16, top: 16, bottom: 24 },
+            xAxis: {
+              type: 'category',
+              data: dayKeys,
+              axisLabel: { color: '#6f6e69', fontSize: 10 },
+              axisLine: { lineStyle: { color: '#e5e5e0' } },
+            },
+            yAxis: {
+              type: 'value',
+              axisLabel: { color: '#85847f', fontSize: 10 },
+              splitLine: { lineStyle: { color: '#f3f2ed' } },
+            },
+            series: [
+              {
+                type: 'line',
+                data: daySeries.map((d) => d[1]),
+                smooth: true,
+                lineStyle: { color: '#1d1d1b', width: 2 },
+                areaStyle: { color: 'rgba(29,29,27,0.06)' },
+                itemStyle: { color: '#1d1d1b' },
+              },
+            ],
+          }}
+          style={{ height: 320 }}
+          aria-label="Reports submitted per day"
+        />
+      </ChartCard>
     </div>
   );
 }

@@ -1,7 +1,16 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { Spinner, EmptyState, Badge, Card, CardBody } from '../design';
+import {
+  IconSearch,
+  IconFilter,
+  IconX,
+  IconMapPin,
+  IconArrowRight,
+  IconChevronLeft,
+  IconChevronRight,
+} from '@tabler/icons-react';
+import { Spinner, EmptyState, Badge } from '../design';
 import { api } from '../api/client';
 import { departmentApi, type ReportListFilters } from '../api/operations';
 import { ExportMenu } from '../components/ExportMenu';
@@ -70,15 +79,13 @@ function ReportLocationText({ location }: { location: DepartmentReportListItem['
   );
 
   return (
-    <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-slate-600">
-      <span aria-hidden className="text-emerald-700">
-        •
-      </span>
-      <span className="truncate">
+    <div className="mt-1.5 flex items-center gap-1.5">
+      <IconMapPin size={12} stroke={1.6} className="shrink-0 text-[#85847f]" />
+      <span className="truncate text-xs text-[#85847f]">
         {providedAddress ??
           (geocodedAddress || (location ? 'Location captured' : 'Location unavailable'))}
       </span>
-    </p>
+    </div>
   );
 }
 
@@ -96,7 +103,6 @@ export default function ReportListPage() {
   const { selectedId, ready, memberships } = useDepartmentSelection();
   const location = useLocation();
   const secondaryOnly = location.pathname === '/operations/tasks';
-  const selectedDepartment = memberships.find((membership) => membership.id === selectedId);
   const [params, setParams] = useSearchParams();
   const [filters, setFilters] = useState<ReportListFilters>(() => ({
     status: params.get('status') ?? '',
@@ -178,7 +184,7 @@ export default function ReportListPage() {
             onClick={() => {
               void refetch();
             }}
-            className="text-sm font-medium text-emerald-600 hover:underline"
+            className="text-sm font-medium text-[#1d1d1b] underline underline-offset-2"
           >
             Retry
           </button>
@@ -217,75 +223,76 @@ export default function ReportListPage() {
   ].filter(Boolean).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+          <p className="font-mono text-[11px] uppercase tracking-wider text-[#85847f]">
             {secondaryOnly ? 'Linked reports' : 'Officer queue'}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold text-slate-950">
+          <h1 className="mt-1 text-xl font-semibold text-[#1d1d1b]">
             {secondaryOnly ? 'Linked reports' : 'Assigned reports'}
           </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            {secondaryOnly
-              ? 'Complete linked work without changing the primary report workflow.'
-              : "Reports and linked tasks that are already in your department's hands."}
-          </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {!secondaryOnly && <ExportMenu filters={scopedFilters} />}
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-2 text-xs text-slate-500 sm:gap-x-3 sm:text-sm">
-        <span className="font-semibold text-slate-950">{data.meta.total} reports</span>
-        <span aria-hidden>·</span>
-        <span>
-          <strong className="font-semibold text-slate-900">{needsAction}</strong> action
+      <div className="flex flex-wrap items-center gap-x-3 text-xs text-[#6f6e69]">
+        <span className="font-semibold text-[#1d1d1b]">{data.meta.total} reports</span>
+        <span aria-hidden className="text-[#85847f]">
+          |
         </span>
-        <span aria-hidden>·</span>
+        <span>
+          <strong className="font-semibold text-[#1d1d1b]">{needsAction}</strong> action
+        </span>
+        <span aria-hidden className="text-[#85847f]">
+          |
+        </span>
         <span>
           <strong className="font-semibold text-red-600">{overdue}</strong> overdue
         </span>
-        <span aria-hidden>·</span>
+        <span aria-hidden className="text-[#85847f]">
+          |
+        </span>
         <span>
           <strong className="font-semibold text-emerald-700">{resolved}</strong> resolved
         </span>
       </div>
 
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex gap-2 p-2.5 sm:p-3">
+      <div className="rounded-xl bg-white p-3">
+        <div className="flex gap-2">
           <label className="relative min-w-0 flex-1">
             <span className="sr-only">Search reports</span>
-            <span
+            <IconSearch
+              size={16}
+              stroke={1.6}
               aria-hidden
-              className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400"
-            >
-              ⌕
-            </span>
+              className="pointer-events-none absolute inset-y-0 left-3 my-auto text-[#85847f]"
+            />
             <input
               name="search"
               type="search"
               placeholder="Search title or report number"
               value={filters.search ?? ''}
               onChange={(e) => updateFilter('search', e.target.value)}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+              className="h-10 w-full rounded-full border-0 bg-[#f3f2ed] pl-9 pr-3 text-sm text-[#1d1d1b] outline-none transition placeholder:text-[#85847f] focus:ring-2 focus:ring-[#1d1d1b]/10"
             />
           </label>
           <button
             type="button"
             onClick={() => setFiltersOpen((open) => !open)}
             aria-expanded={filtersOpen}
-            className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition ${
+            className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-medium transition ${
               filtersOpen || activeFilterCount > 0
-                ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                ? 'bg-[#1d1d1b] text-white'
+                : 'bg-[#f3f2ed] text-[#1d1d1b]'
             }`}
           >
-            <span aria-hidden>☷</span>
+            <IconFilter size={14} stroke={1.6} />
             <span>Filters</span>
             {activeFilterCount > 0 && (
-              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-emerald-700 px-1 text-[11px] text-white">
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-white/20 px-1 text-[10px] font-semibold">
                 {activeFilterCount}
               </span>
             )}
@@ -293,7 +300,7 @@ export default function ReportListPage() {
         </div>
 
         {filtersOpen && (
-          <div className="border-t border-slate-100 px-3 pb-3 pt-2.5">
+          <div className="mt-3 border-t border-[#f3f2ed] pt-3">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <label>
                 <span className="sr-only">Status</span>
@@ -301,7 +308,7 @@ export default function ReportListPage() {
                   name="status"
                   value={filters.status ?? ''}
                   onChange={(e) => updateFilter('status', e.target.value)}
-                  className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  className="h-9 w-full rounded-full border-0 bg-[#f3f2ed] px-4 text-sm text-[#1d1d1b] outline-none focus:ring-2 focus:ring-[#1d1d1b]/10"
                 >
                   {STATUS_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -316,7 +323,7 @@ export default function ReportListPage() {
                   name="priority"
                   value={filters.priority ?? ''}
                   onChange={(e) => updateFilter('priority', e.target.value)}
-                  className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  className="h-9 w-full rounded-full border-0 bg-[#f3f2ed] px-4 text-sm text-[#1d1d1b] outline-none focus:ring-2 focus:ring-[#1d1d1b]/10"
                 >
                   {PRIORITY_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -331,7 +338,7 @@ export default function ReportListPage() {
                   name="category"
                   value={filters.category ?? ''}
                   onChange={(e) => updateFilter('category', e.target.value)}
-                  className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  className="h-9 w-full rounded-full border-0 bg-[#f3f2ed] px-4 text-sm text-[#1d1d1b] outline-none focus:ring-2 focus:ring-[#1d1d1b]/10"
                 >
                   <option value="">All categories</option>
                   {(reportTypes.data ?? []).map((type) => (
@@ -344,7 +351,7 @@ export default function ReportListPage() {
             </div>
             <div className="mt-2 flex flex-wrap items-end gap-2">
               <label className="min-w-[140px] flex-1">
-                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
                   From date
                 </span>
                 <input
@@ -352,11 +359,11 @@ export default function ReportListPage() {
                   type="date"
                   value={filters.date_from ?? ''}
                   onChange={(e) => updateFilter('date_from', e.target.value)}
-                  className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  className="h-9 w-full rounded-full border-0 bg-[#f3f2ed] px-4 text-sm text-[#1d1d1b] outline-none focus:ring-2 focus:ring-[#1d1d1b]/10"
                 />
               </label>
               <label className="min-w-[140px] flex-1">
-                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
                   To date
                 </span>
                 <input
@@ -364,136 +371,127 @@ export default function ReportListPage() {
                   type="date"
                   value={filters.date_to ?? ''}
                   onChange={(e) => updateFilter('date_to', e.target.value)}
-                  className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  className="h-9 w-full rounded-full border-0 bg-[#f3f2ed] px-4 text-sm text-[#1d1d1b] outline-none focus:ring-2 focus:ring-[#1d1d1b]/10"
                 />
               </label>
               {activeFilterCount > 0 && (
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="h-10 rounded-xl px-3 text-sm font-semibold text-red-600 hover:bg-red-50"
+                  className="flex h-9 items-center gap-1 rounded-full px-3 text-sm font-medium text-red-600 hover:bg-red-50"
                 >
-                  Clear all
+                  <IconX size={14} stroke={1.6} />
+                  Clear
                 </button>
               )}
             </div>
           </div>
         )}
-      </section>
+      </div>
 
       {data.data.length === 0 ? (
         <EmptyState title="No reports match" description="Try clearing your filters." />
       ) : (
-        <div className="space-y-4">
-          {data.data.map((r, index) => (
-            <Card key={r.id} className="group transition hover:border-emerald-300 hover:shadow-md">
-              <Link
-                to={`/operations/reports/${r.id}${selectedId ? `?department_id=${encodeURIComponent(selectedId)}` : ''}`}
-                className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-              >
-                <CardBody>
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex min-w-0 gap-3 sm:gap-4">
-                      <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-lg font-semibold text-white sm:flex">
-                        {String(index + 1).padStart(2, '0')}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge tone={r.assignment?.kind === 'secondary' ? 'purple' : 'neutral'}>
-                            {r.assignment?.kind === 'secondary'
-                              ? 'Linked report'
-                              : 'Primary report'}
-                          </Badge>
-                          <Badge
-                            tone={
-                              r.assignment?.kind === 'secondary'
-                                ? r.assignment.status === 'completed'
-                                  ? 'success'
-                                  : 'info'
-                                : statusTone(r.current_status_code)
-                            }
-                          >
-                            {r.assignment?.kind === 'secondary'
-                              ? statusLabel(r.assignment.status)
-                              : statusLabel(r.current_status_code)}
-                          </Badge>
-                          {r.priority && (
-                            <Badge tone={PRIORITY_TONE[r.priority.code] ?? 'neutral'}>
-                              {r.priority.name}
-                            </Badge>
-                          )}
-                          <Badge tone="neutral">
-                            {r.report_type?.name ?? r.report_type?.code ?? '—'}
-                          </Badge>
-                        </div>
-                        <h2 className="mt-2 line-clamp-2 text-base font-semibold text-slate-950 group-hover:text-emerald-700 lg:truncate">
-                          {r.title}
-                        </h2>
-                        <p className="mt-1 font-mono text-xs text-slate-500">{r.tracking_number}</p>
-                        <ReportLocationText location={r.location} />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4 lg:w-[520px]">
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-slate-400">Deadline</p>
-                        <div className="mt-1">
-                          <SlaBadge report={r} assignment={r.assignment} />
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-slate-400">Department</p>
-                        <p className="mt-1 truncate font-medium text-slate-700">
-                          {r.assignment?.kind === 'secondary'
-                            ? (selectedDepartment?.name ?? 'Selected department')
-                            : (r.department?.name ?? '—')}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-slate-400">Reported</p>
-                        <p className="mt-1 font-medium text-slate-700">
-                          {relativeDate(r.submitted_at)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-slate-400">Next step</p>
-                        <p className="mt-1 font-medium text-slate-700">
-                          {r.assignment?.kind === 'secondary'
-                            ? 'Complete task'
-                            : (NEXT_ACTION[r.current_status_code ?? ''] ?? 'Review')}
-                        </p>
-                      </div>
+        <div className="space-y-3">
+          {data.data.map((r) => (
+            <Link
+              key={r.id}
+              to={`/operations/reports/${r.id}${selectedId ? `?department_id=${encodeURIComponent(selectedId)}` : ''}`}
+              className="group block rounded-xl bg-white p-4 transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1d1d1b]"
+            >
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone={r.assignment?.kind === 'secondary' ? 'purple' : 'neutral'}>
+                      {r.assignment?.kind === 'secondary' ? 'Linked report' : 'Primary report'}
+                    </Badge>
+                    <Badge
+                      tone={
+                        r.assignment?.kind === 'secondary'
+                          ? r.assignment.status === 'completed'
+                            ? 'success'
+                            : 'info'
+                          : statusTone(r.current_status_code)
+                      }
+                    >
+                      {r.assignment?.kind === 'secondary'
+                        ? statusLabel(r.assignment.status)
+                        : statusLabel(r.current_status_code)}
+                    </Badge>
+                    {r.priority && (
+                      <Badge tone={PRIORITY_TONE[r.priority.code] ?? 'neutral'}>
+                        {r.priority.name}
+                      </Badge>
+                    )}
+                  </div>
+                  <h2 className="mt-2 line-clamp-1 text-sm font-semibold text-[#1d1d1b] group-hover:underline">
+                    {r.title}
+                  </h2>
+                  <p className="mt-0.5 font-mono text-[11px] text-[#85847f]">{r.tracking_number}</p>
+                  <ReportLocationText location={r.location} />
+                </div>
+                <div className="flex shrink-0 items-center gap-6 text-xs lg:gap-8">
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                      SLA
+                    </p>
+                    <div className="mt-1">
+                      <SlaBadge report={r} assignment={r.assignment} />
                     </div>
                   </div>
-                </CardBody>
-              </Link>
-            </Card>
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                      Reported
+                    </p>
+                    <p className="mt-1 text-[#6f6e69]">{relativeDate(r.submitted_at)}</p>
+                  </div>
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                      Next step
+                    </p>
+                    <p className="mt-1 text-[#6f6e69]">
+                      {r.assignment?.kind === 'secondary'
+                        ? 'Complete task'
+                        : (NEXT_ACTION[r.current_status_code ?? ''] ?? 'Review')}
+                    </p>
+                  </div>
+                  <IconArrowRight
+                    size={16}
+                    stroke={1.6}
+                    className="hidden text-[#85847f] transition group-hover:translate-x-0.5 group-hover:text-[#1d1d1b] lg:block"
+                  />
+                </div>
+              </div>
+            </Link>
           ))}
         </div>
       )}
 
-      <div className="flex items-center justify-between text-xs text-slate-500">
-        <span>
-          Page {data.meta.current_page} of {data.meta.last_page} ({data.meta.per_page} per page)
-        </span>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            disabled={data.meta.current_page <= 1}
-            onClick={() => goToPage((filters.page ?? 1) - 1)}
-            className="rounded border border-slate-300 px-3 py-1 text-xs font-medium disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <button
-            type="button"
-            disabled={data.meta.current_page >= data.meta.last_page}
-            onClick={() => goToPage((filters.page ?? 1) + 1)}
-            className="rounded border border-slate-300 px-3 py-1 text-xs font-medium disabled:opacity-50"
-          >
-            Next
-          </button>
+      {data.meta.last_page > 1 && (
+        <div className="flex items-center justify-between text-xs text-[#85847f]">
+          <span className="font-mono text-[11px]">
+            {data.meta.current_page} / {data.meta.last_page}
+          </span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={data.meta.current_page <= 1}
+              onClick={() => goToPage((filters.page ?? 1) - 1)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#1d1d1b] transition hover:bg-[#f3f2ed] disabled:opacity-30"
+            >
+              <IconChevronLeft size={16} stroke={1.6} />
+            </button>
+            <button
+              type="button"
+              disabled={data.meta.current_page >= data.meta.last_page}
+              onClick={() => goToPage((filters.page ?? 1) + 1)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#1d1d1b] transition hover:bg-[#f3f2ed] disabled:opacity-30"
+            >
+              <IconChevronRight size={16} stroke={1.6} />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

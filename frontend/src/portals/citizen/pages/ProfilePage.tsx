@@ -3,14 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../../auth/AuthContext';
 import { apiRequest, type ApiEnvelope } from '../../../auth/api';
 import { Spinner } from '../../moderator/design';
-import {
-  IconUser,
-  IconMail,
-  IconPhone,
-  IconShield,
-  IconHash,
-  IconLogout,
-} from '@tabler/icons-react';
+import { IconUser, IconMail, IconPhone, IconShield, IconLogout } from '@tabler/icons-react';
 
 interface ProfileData {
   id: string;
@@ -23,22 +16,13 @@ interface ProfileData {
 interface InfoRowProps {
   label: string;
   value: string | null | undefined;
-  monospace?: boolean;
 }
 
-function InfoRow({ label, value, monospace = false }: InfoRowProps): JSX.Element {
+function InfoRow({ label, value }: InfoRowProps): JSX.Element {
   return (
     <div className="flex min-h-[44px] items-center justify-between gap-4 py-3">
       <dt className="text-sm text-[#6f6e69]">{label}</dt>
-      <dd
-        className={
-          monospace
-            ? 'break-all text-right font-mono text-sm text-[#1d1d1b]'
-            : 'text-sm font-medium text-[#1d1d1b]'
-        }
-      >
-        {value ?? '—'}
-      </dd>
+      <dd className="text-sm font-medium text-[#1d1d1b]">{value ?? '—'}</dd>
     </div>
   );
 }
@@ -112,10 +96,6 @@ export default function ProfilePage(): JSX.Element {
 
             <Section title="Contact" icon={<IconMail className="h-4 w-4" stroke={1.6} />}>
               <InfoRow label="Email address" value={me.data?.email} />
-            </Section>
-
-            <Section title="Account" icon={<IconHash className="h-4 w-4" stroke={1.6} />}>
-              <InfoRow label="Account ID" value={me.data?.id} monospace />
             </Section>
 
             <Section title="Access Roles" icon={<IconShield className="h-4 w-4" stroke={1.6} />}>

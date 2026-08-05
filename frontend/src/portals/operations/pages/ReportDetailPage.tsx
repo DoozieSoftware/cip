@@ -3,16 +3,21 @@ import type { ChangeEvent } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Badge,
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-  EmptyState,
-  Spinner,
-  Textarea,
-} from '../design';
+  IconArrowLeft,
+  IconCircleCheck,
+  IconClock,
+  IconPaperclip,
+  IconSend,
+  IconShield,
+  IconUser,
+  IconAlertTriangle,
+  IconUpload,
+  IconFileText,
+  IconMessageCircle,
+  IconLink,
+  IconCircleDotted,
+} from '@tabler/icons-react';
+import { Badge, EmptyState, Spinner, Textarea } from '../design';
 import { departmentApi } from '../api/operations';
 import type {
   DepartmentReportDetail,
@@ -250,7 +255,7 @@ export default function ReportDetailPage() {
             onClick={() => {
               void refetch();
             }}
-            className="text-sm font-medium text-emerald-600 hover:underline"
+            className="text-sm font-medium text-[#1d1d1b] underline underline-offset-2"
           >
             Retry
           </button>
@@ -276,71 +281,74 @@ export default function ReportDetailPage() {
     : (ACTIONS_BY_STATUS[status as ReportStatusCode] ?? []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <Link
         to="/operations/reports"
-        className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 hover:underline"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6f6e69] transition hover:text-[#1d1d1b]"
       >
-        ← Back to reports
+        <IconArrowLeft size={16} stroke={1.6} />
+        Back to reports
       </Link>
-      <header className="space-y-2">
+
+      <header className="rounded-xl bg-white p-4">
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold text-slate-900">{report.title}</h1>
-            <p className="font-mono text-xs text-slate-500">{report.tracking_number}</p>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone={isSecondaryTask ? 'purple' : 'neutral'}>
+                {isSecondaryTask ? 'Linked report' : 'Primary report'}
+              </Badge>
+              <Badge tone={statusTone(status)}>{statusLabel(status)}</Badge>
+              {report.report_type && <Badge tone="neutral">{report.report_type.name}</Badge>}
+              {report.priority && <Badge tone="neutral">{report.priority.name}</Badge>}
+            </div>
+            <h1 className="mt-2 text-lg font-semibold text-[#1d1d1b]">{report.title}</h1>
+            <p className="mt-0.5 font-mono text-xs text-[#85847f]">{report.tracking_number}</p>
           </div>
-          <div className="flex flex-wrap justify-end gap-2">
-            <Badge tone={isSecondaryTask ? 'purple' : 'neutral'}>
-              {isSecondaryTask ? 'Linked report' : 'Primary report'}
-            </Badge>
-            <Badge tone={statusTone(status)}>{statusLabel(status)}</Badge>
+          <div className="shrink-0">
+            {(isSecondaryTask
+              ? assignment?.sla_minutes != null
+              : report.department_sla_minutes != null) && (
+              <SlaChip
+                createdAt={isSecondaryTask ? assignment?.assigned_at : report.created_at}
+                slaMinutes={
+                  isSecondaryTask ? assignment?.sla_minutes : report.department_sla_minutes
+                }
+                status={isSecondaryTask ? taskStatus : status}
+              />
+            )}
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {report.report_type && <Badge tone="neutral">{report.report_type.name}</Badge>}
-          {report.priority && <Badge tone="neutral">{report.priority.name} priority</Badge>}
-          {(isSecondaryTask
-            ? assignment?.sla_minutes != null
-            : report.department_sla_minutes != null) && (
-            <SlaChip
-              createdAt={isSecondaryTask ? assignment?.assigned_at : report.created_at}
-              slaMinutes={isSecondaryTask ? assignment?.sla_minutes : report.department_sla_minutes}
-              status={isSecondaryTask ? taskStatus : status}
-            />
-          )}
         </div>
       </header>
 
       {report.assignments.length > 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Linked departments</CardTitle>
-            <p className="mt-1 text-xs text-slate-500">
-              This report needs action from multiple departments.
-            </p>
-          </CardHeader>
-          <CardBody className="divide-y divide-slate-100">
+        <div className="rounded-xl bg-white p-4">
+          <div className="flex items-center gap-2">
+            <IconLink size={14} stroke={1.6} className="text-[#85847f]" />
+            <h2 className="text-sm font-semibold text-[#1d1d1b]">Linked departments</h2>
+          </div>
+          <p className="mt-1 text-xs text-[#85847f]">
+            This report needs action from multiple departments.
+          </p>
+          <div className="mt-3 space-y-0 divide-y divide-[#f3f2ed]">
             {report.assignments.map((a) => (
               <div
                 key={a.id}
-                className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
               >
                 <div className="flex items-center gap-3">
                   <span
                     className={
-                      'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ' +
-                      (a.is_primary
-                        ? 'bg-blue-100 text-blue-700 '
-                        : 'bg-purple-100 text-purple-700 ')
+                      'flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ' +
+                      (a.is_primary ? 'bg-[#1d1d1b] text-white ' : 'bg-[#f3f2ed] text-[#6f6e69] ')
                     }
                   >
                     {a.is_primary ? 'P' : 'S'}
                   </span>
                   <div>
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-medium text-[#1d1d1b]">
                       {a.department?.name ?? 'Department'}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-[#85847f]">
                       {a.is_primary ? 'Primary — owns closure' : 'Linked — assists resolution'}
                     </p>
                   </div>
@@ -357,22 +365,25 @@ export default function ReportDetailPage() {
                   >
                     {statusLabel(a.status)}
                   </Badge>
-                  {a.officer && <p className="mt-0.5 text-xs text-slate-500">{a.officer.name}</p>}
+                  {a.officer && <p className="mt-0.5 text-xs text-[#85847f]">{a.officer.name}</p>}
                 </div>
               </div>
             ))}
-          </CardBody>
-        </Card>
+          </div>
+        </div>
       )}
 
-      <Card>
-        <CardBody className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="rounded-xl bg-white p-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-              Current workflow
-            </p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-900">{statusLabel(status)}</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
+            <div className="flex items-center gap-2">
+              <IconShield size={14} stroke={1.6} className="text-[#85847f]" />
+              <p className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                Current workflow
+              </p>
+            </div>
+            <h2 className="mt-1 text-base font-semibold text-[#1d1d1b]">{statusLabel(status)}</h2>
+            <p className="mt-1 text-sm leading-5 text-[#6f6e69]">
               {isSecondaryTask
                 ? 'This linked task has its own completion state. The primary department retains control of the report workflow.'
                 : (STATUS_GUIDANCE[status] ?? 'No workflow action is available for this status.')}
@@ -383,288 +394,350 @@ export default function ReportDetailPage() {
               {availableActions.map((event) => {
                 const meta = ACTION_META[event];
                 return (
-                  <Button
+                  <button
                     key={event}
-                    variant={meta.variant}
-                    size="lg"
+                    type="button"
                     onClick={() => requestAction(event)}
                     disabled={actionPending}
-                    loading={actionPending && activeAction === event}
                     aria-keyshortcuts={meta.shortcut}
+                    className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                      event === 'accept' || event === 'start'
+                        ? 'bg-[#1d1d1b] text-white hover:bg-[#1d1d1b]/90'
+                        : event === 'resolve'
+                          ? 'bg-emerald-700 text-white hover:bg-emerald-800'
+                          : event === 'close'
+                            ? 'bg-red-600 text-white hover:bg-red-700'
+                            : 'bg-[#f3f2ed] text-[#1d1d1b] hover:bg-[#f3f2ed]/80'
+                    }`}
                   >
+                    {actionPending && activeAction === event ? (
+                      <span
+                        aria-hidden
+                        className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                      />
+                    ) : event === 'accept' ? (
+                      <IconCircleCheck size={14} stroke={1.6} />
+                    ) : event === 'start' ? (
+                      <IconAlertTriangle size={14} stroke={1.6} />
+                    ) : event === 'resolve' ? (
+                      <IconCircleCheck size={14} stroke={1.6} />
+                    ) : event === 'close' ? (
+                      <IconShield size={14} stroke={1.6} />
+                    ) : (
+                      <IconMessageCircle size={14} stroke={1.6} />
+                    )}
                     {meta.label}
-                  </Button>
+                  </button>
                 );
               })}
             </div>
           )}
           {action.isError && (
-            <p role="alert" className="w-full text-sm text-red-700 sm:basis-full">
+            <p role="alert" className="w-full text-sm text-red-600 sm:basis-full">
               {action.error instanceof Error ? action.error.message : 'The report action failed.'}
             </p>
           )}
-        </CardBody>
-      </Card>
+        </div>
+      </div>
 
       {isSecondaryTask && (
-        <Card>
-          <CardHeader>
+        <div className="rounded-xl bg-white p-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <CardTitle>Linked report</CardTitle>
-              <p className="mt-1 text-xs text-slate-500">
+              <div className="flex items-center gap-2">
+                <IconLink size={14} stroke={1.6} className="text-[#85847f]" />
+                <h2 className="text-sm font-semibold text-[#1d1d1b]">Linked report</h2>
+              </div>
+              <p className="mt-1 text-xs text-[#85847f]">
                 Complete this department task without resolving or closing the report.
               </p>
+              <div className="mt-3 flex items-center gap-4 text-xs">
+                <div>
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                    Department
+                  </p>
+                  <p className="mt-0.5 font-medium text-[#1d1d1b]">
+                    {selectedDepartment?.name ?? 'Selected department'}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                    Assigned
+                  </p>
+                  <p className="mt-0.5 font-medium text-[#1d1d1b]">
+                    {new Date(assignment.assigned_at).toLocaleString()}
+                  </p>
+                </div>
+              </div>
             </div>
-            <Badge tone={taskStatus === 'completed' ? 'success' : 'info'}>
-              {statusLabel(taskStatus)}
-            </Badge>
-          </CardHeader>
-          <CardBody className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-slate-500">Department</dt>
-                <dd className="mt-1 font-medium text-slate-900">
-                  {selectedDepartment?.name ?? 'Selected department'}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-slate-500">Assigned</dt>
-                <dd className="mt-1 font-medium text-slate-900">
-                  {new Date(assignment.assigned_at).toLocaleString()}
-                </dd>
-              </div>
-            </dl>
-            {taskStatus === 'open' && (
-              <Button
-                variant="success"
-                onClick={() => setTaskCompletionPending(true)}
-                disabled={completeTask.isPending}
-                loading={completeTask.isPending}
-              >
-                Mark task complete
-              </Button>
-            )}
-            {completeTask.isError && (
-              <p role="alert" className="text-sm text-red-700">
-                {completeTask.error instanceof Error
-                  ? completeTask.error.message
-                  : 'The task could not be completed.'}
-              </p>
-            )}
-          </CardBody>
-        </Card>
+            <div className="flex items-center gap-2">
+              <Badge tone={taskStatus === 'completed' ? 'success' : 'info'}>
+                {statusLabel(taskStatus)}
+              </Badge>
+              {taskStatus === 'open' && (
+                <button
+                  type="button"
+                  onClick={() => setTaskCompletionPending(true)}
+                  disabled={completeTask.isPending}
+                  className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-5 py-2 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:opacity-50"
+                >
+                  {completeTask.isPending ? (
+                    <span
+                      aria-hidden
+                      className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                    />
+                  ) : (
+                    <IconCircleCheck size={14} stroke={1.6} />
+                  )}
+                  Mark task complete
+                </button>
+              )}
+            </div>
+          </div>
+          {completeTask.isError && (
+            <p role="alert" className="mt-3 text-sm text-red-600">
+              {completeTask.error instanceof Error
+                ? completeTask.error.message
+                : 'The task could not be completed.'}
+            </p>
+          )}
+        </div>
       )}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]">
         <div className="space-y-5">
-          <Card className="overflow-hidden">
-            <CardHeader>
-              <div>
-                <CardTitle>Evidence and proof</CardTitle>
-                <p className="mt-1 text-xs text-slate-500">
-                  Citizen report on the left; department completion proof on the right.
-                </p>
-              </div>
-            </CardHeader>
-            <CardBody className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="mb-3 flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Before
-                    </p>
-                    <span className="text-xs text-slate-500">
-                      {evidence.length} {evidence.length === 1 ? 'item' : 'items'}
-                    </span>
-                  </div>
-                  {evidence.length === 0 ? (
-                    <EmptyState
-                      title="No evidence"
-                      description="The citizen did not attach any evidence to this report."
-                    />
-                  ) : (
-                    <MediaGallery items={evidence} label="Citizen evidence" />
-                  )}
-                </div>
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3">
-                  <div className="mb-3 flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                      After
-                    </p>
-                    <span className="text-xs text-emerald-700">
-                      {proof.length === 0 ? 'Awaiting proof' : `${proof.length} uploaded`}
-                    </span>
-                  </div>
-                  {proof.length === 0 ? (
-                    <p className="rounded-xl border border-dashed border-emerald-300 bg-white/70 px-4 py-8 text-center text-sm text-slate-600">
-                      Upload proof photos after the field crew completes the work.
-                    </p>
-                  ) : (
-                    <MediaGallery items={proof} label="Proof of completion" />
-                  )}
-                </div>
-              </div>
-              {!isTerminal && (
-                <div className="flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm text-slate-600">
-                    Proof photos stay department-private until the report is closed.
+          <div className="rounded-xl bg-white p-4">
+            <div className="flex items-center gap-2">
+              <IconPaperclip size={14} stroke={1.6} className="text-[#85847f]" />
+              <h2 className="text-sm font-semibold text-[#1d1d1b]">Evidence and proof</h2>
+            </div>
+            <p className="mt-1 text-xs text-[#85847f]">
+              Citizen report on the left; department completion proof on the right.
+            </p>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div className="rounded-lg bg-[#f3f2ed] p-3">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                    Before
                   </p>
-                  <input
-                    ref={proofInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    hidden
-                    aria-label="Proof photo input"
-                    onChange={handleProofFiles}
-                  />
-                  <Button
-                    variant="secondary"
-                    onClick={() => proofInputRef.current?.click()}
-                    disabled={uploadProof.isPending}
-                  >
-                    {uploadProof.isPending ? 'Uploading…' : 'Upload proof photos'}
-                  </Button>
-                  {uploadProof.isError && (
-                    <p role="alert" className="text-sm text-red-700">
-                      {uploadProof.error instanceof Error
-                        ? uploadProof.error.message
-                        : 'The proof photos could not be uploaded.'}
-                    </p>
-                  )}
+                  <span className="text-xs text-[#85847f]">
+                    {evidence.length} {evidence.length === 1 ? 'item' : 'items'}
+                  </span>
                 </div>
-              )}
-            </CardBody>
-          </Card>
+                {evidence.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-[#85847f]/30 py-8 text-center">
+                    <IconFileText size={20} stroke={1.6} className="text-[#85847f]" />
+                    <p className="mt-2 text-xs text-[#85847f]">No evidence</p>
+                  </div>
+                ) : (
+                  <MediaGallery items={evidence} label="Citizen evidence" />
+                )}
+              </div>
+              <div className="rounded-lg bg-emerald-50 p-3">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-emerald-700">
+                    After
+                  </p>
+                  <span className="text-xs text-emerald-700">
+                    {proof.length === 0 ? 'Awaiting proof' : `${proof.length} uploaded`}
+                  </span>
+                </div>
+                {proof.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-emerald-300 bg-white/70 py-8 text-center">
+                    <IconUpload size={20} stroke={1.6} className="text-emerald-600" />
+                    <p className="mt-2 text-xs text-[#6f6e69]">Upload proof photos after the field crew completes the work.</p>
+                  </div>
+                ) : (
+                  <MediaGallery items={proof} label="Proof of completion" />
+                )}
+              </div>
+            </div>
+            {!isTerminal && (
+              <div className="mt-4 flex flex-col gap-2 border-t border-[#f3f2ed] pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-[#85847f]">
+                  Proof photos stay department-private until the report is closed.
+                </p>
+                <input
+                  ref={proofInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  hidden
+                  aria-label="Proof photo input"
+                  onChange={handleProofFiles}
+                />
+                <button
+                  type="button"
+                  onClick={() => proofInputRef.current?.click()}
+                  disabled={uploadProof.isPending}
+                  className="inline-flex items-center gap-2 rounded-full bg-[#f3f2ed] px-4 py-2 text-sm font-medium text-[#1d1d1b] transition hover:bg-[#f3f2ed]/80 disabled:opacity-50"
+                >
+                  <IconUpload size={14} stroke={1.6} />
+                  {uploadProof.isPending ? 'Uploading...' : 'Upload proof photos'}
+                </button>
+                {uploadProof.isError && (
+                  <p role="alert" className="text-sm text-red-600">
+                    {uploadProof.error instanceof Error
+                      ? uploadProof.error.message
+                      : 'The proof photos could not be uploaded.'}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Report details</CardTitle>
-            </CardHeader>
-            <CardBody className="space-y-3">
+          <div className="rounded-xl bg-white p-4">
+            <div className="flex items-center gap-2">
+              <IconFileText size={14} stroke={1.6} className="text-[#85847f]" />
+              <h2 className="text-sm font-semibold text-[#1d1d1b]">Report details</h2>
+            </div>
+            <div className="mt-3 space-y-3">
               {report.description && (
-                <p className="whitespace-pre-line text-sm leading-6 text-slate-800">
+                <p className="whitespace-pre-line text-sm leading-5 text-[#6f6e69]">
                   {report.description}
                 </p>
               )}
-              <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+              <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-xs sm:grid-cols-2">
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">Type</dt>
-                  <dd>{report.report_type?.name ?? '—'}</dd>
+                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                    Type
+                  </dt>
+                  <dd className="mt-0.5 text-[#1d1d1b]">{report.report_type?.name ?? '—'}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">Priority</dt>
-                  <dd>{report.priority?.name ?? '—'}</dd>
+                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                    Priority
+                  </dt>
+                  <dd className="mt-0.5 text-[#1d1d1b]">{report.priority?.name ?? '—'}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">Submitted</dt>
-                  <dd>
+                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                    Submitted
+                  </dt>
+                  <dd className="mt-0.5 text-[#1d1d1b]">
                     {report.submitted_at ? new Date(report.submitted_at).toLocaleString() : '—'}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">Reference</dt>
-                  <dd className="font-mono text-xs">{report.tracking_number}</dd>
+                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                    Reference
+                  </dt>
+                  <dd className="mt-0.5 font-mono text-[#1d1d1b]">{report.tracking_number}</dd>
                 </div>
               </dl>
-            </CardBody>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Status timeline</CardTitle>
-            </CardHeader>
-            <CardBody>
+          <div className="rounded-xl bg-white p-4">
+            <div className="flex items-center gap-2">
+              <IconCircleDotted size={14} stroke={1.6} className="text-[#85847f]" />
+              <h2 className="text-sm font-semibold text-[#1d1d1b]">Status timeline</h2>
+            </div>
+            <div className="mt-3">
               <StatusTimeline entries={report.status_history ?? []} />
-            </CardBody>
-          </Card>
+            </div>
+          </div>
         </div>
 
         <aside className="space-y-5">
           <LocationCard location={report.location} />
-          <Card>
-            <CardHeader>
-              <CardTitle>Accountability</CardTitle>
-            </CardHeader>
-            <CardBody>
-              <dl className="space-y-4 text-sm">
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">Department</dt>
-                  <dd className="mt-1 font-medium text-slate-900">
-                    {report.department?.name ?? '—'}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">
-                    Assigned officer
-                  </dt>
-                  <dd className="mt-1 font-medium text-slate-900">
-                    {report.assigned_to?.name ?? 'Unassigned'}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">SLA</dt>
-                  <dd className="mt-1">
-                    <SlaChip
-                      createdAt={isSecondaryTask ? assignment?.assigned_at : report.created_at}
-                      slaMinutes={
-                        isSecondaryTask ? assignment?.sla_minutes : report.department_sla_minutes
-                      }
-                      status={isSecondaryTask ? taskStatus : status}
-                    />
-                  </dd>
-                </div>
-              </dl>
-            </CardBody>
-          </Card>
+          <div className="rounded-xl bg-white p-4">
+            <div className="flex items-center gap-2">
+              <IconUser size={14} stroke={1.6} className="text-[#85847f]" />
+              <h2 className="text-sm font-semibold text-[#1d1d1b]">Accountability</h2>
+            </div>
+            <dl className="mt-3 space-y-3 text-xs">
+              <div className="flex items-center justify-between">
+                <dt className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                  Department
+                </dt>
+                <dd className="font-medium text-[#1d1d1b]">{report.department?.name ?? '—'}</dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                  Assigned officer
+                </dt>
+                <dd className="font-medium text-[#1d1d1b]">
+                  {report.assigned_to?.name ?? 'Unassigned'}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                  SLA
+                </dt>
+                <dd>
+                  <SlaChip
+                    createdAt={isSecondaryTask ? assignment?.assigned_at : report.created_at}
+                    slaMinutes={
+                      isSecondaryTask ? assignment?.sla_minutes : report.department_sla_minutes
+                    }
+                    status={isSecondaryTask ? taskStatus : status}
+                  />
+                </dd>
+              </div>
+            </dl>
+          </div>
         </aside>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Internal notes</CardTitle>
-        </CardHeader>
-        <CardBody className="space-y-3">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700" htmlFor="note-body">
-              Add a note (department-private)
-            </label>
+      <div className="rounded-xl bg-white p-4">
+        <div className="flex items-center gap-2">
+          <IconMessageCircle size={14} stroke={1.6} className="text-[#85847f]" />
+          <h2 className="text-sm font-semibold text-[#1d1d1b]">Internal notes</h2>
+        </div>
+        <div className="mt-3 space-y-3">
+          <div>
             <Textarea
               ref={noteRef}
               id="note-body"
               value={noteBody}
               onChange={(e) => setNoteBody(e.target.value)}
               placeholder="Site visit notes, contact log, etc."
-              rows={4}
+              rows={3}
               aria-keyshortcuts="N"
+              className="rounded-lg border-0 bg-[#f3f2ed] text-sm text-[#1d1d1b] placeholder:text-[#85847f] focus:ring-2 focus:ring-[#1d1d1b]/10"
             />
-            <Button
-              variant="primary"
-              onClick={() => {
-                addNote.mutate();
-              }}
-              disabled={addNote.isPending || noteBody.trim() === ''}
-            >
-              {addNote.isPending ? 'Saving…' : 'Save note'}
-            </Button>
+            <div className="mt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  addNote.mutate();
+                }}
+                disabled={addNote.isPending || noteBody.trim() === ''}
+                className="inline-flex items-center gap-2 rounded-full bg-[#1d1d1b] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#1d1d1b]/90 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {addNote.isPending ? (
+                  <span
+                    aria-hidden
+                    className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                  />
+                ) : (
+                  <IconSend size={14} stroke={1.6} />
+                )}
+                Save note
+              </button>
+            </div>
           </div>
 
-          <ul className="space-y-2">
+          <div className="space-y-2">
             {(notesData?.data ?? []).map((n) => (
-              <li key={n.id} className="rounded border border-slate-200 p-3">
-                <p className="text-sm text-slate-800">{n.body}</p>
-                <p className="mt-1 text-xs text-slate-500">
-                  {n.author_name ?? 'system'} ·{' '}
-                  {n.created_at ? new Date(n.created_at).toLocaleString() : ''}
+              <div key={n.id} className="rounded-lg bg-[#f3f2ed] p-3">
+                <p className="text-sm leading-5 text-[#1d1d1b]">{n.body}</p>
+                <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[#85847f]">
+                  <IconUser size={10} stroke={1.6} />
+                  <span>{n.author_name ?? 'system'}</span>
+                  <span aria-hidden>·</span>
+                  <IconClock size={10} stroke={1.6} />
+                  <span>{n.created_at ? new Date(n.created_at).toLocaleString() : ''}</span>
                 </p>
-              </li>
+              </div>
             ))}
             {(notesData?.data ?? []).length === 0 && (
-              <li className="text-sm text-slate-500">No notes yet.</li>
+              <p className="py-4 text-center text-xs text-[#85847f]">No notes yet.</p>
             )}
-          </ul>
-        </CardBody>
-      </Card>
+          </div>
+        </div>
+      </div>
 
       <ConfirmActionDialog
         open={pendingAction !== null}

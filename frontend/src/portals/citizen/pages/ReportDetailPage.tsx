@@ -137,7 +137,7 @@ export default function ReportDetailPage(): JSX.Element {
           action={
             <Link
               to="/citizen/reports"
-              className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-white px-6 text-sm font-medium text-[#1d1d1b] shadow-sm ring-1 ring-slate-200 active:bg-[#faf9f6]"
+              className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-full border border-black/15 bg-white px-6 text-sm font-medium text-[#1d1d1b] hover:border-black/30"
             >
               Return to My Reports
             </Link>
@@ -150,28 +150,30 @@ export default function ReportDetailPage(): JSX.Element {
   const r = detail.data;
 
   return (
-    <div className="mx-auto max-w-3xl bg-slate-50 pb-12">
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-10 bg-gradient-to-b from-slate-900 to-slate-800 px-4 pb-5 pt-4">
+    <div className="mx-auto max-w-3xl bg-[#f3f2ed] pb-12">
+      {/* Header */}
+      <header className="sticky top-0 z-10 border-b border-[#d9d7d0] bg-[#f3f2ed] px-4 pb-4 pt-3">
         <div className="flex items-center gap-3">
           <Link
             to="/citizen/reports"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/10 text-white active:bg-white/20"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#d8d6cf] bg-[#faf9f6] text-[#1d1d1b] hover:bg-white"
             aria-label="Back to My Reports"
           >
             <IconArrowLeft className="h-5 w-5" stroke={1.6} />
           </Link>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-white">{r.title}</p>
-            <p className="font-mono text-xs text-slate-400">{formatReferenceId(r.id)}</p>
+            <p className="truncate text-sm font-medium text-[#1d1d1b]">{r.title}</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#85847f]">
+              {formatReferenceId(r.id)}
+            </p>
           </div>
           <StatusBadge status={r.status} className="shrink-0" />
         </div>
       </header>
 
-      <div className="space-y-4 px-4 pt-5">
-        {/* Title Card */}
-        <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <div className="space-y-4 px-4 pt-4">
+        {/* Title Section */}
+        <section className="rounded-xl bg-white p-4">
           <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
             <IconFileText className="h-3.5 w-3.5" stroke={1.6} />
             Official Reference
@@ -181,12 +183,12 @@ export default function ReportDetailPage(): JSX.Element {
           </p>
           <div className="mt-3 flex items-center gap-2">
             {r.is_verified ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                 <IconCircleCheck className="h-3.5 w-3.5" stroke={1.6} />
                 Verified
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
                 <IconAlertTriangle className="h-3.5 w-3.5" stroke={1.6} />
                 Pending
               </span>
@@ -205,7 +207,7 @@ export default function ReportDetailPage(): JSX.Element {
         </section>
 
         {/* Quick Details */}
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+        <div className="rounded-xl bg-white p-4">
           <div className="grid grid-cols-2 gap-3">
             <DetailBlock
               icon={<IconFileText className="h-3.5 w-3.5" stroke={1.6} />}
@@ -231,7 +233,7 @@ export default function ReportDetailPage(): JSX.Element {
         </div>
 
         {/* Status Timeline */}
-        <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+        <section className="rounded-xl bg-white p-4">
           <h2 className="flex items-center gap-2 text-sm font-medium text-[#1d1d1b]">
             <span className="grid h-7 w-7 place-items-center rounded-full bg-[#efeee9]">
               <IconClock className="h-3.5 w-3.5 text-[#1d1d1b]" stroke={1.7} />
@@ -277,7 +279,7 @@ export default function ReportDetailPage(): JSX.Element {
                               {t.event}
                             </span>
                             {isLatest ? (
-                              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-200">
+                              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
                                 Current
                               </span>
                             ) : null}
@@ -315,7 +317,7 @@ export default function ReportDetailPage(): JSX.Element {
 
         {/* Department Card */}
         {r.assigned_department ? (
-          <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <section className="rounded-xl bg-white p-4">
             <h2 className="flex items-center gap-2 text-sm font-medium text-[#1d1d1b]">
               <span className="grid h-7 w-7 place-items-center rounded-full bg-[#efeee9]">
                 <IconBuilding className="h-3.5 w-3.5 text-[#1d1d1b]" stroke={1.7} />
@@ -336,14 +338,14 @@ export default function ReportDetailPage(): JSX.Element {
 
         {/* Location Card */}
         {r.location ? (
-          <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <section className="rounded-xl bg-white p-4">
             <h2 className="flex items-center gap-2 text-sm font-medium text-[#1d1d1b]">
               <span className="grid h-7 w-7 place-items-center rounded-full bg-[#efeee9]">
                 <IconMapPin className="h-3.5 w-3.5 text-[#1d1d1b]" stroke={1.7} />
               </span>
               Location
             </h2>
-            <div className="mt-3 overflow-hidden rounded-lg ring-1 ring-slate-200">
+            <div className="mt-3 overflow-hidden rounded-lg border border-[#e4e2dc]">
               <LocationMap
                 latitude={r.location.latitude}
                 longitude={r.location.longitude}
@@ -357,7 +359,7 @@ export default function ReportDetailPage(): JSX.Element {
                 {formatLocation(r.location.address)}
               </p>
             </div>
-            <div className="mt-2 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 ring-1 ring-emerald-200">
+            <div className="mt-2 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
               <IconCircleCheck className="h-4 w-4 text-emerald-600" stroke={1.7} />
               <span className="text-xs font-medium text-emerald-700">
                 Location captured at time of submission
@@ -368,7 +370,7 @@ export default function ReportDetailPage(): JSX.Element {
 
         {/* Evidence Grid */}
         {r.media && r.media.length > 0 ? (
-          <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <section className="rounded-xl bg-white p-4">
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-sm font-medium text-[#1d1d1b]">
                 <span className="grid h-7 w-7 place-items-center rounded-full bg-[#efeee9]">
@@ -384,7 +386,7 @@ export default function ReportDetailPage(): JSX.Element {
               {r.media.map((m, i) => (
                 <div
                   key={m.id}
-                  className="group relative aspect-square overflow-hidden rounded-lg bg-[#faf9f6] ring-1 ring-slate-200"
+                  className="group relative aspect-square overflow-hidden rounded-lg border border-[#e4e2dc] bg-[#faf9f6]"
                 >
                   <EvidencePreview media={m} />
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5">
@@ -404,7 +406,7 @@ export default function ReportDetailPage(): JSX.Element {
             </div>
           </section>
         ) : (
-          <section className="flex flex-col items-center gap-2 rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200">
+          <section className="flex flex-col items-center gap-2 rounded-xl bg-white p-8 text-center">
             <span className="grid h-10 w-10 place-items-center rounded-full bg-[#efeee9]">
               <IconCamera className="h-5 w-5 text-[#85847f]" stroke={1.6} />
             </span>
@@ -417,7 +419,7 @@ export default function ReportDetailPage(): JSX.Element {
 
         {/* AI Insights */}
         {r.ai_summary ? (
-          <section className="rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-200">
+          <section className="rounded-xl border border-sky-200 bg-sky-50 p-4">
             <h2 className="flex items-center gap-2 text-sm font-medium text-[#1d1d1b]">
               <span className="grid h-7 w-7 place-items-center rounded-full bg-sky-100">
                 <IconShield className="h-3.5 w-3.5 text-sky-600" stroke={1.7} />
@@ -434,7 +436,7 @@ export default function ReportDetailPage(): JSX.Element {
                     {r.ai_summary.labels.map((l) => (
                       <span
                         key={l.name}
-                        className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-sky-800 ring-1 ring-sky-200"
+                        className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-xs font-medium text-sky-800"
                       >
                         {l.name}
                         <span className="ml-1 text-sky-500">
@@ -462,7 +464,7 @@ export default function ReportDetailPage(): JSX.Element {
                 ) : null}
               </div>
             </div>
-            <p className="mt-4 rounded-lg bg-white px-3 py-2 text-xs leading-relaxed text-sky-800 ring-1 ring-sky-200">
+            <p className="mt-4 rounded-lg border border-sky-200 bg-white px-3 py-2 text-xs leading-relaxed text-sky-800">
               <strong>Note:</strong> This automated analysis is for informational purposes only. All
               reports are subject to official review by a moderator or department officer before
               action is taken.
@@ -471,11 +473,11 @@ export default function ReportDetailPage(): JSX.Element {
         ) : null}
 
         {/* Audit History - Collapsible */}
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+        <section className="overflow-hidden rounded-xl bg-white">
           <button
             type="button"
             onClick={() => setAuditExpanded(!auditExpanded)}
-            className="flex w-full items-center justify-between gap-2 px-4 py-3.5 text-left active:bg-[#faf9f6]"
+            className="flex w-full items-center justify-between gap-2 border-b border-[#e4e2dc] px-4 py-3.5 text-left active:bg-[#faf9f6]"
             aria-expanded={auditExpanded}
           >
             <h2 className="flex items-center gap-2 text-sm font-medium text-[#1d1d1b]">
@@ -490,7 +492,7 @@ export default function ReportDetailPage(): JSX.Element {
             />
           </button>
           {auditExpanded ? (
-            <div className="border-t border-[#e4e2dc] px-4 py-4">
+            <div className="px-4 py-4">
               {timeline.isLoading ? (
                 <div className="flex items-center gap-3 py-4">
                   <Spinner label="Loading audit history" />
@@ -530,7 +532,7 @@ export default function ReportDetailPage(): JSX.Element {
         </section>
 
         {/* Footer Notice */}
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+        <div className="rounded-xl bg-white p-4">
           <p className="text-center text-xs leading-relaxed text-[#6f6e69]">
             This is an official record generated by the Civic Intelligence Platform. Reference{' '}
             <span className="font-mono font-semibold text-[#1d1d1b]">
@@ -554,7 +556,7 @@ function DetailBlock({
   value: string;
 }): JSX.Element {
   return (
-    <div className="rounded-lg bg-[#faf9f6] p-3 ring-1 ring-slate-200">
+    <div className="rounded-lg border border-[#e4e2dc] bg-[#faf9f6] p-3">
       <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
         {icon}
         {label}
