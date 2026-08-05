@@ -3,8 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../../auth/AuthContext';
 import { apiRequest, type ApiEnvelope } from '../../../auth/api';
 import { Spinner } from '../../moderator/design';
-import { cx } from '../../moderator/design/cx';
-import { User, Mail, Phone, Shield, Hash } from 'lucide-react';
+import {
+  IconUser,
+  IconMail,
+  IconPhone,
+  IconShield,
+  IconHash,
+  IconLogout,
+} from '@tabler/icons-react';
 
 interface ProfileData {
   id: string;
@@ -18,21 +24,18 @@ interface InfoRowProps {
   label: string;
   value: string | null | undefined;
   monospace?: boolean;
-  icon?: JSX.Element;
 }
 
-function InfoRow({ label, value, monospace = false, icon }: InfoRowProps): JSX.Element {
+function InfoRow({ label, value, monospace = false }: InfoRowProps): JSX.Element {
   return (
-    <div className="flex flex-col gap-1 py-3.5 sm:flex-row sm:items-start sm:gap-6">
-      <dt className="flex w-44 flex-shrink-0 items-center gap-2 text-sm font-medium text-slate-400">
-        {icon}
-        {label}
-      </dt>
+    <div className="flex min-h-[44px] items-center justify-between gap-4 py-3">
+      <dt className="text-sm text-[#6f6e69]">{label}</dt>
       <dd
-        className={cx(
-          'min-w-0 flex-1 text-base text-slate-800',
-          monospace && 'break-all font-mono text-sm text-slate-500',
-        )}
+        className={
+          monospace
+            ? 'break-all text-right font-mono text-sm text-[#1d1d1b]'
+            : 'text-sm font-medium text-[#1d1d1b]'
+        }
       >
         {value ?? '—'}
       </dd>
@@ -42,30 +45,24 @@ function InfoRow({ label, value, monospace = false, icon }: InfoRowProps): JSX.E
 
 interface SectionProps {
   title: string;
-  description?: string;
+  icon: JSX.Element;
   children: React.ReactNode;
-  icon?: JSX.Element;
 }
 
-function Section({ title, description, children, icon }: SectionProps): JSX.Element {
+function Section({ title, icon, children }: SectionProps): JSX.Element {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white">
-      <header className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
-        {icon && (
-          <span
-            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-500 ring-1 ring-inset ring-slate-100"
-            aria-hidden
-          >
-            {icon}
-          </span>
-        )}
-        <div>
-          <h2 className="text-sm font-semibold tracking-tight text-slate-900">{title}</h2>
-          {description && <p className="mt-0.5 text-xs text-slate-400">{description}</p>}
-        </div>
-      </header>
-      <div className="px-6">{children}</div>
-    </section>
+    <div className="rounded-2xl border border-black/10 bg-white p-5">
+      <div className="flex items-center gap-3">
+        <span
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#efeee9] text-[#777670]"
+          aria-hidden
+        >
+          {icon}
+        </span>
+        <h2 className="text-sm font-medium text-[#1d1d1b]">{title}</h2>
+      </div>
+      <div className="mt-3 divide-y divide-[#e4e2dc]">{children}</div>
+    </div>
   );
 }
 
@@ -80,110 +77,95 @@ export default function ProfilePage(): JSX.Element {
   });
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-8">
-      <header className="space-y-3">
-        <div className="flex items-center gap-3">
-          <span
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900"
-            aria-hidden
-          >
-            <User className="h-5 w-5 text-white" />
-          </span>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-              Citizen Account Record
-            </h1>
-            <p className="mt-0.5 text-sm text-slate-500">
-              Your registered account information and access credentials.
-            </p>
-          </div>
+    <div className="space-y-8">
+      <header className="flex items-start justify-between gap-5 border-b border-[#d9d7d0] pb-7">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#777670]">
+            Citizen services
+          </p>
+          <h1 className="mt-2 text-[2rem] font-normal leading-[1.05] tracking-[-0.035em] sm:text-4xl">
+            Profile
+          </h1>
+          <p className="mt-3 max-w-2xl text-[15px] leading-6 text-[#6f6e69]">
+            Your registered account information
+          </p>
         </div>
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#d8d6cf] bg-[#faf9f6]">
+          <IconUser className="h-5 w-5" stroke={1.6} />
+        </span>
       </header>
 
-      {me.isLoading ? (
-        <div className="flex justify-center py-20">
-          <Spinner label="Loading account record" />
-        </div>
-      ) : (
-        <>
-          <Section
-            title="Personal Information"
-            description="Your registered identity details on file."
-            icon={<User className="h-4 w-4" />}
-          >
-            <dl className="divide-y divide-slate-100">
-              <InfoRow
-                label="Full name"
-                value={me.data?.name}
-                icon={<User className="h-3.5 w-3.5" />}
-              />
-              <InfoRow
-                label="Mobile number"
-                value={me.data?.mobile ?? user?.mobile}
-                icon={<Phone className="h-3.5 w-3.5" />}
-              />
-              <InfoRow
-                label="Email address"
-                value={me.data?.email}
-                icon={<Mail className="h-3.5 w-3.5" />}
-              />
-            </dl>
-          </Section>
+      <main className="mx-auto max-w-3xl space-y-4 pb-12">
+        {me.isLoading ? (
+          <div className="flex justify-center py-20">
+            <Spinner label="Loading profile" />
+          </div>
+        ) : (
+          <>
+            <Section
+              title="Personal Information"
+              icon={<IconUser className="h-4 w-4" stroke={1.6} />}
+            >
+              <InfoRow label="Full name" value={me.data?.name} />
+              <InfoRow label="Mobile number" value={me.data?.mobile ?? user?.mobile} />
+            </Section>
 
-          <Section
-            title="Account Details"
-            description="System identifiers for your record."
-            icon={<Hash className="h-4 w-4" />}
-          >
-            <dl className="divide-y divide-slate-100">
+            <Section title="Contact" icon={<IconMail className="h-4 w-4" stroke={1.6} />}>
+              <InfoRow label="Email address" value={me.data?.email} />
+            </Section>
+
+            <Section title="Account" icon={<IconHash className="h-4 w-4" stroke={1.6} />}>
               <InfoRow label="Account ID" value={me.data?.id} monospace />
-            </dl>
-          </Section>
+            </Section>
 
-          <Section
-            title="Access Roles"
-            description="Your permissions within the civic platform."
-            icon={<Shield className="h-4 w-4" />}
-          >
-            {(me.data?.roles ?? []).length === 0 ? (
-              <p className="py-4 text-sm text-slate-400">No roles assigned.</p>
-            ) : (
-              <ul className="flex flex-wrap gap-2 py-4">
-                {(me.data?.roles ?? []).map((r) => (
-                  <li
-                    key={r}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-100"
-                  >
-                    <Shield className="h-3.5 w-3.5 text-slate-400" aria-hidden />
-                    {r}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Section>
+            <Section title="Access Roles" icon={<IconShield className="h-4 w-4" stroke={1.6} />}>
+              {(me.data?.roles ?? []).length === 0 ? (
+                <p className="py-3 text-sm text-[#85847f]">No roles assigned.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2 py-3">
+                  {(me.data?.roles ?? []).map((r) => (
+                    <span
+                      key={r}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#efeee9] px-3 py-1 text-[10px] uppercase tracking-[0.08em] text-[#777670]"
+                    >
+                      <IconShield className="h-3.5 w-3.5" stroke={1.7} aria-hidden />
+                      {r}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </Section>
 
-          <section className="rounded-xl border border-amber-200/70 bg-amber-50/50 p-5">
-            <div className="flex items-start gap-3">
-              <span
-                className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100/80 text-amber-600 ring-1 ring-inset ring-amber-200/50"
-                aria-hidden
-              >
-                <Shield className="h-4 w-4" />
-              </span>
-              <div>
-                <h3 className="text-sm font-semibold text-amber-900">
-                  Need to update your information?
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-amber-700">
-                  Account details are managed by the civic administration. To correct your name,
-                  mobile number, or email, please contact your local office or submit a request
-                  through the support channel.
-                </p>
+            <div className="rounded-2xl border border-[#d8cfae] bg-[#f1ead4] p-5">
+              <div className="flex items-start gap-4">
+                <span
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#e8dfc0] text-[#746f5e]"
+                  aria-hidden
+                >
+                  <IconPhone className="h-4 w-4" stroke={1.6} />
+                </span>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-[#1d1d1b]">
+                    Need to update your information?
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-[#686762]">
+                    Account details are managed by the civic administration. Contact your local
+                    office to correct your name, mobile number, or email.
+                  </p>
+                </div>
               </div>
             </div>
-          </section>
-        </>
-      )}
+
+            <button
+              type="button"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium text-[#1d1d1b] transition hover:border-black/30 active:bg-[#faf9f6] sm:w-auto"
+            >
+              <IconLogout className="h-4 w-4" stroke={1.6} aria-hidden />
+              Sign out
+            </button>
+          </>
+        )}
+      </main>
     </div>
   );
 }

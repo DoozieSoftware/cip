@@ -122,7 +122,7 @@ describe('SubmitPage', () => {
 
     // Step 5: Review & Submit
     await waitFor(() => expect(screen.getByText('Review Your Report')).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /file official report/i }));
+    fireEvent.click(screen.getByRole('button', { name: /file report/i }));
 
     await waitFor(() => {
       expect(mutateAsyncMock).toHaveBeenCalledWith(

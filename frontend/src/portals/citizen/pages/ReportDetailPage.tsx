@@ -1,21 +1,19 @@
 import { Link, useParams } from 'react-router-dom';
 import { type JSX, useState } from 'react';
 import {
-  ArrowLeft,
-  FileText,
-  MapPin,
-  Clock,
-  CheckCircle,
-  ChevronDown,
-  Building2,
-  Tag,
-  AlertTriangle,
-  Shield,
-  Hash,
-  Calendar,
-  User,
-  Image as ImageIcon,
-} from 'lucide-react';
+  IconArrowLeft,
+  IconFileText,
+  IconMapPin,
+  IconClock,
+  IconCircleCheck,
+  IconChevronDown,
+  IconCalendar,
+  IconUser,
+  IconBuilding,
+  IconShield,
+  IconCamera,
+  IconAlertTriangle,
+} from '@tabler/icons-react';
 import { type ReportDetail, useReportDetail, useReportTimeline } from '../api/client';
 import { EmptyState, Spinner } from '../../moderator/design';
 import { StatusBadge } from '../components/StatusBadge';
@@ -37,8 +35,8 @@ function EvidencePreview({
     return (
       <div className="grid h-full w-full place-items-center px-3 text-center">
         <div className="flex flex-col items-center gap-2">
-          <ImageIcon className="h-6 w-6 text-slate-300" />
-          <span className="text-[11px] text-slate-400">Unavailable</span>
+          <IconCamera className="h-6 w-6 text-[#bfbbb2]" />
+          <span className="text-[11px] text-[#85847f]">Unavailable</span>
         </div>
       </div>
     );
@@ -46,7 +44,7 @@ function EvidencePreview({
 
   if (media.kind === 'video') {
     return (
-      <div className="relative h-full w-full bg-slate-950">
+      <div className="relative h-full w-full bg-[#1d1d1b]">
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
         <video
           src={url}
@@ -121,7 +119,7 @@ export default function ReportDetailPage(): JSX.Element {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4">
         <Spinner label="Loading official record" />
-        <p className="text-sm text-slate-500">Retrieving your official record...</p>
+        <p className="text-sm text-[#6f6e69]">Retrieving your official record...</p>
       </div>
     );
   }
@@ -139,7 +137,7 @@ export default function ReportDetailPage(): JSX.Element {
           action={
             <Link
               to="/citizen/reports"
-              className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-sm font-medium text-slate-700 shadow-sm active:bg-slate-50"
+              className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-white px-6 text-sm font-medium text-[#1d1d1b] shadow-sm ring-1 ring-slate-200 active:bg-[#faf9f6]"
             >
               Return to My Reports
             </Link>
@@ -152,128 +150,151 @@ export default function ReportDetailPage(): JSX.Element {
   const r = detail.data;
 
   return (
-    <div className="mx-auto max-w-3xl pb-12">
+    <div className="mx-auto max-w-3xl bg-slate-50 pb-12">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-10 border-b border-slate-100 bg-white/95 px-4 py-3 backdrop-blur-md">
+      <header className="sticky top-0 z-10 bg-gradient-to-b from-slate-900 to-slate-800 px-4 pb-5 pt-4">
         <div className="flex items-center gap-3">
           <Link
             to="/citizen/reports"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm active:bg-slate-50"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/10 text-white active:bg-white/20"
             aria-label="Back to My Reports"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <IconArrowLeft className="h-5 w-5" stroke={1.6} />
           </Link>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-slate-900">{r.title}</p>
+            <p className="truncate text-sm font-semibold text-white">{r.title}</p>
             <p className="font-mono text-xs text-slate-400">{formatReferenceId(r.id)}</p>
           </div>
           <StatusBadge status={r.status} className="shrink-0" />
         </div>
       </header>
 
-      <div className="space-y-5 px-4 pt-6">
-        {/* Title & Reference Card */}
-        <section className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-slate-400">
-                <Hash className="h-3.5 w-3.5" />
-                Official Reference
-              </div>
-              <p className="mt-2 font-mono text-xl font-bold tracking-wide text-slate-900">
-                {formatReferenceId(r.id)}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {r.is_verified ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-                  <CheckCircle className="h-3.5 w-3.5" />
-                  Verified
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-100 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  Pending
-                </span>
-              )}
-            </div>
+      <div className="space-y-4 px-4 pt-5">
+        {/* Title Card */}
+        <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+            <IconFileText className="h-3.5 w-3.5" stroke={1.6} />
+            Official Reference
           </div>
-
-          <div className="mt-5 border-t border-slate-50 pt-5">
-            <h1 className="text-2xl font-bold leading-tight text-slate-900">{r.title}</h1>
+          <p className="mt-1 font-mono text-lg font-bold tracking-wide text-[#1d1d1b]">
+            {formatReferenceId(r.id)}
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            {r.is_verified ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                <IconCircleCheck className="h-3.5 w-3.5" stroke={1.6} />
+                Verified
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
+                <IconAlertTriangle className="h-3.5 w-3.5" stroke={1.6} />
+                Pending
+              </span>
+            )}
+          </div>
+          <div className="mt-4 border-t border-[#e4e2dc] pt-4">
+            <h1 className="text-xl font-bold leading-tight text-[#1d1d1b]">{r.title}</h1>
             {r.description ? (
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[#6f6e69]">
                 {r.description}
               </p>
             ) : (
-              <p className="mt-3 text-sm italic text-slate-400">No description provided.</p>
+              <p className="mt-2 text-sm italic text-[#85847f]">No description provided.</p>
             )}
           </div>
         </section>
 
+        {/* Quick Details */}
+        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <div className="grid grid-cols-2 gap-3">
+            <DetailBlock
+              icon={<IconFileText className="h-3.5 w-3.5" stroke={1.6} />}
+              label="Category"
+              value={r.type?.name ?? '—'}
+            />
+            <DetailBlock
+              icon={<IconAlertTriangle className="h-3.5 w-3.5" stroke={1.6} />}
+              label="Priority"
+              value={r.priority?.name ?? '—'}
+            />
+            <DetailBlock
+              icon={<IconCalendar className="h-3.5 w-3.5" stroke={1.6} />}
+              label="Submitted"
+              value={`${formatDate(r.created_at)}${formatTime(r.created_at) ? ` · ${formatTime(r.created_at)}` : ''}`}
+            />
+            <DetailBlock
+              icon={<IconBuilding className="h-3.5 w-3.5" stroke={1.6} />}
+              label="Assigned To"
+              value={r.assigned_department?.name ?? 'Pending'}
+            />
+          </div>
+        </div>
+
         {/* Status Timeline */}
-        <section className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-          <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-            <Clock className="h-3.5 w-3.5" />
+        <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <h2 className="flex items-center gap-2 text-sm font-medium text-[#1d1d1b]">
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-[#efeee9]">
+              <IconClock className="h-3.5 w-3.5 text-[#1d1d1b]" stroke={1.7} />
+            </span>
             Status Timeline
           </h2>
-          <div className="mt-5">
+          <div className="mt-4">
             {timeline.isLoading ? (
               <div className="flex items-center gap-3 py-4">
                 <Spinner label="Loading timeline" />
-                <span className="text-sm text-slate-500">Loading status history...</span>
+                <span className="text-sm text-[#6f6e69]">Loading status history...</span>
               </div>
             ) : timeline.data && timeline.data.length > 0 ? (
               <ol className="relative">
                 {timeline.data.map((t, i) => {
                   const isLatest = i === 0;
                   return (
-                    <li key={i} className="relative flex gap-4 pb-5 last:pb-0">
+                    <li key={i} className="relative flex gap-3 pb-4 last:pb-0">
                       {i < timeline.data.length - 1 ? (
                         <span
                           aria-hidden
-                          className="absolute left-[11px] top-6 h-full w-0.5 bg-slate-100"
+                          className="absolute left-[9px] top-5 h-full w-0.5 bg-[#e4e2dc]"
                         />
                       ) : null}
                       <span
                         aria-hidden
-                        className={`relative z-10 grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full ${
+                        className={`relative z-10 grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full ${
                           isLatest
                             ? 'bg-emerald-500 ring-[3px] ring-emerald-100'
-                            : 'bg-slate-200 ring-[3px] ring-white'
+                            : 'bg-[#e4e2dc] ring-[3px] ring-white'
                         }`}
                       >
                         <span
-                          className={`block rounded-full ${isLatest ? 'h-2 w-2 bg-white' : 'h-1.5 w-1.5 bg-slate-400'}`}
+                          className={`block rounded-full ${isLatest ? 'h-2 w-2 bg-white' : 'h-1.5 w-1.5 text-[#85847f]'}`}
                         />
                       </span>
                       <div className="min-w-0 flex-1 pt-0.5">
-                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                           <div className="flex items-center gap-2">
                             <span
-                              className={`text-sm font-semibold ${isLatest ? 'text-slate-900' : 'text-slate-600'}`}
+                              className={`text-sm font-medium ${isLatest ? 'text-[#1d1d1b]' : 'text-[#6f6e69]'}`}
                             >
                               {t.event}
                             </span>
                             {isLatest ? (
-                              <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-200">
                                 Current
                               </span>
                             ) : null}
                           </div>
-                          <time className="text-xs text-slate-400">
+                          <time className="text-xs text-[#85847f]">
                             {formatDate(t.at)}
                             {formatTime(t.at) ? ` · ${formatTime(t.at)}` : ''}
                           </time>
                         </div>
                         {t.actor ? (
-                          <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-                            <User className="h-3 w-3" />
+                          <p className="mt-0.5 flex items-center gap-1 text-xs text-[#6f6e69]">
+                            <IconUser className="h-3 w-3" stroke={1.6} />
                             {t.actor}
                           </p>
                         ) : null}
                         {t.note ? (
-                          <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{t.note}</p>
+                          <p className="mt-1 text-xs leading-relaxed text-[#6f6e69]">{t.note}</p>
                         ) : null}
                       </div>
                     </li>
@@ -281,60 +302,33 @@ export default function ReportDetailPage(): JSX.Element {
                 })}
               </ol>
             ) : (
-              <div className="py-8 text-center">
-                <p className="text-sm text-slate-500">No status updates yet</p>
-                <p className="mt-1 text-xs text-slate-400">Status changes will appear here.</p>
+              <div className="flex flex-col items-center gap-2 py-8 text-center">
+                <span className="grid h-10 w-10 place-items-center rounded-full bg-[#efeee9]">
+                  <IconClock className="h-5 w-5 text-[#85847f]" stroke={1.6} />
+                </span>
+                <p className="text-sm font-medium text-[#1d1d1b]">No status updates yet</p>
+                <p className="text-xs text-[#85847f]">Status changes will appear here.</p>
               </div>
             )}
           </div>
         </section>
 
-        {/* Quick Details Grid */}
-        <section className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-          <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-            <FileText className="h-3.5 w-3.5" />
-            Report Details
-          </h2>
-          <div className="mt-5 grid grid-cols-2 gap-5 lg:grid-cols-4">
-            <DetailBlock
-              icon={<Tag className="h-3.5 w-3.5" />}
-              label="Category"
-              value={r.type?.name ?? '—'}
-            />
-            <DetailBlock
-              icon={<AlertTriangle className="h-3.5 w-3.5" />}
-              label="Priority"
-              value={r.priority?.name ?? '—'}
-            />
-            <DetailBlock
-              icon={<Calendar className="h-3.5 w-3.5" />}
-              label="Submitted"
-              value={`${formatDate(r.created_at)}${formatTime(r.created_at) ? ` · ${formatTime(r.created_at)}` : ''}`}
-            />
-            <DetailBlock
-              icon={<Building2 className="h-3.5 w-3.5" />}
-              label="Assigned To"
-              value={r.assigned_department?.name ?? 'Pending Assignment'}
-            />
-          </div>
-        </section>
-
         {/* Department Card */}
         {r.assigned_department ? (
-          <section className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-            <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-              <Building2 className="h-3.5 w-3.5" />
+          <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+            <h2 className="flex items-center gap-2 text-sm font-medium text-[#1d1d1b]">
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-[#efeee9]">
+                <IconBuilding className="h-3.5 w-3.5 text-[#1d1d1b]" stroke={1.7} />
+              </span>
               Department Assignment
             </h2>
-            <div className="mt-5 flex items-start gap-4">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-slate-50">
-                <Building2 className="h-5 w-5 text-slate-500" />
+            <div className="mt-3 flex items-center gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#efeee9]">
+                <IconBuilding className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-900">{r.assigned_department.name}</p>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  This department is responsible for reviewing and resolving your report.
-                </p>
+                <p className="text-sm font-medium text-[#1d1d1b]">{r.assigned_department.name}</p>
+                <p className="text-xs text-[#85847f]">Responsible for reviewing this report</p>
               </div>
             </div>
           </section>
@@ -342,30 +336,32 @@ export default function ReportDetailPage(): JSX.Element {
 
         {/* Location Card */}
         {r.location ? (
-          <section className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-            <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-              <MapPin className="h-3.5 w-3.5" />
+          <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+            <h2 className="flex items-center gap-2 text-sm font-medium text-[#1d1d1b]">
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-[#efeee9]">
+                <IconMapPin className="h-3.5 w-3.5 text-[#1d1d1b]" stroke={1.7} />
+              </span>
               Location
             </h2>
-            <div className="mt-5 overflow-hidden rounded-xl border border-slate-100">
+            <div className="mt-3 overflow-hidden rounded-lg ring-1 ring-slate-200">
               <LocationMap
                 latitude={r.location.latitude}
                 longitude={r.location.longitude}
                 label={r.location.address}
-                height={180}
+                height={160}
               />
             </div>
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="flex items-start gap-2 text-sm text-slate-700">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+            <div className="mt-3 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+              <p className="flex items-start gap-2 text-sm text-[#1d1d1b]">
+                <IconMapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#85847f]" stroke={1.6} />
                 {r.location.address ?? 'Address not available'}
               </p>
-              <p className="shrink-0 font-mono text-xs text-slate-400">
+              <p className="shrink-0 font-mono text-xs text-[#85847f]">
                 {formatCoordinates(r.location.latitude, r.location.longitude)}
               </p>
             </div>
-            <div className="mt-3 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5">
-              <CheckCircle className="h-4 w-4 text-emerald-600" />
+            <div className="mt-2 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 ring-1 ring-emerald-200">
+              <IconCircleCheck className="h-4 w-4 text-emerald-600" stroke={1.7} />
               <span className="text-xs font-medium text-emerald-700">
                 Location captured at time of submission
               </span>
@@ -375,31 +371,33 @@ export default function ReportDetailPage(): JSX.Element {
 
         {/* Evidence Grid */}
         {r.media && r.media.length > 0 ? (
-          <section className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
             <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-                <ImageIcon className="h-3.5 w-3.5" />
+              <h2 className="flex items-center gap-2 text-sm font-medium text-[#1d1d1b]">
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-[#efeee9]">
+                  <IconCamera className="h-3.5 w-3.5 text-[#1d1d1b]" stroke={1.7} />
+                </span>
                 Evidence
               </h2>
-              <span className="rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+              <span className="rounded-full bg-[#efeee9] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
                 {r.media.length} {r.media.length === 1 ? 'item' : 'items'}
               </span>
             </div>
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {r.media.map((m, i) => (
                 <div
                   key={m.id}
-                  className="group relative aspect-square overflow-hidden rounded-xl border border-slate-100 bg-slate-50"
+                  className="group relative aspect-square overflow-hidden rounded-lg bg-[#faf9f6] ring-1 ring-slate-200"
                 >
                   <EvidencePreview media={m} />
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2.5 py-2">
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5">
                     <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-white">
                       EVD-{String(i + 1).padStart(2, '0')}
                     </p>
                   </div>
                   {m.kind === 'video' ? (
                     <div className="pointer-events-none absolute inset-0 grid place-items-center">
-                      <span className="rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-bold uppercase text-white">
+                      <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
                         Video
                       </span>
                     </div>
@@ -409,10 +407,12 @@ export default function ReportDetailPage(): JSX.Element {
             </div>
           </section>
         ) : (
-          <section className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center">
-            <ImageIcon className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-3 text-sm font-medium text-slate-600">No Evidence Attached</p>
-            <p className="mt-1 text-xs text-slate-400">
+          <section className="flex flex-col items-center gap-2 rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200">
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-[#efeee9]">
+              <IconCamera className="h-5 w-5 text-[#85847f]" stroke={1.6} />
+            </span>
+            <p className="text-sm font-medium text-[#1d1d1b]">No Evidence Attached</p>
+            <p className="text-xs text-[#85847f]">
               This record does not contain any supporting evidence.
             </p>
           </section>
@@ -420,22 +420,24 @@ export default function ReportDetailPage(): JSX.Element {
 
         {/* AI Insights */}
         {r.ai_summary ? (
-          <section className="rounded-2xl border border-sky-100 bg-sky-50/30 p-6">
-            <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-              <Shield className="h-3.5 w-3.5" />
+          <section className="rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-200">
+            <h2 className="flex items-center gap-2 text-sm font-medium text-[#1d1d1b]">
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-sky-100">
+                <IconShield className="h-3.5 w-3.5 text-sky-600" stroke={1.7} />
+              </span>
               Automated Analysis
             </h2>
-            <div className="mt-5 space-y-5">
+            <div className="mt-3 space-y-4">
               {r.ai_summary.labels && r.ai_summary.labels.length > 0 ? (
                 <div>
-                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
                     Detected Labels
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {r.ai_summary.labels.map((l) => (
                       <span
                         key={l.name}
-                        className="rounded-full border border-sky-100 bg-white px-3 py-1 text-xs font-medium text-sky-800"
+                        className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-sky-800 ring-1 ring-sky-200"
                       >
                         {l.name}
                         <span className="ml-1 text-sky-500">
@@ -446,24 +448,24 @@ export default function ReportDetailPage(): JSX.Element {
                   </div>
                 </div>
               ) : null}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {r.ai_summary.recommended_department ? (
                   <DetailBlock
-                    icon={<Building2 className="h-3.5 w-3.5" />}
+                    icon={<IconBuilding className="h-3.5 w-3.5" stroke={1.6} />}
                     label="Recommended Department"
                     value={r.ai_summary.recommended_department.name}
                   />
                 ) : null}
                 {typeof r.ai_summary.fraud_score === 'number' ? (
                   <DetailBlock
-                    icon={<Shield className="h-3.5 w-3.5" />}
+                    icon={<IconShield className="h-3.5 w-3.5" stroke={1.6} />}
                     label="Evidence Review Score"
                     value={`${Math.round(r.ai_summary.fraud_score * 100)}%`}
                   />
                 ) : null}
               </div>
             </div>
-            <p className="mt-5 rounded-xl border border-sky-100 bg-white px-4 py-3 text-xs leading-relaxed text-sky-800">
+            <p className="mt-4 rounded-lg bg-white px-3 py-2 text-xs leading-relaxed text-sky-800 ring-1 ring-sky-200">
               <strong>Note:</strong> This automated analysis is for informational purposes only. All
               reports are subject to official review by a moderator or department officer before
               action is taken.
@@ -472,66 +474,69 @@ export default function ReportDetailPage(): JSX.Element {
         ) : null}
 
         {/* Audit History - Collapsible */}
-        <section className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
           <button
             type="button"
             onClick={() => setAuditExpanded(!auditExpanded)}
-            className="flex w-full items-center justify-between gap-2 px-6 py-4 text-left active:bg-slate-50"
+            className="flex w-full items-center justify-between gap-2 px-4 py-3.5 text-left active:bg-[#faf9f6]"
             aria-expanded={auditExpanded}
           >
-            <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-              <Clock className="h-3.5 w-3.5" />
+            <h2 className="flex items-center gap-2 text-sm font-medium text-[#1d1d1b]">
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-[#efeee9]">
+                <IconClock className="h-3.5 w-3.5 text-[#6f6e69]" stroke={1.7} />
+              </span>
               Audit History
             </h2>
-            <ChevronDown
-              className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 ${auditExpanded ? 'rotate-180' : ''}`}
+            <IconChevronDown
+              className={`h-5 w-5 shrink-0 text-[#85847f] transition-transform duration-200 ${auditExpanded ? 'rotate-180' : ''}`}
+              stroke={1.6}
             />
           </button>
           {auditExpanded ? (
-            <div className="border-t border-slate-50 px-6 py-5">
+            <div className="border-t border-[#e4e2dc] px-4 py-4">
               {timeline.isLoading ? (
                 <div className="flex items-center gap-3 py-4">
                   <Spinner label="Loading audit history" />
-                  <span className="text-sm text-slate-500">Loading...</span>
+                  <span className="text-sm text-[#6f6e69]">Loading...</span>
                 </div>
               ) : timeline.data && timeline.data.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400">
-                        <th className="pb-3 pr-4 font-semibold">Event</th>
-                        <th className="pb-3 pr-4 font-semibold">Date</th>
-                        <th className="pb-3 font-semibold">Actor</th>
+                      <tr className="border-b border-[#e4e2dc] font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                        <th className="pb-2.5 pr-3 font-semibold">Event</th>
+                        <th className="pb-2.5 pr-3 font-semibold">Date</th>
+                        <th className="pb-2.5 font-semibold">Actor</th>
                       </tr>
                     </thead>
                     <tbody>
                       {timeline.data.map((t, i) => (
-                        <tr key={i} className="border-b border-slate-50 last:border-0">
-                          <td className="py-3 pr-4 font-medium text-slate-900">{t.event}</td>
-                          <td className="py-3 pr-4 whitespace-nowrap text-slate-500">
+                        <tr key={i} className="border-b border-[#e4e2dc] last:border-0">
+                          <td className="py-2.5 pr-3 font-medium text-[#1d1d1b]">{t.event}</td>
+                          <td className="py-2.5 pr-3 whitespace-nowrap text-[#6f6e69]">
                             {formatDate(t.at)}
                             {formatTime(t.at) ? (
                               <span className="ml-1 text-xs">{formatTime(t.at)}</span>
                             ) : null}
                           </td>
-                          <td className="py-3 text-slate-500">{t.actor ?? '—'}</td>
+                          <td className="py-2.5 text-[#6f6e69]">{t.actor ?? '—'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <p className="py-4 text-center text-sm text-slate-500">No audit entries yet.</p>
+                <p className="py-4 text-center text-sm text-[#6f6e69]">No audit entries yet.</p>
               )}
             </div>
           ) : null}
         </section>
 
         {/* Footer Notice */}
-        <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
-          <p className="text-center text-xs leading-relaxed text-slate-500">
+        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <p className="text-center text-xs leading-relaxed text-[#6f6e69]">
             This is an official record generated by the Civic Intelligence Platform. Reference{' '}
-            <span className="font-mono font-semibold text-slate-700">
+            <span className="font-mono font-semibold text-[#1d1d1b]">
               {formatReferenceId(r.id)}
             </span>{' '}
             must be quoted in all correspondence.
@@ -552,12 +557,12 @@ function DetailBlock({
   value: string;
 }): JSX.Element {
   return (
-    <div className="rounded-xl border border-slate-50 bg-slate-50/50 p-3.5">
-      <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+    <div className="rounded-lg bg-[#faf9f6] p-3 ring-1 ring-slate-200">
+      <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
         {icon}
         {label}
       </div>
-      <p className="mt-1.5 truncate text-sm font-medium text-slate-900">{value}</p>
+      <p className="mt-1 truncate text-sm font-medium text-[#1d1d1b]">{value}</p>
     </div>
   );
 }

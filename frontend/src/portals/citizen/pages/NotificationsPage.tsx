@@ -3,7 +3,7 @@ import { type JSX } from 'react';
 import { Spinner } from '../../moderator/design';
 import { Link } from 'react-router-dom';
 import { cx } from '../../moderator/design/cx';
-import { Bell, BellRing, ChevronRight } from 'lucide-react';
+import { IconBell, IconBellRinging, IconChevronRight, IconCheck } from '@tabler/icons-react';
 
 function formatDateTime(value: string | null | undefined): string {
   if (!value) return '';
@@ -36,119 +36,127 @@ export default function NotificationsPage(): JSX.Element {
   const unreadCount = notifications.filter((n) => !n.read_at).length;
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-8">
-      <header className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Official Notifications
+    <div className="space-y-8">
+      <header className="flex items-start justify-between gap-5 border-b border-[#d9d7d0] pb-7">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#777670]">
+            Citizen services
+          </p>
+          <h1 className="mt-2 text-[2rem] font-normal leading-[1.05] tracking-[-0.035em] sm:text-4xl">
+            Notifications
           </h1>
+          <p className="mt-3 max-w-2xl text-[15px] leading-6 text-[#6f6e69]">
+            Status updates regarding your submitted reports
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
           {unreadCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 ring-1 ring-inset ring-blue-100">
-              <BellRing className="h-3.5 w-3.5" aria-hidden />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] text-[#777670]">
+              <IconBellRinging className="h-3.5 w-3.5" stroke={1.6} aria-hidden />
               {unreadCount} unread
             </span>
           )}
         </div>
-        <p className="text-sm text-slate-500">
-          Status updates regarding your submitted reports and civic interactions.
-        </p>
       </header>
 
-      {list.isLoading ? (
-        <div className="flex justify-center py-20">
-          <Spinner label="Loading notifications" />
-        </div>
-      ) : notifications.length === 0 ? (
-        <div className="flex flex-col items-center py-20 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 ring-1 ring-inset ring-slate-100">
-            <Bell className="h-7 w-7 text-slate-300" aria-hidden />
+      <main className="mx-auto max-w-3xl space-y-4 pb-12">
+        {list.isLoading ? (
+          <div className="flex justify-center py-20">
+            <Spinner label="Loading notifications" />
           </div>
-          <h2 className="mt-5 text-lg font-semibold text-slate-800">No notifications</h2>
-          <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-500">
-            You have no official notifications at this time. Updates will appear here.
-          </p>
-          <Link
-            to="/citizen/submit"
-            className="mt-8 inline-flex min-h-[44px] items-center rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 active:bg-slate-950"
-          >
-            Submit a report
-          </Link>
-        </div>
-      ) : (
-        <ul className="space-y-3">
-          {notifications.map((n) => (
-            <li
+        ) : notifications.length === 0 ? (
+          <div className="rounded-2xl border border-black/10 bg-white">
+            <div className="flex flex-col items-center px-6 py-16">
+              <span className="grid h-14 w-14 place-items-center rounded-full bg-[#efeee9]">
+                <IconBell className="h-7 w-7 text-[#777670]" stroke={1.5} aria-hidden />
+              </span>
+              <p className="mt-4 text-base font-medium text-[#1d1d1b]">No notifications</p>
+              <p className="mt-1 text-sm text-[#777670]">
+                Updates about your reports will appear here
+              </p>
+              <Link
+                to="/citizen/submit"
+                className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium transition hover:border-black/30"
+              >
+                File a report
+                <IconChevronRight className="h-4 w-4" stroke={1.6} />
+              </Link>
+            </div>
+          </div>
+        ) : (
+          notifications.map((n) => (
+            <div
               key={n.id}
               className={cx(
-                'rounded-xl border bg-white transition',
-                n.read_at
-                  ? 'border-slate-200 hover:border-slate-300'
-                  : 'border-blue-200 bg-blue-50/30',
+                'rounded-2xl bg-white p-5 shadow-sm ring-1 transition',
+                n.read_at ? 'ring-slate-200' : 'bg-blue-50/40 ring-blue-200',
               )}
             >
-              <div className="p-5">
-                <div className="flex items-start gap-4">
-                  <div
-                    className={cx(
-                      'flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl',
-                      n.read_at ? 'bg-slate-50 text-slate-400' : 'bg-blue-100/70 text-blue-700',
-                    )}
-                    aria-hidden
-                  >
-                    <Bell className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          {!n.read_at && (
-                            <span
-                              className="mt-0.5 h-2 w-2 flex-shrink-0 rounded-full bg-blue-600"
-                              aria-label="Unread"
-                            />
-                          )}
-                          <h2 className="truncate text-base font-medium text-slate-900">
-                            {n.title}
-                          </h2>
-                        </div>
-                        <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{n.body}</p>
+              <div className="flex items-start gap-4">
+                <span
+                  className={cx(
+                    'grid h-10 w-10 shrink-0 place-items-center rounded-full',
+                    n.read_at ? 'bg-[#efeee9] text-[#777670]' : 'bg-blue-100 text-blue-600',
+                  )}
+                  aria-hidden
+                >
+                  <IconBell className="h-5 w-5" stroke={1.6} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        {!n.read_at && (
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full bg-blue-600"
+                            aria-label="Unread"
+                          />
+                        )}
+                        <p className="truncate text-sm font-medium text-[#1d1d1b]">{n.title}</p>
                       </div>
+                      <p className="mt-1 text-sm leading-relaxed text-[#6f6e69]">{n.body}</p>
                     </div>
-                    <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-                      <time dateTime={n.created_at} className="text-xs font-medium text-slate-400">
-                        {formatDateTime(n.created_at)}
-                      </time>
-                      <span className="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-500 ring-1 ring-inset ring-slate-100">
-                        {channelLabel(n.channel)}
-                      </span>
-                    </div>
-                    {n.data && typeof n.data === 'object' && 'report_id' in n.data && (
-                      <Link
-                        to={`/citizen/reports/${String(n.data.report_id)}`}
-                        className="mt-4 inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-slate-900 transition hover:text-slate-700"
-                      >
-                        View related report
-                        <ChevronRight className="h-4 w-4" aria-hidden />
-                      </Link>
-                    )}
+                    <IconChevronRight
+                      className="h-5 w-5 shrink-0 text-[#aaa9a4]"
+                      stroke={1.5}
+                      aria-hidden
+                    />
                   </div>
-                </div>
-                {!n.read_at && (
-                  <div className="mt-4 border-t border-blue-100/80 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => markRead.mutate(n.id)}
-                      className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 sm:w-auto"
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <time dateTime={n.created_at} className="text-xs text-[#85847f]">
+                      {formatDateTime(n.created_at)}
+                    </time>
+                    <span className="inline-flex items-center rounded bg-[#efeee9] px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-[#85847f]">
+                      {channelLabel(n.channel)}
+                    </span>
+                  </div>
+                  {n.data && typeof n.data === 'object' && 'report_id' in n.data && (
+                    <Link
+                      to={`/citizen/reports/${String(n.data.report_id)}`}
+                      className="mt-3 inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-[#1d1d1b] transition hover:bg-[#faf9f6]"
                     >
-                      Mark as read
-                    </button>
-                  </div>
-                )}
+                      View report
+                      <IconChevronRight className="h-4 w-4" stroke={1.6} aria-hidden />
+                    </Link>
+                  )}
+                </div>
               </div>
-            </li>
-          ))}
-        </ul>
-      )}
+              {!n.read_at && (
+                <div className="mt-4 border-t border-[#e4e2dc] pt-4">
+                  <button
+                    type="button"
+                    onClick={() => markRead.mutate(n.id)}
+                    className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-black/15 bg-white px-5 py-2 text-sm font-medium text-[#1d1d1b] transition hover:border-black/30 active:bg-[#faf9f6] sm:w-auto"
+                  >
+                    <IconCheck className="h-4 w-4" stroke={1.7} aria-hidden />
+                    Mark as read
+                  </button>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </main>
     </div>
   );
 }
