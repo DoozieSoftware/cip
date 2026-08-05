@@ -1,6 +1,6 @@
 # Department-Wise Routing — Implementation Plan (v3, code-audited)
 
-Status: **Track A and Track B implementation delivered; governance and routing-alignment items remain. Audited 2026-08-05.**
+Status: **Track A and Track B implementation delivered; governance items remain. Audited 2026-08-05.**
 Every claim below marked ✅ verified in code, ⚠️ needs change, or ❓ needs external/governance input.
 Depends on: `docs/department-routing-mapping.md` (approved mapping),
 `Bengaluru_Civic_Issue_Department_Routing_Matrix_2026-08-04.xlsx` (research workbook).
@@ -13,8 +13,8 @@ Phase 1 preserves the original eight broad citizen-facing issue categories.
 Internal AI signals and routing rules resolve reports to a primary department
 without exposing extra fine-grained categories in the PWA. Strict
 department-scoped logins, secondary linked tasks, the operations task queue,
-and the Super Admin cross-department view are implemented. Governance and
-internal-label/routing alignment remain before production rollout.
+and the Super Admin cross-department view are implemented. Governance remains
+before production rollout.
 
 **Category boundary:** citizen categories are the eight active `report_types`;
 fine-grained labels such as `pothole`, `streetlight`, and `water_leakage` are
@@ -46,7 +46,7 @@ not configuration. Estimates below reflect that.
 | C13 | ✅ Routing rules are DB-configurable + cache-invalidated (admin CRUD exists) | `RoutingRepository.php` lines 26–47 |
 | C14 | ✅ Departments table already has `default_sla_minutes`, `escalation_matrix`, `working_hours`, hierarchy `parent_id` — but escalation matrix is **stored, never consumed** | departments migration lines 60–61 |
 | C15 | ✅ Role model ready: `department_officer`, `department_admin`, `moderator`, `super_admin` | `RolesAndPermissionsSeeder.php` |
-| C16 | ⚠️ Active citizen categories are restored to the original 8, while the internal fine-grained rule vocabulary still needs explicit alignment with broad report types | `2026_08_04_600000_restore_original_report_categories.php`; `RoutingRulesSeeder.php` |
+| C16 | ✅ Active citizen categories are restored to the original 8; internal AI-label rules now precede explicit broad-category fallbacks | `2026_08_04_600000_restore_original_report_categories.php`; `2026_08_05_100000_align_routing_rules_to_broad_categories.php`; `RoutingRulesSeeder.php` |
 | C17 | ✅ Secondary assignment service, department task queue, and Super Admin cross-department view exist; governance policy remains open | `SecondaryRoutingService.php`; `DepartmentTaskService.php`; `AdminReportController.php` |
 
 ---
@@ -91,21 +91,23 @@ not configuration. Estimates below reflect that.
 - Fine-grained labels remain historical/internal data and are inactive citizen
   choices. The restore migration enforces this for existing databases.
 
-### 3.3 Routing rules ⚠️ engine change required
+### 3.3 Routing rules ✅ aligned for Phase 1
 - ✅ Admin surface already exists and is sufficient for primary routing:
   `/admin/routing-rules` offers full rule CRUD (name, priority order, conditions
   JSON in the M7 DSL, destination department, default priority, default SLA,
   active toggle, reorder endpoint) — `RoutingAdminController` (super_admin only),
   `StoreRoutingRuleRequest`.
-- Currently seeded rules (all category-based): Garbage→BBMP_WARD_112 (1440m),
-  Roads/Water/Electricity→BBMP_WARD_112 (1440m), Traffic/Parking/Encroachment→BTP
-  (480m, high), Dead Animal→BBMP_WARD_112 (1440m); 2 legacy rules inactive;
-  fallback `routing_default_department_id` → BBMP_WARD_112.
-- ⚠️ Alignment remains: the current rules use internal fine-grained labels while
-  the active citizen catalog uses eight broad codes. The mapping between these
-  two representations must be made explicit before changing production routing.
-- Primary routing: one rule per category (condition DSL already supports
-  `category_in`) ✅ C13.
+- The canonical rule set has nine internal `ai_label_in` rules for specific
+  destinations (streetlights, outages, drains, tree falls, and similar cases)
+  followed by six broad `category_in` fallback rules for the eight citizen
+  categories. This keeps fine-grained routing internal while ensuring every
+  citizen category has a deterministic destination.
+- Existing databases are updated by
+  `2026_08_05_100000_align_routing_rules_to_broad_categories.php`; fresh seeds
+  use the same rule set from `RoutingRulesSeeder.php`.
+- The routing fallback is `routing_default_department_id` → `BBMP_ENG`.
+- Primary routing remains first-match and deterministic; the condition DSL
+  supports both `category_in` and `ai_label_in` ✅ C13.
 - ✅ Secondary routing is implemented without rewriting the first-match engine:
   `SecondaryRoutingService` maps approved AI triggers after primary assignment,
   creates idempotent linked assignments, and preserves one primary owner.
@@ -173,6 +175,20 @@ are confirmed:
 - GIS/ward routing requirements and boundary data.
 - Closure authority for multi-department complaints; the current proposal is
   that the primary department owns closure, with Super Admin override.
+
+### Current pilot defaults
+
+The current implementation follows the documented defaults while official
+government sign-off remains pending:
+
+- Provisional seeded SLAs remain admin-tunable; the official escalation matrix
+  is not activated.
+- Emergency flags are advisory only: they are surfaced to moderators and do
+  not trigger automated dispatch.
+- The primary department owns master-complaint closure; Super Admin retains
+  override authority. Secondary departments complete linked tasks only.
+- Asset ownership and ward/GIS routing remain deferred; category routing is
+  used without geographic overrides.
 
 Implementation delivered:
 

@@ -93,10 +93,16 @@ Catch-all (matches every report):
 {}
 ```
 
-`category_in` only:
+Broad citizen category fallback:
 
 ```json
-{ "category_in": ["pothole", "road_damage"] }
+{ "category_in": ["roads"] }
+```
+
+Internal AI-label refinement:
+
+```json
+{ "ai_label_in": ["streetlight"] }
 ```
 
 `category_in` AND `severity_in`:
@@ -272,17 +278,24 @@ Reassignments write an `audit_logs` row with
 
 ## Bangalore sample rules
 
-`RoutingRulesSeeder` upserts three rules:
+`RoutingRulesSeeder` upserts 15 canonical rules. Nine internal
+`ai_label_in` rules run first for specific destinations such as
+`streetlight -> BBMP_ELEC`, `power_outage -> BESCOM`,
+`tree_fall -> BBMP_FOR`, and `drain_blockage -> BBMP_SWD`. Six broad
+`category_in` fallback rules then cover the eight citizen categories:
 
-| Name                              | Priority | Categories                                                | Destination            | SLA   |
-| --------------------------------- | -------- | --------------------------------------------------------- | ---------------------- | ----- |
-| `Garbage -> BBMP Ward 112`        | 10       | `garbage`, `illegal_dumping`, `dead_animal`, `open_drain` | BBMP_WARD_112          | 24h   |
-| `Pothole -> BBMP Ward 112`        | 20       | `pothole`, `road_damage`                                  | BBMP_WARD_112          | 24h   |
-| `Illegal Parking -> BTP`          | 30       | `illegal_parking`, `encroachment`                         | BTP_TRAFFIC            | 8h    |
+| Broad categories | Destination | Default SLA |
+| ---------------- | ----------- | ----------- |
+| `roads` | `BBMP_ENG` | 24h |
+| `water_sewage` | `BWSSB` | 12h |
+| `electricity` | `BESCOM` | 12h |
+| `garbage`, `dead_animal` | `BBMP_SWM` | 24h |
+| `traffic_violation`, `illegal_parking` | `BTP` | 8h |
+| `encroachment` | `BBMP_TP` | 48h |
 
-The two destination departments (`BBMP_WARD_112`, `BTP_TRAFFIC`)
-are upserted by `code` by the same seeder so the deployment does
-not need a separate departments import.
+The persisted rule migration and the seeder use the same canonical set.
+The fallback destination is `BBMP_ENG`; legacy ward-112 rules are retained
+only as inactive historical records.
 
 ## Test coverage
 
