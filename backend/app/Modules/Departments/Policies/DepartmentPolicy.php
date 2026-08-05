@@ -6,6 +6,7 @@ namespace App\Modules\Departments\Policies;
 
 use App\Modules\Departments\Models\Department;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportAssignment;
 use App\Modules\Shared\Policies\BasePolicy;
 use App\Modules\Shared\Support\DepartmentScope;
 use App\Modules\Users\Models\User;
@@ -117,6 +118,28 @@ class DepartmentPolicy extends BasePolicy
     public function attachProof(User $user, mixed $report): bool
     {
         return $this->view($user, $report);
+    }
+
+    public function completeTask(User $user, mixed $assignment): bool
+    {
+        if (! $assignment instanceof ReportAssignment) {
+            return false;
+        }
+
+        if ($assignment->kind !== ReportAssignment::KIND_SECONDARY) {
+            return false;
+        }
+
+        if (! $assignment->open()->whereKey($assignment->getKey())->exists()) {
+            return false;
+        }
+
+        if (DepartmentScope::isUnrestrictedStaff($user)) {
+            return true;
+        }
+
+        return DepartmentScope::isDepartmentScopedStaff($user)
+            && in_array($assignment->department_id, DepartmentScope::memberDepartmentIds($user), true);
     }
 
     public function viewAudit(User $user): bool

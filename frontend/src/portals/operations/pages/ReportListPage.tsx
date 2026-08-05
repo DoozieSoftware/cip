@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { Spinner, EmptyState, Badge } from '../design';
 import { api } from '../api/client';
 import { departmentApi, type ReportListFilters } from '../api/operations';
@@ -94,6 +94,9 @@ function useReportTypeOptions() {
 
 export default function ReportListPage() {
   const { selectedId, ready, memberships } = useDepartmentSelection();
+  const location = useLocation();
+  const secondaryOnly = location.pathname === '/operations/tasks';
+  const selectedDepartment = memberships.find((membership) => membership.id === selectedId);
   const [params, setParams] = useSearchParams();
   const [filters, setFilters] = useState<ReportListFilters>(() => ({
     status: params.get('status') ?? '',
@@ -102,6 +105,7 @@ export default function ReportListPage() {
     search: params.get('search') ?? '',
     date_from: params.get('date_from') ?? '',
     date_to: params.get('date_to') ?? '',
+    assignment_kind: secondaryOnly ? 'secondary' : undefined,
     page: params.get('page') ? Math.max(1, Number(params.get('page')) || 1) : 1,
     per_page: 20,
   }));
@@ -109,7 +113,11 @@ export default function ReportListPage() {
 
   const reportTypes = useReportTypeOptions();
 
-  const scopedFilters: ReportListFilters = { ...filters, department_id: selectedId ?? undefined };
+  const scopedFilters: ReportListFilters = {
+    ...filters,
+    assignment_kind: secondaryOnly ? 'secondary' : undefined,
+    department_id: selectedId ?? undefined,
+  };
 
   const { data, isLoading, error, refetch } = useQuery<Paginated<DepartmentReportListItem>>({
     queryKey: ['operations', 'reports', scopedFilters],
@@ -144,6 +152,7 @@ export default function ReportListPage() {
       search: '',
       date_from: '',
       date_to: '',
+      assignment_kind: secondaryOnly ? 'secondary' : undefined,
       page: 1,
       per_page: 20,
     });
@@ -178,20 +187,25 @@ export default function ReportListPage() {
     );
   }
 
-  const needsAction = data.data.filter((r) =>
-    ['assigned', 'accepted', 'in_progress', 'resolved'].includes(r.current_status_code ?? ''),
-  ).length;
+  const needsAction = data.data.filter((r) => {
+    const status = r.assignment?.kind === 'secondary' ? r.assignment.status : r.current_status_code;
+    return ['open', 'assigned', 'accepted', 'in_progress', 'resolved'].includes(status ?? '');
+  }).length;
   const resolved = data.data.filter((r) =>
     ['resolved', 'verified', 'closed'].includes(r.current_status_code ?? ''),
   ).length;
   const overdue = data.data.filter((r) => {
+    const isSecondary = r.assignment?.kind === 'secondary';
+    const startAt = isSecondary ? r.assignment?.assigned_at : r.created_at;
+    const slaMinutes = isSecondary ? r.assignment?.sla_minutes : r.department_sla_minutes;
+    const status = isSecondary ? r.assignment?.status : r.current_status_code;
     if (
-      !r.created_at ||
-      !r.department_sla_minutes ||
-      ['resolved', 'verified', 'closed'].includes(r.current_status_code ?? '')
+      !startAt ||
+      !slaMinutes ||
+      ['completed', 'cancelled', 'resolved', 'verified', 'closed'].includes(status ?? '')
     )
       return false;
-    return new Date(r.created_at).getTime() + r.department_sla_minutes * 60_000 < Date.now();
+    return new Date(startAt).getTime() + slaMinutes * 60_000 < Date.now();
   }).length;
   const activeFilterCount = [
     filters.status,
@@ -207,15 +221,19 @@ export default function ReportListPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-            Officer queue
+            {secondaryOnly ? 'Secondary work queue' : 'Officer queue'}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold text-slate-950">Assigned reports</h1>
+          <h1 className="mt-1 text-2xl font-semibold text-slate-950">
+            {secondaryOnly ? 'Secondary tasks' : 'Assigned reports'}
+          </h1>
           <p className="mt-1 text-sm text-slate-600">
-            Reports that are already in your department's hands.
+            {secondaryOnly
+              ? 'Complete linked work without changing the primary report workflow.'
+              : "Reports and linked tasks that are already in your department's hands."}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <ExportMenu filters={scopedFilters} />
+          {!secondaryOnly && <ExportMenu filters={scopedFilters} />}
         </div>
       </div>
 
@@ -373,7 +391,7 @@ export default function ReportListPage() {
               className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"
             >
               <Link
-                to={`/operations/reports/${r.id}`}
+                to={`/operations/reports/${r.id}${selectedId ? `?department_id=${encodeURIComponent(selectedId)}` : ''}`}
                 className="block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -383,8 +401,21 @@ export default function ReportListPage() {
                     </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Badge tone={statusTone(r.current_status_code)}>
-                          {statusLabel(r.current_status_code)}
+                        <Badge tone={r.assignment?.kind === 'secondary' ? 'purple' : 'neutral'}>
+                          {r.assignment?.kind === 'secondary' ? 'Secondary task' : 'Primary report'}
+                        </Badge>
+                        <Badge
+                          tone={
+                            r.assignment?.kind === 'secondary'
+                              ? r.assignment.status === 'completed'
+                                ? 'success'
+                                : 'info'
+                              : statusTone(r.current_status_code)
+                          }
+                        >
+                          {r.assignment?.kind === 'secondary'
+                            ? statusLabel(r.assignment.status)
+                            : statusLabel(r.current_status_code)}
                         </Badge>
                         {r.priority && (
                           <Badge tone={PRIORITY_TONE[r.priority.code] ?? 'neutral'}>
@@ -406,8 +437,16 @@ export default function ReportListPage() {
                     <div>
                       <p className="text-xs uppercase tracking-wide text-slate-400">Deadline</p>
                       <div className="mt-1">
-                        <SlaBadge report={r} />
+                        <SlaBadge report={r} assignment={r.assignment} />
                       </div>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-slate-400">Department</p>
+                      <p className="mt-1 truncate font-medium text-slate-700">
+                        {r.assignment?.kind === 'secondary'
+                          ? (selectedDepartment?.name ?? 'Selected department')
+                          : (r.department?.name ?? '—')}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-wide text-slate-400">Reported</p>
@@ -418,7 +457,9 @@ export default function ReportListPage() {
                     <div>
                       <p className="text-xs uppercase tracking-wide text-slate-400">Next step</p>
                       <p className="mt-1 font-medium text-slate-700">
-                        {NEXT_ACTION[r.current_status_code ?? ''] ?? 'Review'}
+                        {r.assignment?.kind === 'secondary'
+                          ? 'Complete task'
+                          : (NEXT_ACTION[r.current_status_code ?? ''] ?? 'Review')}
                       </p>
                     </div>
                   </div>

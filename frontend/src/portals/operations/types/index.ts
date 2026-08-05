@@ -7,6 +7,8 @@
  */
 
 export type WorkflowEvent = 'accept' | 'start' | 'progress' | 'resolve' | 'close';
+export type AssignmentKind = 'primary' | 'secondary';
+export type TaskStatus = 'open' | 'completed' | 'cancelled';
 
 export type ReportStatusCode =
   | 'draft'
@@ -108,7 +110,21 @@ export interface ReportListItem {
 export interface DepartmentReportListItem extends ReportListItem {
   current_status_code: string | null;
   department_sla_minutes: number | null;
+  assignment: ReportAssignment | null;
   internal_notes: InternalNote[];
+}
+
+export interface ReportAssignment {
+  id: string;
+  department_id: string;
+  is_primary: boolean;
+  kind: AssignmentKind;
+  status: TaskStatus;
+  sla_minutes: number | null;
+  assigned_at: string;
+  accepted_at: string | null;
+  completed_at: string | null;
+  officer: AssignedOfficer | null;
 }
 
 export interface InternalNote {

@@ -31,6 +31,7 @@ export function OperationsApp() {
           <Route element={<OperationsLayout />}>
             <Route index element={<DashboardPage />} />
             <Route path="reports" element={<ReportListPage />} />
+            <Route path="tasks" element={<ReportListPage />} />
             <Route path="reports/export" element={<ExportPage />} />
             <Route path="reports/:id" element={<ReportDetailPage />} />
             <Route path="map" element={<GisMapPage />} />

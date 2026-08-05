@@ -27,6 +27,7 @@ import { MediaGallery } from '../components/MediaGallery';
 import { SlaChip } from '../components/SlaChip';
 import { StatusTimeline } from '../components/StatusTimeline';
 import { statusLabel, statusTone } from '../components/statusMeta';
+import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 
 const actionStatus: Partial<Record<WorkflowEvent, ReportStatusCode>> = {
   accept: 'assigned',
@@ -112,6 +113,8 @@ const ACTION_DESCRIPTION: Record<WorkflowEvent, string> = {
 export default function ReportDetailPage() {
   const params = useParams<{ id: string }>();
   const reportId = params.id ?? '';
+  const { selectedId, ready, memberships } = useDepartmentSelection();
+  const selectedDepartment = memberships.find((membership) => membership.id === selectedId);
   const queryClient = useQueryClient();
   const noteRef = useRef<HTMLTextAreaElement | null>(null);
   const proofInputRef = useRef<HTMLInputElement | null>(null);
@@ -122,26 +125,28 @@ export default function ReportDetailPage() {
     error,
     refetch,
   } = useQuery<DepartmentReportDetail>({
-    queryKey: ['operations', 'report', reportId],
-    queryFn: async () => (await departmentApi.showReport(reportId)).data,
-    enabled: Boolean(reportId),
+    queryKey: ['operations', 'report', reportId, selectedId],
+    queryFn: async () =>
+      (await departmentApi.showReportInDepartment(reportId, selectedId ?? '')).data,
+    enabled: Boolean(reportId) && ready && memberships.length > 0 && Boolean(selectedId),
   });
 
   const { data: notesData, refetch: refetchNotes } = useQuery<{ data: InternalNote[] }>({
-    queryKey: ['operations', 'report', reportId, 'notes'],
-    queryFn: () => departmentApi.listNotes(reportId),
-    enabled: Boolean(reportId),
+    queryKey: ['operations', 'report', reportId, 'notes', selectedId],
+    queryFn: () => departmentApi.listNotes(reportId, selectedId ?? undefined),
+    enabled: Boolean(reportId) && ready && memberships.length > 0 && Boolean(selectedId),
   });
 
   const [noteBody, setNoteBody] = useState('');
   const [pendingAction, setPendingAction] = useState<WorkflowEvent | null>(null);
+  const [taskCompletionPending, setTaskCompletionPending] = useState(false);
 
   const action = useMutation({
     mutationFn: (input: { event: WorkflowEvent; note?: string }) =>
       departmentApi.action(reportId, input.event, input.note),
     onSuccess: (response) => {
       queryClient.setQueryData<DepartmentReportDetail>(
-        ['operations', 'report', reportId],
+        ['operations', 'report', reportId, selectedId],
         (current) =>
           ({
             ...response.data,
@@ -155,8 +160,23 @@ export default function ReportDetailPage() {
   const actionPending = action.isPending;
   const activeAction = action.variables?.event;
 
+  const completeTask = useMutation({
+    mutationFn: (note?: string) => {
+      const assignment = report?.assignment;
+      if (!report || assignment?.kind !== 'secondary') {
+        throw new Error('Only a secondary task can be completed here.');
+      }
+      return departmentApi.completeTask(report.id, assignment.id, note, selectedId ?? undefined);
+    },
+    onSuccess: () => {
+      setTaskCompletionPending(false);
+      void queryClient.invalidateQueries({ queryKey: ['operations', 'reports'] });
+      void queryClient.invalidateQueries({ queryKey: ['operations', 'report', reportId] });
+    },
+  });
+
   const addNote = useMutation({
-    mutationFn: () => departmentApi.addNote(reportId, noteBody.trim()),
+    mutationFn: () => departmentApi.addNote(reportId, noteBody.trim(), selectedId ?? undefined),
     onSuccess: () => {
       setNoteBody('');
       void refetchNotes();
@@ -212,7 +232,7 @@ export default function ReportDetailPage() {
   );
   useKeyboardShortcuts(shortcuts, !isLoading && Boolean(report));
 
-  if (isLoading) {
+  if (isLoading || !ready || (memberships.length > 0 && !selectedId)) {
     return (
       <div className="flex items-center justify-center py-20" aria-live="polite">
         <Spinner label="Loading report" />
@@ -240,11 +260,20 @@ export default function ReportDetailPage() {
   }
 
   const status = report.current_status_code ?? 'unknown';
-  const isTerminal = status === 'closed' || status === 'rejected' || status === 'merged';
+  const assignment = report.assignment;
+  const isSecondaryTask = assignment?.kind === 'secondary';
+  const taskStatus = assignment?.status ?? null;
+  const isTerminal =
+    status === 'closed' ||
+    status === 'rejected' ||
+    status === 'merged' ||
+    (isSecondaryTask && taskStatus !== 'open');
   const evidence = report.media.filter((m) => m.role === 'evidence');
   const proof = report.media.filter((m) => m.role === 'proof');
   const pendingMeta = pendingAction ? ACTION_META[pendingAction] : null;
-  const availableActions = ACTIONS_BY_STATUS[status as ReportStatusCode] ?? [];
+  const availableActions = isSecondaryTask
+    ? []
+    : (ACTIONS_BY_STATUS[status as ReportStatusCode] ?? []);
 
   return (
     <div className="space-y-6">
@@ -260,16 +289,23 @@ export default function ReportDetailPage() {
             <h1 className="text-xl font-semibold text-slate-900">{report.title}</h1>
             <p className="font-mono text-xs text-slate-500">{report.tracking_number}</p>
           </div>
-          <Badge tone={statusTone(status)}>{statusLabel(status)}</Badge>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Badge tone={isSecondaryTask ? 'purple' : 'neutral'}>
+              {isSecondaryTask ? 'Secondary task' : 'Primary report'}
+            </Badge>
+            <Badge tone={statusTone(status)}>{statusLabel(status)}</Badge>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {report.report_type && <Badge tone="neutral">{report.report_type.name}</Badge>}
           {report.priority && <Badge tone="neutral">{report.priority.name} priority</Badge>}
-          {report.department_sla_minutes != null && (
+          {(isSecondaryTask
+            ? assignment?.sla_minutes != null
+            : report.department_sla_minutes != null) && (
             <SlaChip
-              createdAt={report.created_at}
-              slaMinutes={report.department_sla_minutes}
-              status={status}
+              createdAt={isSecondaryTask ? assignment?.assigned_at : report.created_at}
+              slaMinutes={isSecondaryTask ? assignment?.sla_minutes : report.department_sla_minutes}
+              status={isSecondaryTask ? taskStatus : status}
             />
           )}
         </div>
@@ -283,7 +319,9 @@ export default function ReportDetailPage() {
             </p>
             <h2 className="mt-1 text-lg font-semibold text-slate-900">{statusLabel(status)}</h2>
             <p className="mt-1 text-sm leading-6 text-slate-600">
-              {STATUS_GUIDANCE[status] ?? 'No workflow action is available for this status.'}
+              {isSecondaryTask
+                ? 'This linked task has its own completion state. The primary department retains control of the report workflow.'
+                : (STATUS_GUIDANCE[status] ?? 'No workflow action is available for this status.')}
             </p>
           </div>
           {availableActions.length > 0 && (
@@ -313,6 +351,55 @@ export default function ReportDetailPage() {
           )}
         </CardBody>
       </Card>
+
+      {isSecondaryTask && (
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Secondary task</CardTitle>
+              <p className="mt-1 text-xs text-slate-500">
+                Complete this department task without resolving or closing the report.
+              </p>
+            </div>
+            <Badge tone={taskStatus === 'completed' ? 'success' : 'info'}>
+              {statusLabel(taskStatus)}
+            </Badge>
+          </CardHeader>
+          <CardBody className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-slate-500">Department</dt>
+                <dd className="mt-1 font-medium text-slate-900">
+                  {selectedDepartment?.name ?? 'Selected department'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-slate-500">Assigned</dt>
+                <dd className="mt-1 font-medium text-slate-900">
+                  {new Date(assignment.assigned_at).toLocaleString()}
+                </dd>
+              </div>
+            </dl>
+            {taskStatus === 'open' && (
+              <Button
+                variant="success"
+                onClick={() => setTaskCompletionPending(true)}
+                disabled={completeTask.isPending}
+                loading={completeTask.isPending}
+              >
+                Mark task complete
+              </Button>
+            )}
+            {completeTask.isError && (
+              <p role="alert" className="text-sm text-red-700">
+                {completeTask.error instanceof Error
+                  ? completeTask.error.message
+                  : 'The task could not be completed.'}
+              </p>
+            )}
+          </CardBody>
+        </Card>
+      )}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]">
         <div className="space-y-5">
@@ -465,9 +552,11 @@ export default function ReportDetailPage() {
                   <dt className="text-xs uppercase tracking-wide text-slate-500">SLA</dt>
                   <dd className="mt-1">
                     <SlaChip
-                      createdAt={report.created_at}
-                      slaMinutes={report.department_sla_minutes}
-                      status={status}
+                      createdAt={isSecondaryTask ? assignment?.assigned_at : report.created_at}
+                      slaMinutes={
+                        isSecondaryTask ? assignment?.sla_minutes : report.department_sla_minutes
+                      }
+                      status={isSecondaryTask ? taskStatus : status}
                     />
                   </dd>
                 </div>
@@ -535,6 +624,17 @@ export default function ReportDetailPage() {
         busy={actionPending}
         onConfirm={confirmAction}
         onClose={() => setPendingAction(null)}
+      />
+      <ConfirmActionDialog
+        open={taskCompletionPending}
+        title="Mark task complete"
+        description="Confirm that your department's linked work is complete. This will not change the primary report status."
+        confirmLabel="Complete task"
+        confirmVariant="success"
+        requiresNote
+        busy={completeTask.isPending}
+        onConfirm={(note) => completeTask.mutate(note)}
+        onClose={() => setTaskCompletionPending(false)}
       />
     </div>
   );

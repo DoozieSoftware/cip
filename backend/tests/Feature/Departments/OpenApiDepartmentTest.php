@@ -11,7 +11,6 @@ declare(strict_types=1);
  * path parameters, and admin department sub-resources are
  * all present.
  */
-
 it('exposes every M11 operations endpoint in the OpenAPI document', function (): void {
     $yaml = file_get_contents(storage_path('api-docs/openapi.yaml'));
     expect($yaml)->not->toBeFalse();
@@ -26,6 +25,7 @@ it('exposes every M11 operations endpoint in the OpenAPI document', function ():
         '/api/v1/department/reports/{report}/progress:',
         '/api/v1/department/reports/{report}/resolve:',
         '/api/v1/department/reports/{report}/close:',
+        '/api/v1/department/reports/{report}/tasks/{assignment}/complete:',
         '/api/v1/department/reports/{report}/note:',
         '/api/v1/department/reports/{report}/notes:',
         '/api/v1/admin/departments/{department}/officers:',
@@ -46,6 +46,7 @@ it('declares a schema for every M11 operations resource', function (): void {
         'DepartmentReportDetail:',
         'DepartmentReportListResponse:',
         'DepartmentReportDetailResponse:',
+        'DepartmentReportAssignment:',
         'ProgressNoteRequest:',
         'InternalNote:',
         'InternalNoteRequest:',
@@ -75,6 +76,7 @@ it('tags every operations endpoint with the Operations tag', function (): void {
         ->and($yaml)->toContain('operationId: department.reports.progress')
         ->and($yaml)->toContain('operationId: department.reports.resolve')
         ->and($yaml)->toContain('operationId: department.reports.close')
+        ->and($yaml)->toContain('operationId: department.reports.tasks.complete')
         ->and($yaml)->toContain('operationId: department.reports.note.store')
         ->and($yaml)->toContain('operationId: department.reports.notes.index')
         ->and($yaml)->toContain('operationId: admin.departments.officers.index')

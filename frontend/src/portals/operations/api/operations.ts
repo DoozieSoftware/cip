@@ -34,6 +34,7 @@ export interface ReportListFilters {
   per_page?: number;
   /** Scoped department for multi-membership staff (resolver-validated). */
   department_id?: string;
+  assignment_kind?: 'primary' | 'secondary';
 }
 
 export interface Membership {
@@ -75,6 +76,11 @@ export const departmentApi = {
 
   showReport: (id: string) =>
     api.get<{ success: boolean; data: DepartmentReportDetail }>(`/department/reports/${id}`),
+
+  showReportInDepartment: (id: string, departmentId: string) =>
+    api.get<{ success: boolean; data: DepartmentReportDetail }>(`/department/reports/${id}`, {
+      department_id: departmentId,
+    }),
 
   /**
    * Uploads proof photos to a department report. The endpoint expects
@@ -130,11 +136,24 @@ export const departmentApi = {
       note ? { note } : {},
     ),
 
-  listNotes: (id: string) =>
-    api.get<{ success: boolean; data: InternalNote[] }>(`/department/reports/${id}/notes`),
+  completeTask: (reportId: string, assignmentId: string, note?: string, departmentId?: string) =>
+    api.post<{ success: boolean; data: DepartmentReportDetail }>(
+      `/department/reports/${reportId}/tasks/${assignmentId}/complete`,
+      note ? { note } : {},
+      { department_id: departmentId },
+    ),
 
-  addNote: (id: string, body: string) =>
-    api.post<{ success: boolean; data: InternalNote }>(`/department/reports/${id}/note`, { body }),
+  listNotes: (id: string, departmentId?: string) =>
+    api.get<{ success: boolean; data: InternalNote[] }>(`/department/reports/${id}/notes`, {
+      department_id: departmentId,
+    }),
+
+  addNote: (id: string, body: string, departmentId?: string) =>
+    api.post<{ success: boolean; data: InternalNote }>(
+      `/department/reports/${id}/note`,
+      { body },
+      { department_id: departmentId },
+    ),
 };
 
 export const adminApi = {

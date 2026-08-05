@@ -6,6 +6,7 @@ namespace App\Modules\Departments\Providers;
 
 use App\Modules\Departments\Policies\DepartmentPolicy;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportAssignment;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -94,5 +95,6 @@ class DepartmentServiceProvider extends ServiceProvider
         Gate::define('department.close', static fn (User $user, Report $report): bool => $policy()->close($user, $report));
         Gate::define('department.add_note', static fn (User $user, Report $report): bool => $policy()->addNote($user, $report));
         Gate::define('department.attach_proof', static fn (User $user, Report $report): bool => $policy()->attachProof($user, $report));
+        Gate::define('department.complete_task', static fn (User $user, ReportAssignment $assignment): bool => $policy()->completeTask($user, $assignment));
     }
 }

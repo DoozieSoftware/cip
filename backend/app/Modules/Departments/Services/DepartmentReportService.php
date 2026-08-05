@@ -97,8 +97,13 @@ class DepartmentReportService
         ]);
     }
 
-    public function addNote(Report $report, User $actor, string $body, ?Request $request): InternalNote
-    {
+    public function addNote(
+        Report $report,
+        User $actor,
+        string $body,
+        ?Request $request,
+        ?string $departmentId = null,
+    ): InternalNote {
         if (! $report->department_id) {
             throw new ApiException('REPORT_HAS_NO_DEPARTMENT', 'Report has no department; cannot add a department note.', 422);
         }
@@ -111,10 +116,12 @@ class DepartmentReportService
             throw new ApiException('NOTE_TOO_LONG', 'Note body cannot exceed 4000 characters.', 422);
         }
 
-        return DB::transaction(function () use ($report, $actor, $body, $request): InternalNote {
+        $departmentId ??= $report->department_id;
+
+        return DB::transaction(function () use ($report, $actor, $body, $request, $departmentId): InternalNote {
             $note = InternalNote::query()->create([
                 'report_id' => $report->getKey(),
-                'department_id' => $report->department_id,
+                'department_id' => $departmentId,
                 'author_id' => $actor->getKey(),
                 'body' => $body,
                 'created_at' => now(),
@@ -128,7 +135,7 @@ class DepartmentReportService
                 'action' => 'report.note_added',
                 'before' => null,
                 'after' => [
-                    'department_id' => $report->department_id,
+                    'department_id' => $departmentId,
                     'note_id' => $note->getKey(),
                 ],
                 'ip' => $request?->ip(),

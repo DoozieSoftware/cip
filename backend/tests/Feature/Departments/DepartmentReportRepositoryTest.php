@@ -122,3 +122,28 @@ it('includes reports held by an open secondary assignment in the target queue', 
             'sla_minutes' => 480,
         ]);
 });
+
+it('filters the operations queue to secondary assignments when requested', function (): void {
+    $primary = Department::factory()->create(['code' => 'PRIMARY-FILTER']);
+    $secondary = Department::factory()->create(['code' => 'SECONDARY-FILTER']);
+    $assigned = ReportStatus::query()->where('code', 'assigned')->firstOrFail();
+    $report = Report::factory()->create([
+        'department_id' => $primary->id,
+        'current_status_id' => $assigned->id,
+    ]);
+    ReportAssignment::query()->create([
+        'report_id' => $report->id,
+        'department_id' => $secondary->id,
+        'is_primary' => false,
+        'kind' => ReportAssignment::KIND_SECONDARY,
+        'assigned_at' => now(),
+        'task_status' => ReportAssignment::TASK_STATUS_OPEN,
+        'sla_minutes' => 480,
+    ]);
+
+    $page = app(DepartmentReportRepository::class)->assignedTo($secondary->id, [
+        'assignment_kind' => ReportAssignment::KIND_SECONDARY,
+    ]);
+
+    expect($page->total())->toBe(1);
+});

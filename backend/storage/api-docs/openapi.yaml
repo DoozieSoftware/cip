@@ -99,6 +99,9 @@ paths:
           name: search
           schema: { type: string }
         - in: query
+          name: assignment_kind
+          schema: { type: string, enum: [primary, secondary] }
+        - in: query
           name: page
           schema: { type: integer, minimum: 1, default: 1 }
         - in: query
@@ -263,6 +266,31 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/ValidationError' }
+  /api/v1/department/reports/{report}/tasks/{assignment}/complete:
+    post:
+      tags: [Operations]
+      summary: 'Complete an open secondary department task without changing report workflow'
+      operationId: department.reports.tasks.complete
+      parameters:
+        - $ref: '#/components/parameters/PathReportId'
+        - in: path
+          name: assignment
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProgressNoteRequest' }
+      responses:
+        '200':
+          description: 'Secondary task completed; the report workflow is unchanged.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentReportDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
   /api/v1/department/reports/{report}/note:
     post:
       tags: [Operations]
@@ -399,6 +427,10 @@ paths:
         properties:
           current_status_code: { type: string, example: 'assigned' }
           department_sla_minutes: { type: integer, nullable: true }
+          assignment:
+            nullable: true
+            allOf:
+              - $ref: '#/components/schemas/DepartmentReportAssignment'
           internal_notes:
             type: array
             items: { $ref: '#/components/schemas/InternalNote' }
@@ -438,6 +470,24 @@ paths:
       author_id: { type: string, format: uuid, nullable: true }
       author_name: { type: string, nullable: true }
       created_at: { type: string, format: date-time }
+  DepartmentReportAssignment:
+    type: object
+    properties:
+      id: { type: string, format: uuid }
+      department_id: { type: string, format: uuid }
+      is_primary: { type: boolean }
+      kind: { type: string, enum: [primary, secondary] }
+      status: { type: string, enum: [open, completed, cancelled] }
+      sla_minutes: { type: integer, nullable: true }
+      assigned_at: { type: string, format: date-time }
+      accepted_at: { type: string, format: date-time, nullable: true }
+      completed_at: { type: string, format: date-time, nullable: true }
+      officer:
+        nullable: true
+        type: object
+        properties:
+          id: { type: string, format: uuid }
+          name: { type: string, nullable: true }
   InternalNoteRequest:
     type: object
     required: [body]

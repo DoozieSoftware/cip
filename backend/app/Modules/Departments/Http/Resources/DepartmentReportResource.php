@@ -50,14 +50,20 @@ class DepartmentReportResource extends JsonResource
         $status = $report->relationLoaded('status') ? $report->status : $report->status()->first();
         $type = $report->relationLoaded('reportType') ? $report->reportType : $report->reportType()->first();
         $location = $report->relationLoaded('location') ? $report->location : $report->location()->first();
+        $requestedDepartment = $request->query('department_id');
+        $assignmentDepartment = is_string($requestedDepartment) && $requestedDepartment !== ''
+            ? $requestedDepartment
+            : $report->department_id;
         $notes = $report->relationLoaded('internalNotes')
-            ? $report->internalNotes->map(fn (InternalNote $n): array => [
-                'id' => $n->id,
-                'body' => $n->body,
-                'author_id' => $n->author_id,
-                'author_name' => $n->relationLoaded('author') ? $n->author?->name : null,
-                'created_at' => $n->created_at?->toIso8601String(),
-            ])->all()
+            ? $report->internalNotes
+                ->where('department_id', $assignmentDepartment)
+                ->map(fn (InternalNote $n): array => [
+                    'id' => $n->id,
+                    'body' => $n->body,
+                    'author_id' => $n->author_id,
+                    'author_name' => $n->relationLoaded('author') ? $n->author?->name : null,
+                    'created_at' => $n->created_at?->toIso8601String(),
+                ])->all()
             : [];
 
         $media = Media::query()
@@ -70,16 +76,14 @@ class DepartmentReportResource extends JsonResource
             ? $report->statusHistory
             : $report->statusHistory()->with(['fromStatus', 'toStatus'])->orderBy('created_at')->get();
 
-        $requestedDepartment = $request->query('department_id');
-        $assignmentDepartment = is_string($requestedDepartment) && $requestedDepartment !== ''
-            ? $requestedDepartment
-            : $report->department_id;
-
         $activeAssignment = ReportAssignment::query()
             ->where('report_id', $report->id)
             ->when(is_string($assignmentDepartment) && $assignmentDepartment !== '',
                 fn ($query) => $query->where('department_id', $assignmentDepartment))
-            ->open()
+            ->whereIn('task_status', [
+                ReportAssignment::TASK_STATUS_OPEN,
+                ReportAssignment::TASK_STATUS_COMPLETED,
+            ])
             ->whereNull('reassigned_at')
             ->with('officer')
             ->latest('assigned_at')

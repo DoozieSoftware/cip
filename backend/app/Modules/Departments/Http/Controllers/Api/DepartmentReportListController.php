@@ -42,6 +42,9 @@ class DepartmentReportListController extends Controller
 
     public function show(Report $report, Request $request): JsonResponse
     {
+        $request->merge([
+            'department_id' => $this->resolveDepartmentId($request, $report->department_id),
+        ]);
         $report = $this->repo->detail($report);
 
         return response()->json([
@@ -51,7 +54,7 @@ class DepartmentReportListController extends Controller
         ]);
     }
 
-    private function resolveDepartmentId(Request $request): string
+    private function resolveDepartmentId(Request $request, ?string $fallback = null): string
     {
         $user = $request->user();
 
@@ -60,6 +63,11 @@ class DepartmentReportListController extends Controller
         }
 
         $requested = $request->query('department_id');
+
+        if ((! is_string($requested) || $requested === '') && $fallback !== null
+            && $user->hasAnyRole(['super_admin', 'system'])) {
+            return $fallback;
+        }
 
         return $this->departments
             ->resolve($user, is_string($requested) && $requested !== '' ? $requested : null)

@@ -71,6 +71,7 @@ class DepartmentReportRepository
             ->with(['reportType', 'department', 'status', 'priority', 'location']);
 
         $this->applyInHandScope($query);
+        $this->applyAssignmentKindScope($query, $departmentId, $filters);
         $this->applyFilters($query, $filters);
 
         $rawPerPage = $filters['per_page'] ?? 20;
@@ -170,6 +171,28 @@ class DepartmentReportRepository
                     ->orWhere('title', 'like', $term);
             });
         }
+    }
+
+    /**
+     * Secondary work is filtered at the database boundary so pagination does
+     * not hide tasks behind unrelated primary reports.
+     *
+     * @param  array<array-key, mixed>  $filters
+     * @param  Builder<Report>  $query
+     */
+    private function applyAssignmentKindScope(Builder $query, string $departmentId, array $filters): void
+    {
+        if (($filters['assignment_kind'] ?? null) !== ReportAssignment::KIND_SECONDARY) {
+            return;
+        }
+
+        $query->whereHas('assignments', function (Builder $assignment) use ($departmentId): void {
+            $assignment
+                ->whereNull('completed_at')
+                ->where('task_status', ReportAssignment::TASK_STATUS_OPEN)
+                ->where('department_id', $departmentId)
+                ->where('kind', ReportAssignment::KIND_SECONDARY);
+        });
     }
 
     /**

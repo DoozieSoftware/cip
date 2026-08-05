@@ -61,7 +61,13 @@ export function formatSla(
   now: number = Date.now(),
 ): SlaDisplay | null {
   if (!createdAt || !slaMinutes || slaMinutes <= 0) return null;
-  if (status === 'resolved' || status === 'verified' || status === 'closed') {
+  if (
+    status === 'completed' ||
+    status === 'cancelled' ||
+    status === 'resolved' ||
+    status === 'verified' ||
+    status === 'closed'
+  ) {
     return { label: 'SLA met', tone: 'success' };
   }
   const created = new Date(createdAt).getTime();

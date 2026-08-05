@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { departmentApi } from '../api/operations';
+import { DepartmentSelectionProvider } from '../context/DepartmentSelectionContext';
 import { computeSlaLabel } from '../components/slaInfo';
 import type { DepartmentReportDetail } from '../types';
 import ReportDetailPage from './ReportDetailPage';
@@ -11,7 +12,10 @@ import ReportDetailPage from './ReportDetailPage';
 vi.mock('../api/operations', () => ({
   departmentApi: {
     showReport: vi.fn(),
+    showReportInDepartment: vi.fn(),
     action: vi.fn(),
+    completeTask: vi.fn(),
+    memberships: vi.fn(),
     listNotes: vi.fn(),
     addNote: vi.fn(),
     uploadProof: vi.fn(),
@@ -46,6 +50,7 @@ function baseReport(overrides: Partial<DepartmentReportDetail> = {}): Department
     media: [],
     status_history: [],
     assigned_to: null,
+    assignment: null,
     ...overrides,
   };
 }
@@ -54,19 +59,29 @@ function renderWithClient(ui: ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[`/operations/reports/${REPORT_ID}`]}>
-        <Routes>
-          <Route path="/operations/reports/:id" element={ui} />
-        </Routes>
-      </MemoryRouter>
+      <DepartmentSelectionProvider>
+        <MemoryRouter initialEntries={[`/operations/reports/${REPORT_ID}`]}>
+          <Routes>
+            <Route path="/operations/reports/:id" element={ui} />
+          </Routes>
+        </MemoryRouter>
+      </DepartmentSelectionProvider>
     </QueryClientProvider>,
   );
 }
 
 function renderPage(report: DepartmentReportDetail) {
-  vi.mocked(departmentApi.showReport).mockResolvedValue({ success: true, data: report });
+  vi.mocked(departmentApi.memberships).mockResolvedValue({
+    success: true,
+    data: [{ id: 'dept-1', code: 'BBMP', name: 'BBMP' }],
+  });
+  vi.mocked(departmentApi.showReportInDepartment).mockResolvedValue({
+    success: true,
+    data: report,
+  });
   vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
   vi.mocked(departmentApi.action).mockResolvedValue({ success: true, data: report });
+  vi.mocked(departmentApi.completeTask).mockResolvedValue({ success: true, data: report });
   renderWithClient(<ReportDetailPage />);
 }
 
@@ -76,14 +91,24 @@ beforeEach(() => {
 
 describe('ReportDetailPage', () => {
   it('shows a loading state while the report is being fetched', () => {
-    vi.mocked(departmentApi.showReport).mockReturnValue(new Promise(() => {}));
+    vi.mocked(departmentApi.memberships).mockResolvedValue({
+      success: true,
+      data: [{ id: 'dept-1', code: 'BBMP', name: 'BBMP' }],
+    });
+    vi.mocked(departmentApi.showReportInDepartment).mockReturnValue(new Promise(() => {}));
     vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
     renderWithClient(<ReportDetailPage />);
     expect(screen.getByLabelText('Loading report')).toBeInTheDocument();
   });
 
   it('shows an error state with retry when the report fails to load', async () => {
-    vi.mocked(departmentApi.showReport).mockRejectedValue(new Error('backend unreachable'));
+    vi.mocked(departmentApi.memberships).mockResolvedValue({
+      success: true,
+      data: [{ id: 'dept-1', code: 'BBMP', name: 'BBMP' }],
+    });
+    vi.mocked(departmentApi.showReportInDepartment).mockRejectedValue(
+      new Error('backend unreachable'),
+    );
     vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
     renderWithClient(<ReportDetailPage />);
     expect(await screen.findByText('Report not found')).toBeInTheDocument();
@@ -209,6 +234,42 @@ describe('ReportDetailPage', () => {
     expect(screen.queryByRole('button', { name: 'Close report' })).toBeNull();
   });
 
+  it('keeps secondary tasks out of the report workflow and completes the task safely', async () => {
+    const assignment = {
+      id: 'assignment-1',
+      department_id: 'dept-1',
+      is_primary: false,
+      kind: 'secondary' as const,
+      status: 'open' as const,
+      sla_minutes: 480,
+      assigned_at: '2026-08-01T09:00:00+05:30',
+      accepted_at: null,
+      completed_at: null,
+      officer: null,
+    };
+    renderPage(baseReport({ assignment }));
+
+    expect(await screen.findAllByText('Secondary task')).not.toHaveLength(0);
+    expect(screen.getByText('Open')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Accept assignment' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Mark as resolved' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark task complete' }));
+    fireEvent.change(await screen.findByLabelText('Note (required)'), {
+      target: { value: 'Traffic control completed.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Complete task' }));
+
+    await waitFor(() =>
+      expect(departmentApi.completeTask).toHaveBeenCalledWith(
+        REPORT_ID,
+        'assignment-1',
+        'Traffic control completed.',
+        'dept-1',
+      ),
+    );
+  });
+
   it('uploads proof photos and refetches the report', async () => {
     renderPage(baseReport());
     const file = new File(['x'], 'after-fix.jpg', { type: 'image/jpeg' });
@@ -218,7 +279,7 @@ describe('ReportDetailPage', () => {
     fireEvent.change(input, { target: { files: [file] } });
 
     await waitFor(() => expect(departmentApi.uploadProof).toHaveBeenCalledWith(REPORT_ID, [file]));
-    await waitFor(() => expect(departmentApi.showReport).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(departmentApi.showReportInDepartment).toHaveBeenCalledTimes(2));
   });
 });
 

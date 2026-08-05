@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Departments\Models\Department;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportAssignment;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Users\Models\User;
 use Database\Seeders\DefaultWorkflowSeeder;
@@ -136,6 +137,75 @@ it('addNote rejects an empty body with 422', function (): void {
 
     $this->postJson("/api/v1/department/reports/{$report->id}/note", ['body' => ''])
         ->assertStatus(422);
+});
+
+it('completes a secondary task without changing the primary report workflow', function (): void {
+    $primary = Department::factory()->create(['code' => 'PRIMARY']);
+    $secondary = Department::factory()->create(['code' => 'SECONDARY']);
+    $report = landReportInAssigned($primary);
+    $assignment = ReportAssignment::query()->create([
+        'report_id' => $report->id,
+        'department_id' => $secondary->id,
+        'is_primary' => false,
+        'kind' => ReportAssignment::KIND_SECONDARY,
+        'assigned_at' => now(),
+        'task_status' => ReportAssignment::TASK_STATUS_OPEN,
+        'sla_minutes' => 480,
+    ]);
+    $officer = makeDepartmentOfficer($secondary);
+    Sanctum::actingAs($officer);
+
+    $this->postJson(
+        "/api/v1/department/reports/{$report->id}/tasks/{$assignment->id}/complete?department_id={$secondary->id}",
+        ['note' => 'Traffic control task completed.'],
+    )->assertOk()->assertJsonPath('data.assignment.status', ReportAssignment::TASK_STATUS_COMPLETED);
+
+    expect($assignment->refresh()->task_status)->toBe(ReportAssignment::TASK_STATUS_COMPLETED)
+        ->and($assignment->completed_at)->not->toBeNull()
+        ->and($report->refresh()->status?->code)->toBe('assigned');
+});
+
+it('does not let another department complete a secondary task', function (): void {
+    $primary = Department::factory()->create(['code' => 'PRIMARY']);
+    $secondary = Department::factory()->create(['code' => 'SECONDARY']);
+    $other = Department::factory()->create(['code' => 'OTHER']);
+    $report = landReportInAssigned($primary);
+    $assignment = ReportAssignment::query()->create([
+        'report_id' => $report->id,
+        'department_id' => $secondary->id,
+        'is_primary' => false,
+        'kind' => ReportAssignment::KIND_SECONDARY,
+        'assigned_at' => now(),
+        'task_status' => ReportAssignment::TASK_STATUS_OPEN,
+        'sla_minutes' => 480,
+    ]);
+    $officer = makeDepartmentOfficer($other);
+    Sanctum::actingAs($officer);
+
+    $this->postJson("/api/v1/department/reports/{$report->id}/tasks/{$assignment->id}/complete", [])
+        ->assertForbidden();
+    expect($assignment->refresh()->task_status)->toBe(ReportAssignment::TASK_STATUS_OPEN);
+});
+
+it('does not let a secondary member select an unrelated department for report detail', function (): void {
+    $primary = Department::factory()->create(['code' => 'PRIMARY-DETAIL']);
+    $secondary = Department::factory()->create(['code' => 'SECONDARY-DETAIL']);
+    $other = Department::factory()->create(['code' => 'OTHER-DETAIL']);
+    $report = landReportInAssigned($primary);
+    ReportAssignment::query()->create([
+        'report_id' => $report->id,
+        'department_id' => $secondary->id,
+        'is_primary' => false,
+        'kind' => ReportAssignment::KIND_SECONDARY,
+        'assigned_at' => now(),
+        'task_status' => ReportAssignment::TASK_STATUS_OPEN,
+        'sla_minutes' => 480,
+    ]);
+    $officer = makeDepartmentOfficer($secondary);
+    Sanctum::actingAs($officer);
+
+    $this->getJson("/api/v1/department/reports/{$report->id}?department_id={$other->id}")
+        ->assertForbidden();
 });
 
 it('GET notes returns the department-internal notes newest-first', function (): void {

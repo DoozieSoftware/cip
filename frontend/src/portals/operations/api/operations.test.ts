@@ -6,8 +6,10 @@ describe('operations API surface', () => {
     expect(typeof departmentApi.dashboard).toBe('function');
     expect(typeof departmentApi.listReports).toBe('function');
     expect(typeof departmentApi.showReport).toBe('function');
+    expect(typeof departmentApi.showReportInDepartment).toBe('function');
     expect(typeof departmentApi.exportUrl).toBe('function');
     expect(typeof departmentApi.action).toBe('function');
+    expect(typeof departmentApi.completeTask).toBe('function');
     expect(typeof departmentApi.listNotes).toBe('function');
     expect(typeof departmentApi.addNote).toBe('function');
   });

@@ -333,6 +333,9 @@ Route::prefix('v1')->group(function (): void {
         Route::post('reports/{report}/close', [DepartmentReportActionsController::class, 'close'])
             ->middleware('can:department.close,report')
             ->name('reports.close');
+        Route::post('reports/{report}/tasks/{assignment}/complete', [DepartmentReportActionsController::class, 'completeTask'])
+            ->middleware('can:department.complete_task,assignment')
+            ->name('reports.tasks.complete');
         // T-M11-005 — internal note (department-private)
         Route::post('reports/{report}/note', [DepartmentReportActionsController::class, 'addNote'])
             ->middleware('can:department.add_note,report')
