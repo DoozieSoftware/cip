@@ -94,7 +94,7 @@ class ReportAssignment extends Model
     {
         return $query
             ->whereNull('completed_at')
-            ->where('task_status', '!=', self::TASK_STATUS_CANCELLED);
+            ->where('task_status', self::TASK_STATUS_OPEN);
     }
 
     /**
@@ -107,7 +107,10 @@ class ReportAssignment extends Model
      */
     public function scopeOpenPrimary(Builder $query): Builder
     {
-        return $query->open()->where('is_primary', true);
+        return $query
+            ->open()
+            ->where('is_primary', true)
+            ->where('kind', self::KIND_PRIMARY);
     }
 
     /** @return BelongsTo<Department, $this> */

@@ -10,6 +10,7 @@ use App\Modules\Reports\Models\Report;
 use App\Modules\Routing\Services\AssignmentService;
 use App\Modules\Routing\Services\RoutingEngine;
 use App\Modules\Routing\Services\RoutingFallbackService;
+use App\Modules\Routing\Services\SecondaryRoutingService;
 use App\Modules\Shared\Services\SystemUserService;
 use App\Modules\Workflow\Services\WorkflowEngine;
 use Illuminate\Support\Facades\Log;
@@ -65,6 +66,7 @@ class AiCompletedListener
         private readonly SystemUserService $system,
         private readonly RoutingFallbackService $fallback,
         private readonly ConfidenceAggregator $confidence,
+        private readonly SecondaryRoutingService $secondary,
     ) {}
 
     public function handle(AiCompleted $event): void
@@ -171,6 +173,10 @@ class AiCompletedListener
         }
 
         $this->assignments->assign($report, $decision, $systemActor, reason: $reason);
+
+        // The primary assignment remains the report owner. Secondary rows
+        // are linked co-tasks and never update reports.department_id.
+        $this->secondary->route($report, $secondaryTriggers, $systemActor, reason: $reason);
 
         $wfDecision = $this->workflow->evaluate($report, 'ai_auto_assign', $systemActor);
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Modules\Departments\Models\Department;
 use App\Modules\Departments\Policies\DepartmentPolicy;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportAssignment;
 use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -47,6 +48,29 @@ it('a member of the department can view and act on its reports', function (): vo
     expect($p->start($officer, $report))->toBeTrue();
     expect($p->resolve($officer, $report))->toBeTrue();
     expect($p->addNote($officer, $report))->toBeTrue();
+});
+
+it('a member of an open secondary assignment can view and act on the report', function (): void {
+    $primary = Department::factory()->create(['code' => 'PRIMARY-A']);
+    $secondary = Department::factory()->create(['code' => 'SECONDARY-B']);
+    Role::firstOrCreate(['name' => 'department', 'guard_name' => 'web']);
+    $officer = User::factory()->create();
+    $officer->assignRole('department');
+    $officer->departments()->attach($secondary->id);
+    $report = Report::factory()->create(['department_id' => $primary->id]);
+    ReportAssignment::query()->create([
+        'report_id' => $report->id,
+        'department_id' => $secondary->id,
+        'is_primary' => false,
+        'kind' => ReportAssignment::KIND_SECONDARY,
+        'assigned_at' => now(),
+        'task_status' => ReportAssignment::TASK_STATUS_OPEN,
+        'sla_minutes' => 480,
+    ]);
+
+    $p = new DepartmentPolicy;
+    expect($p->view($officer, $report))->toBeTrue()
+        ->and($p->accept($officer, $report))->toBeTrue();
 });
 
 it('a citizen (no department role) cannot view or act', function (): void {

@@ -7,6 +7,7 @@ namespace App\Modules\Departments\Policies;
 use App\Modules\Departments\Models\Department;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Shared\Policies\BasePolicy;
+use App\Modules\Shared\Support\DepartmentScope;
 use App\Modules\Users\Models\User;
 
 /**
@@ -75,20 +76,7 @@ class DepartmentPolicy extends BasePolicy
             return false;
         }
 
-        $deptId = $report->department_id ?? null;
-
-        if (! $deptId) {
-            // An unassigned report cannot be read by a department
-            // officer — only the moderator or super_admin can.
-            return false;
-        }
-        $dept = Department::query()->whereKey($deptId)->first();
-
-        if (! $dept) {
-            return false;
-        }
-
-        return $this->isMember($user, $dept);
+        return DepartmentScope::canViewReport($user, $report);
     }
 
     public function accept(User $user, mixed $report): bool

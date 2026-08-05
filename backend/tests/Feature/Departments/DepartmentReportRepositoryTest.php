@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
+use App\Modules\Departments\Http\Resources\DepartmentReportResource;
 use App\Modules\Departments\Models\Department;
 use App\Modules\Departments\Repositories\DepartmentReportRepository;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportAssignment;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Reports\Models\ReportType;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 
 uses(RefreshDatabase::class);
 
@@ -76,4 +79,46 @@ it('dashboard counts returns open / due_today / sla_breached / by_category', fun
     $counts = app(DepartmentReportRepository::class)->dashboardCounts($deptA->id);
     expect($counts['open'])->toBe(2);
     expect($counts)->toHaveKeys(['open', 'due_today', 'sla_breached', 'by_category']);
+});
+
+it('includes reports held by an open secondary assignment in the target queue', function (): void {
+    $primary = Department::factory()->create(['code' => 'PRIMARY']);
+    $secondary = Department::factory()->create(['code' => 'SECONDARY', 'default_sla_minutes' => 480]);
+    $assigned = ReportStatus::query()->where('code', 'assigned')->firstOrFail();
+    $report = Report::factory()->create([
+        'department_id' => $primary->id,
+        'current_status_id' => $assigned->id,
+    ]);
+
+    ReportAssignment::query()->create([
+        'report_id' => $report->id,
+        'department_id' => $primary->id,
+        'is_primary' => true,
+        'kind' => ReportAssignment::KIND_PRIMARY,
+        'assigned_at' => now(),
+        'task_status' => ReportAssignment::TASK_STATUS_OPEN,
+        'sla_minutes' => 1440,
+    ]);
+    ReportAssignment::query()->create([
+        'report_id' => $report->id,
+        'department_id' => $secondary->id,
+        'is_primary' => false,
+        'kind' => ReportAssignment::KIND_SECONDARY,
+        'assigned_at' => now(),
+        'task_status' => ReportAssignment::TASK_STATUS_OPEN,
+        'sla_minutes' => 480,
+    ]);
+
+    $page = app(DepartmentReportRepository::class)->assignedTo($secondary->id);
+    $request = Request::create('/api/v1/department/reports', 'GET', ['department_id' => $secondary->id]);
+    $data = (new DepartmentReportResource($page->items()[0]))->toArray($request);
+
+    expect($page->total())->toBe(1)
+        ->and($data['assignment'])->toMatchArray([
+            'department_id' => $secondary->id,
+            'is_primary' => false,
+            'kind' => ReportAssignment::KIND_SECONDARY,
+            'status' => ReportAssignment::TASK_STATUS_OPEN,
+            'sla_minutes' => 480,
+        ]);
 });

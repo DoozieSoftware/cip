@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Departments\Repositories;
 
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportAssignment;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -58,7 +59,15 @@ class DepartmentReportRepository
     public function assignedTo(string $departmentId, array $filters = []): LengthAwarePaginator
     {
         $query = Report::query()
-            ->where('department_id', $departmentId)
+            ->where(function (Builder $query) use ($departmentId): void {
+                $query->where('department_id', $departmentId)
+                    ->orWhereHas('assignments', function (Builder $assignment) use ($departmentId): void {
+                        $assignment
+                            ->whereNull('completed_at')
+                            ->where('task_status', ReportAssignment::TASK_STATUS_OPEN)
+                            ->where('department_id', $departmentId);
+                    });
+            })
             ->with(['reportType', 'department', 'status', 'priority', 'location']);
 
         $this->applyInHandScope($query);
@@ -88,7 +97,15 @@ class DepartmentReportRepository
      */
     public function dashboardCounts(string $departmentId): array
     {
-        $base = Report::query()->where('department_id', $departmentId);
+        $base = Report::query()->where(function (Builder $query) use ($departmentId): void {
+            $query->where('department_id', $departmentId)
+                ->orWhereHas('assignments', function (Builder $assignment) use ($departmentId): void {
+                    $assignment
+                        ->whereNull('completed_at')
+                        ->where('task_status', ReportAssignment::TASK_STATUS_OPEN)
+                        ->where('department_id', $departmentId);
+                });
+        });
         $base->whereHas('status', fn ($q) => $q->whereIn('code', self::IN_HAND_STATUSES));
 
         $open = (clone $base)->whereHas('status', fn ($q) => $q->where('is_terminal', false))->count();

@@ -70,12 +70,36 @@ class DepartmentReportResource extends JsonResource
             ? $report->statusHistory
             : $report->statusHistory()->with(['fromStatus', 'toStatus'])->orderBy('created_at')->get();
 
+        $requestedDepartment = $request->query('department_id');
+        $assignmentDepartment = is_string($requestedDepartment) && $requestedDepartment !== ''
+            ? $requestedDepartment
+            : $report->department_id;
+
         $activeAssignment = ReportAssignment::query()
             ->where('report_id', $report->id)
+            ->when(is_string($assignmentDepartment) && $assignmentDepartment !== '',
+                fn ($query) => $query->where('department_id', $assignmentDepartment))
+            ->open()
             ->whereNull('reassigned_at')
             ->with('officer')
             ->latest('assigned_at')
             ->first();
+
+        $assignment = $activeAssignment === null ? null : [
+            'id' => $activeAssignment->id,
+            'department_id' => $activeAssignment->department_id,
+            'is_primary' => (bool) $activeAssignment->is_primary,
+            'kind' => $activeAssignment->kind,
+            'status' => $activeAssignment->task_status,
+            'sla_minutes' => $activeAssignment->sla_minutes,
+            'assigned_at' => $activeAssignment->assigned_at->toIso8601String(),
+            'accepted_at' => $activeAssignment->accepted_at?->toIso8601String(),
+            'completed_at' => $activeAssignment->completed_at?->toIso8601String(),
+            'officer' => $activeAssignment->officer === null ? null : [
+                'id' => $activeAssignment->officer->id,
+                'name' => $activeAssignment->officer->name,
+            ],
+        ];
 
         // array_merge, not `+` — the override array's `location` must win
         // over the base resource's differently-shaped one (latitude/
@@ -113,6 +137,9 @@ class DepartmentReportResource extends JsonResource
                 'reason' => $h->reason,
                 'created_at' => $h->created_at?->toIso8601String(),
             ])->all(),
+            // The selected department's task is explicit so a secondary
+            // queue never has to infer ownership from reports.department_id.
+            'assignment' => $assignment,
             'assigned_to' => $activeAssignment?->officer === null ? null : [
                 'id' => $activeAssignment->officer->id,
                 'name' => $activeAssignment->officer->name,

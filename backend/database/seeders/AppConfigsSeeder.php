@@ -107,6 +107,20 @@ class AppConfigsSeeder extends Seeder
             'cohort' => null,
             'description' => 'Detect near-duplicate reports within a 50m / 14-day window.',
         ],
+        [
+            'key' => 'secondary_routing_trigger_map',
+            'value' => [
+                'traffic_obstruction' => 'BTP',
+                'road_damage_by_utility_work' => 'BBMP_ENG',
+                'sewage_in_drain' => 'BBMP_SWD',
+                'cable_hazard' => 'BESCOM',
+                'footpath_damage_by_parking' => 'BBMP_ENG',
+            ],
+            'enabled' => true,
+            'rollout_percentage' => 100,
+            'cohort' => null,
+            'description' => 'Maps approved AI secondary-routing triggers to active department codes.',
+        ],
     ];
 
     public function run(): void
