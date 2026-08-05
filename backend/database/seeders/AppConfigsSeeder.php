@@ -8,9 +8,10 @@ use App\Modules\Settings\Models\AppConfig;
 use Illuminate\Database\Seeder;
 
 /**
- * Master data: the 10 default feature flags per docs/09 §18.
+ * Master data: the default feature flags per docs/09 §18 plus the
+ * configurable linked-routing trigger map.
  *
- * Every flag carries:
+ * Every entry carries:
  *  - `enabled` — the master switch
  *  - `rollout_percentage` — 0-100, deterministic SHA-256 bucket
  *  - `cohort` — optional predicate array

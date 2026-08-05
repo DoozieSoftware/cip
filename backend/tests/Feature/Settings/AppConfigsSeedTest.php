@@ -8,10 +8,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-it('seeds all 10 default feature flags from docs/09 §18', function (): void {
+it('seeds the default feature flags and linked-routing map', function (): void {
     (new AppConfigsSeeder)->run();
 
-    expect(AppConfig::query()->count())->toBe(10);
+    expect(AppConfig::query()->count())->toBe(11);
 
     foreach ([
         'anonymous_reporting',
@@ -24,9 +24,13 @@ it('seeds all 10 default feature flags from docs/09 §18', function (): void {
         'push_notifications',
         'fraud_detection',
         'duplicate_detection',
+        'secondary_routing_trigger_map',
     ] as $key) {
         expect(AppConfig::query()->where('key', $key)->exists())->toBeTrue("missing flag: {$key}");
     }
+
+    expect(AppConfig::query()->where('key', 'secondary_routing_trigger_map')->firstOrFail()->value)
+        ->toMatchArray(['cable_hazard' => 'BESCOM']);
 });
 
 it('defaults match the docs — most flags on, video_mandatory off', function (): void {
@@ -58,5 +62,5 @@ it('is idempotent — a second run does not duplicate rows', function (): void {
     (new AppConfigsSeeder)->run();
     (new AppConfigsSeeder)->run();
 
-    expect(AppConfig::query()->count())->toBe(10);
+    expect(AppConfig::query()->count())->toBe(11);
 });

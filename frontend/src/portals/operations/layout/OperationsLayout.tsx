@@ -13,7 +13,7 @@ const DEPARTMENT_ADMIN_ROLES: Role[] = ['super_admin', 'system', 'department_adm
 const NAV: OperationsNavItem[] = [
   { to: '/operations', label: 'Dashboard', end: true, icon: '📊' },
   { to: '/operations/reports', label: 'Assigned Reports', icon: '📋' },
-  { to: '/operations/tasks', label: 'Secondary Tasks', icon: '🧩' },
+  { to: '/operations/tasks', label: 'Linked Reports', icon: '🧩' },
   { to: '/operations/reports/export', label: 'Export', icon: '📤' },
   { to: '/operations/analytics', label: 'Analytics', icon: '📈' },
   { to: '/operations/map', label: 'GIS Map', icon: '🗺️' },

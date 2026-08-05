@@ -51,6 +51,7 @@ function baseReport(overrides: Partial<DepartmentReportDetail> = {}): Department
     status_history: [],
     assigned_to: null,
     assignment: null,
+    assignments: [],
     ...overrides,
   };
 }
@@ -179,6 +180,47 @@ describe('ReportDetailPage', () => {
     expect(await screen.findAllByText(/Overdue by/)).not.toHaveLength(0);
   });
 
+  it('shows primary and linked departments on a multi-department report', async () => {
+    renderPage(
+      baseReport({
+        assignments: [
+          {
+            id: 'primary-assignment',
+            department_id: 'dept-1',
+            department: { id: 'dept-1', code: 'BBMP', name: 'BBMP Engineering' },
+            is_primary: true,
+            kind: 'primary',
+            status: 'open',
+            sla_minutes: 1440,
+            assigned_at: '2026-08-01T09:00:00+05:30',
+            accepted_at: null,
+            completed_at: null,
+            officer: { id: 'officer-1', name: 'Deepa' },
+          },
+          {
+            id: 'linked-assignment',
+            department_id: 'dept-2',
+            department: { id: 'dept-2', code: 'BESCOM', name: 'BESCOM' },
+            is_primary: false,
+            kind: 'secondary',
+            status: 'open',
+            sla_minutes: 480,
+            assigned_at: '2026-08-01T09:00:00+05:30',
+            accepted_at: null,
+            completed_at: null,
+            officer: { id: 'officer-2', name: 'Ravi' },
+          },
+        ],
+      }),
+    );
+
+    expect(await screen.findByText('Linked departments')).toBeInTheDocument();
+    expect(screen.getByText('Primary — owns closure')).toBeInTheDocument();
+    expect(screen.getByText('Linked — assists resolution')).toBeInTheDocument();
+    expect(screen.getByText('Deepa')).toBeInTheDocument();
+    expect(screen.getByText('Ravi')).toBeInTheDocument();
+  });
+
   it('hides the proof upload control for terminal reports', async () => {
     renderPage(baseReport({ current_status_code: 'closed' }));
     expect(await screen.findByRole('heading', { name: 'Pothole on Main St' })).toBeInTheDocument();
@@ -249,7 +291,7 @@ describe('ReportDetailPage', () => {
     };
     renderPage(baseReport({ assignment }));
 
-    expect(await screen.findAllByText('Secondary task')).not.toHaveLength(0);
+    expect(await screen.findAllByText('Linked report')).not.toHaveLength(0);
     expect(screen.getByText('Open')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Accept assignment' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mark as resolved' })).toBeNull();

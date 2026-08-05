@@ -117,6 +117,7 @@ export interface DepartmentReportListItem extends ReportListItem {
 export interface ReportAssignment {
   id: string;
   department_id: string;
+  department?: { id: string; code: string; name: string } | null;
   is_primary: boolean;
   kind: AssignmentKind;
   status: TaskStatus;
@@ -166,6 +167,7 @@ export interface DepartmentReportDetail extends DepartmentReportListItem {
   media: DepartmentReportMedia[];
   status_history: StatusHistoryEntry[];
   assigned_to: AssignedOfficer | null;
+  assignments: ReportAssignment[];
 }
 
 export interface DepartmentDashboardCounts {

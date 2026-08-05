@@ -141,9 +141,36 @@ class DepartmentReportResource extends JsonResource
                 'reason' => $h->reason,
                 'created_at' => $h->created_at?->toIso8601String(),
             ])->all(),
-            // The selected department's task is explicit so a secondary
+            // The selected department's task is explicit so a support
             // queue never has to infer ownership from reports.department_id.
             'assignment' => $assignment,
+            'assignments' => ReportAssignment::query()
+                ->where('report_id', $report->id)
+                ->whereNull('reassigned_at')
+                ->with(['officer', 'department'])
+                ->orderByDesc('is_primary')
+                ->orderBy('assigned_at')
+                ->get()
+                ->map(fn (ReportAssignment $a): array => [
+                    'id' => $a->id,
+                    'department_id' => $a->department_id,
+                    'department' => $a->department === null ? null : [
+                        'id' => $a->department->id,
+                        'code' => $a->department->code,
+                        'name' => $a->department->name,
+                    ],
+                    'is_primary' => (bool) $a->is_primary,
+                    'kind' => $a->kind,
+                    'status' => $a->task_status,
+                    'sla_minutes' => $a->sla_minutes,
+                    'assigned_at' => $a->assigned_at->toIso8601String(),
+                    'accepted_at' => $a->accepted_at?->toIso8601String(),
+                    'completed_at' => $a->completed_at?->toIso8601String(),
+                    'officer' => $a->officer === null ? null : [
+                        'id' => $a->officer->id,
+                        'name' => $a->officer->name,
+                    ],
+                ])->all(),
             'assigned_to' => $activeAssignment?->officer === null ? null : [
                 'id' => $activeAssignment->officer->id,
                 'name' => $activeAssignment->officer->name,

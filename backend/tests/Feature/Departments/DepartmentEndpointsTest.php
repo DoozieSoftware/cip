@@ -61,7 +61,26 @@ it('returns the list scoped to the officer\'s department', function (): void {
 
 it('returns a scoped report detail by id', function (): void {
     $dept = Department::factory()->create(['code' => 'BBMP']);
+    $linkedDept = Department::factory()->create(['code' => 'BESCOM']);
     $report = landReportInAssigned($dept);
+    $primaryAssignment = ReportAssignment::query()->create([
+        'report_id' => $report->id,
+        'department_id' => $dept->id,
+        'is_primary' => true,
+        'kind' => ReportAssignment::KIND_PRIMARY,
+        'assigned_at' => now(),
+        'task_status' => ReportAssignment::TASK_STATUS_OPEN,
+        'sla_minutes' => 1440,
+    ]);
+    $linkedAssignment = ReportAssignment::query()->create([
+        'report_id' => $report->id,
+        'department_id' => $linkedDept->id,
+        'is_primary' => false,
+        'kind' => ReportAssignment::KIND_SECONDARY,
+        'assigned_at' => now(),
+        'task_status' => ReportAssignment::TASK_STATUS_OPEN,
+        'sla_minutes' => 480,
+    ]);
     $officer = makeDepartmentOfficer($dept);
 
     Sanctum::actingAs($officer);
@@ -69,7 +88,13 @@ it('returns a scoped report detail by id', function (): void {
     $r->assertOk()
         ->assertJsonPath('data.id', $report->id)
         ->assertJsonPath('data.current_status_code', 'assigned')
-        ->assertJsonPath('data.internal_notes', []);
+        ->assertJsonPath('data.internal_notes', [])
+        ->assertJsonPath('data.assignments.0.id', $primaryAssignment->id)
+        ->assertJsonPath('data.assignments.0.department.code', 'BBMP')
+        ->assertJsonPath('data.assignments.0.is_primary', true)
+        ->assertJsonPath('data.assignments.1.id', $linkedAssignment->id)
+        ->assertJsonPath('data.assignments.1.department.code', 'BESCOM')
+        ->assertJsonPath('data.assignments.1.is_primary', false);
 });
 
 it('rejects report detail from another department', function (): void {
@@ -115,6 +140,8 @@ it('close moves a resolved report to closed', function (): void {
     $this->postJson("/api/v1/department/reports/{$report->id}/close", [])
         ->assertOk()
         ->assertJsonPath('data.current_status_code', 'closed');
+
+    expect($report->refresh()->closed_at)->not->toBeNull();
 });
 
 it('addNote creates a 201 and the note body roundtrips', function (): void {

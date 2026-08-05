@@ -152,6 +152,11 @@ class WorkflowEngine
 
             if ($toStatus !== null) {
                 $report->current_status_id = $toStatus->id;
+
+                if ($toStatus->code === 'closed' && $report->closed_at === null) {
+                    $report->closed_at = now();
+                }
+
                 $report->save();
             }
 

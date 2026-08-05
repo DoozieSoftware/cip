@@ -21,9 +21,9 @@ class DatabaseSeeder extends Seeder
      * parents. The four default departments (BBMP, BTP, BWSSB,
      * BESCOM) are seeded last because they need the geography
      * tree (their `jurisdiction` field matches on a geography
-     * attribute). The 10 default feature flags are seeded after
-     * the master data — every other module reads them on cold
-     * start.
+     * attribute). The default feature flags and linked-routing map
+     * are seeded after the master data — every other module reads
+     * them on cold start.
      */
     public function run(): void
     {

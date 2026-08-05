@@ -1,45 +1,80 @@
-import { Badge } from '../design';
 import type { StatusHistoryEntry } from '../types';
-import { statusLabel, statusTone } from './statusMeta';
+import { statusLabel } from './statusMeta';
 
-/** Vertical lifecycle trail, oldest -> newest, as returned by the API. */
-export function StatusTimeline({ entries }: { entries: StatusHistoryEntry[] }) {
-  if (entries.length === 0) {
-    return <p className="text-sm text-slate-500">No status changes recorded yet.</p>;
-  }
-  return (
-    <ol className="space-y-4 border-l border-slate-200 pl-5">
-      {entries.map((entry, index) => (
-        <li key={`${entry.to_code ?? 'unknown'}-${entry.created_at ?? index}`} className="relative">
-          <span
-            aria-hidden
-            className="absolute -left-[26px] top-1.5 h-2 w-2 rounded-full bg-slate-300"
-          />
-          <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-slate-800">
-            <Badge tone={statusTone(entry.from_code)}>{statusLabel(entry.from_code)}</Badge>
-            <span aria-hidden className="text-slate-400">
-              →
-            </span>
-            <Badge tone={statusTone(entry.to_code)}>{statusLabel(entry.to_code)}</Badge>
-          </p>
-          {entry.reason && !isSystemReason(entry.reason) && (
-            <p className="mt-1 text-sm text-slate-600">{entry.reason}</p>
-          )}
-          {entry.created_at && (
-            <p className="mt-0.5 text-xs text-slate-500">
-              {new Date(entry.created_at).toLocaleString()}
-            </p>
-          )}
-        </li>
-      ))}
-    </ol>
-  );
+const STEPS = [
+  'draft',
+  'submitted',
+  'ai_processing',
+  'pending_moderator',
+  'assigned',
+  'accepted',
+  'in_progress',
+  'resolved',
+  'closed',
+];
+
+function formatTimestamp(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
-/**
- * System transitions (e.g. "workflow.transition:<uuid>") carry no
- * human-readable reason — hide them instead of cluttering the timeline.
- */
-function isSystemReason(reason: string): boolean {
-  return /^(workflow\.|job\.|system\.)/i.test(reason) || /^[0-9a-f]{8}-/i.test(reason);
+export function StatusTimeline({ entries }: { entries: StatusHistoryEntry[] }) {
+  const current = entries.length > 0 ? entries[entries.length - 1]?.to_code : null;
+  const currentIndex = STEPS.indexOf(current ?? 'draft');
+
+  return (
+    <div className="relative flex items-start justify-between gap-1">
+      <div className="absolute left-0 right-0 top-4 h-0.5 bg-slate-200" />
+      <div
+        className="absolute left-0 top-4 h-0.5 bg-emerald-500 transition-all"
+        style={{ width: `${(currentIndex / (STEPS.length - 1)) * 100}%` }}
+      />
+      {STEPS.map((code, index) => {
+        const done = index < currentIndex;
+        const active = code === current;
+        const entry = entries.find((e) => e.to_code === code);
+        return (
+          <div key={code} className="relative z-10 flex flex-1 flex-col items-center min-w-0">
+            <span
+              className={
+                'relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ' +
+                (active
+                  ? 'bg-blue-600 text-white ring-4 ring-blue-200 '
+                  : done
+                    ? 'bg-emerald-500 text-white '
+                    : 'bg-slate-200 text-slate-400 ')
+              }
+            >
+              {active && (
+                <span className="absolute inset-0 animate-ping rounded-full bg-blue-400 opacity-60" />
+              )}
+              <span className="relative">{done ? '✓' : index + 1}</span>
+            </span>
+            <span
+              className={
+                'mt-1.5 w-full truncate text-center text-[11px] leading-tight ' +
+                (active
+                  ? 'font-medium text-blue-700 '
+                  : done
+                    ? 'text-slate-700 '
+                    : 'text-slate-400 ')
+              }
+              title={statusLabel(code)}
+            >
+              {statusLabel(code)}
+            </span>
+            {entry?.created_at && (
+              <span className="mt-0.5 truncate text-[10px] tabular-nums text-slate-500">
+                {formatTimestamp(entry.created_at)}
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }

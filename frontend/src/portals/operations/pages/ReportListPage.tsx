@@ -221,10 +221,10 @@ export default function ReportListPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-            {secondaryOnly ? 'Secondary work queue' : 'Officer queue'}
+            {secondaryOnly ? 'Linked reports' : 'Officer queue'}
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-slate-950">
-            {secondaryOnly ? 'Secondary tasks' : 'Assigned reports'}
+            {secondaryOnly ? 'Linked reports' : 'Assigned reports'}
           </h1>
           <p className="mt-1 text-sm text-slate-600">
             {secondaryOnly
@@ -402,7 +402,7 @@ export default function ReportListPage() {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge tone={r.assignment?.kind === 'secondary' ? 'purple' : 'neutral'}>
-                          {r.assignment?.kind === 'secondary' ? 'Secondary task' : 'Primary report'}
+                          {r.assignment?.kind === 'secondary' ? 'Linked report' : 'Primary report'}
                         </Badge>
                         <Badge
                           tone={

@@ -291,7 +291,7 @@ export default function ReportDetailPage() {
           </div>
           <div className="flex flex-wrap justify-end gap-2">
             <Badge tone={isSecondaryTask ? 'purple' : 'neutral'}>
-              {isSecondaryTask ? 'Secondary task' : 'Primary report'}
+              {isSecondaryTask ? 'Linked report' : 'Primary report'}
             </Badge>
             <Badge tone={statusTone(status)}>{statusLabel(status)}</Badge>
           </div>
@@ -310,6 +310,60 @@ export default function ReportDetailPage() {
           )}
         </div>
       </header>
+
+      {report.assignments.length > 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Linked departments</CardTitle>
+            <p className="mt-1 text-xs text-slate-500">
+              This report needs action from multiple departments.
+            </p>
+          </CardHeader>
+          <CardBody className="divide-y divide-slate-100">
+            {report.assignments.map((a) => (
+              <div
+                key={a.id}
+                className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className={
+                      'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ' +
+                      (a.is_primary
+                        ? 'bg-blue-100 text-blue-700 '
+                        : 'bg-purple-100 text-purple-700 ')
+                    }
+                  >
+                    {a.is_primary ? 'P' : 'S'}
+                  </span>
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">
+                      {a.department?.name ?? 'Department'}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {a.is_primary ? 'Primary — owns closure' : 'Linked — assists resolution'}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Badge
+                    tone={
+                      a.status === 'completed'
+                        ? 'success'
+                        : a.status === 'cancelled'
+                          ? 'danger'
+                          : 'info'
+                    }
+                  >
+                    {statusLabel(a.status)}
+                  </Badge>
+                  {a.officer && <p className="mt-0.5 text-xs text-slate-500">{a.officer.name}</p>}
+                </div>
+              </div>
+            ))}
+          </CardBody>
+        </Card>
+      )}
 
       <Card>
         <CardBody className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
@@ -356,7 +410,7 @@ export default function ReportDetailPage() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Secondary task</CardTitle>
+              <CardTitle>Linked report</CardTitle>
               <p className="mt-1 text-xs text-slate-500">
                 Complete this department task without resolving or closing the report.
               </p>
