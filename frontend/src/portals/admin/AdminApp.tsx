@@ -6,6 +6,7 @@ import { Spinner } from '../moderator/design';
 
 const AdminDashboard = lazy(() => import('./pages/AdminGovernmentDashboard'));
 const AdminUsers = lazy(() => import('./pages/AdminUsers'));
+const AdminReports = lazy(() => import('./pages/AdminReports'));
 const AdminDepartments = lazy(() => import('./pages/AdminDepartments'));
 const AdminOrganizations = lazy(() => import('./pages/AdminOrganizations'));
 const AdminRoles = lazy(() => import('./pages/AdminRoles'));
@@ -39,6 +40,7 @@ export function AdminApp(): JSX.Element {
         <Route element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
+          <Route path="reports" element={<AdminReports />} />
           <Route path="departments" element={<AdminDepartments />} />
           <Route path="organizations" element={<AdminOrganizations />} />
           <Route path="roles" element={<AdminRoles />} />

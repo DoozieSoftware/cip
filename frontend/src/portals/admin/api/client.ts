@@ -111,11 +111,13 @@ export interface AuditLog {
   created_at: string;
 }
 
-export function useAdminUsers(q: string) {
+export function useAdminUsers(q: string, role?: string) {
   return useQuery({
-    queryKey: ['admin', 'users', q],
+    queryKey: ['admin', 'users', q, role],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<AdminUser[]>>('/admin/users', { query: { q, per_page: 100 } });
+      const res = await apiRequest<ApiEnvelope<AdminUser[]>>('/admin/users', {
+        query: { q, role, per_page: 100 },
+      });
       return res.data;
     },
   });
@@ -125,7 +127,9 @@ export function useAdminDepartments() {
   return useQuery({
     queryKey: ['admin', 'departments'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<AdminDepartment[]>>('/admin/departments', { query: { per_page: 100 } });
+      const res = await apiRequest<ApiEnvelope<AdminDepartment[]>>('/admin/departments', {
+        query: { per_page: 100 },
+      });
       return res.data;
     },
   });
@@ -134,7 +138,11 @@ export function useAdminDepartments() {
 export function useCreateDepartment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: AdminDepartmentInput) => apiRequest<ApiEnvelope<AdminDepartment>>('/admin/departments', { method: 'POST', body: input }),
+    mutationFn: (input: AdminDepartmentInput) =>
+      apiRequest<ApiEnvelope<AdminDepartment>>('/admin/departments', {
+        method: 'POST',
+        body: input,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'departments'] }),
   });
 }
@@ -142,7 +150,11 @@ export function useCreateDepartment() {
 export function useUpdateDepartment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...input }: AdminDepartmentInput & { id: string }) => apiRequest<ApiEnvelope<AdminDepartment>>(`/admin/departments/${encodeURIComponent(id)}`, { method: 'PUT', body: input }),
+    mutationFn: ({ id, ...input }: AdminDepartmentInput & { id: string }) =>
+      apiRequest<ApiEnvelope<AdminDepartment>>(`/admin/departments/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: input,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'departments'] }),
   });
 }
@@ -150,7 +162,8 @@ export function useUpdateDepartment() {
 export function useDeleteDepartment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => apiRequest<unknown>(`/admin/departments/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    mutationFn: (id: string) =>
+      apiRequest<unknown>(`/admin/departments/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'departments'] }),
   });
 }
@@ -159,7 +172,9 @@ export function useAdminOrganizations() {
   return useQuery({
     queryKey: ['admin', 'organizations'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<AdminOrganization[]>>('/admin/organizations', { query: { per_page: 100 } });
+      const res = await apiRequest<ApiEnvelope<AdminOrganization[]>>('/admin/organizations', {
+        query: { per_page: 100 },
+      });
       return res.data;
     },
   });
@@ -168,7 +183,11 @@ export function useAdminOrganizations() {
 export function useCreateOrganization() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: AdminOrganizationInput) => apiRequest<ApiEnvelope<AdminOrganization>>('/admin/organizations', { method: 'POST', body: input }),
+    mutationFn: (input: AdminOrganizationInput) =>
+      apiRequest<ApiEnvelope<AdminOrganization>>('/admin/organizations', {
+        method: 'POST',
+        body: input,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'organizations'] }),
   });
 }
@@ -176,7 +195,11 @@ export function useCreateOrganization() {
 export function useUpdateOrganization() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...input }: AdminOrganizationInput & { id: string }) => apiRequest<ApiEnvelope<AdminOrganization>>(`/admin/organizations/${encodeURIComponent(id)}`, { method: 'PUT', body: input }),
+    mutationFn: ({ id, ...input }: AdminOrganizationInput & { id: string }) =>
+      apiRequest<ApiEnvelope<AdminOrganization>>(`/admin/organizations/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: input,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'organizations'] }),
   });
 }
@@ -184,7 +207,8 @@ export function useUpdateOrganization() {
 export function useDeleteOrganization() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => apiRequest<unknown>(`/admin/organizations/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    mutationFn: (id: string) =>
+      apiRequest<unknown>(`/admin/organizations/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'organizations'] }),
   });
 }
@@ -202,7 +226,10 @@ export function useUpdateUser() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...patch }: Partial<AdminUserInput> & { id: string }) =>
-      apiRequest<ApiEnvelope<AdminUser>>(`/admin/users/${encodeURIComponent(id)}`, { method: 'PUT', body: patch }),
+      apiRequest<ApiEnvelope<AdminUser>>(`/admin/users/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: patch,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   });
 }
@@ -220,7 +247,9 @@ export function useAdminRoles() {
   return useQuery({
     queryKey: ['admin', 'roles'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<AdminRole[]>>('/admin/roles', { query: { per_page: 100 } });
+      const res = await apiRequest<ApiEnvelope<AdminRole[]>>('/admin/roles', {
+        query: { per_page: 100 },
+      });
       return res.data;
     },
   });
@@ -230,7 +259,9 @@ export function useAdminPermissions() {
   return useQuery({
     queryKey: ['admin', 'permissions'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<AdminPermission[]>>('/admin/permissions', { query: { per_page: 200 } });
+      const res = await apiRequest<ApiEnvelope<AdminPermission[]>>('/admin/permissions', {
+        query: { per_page: 200 },
+      });
       return res.data;
     },
   });
@@ -240,8 +271,67 @@ export function useAdminReportTypes() {
   return useQuery({
     queryKey: ['admin', 'report-types'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<AdminReportType[]>>('/admin/report-types', { query: { per_page: 100 } });
+      const res = await apiRequest<ApiEnvelope<AdminReportType[]>>('/admin/report-types', {
+        query: { per_page: 100 },
+      });
       return res.data;
+    },
+  });
+}
+
+export interface AdminReportAssignment {
+  id: string;
+  kind: 'primary' | 'secondary';
+  is_primary: boolean;
+  task_status: string;
+  department: { id: string; code: string; name: string } | null;
+  officer: { id: string; name: string | null } | null;
+  assigned_at: string | null;
+}
+
+export interface AdminReport {
+  id: string;
+  tracking_number: string;
+  title: string;
+  description: string | null;
+  current_status_code: string | null;
+  submitted_at: string | null;
+  report_type: { id: string; code: string; name: string } | null;
+  department: { id: string; code: string; name: string } | null;
+  assignments: AdminReportAssignment[];
+}
+
+export interface AdminReportFilters {
+  department_id?: string;
+  status?: string;
+  category?: string;
+  officer_id?: string;
+  assignment_type?: string;
+  date_from?: string;
+  date_to?: string;
+  q?: string;
+  page?: number;
+  per_page?: number;
+}
+
+export interface AdminReportPagination {
+  page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+}
+
+export function useAdminReports(filters: AdminReportFilters = {}) {
+  return useQuery({
+    queryKey: ['admin', 'reports', filters],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<AdminReport[]>>('/admin/reports', {
+        query: { ...filters, per_page: filters.per_page ?? 25 },
+      });
+      return {
+        reports: res.data,
+        meta: res.meta as unknown as AdminReportPagination,
+      };
     },
   });
 }
@@ -265,7 +355,10 @@ export function useUpdateRole() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...patch }: AdminRoleInput & { id: string }) =>
-      apiRequest<ApiEnvelope<AdminRole>>(`/admin/roles/${encodeURIComponent(id)}`, { method: 'PUT', body: patch }),
+      apiRequest<ApiEnvelope<AdminRole>>(`/admin/roles/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: patch,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'roles'] }),
   });
 }
@@ -274,10 +367,13 @@ export function useSyncRolePermissions() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, permissions }: { id: string; permissions: string[] }) =>
-      apiRequest<ApiEnvelope<AdminRole>>(`/admin/roles/${encodeURIComponent(id)}/permissions/sync`, {
-        method: 'POST',
-        body: { permissions },
-      }),
+      apiRequest<ApiEnvelope<AdminRole>>(
+        `/admin/roles/${encodeURIComponent(id)}/permissions/sync`,
+        {
+          method: 'POST',
+          body: { permissions },
+        },
+      ),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'roles'] }),
   });
 }
@@ -299,7 +395,10 @@ export function useCreateReportType() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: AdminReportTypeInput) =>
-      apiRequest<ApiEnvelope<AdminReportType>>('/admin/report-types', { method: 'POST', body: input }),
+      apiRequest<ApiEnvelope<AdminReportType>>('/admin/report-types', {
+        method: 'POST',
+        body: input,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'report-types'] }),
   });
 }
@@ -308,7 +407,10 @@ export function useUpdateReportType() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...patch }: AdminReportTypeInput & { id: string }) =>
-      apiRequest<ApiEnvelope<AdminReportType>>(`/admin/report-types/${encodeURIComponent(id)}`, { method: 'PUT', body: patch }),
+      apiRequest<ApiEnvelope<AdminReportType>>(`/admin/report-types/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: patch,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'report-types'] }),
   });
 }
@@ -317,7 +419,9 @@ export function useDeleteReportType() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) =>
-      apiRequest<ApiEnvelope<AdminReportType>>(`/admin/report-types/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+      apiRequest<ApiEnvelope<AdminReportType>>(`/admin/report-types/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'report-types'] }),
   });
 }
@@ -326,7 +430,9 @@ export function useSecurityPolicies() {
   return useQuery({
     queryKey: ['admin', 'security-policies'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<SecurityPolicy[]>>('/admin/security-policies', { query: { per_page: 100 } });
+      const res = await apiRequest<ApiEnvelope<SecurityPolicy[]>>('/admin/security-policies', {
+        query: { per_page: 100 },
+      });
       return res.data;
     },
   });
@@ -336,7 +442,9 @@ export function useFeatureFlags() {
   return useQuery({
     queryKey: ['admin', 'app-configs'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<AppConfigFlag[]>>('/admin/app-configs', { query: { per_page: 100 } });
+      const res = await apiRequest<ApiEnvelope<AppConfigFlag[]>>('/admin/app-configs', {
+        query: { per_page: 100 },
+      });
       return res.data;
     },
   });
@@ -370,7 +478,12 @@ export function useToggleFeatureFlag() {
 export function useUpsertSecurityPolicy() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { key: string; value: Record<string, unknown>; type?: string; description?: string }) => {
+    mutationFn: async (input: {
+      key: string;
+      value: Record<string, unknown>;
+      type?: string;
+      description?: string;
+    }) => {
       try {
         return await apiRequest<ApiEnvelope<SecurityPolicy>>('/admin/security-policies', {
           method: 'POST',
@@ -378,10 +491,13 @@ export function useUpsertSecurityPolicy() {
         });
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
-          return await apiRequest<ApiEnvelope<SecurityPolicy>>(`/admin/security-policies/${encodeURIComponent(input.key)}`, {
-            method: 'PUT',
-            body: input,
-          });
+          return await apiRequest<ApiEnvelope<SecurityPolicy>>(
+            `/admin/security-policies/${encodeURIComponent(input.key)}`,
+            {
+              method: 'PUT',
+              body: input,
+            },
+          );
         }
         throw err;
       }
@@ -435,9 +551,9 @@ export function usePlatformHealthComponents() {
   return useQuery({
     queryKey: ['admin', 'health', 'components'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<{ components: Record<string, HealthComponent>; checked_at: string }>>(
-        '/admin/health/components',
-      );
+      const res = await apiRequest<
+        ApiEnvelope<{ components: Record<string, HealthComponent>; checked_at: string }>
+      >('/admin/health/components');
       return res.data;
     },
     refetchInterval: 30_000,
@@ -459,9 +575,12 @@ export function useSchedulerAction() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { id: string; action: 'run-now' | 'pause' | 'resume' }) => {
-      return apiRequest<unknown>(`/admin/scheduler/jobs/${encodeURIComponent(input.id)}/${input.action}`, {
-        method: 'POST',
-      });
+      return apiRequest<unknown>(
+        `/admin/scheduler/jobs/${encodeURIComponent(input.id)}/${input.action}`,
+        {
+          method: 'POST',
+        },
+      );
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'scheduler'] }),
   });
@@ -575,7 +694,9 @@ export function useProbeIntegration() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) =>
-      apiRequest<unknown>(`/admin/integrations/${encodeURIComponent(id)}/health`, { method: 'POST' }),
+      apiRequest<unknown>(`/admin/integrations/${encodeURIComponent(id)}/health`, {
+        method: 'POST',
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'integrations'] }),
   });
 }
@@ -602,7 +723,10 @@ export function useUpdateMediaStorage() {
 export function useProbeMediaStorage() {
   return useMutation({
     mutationFn: async () => {
-      const res = await apiRequest<ApiEnvelope<{ reachable: boolean; detail: string }>>('/admin/media/storage/probe', { method: 'POST' });
+      const res = await apiRequest<ApiEnvelope<{ reachable: boolean; detail: string }>>(
+        '/admin/media/storage/probe',
+        { method: 'POST' },
+      );
       return res.data;
     },
   });
@@ -612,9 +736,12 @@ export function useNotificationConfigs(params: { channel?: string; active?: bool
   return useQuery({
     queryKey: ['admin', 'notification-configs', params],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<NotificationConfig[]>>('/admin/notification-configs', {
-        query: { ...params, per_page: 100 },
-      });
+      const res = await apiRequest<ApiEnvelope<NotificationConfig[]>>(
+        '/admin/notification-configs',
+        {
+          query: { ...params, per_page: 100 },
+        },
+      );
       return res.data;
     },
   });
@@ -643,7 +770,9 @@ export function useDeleteNotificationConfig() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) =>
-      apiRequest<unknown>(`/admin/notification-configs/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+      apiRequest<unknown>(`/admin/notification-configs/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'notification-configs'] }),
   });
 }
@@ -710,7 +839,9 @@ export function useAiProviders(active?: boolean) {
   return useQuery({
     queryKey: ['admin', 'ai', 'providers', active],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<AiProvider[]>>('/admin/ai/providers', { query: { active, per_page: 50 } });
+      const res = await apiRequest<ApiEnvelope<AiProvider[]>>('/admin/ai/providers', {
+        query: { active, per_page: 50 },
+      });
       return res.data;
     },
   });
@@ -720,7 +851,9 @@ export function useAiPrompts(name?: string, status?: string) {
   return useQuery({
     queryKey: ['admin', 'ai', 'prompts', name, status],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<PromptVersion[]>>('/admin/ai/prompts', { query: { name, status, per_page: 50 } });
+      const res = await apiRequest<ApiEnvelope<PromptVersion[]>>('/admin/ai/prompts', {
+        query: { name, status, per_page: 50 },
+      });
       return res.data;
     },
   });
@@ -739,7 +872,10 @@ export function useUpdateAiProvider() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...patch }: Partial<AiProviderInput> & { id: string }) =>
-      apiRequest<ApiEnvelope<AiProvider>>(`/admin/ai/providers/${encodeURIComponent(id)}`, { method: 'PUT', body: patch }),
+      apiRequest<ApiEnvelope<AiProvider>>(`/admin/ai/providers/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: patch,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'providers'] }),
   });
 }
@@ -747,7 +883,10 @@ export function useUpdateAiProvider() {
 export function useTestAiProvider() {
   return useMutation({
     mutationFn: async (id: string) =>
-      apiRequest<{ healthy: boolean; error?: string }>(`/admin/ai/providers/${encodeURIComponent(id)}/test`, { method: 'POST' }),
+      apiRequest<{ healthy: boolean; error?: string }>(
+        `/admin/ai/providers/${encodeURIComponent(id)}/test`,
+        { method: 'POST' },
+      ),
   });
 }
 
@@ -755,7 +894,9 @@ export function useActivateAiProvider() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) =>
-      apiRequest<unknown>(`/admin/ai/providers/${encodeURIComponent(id)}/activate`, { method: 'POST' }),
+      apiRequest<unknown>(`/admin/ai/providers/${encodeURIComponent(id)}/activate`, {
+        method: 'POST',
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'providers'] }),
   });
 }
@@ -773,7 +914,9 @@ export function useApprovePrompt() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) =>
-      apiRequest<unknown>(`/admin/ai/prompts/${encodeURIComponent(id)}/approve`, { method: 'POST' }),
+      apiRequest<unknown>(`/admin/ai/prompts/${encodeURIComponent(id)}/approve`, {
+        method: 'POST',
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'prompts'] }),
   });
 }
@@ -782,7 +925,9 @@ export function useRollbackPrompt() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) =>
-      apiRequest<unknown>(`/admin/ai/prompts/${encodeURIComponent(id)}/rollback`, { method: 'POST' }),
+      apiRequest<unknown>(`/admin/ai/prompts/${encodeURIComponent(id)}/rollback`, {
+        method: 'POST',
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ai', 'prompts'] }),
   });
 }
@@ -919,7 +1064,9 @@ export function useWorkflows() {
   return useQuery({
     queryKey: ['admin', 'workflows'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<WorkflowDefinition[]>>('/admin/workflows', { query: { per_page: 100 } });
+      const res = await apiRequest<ApiEnvelope<WorkflowDefinition[]>>('/admin/workflows', {
+        query: { per_page: 100 },
+      });
       return res.data;
     },
   });
@@ -929,7 +1076,10 @@ export function useCreateWorkflow() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: Partial<WorkflowDefinition>) =>
-      apiRequest<ApiEnvelope<WorkflowDefinition>>('/admin/workflows', { method: 'POST', body: input }),
+      apiRequest<ApiEnvelope<WorkflowDefinition>>('/admin/workflows', {
+        method: 'POST',
+        body: input,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'workflows'] }),
   });
 }
@@ -975,7 +1125,9 @@ export function useSettings(q?: string) {
   return useQuery({
     queryKey: ['admin', 'settings', q],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<Setting[]>>('/admin/settings', { query: { q, per_page: 100 } });
+      const res = await apiRequest<ApiEnvelope<Setting[]>>('/admin/settings', {
+        query: { q, per_page: 100 },
+      });
       return res.data;
     },
   });
@@ -994,7 +1146,10 @@ export function useUpdateSetting() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ key, ...patch }: Partial<Setting> & { key: string }) =>
-      apiRequest<ApiEnvelope<Setting>>(`/admin/settings/${encodeURIComponent(key)}`, { method: 'PUT', body: patch }),
+      apiRequest<ApiEnvelope<Setting>>(`/admin/settings/${encodeURIComponent(key)}`, {
+        method: 'PUT',
+        body: patch,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'settings'] }),
   });
 }

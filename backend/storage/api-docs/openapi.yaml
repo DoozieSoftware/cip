@@ -1482,6 +1482,47 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/reports:
+    get:
+      tags: ['Super Admin']
+      summary: 'List reports across departments (super_admin only)'
+      operationId: admin.reports.index
+      parameters:
+        - in: query
+          name: department_id
+          schema: { type: string, format: uuid }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: officer_id
+          schema: { type: string, format: uuid }
+        - in: query
+          name: assignment_type
+          schema: { type: string, enum: [primary, secondary] }
+        - in: query
+          name: date_from
+          schema: { type: string, format: date }
+        - in: query
+          name: date_to
+          schema: { type: string, format: date }
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 500, default: 25 }
+      responses:
+        '200':
+          description: 'Paginated cross-department report list.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminReportListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /api/v1/admin/report-types:
     get:
       tags: ['Super Admin']
@@ -2905,6 +2946,44 @@ components:
       properties:
         name: { type: string, maxLength: 128, example: 'reports.export' }
         guard_name: { type: string, nullable: true, maxLength: 64, example: 'web' }
+    AdminReportListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/AdminReport' }
+            meta: { $ref: '#/components/schemas/PaginationMeta' }
+    AdminReport:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tracking_number: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        current_status_code: { type: string, nullable: true }
+        submitted_at: { type: string, format: date-time, nullable: true }
+        report_type: { $ref: '#/components/schemas/ReportType', nullable: true }
+        department: { $ref: '#/components/schemas/Department', nullable: true }
+        assignments:
+          type: array
+          items: { $ref: '#/components/schemas/AdminReportAssignment' }
+    AdminReportAssignment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [primary, secondary] }
+        is_primary: { type: boolean }
+        task_status: { type: string }
+        department: { $ref: '#/components/schemas/Department', nullable: true }
+        officer:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string, nullable: true }
+        assigned_at: { type: string, format: date-time, nullable: true }
     ReportTypeResponse:
       allOf:
         - $ref: '#/components/schemas/ApiResponse'

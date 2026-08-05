@@ -20,7 +20,9 @@ React portal.
    /admin                                          ← dashboard counts
         │
    /admin/organizations, /admin/departments
-        │
+         │
+   /admin/reports                                  ← cross-department report search
+         │
    /admin/users, /admin/roles, /admin/permissions
         │
    /admin/report-types                             ← category & schema config
@@ -64,6 +66,7 @@ Form-Request `authorize()` layer and at each controller's
 | Method | Path | Notes |
 | ------ | ---- | ----- |
 | GET    | `/api/v1/admin/departments` | paginated, human-readable department management |
+| GET    | `/api/v1/admin/reports` | paginated cross-department list; filters `department_id`, `status`, `category`, `officer_id`, `assignment_type`, `date_from`, `date_to` |
 | POST   | `/api/v1/admin/departments` | create department |
 | PUT    | `/api/v1/admin/departments/{department}` | update hierarchy, jurisdiction, SLA |
 | DELETE | `/api/v1/admin/departments/{department}` | deactivate/delete per policy |

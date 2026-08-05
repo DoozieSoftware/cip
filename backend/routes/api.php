@@ -28,6 +28,7 @@ use App\Modules\Notifications\Http\Controllers\Api\PushSubscriptionController;
 use App\Modules\Public\Http\Controllers\PublicDepartmentPerformanceController;
 use App\Modules\Public\Http\Controllers\PublicHeatmapController;
 use App\Modules\Public\Http\Controllers\PublicStatsController;
+use App\Modules\Reports\Http\Controllers\Admin\AdminReportController;
 use App\Modules\Reports\Http\Controllers\Admin\AdminReportTypeController;
 use App\Modules\Reports\Http\Controllers\Api\ReportsController;
 use App\Modules\Routing\Http\Controllers\Admin\ReassignController;
@@ -132,6 +133,8 @@ Route::prefix('v1')->group(function (): void {
         Route::get('permissions/{permission}', [AdminPermissionController::class, 'show'])->name('permissions.show');
         Route::delete('permissions/{permission}', [AdminPermissionController::class, 'destroy'])->name('permissions.destroy');
 
+        // Cross-department report search is read-only; no audit mutation is performed.
+        Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
         // T-M12-003 — Report-type CRUD (super_admin)
         Route::get('report-types', [AdminReportTypeController::class, 'index'])->name('report-types.index');
         Route::post('report-types', [AdminReportTypeController::class, 'store'])->name('report-types.store');
