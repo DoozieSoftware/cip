@@ -37,21 +37,14 @@ beforeEach(function (): void {
 });
 
 dataset('phase1PrimaryRouting', [
-    'T001 pothole' => ['pothole', 'BBMP_ENG'],
-    'T002 footpath damage' => ['footpath_damage', 'BBMP_ENG'],
-    'T003 garbage' => ['garbage', 'BBMP_SWM'],
-    'T004 dead animal' => ['dead_animal', 'BBMP_SWM'],
-    'T005 streetlight' => ['streetlight', 'BBMP_ELEC'],
-    'T006 power outage' => ['power_outage', 'BESCOM'],
-    'T007 water leakage' => ['water_leakage', 'BWSSB'],
-    'T008 sewage overflow' => ['sewage_overflow', 'BWSSB'],
-    'T009 drain blockage' => ['drain_blockage', 'BBMP_SWD'],
-    'T010 traffic violation' => ['traffic_violation', 'BTP'],
-    'T011 illegal parking' => ['illegal_parking', 'BTP'],
-    'T012 tree fall' => ['tree_fall', 'BBMP_FOR'],
-    'T013 stray animal' => ['stray_animal', 'BBMP_AH'],
-    'T014 encroachment' => ['encroachment', 'BBMP_TP'],
-    'T015 noise pollution' => ['noise_pollution', 'KSPCB'],
+    'T001 roads' => ['roads', 'BBMP_ENG'],
+    'T002 water and sewage' => ['water_sewage', 'BWSSB'],
+    'T003 electricity' => ['electricity', 'BESCOM'],
+    'T004 garbage' => ['garbage', 'BBMP_SWM'],
+    'T005 traffic violation' => ['traffic_violation', 'BTP'],
+    'T006 illegal parking' => ['illegal_parking', 'BTP'],
+    'T007 encroachment' => ['encroachment', 'BBMP_TP'],
+    'T008 dead animal' => ['dead_animal', 'BBMP_SWM'],
 ]);
 
 it('routes every approved Phase 1 category to its primary department', function (string $category, string $department): void {
@@ -71,8 +64,16 @@ it('T016 sends an unmatched category to the configured fallback', function (): v
         ->toBe('BBMP_ENG');
 });
 
+it('routes an internal AI label before the broad category fallback', function (): void {
+    $report = phase1Report('electricity');
+    $report->forceFill(['ai_label' => 'streetlight'])->save();
+
+    expect(app(RoutingEngine::class)->resolve($report)->destinationDepartment->code)
+        ->toBe('BBMP_ELEC');
+});
+
 it('T017 creates exactly one primary assignment for a routed report', function (): void {
-    $report = phase1Report('pothole');
+    $report = phase1Report('roads');
     $decision = app(RoutingEngine::class)->resolve($report);
 
     expect($decision)->not->toBeNull();
@@ -88,7 +89,7 @@ it('T018 denies a department officer access to another department report', funct
     $officer = User::factory()->create();
     $officer->assignRole('department_officer');
     $officer->departments()->attach($roads->id);
-    $report = phase1Report('water_leakage');
+    $report = phase1Report('water_sewage');
 
     expect((new DepartmentPolicy)->view($officer, $report))->toBeFalse()
         ->and($report->department_id)->toBeNull();

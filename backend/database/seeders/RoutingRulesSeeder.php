@@ -17,8 +17,8 @@ use Illuminate\Support\Facades\DB;
  * Seeds the Phase 1 Bengaluru routing rules per
  * docs/department-routing-mapping.md §4 (approved taxonomy):
  *
- *   - 15 category_in rules, one per approved category, targeting the
- *     responsible BBMP wing or external agency
+ *   - internal AI-label rules run before broad citizen-category fallbacks
+ *   - broad citizen categories remain the only PWA choices
  *   - legacy demo rules (BBMP_WARD_112 / merged categories) deactivated
  *   - fallback `routing_default_department_id` -> BBMP_ENG
  *
@@ -42,25 +42,25 @@ class RoutingRulesSeeder extends Seeder
                 ->get()
                 ->keyBy('code');
 
-            // Approved taxonomy (docs/department-routing-mapping.md §4).
-            // Names match the taxonomy migration exactly (case-insensitive
-            // collation makes divergent names collide with migration rows).
+            // Internal AI labels are more specific than the broad citizen
+            // categories, so they run first. Broad category rules below are
+            // safe fallbacks when no internal label is available.
             $rules = [
-                ['name' => 'Pothole -> BBMP Roads', 'category' => 'pothole', 'code' => 'BBMP_ENG', 'priority' => $medium, 'sla' => 1440, 'order' => 10],
-                ['name' => 'Footpath -> BBMP Roads', 'category' => 'footpath_damage', 'code' => 'BBMP_ENG', 'priority' => $medium, 'sla' => 1440, 'order' => 11],
-                ['name' => 'Garbage -> BBMP SWM', 'category' => 'garbage', 'code' => 'BBMP_SWM', 'priority' => $medium, 'sla' => 1440, 'order' => 12],
-                ['name' => 'Dead Animal -> BBMP SWM', 'category' => 'dead_animal', 'code' => 'BBMP_SWM', 'priority' => $medium, 'sla' => 1440, 'order' => 13],
-                ['name' => 'Streetlight -> BBMP Electrical', 'category' => 'streetlight', 'code' => 'BBMP_ELEC', 'priority' => $medium, 'sla' => 1440, 'order' => 14],
-                ['name' => 'Power Outage -> BESCOM', 'category' => 'power_outage', 'code' => 'BESCOM', 'priority' => $high, 'sla' => 720, 'order' => 15],
-                ['name' => 'Water Leak -> BWSSB', 'category' => 'water_leakage', 'code' => 'BWSSB', 'priority' => $high, 'sla' => 720, 'order' => 16],
-                ['name' => 'Sewage Overflow -> BWSSB', 'category' => 'sewage_overflow', 'code' => 'BWSSB', 'priority' => $high, 'sla' => 720, 'order' => 17],
-                ['name' => 'Drain Blockage -> BBMP SWD', 'category' => 'drain_blockage', 'code' => 'BBMP_SWD', 'priority' => $medium, 'sla' => 1440, 'order' => 18],
-                ['name' => 'Traffic Violation -> BTP', 'category' => 'traffic_violation', 'code' => 'BTP', 'priority' => $high, 'sla' => 480, 'order' => 19],
-                ['name' => 'Illegal Parking -> BTP', 'category' => 'illegal_parking', 'code' => 'BTP', 'priority' => $high, 'sla' => 480, 'order' => 20],
-                ['name' => 'Tree Fall -> BBMP Forest', 'category' => 'tree_fall', 'code' => 'BBMP_FOR', 'priority' => $high, 'sla' => 720, 'order' => 21],
-                ['name' => 'Stray Animal -> BBMP Animal Husbandry', 'category' => 'stray_animal', 'code' => 'BBMP_AH', 'priority' => $medium, 'sla' => 1440, 'order' => 22],
-                ['name' => 'Encroachment -> BBMP Town Planning', 'category' => 'encroachment', 'code' => 'BBMP_TP', 'priority' => $medium, 'sla' => 2880, 'order' => 23],
-                ['name' => 'Noise Pollution -> KSPCB', 'category' => 'noise_pollution', 'code' => 'KSPCB', 'priority' => $medium, 'sla' => 2880, 'order' => 24],
+                ['name' => 'Tree Fall -> BBMP Forest', 'conditions' => ['ai_label_in' => ['tree_fall']], 'code' => 'BBMP_FOR', 'priority' => $high, 'sla' => 720, 'order' => 10],
+                ['name' => 'Stray Animal -> BBMP Animal Husbandry', 'conditions' => ['ai_label_in' => ['stray_animal']], 'code' => 'BBMP_AH', 'priority' => $medium, 'sla' => 1440, 'order' => 11],
+                ['name' => 'Streetlight -> BBMP Electrical', 'conditions' => ['ai_label_in' => ['streetlight']], 'code' => 'BBMP_ELEC', 'priority' => $medium, 'sla' => 1440, 'order' => 12],
+                ['name' => 'Power Outage -> BESCOM', 'conditions' => ['ai_label_in' => ['power_outage']], 'code' => 'BESCOM', 'priority' => $high, 'sla' => 720, 'order' => 13],
+                ['name' => 'Water Leak -> BWSSB', 'conditions' => ['ai_label_in' => ['water_leakage']], 'code' => 'BWSSB', 'priority' => $high, 'sla' => 720, 'order' => 14],
+                ['name' => 'Sewage Overflow -> BWSSB', 'conditions' => ['ai_label_in' => ['sewage_overflow']], 'code' => 'BWSSB', 'priority' => $high, 'sla' => 720, 'order' => 15],
+                ['name' => 'Drain Blockage -> BBMP SWD', 'conditions' => ['ai_label_in' => ['drain_blockage']], 'code' => 'BBMP_SWD', 'priority' => $medium, 'sla' => 1440, 'order' => 16],
+                ['name' => 'Noise Pollution -> KSPCB', 'conditions' => ['ai_label_in' => ['noise_pollution']], 'code' => 'KSPCB', 'priority' => $medium, 'sla' => 2880, 'order' => 17],
+                ['name' => 'Road Detail -> BBMP Roads', 'conditions' => ['ai_label_in' => ['pothole', 'footpath_damage', 'road_damage']], 'code' => 'BBMP_ENG', 'priority' => $medium, 'sla' => 1440, 'order' => 18],
+                ['name' => 'Roads -> BBMP Roads', 'conditions' => ['category_in' => ['roads']], 'code' => 'BBMP_ENG', 'priority' => $medium, 'sla' => 1440, 'order' => 20],
+                ['name' => 'Water & Sewage -> BWSSB', 'conditions' => ['category_in' => ['water_sewage']], 'code' => 'BWSSB', 'priority' => $high, 'sla' => 720, 'order' => 21],
+                ['name' => 'Electricity -> BESCOM', 'conditions' => ['category_in' => ['electricity']], 'code' => 'BESCOM', 'priority' => $high, 'sla' => 720, 'order' => 22],
+                ['name' => 'Garbage & Dead Animal -> BBMP SWM', 'conditions' => ['category_in' => ['garbage', 'dead_animal']], 'code' => 'BBMP_SWM', 'priority' => $medium, 'sla' => 1440, 'order' => 23],
+                ['name' => 'Traffic & Parking -> BTP', 'conditions' => ['category_in' => ['traffic_violation', 'illegal_parking']], 'code' => 'BTP', 'priority' => $high, 'sla' => 480, 'order' => 24],
+                ['name' => 'Encroachment -> BBMP Town Planning', 'conditions' => ['category_in' => ['encroachment']], 'code' => 'BBMP_TP', 'priority' => $medium, 'sla' => 2880, 'order' => 25],
             ];
 
             foreach ($rules as $rule) {
@@ -73,7 +73,7 @@ class RoutingRulesSeeder extends Seeder
                 $this->ensureRule(
                     name: $rule['name'],
                     priority: $rule['order'],
-                    conditions: ['category_in' => [$rule['category']]],
+                    conditions: $rule['conditions'],
                     destinationDepartment: $department,
                     defaultPriority: $rule['priority'],
                     defaultSlaMinutes: $rule['sla'],
@@ -86,36 +86,19 @@ class RoutingRulesSeeder extends Seeder
             $legacyNames = [
                 'Garbage -> BBMP Ward 112',
                 'Roads, Water & Electricity -> BBMP Ward 112',
-                'Traffic & Parking -> BTP',
                 'Dead Animal -> BBMP Ward 112',
                 'Pothole -> BBMP Ward 112',
+                'Pothole -> BBMP Roads',
+                'Footpath -> BBMP Roads',
+                'Garbage -> BBMP SWM',
+                'Dead Animal -> BBMP SWM',
+                'Traffic Violation -> BTP',
+                'Illegal Parking -> BTP',
             ];
 
             RoutingRule::query()
                 ->whereIn('name', $legacyNames)
                 ->update(['active' => false]);
-
-            // Remove duplicate category rules left by the taxonomy migration.
-            // The canonical rules above are the single active source of truth;
-            // legacy demo rules remain inactive, while migration-era duplicates
-            // are deleted rather than retained as confusing dead records.
-            $canonicalNames = array_column($rules, 'name');
-            $approvedCategories = array_column($rules, 'category');
-
-            RoutingRule::query()
-                ->whereNotIn('name', array_merge($canonicalNames, $legacyNames))
-                ->get()
-                ->each(function (RoutingRule $rule) use ($approvedCategories): void {
-                    $conditions = $rule->conditions;
-                    $categories = is_array($conditions) ? ($conditions['category_in'] ?? []) : [];
-                    $categories = is_array($categories)
-                        ? array_values(array_filter($categories, 'is_string'))
-                        : [];
-
-                    if ($categories !== [] && array_intersect($categories, $approvedCategories) !== []) {
-                        $rule->delete();
-                    }
-                });
 
             $fallback = $departments->get('BBMP_ENG');
 

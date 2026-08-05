@@ -35,10 +35,10 @@ it('seeds the fifteen approved Bangalore routing rules', function (): void {
 
     expect(RoutingRule::query()->where('active', true)->count())->toBe(15);
 
-    $this->assertDatabaseHas('routing_rules', ['name' => 'Garbage -> BBMP SWM', 'priority' => 12]);
-    $this->assertDatabaseHas('routing_rules', ['name' => 'Streetlight -> BBMP Electrical', 'priority' => 14]);
-    $this->assertDatabaseHas('routing_rules', ['name' => 'Illegal Parking -> BTP', 'priority' => 20]);
-    $this->assertDatabaseHas('routing_rules', ['name' => 'Noise Pollution -> KSPCB', 'priority' => 24]);
+    $this->assertDatabaseHas('routing_rules', ['name' => 'Roads -> BBMP Roads', 'priority' => 20]);
+    $this->assertDatabaseHas('routing_rules', ['name' => 'Electricity -> BESCOM', 'priority' => 22]);
+    $this->assertDatabaseHas('routing_rules', ['name' => 'Traffic & Parking -> BTP', 'priority' => 24]);
+    $this->assertDatabaseHas('routing_rules', ['name' => 'Encroachment -> BBMP Town Planning', 'priority' => 25]);
 });
 
 it('upserts the approved routing destination departments', function (): void {
