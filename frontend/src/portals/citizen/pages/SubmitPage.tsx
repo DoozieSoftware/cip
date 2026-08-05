@@ -2,6 +2,18 @@ import { useRef, useState, useEffect, type FormEvent } from 'react';
 import { type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  Camera,
+  MapPin,
+  FileText,
+  AlertTriangle,
+  Check,
+  ArrowLeft,
+  ArrowRight,
+  Pencil,
+  Shield,
+  Upload,
+} from 'lucide-react';
+import {
   useCreateReport,
   useReportTypes,
   type ReportType,
@@ -16,6 +28,15 @@ import { evidencePreviewHandlers } from '../security/evidenceGuards';
 import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 import { ApiError } from '../../../auth/api';
 
+const FORM_STEPS = ['Category', 'Details', 'Location', 'Evidence', 'Review'] as const;
+type Step = (typeof FORM_STEPS)[number];
+
+function currentStep(typeId: string, location: CapturedLocation | null): Step {
+  if (!typeId) return 'Category';
+  if (!location) return 'Location';
+  return 'Evidence';
+}
+
 export default function SubmitPage(): JSX.Element {
   const navigate = useNavigate();
   const toast = useToast();
@@ -27,9 +48,6 @@ export default function SubmitPage(): JSX.Element {
   const [description, setDescription] = useState<string>('');
   const [location, setLocation] = useState<CapturedLocation | null>(null);
   const [address, setAddress] = useState<string>('');
-  // Human-readable place name for the captured GPS point (e.g. "Kengeri,
-  // Bengaluru"). Empty until the lookup resolves; we show coordinates until
-  // then and if geocoding is unavailable.
   const placeName = useReverseGeocode(location?.latitude ?? NaN, location?.longitude ?? NaN);
   const [files, setFiles] = useState<File[]>([]);
   const [showVideo, setShowVideo] = useState<boolean>(false);
@@ -38,6 +56,7 @@ export default function SubmitPage(): JSX.Element {
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<'type' | 'title' | 'description' | 'location' | 'evidence', string>>
   >({});
+  const [currentViewStep, setCurrentViewStep] = useState<Step>('Category');
 
   function onCameraError(err: CameraError): void {
     setError(err.message);
@@ -72,40 +91,70 @@ export default function SubmitPage(): JSX.Element {
     setFiles((prev) => [...prev.filter((x) => !x.type.startsWith('video/')), f].slice(0, 6));
   }
 
-  /**
-   * A `TypeError` (or any non-`ApiError`) from `mutateAsync` means
-   * `fetch` itself failed - no network, not a server rejection. An
-   * `ApiError` means the server was reachable and said no (validation,
-   * auth, etc.), which must surface as a real error, not a silent
-   * offline-queue save.
-   */
   function isNetworkFailure(err: unknown): boolean {
     return !(err instanceof ApiError);
   }
 
-  async function onSubmit(e: FormEvent): Promise<void> {
-    e.preventDefault();
-    setError(null);
-    setFieldErrors({});
+  function validateForm(): boolean {
+    const errors: typeof fieldErrors = {};
     if (!typeId) {
-      setFieldError('type', 'Pick a category.');
+      errors.type = 'Pick a category.';
     }
     if (title.trim().length < 5) {
-      setFieldError('title', 'Title should be at least 5 characters.');
+      errors.title = 'Title should be at least 5 characters.';
     }
     if (description.trim().length < 10) {
-      setFieldError('description', 'Description should be at least 10 characters.');
+      errors.description = 'Description should be at least 10 characters.';
     }
-    if (Object.keys(fieldErrors).length > 0) {
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
+  function goToStep(step: Step): void {
+    setCurrentViewStep(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function handleCategoryNext(): void {
+    if (!typeId) {
+      setFieldError('type', 'Pick a category.');
       return;
     }
+    setFieldError('type', null);
+    goToStep('Details');
+  }
 
-    const activeLocation = location ?? (await gpsRef.current?.requestLocation()) ?? null;
-    if (activeLocation === null) {
+  function handleDetailsNext(): void {
+    const errors: Partial<typeof fieldErrors> = {};
+    if (title.trim().length < 5) {
+      errors.title = 'Title should be at least 5 characters.';
+    }
+    if (description.trim().length < 10) {
+      errors.description = 'Description should be at least 10 characters.';
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors((prev) => ({ ...prev, ...errors }));
+      return;
+    }
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next.title;
+      delete next.description;
+      return next;
+    });
+    goToStep('Location');
+  }
+
+  function handleLocationNext(): void {
+    if (!location) {
       setFieldError('location', 'Allow location access to tag the report.');
       return;
     }
+    setFieldError('location', null);
+    goToStep('Evidence');
+  }
 
+  function handleEvidenceNext(): void {
     const hasPhoto = files.some((f) => f.type.startsWith('image/'));
     const hasVideo = files.some((f) => f.type.startsWith('video/'));
     if (selectedType?.requires_photo && !hasPhoto) {
@@ -114,6 +163,38 @@ export default function SubmitPage(): JSX.Element {
     }
     if (selectedType?.requires_video && !hasVideo) {
       setFieldError('evidence', 'This category requires a video.');
+      return;
+    }
+    setFieldError('evidence', null);
+    goToStep('Review');
+  }
+
+  async function onSubmit(e: FormEvent): Promise<void> {
+    e.preventDefault();
+    setError(null);
+    setFieldErrors({});
+
+    if (!validateForm()) {
+      return;
+    }
+
+    const activeLocation = location ?? (await gpsRef.current?.requestLocation()) ?? null;
+    if (activeLocation === null) {
+      setFieldError('location', 'Allow location access to tag the report.');
+      goToStep('Location');
+      return;
+    }
+
+    const hasPhoto = files.some((f) => f.type.startsWith('image/'));
+    const hasVideo = files.some((f) => f.type.startsWith('video/'));
+    if (selectedType?.requires_photo && !hasPhoto) {
+      setFieldError('evidence', 'This category requires at least one photo.');
+      goToStep('Evidence');
+      return;
+    }
+    if (selectedType?.requires_video && !hasVideo) {
+      setFieldError('evidence', 'This category requires a video.');
+      goToStep('Evidence');
       return;
     }
 
@@ -150,10 +231,16 @@ export default function SubmitPage(): JSX.Element {
   const selectedType: ReportType | undefined = types.data?.find((t) => t.id === typeId);
   const evidenceRequired = Boolean(selectedType?.requires_photo || selectedType?.requires_video);
   const reportTypes = types.data ?? [];
+  const activeStep = currentStep(typeId, location);
+  const stepIndex = FORM_STEPS.indexOf(currentViewStep);
 
-  // If the chosen category requires a video, reveal the recorder and
-  // never let it read as optional — previously the toggle label was
-  // hardcoded "(optional)", so required-video categories looked skippable.
+  const completedSteps: Step[] = [];
+  if (typeId) completedSteps.push('Category');
+  if (typeId && title.trim().length >= 5 && description.trim().length >= 10)
+    completedSteps.push('Details');
+  if (location) completedSteps.push('Location');
+  if (location && (!evidenceRequired || files.length > 0)) completedSteps.push('Evidence');
+
   useEffect(() => {
     if (selectedType?.requires_video) {
       setShowVideo(true);
@@ -161,339 +248,778 @@ export default function SubmitPage(): JSX.Element {
   }, [selectedType?.requires_video]);
 
   return (
-    <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
-      <header className="rounded-lg border border-slate-200 bg-white p-4">
-        <div className="flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => void navigate('/citizen')}
-            className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-xl text-blue-700 hover:bg-slate-50"
-            aria-label="Back to citizen home"
-          >
-            ‹
-          </button>
-          <div className="text-center">
-            <h1 className="text-lg font-bold text-slate-950">New Report</h1>
-            <p className="text-xs text-slate-500">Issue details, exact road, and evidence</p>
+    <form onSubmit={(e) => void onSubmit(e)} className="min-h-screen bg-slate-50 pb-32">
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+        <div className="mx-auto max-w-2xl px-4">
+          <div className="flex items-center gap-3 py-3">
+            <button
+              type="button"
+              onClick={() => void navigate('/citizen')}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+              aria-label="Back to citizen home"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-semibold tracking-tight text-slate-900">File a Report</h1>
+              <p className="text-xs text-slate-500">
+                Step {stepIndex + 1} of {FORM_STEPS.length}
+              </p>
+            </div>
           </div>
-          <span aria-hidden className="h-9 w-9" />
-        </div>
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full w-full rounded-full bg-blue-600" />
+
+          {/* Progress dots */}
+          <div className="flex items-center gap-1.5 pb-3">
+            {FORM_STEPS.map((step, i) => {
+              const isActive = step === currentViewStep;
+              const isComplete = completedSteps.includes(step);
+              return (
+                <button
+                  key={step}
+                  type="button"
+                  onClick={() => {
+                    if (i < FORM_STEPS.indexOf(activeStep) || completedSteps.includes(step)) {
+                      goToStep(step);
+                    }
+                  }}
+                  disabled={i > FORM_STEPS.indexOf(activeStep) && !completedSteps.includes(step)}
+                  className={cx(
+                    'group flex flex-1 items-center gap-1.5 rounded-full py-1 transition',
+                    isActive || isComplete ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+                  )}
+                  aria-label={`Step ${i + 1}: ${step}${isComplete ? ' (completed)' : ''}${isActive ? ' (current)' : ''}`}
+                  aria-current={isActive ? 'step' : undefined}
+                >
+                  <span
+                    className={cx(
+                      'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium transition',
+                      isComplete
+                        ? 'bg-emerald-500 text-white'
+                        : isActive
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-200 text-slate-500',
+                    )}
+                  >
+                    {isComplete ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : i + 1}
+                  </span>
+                  <span
+                    className={cx(
+                      'hidden text-xs font-medium sm:block',
+                      isActive
+                        ? 'text-slate-900'
+                        : isComplete
+                          ? 'text-emerald-700'
+                          : 'text-slate-400',
+                    )}
+                  >
+                    {step}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </header>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-950">
-            Issue details{' '}
-            <span className="text-red-500" aria-hidden>
-              *
-            </span>
-          </h2>
-          {selectedType ? (
-            <span className="text-xs text-slate-500">{selectedType.name}</span>
-          ) : null}
-        </div>
-        {types.isLoading ? (
-          <Spinner label="Loading categories" />
-        ) : types.isError ? (
-          <p role="alert" className="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            Could not load categories. Your session may have expired. Please log in again.
-          </p>
-        ) : reportTypes.length === 0 ? (
-          <p role="alert" className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
-            No active report categories are available. Please contact an administrator.
-          </p>
-        ) : (
-          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {reportTypes.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTypeId(t.id)}
-                className={cx(
-                  'flex items-center gap-2 rounded-lg border p-3 text-left text-sm transition',
-                  typeId === t.id
-                    ? 'border-blue-500 bg-blue-50 text-blue-800 ring-1 ring-blue-200'
-                    : 'border-slate-200 bg-white hover:border-slate-300',
-                  fieldErrors.type ? 'border-red-400' : '',
-                )}
-              >
-                <span
-                  aria-hidden
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-slate-50"
-                  style={{ color: t.color ?? '#2563eb' }}
-                >
-                  <IssueIcon code={t.code} />
-                </span>
-                <span className="font-medium">{t.name}</span>
-              </button>
-            ))}
-          </div>
-        )}
-        {fieldErrors.type ? (
-          <p role="alert" className="mt-2 text-xs font-medium text-red-600">
-            {fieldErrors.type}
-          </p>
-        ) : null}
-        {selectedType ? (
-          <p className="mt-2 inline-flex rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
-            {selectedType.requires_photo ? 'Evidence required' : 'Evidence optional'}
-            {selectedType.requires_video ? ' - Video required' : ''}
-          </p>
-        ) : null}
-        <label htmlFor="report-title" className="mt-3 block text-xs font-medium text-slate-600">
-          Title{' '}
-          <span className="text-red-500" aria-hidden>
-            *
-          </span>
-        </label>
-        <input
-          id="report-title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Big pothole near MG Road metro gate 3"
-          aria-invalid={fieldErrors.title ? true : undefined}
-          className={cx(
-            'mt-1 block w-full rounded-md border px-3 py-2 text-base shadow-sm focus:border-blue-500 focus:ring-blue-500',
-            fieldErrors.title ? 'border-red-400' : 'border-slate-300',
-          )}
-          required
-        />
-        {fieldErrors.title ? (
-          <p role="alert" className="mt-1 text-xs font-medium text-red-600">
-            {fieldErrors.title}
-          </p>
-        ) : null}
-        <label
-          htmlFor="report-description"
-          className="mt-2 block text-xs font-medium text-slate-600"
-        >
-          Description{' '}
-          <span className="text-red-500" aria-hidden>
-            *
-          </span>
-        </label>
-        <textarea
-          id="report-description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={3}
-          placeholder="Affects traffic; vehicles swerve into the bus lane. Approx 80 cm wide."
-          aria-invalid={fieldErrors.description ? true : undefined}
-          className={cx(
-            'mt-1 block w-full rounded-md border px-3 py-2 text-base shadow-sm focus:border-blue-500 focus:ring-blue-500',
-            fieldErrors.description ? 'border-red-400' : 'border-slate-300',
-          )}
-          required
-        />
-        {fieldErrors.description ? (
-          <p role="alert" className="mt-1 text-xs font-medium text-red-600">
-            {fieldErrors.description}
-          </p>
-        ) : null}
-      </section>
+      {/* Content */}
+      <div className="mx-auto max-w-2xl px-4 pt-6">
+        {/* Step 1: Category Selection */}
+        {currentViewStep === 'Category' && (
+          <section className="space-y-5">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">Report Category</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Select the category that best describes the civic issue you wish to report.
+              </p>
+            </div>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-950">
-            Location{' '}
-            <span className="text-red-500" aria-hidden>
-              *
-            </span>
-          </h2>
-          {location !== null ? (
-            location.mock_heuristic.likely ? (
-              <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
-                Location suspicious
-              </span>
+            {types.isLoading ? (
+              <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white p-12">
+                <Spinner label="Loading categories" />
+              </div>
+            ) : types.isError ? (
+              <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-5">
+                <p className="text-sm font-medium text-red-800">
+                  Could not load categories. Your session may have expired. Please log in again.
+                </p>
+              </div>
+            ) : reportTypes.length === 0 ? (
+              <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                <p className="text-sm font-medium text-amber-800">
+                  No active report categories are available. Please contact an administrator.
+                </p>
+              </div>
             ) : (
-              <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">
-                GPS verified
-              </span>
-            )
-          ) : null}
-        </div>
-        <GpsCapture ref={gpsRef} onCapture={setLocation} className="mt-2" />
-        {fieldErrors.location ? (
-          <p role="alert" className="mt-2 text-xs font-medium text-red-600">
-            {fieldErrors.location}
-          </p>
-        ) : null}
-        {location !== null ? (
-          <div className="mt-2 space-y-0.5">
-            <span
-              className="flex items-start gap-1 text-xs font-medium text-slate-700"
-              title={`${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}${location.accuracy_m !== null ? ` (+/-${Math.round(location.accuracy_m)} m)` : ''}`}
-            >
-              <span aria-hidden>📍</span>
-              <span>{placeName || 'Location captured'}</span>
-            </span>
-            {location.accuracy_m !== null && location.accuracy_m > 100 ? (
-              <p className="mt-1 text-[11px] font-medium text-amber-700">
-                Coarse fix — tap Use my location again in an open area for a sharper place tag.
+              <div className="space-y-2">
+                {reportTypes.map((t) => (
+                  <label
+                    key={t.id}
+                    className={cx(
+                      'flex cursor-pointer items-center gap-4 rounded-2xl border-2 p-4 transition',
+                      typeId === t.id
+                        ? 'border-slate-900 bg-white shadow-sm'
+                        : 'border-slate-200 bg-white hover:border-slate-300',
+                      fieldErrors.type && !typeId ? 'border-red-400 bg-red-50' : '',
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="report-category"
+                      value={t.id}
+                      checked={typeId === t.id}
+                      onChange={() => setTypeId(t.id)}
+                      className="sr-only"
+                    />
+                    <span
+                      aria-hidden
+                      className={cx(
+                        'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition',
+                        typeId === t.id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500',
+                      )}
+                      style={{ color: typeId === t.id ? 'white' : (t.color ?? '#334155') }}
+                    >
+                      <IssueIcon code={t.code} />
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-semibold text-slate-900">{t.name}</span>
+                      <span className="block text-xs text-slate-500">
+                        {t.requires_photo ? 'Evidence required' : 'Evidence optional'}
+                        {t.requires_video ? ' · Video required' : ''}
+                      </span>
+                    </span>
+                    {typeId === t.id && (
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900">
+                        <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+                      </span>
+                    )}
+                  </label>
+                ))}
+              </div>
+            )}
+            {fieldErrors.type ? (
+              <p role="alert" className="text-sm font-medium text-red-600 px-1">
+                {fieldErrors.type}
               </p>
             ) : null}
-          </div>
-        ) : null}
-        <input
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          placeholder="Exact road / landmark, e.g. 8th Main Road near BESCOM office"
-          className="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-        />
-        <p className="mt-1 text-[11px] text-slate-500">
-          GPS pins the spot; road name or landmark helps officers find the same side of the road.
-        </p>
-      </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-950">Evidence</h2>
-            <p className="text-xs text-slate-500">
-              Up to 5 photos and 1 short video. Each up to 25 MB.
-            </p>
-          </div>
-          <span
-            className={cx(
-              'rounded-full border px-2 py-1 text-xs font-semibold',
-              evidenceRequired ? 'border-red-200 text-red-600' : 'border-slate-200 text-slate-500',
-            )}
-          >
-            {evidenceRequired ? 'Required' : 'Optional'}
-          </span>
-        </div>
-        {fieldErrors.evidence ? (
-          <p role="alert" className="mt-2 text-xs font-medium text-red-600">
-            {fieldErrors.evidence}
-          </p>
-        ) : null}
-        <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-          Safety first: never take photos or use this app while driving. Pull over somewhere safe
-          before capturing evidence.
-        </p>
-        <div className="mt-2 space-y-3">
-          <CameraCapture mode="photo" onCapture={addPhoto} onError={onCameraError} />
-          <button
-            type="button"
-            onClick={() => setShowVideo((v) => !v)}
-            className="w-full rounded-md border border-blue-600 bg-white px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
-          >
-            {showVideo
-              ? 'Hide video recorder'
-              : `Add a short video (${selectedType?.requires_video ? 'required' : 'optional'})`}
-          </button>
-          {showVideo ? (
-            <CameraCapture mode="video" onCapture={addVideo} onError={onCameraError} />
-          ) : null}
-        </div>
-        {files.length > 0 ? (
-          <ul className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {files.map((f, i) => (
-              <li key={i} className="relative">
-                <div className="aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
-                  {f.type.startsWith('image/') ? (
-                    <img
-                      src={URL.createObjectURL(f)}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      {...evidencePreviewHandlers()}
-                    />
-                  ) : (
-                    <div className="grid h-full w-full place-items-center text-2xl">🎥</div>
+            <button
+              type="button"
+              onClick={handleCategoryNext}
+              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 text-base font-semibold text-white shadow-sm transition hover:bg-slate-800 active:scale-[0.98]"
+            >
+              Continue
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </section>
+        )}
+
+        {/* Step 2: Issue Details */}
+        {currentViewStep === 'Details' && (
+          <section className="space-y-5">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">Issue Details</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Provide a clear description of the issue to help officials address it promptly.
+              </p>
+            </div>
+
+            <div className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5">
+              <div>
+                <label htmlFor="report-title" className="text-sm font-medium text-slate-700">
+                  Report Title <span className="text-red-500">*</span>
+                </label>
+                <p className="mt-1 text-xs text-slate-500">
+                  A brief, descriptive headline (minimum 5 characters).
+                </p>
+                <input
+                  id="report-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Large pothole near metro gate 3"
+                  aria-invalid={fieldErrors.title ? true : undefined}
+                  aria-describedby={fieldErrors.title ? 'title-error' : undefined}
+                  className={cx(
+                    'mt-2 block w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-base placeholder:text-slate-400 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900',
+                    fieldErrors.title ? 'border-red-400 bg-red-50' : '',
                   )}
+                  required
+                />
+                {fieldErrors.title ? (
+                  <p
+                    id="title-error"
+                    role="alert"
+                    className="mt-2 text-sm font-medium text-red-600"
+                  >
+                    {fieldErrors.title}
+                  </p>
+                ) : null}
+              </div>
+
+              <div>
+                <label htmlFor="report-description" className="text-sm font-medium text-slate-700">
+                  Detailed Description <span className="text-red-500">*</span>
+                </label>
+                <p className="mt-1 text-xs text-slate-500">
+                  Include size, duration, safety concerns (minimum 10 characters).
+                </p>
+                <textarea
+                  id="report-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={4}
+                  placeholder="Describe the issue: how long it exists, who it affects, any safety hazards…"
+                  aria-invalid={fieldErrors.description ? true : undefined}
+                  aria-describedby={fieldErrors.description ? 'desc-error' : undefined}
+                  className={cx(
+                    'mt-2 block w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-base placeholder:text-slate-400 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900',
+                    fieldErrors.description ? 'border-red-400 bg-red-50' : '',
+                  )}
+                  required
+                />
+                {fieldErrors.description ? (
+                  <p id="desc-error" role="alert" className="mt-2 text-sm font-medium text-red-600">
+                    {fieldErrors.description}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => goToStep('Category')}
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-6 text-base font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98]"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={handleDetailsNext}
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 text-base font-semibold text-white shadow-sm transition hover:bg-slate-800 active:scale-[0.98]"
+              >
+                Continue
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* Step 3: Location Verification */}
+        {currentViewStep === 'Location' && (
+          <section className="space-y-5">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">Location Verification</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Your precise location is required to route this report to the correct department.
+              </p>
+            </div>
+
+            {/* Privacy notice */}
+            <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+              <Shield className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
+              <p className="text-sm leading-relaxed text-slate-600">
+                <strong className="font-medium text-slate-700">Privacy notice:</strong> Your GPS
+                coordinates are used solely for report routing and are not shared publicly.
+              </p>
+            </div>
+
+            {/* GPS capture */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
+                  <MapPin className="h-5 w-5 text-slate-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Capture Location</p>
+                  <p className="text-xs text-slate-500">Tap the button to detect your position</p>
+                </div>
+              </div>
+              <GpsCapture ref={gpsRef} onCapture={setLocation} />
+            </div>
+
+            {fieldErrors.location ? (
+              <p role="alert" className="text-sm font-medium text-red-600 px-1">
+                {fieldErrors.location}
+              </p>
+            ) : null}
+
+            {location !== null ? (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500">
+                    <Check className="h-5 w-5 text-white" strokeWidth={3} />
+                  </div>
+                  <div className="text-sm">
+                    <p className="font-semibold text-emerald-900">Location captured</p>
+                    <p className="mt-1 text-emerald-700">
+                      {placeName ||
+                        `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`}
+                      {location.accuracy_m !== null
+                        ? ` (±${Math.round(location.accuracy_m)} m)`
+                        : ''}
+                    </p>
+                  </div>
+                </div>
+                {location.accuracy_m !== null && location.accuracy_m > 100 ? (
+                  <p className="mt-3 rounded-xl bg-amber-100 px-4 py-2.5 text-sm font-medium text-amber-800">
+                    Coarse fix detected. For best results, try again in an open area.
+                  </p>
+                ) : null}
+                {location.mock_heuristic.likely ? (
+                  <p className="mt-3 rounded-xl bg-amber-100 px-4 py-2.5 text-sm font-medium text-amber-800">
+                    This location appears suspicious ({location.mock_heuristic.reasons.join('; ')}).
+                    It may be rejected during review.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div>
+              <label htmlFor="report-address" className="text-sm font-medium text-slate-700">
+                Nearest Landmark or Address
+                <span className="text-slate-400 font-normal"> (optional)</span>
+              </label>
+              <p className="mt-1 text-xs text-slate-500">
+                A street name or nearby landmark helps officers locate the exact spot.
+              </p>
+              <input
+                id="report-address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="e.g. Near BESCOM office, 8th Main Road"
+                className="mt-2 block w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-base placeholder:text-slate-400 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => goToStep('Details')}
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-6 text-base font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98]"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={handleLocationNext}
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 text-base font-semibold text-white shadow-sm transition hover:bg-slate-800 active:scale-[0.98]"
+              >
+                Continue
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* Step 4: Evidence Upload */}
+        {currentViewStep === 'Evidence' && (
+          <section className="space-y-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">Attach Evidence</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Up to 5 photos and 1 short video (3–5 seconds). Max 25 MB per file.
+                </p>
+              </div>
+              <span
+                className={cx(
+                  'shrink-0 rounded-full px-3 py-1 text-xs font-semibold',
+                  evidenceRequired ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600',
+                )}
+              >
+                {evidenceRequired ? 'Required' : 'Optional'}
+              </span>
+            </div>
+
+            {/* Safety advisory */}
+            <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+              <div className="text-sm leading-relaxed text-amber-800">
+                <p className="font-semibold text-amber-900">Safety First</p>
+                <p className="mt-0.5">
+                  Never capture evidence while operating a vehicle. Pull over to a safe location
+                  first.
+                </p>
+              </div>
+            </div>
+
+            {fieldErrors.evidence ? (
+              <p role="alert" className="text-sm font-medium text-red-600 px-1">
+                {fieldErrors.evidence}
+              </p>
+            ) : null}
+
+            {/* Camera controls */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
+                  <Camera className="h-5 w-5 text-slate-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Camera</p>
+                  <p className="text-xs text-slate-500">Capture photos or record video</p>
+                </div>
+              </div>
+              <CameraCapture mode="photo" onCapture={addPhoto} onError={onCameraError} />
+              <button
+                type="button"
+                onClick={() => setShowVideo((v) => !v)}
+                className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 active:scale-[0.98]"
+              >
+                <Camera className="h-4 w-4" />
+                {showVideo
+                  ? 'Hide video recorder'
+                  : `Record video${selectedType?.requires_video ? ' (required)' : ' (optional)'}`}
+              </button>
+              {showVideo ? (
+                <CameraCapture mode="video" onCapture={addVideo} onError={onCameraError} />
+              ) : null}
+            </div>
+
+            {/* File previews */}
+            {files.length > 0 ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Upload className="h-4 w-4 text-slate-500" />
+                  <p className="text-sm font-medium text-slate-700">
+                    {files.length} file{files.length !== 1 ? 's' : ''} attached
+                  </p>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {files.map((f, i) => (
+                    <div key={i} className="relative">
+                      <div className="aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                        {f.type.startsWith('image/') ? (
+                          <img
+                            src={URL.createObjectURL(f)}
+                            alt=""
+                            className="h-full w-full object-cover"
+                            {...evidencePreviewHandlers()}
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-slate-100">
+                            <Camera className="h-8 w-8 text-slate-400" />
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(i)}
+                        className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs font-medium text-white shadow-sm transition hover:bg-red-600"
+                        aria-label={`Remove ${f.name}`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => goToStep('Location')}
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-6 text-base font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98]"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={handleEvidenceNext}
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 text-base font-semibold text-white shadow-sm transition hover:bg-slate-800 active:scale-[0.98]"
+              >
+                Review
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* Step 5: Review & Submit */}
+        {currentViewStep === 'Review' && (
+          <section className="space-y-5">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">Review Your Report</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Please review all details before submitting your official report.
+              </p>
+            </div>
+
+            {/* Review cards */}
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="flex items-center justify-between border-b border-slate-100 p-4">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Category
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-slate-900">
+                    {selectedType?.name ?? 'Unknown'}
+                  </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => removeFile(i)}
-                  className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-slate-900/80 text-xs text-white"
-                  aria-label={`Remove ${f.name}`}
+                  onClick={() => goToStep('Category')}
+                  className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 transition hover:text-slate-900"
                 >
-                  ×
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
                 </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </section>
+              </div>
 
-      {error !== null ? (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
+              <div className="flex items-center justify-between border-b border-slate-100 p-4">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Title
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-slate-900 truncate">{title}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => goToStep('Details')}
+                  className="ml-2 inline-flex items-center gap-1 text-sm font-medium text-slate-600 transition hover:text-slate-900"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </button>
+              </div>
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full rounded-lg bg-blue-600 px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-      >
-        {submitting ? 'Submitting…' : 'Submit report'}
-      </button>
+              <div className="border-b border-slate-100 p-4">
+                <div className="flex items-start justify-between">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Description
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => goToStep('Details')}
+                    className="ml-2 inline-flex shrink-0 items-center gap-1 text-sm font-medium text-slate-600 transition hover:text-slate-900"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
+                  </button>
+                </div>
+                <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">{description}</p>
+              </div>
+
+              <div className="flex items-center justify-between border-b border-slate-100 p-4">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Location
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-slate-900">
+                    {location
+                      ? `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`
+                      : 'Not captured'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => goToStep('Location')}
+                  className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 transition hover:text-slate-900"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-4">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Evidence
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-slate-900">
+                    {files.length} file{files.length !== 1 ? 's' : ''} attached
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => goToStep('Evidence')}
+                  className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 transition hover:text-slate-900"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </button>
+              </div>
+            </div>
+
+            {/* Error summary */}
+            {error !== null ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+                  <p className="text-sm font-medium text-red-800">{error}</p>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Submit section */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
+              <p className="text-center text-sm text-slate-500">
+                By submitting, you confirm the information is accurate to the best of your
+                knowledge.
+              </p>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 text-base font-semibold text-white shadow-sm transition hover:bg-slate-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-400"
+              >
+                <FileText className="h-5 w-5" />
+                {submitting ? 'Submitting…' : 'File Official Report'}
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => goToStep('Evidence')}
+              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-6 text-base font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Evidence
+            </button>
+          </section>
+        )}
+      </div>
     </form>
   );
 }
 
 function IssueIcon({ code }: { code: string }): JSX.Element {
-  const paths: Record<string, JSX.Element> = {
+  const iconClass = 'h-5 w-5';
+  const icons: Record<string, JSX.Element> = {
     roads: (
-      <>
+      <svg
+        viewBox="0 0 24 24"
+        className={iconClass}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M7 21 10 3h4l3 18" />
         <path d="M12 5v3M12 11v3M12 17v2" />
-      </>
+      </svg>
     ),
-    water_sewage: <path d="M12 3s6 6.2 6 11a6 6 0 0 1-12 0c0-4.8 6-11 6-11Z" />,
-    electricity: <path d="m13 2-8 11h6l-1 9 8-12h-6l1-8Z" />,
+    water_sewage: (
+      <svg
+        viewBox="0 0 24 24"
+        className={iconClass}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M12 3s6 6.2 6 11a6 6 0 0 1-12 0c0-4.8 6-11 6-11Z" />
+      </svg>
+    ),
+    electricity: (
+      <svg
+        viewBox="0 0 24 24"
+        className={iconClass}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="m13 2-8 11h6l-1 9 8-12h-6l1-8Z" />
+      </svg>
+    ),
     garbage: (
-      <>
+      <svg
+        viewBox="0 0 24 24"
+        className={iconClass}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M5 7h14M10 4h4l1 3H9l1-3ZM7 7l1 14h8l1-14" />
         <path d="M10 11v6M14 11v6" />
-      </>
+      </svg>
     ),
     traffic_violation: (
-      <>
+      <svg
+        viewBox="0 0 24 24"
+        className={iconClass}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <rect x="7" y="3" width="10" height="18" rx="2" />
         <circle cx="12" cy="8" r="1.5" />
         <circle cx="12" cy="12" r="1.5" />
         <circle cx="12" cy="16" r="1.5" />
-      </>
+      </svg>
     ),
     illegal_parking: (
-      <>
+      <svg
+        viewBox="0 0 24 24"
+        className={iconClass}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <rect x="4" y="4" width="16" height="16" rx="3" />
         <path d="M10 17V7h3.5a3 3 0 0 1 0 6H10" />
-      </>
+      </svg>
     ),
     encroachment: (
-      <>
+      <svg
+        viewBox="0 0 24 24"
+        className={iconClass}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M4 20h16M6 20V9l6-5 6 5v11M9 20v-5h6v5" />
         <path d="M3 11h18" />
-      </>
+      </svg>
     ),
     dead_animal: (
-      <>
+      <svg
+        viewBox="0 0 24 24"
+        className={iconClass}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <circle cx="8" cy="8" r="2" />
         <circle cx="16" cy="8" r="2" />
         <circle cx="6" cy="13" r="2" />
         <circle cx="18" cy="13" r="2" />
         <path d="M12 12c-3 0-5 2-5 4 0 2 2 3 5 3s5-1 5-3c0-2-2-4-5-4Z" />
-      </>
+      </svg>
     ),
   };
 
   return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-5 w-5"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {paths[code] ?? <circle cx="12" cy="12" r="8" />}
-    </svg>
+    icons[code] ?? (
+      <svg
+        viewBox="0 0 24 24"
+        className={iconClass}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="8" />
+      </svg>
+    )
   );
 }

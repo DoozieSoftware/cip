@@ -58,6 +58,7 @@ describe('SubmitPage', () => {
   beforeEach(() => {
     mutateAsyncMock.mockReset();
     mutateAsyncMock.mockResolvedValue({ id: 'report-1', status: 'submitted' });
+    window.scrollTo = vi.fn();
     if (typeof URL.createObjectURL !== 'function') {
       URL.createObjectURL = vi.fn(() => 'blob:mock');
     } else {
@@ -70,7 +71,7 @@ describe('SubmitPage', () => {
     }
   });
 
-  it('submits an optional-video category without a video after capturing required location and photo', async () => {
+  it('submits a report after completing all steps', async () => {
     const getCurrentPosition = vi.fn((success: PositionCallback) => {
       success({
         coords: {
@@ -89,20 +90,40 @@ describe('SubmitPage', () => {
       ...globalThis.navigator,
       geolocation: { getCurrentPosition },
     });
+    Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
 
     renderSubmitPage();
 
-    fireEvent.click(screen.getByRole('button', { name: /roads/i }));
-    fireEvent.click(screen.getByTestId('camera-photo'));
-    fireEvent.change(screen.getByPlaceholderText(/Big pothole/i), {
+    // Step 1: Category
+    fireEvent.click(screen.getByText('Roads').closest('label') ?? screen.getByText('Roads'));
+    fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
+
+    // Step 2: Details
+    await waitFor(() => expect(screen.getByText('Issue Details')).toBeInTheDocument());
+    fireEvent.change(screen.getByPlaceholderText(/Large pothole/i), {
       target: { value: 'Large pothole near metro' },
     });
-    fireEvent.change(screen.getByPlaceholderText(/Affects traffic/i), {
+    fireEvent.change(screen.getByPlaceholderText(/Describe the issue/i), {
       target: { value: 'Vehicles are swerving into the bus lane near the metro gate.' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Submit report' }));
+    fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
 
+    // Step 3: Location
+    await waitFor(() => expect(screen.getByText('Location Verification')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /use my location/i }));
     await waitFor(() => expect(getCurrentPosition).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByText('Location captured')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
+
+    // Step 4: Evidence
+    await waitFor(() => expect(screen.getByText('Attach Evidence')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('camera-photo'));
+    fireEvent.click(screen.getByRole('button', { name: /^review$/i }));
+
+    // Step 5: Review & Submit
+    await waitFor(() => expect(screen.getByText('Review Your Report')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /file official report/i }));
+
     await waitFor(() => {
       expect(mutateAsyncMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -115,5 +136,50 @@ describe('SubmitPage', () => {
       );
     });
     expect(screen.queryByText('This category requires a video.')).toBeNull();
+  });
+
+  it('validates category selection', () => {
+    renderSubmitPage();
+    fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
+    expect(screen.getByText('Pick a category.')).toBeInTheDocument();
+  });
+
+  it('validates title and description length', async () => {
+    renderSubmitPage();
+
+    // Go to details
+    fireEvent.click(screen.getByText('Roads').closest('label') ?? screen.getByText('Roads'));
+    fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
+
+    // Try to continue with short input
+    await waitFor(() => expect(screen.getByText('Issue Details')).toBeInTheDocument());
+    fireEvent.change(screen.getByPlaceholderText(/Large pothole/i), {
+      target: { value: 'Hi' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/Describe the issue/i), {
+      target: { value: 'Short' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
+
+    expect(screen.getByText('Title should be at least 5 characters.')).toBeInTheDocument();
+    expect(screen.getByText('Description should be at least 10 characters.')).toBeInTheDocument();
+  });
+
+  it('allows navigating back to edit previous steps', async () => {
+    renderSubmitPage();
+
+    // Select category and proceed
+    fireEvent.click(screen.getByText('Roads').closest('label') ?? screen.getByText('Roads'));
+    fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
+
+    // Verify we're on details step
+    await waitFor(() => expect(screen.getByText('Issue Details')).toBeInTheDocument());
+
+    // Get the Back button (there should be only one visible at this step)
+    const backButton = screen.getByRole('button', { name: /^back$/i });
+    fireEvent.click(backButton);
+
+    // Should be back on category
+    await waitFor(() => expect(screen.getByText('Report Category')).toBeInTheDocument());
   });
 });
