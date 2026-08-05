@@ -70,7 +70,19 @@ it('a member of an open secondary assignment can view and act on the report', fu
 
     $p = new DepartmentPolicy;
     expect($p->view($officer, $report))->toBeTrue()
-        ->and($p->accept($officer, $report))->toBeTrue();
+        ->and($p->accept($officer, $report))->toBeTrue()
+        ->and($p->close($officer, $report))->toBeFalse();
+});
+
+it('allows the primary department to close the master complaint', function (): void {
+    $primary = Department::factory()->create(['code' => 'PRIMARY-CLOSE']);
+    Role::firstOrCreate(['name' => 'department', 'guard_name' => 'web']);
+    $officer = User::factory()->create();
+    $officer->assignRole('department');
+    $officer->departments()->attach($primary->id);
+    $report = Report::factory()->create(['department_id' => $primary->id]);
+
+    expect((new DepartmentPolicy)->close($officer, $report))->toBeTrue();
 });
 
 it('a citizen (no department role) cannot view or act', function (): void {

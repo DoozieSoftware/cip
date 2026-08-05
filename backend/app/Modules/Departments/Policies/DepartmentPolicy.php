@@ -102,7 +102,21 @@ class DepartmentPolicy extends BasePolicy
 
     public function close(User $user, mixed $report): bool
     {
-        return $this->view($user, $report);
+        if (! $report instanceof Report) {
+            return false;
+        }
+
+        if (DepartmentScope::isUnrestrictedStaff($user)) {
+            return true;
+        }
+
+        if (! DepartmentScope::isDepartmentScopedStaff($user) || $report->department_id === null) {
+            return false;
+        }
+
+        // A linked secondary department may complete its task, but the
+        // primary department remains the owner of the master complaint.
+        return in_array($report->department_id, DepartmentScope::memberDepartmentIds($user), true);
     }
 
     public function addNote(User $user, mixed $report): bool
