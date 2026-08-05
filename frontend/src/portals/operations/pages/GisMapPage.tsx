@@ -229,7 +229,7 @@ export default function GisMapPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-slate-900">GIS map</h1>
         <p className="text-sm text-slate-500">
@@ -332,7 +332,7 @@ export default function GisMapPage() {
         {selected && (
           <aside
             aria-label="Selected report details"
-            className="fixed inset-x-0 bottom-0 z-10 max-h-[75vh] overflow-y-auto rounded-t-2xl border-t border-slate-200 bg-white p-4 shadow-xl lg:static lg:z-auto lg:col-span-1 lg:max-h-none lg:rounded-none lg:border lg:p-5 lg:shadow-sm"
+            className="fixed inset-x-0 bottom-0 z-10 max-h-[75vh] overflow-y-auto rounded-t-2xl border-t border-slate-200 bg-white p-5 shadow-xl lg:static lg:z-auto lg:col-span-1 lg:max-h-none lg:rounded-none lg:border lg:shadow-sm"
           >
             <div className="mb-3 flex items-start justify-between gap-2">
               <p className="font-mono text-xs text-slate-500">{selected.tracking_number}</p>

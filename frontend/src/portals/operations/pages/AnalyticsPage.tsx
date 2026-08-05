@@ -77,7 +77,7 @@ export default function AnalyticsPage() {
   const daySeries = dayKeys.map((k) => [k, byDay[k]]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <header>
         <h1 className="text-xl font-semibold text-slate-900">Analytics</h1>
         <p className="text-sm text-slate-500">Live operational load for the officer's department</p>

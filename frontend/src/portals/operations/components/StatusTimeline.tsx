@@ -27,7 +27,7 @@ export function StatusTimeline({ entries }: { entries: StatusHistoryEntry[] }) {
   const currentIndex = STEPS.indexOf(current ?? 'draft');
 
   return (
-    <div className="relative flex items-start justify-between gap-1">
+    <div className="relative flex items-start justify-between gap-2">
       <div className="absolute left-0 right-0 top-4 h-0.5 bg-slate-200" />
       <div
         className="absolute left-0 top-4 h-0.5 bg-emerald-500 transition-all"

@@ -22,7 +22,7 @@ export default function MyReportsPage(): JSX.Element {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-950">My reports</h1>

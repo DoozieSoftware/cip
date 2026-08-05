@@ -39,7 +39,7 @@ export default function AdminGovernmentDashboard(): JSX.Element {
   const activeIntegrations = (integrations.data ?? []).filter((integration) => integration.status === 'active').length;
   const runningJobs = (scheduler.data ?? []).filter((job) => !job.paused).length;
 
-  return <div className="space-y-5">
+  return <div className="space-y-6">
     <header className="border-b border-slate-300 pb-4">
       <div className="text-xs text-slate-500">Home / Administration</div>
       <div className="mt-2 flex flex-wrap items-end justify-between gap-3">

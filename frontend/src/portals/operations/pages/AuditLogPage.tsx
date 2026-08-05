@@ -109,12 +109,13 @@ export default function AuditLogPage() {
   }, [exportedAt]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Audit log</h1>
           <p className="text-sm text-slate-500">
-            Immutable, append-only record of security-relevant events. Read-only for auditors and admins.
+            Immutable, append-only record of security-relevant events. Read-only for auditors and
+            admins.
           </p>
         </div>
         <div className="flex items-center gap-2">

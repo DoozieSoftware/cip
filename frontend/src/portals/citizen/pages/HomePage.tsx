@@ -32,7 +32,7 @@ export default function HomePage(): JSX.Element {
   const queueSize = queue.data ?? 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <section className="rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
         <div className="flex items-start justify-between gap-4">
           <div>

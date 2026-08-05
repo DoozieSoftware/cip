@@ -23,7 +23,7 @@ export default function AiPerformancePage() {
 
   const a = q.data;
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">AI performance</h1>

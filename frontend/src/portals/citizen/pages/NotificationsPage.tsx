@@ -24,7 +24,7 @@ export default function NotificationsPage(): JSX.Element {
   const markRead = useMarkNotificationRead();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Updates</h1>
         <p className="text-sm text-slate-600">Status changes from moderators and departments.</p>

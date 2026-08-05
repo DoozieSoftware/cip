@@ -308,7 +308,7 @@ export default function ReportDetailPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link to="/moderator/queue" className="text-xs text-brand-700 hover:underline">

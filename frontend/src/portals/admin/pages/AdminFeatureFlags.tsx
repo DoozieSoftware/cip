@@ -7,7 +7,7 @@ export default function AdminFeatureFlags(): JSX.Element {
   const toggle = useToggleFeatureFlag();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Feature flags</h1>
         <p className="text-sm text-slate-600">Master kill-switches and gradual rollouts.</p>

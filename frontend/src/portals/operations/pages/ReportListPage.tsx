@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { Spinner, EmptyState, Badge } from '../design';
+import { Spinner, EmptyState, Badge, Card, CardBody } from '../design';
 import { api } from '../api/client';
 import { departmentApi, type ReportListFilters } from '../api/operations';
 import { ExportMenu } from '../components/ExportMenu';
@@ -217,7 +217,7 @@ export default function ReportListPage() {
   ].filter(Boolean).length;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
@@ -384,88 +384,89 @@ export default function ReportListPage() {
       {data.data.length === 0 ? (
         <EmptyState title="No reports match" description="Try clearing your filters." />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {data.data.map((r, index) => (
-            <article
-              key={r.id}
-              className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"
-            >
+            <Card key={r.id} className="group transition hover:border-emerald-300 hover:shadow-md">
               <Link
                 to={`/operations/reports/${r.id}${selectedId ? `?department_id=${encodeURIComponent(selectedId)}` : ''}`}
-                className="block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
               >
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="flex min-w-0 gap-3 sm:gap-4">
-                    <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-lg font-semibold text-white sm:flex">
-                      {String(index + 1).padStart(2, '0')}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge tone={r.assignment?.kind === 'secondary' ? 'purple' : 'neutral'}>
-                          {r.assignment?.kind === 'secondary' ? 'Linked report' : 'Primary report'}
-                        </Badge>
-                        <Badge
-                          tone={
-                            r.assignment?.kind === 'secondary'
-                              ? r.assignment.status === 'completed'
-                                ? 'success'
-                                : 'info'
-                              : statusTone(r.current_status_code)
-                          }
-                        >
-                          {r.assignment?.kind === 'secondary'
-                            ? statusLabel(r.assignment.status)
-                            : statusLabel(r.current_status_code)}
-                        </Badge>
-                        {r.priority && (
-                          <Badge tone={PRIORITY_TONE[r.priority.code] ?? 'neutral'}>
-                            {r.priority.name}
+                <CardBody>
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex min-w-0 gap-3 sm:gap-4">
+                      <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-lg font-semibold text-white sm:flex">
+                        {String(index + 1).padStart(2, '0')}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge tone={r.assignment?.kind === 'secondary' ? 'purple' : 'neutral'}>
+                            {r.assignment?.kind === 'secondary'
+                              ? 'Linked report'
+                              : 'Primary report'}
                           </Badge>
-                        )}
-                        <Badge tone="neutral">
-                          {r.report_type?.name ?? r.report_type?.code ?? '—'}
-                        </Badge>
+                          <Badge
+                            tone={
+                              r.assignment?.kind === 'secondary'
+                                ? r.assignment.status === 'completed'
+                                  ? 'success'
+                                  : 'info'
+                                : statusTone(r.current_status_code)
+                            }
+                          >
+                            {r.assignment?.kind === 'secondary'
+                              ? statusLabel(r.assignment.status)
+                              : statusLabel(r.current_status_code)}
+                          </Badge>
+                          {r.priority && (
+                            <Badge tone={PRIORITY_TONE[r.priority.code] ?? 'neutral'}>
+                              {r.priority.name}
+                            </Badge>
+                          )}
+                          <Badge tone="neutral">
+                            {r.report_type?.name ?? r.report_type?.code ?? '—'}
+                          </Badge>
+                        </div>
+                        <h2 className="mt-2 line-clamp-2 text-base font-semibold text-slate-950 group-hover:text-emerald-700 lg:truncate">
+                          {r.title}
+                        </h2>
+                        <p className="mt-1 font-mono text-xs text-slate-500">{r.tracking_number}</p>
+                        <ReportLocationText location={r.location} />
                       </div>
-                      <h2 className="mt-2 line-clamp-2 text-base font-semibold text-slate-950 group-hover:text-emerald-700 lg:truncate">
-                        {r.title}
-                      </h2>
-                      <p className="mt-1 font-mono text-xs text-slate-500">{r.tracking_number}</p>
-                      <ReportLocationText location={r.location} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4 lg:w-[520px]">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Deadline</p>
+                        <div className="mt-1">
+                          <SlaBadge report={r} assignment={r.assignment} />
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Department</p>
+                        <p className="mt-1 truncate font-medium text-slate-700">
+                          {r.assignment?.kind === 'secondary'
+                            ? (selectedDepartment?.name ?? 'Selected department')
+                            : (r.department?.name ?? '—')}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Reported</p>
+                        <p className="mt-1 font-medium text-slate-700">
+                          {relativeDate(r.submitted_at)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Next step</p>
+                        <p className="mt-1 font-medium text-slate-700">
+                          {r.assignment?.kind === 'secondary'
+                            ? 'Complete task'
+                            : (NEXT_ACTION[r.current_status_code ?? ''] ?? 'Review')}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4 lg:w-[520px]">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-400">Deadline</p>
-                      <div className="mt-1">
-                        <SlaBadge report={r} assignment={r.assignment} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-400">Department</p>
-                      <p className="mt-1 truncate font-medium text-slate-700">
-                        {r.assignment?.kind === 'secondary'
-                          ? (selectedDepartment?.name ?? 'Selected department')
-                          : (r.department?.name ?? '—')}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-400">Reported</p>
-                      <p className="mt-1 font-medium text-slate-700">
-                        {relativeDate(r.submitted_at)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-400">Next step</p>
-                      <p className="mt-1 font-medium text-slate-700">
-                        {r.assignment?.kind === 'secondary'
-                          ? 'Complete task'
-                          : (NEXT_ACTION[r.current_status_code ?? ''] ?? 'Review')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                </CardBody>
               </Link>
-            </article>
+            </Card>
           ))}
         </div>
       )}

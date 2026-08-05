@@ -134,7 +134,7 @@ export default function AdminRoles(): JSX.Element {
   const busy = create.isPending || update.isPending || sync.isPending;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <header className="flex items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Roles &amp; permissions</h1>

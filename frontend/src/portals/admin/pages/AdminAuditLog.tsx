@@ -11,7 +11,7 @@ export default function AdminAuditLog(): JSX.Element {
   const list = useAuditLogs({ action: action || undefined, entity: entity || undefined, date_from: dateFrom || undefined, date_to: dateTo || undefined });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Audit log</h1>
         <p className="text-sm text-slate-600">Search who-did-what across the platform.</p>

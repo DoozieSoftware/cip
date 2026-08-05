@@ -50,7 +50,7 @@ export default function AdminReports(): JSX.Element {
     ).length + (search ? 1 : 0);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <header>
         <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
           Cross-department oversight

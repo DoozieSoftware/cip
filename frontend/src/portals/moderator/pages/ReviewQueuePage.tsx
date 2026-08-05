@@ -84,7 +84,7 @@ export default function ReviewQueuePage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Review Queue</h1>

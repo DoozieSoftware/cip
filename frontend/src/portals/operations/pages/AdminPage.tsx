@@ -37,20 +37,26 @@ export default function AdminPage() {
   });
   const selectableDepartments = departmentsQuery.data ?? [];
   const department = canChooseDepartment
-    ? selectableDepartments.find((item) => item.id === selectedDepartmentId) ?? selectableDepartments[0] ?? null
-    : user?.departments?.[0] ?? null;
+    ? (selectableDepartments.find((item) => item.id === selectedDepartmentId) ??
+      selectableDepartments[0] ??
+      null)
+    : (user?.departments?.[0] ?? null);
   const departmentId = department?.id ?? '';
 
-  const { data: officers, isLoading, refetch } = useQuery<DepartmentOfficer[]>({
+  const {
+    data: officers,
+    isLoading,
+    refetch,
+  } = useQuery<DepartmentOfficer[]>({
     queryKey: ['admin', 'officers', departmentId],
     queryFn: async () => (await adminApi.listOfficers(departmentId)).data,
     enabled: Boolean(departmentId),
   });
 
   const [sla, setSla] = useState<string>('240');
-  const [workingHours, setWorkingHours] = useState<Array<{ day: Day; open: string; close: string }>>([
-    { day: 'mon', open: '09:00', close: '17:00' },
-  ]);
+  const [workingHours, setWorkingHours] = useState<
+    Array<{ day: Day; open: string; close: string }>
+  >([{ day: 'mon', open: '09:00', close: '17:00' }]);
   const [holidaysText, setHolidaysText] = useState<string>('2026-12-25, 2026-12-26');
 
   const updateAdmin = useMutation({
@@ -104,7 +110,7 @@ export default function AdminPage() {
 
   if (!departmentId) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <header>
           <h1 className="text-xl font-semibold text-slate-900">Department admin</h1>
           <p className="text-sm text-slate-500">No department is assigned to this account.</p>
@@ -112,7 +118,8 @@ export default function AdminPage() {
         <Card>
           <CardBody>
             <p className="text-sm text-slate-700">
-              Ask a platform administrator to assign this user to a department before managing officers or settings.
+              Ask a platform administrator to assign this user to a department before managing
+              officers or settings.
             </p>
           </CardBody>
         </Card>
@@ -175,7 +182,9 @@ export default function AdminPage() {
             <div className="flex items-end">
               <Button
                 variant="primary"
-                onClick={() => { attachOfficer.mutate(); }}
+                onClick={() => {
+                  attachOfficer.mutate();
+                }}
                 disabled={attachOfficer.isPending || newOfficerId.trim() === ''}
               >
                 {attachOfficer.isPending ? 'Attaching…' : 'Attach officer'}
@@ -183,7 +192,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {(!officers || officers.length === 0) ? (
+          {!officers || officers.length === 0 ? (
             <EmptyState title="No officers attached" description="Attach one above." />
           ) : (
             <Table>
@@ -203,14 +212,18 @@ export default function AdminPage() {
                     <TD>{o.name ?? '—'}</TD>
                     <TD className="font-mono text-xs">{o.mobile}</TD>
                     <TD>{o.email ?? '—'}</TD>
-                    <TD>{o.is_manager ? <Badge tone="info">Manager</Badge> : <Badge>Officer</Badge>}</TD>
+                    <TD>
+                      {o.is_manager ? <Badge tone="info">Manager</Badge> : <Badge>Officer</Badge>}
+                    </TD>
                     <TD className="text-xs text-slate-500">
                       {o.assigned_at ? new Date(o.assigned_at).toLocaleDateString() : '—'}
                     </TD>
                     <TD>
                       <Button
                         variant="danger"
-                        onClick={() => { detachOfficer.mutate(o.id); }}
+                        onClick={() => {
+                          detachOfficer.mutate(o.id);
+                        }}
                         disabled={detachOfficer.isPending}
                       >
                         Detach
@@ -253,12 +266,16 @@ export default function AdminPage() {
                         value={row.day}
                         onChange={(e) => {
                           const v = e.target.value as Day;
-                          setWorkingHours((cur) => cur.map((r, i) => (i === idx ? { ...r, day: v } : r)));
+                          setWorkingHours((cur) =>
+                            cur.map((r, i) => (i === idx ? { ...r, day: v } : r)),
+                          );
                         }}
                         className="rounded border border-slate-300 px-2 py-1"
                       >
                         {DAYS.map((d) => (
-                          <option key={d} value={d}>{d}</option>
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
                         ))}
                       </select>
                     </td>
@@ -266,7 +283,11 @@ export default function AdminPage() {
                       <input
                         type="time"
                         value={row.open}
-                        onChange={(e) => setWorkingHours((cur) => cur.map((r, i) => (i === idx ? { ...r, open: e.target.value } : r)))}
+                        onChange={(e) =>
+                          setWorkingHours((cur) =>
+                            cur.map((r, i) => (i === idx ? { ...r, open: e.target.value } : r)),
+                          )
+                        }
                         className="rounded border border-slate-300 px-2 py-1"
                       />
                     </td>
@@ -274,7 +295,11 @@ export default function AdminPage() {
                       <input
                         type="time"
                         value={row.close}
-                        onChange={(e) => setWorkingHours((cur) => cur.map((r, i) => (i === idx ? { ...r, close: e.target.value } : r)))}
+                        onChange={(e) =>
+                          setWorkingHours((cur) =>
+                            cur.map((r, i) => (i === idx ? { ...r, close: e.target.value } : r)),
+                          )
+                        }
                         className="rounded border border-slate-300 px-2 py-1"
                       />
                     </td>
@@ -290,7 +315,9 @@ export default function AdminPage() {
           />
           <Button
             variant="primary"
-            onClick={() => { updateAdmin.mutate(); }}
+            onClick={() => {
+              updateAdmin.mutate();
+            }}
             disabled={updateAdmin.isPending}
           >
             {updateAdmin.isPending ? 'Saving…' : 'Save settings'}

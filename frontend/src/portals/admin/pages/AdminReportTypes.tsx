@@ -243,7 +243,7 @@ export default function AdminReportTypes(): JSX.Element {
   const busy = create.isPending || update.isPending;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <header className="flex items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Report types</h1>

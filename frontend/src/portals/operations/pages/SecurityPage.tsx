@@ -153,7 +153,7 @@ export default function SecurityPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Security dashboard</h1>

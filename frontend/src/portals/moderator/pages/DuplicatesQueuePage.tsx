@@ -33,7 +33,7 @@ export default function DuplicatesQueuePage() {
     return <EmptyState title="Could not load duplicates" description="The /moderator/duplicates endpoint did not respond." />;
   }
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <header>
         <h1 className="text-xl font-semibold text-slate-900">Duplicate queue</h1>
         <p className="text-sm text-slate-500">

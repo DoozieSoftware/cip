@@ -33,7 +33,7 @@ export default function AdminSecurityPolicies(): JSX.Element {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Security policies</h1>
         <p className="text-sm text-slate-600">Database-driven knobs the platform reads at runtime.</p>

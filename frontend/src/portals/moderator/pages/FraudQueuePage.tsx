@@ -33,7 +33,7 @@ export default function FraudQueuePage() {
     return <EmptyState title="Could not load the fraud queue" description="The /moderator/fraud endpoint did not respond." />;
   }
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <header>
         <h1 className="text-xl font-semibold text-slate-900">Fraud queue</h1>
         <p className="text-sm text-slate-500">
