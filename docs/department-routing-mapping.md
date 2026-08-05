@@ -4,6 +4,10 @@ Status: **Approved for AI Categorization & Department-Wise Routing Implementatio
 Scope: Department-wise civic complaint routing for Bengaluru Urban across municipal wings and state utility boards.  
 Out of scope (deferred for future phase): Detailed ward-level assignment, location-based geofence routing, 1-to-1 officer mapping.
 
+**Category boundary:** the citizen-facing selector keeps the original eight
+broad categories. The fine-grained labels in the routing tables below are
+internal AI/routing vocabulary and must not be added as extra PWA choices.
+
 ---
 
 ## 1. Primary & Secondary Civic Authorities Master Table
@@ -59,7 +63,7 @@ BBMP classifies grievances across specialized department wings. Each wing receiv
 
 ---
 
-## 4. Master Complaint Category → Department Mapping Table (for AI Engine)
+## 4. Internal Routing Vocabulary → Department Mapping Table (for AI Engine)
 
 | Category Code | Display Category Name | Primary Department | Secondary Dept (CC / Co-owner) | Key AI Detection Keywords & Context |
 | :--- | :--- | :--- | :--- | :--- |

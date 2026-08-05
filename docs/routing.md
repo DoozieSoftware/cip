@@ -8,6 +8,12 @@ the M9 notifications + M10 portals.
 It is defined end-to-end in `docs/02` §12, `docs/03` §16, `docs/04` §12,
 `docs/05` §23, and `docs/09` §12.
 
+## Category Boundary
+
+The citizen PWA keeps the original eight broad issue categories. Fine-grained
+labels such as `pothole`, `streetlight`, and `water_leakage` are internal
+routing vocabulary and must not appear as extra citizen-facing categories.
+
 ## Endpoints
 
 | Method | Path                                                | Audience                    | Notes                                          |
