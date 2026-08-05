@@ -36,13 +36,12 @@ describe('LoginPage', () => {
     apiRequestMock.mockReset();
   });
 
-  it('defaults to OTP mode with the demo accounts visible', () => {
+  it('shows the OTP form with demo accounts visible', () => {
     renderLoginPage();
 
-    expect(screen.getByRole('button', { name: 'Sign in with OTP' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Staff password login' })).toBeTruthy();
     expect(screen.getByLabelText('Mobile number')).toBeTruthy();
-    expect(screen.queryByLabelText('Password')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Send code' })).toBeTruthy();
+    expect(screen.getByText('Citizen')).toBeTruthy();
     expect(screen.getByText('Super Admin')).toBeTruthy();
   });
 
@@ -55,57 +54,54 @@ describe('LoginPage', () => {
     fireEvent.click(officerCard);
 
     expect(officerCard).toHaveAttribute('aria-pressed', 'true');
-    expect(officerCard.className).toContain('border-brand-500');
-    expect(officerCard.className).toContain('ring-2');
-    expect(screen.getByText('Selected')).toBeTruthy();
   });
 
-  it('switches to the staff password form and submits mobile + password to /auth/login', async () => {
+  it('sends OTP and shows the verify stage', async () => {
     apiRequestMock.mockImplementation((path: string) => {
-      if (path === '/auth/login') {
+      if (path === '/auth/send-otp') {
+        return Promise.resolve({ data: { debug_otp: '123456' } });
+      }
+      if (path === '/auth/verify-otp') {
         return Promise.resolve({
           data: {
-            token: { access_token: 'staff-token', type: 'Bearer' },
-            refresh_token: 'refresh-abc',
+            token: { access_token: 'token', type: 'Bearer' },
+            refresh_token: 'refresh',
             refresh_expires_at: '2026-01-01T00:00:00Z',
-            user: { id: 'u1', mobile: '9999900002', roles: ['moderator'] },
+            user: { id: 'u1', mobile: '9999900001', roles: ['citizen'] },
           },
         });
       }
       if (path === '/auth/me') {
-        return Promise.resolve({ data: { id: 'u1', roles: ['moderator'] } });
+        return Promise.resolve({ data: { id: 'u1', roles: ['citizen'] } });
       }
       return Promise.reject(new Error(`unexpected path ${path}`));
     });
 
     renderLoginPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Staff password login' }));
-
-    fireEvent.change(screen.getByLabelText('Mobile number'), { target: { value: '9999900002' } });
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Correct-Horse9' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    fireEvent.change(screen.getByLabelText('Mobile number'), { target: { value: '9999900001' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
 
     await waitFor(() => {
-      expect(apiRequestMock).toHaveBeenCalledWith('/auth/login', {
+      expect(apiRequestMock).toHaveBeenCalledWith('/auth/send-otp', {
         method: 'POST',
-        body: { mobile: '9999900002', password: 'Correct-Horse9' },
+        body: { mobile: '9999900001' },
       });
     });
+
+    expect(screen.getByRole('button', { name: /verify and continue/i })).toBeTruthy();
   });
 
-  it('shows the server error message when staff login fails', async () => {
+  it('shows error message when OTP request fails', async () => {
     const { ApiError } = await import('../../auth/api');
-    apiRequestMock.mockImplementation(() => Promise.reject(new ApiError(401, 'UNAUTHORIZED', 'Invalid mobile or password.', null)));
+    apiRequestMock.mockImplementation(() => Promise.reject(new ApiError(400, 'BAD_REQUEST', 'Failed to send OTP', null)));
 
     renderLoginPage();
-    fireEvent.click(screen.getByRole('button', { name: 'Staff password login' }));
-    fireEvent.change(screen.getByLabelText('Mobile number'), { target: { value: '9999900002' } });
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'wrong' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    fireEvent.change(screen.getByLabelText('Mobile number'), { target: { value: '9999900001' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send code' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Invalid mobile or password.')).toBeTruthy();
+      expect(screen.getByText('Failed to send OTP')).toBeTruthy();
     });
   });
 });

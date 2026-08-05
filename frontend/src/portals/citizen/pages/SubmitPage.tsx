@@ -549,11 +549,10 @@ export default function SubmitPage(): JSX.Element {
                   </div>
                   <div className="text-sm">
                     <p className="font-semibold text-emerald-900">Location captured</p>
-                    <p className="mt-1 font-mono text-emerald-700">
-                      {placeName ||
-                        `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`}
+                    <p className="mt-1 text-sm text-emerald-700">
+                      {placeName || 'Location captured'}
                       {location.accuracy_m !== null
-                        ? ` (±${Math.round(location.accuracy_m)} m)`
+                        ? ` · ±${Math.round(location.accuracy_m)} m accuracy`
                         : ''}
                     </p>
                   </div>
@@ -806,9 +805,9 @@ export default function SubmitPage(): JSX.Element {
                   <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
                     Location
                   </p>
-                  <p className="mt-1 font-mono text-sm font-medium text-[#1d1d1b]">
+                  <p className="mt-1 text-sm font-medium text-[#1d1d1b]">
                     {location
-                      ? `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`
+                      ? (placeName || address || 'Location captured')
                       : 'Not captured'}
                   </p>
                 </div>

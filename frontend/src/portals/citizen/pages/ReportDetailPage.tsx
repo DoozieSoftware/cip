@@ -105,8 +105,8 @@ function formatReferenceId(id: string): string {
   return `REF-${cleaned}`;
 }
 
-function formatCoordinates(lat: number, lng: number): string {
-  return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+function formatLocation(address?: string | null): string {
+  return address ?? 'Address not available';
 }
 
 export default function ReportDetailPage(): JSX.Element {
@@ -351,13 +351,10 @@ export default function ReportDetailPage(): JSX.Element {
                 height={160}
               />
             </div>
-            <div className="mt-3 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-3">
               <p className="flex items-start gap-2 text-sm text-[#1d1d1b]">
                 <IconMapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#85847f]" stroke={1.6} />
-                {r.location.address ?? 'Address not available'}
-              </p>
-              <p className="shrink-0 font-mono text-xs text-[#85847f]">
-                {formatCoordinates(r.location.latitude, r.location.longitude)}
+                {formatLocation(r.location.address)}
               </p>
             </div>
             <div className="mt-2 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 ring-1 ring-emerald-200">
