@@ -123,6 +123,21 @@ export function AiAnalysisPanel({ ai, statusCode, mockGpsScore }: AiAnalysisPane
         </div>
       </div>
 
+      {ai.notes && (
+        <div className="mt-4 rounded-lg bg-[#fff7e7] px-4 py-4 ring-1 ring-[#e7b75d]">
+          <div className="flex items-center justify-between">
+            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#8a5b0b]">
+              <IconNote className="h-4 w-4" stroke={1.8} />
+              AI notes — read before deciding
+            </p>
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#e7b75d] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[#3a2c08]">
+              Important
+            </span>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-[#5a4510]">{ai.notes}</p>
+        </div>
+      )}
+
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Metric
           icon={<IconShieldCheck className="h-4 w-4" stroke={1.7} />}
@@ -222,16 +237,6 @@ export function AiAnalysisPanel({ ai, statusCode, mockGpsScore }: AiAnalysisPane
             )}
           </div>
           <p className="mt-1 text-xs text-[#765b29]">Verify against the evidence before acting.</p>
-        </div>
-      )}
-
-      {ai.notes && (
-        <div className="mt-4 border-t border-[#e4e2dc] pt-4">
-          <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#777670]">
-            <IconNote className="h-4 w-4" stroke={1.7} />
-            AI notes
-          </p>
-          <p className="mt-1.5 text-sm leading-6 text-[#4f4e4a]">{ai.notes}</p>
         </div>
       )}
     </section>

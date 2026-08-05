@@ -93,52 +93,63 @@ function ActionFooter({
   const decisionsEnabled = MODERATION_OPEN_STATES.includes(statusCode);
 
   return (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Moderation actions">
-      <Button
-        variant="success"
-        onClick={onApprove}
-        disabled={busy || !decisionsEnabled}
-        aria-keyshortcuts="A"
-        leftIcon={<IconCheck className="h-4 w-4" stroke={1.8} />}
-      >
-        Approve
-      </Button>
-      <Button
-        variant="danger"
-        onClick={onReject}
-        disabled={busy || !decisionsEnabled}
-        aria-keyshortcuts="R"
-        leftIcon={<IconX className="h-4 w-4" stroke={1.8} />}
-      >
-        Reject
-      </Button>
-      <Button
-        variant="secondary"
-        onClick={onMerge}
-        disabled={busy || !decisionsEnabled}
-        aria-keyshortcuts="M"
-        leftIcon={<IconGitMerge className="h-4 w-4" stroke={1.6} />}
-      >
-        Merge
-      </Button>
-      <Button
-        variant="ghost"
-        onClick={onEscalate}
-        disabled={busy || !decisionsEnabled}
-        aria-keyshortcuts="E"
-        leftIcon={<IconArrowUp className="h-4 w-4" stroke={1.6} />}
-      >
-        Escalate
-      </Button>
-      <Button
-        variant="secondary"
-        onClick={onAssign}
-        disabled={busy}
-        aria-keyshortcuts="T"
-        leftIcon={<IconUserShare className="h-4 w-4" stroke={1.6} />}
-      >
-        Reassign
-      </Button>
+    <div className="space-y-3" role="group" aria-label="Moderation actions">
+      <div className="flex flex-wrap gap-3">
+        <Button
+          variant="success"
+          size="lg"
+          onClick={onApprove}
+          disabled={busy || !decisionsEnabled}
+          aria-keyshortcuts="A"
+          leftIcon={<IconCheck className="h-4 w-4" stroke={1.8} />}
+          className="flex-1 sm:flex-none"
+        >
+          Approve
+        </Button>
+        <Button
+          variant="danger"
+          size="lg"
+          onClick={onReject}
+          disabled={busy || !decisionsEnabled}
+          aria-keyshortcuts="R"
+          leftIcon={<IconX className="h-4 w-4" stroke={1.8} />}
+          className="flex-1 sm:flex-none"
+        >
+          Reject
+        </Button>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onMerge}
+          disabled={busy || !decisionsEnabled}
+          aria-keyshortcuts="M"
+          leftIcon={<IconGitMerge className="h-4 w-4" stroke={1.6} />}
+        >
+          Merge
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onEscalate}
+          disabled={busy || !decisionsEnabled}
+          aria-keyshortcuts="E"
+          leftIcon={<IconArrowUp className="h-4 w-4" stroke={1.6} />}
+        >
+          Escalate
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onAssign}
+          disabled={busy}
+          aria-keyshortcuts="T"
+          leftIcon={<IconUserShare className="h-4 w-4" stroke={1.6} />}
+        >
+          Reassign
+        </Button>
+      </div>
     </div>
   );
 }
@@ -208,6 +219,27 @@ export default function ReportDetailPage() {
     setDuplicateIds('');
   }, [id]);
 
+  const goNext = useCallback(() => {
+    void qc
+      .fetchQuery({
+        queryKey: ['moderator', 'queue', { status: 'pending_moderator', per_page: 20 }],
+        queryFn: () => queueApi.list({ status: 'pending_moderator', per_page: 20 }),
+      })
+      .then((res) => {
+        const data = res.data;
+        const idx = data.findIndex((r) => r.id === id);
+        const next = data[idx + 1] ?? data[0];
+        if (next && next.id !== id) {
+          void navigate(`/moderator/reports/${next.id}`);
+        } else {
+          void navigate('/moderator/queue');
+        }
+      })
+      .catch(() => {
+        void navigate('/moderator/queue');
+      });
+  }, [id, navigate, qc]);
+
   const review = useMutation({
     mutationFn: (p: ReviewPayload) => actionsApi.review(id, p),
     onSuccess: (updated) => {
@@ -215,6 +247,7 @@ export default function ReportDetailPage() {
       void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });
       setApproveOpen(false);
       setRemarks('');
+      void navigate('/moderator/queue');
     },
   });
   const reject = useMutation({
@@ -223,6 +256,7 @@ export default function ReportDetailPage() {
       qc.setQueryData(['moderator', 'reports', id], updated);
       void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });
       setRejectOpen(false);
+      void navigate('/moderator/queue');
     },
   });
   const merge = useMutation({
@@ -249,22 +283,6 @@ export default function ReportDetailPage() {
       setAssignOpen(false);
     },
   });
-
-  const goNext = useCallback(() => {
-    void qc
-      .fetchQuery({
-        queryKey: ['moderator', 'queue', { status: 'pending_moderator', per_page: 20 }],
-        queryFn: () => queueApi.list({ status: 'pending_moderator', per_page: 20 }),
-      })
-      .then((res) => {
-        const data = res.data;
-        const idx = data.findIndex((r) => r.id === id);
-        const next = data[idx + 1] ?? data[0];
-        if (next) {
-          void navigate(`/moderator/reports/${next.id}`);
-        }
-      });
-  }, [id, navigate, qc]);
 
   const shortcuts = useMemo(
     () => ({

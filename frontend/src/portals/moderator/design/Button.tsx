@@ -6,15 +6,15 @@ type Size = 'sm' | 'md' | 'lg';
 
 const VARIANT: Record<Variant, string> = {
   primary:
-    'bg-brand-600 text-white hover:bg-brand-700 focus-visible:ring-brand-500 disabled:bg-brand-300',
+    'bg-[#1d1d1b] text-white hover:bg-black focus-visible:ring-[#1d1d1b] disabled:bg-[#85847f]',
   secondary:
-    'bg-white text-slate-800 ring-1 ring-slate-300 hover:bg-slate-50 focus-visible:ring-slate-400 disabled:text-slate-400',
+    'bg-white text-[#1d1d1b] ring-1 ring-[#d0cec8] hover:bg-[#f3f2ed] hover:ring-[#aaa9a4] focus-visible:ring-[#1d1d1b] disabled:text-[#a8a7a1]',
   danger:
-    'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500 disabled:bg-red-300',
+    'bg-[#a42f29] text-white hover:bg-[#8a2621] focus-visible:ring-[#a42f29] disabled:bg-[#d8a5a1]',
   success:
-    'bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-500 disabled:bg-emerald-300',
+    'bg-[#226b46] text-white hover:bg-[#1b5738] focus-visible:ring-[#226b46] disabled:bg-[#9bc3ab]',
   ghost:
-    'bg-transparent text-slate-700 hover:bg-slate-100 focus-visible:ring-slate-400',
+    'bg-transparent text-[#4f4e4a] hover:bg-[#f3f2ed] hover:text-[#1d1d1b] focus-visible:ring-[#1d1d1b]',
 };
 
 const SIZE: Record<Size, string> = {
@@ -55,7 +55,12 @@ export function Button({
       {loading ? (
         <span
           aria-hidden
-          className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+          className={cx(
+            'h-4 w-4 animate-spin rounded-full border-2',
+            variant === 'secondary' || variant === 'ghost'
+              ? 'border-[#1d1d1b]/30 border-t-[#1d1d1b]'
+              : 'border-white/40 border-t-white',
+          )}
         />
       ) : (
         leftIcon
