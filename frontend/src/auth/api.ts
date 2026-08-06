@@ -1,21 +1,15 @@
-import { STORAGE_KEY, handleUnauthorized } from './storage';
+import { request } from '../shared/api/client';
+import { ApiError } from '../shared/api/errors';
+import type { ApiEnvelope } from '../shared/api/envelope';
+import { STORAGE_KEY } from './storage';
+
+export type { ApiEnvelope };
+export { ApiError };
 
 const API_BASE = (import.meta.env['VITE_API_BASE'] as string | undefined) ?? '/api/v1';
 
 export function buildApiUrl(path: string): string {
   return new URL(API_BASE + path, window.location.origin).toString();
-}
-
-export class ApiError extends Error {
-  status: number;
-  code: string;
-  details: unknown;
-  constructor(status: number, code: string, message: string, details: unknown) {
-    super(message);
-    this.status = status;
-    this.code = code;
-    this.details = details;
-  }
 }
 
 export function getToken(): string | null {
@@ -43,67 +37,7 @@ export interface RequestOptions {
 }
 
 export async function apiRequest<T>(path: string, opts: RequestOptions = {}): Promise<T> {
-  const method = opts.method ?? 'GET';
-  const token = getToken();
-
-  const url = new URL(buildApiUrl(path));
-  if (opts.query) {
-    for (const [k, v] of Object.entries(opts.query)) {
-      if (v === undefined || v === null || v === '') {
-        continue;
-      }
-      url.searchParams.set(k, String(v));
-    }
-  }
-
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-    ...(opts.headers ?? {}),
-  };
-  if (opts.body !== undefined) {
-    headers['Content-Type'] = 'application/json';
-  }
-  if (token !== null) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const res = await fetch(url.toString(), {
-    method,
-    headers,
-    body: opts.body !== undefined ? JSON.stringify(opts.body) : null,
-    signal: opts.signal ?? null,
-    credentials: 'same-origin',
-  });
-
-  const contentType = res.headers.get('content-type') ?? '';
-  const isJson = contentType.includes('application/json');
-  const payload: unknown = isJson ? await res.json() : await res.text();
-
-  if (!res.ok) {
-    if (res.status === 401) {
-      // Token missing / expired: clear it and send the user to login
-      // rather than surfacing a generic request failure.
-      handleUnauthorized();
-    }
-    const env = (payload ?? {}) as { code?: string; message?: string; data?: unknown };
-    throw new ApiError(
-      res.status,
-      env.code ?? `HTTP_${res.status}`,
-      env.message ?? `Request failed: ${res.status}`,
-      env.data ?? null,
-    );
-  }
-
-  return payload as T;
-}
-
-export interface ApiEnvelope<T> {
-  success: boolean;
-  message: string;
-  data: T;
-  meta?: Record<string, unknown>;
-  code: string;
-  trace_id: string;
+  return request<T>(path, opts);
 }
 
 export function unwrap<T>(envelope: ApiEnvelope<T>): T {
