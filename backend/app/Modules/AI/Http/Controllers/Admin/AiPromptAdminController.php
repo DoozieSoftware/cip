@@ -101,11 +101,15 @@ class AiPromptAdminController extends Controller
 
     public function approve(Request $request, string $id): PromptVersionResource|JsonResponse
     {
+        $this->ensureAdmin($request);
+
         return $this->flipLifecycle($id, PromptVersion::STATUS_APPROVED, $request->user()?->id);
     }
 
     public function rollback(Request $request, string $id): PromptVersionResource|JsonResponse
     {
+        $this->ensureAdmin($request);
+
         return $this->flipLifecycle($id, PromptVersion::STATUS_APPROVED, $request->user()?->id, rollback: true);
     }
 

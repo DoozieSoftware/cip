@@ -10,6 +10,7 @@ use App\Modules\AI\Http\Resources\AiResultResource;
 use App\Modules\AI\Jobs\AiPipelineOrchestrator;
 use App\Modules\AI\Models\AiJob;
 use App\Modules\AI\Models\AiResult;
+use App\Modules\Shared\Exceptions\ApiException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,6 +23,15 @@ use Illuminate\Http\Request;
  */
 class InternalAiController extends Controller
 {
+    private function ensureSystem(Request $request): void
+    {
+        $user = $request->user();
+
+        if ($user === null || ! $user->hasRole('system')) {
+            throw ApiException::forbidden('system role is required.');
+        }
+    }
+
     /**
      * POST /api/v1/internal/ai/process
      * Enqueue a pipeline run for a report. Returns 202 with the
@@ -29,6 +39,8 @@ class InternalAiController extends Controller
      */
     public function process(Request $request, string $reportId): JsonResponse
     {
+        $this->ensureSystem($request);
+
         $job = AiPipelineOrchestrator::dispatch($reportId);
 
         return response()->json([
@@ -43,8 +55,10 @@ class InternalAiController extends Controller
      * GET /api/v1/internal/ai/job/{id}
      * Returns job status; 404 if missing.
      */
-    public function job(string $id): AiJobResource|JsonResponse
+    public function job(Request $request, string $id): AiJobResource|JsonResponse
     {
+        $this->ensureSystem($request);
+
         $job = AiJob::query()->find($id);
 
         if ($job === null) {
@@ -58,8 +72,10 @@ class InternalAiController extends Controller
      * GET /api/v1/internal/ai/job/{id}/result
      * Returns the result and labels; 404 if not yet produced.
      */
-    public function result(string $id): AiResultResource|JsonResponse
+    public function result(Request $request, string $id): AiResultResource|JsonResponse
     {
+        $this->ensureSystem($request);
+
         $result = AiResult::query()
             ->with('labels')
             ->where('job_id', $id)
