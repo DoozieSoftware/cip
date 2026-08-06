@@ -10,14 +10,26 @@ export function Table({ children, className }: { children: ReactNode; className?
 }
 
 export function THead({ children }: { children: ReactNode }) {
-  return <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">{children}</thead>;
+  return (
+    <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">{children}</thead>
+  );
 }
 
 export function TBody({ children }: { children: ReactNode }) {
   return <tbody className="divide-y divide-slate-100 bg-white">{children}</tbody>;
 }
 
-export function TR({ children, onClick, className, selected }: { children: ReactNode; onClick?: () => void; className?: string; selected?: boolean }) {
+export function TR({
+  children,
+  onClick,
+  className,
+  selected,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  className?: string;
+  selected?: boolean;
+}) {
   return (
     <tr
       onClick={onClick}

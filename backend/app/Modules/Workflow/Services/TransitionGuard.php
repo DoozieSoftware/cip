@@ -67,7 +67,7 @@ class TransitionGuard
             // conditions failed. The actor is authenticated
             // and authorised, so this is a 422 (not 403).
             throw InvalidTransitionException::conditionsFailed(
-                fromStateCode: (string) ($transition->fromState?->code ?? ''),
+                fromStateCode: (string) ($transition->fromState->code ?? ''),
                 event: $transition->event,
             );
         }

@@ -19,19 +19,18 @@ vi.mock('../context/DepartmentSelectionContext', () => ({
   })),
 }));
 
-const { departmentApi } = await import('../api/operations');
+const opsMod = (await import('../api/operations')) as {
+  departmentApi: Record<string, ReturnType<typeof vi.fn>>;
+};
+const { departmentApi } = opsMod;
 const ExportPage = (await import('../ExportPage')).default;
 
 describe('ExportPage', () => {
   let client: QueryClient;
   beforeEach(() => {
     vi.clearAllMocks();
-    (departmentApi.exportUrl as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-      '/api/v1/department/reports/export?format=csv',
-    );
-    (departmentApi.exportDownload as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined,
-    );
+    departmentApi.exportUrl.mockReturnValue('/api/v1/department/reports/export?format=csv');
+    departmentApi.exportDownload.mockResolvedValue(undefined);
     client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   });
 

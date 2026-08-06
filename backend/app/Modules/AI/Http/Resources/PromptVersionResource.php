@@ -34,8 +34,8 @@ class PromptVersionResource extends JsonResource
             'status' => $p->status,
             'approved_by' => $p->approved_by,
             'approved_at' => $p->approved_at?->toIso8601String(),
-            'created_at' => $p->created_at?->toIso8601String(),
-            'updated_at' => $p->updated_at?->toIso8601String(),
+            'created_at' => $p->created_at->toIso8601String(),
+            'updated_at' => $p->updated_at->toIso8601String(),
         ];
     }
 }

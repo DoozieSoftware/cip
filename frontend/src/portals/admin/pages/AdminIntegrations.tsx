@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type JSX } from 'react';
+import { useState, type ChangeEvent, type FormEvent, type JSX } from 'react';
 import {
   useIntegrations,
   useCreateIntegration,
@@ -80,7 +80,7 @@ function IntegrationForm({
           label="Code"
           name="code"
           value={code}
-          onChange={(e) => setCode(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setCode(e.target.value)}
           required
           disabled={!!initial?.id}
           placeholder="bbmp_311"
@@ -90,7 +90,7 @@ function IntegrationForm({
           label="Display name"
           name="display_name"
           value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setDisplayName(e.target.value)}
           required
           placeholder="BBMP 311"
           className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
@@ -99,7 +99,7 @@ function IntegrationForm({
           label="Provider"
           name="provider"
           value={provider}
-          onChange={(e) => setProvider(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setProvider(e.target.value)}
           required
           placeholder="bbmp / btp / karnataka_uats"
           className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
@@ -109,7 +109,7 @@ function IntegrationForm({
           name="base_url"
           type="url"
           value={baseUrl}
-          onChange={(e) => setBaseUrl(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setBaseUrl(e.target.value)}
           placeholder="https://api.bbmp.gov.in"
           className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
         />
@@ -169,7 +169,7 @@ export default function AdminIntegrations(): JSX.Element {
                 label="Search"
                 name="search"
                 value={q}
-                onChange={(e) => setQ(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setQ(e.target.value)}
                 placeholder="code, name, provider"
                 className="rounded-xl border border-[#d0cec8] bg-white px-4 py-2.5 pl-10 text-sm text-[#1d1d1b] placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
               />
@@ -179,7 +179,7 @@ export default function AdminIntegrations(): JSX.Element {
                 label="Status"
                 name="status"
                 value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setStatus(e.target.value)}
                 options={[
                   { value: '', label: 'all' },
                   { value: 'active', label: 'active' },

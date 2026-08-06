@@ -78,7 +78,7 @@ class ReassignController extends BaseController
                 'department_id' => $assignment->department_id,
                 'officer_id' => $assignment->officer_id,
                 'assigned_by' => $assignment->assigned_by,
-                'assigned_at' => $assignment->assigned_at?->toIso8601String(),
+                'assigned_at' => $assignment->assigned_at->toIso8601String(),
                 'reassignment_reason' => $assignment->reassignment_reason,
             ],
             'Report reassigned.',

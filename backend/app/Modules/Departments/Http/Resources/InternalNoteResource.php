@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\Departments\Http\Resources;
 
+use App\Modules\Reports\Models\InternalNote;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @property-read InternalNote $resource
+ */
 class InternalNoteResource extends JsonResource
 {
     /**

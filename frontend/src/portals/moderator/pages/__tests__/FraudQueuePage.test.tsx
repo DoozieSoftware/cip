@@ -65,9 +65,7 @@ describe('FraudQueuePage', () => {
   });
 
   it('shows loading state', () => {
-    (queueApi.fraud as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-      new Promise(() => {}),
-    );
+    (queueApi.fraud as unknown as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
     render(
       <QueryClientProvider client={client}>
         <MemoryRouter>
@@ -79,9 +77,7 @@ describe('FraudQueuePage', () => {
   });
 
   it('shows error state', async () => {
-    (queueApi.fraud as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error('fail'),
-    );
+    (queueApi.fraud as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('fail'));
     render(
       <QueryClientProvider client={client}>
         <MemoryRouter>

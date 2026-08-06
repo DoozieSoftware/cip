@@ -110,7 +110,7 @@ class ModeratorReportDetailResource extends JsonResource
                 'actor_name' => $a->user?->name,
                 'action' => $a->action,
                 'payload' => $a->after,
-                'created_at' => $a->created_at?->toIso8601String(),
+                'created_at' => $a->created_at->toIso8601String(),
             ])->all(),
             'status_history' => $statusHistory->map(fn ($h): array => [
                 'from_code' => $h->fromStatus?->code,
@@ -196,7 +196,7 @@ class ModeratorReportDetailResource extends JsonResource
             'consistency_score' => $result->consistency_score,
             'mismatch_reason' => $result->mismatch_reason,
             'synthetic_score' => $result->synthetic_score,
-            'created_at' => $result->created_at?->toIso8601String(),
+            'created_at' => $result->created_at->toIso8601String(),
         ];
     }
 }

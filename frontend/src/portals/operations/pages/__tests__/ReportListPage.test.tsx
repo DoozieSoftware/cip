@@ -26,7 +26,10 @@ vi.mock('../../../shared/geo/useReverseGeocode', () => ({
   useReverseGeocode: vi.fn(() => null),
 }));
 
-const { departmentApi } = await import('../api/operations');
+const opsMod = (await import('../api/operations')) as {
+  departmentApi: Record<string, ReturnType<typeof vi.fn>>;
+};
+const { departmentApi } = opsMod;
 const ReportListPage = (await import('../ReportListPage')).default;
 
 const REPORTS = [
@@ -49,7 +52,7 @@ describe('ReportListPage', () => {
   let client: QueryClient;
   beforeEach(() => {
     vi.clearAllMocks();
-    (departmentApi.listReports as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    departmentApi.listReports.mockResolvedValue({
       data: REPORTS,
       meta: { current_page: 1, per_page: 20, total: 1, last_page: 1 },
     });
@@ -80,9 +83,7 @@ describe('ReportListPage', () => {
   });
 
   it('shows loading state', () => {
-    (departmentApi.listReports as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-      new Promise(() => {}),
-    );
+    departmentApi.listReports.mockReturnValue(new Promise(() => {}));
     render(
       <QueryClientProvider client={client}>
         <MemoryRouter>
@@ -94,9 +95,7 @@ describe('ReportListPage', () => {
   });
 
   it('shows error state', async () => {
-    (departmentApi.listReports as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error('fail'),
-    );
+    departmentApi.listReports.mockRejectedValue(new Error('fail'));
     render(
       <QueryClientProvider client={client}>
         <MemoryRouter>
@@ -108,7 +107,7 @@ describe('ReportListPage', () => {
   });
 
   it('shows empty state when no reports', async () => {
-    (departmentApi.listReports as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    departmentApi.listReports.mockResolvedValue({
       data: [],
       meta: { current_page: 1, per_page: 20, total: 0, last_page: 1 },
     });

@@ -32,7 +32,7 @@ function buildUrl(path: string, query?: Record<string, unknown>): string {
   if (query) {
     for (const [k, v] of Object.entries(query)) {
       if (v === undefined || v === null || v === '') continue;
-      if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+      if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
         url.searchParams.set(k, String(v));
       }
     }
@@ -76,7 +76,7 @@ async function request<T>(
     }
     const message =
       (typeof payload === 'object' && payload !== null && 'message' in payload
-        ? String((payload).message)
+        ? String(payload.message)
         : null) ?? `Request failed (${res.status})`;
     throw new ApiError(res.status, message, payload);
   }
@@ -92,6 +92,7 @@ async function request<T>(
 }
 
 export const api = {
-  get: <T>(path: string, query?: Record<string, unknown>) => request<T>('GET', path, undefined, query),
+  get: <T>(path: string, query?: Record<string, unknown>) =>
+    request<T>('GET', path, undefined, query),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
 };

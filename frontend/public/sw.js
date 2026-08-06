@@ -1,4 +1,3 @@
-/* eslint-disable */
 /**
  * Civic Intelligence Platform — Citizen PWA service worker.
  *

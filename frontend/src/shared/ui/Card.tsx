@@ -3,13 +3,7 @@ import { cx } from './cx';
 
 export function Card({ className, children, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div
-      {...rest}
-      className={cx(
-        'rounded-xl bg-white shadow-sm ring-1 ring-black/5',
-        className,
-      )}
-    >
+    <div {...rest} className={cx('rounded-xl bg-white shadow-sm ring-1 ring-black/5', className)}>
       {children}
     </div>
   );

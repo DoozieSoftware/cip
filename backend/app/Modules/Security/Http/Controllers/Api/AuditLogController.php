@@ -128,7 +128,7 @@ class AuditLogController extends Controller
                 'ip' => $row->ip,
                 'device_fingerprint' => $row->device_fingerprint,
                 'request_id' => $row->request_id,
-                'created_at' => $row->created_at?->toIso8601String(),
+                'created_at' => $row->created_at->toIso8601String(),
             ];
         })->all();
 

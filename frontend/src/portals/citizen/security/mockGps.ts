@@ -27,23 +27,23 @@ export interface SampleInput {
 type AnyPosition = GeolocationPosition | SampleInput;
 
 function pickAccuracy(p: AnyPosition): number | null {
-  if ('coords' in p) return (p as GeolocationPosition).coords.accuracy;
-  return (p as SampleInput).accuracy;
+  if ('coords' in p) return p.coords.accuracy;
+  return p.accuracy;
 }
 function pickAltitude(p: AnyPosition): number | null {
-  if ('coords' in p) return (p as GeolocationPosition).coords.altitude;
-  return (p as SampleInput).altitude;
+  if ('coords' in p) return p.coords.altitude;
+  return p.altitude;
 }
 function pickTimestamp(p: AnyPosition): number {
-  if ('coords' in p) return (p as GeolocationPosition).timestamp;
-  return (p as SampleInput).timestamp;
+  if ('coords' in p) return p.timestamp;
+  return p.timestamp;
 }
 function pickMock(p: AnyPosition): boolean | null | undefined {
   if ('coords' in p) {
-    const c = (p as GeolocationPosition).coords as { mock?: boolean | null };
+    const c = p.coords as { mock?: boolean | null };
     return c.mock;
   }
-  return (p as SampleInput).mock;
+  return p.mock;
 }
 
 export function mockGpsLikely(

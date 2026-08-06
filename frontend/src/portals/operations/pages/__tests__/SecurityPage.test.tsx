@@ -9,14 +9,17 @@ vi.mock('../api/operations', () => ({
   },
 }));
 
-const { securityApi } = await import('../api/operations');
+const operationsMod = (await import('../api/operations')) as {
+  securityApi: { dashboard: ReturnType<typeof vi.fn> };
+};
+const { securityApi } = operationsMod;
 const SecurityPage = (await import('../SecurityPage')).default;
 
 describe('SecurityPage', () => {
   let client: QueryClient;
   beforeEach(() => {
     vi.clearAllMocks();
-    (securityApi.dashboard as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    securityApi.dashboard.mockResolvedValue({
       success: true,
       data: {
         failed_logins: { count: 5, recent: [] },
@@ -59,9 +62,7 @@ describe('SecurityPage', () => {
   });
 
   it('shows loading state', () => {
-    (securityApi.dashboard as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-      new Promise(() => {}),
-    );
+    securityApi.dashboard.mockReturnValue(new Promise(() => {}));
     render(
       <QueryClientProvider client={client}>
         <MemoryRouter>
@@ -73,9 +74,7 @@ describe('SecurityPage', () => {
   });
 
   it('shows error state', async () => {
-    (securityApi.dashboard as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error('fail'),
-    );
+    securityApi.dashboard.mockRejectedValue(new Error('fail'));
     render(
       <QueryClientProvider client={client}>
         <MemoryRouter>
@@ -87,7 +86,7 @@ describe('SecurityPage', () => {
   });
 
   it('shows empty data state', async () => {
-    (securityApi.dashboard as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    securityApi.dashboard.mockResolvedValue({
       success: true,
       data: null,
     });

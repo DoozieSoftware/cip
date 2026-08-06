@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Integrations\Http\Resources;
 
+use App\Modules\Integrations\Models\Integration;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,6 +15,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * (so the Super Admin UI can show which fields are
  * configured) but every value is replaced with
  * "********". A write-only field, never echoed back.
+ *
+ * @property-read Integration $resource
  */
 class IntegrationResource extends JsonResource
 {
@@ -22,8 +25,10 @@ class IntegrationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $integration = $this->resource;
+
         /** @var array<string, mixed>|null $raw */
-        $raw = $this->credentials;
+        $raw = $integration->credentials;
         $masked = null;
 
         if (is_array($raw)) {
@@ -35,18 +40,18 @@ class IntegrationResource extends JsonResource
         }
 
         return [
-            'id' => $this->id,
-            'code' => $this->code,
-            'provider' => $this->provider,
-            'display_name' => $this->display_name,
-            'base_url' => $this->base_url,
+            'id' => $integration->id,
+            'code' => $integration->code,
+            'provider' => $integration->provider,
+            'display_name' => $integration->display_name,
+            'base_url' => $integration->base_url,
             'credentials' => $masked,
-            'settings' => $this->settings,
-            'status' => $this->status,
-            'last_check_at' => $this->last_check_at?->toIso8601String(),
-            'last_error' => $this->last_error,
-            'created_at' => $this->created_at?->toIso8601String(),
-            'updated_at' => $this->updated_at?->toIso8601String(),
+            'settings' => $integration->settings,
+            'status' => $integration->status,
+            'last_check_at' => $integration->last_check_at?->toIso8601String(),
+            'last_error' => $integration->last_error,
+            'created_at' => $integration->created_at?->toIso8601String(),
+            'updated_at' => $integration->updated_at?->toIso8601String(),
         ];
     }
 }

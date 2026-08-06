@@ -32,10 +32,7 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) return this.props.fallback(this.state.error, this.reset);
       return (
         <div className="mx-auto max-w-5xl px-4 py-6 pb-24 sm:py-10">
-          <div
-            role="alert"
-            className="rounded-lg border border-rose-200 bg-rose-50 p-6"
-          >
+          <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-6">
             <h2 className="text-base font-semibold text-rose-900">Something went wrong</h2>
             <p className="mt-1 text-sm text-rose-700">
               The citizen app hit an unexpected error. Please refresh, or report it from the

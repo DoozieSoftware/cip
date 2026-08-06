@@ -34,18 +34,21 @@ vi.mock('../../../../auth/AuthContext', () => ({
   })),
 }));
 
-const { adminApi } = await import('../api/operations');
+const opsMod = (await import('../api/operations')) as {
+  adminApi: { listDepartments: ReturnType<typeof vi.fn>; listOfficers: ReturnType<typeof vi.fn> };
+};
+const { adminApi } = opsMod;
 const AdminPage = (await import('../AdminPage')).default;
 
 describe('OperationsAdminPage', () => {
   let client: QueryClient;
   beforeEach(() => {
     vi.clearAllMocks();
-    (adminApi.listDepartments as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    adminApi.listDepartments.mockResolvedValue({
       success: true,
       data: [{ id: 'dept-1', code: 'bbmp', name: 'BBMP' }],
     });
-    (adminApi.listOfficers as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    adminApi.listOfficers.mockResolvedValue({
       success: true,
       data: [
         {
@@ -86,9 +89,7 @@ describe('OperationsAdminPage', () => {
   });
 
   it('shows loading state for departments', () => {
-    (adminApi.listDepartments as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-      new Promise(() => {}),
-    );
+    adminApi.listDepartments.mockReturnValue(new Promise(() => {}));
     render(
       <QueryClientProvider client={client}>
         <MemoryRouter>
@@ -100,9 +101,7 @@ describe('OperationsAdminPage', () => {
   });
 
   it('shows loading state for officers', () => {
-    (adminApi.listOfficers as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-      new Promise(() => {}),
-    );
+    adminApi.listOfficers.mockReturnValue(new Promise(() => {}));
     render(
       <QueryClientProvider client={client}>
         <MemoryRouter>

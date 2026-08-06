@@ -83,7 +83,7 @@ class DuplicateDetector
             }
 
             $score = $this->distanceToScore($distance);
-            $ageDays = $candidate->created_at?->diffInDays(now()) ?? $windowDays;
+            $ageDays = $candidate->created_at->diffInDays(now()) ?? $windowDays;
             $timeBoost = max(0, 100 - (int) (($ageDays / max(1, $windowDays)) * 100));
 
             // Combined: take the higher of perceptual match and

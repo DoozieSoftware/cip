@@ -23,7 +23,6 @@ export function ExportMenu({ filters }: ExportMenuProps) {
 
   const triggerDownload = (format: ExportFormat): void => {
     departmentApi.exportDownload(format, filters).catch((err: unknown) => {
-      // eslint-disable-next-line no-console
       console.error('Export download failed', err);
     });
     setOpen(false);

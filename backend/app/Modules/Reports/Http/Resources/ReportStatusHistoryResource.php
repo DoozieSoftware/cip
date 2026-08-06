@@ -23,8 +23,8 @@ class ReportStatusHistoryResource extends JsonResource
     {
         $row = $this->resource;
 
-        $fromName = $row->fromStatus?->name;
-        $toName = $row->toStatus?->name ?? 'updated';
+        $fromName = $row->fromStatus->name;
+        $toName = $row->toStatus->name ?? 'updated';
         $event = $fromName !== null
             ? "Status changed from {$fromName} to {$toName}"
             : "Report {$toName}";
@@ -43,7 +43,7 @@ class ReportStatusHistoryResource extends JsonResource
             'from_status_id' => $row->from_status_id,
             'to_status_id' => $row->to_status_id,
             'actor_id' => $row->actor_id,
-            'actor' => $row->actor?->name ?? ($row->actor_id ? 'Official' : 'System'),
+            'actor' => $row->actor->name ?? ($row->actor_id ? 'Official' : 'System'),
             'event' => $event,
             'note' => $note,
             'at' => $row->created_at?->toIso8601String(),

@@ -78,9 +78,9 @@ class DepartmentReportsExport
         return [
             'tracking_number' => (string) $r->tracking_number,
             'title' => (string) $r->title,
-            'status' => (string) ($r->status?->code ?? ''),
-            'priority' => (string) ($r->priority?->code ?? ''),
-            'report_type' => (string) ($r->reportType?->code ?? ''),
+            'status' => (string) $r->status?->code,
+            'priority' => (string) $r->priority?->code,
+            'report_type' => (string) $r->reportType?->code,
             'submitted_at' => $r->submitted_at?->toIso8601String() ?? '',
             'closed_at' => $r->closed_at?->toIso8601String() ?? '',
         ];

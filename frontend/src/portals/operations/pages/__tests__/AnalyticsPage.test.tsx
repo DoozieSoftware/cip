@@ -24,18 +24,21 @@ vi.mock('echarts-for-react', () => ({
   default: () => <div data-testid="echarts-mock" />,
 }));
 
-const { departmentApi } = await import('../api/operations');
+const opsMod = (await import('../api/operations')) as {
+  departmentApi: Record<string, ReturnType<typeof vi.fn>>;
+};
+const { departmentApi } = opsMod;
 const AnalyticsPage = (await import('../AnalyticsPage')).default;
 
 describe('OperationsAnalyticsPage', () => {
   let client: QueryClient;
   beforeEach(() => {
     vi.clearAllMocks();
-    (departmentApi.dashboard as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    departmentApi.dashboard.mockResolvedValue({
       success: true,
       data: { open: 15, due_today: 3, sla_breached: 1, by_category: { roads: 8, sanitation: 7 } },
     });
-    (departmentApi.listReports as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    departmentApi.listReports.mockResolvedValue({
       data: [
         {
           id: 'r-1',
@@ -80,9 +83,7 @@ describe('OperationsAnalyticsPage', () => {
   });
 
   it('shows loading state', () => {
-    (departmentApi.dashboard as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-      new Promise(() => {}),
-    );
+    departmentApi.dashboard.mockReturnValue(new Promise(() => {}));
     render(
       <QueryClientProvider client={client}>
         <MemoryRouter>
@@ -94,9 +95,7 @@ describe('OperationsAnalyticsPage', () => {
   });
 
   it('shows error state', async () => {
-    (departmentApi.dashboard as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error('fail'),
-    );
+    departmentApi.dashboard.mockRejectedValue(new Error('fail'));
     render(
       <QueryClientProvider client={client}>
         <MemoryRouter>

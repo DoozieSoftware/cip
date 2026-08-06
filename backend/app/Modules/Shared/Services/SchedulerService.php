@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Shared\Services;
 
 use App\Modules\Settings\Models\Setting;
+use Illuminate\Console\Application;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -46,8 +47,8 @@ class SchedulerService
                 'id' => $name,
                 'command' => $this->commandFor($event),
                 'expression' => (string) $event->expression,
-                'next_due_at' => $event->nextRunDate()?->toIso8601String(),
-                'timezone' => $event->timezone !== null ? (string) $event->timezone : null,
+                'next_due_at' => $event->nextRunDate()->toIso8601String(),
+                'timezone' => $event->timezone instanceof \DateTimeZone ? $event->timezone->getName() : (is_string($event->timezone) ? $event->timezone : null),
                 'without_overlapping' => (bool) $event->withoutOverlapping,
                 'paused' => in_array($name, $paused, true),
             ];
@@ -109,7 +110,7 @@ class SchedulerService
 
             $command = $this->commandFor($event);
 
-            if ($command !== '' && Artisan::has($command)) {
+            if ($command !== '' && $this->artisanHasCommand($command)) {
                 $exit = Artisan::call($command);
 
                 return "Artisan::call({$command}) exit={$exit}";
@@ -120,7 +121,7 @@ class SchedulerService
 
             if (is_object($job)) {
                 $jobClass = $job::class;
-                $jobInstance = is_string($jobClass) && class_exists($jobClass)
+                $jobInstance = class_exists($jobClass)
                     ? new $jobClass
                     : null;
 
@@ -139,7 +140,7 @@ class SchedulerService
     {
         $description = (string) ($event->description ?? '');
 
-        return $description !== '' ? $description : $event->command;
+        return $description !== '' ? $description : (string) $event->command;
     }
 
     private function commandFor(Event $event): string
@@ -155,5 +156,16 @@ class SchedulerService
         }
 
         return $command;
+    }
+
+    private function artisanHasCommand(string $command): bool
+    {
+        try {
+            $app = Artisan::getFacadeRoot();
+
+            return $app instanceof Application && $app->has($command);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

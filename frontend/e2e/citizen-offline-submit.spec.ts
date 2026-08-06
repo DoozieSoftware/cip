@@ -72,8 +72,13 @@ test.describe('citizen — offline submission (T-M13-024)', () => {
     // mount (CitizenApp's OfflineBridge already called getQueue() and
     // registerOfflineQueueRetry() by the time the page is interactive).
     const initialSize = await page.evaluate(async () => {
-      const { getQueue } = await import('/src/portals/citizen/offline/queue.ts');
-      const q = getQueue();
+      const mod = (await import('/src/portals/citizen/offline/queue.ts')) as {
+        getQueue: () => {
+          enqueue: (item: unknown) => Promise<void>;
+          size: () => Promise<number>;
+        };
+      };
+      const q = mod.getQueue();
       await q.enqueue({
         kind: 'report.create',
         payload: {
@@ -101,8 +106,12 @@ test.describe('citizen — offline submission (T-M13-024)', () => {
     await expect
       .poll(async () =>
         page.evaluate(async () => {
-          const { getQueue } = await import('/src/portals/citizen/offline/queue.ts');
-          return getQueue().size();
+          const mod = (await import('/src/portals/citizen/offline/queue.ts')) as {
+            getQueue: () => { size: () => Promise<number> };
+          };
+          const q = mod.getQueue();
+
+          return q.size();
         }),
       )
       .toBe(0);

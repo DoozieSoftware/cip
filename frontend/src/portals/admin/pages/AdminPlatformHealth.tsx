@@ -13,7 +13,7 @@ import {
   EmptyState,
   ErrorState,
 } from '../../moderator/design';
-import { cx } from '../../moderator/design/cx';
+import { cx } from '../../../shared/ui/cx';
 
 const STATUS_COLOR: Record<string, string> = {
   ok: 'bg-[#edf7f0] text-[#256b45] ring-[#c8e6d2]',

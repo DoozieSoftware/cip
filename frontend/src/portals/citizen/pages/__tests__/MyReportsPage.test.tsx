@@ -44,8 +44,14 @@ describe('MyReportsPage', () => {
       isError: false,
       data: {
         data: [
-          makeReport({ id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', tracking_number: 'CIV-2026-00042' }),
-          makeReport({ id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', tracking_number: 'CIV-2026-00099' }),
+          makeReport({
+            id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+            tracking_number: 'CIV-2026-00042',
+          }),
+          makeReport({
+            id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+            tracking_number: 'CIV-2026-00099',
+          }),
         ],
         meta: { page: 1, per_page: 12, total: 2, last_page: 1 },
       },
@@ -68,11 +74,31 @@ describe('MyReportsPage', () => {
       isError: false,
       data: {
         data: [
-          makeReport({ id: '1', status: { code: 'submitted', name: 'Submitted' }, tracking_number: 'CIV-2026-000001' }),
-          makeReport({ id: '2', status: { code: 'closed', name: 'Closed' }, tracking_number: 'CIV-2026-000002' }),
-          makeReport({ id: '3', status: { code: 'rejected', name: 'Rejected' }, tracking_number: 'CIV-2026-000003' }),
-          makeReport({ id: '4', status: { code: 'merged', name: 'Merged' }, tracking_number: 'CIV-2026-000004' }),
-          makeReport({ id: '5', status: { code: 'resolved', name: 'Resolved' }, tracking_number: 'CIV-2026-000005' }),
+          makeReport({
+            id: '1',
+            status: { code: 'submitted', name: 'Submitted' },
+            tracking_number: 'CIV-2026-000001',
+          }),
+          makeReport({
+            id: '2',
+            status: { code: 'closed', name: 'Closed' },
+            tracking_number: 'CIV-2026-000002',
+          }),
+          makeReport({
+            id: '3',
+            status: { code: 'rejected', name: 'Rejected' },
+            tracking_number: 'CIV-2026-000003',
+          }),
+          makeReport({
+            id: '4',
+            status: { code: 'merged', name: 'Merged' },
+            tracking_number: 'CIV-2026-000004',
+          }),
+          makeReport({
+            id: '5',
+            status: { code: 'resolved', name: 'Resolved' },
+            tracking_number: 'CIV-2026-000005',
+          }),
         ],
         meta: { page: 1, per_page: 12, total: 5, last_page: 1 },
       },
@@ -105,9 +131,21 @@ describe('MyReportsPage', () => {
       isError: false,
       data: {
         data: [
-          makeReport({ id: '1', status: { code: 'accepted', name: 'Accepted' }, tracking_number: 'CIV-2026-000001' }),
-          makeReport({ id: '2', status: { code: 'rejected', name: 'Rejected' }, tracking_number: 'CIV-2026-000002' }),
-          makeReport({ id: '3', status: { code: 'merged', name: 'Merged' }, tracking_number: 'CIV-2026-000003' }),
+          makeReport({
+            id: '1',
+            status: { code: 'accepted', name: 'Accepted' },
+            tracking_number: 'CIV-2026-000001',
+          }),
+          makeReport({
+            id: '2',
+            status: { code: 'rejected', name: 'Rejected' },
+            tracking_number: 'CIV-2026-000002',
+          }),
+          makeReport({
+            id: '3',
+            status: { code: 'merged', name: 'Merged' },
+            tracking_number: 'CIV-2026-000003',
+          }),
         ],
         meta: { page: 1, per_page: 12, total: 3, last_page: 1 },
       },

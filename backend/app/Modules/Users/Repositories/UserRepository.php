@@ -28,6 +28,9 @@ class UserRepository
      *     department_id?: ?string,
      * }  $filters
      */
+    /**
+     * @return LengthAwarePaginator<int, User>
+     */
     public function search(array $filters, int $perPage = 25): LengthAwarePaginator
     {
         $query = User::query()->with(['roles']);

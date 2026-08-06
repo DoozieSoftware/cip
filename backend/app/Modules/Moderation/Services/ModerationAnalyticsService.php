@@ -116,7 +116,8 @@ class ModerationAnalyticsService
             $isOverridden = $action->to_code !== 'assigned';
             // reports.ai_confidence is the canonical 0–100 value the orchestrator
             // writes (result.confidence * 100), so it is the correct display unit.
-            $confidence = (float) ($reports->get((string) $reportId)?->ai_confidence ?? 0.0);
+            $report = $reports->get((string) $reportId);
+            $confidence = $report instanceof Report ? (float) $report->ai_confidence : 0.0;
 
             $totals++;
 
@@ -178,6 +179,9 @@ class ModerationAnalyticsService
             ->get();
     }
 
+    /**
+     * @param  Collection<int, object{report_id: string, to_code: string, created_at: Carbon}>  $actions
+     */
     private function averageReviewMinutes(Collection $actions): float
     {
         $reportIds = $actions->pluck('report_id')->unique()->values()->all();

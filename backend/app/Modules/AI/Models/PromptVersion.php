@@ -44,7 +44,11 @@ use Illuminate\Support\Carbon;
  */
 class PromptVersion extends Model
 {
+    /**
+     * @use HasFactory<PromptVersionFactory>
+     */
     use HasFactory;
+
     use HasUuids;
 
     protected $table = 'prompt_versions';
