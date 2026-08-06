@@ -131,7 +131,7 @@ export default function AdminGovernmentDashboard(): JSX.Element {
         <div
           className={`flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3 ${
             health.data?.status === 'ok'
-              ? 'bg-[#edf7f0]'
+              ? 'bg-[#e9e6de]'
               : health.data?.status === 'degraded'
                 ? 'bg-[#fff6e4]'
                 : 'bg-[#fbeeed]'
@@ -141,9 +141,9 @@ export default function AdminGovernmentDashboard(): JSX.Element {
             <span
               className={`h-2.5 w-2.5 rounded-full ${
                 health.data?.status === 'ok'
-                  ? 'bg-[#226b46]'
+                  ? 'bg-[#4f4e4a]'
                   : health.data?.status === 'degraded'
-                    ? 'bg-[#b5812]'
+                    ? 'bg-[#b9822b]'
                     : 'bg-[#a42f29]'
               }`}
             />
@@ -440,7 +440,7 @@ function Status({ status }: { status: 'ok' | 'degraded' | 'down' }): JSX.Element
     <span
       className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
         status === 'ok'
-          ? 'text-[#256b45]'
+          ? 'text-[#4f4e4a]'
           : status === 'degraded'
             ? 'text-[#805913]'
             : 'text-[#9f3731]'
@@ -448,7 +448,7 @@ function Status({ status }: { status: 'ok' | 'degraded' | 'down' }): JSX.Element
     >
       <span
         className={`h-1.5 w-1.5 rounded-full ${
-          status === 'ok' ? 'bg-[#226b46]' : status === 'degraded' ? 'bg-[#b5812]' : 'bg-[#a42f29]'
+          status === 'ok' ? 'bg-[#4f4e4a]' : status === 'degraded' ? 'bg-[#b9822b]' : 'bg-[#a42f29]'
         }`}
       />
       {status === 'ok' ? 'Operational' : status}
@@ -468,7 +468,7 @@ function Readiness({
   return (
     <div className="flex items-center justify-between gap-3 px-4 py-3">
       <dt className="text-sm text-[#1d1d1b]">{label}</dt>
-      <dd className={`text-xs font-semibold ${good ? 'text-[#256b45]' : 'text-[#85847f]'}`}>
+      <dd className={`text-xs font-semibold ${good ? 'text-[#4f4e4a]' : 'text-[#85847f]'}`}>
         {value}
       </dd>
     </div>
