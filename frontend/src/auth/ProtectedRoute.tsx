@@ -2,7 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { type JSX } from 'react';
 import type { ReactNode } from 'react';
 import { useAuth, type Role } from './AuthContext';
-import { Spinner } from '../portals/moderator/design';
+import { Spinner } from '../shared/ui';
 
 export interface ProtectedRouteProps {
   allow: Role[];

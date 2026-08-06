@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
-import { cx } from '../../moderator/design/cx';
+import { cx } from '../../../shared/ui/cx';
 import { guardVideoDuration, scrubFile } from '../security/evidenceGuards';
 
 /**

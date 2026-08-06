@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Badge, EmptyState, Spinner } from '../design';
+import { Badge, EmptyState, Spinner } from '../shared/ui';
 import { queueApi } from '../api/moderator';
 import {
   IconArrowRight,

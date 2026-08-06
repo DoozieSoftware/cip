@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Dialog, Input, Textarea } from '../design';
+import { Button, Dialog, Input, Textarea } from '../shared/ui';
 
 /**
  * Sticky bulk-action toolbar (T-M10-022). Lets a moderator select N

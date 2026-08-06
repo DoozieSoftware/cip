@@ -17,7 +17,7 @@ import {
   TR,
   TH,
   TD,
-} from '../design';
+} from '../shared/ui';
 import { adminApi, type AdminUpdatePayload, type AttachOfficerPayload } from '../api/operations';
 import { useAuth } from '../../../auth/AuthContext';
 import type { DepartmentOfficer } from '../types';

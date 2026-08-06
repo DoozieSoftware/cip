@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type JSX,
 } from 'react';
-import { cx } from '../../moderator/design/cx';
+import { cx } from '../../../shared/ui/cx';
 
 type ToastKind = 'info' | 'success' | 'error';
 

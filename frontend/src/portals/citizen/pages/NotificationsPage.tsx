@@ -1,8 +1,8 @@
 import { useNotifications, useMarkNotificationRead } from '../api/client';
 import { type JSX } from 'react';
-import { Spinner } from '../../moderator/design';
+import { Spinner } from '../../../shared/ui';
 import { Link } from 'react-router-dom';
-import { cx } from '../../moderator/design/cx';
+import { cx } from '../../../shared/ui/cx';
 import { IconBell, IconBellRinging, IconChevronRight, IconCheck } from '@tabler/icons-react';
 
 function formatDateTime(value: string | null | undefined): string {

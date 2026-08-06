@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react';
 import { type JSX } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { PublicLayout } from './layout/PublicLayout';
-import { ErrorBoundary, ErrorState, Spinner } from '../moderator/design';
+import { ErrorBoundary, ErrorState, Spinner } from '../../shared/ui';
 
 const OverviewPage = lazy(() => import('./pages/OverviewPage'));
 const HeatmapPage = lazy(() => import('./pages/HeatmapPage'));

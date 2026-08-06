@@ -2,7 +2,7 @@ import { type JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../../auth/AuthContext';
 import { apiRequest, type ApiEnvelope } from '../../../auth/api';
-import { Spinner } from '../../moderator/design';
+import { Spinner } from '../../../shared/ui';
 import { IconUser, IconMail, IconPhone, IconShield, IconLogout } from '@tabler/icons-react';
 
 interface ProfileData {

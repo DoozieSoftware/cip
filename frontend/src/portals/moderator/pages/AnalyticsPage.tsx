@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Badge, Card, CardBody, CardHeader, CardTitle, EmptyState, Spinner } from '../design';
+import { Badge, Card, CardBody, CardHeader, CardTitle, EmptyState, Spinner } from '../shared/ui';
 import { analyticsApi } from '../api/moderator';
 import type { AnalyticsSummary } from '../types';
 import { useEffect, useRef } from 'react';

@@ -2,7 +2,7 @@ import { useMemo, type JSX } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { usePublicHeatmap } from '../api/client';
-import { Spinner, EmptyState } from '../../moderator/design';
+import { Spinner, EmptyState } from '../../../shared/ui';
 
 const BENGALURU_CENTER: [number, number] = [12.9716, 77.5946];
 

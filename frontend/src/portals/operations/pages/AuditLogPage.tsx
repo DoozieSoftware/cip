@@ -8,7 +8,7 @@ import {
   IconFilter,
   IconX,
 } from '@tabler/icons-react';
-import { Spinner, Input, Select, Button, Badge } from '../design';
+import { Spinner, Input, Select, Button, Badge } from '../shared/ui';
 import { auditApi, type AuditLogFilters, type AuditLogRow } from '../api/operations';
 import type { PaginationMeta } from '../types';
 

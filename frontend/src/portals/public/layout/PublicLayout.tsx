@@ -1,6 +1,6 @@
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import { type JSX } from 'react';
-import { cx } from '../../moderator/design/cx';
+import { cx } from '../../../shared/ui/cx';
 
 const NAV = [
   { to: '/public', label: 'Overview', end: true },

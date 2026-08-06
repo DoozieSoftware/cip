@@ -19,7 +19,7 @@ import {
   type ReportType,
   type CreateReportInput,
 } from '../api/client';
-import { Spinner, cx } from '../../moderator/design';
+import { Spinner, cx } from '../../../shared/ui';
 import { CameraCapture, type CameraError } from '../components/CameraCapture';
 import { GpsCapture, type CapturedLocation, type GpsCaptureHandle } from '../components/GpsCapture';
 import { getQueue } from '../offline/queue';

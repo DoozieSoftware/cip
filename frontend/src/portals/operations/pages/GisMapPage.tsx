@@ -14,7 +14,7 @@ import {
   IconCategory,
   IconCalendar,
 } from '@tabler/icons-react';
-import { Spinner, Select, Badge } from '../design';
+import { Spinner, Select, Badge } from '../shared/ui';
 import { departmentApi, type ReportListFilters } from '../api/operations';
 import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 import type { DepartmentReportListItem } from '../types';

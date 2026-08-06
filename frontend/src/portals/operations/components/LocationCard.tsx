@@ -1,4 +1,4 @@
-import { Card, CardBody, CardHeader, CardTitle, EmptyState } from '../design';
+import { Card, CardBody, CardHeader, CardTitle, EmptyState } from '../shared/ui';
 import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 
 export interface DepartmentReportLocation {

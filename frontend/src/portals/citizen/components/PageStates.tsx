@@ -1,5 +1,5 @@
 import { type JSX, type ReactNode } from 'react';
-import { EmptyState, ErrorState, Spinner } from '../../moderator/design';
+import { EmptyState, ErrorState, Spinner } from '../../../shared/ui';
 
 /**
  * T-M13-020 — Standard loading / error / empty / data render helper

@@ -3,7 +3,7 @@ import { type JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../../auth/AuthContext';
 import { apiRequest, type ApiEnvelope } from '../../../auth/api';
-import { Spinner, EmptyState } from '../../moderator/design';
+import { Spinner, EmptyState } from '../../../shared/ui';
 import { StatusBadge } from '../components/StatusBadge';
 import { getQueue } from '../offline/queue';
 import { normalizeReport } from '../api/client';

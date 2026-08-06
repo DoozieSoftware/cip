@@ -7,7 +7,7 @@ import {
   useState,
   type JSX,
 } from 'react';
-import { cx } from '../../moderator/design/cx';
+import { cx } from '../../../shared/ui/cx';
 import { mockGpsLikely, type MockGpsResult } from '../security/mockGps';
 
 export interface CapturedLocation {
