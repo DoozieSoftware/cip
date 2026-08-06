@@ -30,10 +30,9 @@ test.describe('citizen — a11y (T-M13-021)', () => {
       const serious = results.violations.filter(
         (v) => v.impact === 'serious' || v.impact === 'critical',
       );
-      expect(
-        serious,
-        `Violations on ${route.path}:\n${JSON.stringify(serious, null, 2)}`,
-      ).toEqual([]);
+      expect(serious, `Violations on ${route.path}:\n${JSON.stringify(serious, null, 2)}`).toEqual(
+        [],
+      );
     });
   }
 

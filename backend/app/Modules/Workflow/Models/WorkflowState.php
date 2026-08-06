@@ -44,6 +44,7 @@ class WorkflowState extends Model
 {
     /** @use HasFactory<WorkflowStateFactory> */
     use HasFactory;
+
     use HasUuids;
 
     protected $table = 'workflow_states';

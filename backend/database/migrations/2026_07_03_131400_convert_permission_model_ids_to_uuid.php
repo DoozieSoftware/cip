@@ -23,6 +23,7 @@ return new class extends Migration
 
         // --- model_has_roles ---
         $fkRolesName = $this->findForeignKeyName("{$prefix}model_has_roles", 'role_id');
+
         if ($fkRolesName !== null) {
             Schema::table('model_has_roles', function ($table) use ($fkRolesName): void {
                 $table->dropForeign($fkRolesName);
@@ -41,6 +42,7 @@ return new class extends Migration
 
         // --- model_has_permissions ---
         $fkPermsName = $this->findForeignKeyName("{$prefix}model_has_permissions", 'permission_id');
+
         if ($fkPermsName !== null) {
             Schema::table('model_has_permissions', function ($table) use ($fkPermsName): void {
                 $table->dropForeign($fkPermsName);
@@ -67,6 +69,7 @@ return new class extends Migration
         $prefix = DB::getTablePrefix();
 
         $fkRolesName = $this->findForeignKeyName("{$prefix}model_has_roles", 'role_id');
+
         if ($fkRolesName !== null) {
             Schema::table('model_has_roles', function ($table) use ($fkRolesName): void {
                 $table->dropForeign($fkRolesName);
@@ -84,6 +87,7 @@ return new class extends Migration
         });
 
         $fkPermsName = $this->findForeignKeyName("{$prefix}model_has_permissions", 'permission_id');
+
         if ($fkPermsName !== null) {
             Schema::table('model_has_permissions', function ($table) use ($fkPermsName): void {
                 $table->dropForeign($fkPermsName);
@@ -109,12 +113,12 @@ return new class extends Migration
     private function findForeignKeyName(string $table, string $column): ?string
     {
         $row = DB::selectOne(
-            "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
+            'SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
              WHERE TABLE_SCHEMA = DATABASE()
                AND TABLE_NAME = ?
                AND COLUMN_NAME = ?
                AND REFERENCED_TABLE_NAME IS NOT NULL
-             LIMIT 1",
+             LIMIT 1',
             [$table, $column],
         );
 

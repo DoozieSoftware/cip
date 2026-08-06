@@ -3,7 +3,6 @@ import { requestBackgroundSync } from '../swBridge';
 
 type Listener = (event: MessageEvent) => void;
 
-
 function makeSw() {
   const listeners: Listener[] = [];
   const postMessage = vi.fn();
@@ -73,7 +72,9 @@ describe('swBridge (T-M13-007)', () => {
     const { onPushReceived } = await import('../swBridge');
     const handler = vi.fn();
     onPushReceived(handler);
-    const ev = { data: { type: 'push:received', payload: { title: 't', body: 'b', url: '/u', tag: 'x' } } } as MessageEvent;
+    const ev = {
+      data: { type: 'push:received', payload: { title: 't', body: 'b', url: '/u', tag: 'x' } },
+    } as MessageEvent;
     sw.__listeners.forEach((l) => l(ev));
     expect(handler).toHaveBeenCalledWith({ title: 't', body: 'b', url: '/u', tag: 'x' });
   });

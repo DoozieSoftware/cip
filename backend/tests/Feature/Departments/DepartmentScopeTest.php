@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 use App\Modules\Departments\Models\Department;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Users\Models\User;
 use Database\Seeders\DefaultWorkflowSeeder;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -17,7 +19,7 @@ beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();
     (new ReportStatusesSeeder)->run();
     (new DefaultWorkflowSeeder)->run();
-    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'department', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'department', 'guard_name' => 'web']);
 });
 
 it('a member of dept A cannot list dept B\'s reports', function (): void {
@@ -38,7 +40,7 @@ it('a member of dept A cannot add a note to dept B\'s report (403)', function ()
     $deptA = Department::factory()->create(['code' => 'A']);
     $deptB = Department::factory()->create(['code' => 'B']);
     $report = Report::factory()->create(['department_id' => $deptB->id]);
-    $assigned = \App\Modules\Reports\Models\ReportStatus::query()->where('code', 'assigned')->firstOrFail();
+    $assigned = ReportStatus::query()->where('code', 'assigned')->firstOrFail();
     $report->current_status_id = $assigned->id;
     $report->save();
 
@@ -55,7 +57,7 @@ it('a member of dept A cannot accept dept B\'s report (403)', function (): void 
     $deptA = Department::factory()->create(['code' => 'A']);
     $deptB = Department::factory()->create(['code' => 'B']);
     $report = Report::factory()->create(['department_id' => $deptB->id]);
-    $assigned = \App\Modules\Reports\Models\ReportStatus::query()->where('code', 'assigned')->firstOrFail();
+    $assigned = ReportStatus::query()->where('code', 'assigned')->firstOrFail();
     $report->current_status_id = $assigned->id;
     $report->save();
 

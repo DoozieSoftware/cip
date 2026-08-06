@@ -3,11 +3,12 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Symfony\Component\Yaml\Yaml;
 
 uses(RefreshDatabase::class);
 
 it('declares the media storage endpoints under the MediaStorage tag', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
+    $doc = Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
     $paths = $doc['paths'] ?? [];
 
     $expected = [
@@ -16,16 +17,19 @@ it('declares the media storage endpoints under the MediaStorage tag', function (
     ];
 
     $missing = [];
+
     foreach ($expected as $path => $methods) {
         if (! array_key_exists($path, $paths)) {
             $missing[] = $path;
             continue;
         }
+
         foreach ($methods as $method) {
             if (! array_key_exists($method, $paths[$path])) {
                 $missing[] = "{$method} on {$path}";
                 continue;
             }
+
             if (! in_array('MediaStorage', $paths[$path][$method]['tags'] ?? [], true)) {
                 $missing[] = "tag MediaStorage on {$method} {$path}";
             }
@@ -36,7 +40,7 @@ it('declares the media storage endpoints under the MediaStorage tag', function (
 });
 
 it('declares the media storage schemas', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
+    $doc = Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
     $schemas = $doc['components']['schemas'] ?? [];
 
     foreach (['MediaStorage', 'MediaStorageResponse', 'MediaStorageUpdateRequest', 'MediaStorageProbeResponse'] as $name) {

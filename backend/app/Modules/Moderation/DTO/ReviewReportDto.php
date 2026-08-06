@@ -24,8 +24,11 @@ use Illuminate\Support\Str;
 final readonly class ReviewReportDto
 {
     public const DECISION_APPROVE = 'approve';
+
     public const DECISION_REJECT = 'reject';
+
     public const DECISION_MERGE = 'merge';
+
     public const DECISION_ESCALATE = 'escalate';
 
     public const ALLOWED_DECISIONS = [
@@ -63,6 +66,7 @@ final readonly class ReviewReportDto
     public static function fromArray(array $validated): self
     {
         $decision = strtolower(trim((string) ($validated['decision'] ?? '')));
+
         if (! in_array($decision, self::ALLOWED_DECISIONS, true)) {
             throw ApiException::validation(
                 'invalid decision; expected one of: '.implode(', ', self::ALLOWED_DECISIONS),
@@ -71,6 +75,7 @@ final readonly class ReviewReportDto
         }
 
         $categoryIds = $validated['category_ids'] ?? [];
+
         if (! is_array($categoryIds)) {
             $categoryIds = [];
         }
@@ -80,6 +85,7 @@ final readonly class ReviewReportDto
         ));
 
         $categoryId = $validated['category_id'] ?? null;
+
         if (is_string($categoryId) && $categoryId !== '') {
             // Prepend the single category_id to the array form so the
             // downstream service sees a single source of truth.
@@ -88,6 +94,7 @@ final readonly class ReviewReportDto
         }
 
         $remarks = $validated['remarks'] ?? null;
+
         if (! is_string($remarks)) {
             $remarks = null;
         } elseif (Str::length($remarks) > 2000) {
@@ -95,16 +102,19 @@ final readonly class ReviewReportDto
         }
 
         $reasonCode = $validated['reason_code'] ?? null;
+
         if (! is_string($reasonCode) || $reasonCode === '') {
             $reasonCode = null;
         }
 
         $mergeInto = $validated['merge_into_report_id'] ?? null;
+
         if (! is_string($mergeInto) || $mergeInto === '') {
             $mergeInto = null;
         }
 
         $departmentId = $validated['department_id'] ?? null;
+
         if (! is_string($departmentId) || $departmentId === '') {
             $departmentId = null;
         }

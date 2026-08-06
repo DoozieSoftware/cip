@@ -6,11 +6,12 @@ use App\Modules\Departments\Models\Department;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Users\Models\User;
+use App\Modules\Workflow\Models\WorkflowDefinition;
 use Database\Seeders\DefaultWorkflowSeeder;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
+use Tests\TestCase;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,7 +24,7 @@ use Spatie\Permission\Models\Role;
 |
 */
 
-pest()->extend(Tests\TestCase::class)->in('Feature');
+pest()->extend(TestCase::class)->in('Feature');
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +38,7 @@ if (! function_exists('seedCivicRolesAndStatuses')) {
         if (Role::query()->where('name', 'citizen')->doesntExist()) {
             (new RolesAndPermissionsSeeder)->run();
         }
+
         if (ReportStatus::query()->count() === 0) {
             (new ReportStatusesSeeder)->run();
             (new DefaultWorkflowSeeder)->run();
@@ -51,6 +53,7 @@ if (! function_exists('makeDepartmentOfficer')) {
         $u = User::factory()->create();
         $u->assignRole('department_officer');
         $u->departments()->attach($dept->id);
+
         return $u;
     }
 }
@@ -58,7 +61,7 @@ if (! function_exists('makeDepartmentOfficer')) {
 if (! function_exists('landReportInAssigned')) {
     function landReportInAssigned(Department $dept): Report
     {
-        $workflow = \App\Modules\Workflow\Models\WorkflowDefinition::query()
+        $workflow = WorkflowDefinition::query()
             ->where('code', 'civic_default')
             ->firstOrFail();
         $report = Report::factory()->create([
@@ -68,6 +71,7 @@ if (! function_exists('landReportInAssigned')) {
         $assigned = ReportStatus::query()->where('code', 'assigned')->firstOrFail();
         $report->current_status_id = $assigned->id;
         $report->save();
+
         return $report->refresh();
     }
 }

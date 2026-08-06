@@ -2,7 +2,15 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PageStates } from '../PageStates';
 
-function makeQuery(overrides: Partial<{ isLoading: boolean; isError: boolean; data: unknown; error: unknown; refetch: ReturnType<typeof vi.fn> }> = {}) {
+function makeQuery(
+  overrides: Partial<{
+    isLoading: boolean;
+    isError: boolean;
+    data: unknown;
+    error: unknown;
+    refetch: ReturnType<typeof vi.fn>;
+  }> = {},
+) {
   return {
     isLoading: false,
     isError: false,

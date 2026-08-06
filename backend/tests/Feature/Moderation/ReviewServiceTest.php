@@ -7,8 +7,12 @@ use App\Modules\Moderation\Events\ReportModerated;
 use App\Modules\Moderation\Services\ModerationService;
 use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportStatus;
+use App\Modules\Reports\Models\ReportType;
 use App\Modules\Security\Models\AuditLog;
+use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
+use App\Modules\Workflow\Models\WorkflowDefinition;
 use App\Modules\Workflow\Services\WorkflowEngine;
 use Database\Seeders\DefaultWorkflowSeeder;
 use Database\Seeders\ReportStatusesSeeder;
@@ -37,13 +41,13 @@ beforeEach(function (): void {
 });
 
 if (! function_exists('makeModerator')) {
-function reviewModerator(): User
-{
-    $u = User::factory()->create();
-    $u->assignRole('moderator');
+    function reviewModerator(): User
+    {
+        $u = User::factory()->create();
+        $u->assignRole('moderator');
 
-    return $u;
-}
+        return $u;
+    }
 }
 
 /**
@@ -51,37 +55,37 @@ function reviewModerator(): User
  * `pending_moderator` (the M10 hand-off state).
  */
 if (! function_exists('landReportInPendingModerator')) {
-function landReportInPendingModerator(): Report
-{
-    $engine = app(WorkflowEngine::class);
+    function landReportInPendingModerator(): Report
+    {
+        $engine = app(WorkflowEngine::class);
 
-    $definition = \App\Modules\Workflow\Models\WorkflowDefinition::query()->where('code', 'civic_default')->firstOrFail();
-    $draft = \App\Modules\Reports\Models\ReportStatus::query()->where('code', 'draft')->firstOrFail();
-    $report = Report::factory()->create([
-        'workflow_id' => $definition->id,
-        'current_status_id' => $draft->id,
-    ]);
+        $definition = WorkflowDefinition::query()->where('code', 'civic_default')->firstOrFail();
+        $draft = ReportStatus::query()->where('code', 'draft')->firstOrFail();
+        $report = Report::factory()->create([
+            'workflow_id' => $definition->id,
+            'current_status_id' => $draft->id,
+        ]);
 
-    // submit (no actor required)
-    $d = $engine->evaluate($report, 'submit', null);
-    $engine->apply($report, $d, null);
-    $report = $report->refresh();
-    $report->load('status');
+        // submit (no actor required)
+        $d = $engine->evaluate($report, 'submit', null);
+        $engine->apply($report, $d, null);
+        $report = $report->refresh();
+        $report->load('status');
 
-    // ai_complete requires a system actor.
-    $system = User::factory()->create();
-    $system->assignRole('system');
-    $d = $engine->evaluate($report, 'ai_complete', $system);
-    $engine->apply($report, $d, $system);
-    $report = $report->refresh();
-    $report->load('status');
+        // ai_complete requires a system actor.
+        $system = User::factory()->create();
+        $system->assignRole('system');
+        $d = $engine->evaluate($report, 'ai_complete', $system);
+        $engine->apply($report, $d, $system);
+        $report = $report->refresh();
+        $report->load('status');
 
-    // moderator_review also requires system.
-    $d = $engine->evaluate($report, 'moderator_review', $system);
-    $engine->apply($report, $d, $system);
+        // moderator_review also requires system.
+        $d = $engine->evaluate($report, 'moderator_review', $system);
+        $engine->apply($report, $d, $system);
 
-    return $report->refresh()->load('status');
-}
+        return $report->refresh()->load('status');
+    }
 }
 
 it('a moderator can approve a pending_moderator report', function (): void {
@@ -162,7 +166,7 @@ it('a moderator can escalate a pending_moderator report', function (): void {
 
 it('rejects review when the current state has no matching transition', function (): void {
     // A report in 'draft' state cannot be approved.
-    $draft = \App\Modules\Reports\Models\ReportStatus::query()->where('code', 'draft')->firstOrFail();
+    $draft = ReportStatus::query()->where('code', 'draft')->firstOrFail();
     $report = Report::factory()->create(['current_status_id' => $draft->id]);
     $moderator = reviewModerator();
 
@@ -170,7 +174,7 @@ it('rejects review when the current state has no matching transition', function 
 
     $service = app(ModerationService::class);
     $service->review($report, $dto, $moderator);
-})->throws(\App\Modules\Shared\Exceptions\ApiException::class);
+})->throws(ApiException::class);
 
 it('rejects a non-moderator actor', function (): void {
     $report = landReportInPendingModerator();
@@ -180,14 +184,14 @@ it('rejects a non-moderator actor', function (): void {
 
     $service = app(ModerationService::class);
     $service->review($report, $dto, $citizen);
-})->throws(\App\Modules\Shared\Exceptions\ApiException::class);
+})->throws(ApiException::class);
 
 it('an override writes the before/after category in the audit row', function (): void {
     $report = landReportInPendingModerator();
     $moderator = reviewModerator();
     $originalCategory = $report->report_type_id;
 
-    $newType = \App\Modules\Reports\Models\ReportType::factory()->create();
+    $newType = ReportType::factory()->create();
 
     $dto = ReviewReportDto::fromArray([
         'decision' => 'approve',

@@ -37,8 +37,8 @@ All database changes must conform to this specification.
 
 | Component      | Technology       |
 | -------------- | ---------------- |
-| Database       | PostgreSQL 17    |
-| GIS            | PostGIS          |
+| Database       | MySQL 8.4        |
+| GIS            | MySQL Spatial    |
 | Cache          | Redis            |
 | Queue          | Redis            |
 | Object Storage | MinIO / S3       |
@@ -55,7 +55,7 @@ All database changes must conform to this specification.
 * Referential integrity enforced
 * No JSON blobs for structured data
 * Configuration-driven master tables
-* GIS enabled for location queries
+* MySQL spatial types (Point, Polygon) for location queries
 
 ---
 
@@ -405,7 +405,7 @@ gps_provider
 
 captured_at
 
-geom (PostGIS Point)
+geom (POINT, SRID 4326)
 
 created_at
 ```
@@ -413,8 +413,10 @@ created_at
 Spatial Index
 
 ```
-GIST(geom)
+SPATIAL INDEX on geom
 ```
+
+MySQL 8.4 uses SRID-aware spatial columns. Point and Polygon geometries are stored using the `POINT` and `POLYGON` types with SRID 4326 (WGS 84). Spatial indexes are supported on InnoDB tables.
 
 ---
 
@@ -464,7 +466,7 @@ district
 boundary_polygon
 ```
 
-Polygon stored in PostGIS.
+Polygon stored as MySQL POLYGON spatial type (SRID 4326).
 
 ---
 
@@ -916,7 +918,7 @@ Latitude
 
 Longitude
 
-PostGIS Point
+MySQL Spatial Point (SRID 4326)
 
 Nearest Ward
 
@@ -928,7 +930,7 @@ Nearest District
 
 Nearest State
 
-Area lookup occurs during submission.
+Area lookup occurs during submission using MySQL spatial functions (ST_Contains, ST_Distance).
 
 Coordinates remain immutable.
 
@@ -1086,7 +1088,7 @@ wards.boundary_polygon
 
 # 26. Partition Strategy
 
-Future support for PostgreSQL partitioning.
+Future support for MySQL 8.4 partitioning.
 
 Partition candidates
 
@@ -1106,7 +1108,7 @@ Partition key
 submitted_at
 ```
 
-Monthly partitions.
+Monthly RANGE partitions on the `submitted_at` column.
 
 ---
 

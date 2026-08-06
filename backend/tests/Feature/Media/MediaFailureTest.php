@@ -3,12 +3,12 @@
 declare(strict_types=1);
 
 use App\Modules\Media\Models\Media;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Media\Services\LogScanner;
 use App\Modules\Media\Services\MediaService;
 use App\Modules\Media\Services\MimeValidator;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Users\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\URL;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
-
 
 /**
  * M5 failure-mode coverage. Every assertion here corresponds

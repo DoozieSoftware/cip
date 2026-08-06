@@ -67,13 +67,7 @@ export function PageStates<T>({
     );
   }
   if (query.data == null) {
-    return (
-      <EmptyState
-        title={emptyTitle}
-        description={emptyDescription}
-        action={emptyAction}
-      />
-    );
+    return <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />;
   }
   return <>{children(query.data as T)}</>;
 }

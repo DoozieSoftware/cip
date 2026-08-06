@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
 import { cx } from '../../moderator/design/cx';
-import { guardVideoDuration, scrubFile } from "../security/evidenceGuards";
+import { guardVideoDuration, scrubFile } from '../security/evidenceGuards';
 
 /**
  * T-M13-008 / T-M13-019 — Camera capture component.
  *
  * Rules:
-  *  - Live capture only (MediaDevices.getUserMedia); no file
+ *  - Live capture only (MediaDevices.getUserMedia); no file
  *    picker. The DOM has no <input type="file">.
  *  - Video capture is camera-only. Audio is intentionally disabled so
  *    the browser does not block recording when microphone permission is
@@ -52,7 +52,14 @@ function pickVideoMimeType(): string {
 }
 
 export function CameraCapture(props: CameraCaptureProps): JSX.Element {
-  const { mode, onCapture, onError, videoMinMs = DEFAULT_VIDEO_MIN, videoMaxMs = DEFAULT_VIDEO_MAX, className } = props;
+  const {
+    mode,
+    onCapture,
+    onError,
+    videoMinMs = DEFAULT_VIDEO_MIN,
+    videoMaxMs = DEFAULT_VIDEO_MAX,
+    className,
+  } = props;
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -68,7 +75,11 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     return () => {
       stopStream();
       if (recorderRef.current && recorderRef.current.state !== 'inactive') {
-        try { recorderRef.current.stop(); } catch { /* noop */ }
+        try {
+          recorderRef.current.stop();
+        } catch {
+          /* noop */
+        }
       }
     };
   }, []);
@@ -88,14 +99,18 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     if (typeof window !== 'undefined' && !window.isSecureContext) {
       const e: CameraError = {
         kind: 'permission_denied',
-        message: 'Camera access requires HTTPS or localhost. Open the app with https:// and try again.',
+        message:
+          'Camera access requires HTTPS or localhost. Open the app with https:// and try again.',
       };
       setError(e);
       onError?.(e);
       return;
     }
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      const e: CameraError = { kind: 'not_found', message: 'Camera not available in this browser.' };
+      const e: CameraError = {
+        kind: 'not_found',
+        message: 'Camera not available in this browser.',
+      };
       setError(e);
       onError?.(e);
       return;
@@ -112,12 +127,15 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
       }
       setActive(true);
     } catch (err) {
-      const permissionBlocked = err instanceof DOMException && ['NotAllowedError', 'SecurityError'].includes(err.name);
+      const permissionBlocked =
+        err instanceof DOMException && ['NotAllowedError', 'SecurityError'].includes(err.name);
       const e: CameraError = {
         kind: 'permission_denied',
         message: permissionBlocked
           ? 'Camera permission is blocked. Open browser site settings for this site, allow Camera, then tap Open camera again.'
-          : err instanceof Error ? err.message : 'Camera access denied.',
+          : err instanceof Error
+            ? err.message
+            : 'Camera access denied.',
       };
       setError(e);
       onError?.(e);
@@ -141,7 +159,9 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/jpeg', 0.85),
+    );
     if (!blob) return;
     const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
     const cleaned = await scrubFile(file);
@@ -149,38 +169,40 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     stopStream();
   }
 
-   function startRecording(): void {
-     if (!streamRef.current) return;
-     if (typeof MediaRecorder === 'undefined') {
-       const err: CameraError = {
-         kind: 'not_found',
-         message: 'Video recording is not supported by this browser. Try Chrome or Safari 17+ on HTTPS.',
-       };
-       setError(err);
-       onError?.(err);
-       return;
-     }
-     chunksRef.current = [];
-     stoppedAtRef.current = 0;
-     const mimeType = pickVideoMimeType();
-     let rec: MediaRecorder;
-     try {
-       rec = new MediaRecorder(streamRef.current, { mimeType });
-     } catch {
-       // Some mobile browsers expose MediaRecorder but reject explicit
-       // mime hints. Retry with browser defaults before failing.
-       try {
-         rec = new MediaRecorder(streamRef.current);
-       } catch {
-         const err: CameraError = {
-           kind: 'not_found',
-           message: 'Video recording is not supported by this browser. Try Chrome or Safari 17+ on HTTPS.',
-         };
-         setError(err);
-         onError?.(err);
-         return;
-       }
-     }
+  function startRecording(): void {
+    if (!streamRef.current) return;
+    if (typeof MediaRecorder === 'undefined') {
+      const err: CameraError = {
+        kind: 'not_found',
+        message:
+          'Video recording is not supported by this browser. Try Chrome or Safari 17+ on HTTPS.',
+      };
+      setError(err);
+      onError?.(err);
+      return;
+    }
+    chunksRef.current = [];
+    stoppedAtRef.current = 0;
+    const mimeType = pickVideoMimeType();
+    let rec: MediaRecorder;
+    try {
+      rec = new MediaRecorder(streamRef.current, { mimeType });
+    } catch {
+      // Some mobile browsers expose MediaRecorder but reject explicit
+      // mime hints. Retry with browser defaults before failing.
+      try {
+        rec = new MediaRecorder(streamRef.current);
+      } catch {
+        const err: CameraError = {
+          kind: 'not_found',
+          message:
+            'Video recording is not supported by this browser. Try Chrome or Safari 17+ on HTTPS.',
+        };
+        setError(err);
+        onError?.(err);
+        return;
+      }
+    }
     rec.ondataavailable = (e: BlobEvent) => {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
@@ -229,15 +251,12 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
   return (
     <div className={cx('space-y-3', className)}>
       <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900">
-        <video
-          ref={videoRef}
-          playsInline
-          muted
-          className="h-full w-full object-cover"
-        />
+        <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
         {!active ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-300">
-            <span aria-hidden className="text-4xl">◎</span>
+            <span aria-hidden className="text-4xl">
+              ◎
+            </span>
             <p className="text-sm">Camera off</p>
           </div>
         ) : null}
@@ -254,15 +273,18 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
         ) : null}
       </div>
 
-       {error ? (
-         <p role="alert" className="rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800">
-           {error.message}
-         </p>
-       ) : mode === 'video' && !active ? (
-         <p className="text-xs text-slate-500">
-           Record a short clip between {videoMinMs / 1000} and {videoMaxMs / 1000} seconds.
-         </p>
-       ) : null}
+      {error ? (
+        <p
+          role="alert"
+          className="rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+        >
+          {error.message}
+        </p>
+      ) : mode === 'video' && !active ? (
+        <p className="text-xs text-slate-500">
+          Record a short clip between {videoMinMs / 1000} and {videoMaxMs / 1000} seconds.
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap items-center justify-center gap-2">
         {!active ? (
@@ -300,7 +322,6 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
           </button>
         )}
       </div>
-
     </div>
   );
 }

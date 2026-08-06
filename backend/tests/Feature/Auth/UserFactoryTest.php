@@ -7,7 +7,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-
 /**
  * Validates the UserFactory states introduced in T-M2-003.
  *

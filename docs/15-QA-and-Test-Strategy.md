@@ -381,6 +381,10 @@ k6
 
 Apache JMeter
 
+Database
+
+MySQL 8.4 (test uses SQLite in-memory via RefreshDatabase)
+
 Metrics
 
 API Response Time
@@ -473,6 +477,8 @@ Push Notifications
 
 Cache Behaviour
 
+Service Worker
+
 Browser Compatibility
 
 ---
@@ -511,7 +517,7 @@ Reverse Geocoding
 
 Ward Detection
 
-Boundary Calculations
+Boundary Calculations (MySQL spatial functions)
 
 Distance Calculations
 

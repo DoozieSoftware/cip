@@ -35,13 +35,13 @@ beforeEach(function (): void {
 });
 
 if (! function_exists('makeModerator')) {
-function mergeModerator(): User
-{
-    $u = User::factory()->create();
-    $u->assignRole('moderator');
+    function mergeModerator(): User
+    {
+        $u = User::factory()->create();
+        $u->assignRole('moderator');
 
-    return $u;
-}
+        return $u;
+    }
 }
 
 it('merges multiple duplicates into a canonical report', function (): void {

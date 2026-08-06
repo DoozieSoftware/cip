@@ -65,7 +65,15 @@ describe('Public DepartmentPerformancePage', () => {
     apiRequestMock.mockResolvedValue({
       data: {
         departments: [
-          { id: 'd1', name: 'BTP', code: 'BTP', total_reports: 5, resolved_reports: 0, resolution_rate_percent: 0, median_resolution_hours: null },
+          {
+            id: 'd1',
+            name: 'BTP',
+            code: 'BTP',
+            total_reports: 5,
+            resolved_reports: 0,
+            resolution_rate_percent: 0,
+            median_resolution_hours: null,
+          },
         ],
       },
     });

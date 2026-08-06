@@ -112,7 +112,9 @@ export default function SettingsPage(): JSX.Element {
             aria-pressed={pushOn}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${pushOn ? 'bg-blue-600' : 'bg-slate-300'} disabled:opacity-50`}
           >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${pushOn ? 'translate-x-6' : 'translate-x-1'}`} />
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${pushOn ? 'translate-x-6' : 'translate-x-1'}`}
+            />
           </button>
           <span className="text-sm text-slate-700">{pushOn ? 'on' : 'off'}</span>
         </div>
@@ -121,8 +123,16 @@ export default function SettingsPage(): JSX.Element {
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-700">Privacy &amp; legal</h2>
         <ul className="mt-2 space-y-1 text-sm text-blue-700">
-          <li><Link to="/citizen/legal/privacy" className="underline">Privacy policy</Link></li>
-          <li><Link to="/citizen/legal/terms" className="underline">Terms of use</Link></li>
+          <li>
+            <Link to="/citizen/legal/privacy" className="underline">
+              Privacy policy
+            </Link>
+          </li>
+          <li>
+            <Link to="/citizen/legal/terms" className="underline">
+              Terms of use
+            </Link>
+          </li>
         </ul>
       </section>
 

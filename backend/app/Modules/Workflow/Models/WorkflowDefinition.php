@@ -38,6 +38,7 @@ class WorkflowDefinition extends Model
 {
     /** @use HasFactory<WorkflowDefinitionFactory> */
     use HasFactory;
+
     use HasUuids;
     use SoftDeletes;
 

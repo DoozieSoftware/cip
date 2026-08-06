@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Reports\Http\Resources;
 
+use App\Modules\Media\Models\Media;
 use App\Modules\Reports\Models\Report;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -26,7 +27,7 @@ class ReportResource extends JsonResource
         $type = $report->relationLoaded('reportType') ? $report->reportType : $report->reportType()->first();
         $status = $report->relationLoaded('status') ? $report->status : $report->status()->first();
         $priority = $report->relationLoaded('priority') ? $report->priority : $report->priority()->first();
-        $citizen = $report->relationLoaded('citizen') ? $report->reportType : $report->citizen()->first();
+        $department = $report->relationLoaded('department') ? $report->department : $report->department()->first();
 
         return [
             'id' => $report->id,
@@ -57,6 +58,17 @@ class ReportResource extends JsonResource
                 'name' => $priority->name,
                 'sla_minutes' => $priority->sla_minutes,
             ],
+            'department' => $department === null ? null : [
+                'id' => $department->id,
+                'code' => $department->code,
+                'name' => $department->name,
+            ],
+            'assigned_department' => $department === null ? null : [
+                'id' => $department->id,
+                'code' => $department->code,
+                'name' => $department->name,
+            ],
+            'media_count' => Media::query()->where('report_id', $report->id)->where('is_replaced', false)->count(),
             'location' => $location === null ? null : [
                 'id' => $location->id,
                 'latitude' => $location->latitude,

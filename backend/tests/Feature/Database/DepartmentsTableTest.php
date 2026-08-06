@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
-
 it('creates the departments table with the required columns', function (): void {
     expect(Schema::hasTable('departments'))->toBeTrue();
 

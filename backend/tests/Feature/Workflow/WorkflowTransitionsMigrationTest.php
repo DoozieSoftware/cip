@@ -9,7 +9,6 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
-
 it('creates the workflow_transitions table with the expected columns', function (): void {
     expect(Schema::hasTable('workflow_transitions'))->toBeTrue();
 

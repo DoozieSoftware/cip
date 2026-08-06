@@ -17,9 +17,10 @@ import path from 'node:path';
 const devSslDir = path.resolve(__dirname, '.devssl');
 const keyPath = path.join(devSslDir, 'key.pem');
 const certPath = path.join(devSslDir, 'cert.pem');
-const https = process.env['CIP_DEV_HTTP'] !== '1' && fs.existsSync(keyPath) && fs.existsSync(certPath)
-  ? { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) }
-  : undefined;
+const https =
+  process.env['CIP_DEV_HTTP'] !== '1' && fs.existsSync(keyPath) && fs.existsSync(certPath)
+    ? { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) }
+    : undefined;
 
 export default defineConfig({
   base: '/',

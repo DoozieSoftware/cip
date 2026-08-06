@@ -104,7 +104,9 @@ async function loadIdb(): Promise<unknown> {
         opts: { upgrade: (db: unknown) => void },
       ) => Promise<unknown>;
     } = await import(/* @vite-ignore */ 'idb').catch(() => {
-      throw new Error("The 'idb' package is not installed. Run `npm i idb` to enable the IndexedDB adapter.");
+      throw new Error(
+        "The 'idb' package is not installed. Run `npm i idb` to enable the IndexedDB adapter.",
+      );
     });
     return mod.openDB('cip-citizen-queue', 1, {
       upgrade(database: unknown): void {
@@ -230,7 +232,9 @@ export class OfflineQueue {
   /** Items still in flight (pending, in_flight, failed-with-retries-left). */
   async pending(): Promise<QueueItem[]> {
     const items = await this.adapter.list();
-    return items.filter((i) => i.status === 'pending' || i.status === 'in_flight' || i.status === 'failed');
+    return items.filter(
+      (i) => i.status === 'pending' || i.status === 'in_flight' || i.status === 'failed',
+    );
   }
 
   /** Add a payload. Idempotent on `id`. */
@@ -284,12 +288,29 @@ export class OfflineQueue {
       const attempts = item.attempts + 1;
       const message = err instanceof Error ? err.message : String(err);
       if (attempts >= item.max_attempts) {
-        await this.adapter.patch(item.id, { status: 'dead', attempts, last_error: message, updated_at: this.now() });
+        await this.adapter.patch(item.id, {
+          status: 'dead',
+          attempts,
+          last_error: message,
+          updated_at: this.now(),
+        });
         return { ...item, status: 'dead', attempts, last_error: message };
       }
       const nextAttempt = this.now() + this.backoff(attempts);
-      await this.adapter.patch(item.id, { status: 'failed', attempts, last_error: message, next_attempt_at: nextAttempt, updated_at: this.now() });
-      return { ...item, status: 'failed', attempts, last_error: message, next_attempt_at: nextAttempt };
+      await this.adapter.patch(item.id, {
+        status: 'failed',
+        attempts,
+        last_error: message,
+        next_attempt_at: nextAttempt,
+        updated_at: this.now(),
+      });
+      return {
+        ...item,
+        status: 'failed',
+        attempts,
+        last_error: message,
+        next_attempt_at: nextAttempt,
+      };
     }
   }
 
@@ -301,11 +322,16 @@ export class OfflineQueue {
   async drain(): Promise<{ processed: number; succeeded: number; failed: number; dead: number }> {
     if (this.running) return { processed: 0, succeeded: 0, failed: 0, dead: 0 };
     this.running = true;
-    let processed = 0, succeeded = 0, failed = 0, dead = 0;
+    let processed = 0,
+      succeeded = 0,
+      failed = 0,
+      dead = 0;
     try {
       const items = await this.adapter.list();
       const now = this.now();
-      const due = items.filter((i) => (i.status === 'pending' || i.status === 'failed') && i.next_attempt_at <= now);
+      const due = items.filter(
+        (i) => (i.status === 'pending' || i.status === 'failed') && i.next_attempt_at <= now,
+      );
       for (const item of due) {
         const result = await this.processOne(item);
         processed++;

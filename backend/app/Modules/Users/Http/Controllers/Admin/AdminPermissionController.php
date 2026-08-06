@@ -33,10 +33,12 @@ class AdminPermissionController extends BaseController
         $this->ensureAdmin($request);
 
         $q = Permission::query();
+
         if ($search = $request->query('q')) {
-            $q->where('name', 'like', '%' . $search . '%');
+            $q->where('name', 'like', '%'.$search.'%');
         }
         $guard = $request->query('guard_name');
+
         if (is_string($guard) && $guard !== '') {
             $q->where('guard_name', $guard);
         }
@@ -103,6 +105,7 @@ class AdminPermissionController extends BaseController
         $perm = is_numeric($id)
             ? Permission::query()->where('id', (int) $id)->first()
             : Permission::query()->where('name', $id)->first();
+
         if ($perm === null) {
             throw ApiException::notFound('Permission');
         }

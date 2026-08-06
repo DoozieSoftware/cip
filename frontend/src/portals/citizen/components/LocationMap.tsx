@@ -47,7 +47,7 @@ export default function LocationMap({
       <div
         className="overflow-hidden rounded-lg border border-slate-200"
         style={{ height }}
-         aria-label={`Map showing the report location${placeLabel ? ` at ${placeLabel}` : ''}`}
+        aria-label={`Map showing the report location${placeLabel ? ` at ${placeLabel}` : ''}`}
       >
         <MapContainer
           center={[latitude, longitude]}
@@ -58,7 +58,7 @@ export default function LocationMap({
         >
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <Marker position={[latitude, longitude]} icon={PIN}>
-             <Popup>{placeLabel || 'Report location'}</Popup>
+            <Popup>{placeLabel || 'Report location'}</Popup>
           </Marker>
         </MapContainer>
       </div>
@@ -89,7 +89,17 @@ export function LocationChip({ latitude, longitude, label }: LocationChipProps):
 
   return (
     <span className="inline-flex min-w-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-600">
-      <svg aria-hidden viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 text-blue-600" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>
+      <svg
+        aria-hidden
+        viewBox="0 0 24 24"
+        className="h-3.5 w-3.5 shrink-0 text-blue-600"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      >
+        <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+        <circle cx="12" cy="10" r="2.5" />
+      </svg>
       <span>{placeLabel || 'Report location'}</span>
     </span>
   );

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { cx } from './cx';
+import { cx } from '../../../shared/ui/cx';
 
 interface DialogProps {
   open: boolean;

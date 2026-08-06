@@ -18,6 +18,7 @@ class DashboardResource extends JsonResource
     public function toArray(Request $request): array
     {
         $d = $this->resource;
+
         return [
             'department_id' => $d['department_id'] ?? null,
             'open' => $d['open'] ?? 0,

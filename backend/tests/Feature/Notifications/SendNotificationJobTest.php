@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Modules\Notifications\Jobs\SendNotificationJob;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Notifications\Mail\TemplateMailable;
 use App\Modules\Notifications\Models\Notification;
 use App\Modules\Notifications\Models\NotificationLog;
@@ -11,12 +10,12 @@ use App\Modules\Notifications\Models\NotificationTemplate;
 use App\Modules\Security\Models\AuditLog;
 use App\Modules\Users\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
-
 
 beforeEach(function (): void {
     Bus::fake();

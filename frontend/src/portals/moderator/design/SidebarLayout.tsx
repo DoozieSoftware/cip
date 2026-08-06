@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { type JSX, type ReactNode, useState } from 'react';
 import { useAuth } from '../../../auth/AuthContext';
-import { cx } from './cx';
+import { cx } from '../../../shared/ui/cx';
 
 export interface SidebarNavItem {
   to: string;

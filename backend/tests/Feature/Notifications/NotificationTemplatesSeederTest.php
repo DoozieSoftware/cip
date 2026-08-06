@@ -3,11 +3,10 @@
 declare(strict_types=1);
 
 use App\Modules\Notifications\Models\NotificationTemplate;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Database\Seeders\NotificationTemplatesSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
-
 
 it('inserts the default templates (>= 5)', function (): void {
     (new NotificationTemplatesSeeder)->run();

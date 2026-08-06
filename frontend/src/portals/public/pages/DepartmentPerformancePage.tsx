@@ -22,11 +22,19 @@ export default function DepartmentPerformancePage(): JSX.Element {
       </header>
 
       {performance.isLoading ? (
-        <div className="flex items-center justify-center py-16"><Spinner label="Loading department performance" /></div>
+        <div className="flex items-center justify-center py-16">
+          <Spinner label="Loading department performance" />
+        </div>
       ) : performance.isError ? (
-        <EmptyState title="Department performance unavailable" description="Please try again shortly." />
+        <EmptyState
+          title="Department performance unavailable"
+          description="Please try again shortly."
+        />
       ) : departments.length === 0 ? (
-        <EmptyState title="No department data yet" description="Performance figures will appear once departments start resolving reports." />
+        <EmptyState
+          title="No department data yet"
+          description="Performance figures will appear once departments start resolving reports."
+        />
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
           <Table>

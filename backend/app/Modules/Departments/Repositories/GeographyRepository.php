@@ -86,6 +86,7 @@ class GeographyRepository
      */
     /**
      * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
      * @param  Builder<TModel>  $query
      * @return LengthAwarePaginator<int, TModel>
      */

@@ -10,7 +10,6 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
-
 it('creates the prompt_versions table with the expected columns', function (): void {
     expect(Schema::hasTable('prompt_versions'))->toBeTrue();
 

@@ -20,11 +20,16 @@ export function PublicLayout(): JSX.Element {
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center gap-3">
-            <span aria-hidden className="grid h-9 w-9 place-items-center rounded-xl bg-brand-600 text-sm font-bold text-white shadow-sm">
+            <span
+              aria-hidden
+              className="grid h-9 w-9 place-items-center rounded-xl bg-brand-600 text-sm font-bold text-white shadow-sm"
+            >
               CIP
             </span>
             <div>
-              <div className="text-sm font-semibold text-slate-900">Civic Intelligence Platform</div>
+              <div className="text-sm font-semibold text-slate-900">
+                Civic Intelligence Platform
+              </div>
               <div className="text-xs text-slate-500">Public transparency portal</div>
             </div>
           </Link>
@@ -53,7 +58,8 @@ export function PublicLayout(): JSX.Element {
       </main>
 
       <footer className="mx-auto max-w-5xl px-6 py-8 text-center text-xs text-slate-500">
-        Aggregate, privacy-safe statistics only — no citizen identity, no exact locations, no evidence.
+        Aggregate, privacy-safe statistics only — no citizen identity, no exact locations, no
+        evidence.
       </footer>
     </div>
   );

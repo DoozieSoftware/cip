@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
-import { type JSX, useState } from 'react';
+import { type JSX, useState, useMemo } from 'react';
 import {
   IconArrowLeft,
   IconFileText,
@@ -14,7 +14,7 @@ import {
   IconCamera,
   IconAlertTriangle,
 } from '@tabler/icons-react';
-import { type ReportDetail, useReportDetail, useReportTimeline } from '../api/client';
+import { type ReportDetail, useReportDetail, useReportTimeline, lifecycleGroup } from '../api/client';
 import { EmptyState, Spinner } from '../../moderator/design';
 import { StatusBadge } from '../components/StatusBadge';
 import LocationMap from '../components/LocationMap';
@@ -97,14 +97,6 @@ function formatTime(value: string | null | undefined): string {
   });
 }
 
-function formatReferenceId(id: string): string {
-  const cleaned = id.replace(/-/g, '').toUpperCase();
-  if (cleaned.length >= 8) {
-    return `REF-${cleaned.slice(0, 4)}-${cleaned.slice(4, 8)}`;
-  }
-  return `REF-${cleaned}`;
-}
-
 function formatLocation(address?: string | null): string {
   return address ?? 'Address not available';
 }
@@ -114,6 +106,11 @@ export default function ReportDetailPage(): JSX.Element {
   const detail = useReportDetail(id);
   const timeline = useReportTimeline(id);
   const [auditExpanded, setAuditExpanded] = useState(false);
+
+  const sortedTimeline = useMemo(() => {
+    if (!timeline.data) return [];
+    return [...timeline.data].sort((a, b) => b.at.localeCompare(a.at));
+  }, [timeline.data]);
 
   if (detail.isLoading) {
     return (
@@ -164,7 +161,7 @@ export default function ReportDetailPage(): JSX.Element {
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-[#1d1d1b]">{r.title}</p>
             <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#85847f]">
-              {formatReferenceId(r.id)}
+              {r.tracking_number}
             </p>
           </div>
           <StatusBadge status={r.status} className="shrink-0" />
@@ -179,18 +176,28 @@ export default function ReportDetailPage(): JSX.Element {
             Official Reference
           </div>
           <p className="mt-1 font-mono text-lg font-bold tracking-wide text-[#1d1d1b]">
-            {formatReferenceId(r.id)}
+            {r.tracking_number}
           </p>
           <div className="mt-3 flex items-center gap-2">
-            {r.is_verified ? (
+            {lifecycleGroup(r.status.code) === 'closed' ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                 <IconCircleCheck className="h-3.5 w-3.5" stroke={1.6} />
-                Verified
+                Closed
+              </span>
+            ) : lifecycleGroup(r.status.code) === 'rejected' ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">
+                <IconAlertTriangle className="h-3.5 w-3.5" stroke={1.6} />
+                Rejected
+              </span>
+            ) : lifecycleGroup(r.status.code) === 'merged' ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">
+                <IconAlertTriangle className="h-3.5 w-3.5" stroke={1.6} />
+                Merged
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
                 <IconAlertTriangle className="h-3.5 w-3.5" stroke={1.6} />
-                Pending
+                In Progress
               </span>
             )}
           </div>
@@ -227,7 +234,7 @@ export default function ReportDetailPage(): JSX.Element {
             <DetailBlock
               icon={<IconBuilding className="h-3.5 w-3.5" stroke={1.6} />}
               label="Assigned To"
-              value={r.assigned_department?.name ?? 'Pending'}
+              value={r.assigned_department?.name ?? r.department?.name ?? 'Pending'}
             />
           </div>
         </div>
@@ -246,13 +253,13 @@ export default function ReportDetailPage(): JSX.Element {
                 <Spinner label="Loading timeline" />
                 <span className="text-sm text-[#6f6e69]">Loading status history...</span>
               </div>
-            ) : timeline.data && timeline.data.length > 0 ? (
+            ) : sortedTimeline.length > 0 ? (
               <ol className="relative">
-                {timeline.data.map((t, i) => {
+                {sortedTimeline.map((t, i) => {
                   const isLatest = i === 0;
                   return (
                     <li key={i} className="relative flex gap-3 pb-4 last:pb-0">
-                      {i < timeline.data.length - 1 ? (
+                      {i < sortedTimeline.length - 1 ? (
                         <span
                           aria-hidden
                           className="absolute left-[9px] top-5 h-full w-0.5 bg-[#e4e2dc]"
@@ -316,7 +323,7 @@ export default function ReportDetailPage(): JSX.Element {
         </section>
 
         {/* Department Card */}
-        {r.assigned_department ? (
+        {r.assigned_department || r.department ? (
           <section className="rounded-xl bg-white p-4">
             <h2 className="flex items-center gap-2 text-sm font-medium text-[#1d1d1b]">
               <span className="grid h-7 w-7 place-items-center rounded-full bg-[#efeee9]">
@@ -329,7 +336,9 @@ export default function ReportDetailPage(): JSX.Element {
                 <IconBuilding className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
               </div>
               <div>
-                <p className="text-sm font-medium text-[#1d1d1b]">{r.assigned_department.name}</p>
+                <p className="text-sm font-medium text-[#1d1d1b]">
+                  {r.assigned_department?.name ?? r.department?.name ?? 'Pending'}
+                </p>
                 <p className="text-xs text-[#85847f]">Responsible for reviewing this report</p>
               </div>
             </div>
@@ -498,7 +507,7 @@ export default function ReportDetailPage(): JSX.Element {
                   <Spinner label="Loading audit history" />
                   <span className="text-sm text-[#6f6e69]">Loading...</span>
                 </div>
-              ) : timeline.data && timeline.data.length > 0 ? (
+              ) : sortedTimeline.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
@@ -509,7 +518,7 @@ export default function ReportDetailPage(): JSX.Element {
                       </tr>
                     </thead>
                     <tbody>
-                      {timeline.data.map((t, i) => (
+                      {sortedTimeline.map((t, i) => (
                         <tr key={i} className="border-b border-[#e4e2dc] last:border-0">
                           <td className="py-2.5 pr-3 font-medium text-[#1d1d1b]">{t.event}</td>
                           <td className="py-2.5 pr-3 whitespace-nowrap text-[#6f6e69]">
@@ -536,7 +545,7 @@ export default function ReportDetailPage(): JSX.Element {
           <p className="text-center text-xs leading-relaxed text-[#6f6e69]">
             This is an official record generated by the Civic Intelligence Platform. Reference{' '}
             <span className="font-mono font-semibold text-[#1d1d1b]">
-              {formatReferenceId(r.id)}
+              {r.tracking_number}
             </span>{' '}
             must be quoted in all correspondence.
           </p>

@@ -98,6 +98,7 @@ class IntegrationAdminService
             : 3000;
 
         $start = microtime(true);
+
         try {
             $response = Http::timeout(max(1, (int) ceil($timeoutMs / 1000)))
                 ->connectTimeout(2)

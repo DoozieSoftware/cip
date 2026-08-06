@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
-
 
 it('creates the notification_templates table with the expected columns', function (): void {
     expect(Schema::hasTable('notification_templates'))->toBeTrue();
@@ -64,6 +63,7 @@ it('enforces uniqueness on (code, locale, version)', function (): void {
     ]));
 
     $threw = false;
+
     try {
         DB::table('notification_templates')->insert(array_merge($base, [
             'id' => (string) Str::uuid(),

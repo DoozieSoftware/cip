@@ -6,7 +6,12 @@ import { CitizenLayout } from './layout/CitizenLayout';
 import { ErrorBoundary, ErrorState, Spinner } from '../moderator/design';
 import { registerOfflineQueueRetry } from './offline/registerQueueRetry';
 import { getQueue } from './offline/queue';
-import { requestBackgroundSync, onQueueDrain, onPushReceived, onPushNavigate } from './offline/swBridge';
+import {
+  requestBackgroundSync,
+  onQueueDrain,
+  onPushReceived,
+  onPushNavigate,
+} from './offline/swBridge';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const SubmitPage = lazy(() => import('./pages/SubmitPage'));

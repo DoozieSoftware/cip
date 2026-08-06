@@ -12,6 +12,7 @@ use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * T-M11-009 — Department admin surface.
@@ -52,6 +53,7 @@ class DepartmentAdminService
         ?Request $request = null,
     ): string {
         $user = User::query()->find($userId);
+
         if ($user === null) {
             throw ApiException::notFound('User');
         }
@@ -73,7 +75,7 @@ class DepartmentAdminService
             // re-attach updates the audit-relevant fields.
             $dept->users()->syncWithoutDetaching([
                 $user->getKey() => [
-                    'id' => (string) \Illuminate\Support\Str::uuid(),
+                    'id' => (string) Str::uuid(),
                     'is_manager' => $isManager,
                     'assigned_at' => $assignedAt,
                     'created_at' => now(),
@@ -114,6 +116,7 @@ class DepartmentAdminService
         ?Request $request = null,
     ): bool {
         $attached = $dept->users()->where('users.id', $userId)->exists();
+
         if (! $attached) {
             return false;
         }
@@ -229,9 +232,11 @@ class DepartmentAdminService
         if ($matrix === null) {
             return;
         }
+
         if (! is_array($matrix)) {
             throw new ApiException('DEPARTMENT_ESCALATION_INVALID', 'escalation_matrix must be an array.', 422);
         }
+
         foreach ($matrix as $row) {
             if (! is_array($row) || ! isset($row['after_minutes'])) {
                 throw new ApiException('DEPARTMENT_ESCALATION_INVALID', 'Each escalation_matrix row needs after_minutes.', 422);
@@ -244,14 +249,17 @@ class DepartmentAdminService
         if ($hours === null) {
             return;
         }
+
         if (! is_array($hours)) {
             throw new ApiException('DEPARTMENT_WORKING_HOURS_INVALID', 'working_hours must be an array.', 422);
         }
         $allowed = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
         foreach ($hours as $row) {
             if (! is_array($row) || ! isset($row['day'], $row['open'], $row['close'])) {
                 throw new ApiException('DEPARTMENT_WORKING_HOURS_INVALID', 'Each working_hours row needs day, open, close.', 422);
             }
+
             if (! in_array($row['day'], $allowed, true)) {
                 throw new ApiException('DEPARTMENT_WORKING_HOURS_INVALID', "Invalid day '{$row['day']}'.", 422);
             }
@@ -263,6 +271,7 @@ class DepartmentAdminService
         if ($holidays === null) {
             return;
         }
+
         if (! is_array($holidays)) {
             throw new ApiException('DEPARTMENT_HOLIDAY_INVALID', 'holiday_calendar must be an array.', 422);
         }

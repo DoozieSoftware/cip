@@ -6,7 +6,7 @@ use App\Modules\Departments\Exports\DepartmentReportsExport;
 use App\Modules\Departments\Models\Department;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
-use App\Modules\Users\Models\User;
+use App\Modules\Workflow\Models\WorkflowDefinition;
 use Database\Seeders\DefaultWorkflowSeeder;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -23,7 +23,7 @@ beforeEach(function (): void {
 
 it('rejects export without auth', function (): void {
     $dept = Department::factory()->create();
-    $this->getJson("/api/v1/department/reports/export?format=csv")->assertStatus(401);
+    $this->getJson('/api/v1/department/reports/export?format=csv')->assertStatus(401);
 });
 
 it('exports CSV with the right MIME and a downloadable file', function (): void {
@@ -80,7 +80,7 @@ it('respects the status filter on the export', function (): void {
     $assigned = ReportStatus::query()->where('code', 'assigned')->firstOrFail();
     $accepted = ReportStatus::query()->where('code', 'accepted')->firstOrFail();
     $inProg = ReportStatus::query()->where('code', 'in_progress')->firstOrFail();
-    $workflow = \App\Modules\Workflow\Models\WorkflowDefinition::query()->where('code', 'civic_default')->firstOrFail();
+    $workflow = WorkflowDefinition::query()->where('code', 'civic_default')->firstOrFail();
 
     // 2 reports in `assigned` (in scope), 1 in `accepted` (out of scope)
     Report::factory()->count(2)->create([

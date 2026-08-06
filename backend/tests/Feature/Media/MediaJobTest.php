@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Modules\Media\Jobs\ComputeHashesJob;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Media\Jobs\ExtractVideoMetadataJob;
 use App\Modules\Media\Jobs\GenerateThumbnailJob;
 use App\Modules\Media\Models\Media;
@@ -15,6 +14,7 @@ use App\Modules\Media\Services\MimeValidator;
 use App\Modules\Media\Services\ThumbnailService;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Users\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
@@ -23,7 +23,6 @@ use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
-
 
 /**
  * M5 queue behaviour. Per docs/14 §16 every media

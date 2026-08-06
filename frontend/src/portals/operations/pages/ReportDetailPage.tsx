@@ -545,7 +545,9 @@ export default function ReportDetailPage() {
                 {proof.length === 0 ? (
                   <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-emerald-300 bg-white/70 py-8 text-center">
                     <IconUpload size={20} stroke={1.6} className="text-emerald-600" />
-                    <p className="mt-2 text-xs text-[#6f6e69]">Upload proof photos after the field crew completes the work.</p>
+                    <p className="mt-2 text-xs text-[#6f6e69]">
+                      Upload proof photos after the field crew completes the work.
+                    </p>
                   </div>
                 ) : (
                   <MediaGallery items={proof} label="Proof of completion" />

@@ -26,6 +26,7 @@ class SecurityDashboardController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+
         if (! $user instanceof User) {
             throw new ApiException('UNAUTHENTICATED', 'Authentication required.', 401);
         }
@@ -33,11 +34,13 @@ class SecurityDashboardController extends Controller
         // permission — the latter is what the Super Admin's Roles &
         // Permissions screen actually edits, so it needs a real effect here.
         $hasPermission = false;
+
         try {
             $hasPermission = $user->hasPermissionTo('security.view');
         } catch (\Throwable) {
             // Permission not seeded/registered — fall through to the role check.
         }
+
         if (! $user->hasAnyRole(['super_admin', 'system', 'auditor', 'department_admin']) && ! $hasPermission) {
             throw new ApiException('FORBIDDEN', 'Security dashboard is read-only for auditors and admins.', 403);
         }

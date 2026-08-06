@@ -8,8 +8,16 @@ describe('evidencePreviewHandlers', () => {
 
     let ctxCalls = 0;
     let dragCalls = 0;
-    const ctxEvent = { preventDefault: () => { ctxCalls += 1; } } as unknown as React.MouseEvent;
-    const dragEvent = { preventDefault: () => { dragCalls += 1; } } as unknown as React.DragEvent;
+    const ctxEvent = {
+      preventDefault: () => {
+        ctxCalls += 1;
+      },
+    } as unknown as React.MouseEvent;
+    const dragEvent = {
+      preventDefault: () => {
+        dragCalls += 1;
+      },
+    } as unknown as React.DragEvent;
 
     handlers.onContextMenu(ctxEvent);
     handlers.onDragStart(dragEvent);
@@ -52,12 +60,18 @@ function makeJpeg(byteOrder: 'MM' | 'II'): Uint8Array {
   const bytes = new Uint8Array(buf);
   const dv = new DataView(buf);
 
-  bytes[0] = 0xff; bytes[1] = 0xd8; // SOI
-  bytes[2] = 0xff; bytes[3] = 0xe1; // APP1
+  bytes[0] = 0xff;
+  bytes[1] = 0xd8; // SOI
+  bytes[2] = 0xff;
+  bytes[3] = 0xe1; // APP1
   dv.setUint16(4, 2 + 6 + tiffLen, false); // segment length (big-endian)
   const exif = 6;
-  bytes[exif] = 0x45; bytes[exif + 1] = 0x78; bytes[exif + 2] = 0x69;
-  bytes[exif + 3] = 0x66; bytes[exif + 4] = 0x00; bytes[exif + 5] = 0x00;
+  bytes[exif] = 0x45;
+  bytes[exif + 1] = 0x78;
+  bytes[exif + 2] = 0x69;
+  bytes[exif + 3] = 0x66;
+  bytes[exif + 4] = 0x00;
+  bytes[exif + 5] = 0x00;
 
   const ts = exif + 6; // tiffStart
   bytes[ts] = little ? 0x49 : 0x4d;
@@ -70,15 +84,30 @@ function makeJpeg(byteOrder: 'MM' | 'II'): Uint8Array {
 
   // IFD0
   u16(8, 3);
-  u16(10, 0x010f); u16(12, 2); u32(14, 4); u32(18, 0x41424344); // Make
-  u16(22, 0x0112); u16(24, 3); u32(26, 1); u16(30, 6);          // Orientation (not stripped)
-  u16(34, 0x8825); u16(36, 4); u32(38, 1); u32(42, 50);         // GPS info pointer -> 50
+  u16(10, 0x010f);
+  u16(12, 2);
+  u32(14, 4);
+  u32(18, 0x41424344); // Make
+  u16(22, 0x0112);
+  u16(24, 3);
+  u32(26, 1);
+  u16(30, 6); // Orientation (not stripped)
+  u16(34, 0x8825);
+  u16(36, 4);
+  u32(38, 1);
+  u32(42, 50); // GPS info pointer -> 50
   u32(46, 0); // next IFD
 
   // GPS IFD @ 50
   u16(50, 2);
-  u16(52, 0x0002); u16(54, 4); u32(56, 1); u32(60, 0x11223344); // GPSLatitude
-  u16(64, 0x0004); u16(66, 4); u32(68, 1); u32(72, 0x55667788); // GPSLongitude
+  u16(52, 0x0002);
+  u16(54, 4);
+  u32(56, 1);
+  u32(60, 0x11223344); // GPSLatitude
+  u16(64, 0x0004);
+  u16(66, 4);
+  u32(68, 1);
+  u32(72, 0x55667788); // GPSLongitude
   u32(76, 0); // next IFD
 
   return bytes;
@@ -97,9 +126,9 @@ describe('stripExif', () => {
     expect(out[0]).toBe(0xff);
     expect(out[1]).toBe(0xd8); // SOI intact
 
-    expect(allZero(out, 72, 76)).toBe(true);  // GPSLatitude value
-    expect(allZero(out, 84, 88)).toBe(true);  // GPSLongitude value
-    expect(allZero(out, 30, 34)).toBe(true);  // Make value
+    expect(allZero(out, 72, 76)).toBe(true); // GPSLatitude value
+    expect(allZero(out, 84, 88)).toBe(true); // GPSLongitude value
+    expect(allZero(out, 30, 34)).toBe(true); // Make value
 
     expect(allZero(out, 42, 46)).toBe(false); // Orientation NOT stripped
     expect(allZero(out, 54, 58)).toBe(false); // GPS pointer NOT stripped
@@ -112,9 +141,9 @@ describe('stripExif', () => {
     expect(out[0]).toBe(0xff);
     expect(out[1]).toBe(0xd8);
 
-    expect(allZero(out, 72, 76)).toBe(true);  // GPSLatitude value
-    expect(allZero(out, 84, 88)).toBe(true);  // GPSLongitude value
-    expect(allZero(out, 30, 34)).toBe(true);  // Make value
+    expect(allZero(out, 72, 76)).toBe(true); // GPSLatitude value
+    expect(allZero(out, 84, 88)).toBe(true); // GPSLongitude value
+    expect(allZero(out, 30, 34)).toBe(true); // Make value
 
     expect(allZero(out, 42, 46)).toBe(false); // Orientation NOT stripped
     expect(allZero(out, 54, 58)).toBe(false); // GPS pointer NOT stripped

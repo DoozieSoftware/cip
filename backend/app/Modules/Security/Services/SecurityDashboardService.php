@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Security\Services;
 
-use App\Modules\Security\Models\AuditLog;
 use App\Modules\Security\Models\SecurityEvent;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Carbon;

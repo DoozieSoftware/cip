@@ -3,12 +3,12 @@
 declare(strict_types=1);
 
 use App\Modules\Authentication\Models\Otp;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Authentication\Services\AuthenticationService;
 use App\Modules\Authentication\Services\OtpService;
 use App\Modules\Security\Models\SecurityEvent;
 use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 

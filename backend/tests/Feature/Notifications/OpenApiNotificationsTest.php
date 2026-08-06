@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * M9 OpenAPI contract test for the notifications surface.
@@ -16,7 +17,6 @@ declare(strict_types=1);
  * The CI workflow runs `swagger-cli validate` as a separate
  * lint step; this test is the fast feedback inside Pest.
  */
-
 it('exposes every M9 notifications endpoint in the OpenAPI document', function (): void {
     $yaml = file_get_contents(storage_path('api-docs/openapi.yaml'));
     expect($yaml)->not->toBeFalse();
@@ -98,7 +98,7 @@ it('the OpenAPI document is parseable as YAML and uses OpenAPI 3', function (): 
     $raw = file_get_contents(storage_path('api-docs/openapi.yaml'));
     expect($raw)->toContain('openapi: 3.0.0');
 
-    $spec = \Symfony\Component\Yaml\Yaml::parseFile(storage_path('api-docs/openapi.yaml'));
+    $spec = Yaml::parseFile(storage_path('api-docs/openapi.yaml'));
     expect($spec)->toBeArray();
     expect($spec['openapi'])->toStartWith('3.');
 });

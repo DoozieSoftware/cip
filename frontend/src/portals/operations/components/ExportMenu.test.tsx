@@ -36,9 +36,11 @@ describe('ExportMenu (T-M11-021)', () => {
     // A plain <a href> navigation can't attach the bearer Authorization
     // header this API requires — the download must go through fetch()
     // like every other authenticated request, not a direct URL visit.
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response(new Blob(['tracking,title\n'], { type: 'text/csv' }), { status: 200 }),
-    );
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(new Blob(['tracking,title\n'], { type: 'text/csv' }), { status: 200 }),
+      );
     vi.stubGlobal('fetch', fetchSpy);
     URL.createObjectURL = vi.fn(() => 'blob:mock');
     URL.revokeObjectURL = vi.fn();

@@ -20,7 +20,11 @@ class FakeBeforeInstallPromptEvent extends Event {
 
 describe('InstallPrompt', () => {
   beforeEach(() => {
-    try { localStorage.clear(); } catch { /* jsdom may not have it */ }
+    try {
+      localStorage.clear();
+    } catch {
+      /* jsdom may not have it */
+    }
   });
 
   afterEach(() => {
@@ -36,31 +40,47 @@ describe('InstallPrompt', () => {
   it('renders the prompt after beforeinstallprompt fires', () => {
     render(<InstallPrompt />);
     const event = new FakeBeforeInstallPromptEvent();
-    act(() => { window.dispatchEvent(event); });
+    act(() => {
+      window.dispatchEvent(event);
+    });
 
-    expect(screen.getByRole('dialog', { name: /install civic intelligence platform/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('dialog', { name: /install civic intelligence platform/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^install$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /not now/i })).toBeInTheDocument();
   });
 
   it('does not show the prompt when previously dismissed within 7 days', () => {
     const recent = String(Date.now() - 1000 * 60 * 60); // 1 hour ago
-    try { localStorage.setItem('cip.pwa.installPrompt.dismissedAt', recent); } catch { /* */ }
+    try {
+      localStorage.setItem('cip.pwa.installPrompt.dismissedAt', recent);
+    } catch {
+      /* */
+    }
 
     render(<InstallPrompt />);
-    act(() => { window.dispatchEvent(new FakeBeforeInstallPromptEvent()); });
+    act(() => {
+      window.dispatchEvent(new FakeBeforeInstallPromptEvent());
+    });
 
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('hides the dialog and records a dismissal when "Not now" is clicked', () => {
     render(<InstallPrompt />);
-    act(() => { window.dispatchEvent(new FakeBeforeInstallPromptEvent()); });
+    act(() => {
+      window.dispatchEvent(new FakeBeforeInstallPromptEvent());
+    });
 
     fireEvent.click(screen.getByRole('button', { name: /not now/i }));
     expect(screen.queryByRole('dialog')).toBeNull();
     let stored: string | null = null;
-    try { stored = localStorage.getItem('cip.pwa.installPrompt.dismissedAt'); } catch { /* */ }
+    try {
+      stored = localStorage.getItem('cip.pwa.installPrompt.dismissedAt');
+    } catch {
+      /* */
+    }
     expect(stored).not.toBeNull();
   });
 
@@ -69,7 +89,9 @@ describe('InstallPrompt', () => {
 
     render(<InstallPrompt />);
     const event = new FakeBeforeInstallPromptEvent();
-    act(() => { window.dispatchEvent(event); });
+    act(() => {
+      window.dispatchEvent(event);
+    });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /^install$/i }));
@@ -100,7 +122,9 @@ describe('InstallPrompt', () => {
     );
 
     render(<InstallPrompt />);
-    act(() => { window.dispatchEvent(new FakeBeforeInstallPromptEvent()); });
+    act(() => {
+      window.dispatchEvent(new FakeBeforeInstallPromptEvent());
+    });
     expect(screen.queryByRole('dialog')).toBeNull();
 
     matchMediaSpy.mockRestore();

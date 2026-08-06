@@ -8,11 +8,12 @@ declare(strict_types=1);
  */
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Symfony\Component\Yaml\Yaml;
 
 uses(RefreshDatabase::class);
 
 it('declares the admin audit-logs endpoint under the Super Admin tag', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(
+    $doc = Yaml::parseFile(
         base_path('storage/api-docs/openapi.yaml'),
     );
     $paths = $doc['paths'] ?? [];
@@ -24,7 +25,7 @@ it('declares the admin audit-logs endpoint under the Super Admin tag', function 
 });
 
 it('declares the AuditLog + AuditLogListResponse schemas', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(
+    $doc = Yaml::parseFile(
         base_path('storage/api-docs/openapi.yaml'),
     );
     $schemas = $doc['components']['schemas'] ?? [];

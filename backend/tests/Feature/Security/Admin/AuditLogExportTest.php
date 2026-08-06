@@ -43,6 +43,7 @@ function auditAdmin(): User
 {
     $u = User::factory()->create();
     $u->assignRole('super_admin');
+
     return $u;
 }
 
@@ -50,6 +51,7 @@ function auditCitizen(): User
 {
     $u = User::factory()->create();
     $u->assignRole('citizen');
+
     return $u;
 }
 
@@ -98,7 +100,7 @@ it('composes entity, action, user_id, and ip filters together', function (): voi
     AuditLog::create(['user_id' => $admin->id, 'action' => 'user.create', 'entity' => 'users', 'entity_id' => 'u-1', 'ip' => '10.0.0.1']);
 
     $response = $this->actingAs($admin, 'sanctum')
-        ->getJson('/api/v1/admin/audit-logs?entity=reports&action=report.update&user_id=' . $admin->id . '&ip=10.0.0.1');
+        ->getJson('/api/v1/admin/audit-logs?entity=reports&action=report.update&user_id='.$admin->id.'&ip=10.0.0.1');
 
     $response->assertOk();
     $body = $response->json();

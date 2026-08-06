@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 use App\Modules\Authentication\Models\Otp;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Authentication\Services\OtpService;
 use App\Modules\Shared\Exceptions\ApiException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 

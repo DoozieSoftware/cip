@@ -37,7 +37,12 @@ const NAV: NavItem[] = [
   { to: '/operations/map', label: 'GIS Map', icon: IconMap },
   { to: '/operations/reports/export', label: 'Export', icon: IconDatabaseExport },
   { to: '/operations/audit', label: 'Audit', icon: IconShield, allowedRoles: AUDIT_SECURITY_ROLES },
-  { to: '/operations/security', label: 'Security', icon: IconLock, allowedRoles: AUDIT_SECURITY_ROLES },
+  {
+    to: '/operations/security',
+    label: 'Security',
+    icon: IconLock,
+    allowedRoles: AUDIT_SECURITY_ROLES,
+  },
   {
     to: '/operations/admin',
     label: 'Admin',

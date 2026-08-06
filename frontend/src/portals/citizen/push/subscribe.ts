@@ -28,7 +28,12 @@ export interface PushSupport {
 }
 
 export function pushSupport(): PushSupport {
-  if (typeof window === 'undefined' || !('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+  if (
+    typeof window === 'undefined' ||
+    !('Notification' in window) ||
+    !('serviceWorker' in navigator) ||
+    !('PushManager' in window)
+  ) {
     return { supported: false, permission: null };
   }
   return { supported: true, permission: Notification.permission };
@@ -41,7 +46,12 @@ export interface SubscribeOptions {
 
 export interface SubscribeResult {
   ok: boolean;
-  reason?: 'unsupported' | 'permission_denied' | 'no_service_worker' | 'subscription_failed' | 'persist_failed';
+  reason?:
+    | 'unsupported'
+    | 'permission_denied'
+    | 'no_service_worker'
+    | 'subscription_failed'
+    | 'persist_failed';
   /** Human-readable detail for the failing branch — surfaced in the toast. */
   detail?: string;
   subscription?: PushSubscriptionJSON;
@@ -55,7 +65,9 @@ export interface SubscribeResult {
 async function resolveVapidKey(provided?: string | null): Promise<string | null> {
   if (provided) return provided;
   try {
-    const res = await apiRequest<{ data: { public_key: string } }>('/notifications/push/vapid-public-key');
+    const res = await apiRequest<{ data: { public_key: string } }>(
+      '/notifications/push/vapid-public-key',
+    );
     return res.data.public_key ?? null;
   } catch {
     return null;
@@ -77,7 +89,8 @@ export async function subscribeToPush(opts: SubscribeOptions = {}): Promise<Subs
   }
 
   const vapidKey = await resolveVapidKey(opts.applicationServerKey ?? null);
-  if (!vapidKey) return { ok: false, reason: 'subscription_failed', detail: 'No VAPID public key configured.' };
+  if (!vapidKey)
+    return { ok: false, reason: 'subscription_failed', detail: 'No VAPID public key configured.' };
 
   let sub: PushSubscription;
   try {
@@ -126,7 +139,11 @@ export async function subscribeToPush(opts: SubscribeOptions = {}): Promise<Subs
   }
 
   if (json.endpoint) {
-    try { localStorage.setItem(PUSH_STORAGE_KEY, json.endpoint); } catch { /* noop */ }
+    try {
+      localStorage.setItem(PUSH_STORAGE_KEY, json.endpoint);
+    } catch {
+      /* noop */
+    }
   }
   return { ok: true, subscription: json };
 }
@@ -134,10 +151,14 @@ export async function subscribeToPush(opts: SubscribeOptions = {}): Promise<Subs
 /**
  * Unsubscribe and tell the backend.
  */
-export async function unsubscribeFromPush(opts: { subscribeUrl?: string; endpoint?: string | null } = {}): Promise<boolean> {
+export async function unsubscribeFromPush(
+  opts: { subscribeUrl?: string; endpoint?: string | null } = {},
+): Promise<boolean> {
   if (!pushSupport().supported) return true;
 
-  let endpoint = opts.endpoint ?? (typeof localStorage !== 'undefined' ? localStorage.getItem(PUSH_STORAGE_KEY) : null);
+  let endpoint =
+    opts.endpoint ??
+    (typeof localStorage !== 'undefined' ? localStorage.getItem(PUSH_STORAGE_KEY) : null);
   try {
     const reg = await navigator.serviceWorker.getRegistration();
     const sub = reg ? await reg.pushManager.getSubscription() : null;
@@ -156,7 +177,11 @@ export async function unsubscribeFromPush(opts: { subscribeUrl?: string; endpoin
     } catch {
       // best-effort
     }
-    try { localStorage.removeItem(PUSH_STORAGE_KEY); } catch { /* noop */ }
+    try {
+      localStorage.removeItem(PUSH_STORAGE_KEY);
+    } catch {
+      /* noop */
+    }
   }
   return true;
 }

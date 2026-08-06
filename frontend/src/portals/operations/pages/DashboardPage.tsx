@@ -110,9 +110,7 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-[#1d1d1b]">
           Department at a glance
         </h1>
-        <p className="text-sm text-[#6f6e69]">
-          Operational load for the officer&apos;s department
-        </p>
+        <p className="text-sm text-[#6f6e69]">Operational load for the officer&apos;s department</p>
       </div>
 
       {/* Metrics */}

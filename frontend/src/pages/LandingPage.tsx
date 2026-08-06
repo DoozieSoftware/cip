@@ -104,7 +104,9 @@ export function LandingPage(): JSX.Element {
               <IconBuildingCommunity className="h-5 w-5" stroke={1.7} />
             </span>
             <div>
-              <div className="text-sm font-semibold tracking-[-0.01em] text-[#1d1d1b]">CIP Karnataka</div>
+              <div className="text-sm font-semibold tracking-[-0.01em] text-[#1d1d1b]">
+                CIP Karnataka
+              </div>
               <div className="text-[11px] text-[#777670]">Citizen services</div>
             </div>
           </div>
@@ -150,7 +152,8 @@ export function LandingPage(): JSX.Element {
             See the city respond.
           </h1>
           <p className="mt-4 max-w-2xl text-lg leading-7 text-[#6f6e69]">
-            Geo-tagged reports. AI-assisted moderation. Department routing. End-to-end civic workflow — for citizens, moderators, departments, and platform admins.
+            Geo-tagged reports. AI-assisted moderation. Department routing. End-to-end civic
+            workflow — for citizens, moderators, departments, and platform admins.
           </p>
         </section>
 
@@ -158,9 +161,12 @@ export function LandingPage(): JSX.Element {
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {PORTALS.map((p) => {
             const Icon = p.icon;
-            const href = isAuthenticated && user
-              ? (p.roles.some((r) => user.roles.includes(r)) ? p.path : '/login')
-              : p.path;
+            const href =
+              isAuthenticated && user
+                ? p.roles.some((r) => user.roles.includes(r))
+                  ? p.path
+                  : '/login'
+                : p.path;
             return (
               <Link
                 key={p.path}
@@ -175,12 +181,17 @@ export function LandingPage(): JSX.Element {
                     {p.audience}
                   </span>
                 </div>
-                <h2 className="mt-5 text-xl font-medium tracking-[-0.02em] text-[#1d1d1b]">{p.title}</h2>
+                <h2 className="mt-5 text-xl font-medium tracking-[-0.02em] text-[#1d1d1b]">
+                  {p.title}
+                </h2>
                 <p className="mt-2 text-sm leading-6 text-[#6f6e69]">{p.description}</p>
                 <p className="mt-3 text-xs text-[#85847f]">{p.highlight}</p>
                 <p className="mt-5 inline-flex items-center gap-1 text-sm font-medium text-[#1d1d1b]">
                   Open portal
-                  <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" stroke={1.7} />
+                  <IconArrowRight
+                    className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                    stroke={1.7}
+                  />
                 </p>
               </Link>
             );
@@ -188,20 +199,42 @@ export function LandingPage(): JSX.Element {
         </section>
 
         {/* Stats */}
-        <section aria-label="Platform statistics" className="mt-12 rounded-2xl border border-black/10 bg-white">
+        <section
+          aria-label="Platform statistics"
+          className="mt-12 rounded-2xl border border-black/10 bg-white"
+        >
           {stats.isLoading ? (
             <div className="p-8 text-center text-sm text-[#777670]">Loading live stats…</div>
           ) : stats.isError || !stats.data ? (
-            <div className="p-8 text-center text-sm text-[#777670]">Live stats are unavailable right now.</div>
+            <div className="p-8 text-center text-sm text-[#777670]">
+              Live stats are unavailable right now.
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-3">
               {[
-                { label: 'Reports processed', value: stats.data.total_reports.toLocaleString(), sub: 'all time' },
-                { label: 'AI-classified', value: `${stats.data.ai_classified_percent}%`, sub: 'before human review' },
-                { label: 'Median time to assign', value: formatDuration(stats.data.median_assign_seconds), sub: 'submit → department' },
+                {
+                  label: 'Reports processed',
+                  value: stats.data.total_reports.toLocaleString(),
+                  sub: 'all time',
+                },
+                {
+                  label: 'AI-classified',
+                  value: `${stats.data.ai_classified_percent}%`,
+                  sub: 'before human review',
+                },
+                {
+                  label: 'Median time to assign',
+                  value: formatDuration(stats.data.median_assign_seconds),
+                  sub: 'submit → department',
+                },
               ].map((m) => (
-                <div key={m.label} className="border-b border-[#e4e2dc] p-6 text-center last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
-                  <div className="text-3xl font-normal tracking-[-0.03em] text-[#1d1d1b] sm:text-4xl">{m.value}</div>
+                <div
+                  key={m.label}
+                  className="border-b border-[#e4e2dc] p-6 text-center last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"
+                >
+                  <div className="text-3xl font-normal tracking-[-0.03em] text-[#1d1d1b] sm:text-4xl">
+                    {m.value}
+                  </div>
                   <div className="mt-2 text-sm font-medium text-[#1d1d1b]">{m.label}</div>
                   <div className="text-xs text-[#777670]">{m.sub}</div>
                 </div>
@@ -212,7 +245,10 @@ export function LandingPage(): JSX.Element {
 
         {/* Footer links */}
         <div className="mt-8 flex flex-wrap items-center justify-between gap-4 text-sm">
-          <Link to="/public" className="inline-flex items-center gap-1 font-medium text-[#1d1d1b] hover:underline">
+          <Link
+            to="/public"
+            className="inline-flex items-center gap-1 font-medium text-[#1d1d1b] hover:underline"
+          >
             <IconGlobe className="h-4 w-4" stroke={1.6} />
             Public transparency portal
           </Link>

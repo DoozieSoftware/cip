@@ -169,11 +169,13 @@ class GeographyService
     private function stringifyScalars(array $values): array
     {
         $out = [];
+
         foreach ($values as $k => $v) {
             if (is_scalar($v) || $v === null) {
                 $out[$k] = is_bool($v) ? (int) $v : (is_null($v) ? null : (string) $v);
             }
         }
+
         return $out;
     }
 

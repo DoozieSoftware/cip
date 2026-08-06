@@ -72,7 +72,7 @@ class Integration extends Model
     protected function casts(): array
     {
         return [
-            'credentials' => 'array',
+            'credentials' => 'encrypted:array',
             'settings' => 'array',
             'last_check_at' => 'datetime',
         ];

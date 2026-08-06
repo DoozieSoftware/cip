@@ -8,11 +8,12 @@ declare(strict_types=1);
  */
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Symfony\Component\Yaml\Yaml;
 
 uses(RefreshDatabase::class);
 
 it('declares the admin report-type endpoints under the Super Admin tag', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(
+    $doc = Yaml::parseFile(
         base_path('storage/api-docs/openapi.yaml'),
     );
     $paths = $doc['paths'] ?? [];
@@ -24,27 +25,30 @@ it('declares the admin report-type endpoints under the Super Admin tag', functio
     ];
 
     $missing = [];
+
     foreach ($expected as $path => $methods) {
         if (! array_key_exists($path, $paths)) {
             $missing[] = $path;
             continue;
         }
+
         foreach ($methods as $method) {
             if (! array_key_exists($method, $paths[$path])) {
                 $missing[] = "{$method} on {$path}";
                 continue;
             }
+
             if (! in_array('Super Admin', $paths[$path][$method]['tags'] ?? [], true)) {
                 $missing[] = "tag Super Admin on {$method} {$path}";
             }
         }
     }
 
-    expect($missing)->toBe([], 'OpenAPI gaps: ' . implode(', ', $missing));
+    expect($missing)->toBe([], 'OpenAPI gaps: '.implode(', ', $missing));
 });
 
 it('declares the report-type request/response schemas', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(
+    $doc = Yaml::parseFile(
         base_path('storage/api-docs/openapi.yaml'),
     );
     $schemas = $doc['components']['schemas'] ?? [];
@@ -63,7 +67,7 @@ it('declares the report-type request/response schemas', function (): void {
 });
 
 it('the ReportTypeStoreRequest requires name and code', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(
+    $doc = Yaml::parseFile(
         base_path('storage/api-docs/openapi.yaml'),
     );
     $required = $doc['components']['schemas']['ReportTypeStoreRequest']['required'] ?? [];

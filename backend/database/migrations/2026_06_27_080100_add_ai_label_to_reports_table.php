@@ -27,7 +27,7 @@ return new class extends Migration
         });
 
         if (Schema::getConnection()->getDriverName() === 'mysql') {
-            DB::statement("ALTER TABLE reports ADD INDEX reports_ai_label_idx (ai_label)");
+            DB::statement('ALTER TABLE reports ADD INDEX reports_ai_label_idx (ai_label)');
         }
     }
 

@@ -1,5 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardBody, CardHeader, CardTitle, EmptyState, Select, Spinner, Badge } from '../design';
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+  Select,
+  Spinner,
+  Badge,
+} from '../design';
 import { analyticsApi } from '../api/moderator';
 import { useState } from 'react';
 
@@ -18,7 +27,12 @@ export default function AiPerformancePage() {
     );
   }
   if (q.isError || !q.data) {
-    return <EmptyState title="Could not load AI performance" description="The /moderator/analytics/ai-performance endpoint did not respond." />;
+    return (
+      <EmptyState
+        title="Could not load AI performance"
+        description="The /moderator/analytics/ai-performance endpoint did not respond."
+      />
+    );
   }
 
   const a = q.data;
@@ -27,7 +41,9 @@ export default function AiPerformancePage() {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">AI performance</h1>
-          <p className="text-sm text-slate-500">Override rate per provider — drives M8 prompt tuning.</p>
+          <p className="text-sm text-slate-500">
+            Override rate per provider — drives M8 prompt tuning.
+          </p>
         </div>
         <Select
           aria-label="Time window"
@@ -52,15 +68,31 @@ export default function AiPerformancePage() {
         <Card>
           <CardBody>
             <p className="text-xs uppercase tracking-wide text-slate-500">Overridden</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900">{a.overridden_by_moderator}</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">
+              {a.overridden_by_moderator}
+            </p>
           </CardBody>
         </Card>
         <Card>
           <CardBody>
             <p className="text-xs uppercase tracking-wide text-slate-500">Override rate</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900">{a.override_rate_pct.toFixed(1)}%</p>
-            <Badge tone={a.override_rate_pct < 10 ? 'success' : a.override_rate_pct < 25 ? 'warning' : 'danger'}>
-              {a.override_rate_pct < 10 ? 'healthy' : a.override_rate_pct < 25 ? 'review prompts' : 'consider swap'}
+            <p className="mt-1 text-2xl font-semibold text-slate-900">
+              {a.override_rate_pct.toFixed(1)}%
+            </p>
+            <Badge
+              tone={
+                a.override_rate_pct < 10
+                  ? 'success'
+                  : a.override_rate_pct < 25
+                    ? 'warning'
+                    : 'danger'
+              }
+            >
+              {a.override_rate_pct < 10
+                ? 'healthy'
+                : a.override_rate_pct < 25
+                  ? 'review prompts'
+                  : 'consider swap'}
             </Badge>
           </CardBody>
         </Card>
@@ -86,7 +118,8 @@ export default function AiPerformancePage() {
                   <td className="px-3 py-2 font-mono text-xs">{p.provider_code}</td>
                   <td className="px-3 py-2">{p.total}</td>
                   <td className="px-3 py-2">
-                    {p.overridden} ({p.total > 0 ? ((p.overridden / p.total) * 100).toFixed(0) : 0}%)
+                    {p.overridden} ({p.total > 0 ? ((p.overridden / p.total) * 100).toFixed(0) : 0}
+                    %)
                   </td>
                   <td className="px-3 py-2">{p.avg_confidence.toFixed(1)}%</td>
                 </tr>

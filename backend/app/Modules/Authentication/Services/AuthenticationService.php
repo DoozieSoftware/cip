@@ -39,6 +39,8 @@ class AuthenticationService extends BaseService
 
     private const LOGIN_LOCKOUT_WINDOW_MINUTES = 15;
 
+    private const DENIED_STATUSES = ['suspended', 'disabled', 'pending'];
+
     public function __construct(
         private readonly OtpService $otpService,
         private readonly RefreshTokenService $refreshTokens,
@@ -71,6 +73,7 @@ class AuthenticationService extends BaseService
                 $user->save();
                 $created = true;
             } else {
+                $this->assertUserActive($user);
                 $user->otp_verified_at = now();
                 $user->save();
             }
@@ -157,6 +160,8 @@ class AuthenticationService extends BaseService
             throw ApiException::unauthorized('Invalid mobile or password.');
         }
 
+        $this->assertUserActive($user);
+
         $user->recordLogin($ip ?? '0.0.0.0');
 
         $token = $user->createToken(
@@ -203,6 +208,8 @@ class AuthenticationService extends BaseService
         $rotated = $this->refreshTokens->rotate($plainRefreshToken, $ip, $userAgent);
         $user = $rotated['user'];
 
+        $this->assertUserActive($user);
+
         $token = $user->createToken(
             name: 'refresh',
             abilities: ['*'],
@@ -234,6 +241,13 @@ class AuthenticationService extends BaseService
         }
 
         $this->refreshTokens->revokeAllForUser($user);
+    }
+
+    private function assertUserActive(User $user): void
+    {
+        if (in_array((string) $user->status, self::DENIED_STATUSES, true) || $user->trashed()) {
+            throw ApiException::forbidden('Account is suspended or disabled. Contact support.');
+        }
     }
 
     /**

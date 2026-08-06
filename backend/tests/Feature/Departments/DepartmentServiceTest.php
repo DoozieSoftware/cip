@@ -9,8 +9,8 @@ use App\Modules\Departments\Models\Department;
 use App\Modules\Departments\Repositories\DepartmentRepository;
 use App\Modules\Departments\Services\DepartmentService;
 use App\Modules\Shared\Exceptions\ApiException;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 
 uses(RefreshDatabase::class);
 

@@ -22,7 +22,10 @@ test.describe('Moderator portal — shell', () => {
 
   test('navigates to the review queue', async ({ page }) => {
     await page.goto('/moderator');
-    await page.getByRole('link', { name: /review queue/i }).first().click();
+    await page
+      .getByRole('link', { name: /review queue/i })
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/moderator\/queue$/);
     await expect(page.getByRole('heading', { name: /review queue/i })).toBeVisible();
   });

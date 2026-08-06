@@ -72,7 +72,7 @@ class NotificationChannelConfig extends Model
     protected function casts(): array
     {
         return [
-            'credentials' => 'array',
+            'credentials' => 'encrypted:array',
             'retry_policy' => 'array',
             'settings' => 'array',
             'per_locale_defaults' => 'array',

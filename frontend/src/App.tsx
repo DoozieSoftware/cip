@@ -62,7 +62,9 @@ export default function App() {
             <Route
               path="/operations/*"
               element={
-                <ProtectedRoute allow={['department_officer', 'department_admin', 'super_admin', 'system']}>
+                <ProtectedRoute
+                  allow={['department_officer', 'department_admin', 'super_admin', 'system']}
+                >
                   <OperationsApp />
                 </ProtectedRoute>
               }

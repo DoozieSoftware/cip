@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Departments\Exports;
 
 use App\Modules\Reports\Models\Report;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -39,7 +41,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class DepartmentReportsExport
 {
     public const FORMAT_CSV = 'csv';
+
     public const FORMAT_XLSX = 'xlsx';
+
     public const FORMAT_PDF = 'pdf';
 
     public const ALLOWED_FORMATS = [
@@ -85,11 +89,12 @@ class DepartmentReportsExport
     /**
      * Build the HTTP response for the given format.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<Report>|\Illuminate\Support\Collection<int, Report>|iterable<int, Report>  $rows
+     * @param  Builder<Report>|Collection<int, Report>|iterable<int, Report>  $rows
      */
     public static function build(string $format, iterable $rows, string $filenameBase): Response
     {
         $format = strtolower($format);
+
         if (! in_array($format, self::ALLOWED_FORMATS, true)) {
             return new Response(
                 json_encode([
@@ -102,7 +107,7 @@ class DepartmentReportsExport
             );
         }
 
-        $filename = $filenameBase . '.' . $format;
+        $filename = $filenameBase.'.'.$format;
 
         return match ($format) {
             self::FORMAT_CSV => self::csv($rows, $filename),
@@ -121,6 +126,7 @@ class DepartmentReportsExport
             // BOM for Excel-compatibility
             fwrite($out, "\xEF\xBB\xBF");
             fputcsv($out, self::COLUMNS);
+
             foreach ($rows as $r) {
                 /** @var Report $r */
                 fputcsv($out, array_values(self::row($r)));
@@ -130,7 +136,7 @@ class DepartmentReportsExport
 
         return new StreamedResponse($callback, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             'Cache-Control' => 'no-store, no-cache, must-revalidate',
         ]);
     }
@@ -144,28 +150,31 @@ class DepartmentReportsExport
         // as a workbook. Minimal schema, no styles, no
         // formulas. Sufficient for the dashboard export.
         $rowsArr = [];
+
         foreach ($rows as $r) {
             /** @var Report $r */
             $rowsArr[] = self::row($r);
         }
 
         $ns = 'urn:schemas-microsoft-com:office:spreadsheet';
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        $xml .= '<?mso-application progid="Excel.Sheet"?>' . "\n";
-        $xml .= '<Workbook xmlns="' . $ns . '" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">';
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n";
+        $xml .= '<?mso-application progid="Excel.Sheet"?>'."\n";
+        $xml .= '<Workbook xmlns="'.$ns.'" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">';
         $xml .= '<Worksheet ss:Name="Reports"><Table>';
 
         $xml .= '<Row>';
+
         foreach (self::COLUMNS as $col) {
-            $xml .= '<Cell><Data ss:Type="String">' . self::escapeXml($col) . '</Data></Cell>';
+            $xml .= '<Cell><Data ss:Type="String">'.self::escapeXml($col).'</Data></Cell>';
         }
         $xml .= '</Row>';
 
         foreach ($rowsArr as $row) {
             $xml .= '<Row>';
+
             foreach (self::COLUMNS as $col) {
                 $val = (string) ($row[$col] ?? '');
-                $xml .= '<Cell><Data ss:Type="String">' . self::escapeXml($val) . '</Data></Cell>';
+                $xml .= '<Cell><Data ss:Type="String">'.self::escapeXml($val).'</Data></Cell>';
             }
             $xml .= '</Row>';
         }
@@ -173,7 +182,7 @@ class DepartmentReportsExport
 
         return new Response($xml, 200, [
             'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             'Cache-Control' => 'no-store, no-cache, must-revalidate',
         ]);
     }
@@ -184,6 +193,7 @@ class DepartmentReportsExport
     private static function pdf(iterable $rows, string $filename): Response
     {
         $rowsArr = [];
+
         foreach ($rows as $r) {
             /** @var Report $r */
             $rowsArr[] = self::row($r);
@@ -191,18 +201,20 @@ class DepartmentReportsExport
 
         $lines = [];
         $lines[] = 'Department Reports Export';
-        $lines[] = 'Generated: ' . now()->toIso8601String();
+        $lines[] = 'Generated: '.now()->toIso8601String();
         $lines[] = '';
         $lines[] = implode(' | ', self::COLUMNS);
         $lines[] = str_repeat('-', 100);
+
         foreach ($rowsArr as $row) {
             $lines[] = implode(' | ', array_map(static fn ($v): string => (string) $v, array_values($row)));
         }
 
         $body = self::buildSinglePagePdf($lines);
+
         return new Response($body, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             'Cache-Control' => 'no-store, no-cache, must-revalidate',
         ]);
     }
@@ -227,11 +239,12 @@ class DepartmentReportsExport
         $lines = array_slice($lines, 0, $rowsPerPage);
 
         $contentStream = "BT\n/F1 9 Tf\n{$lineHeight} TL\n1 0 0 1 {$left} {$top} Tm\n";
+
         foreach (array_values($lines) as $idx => $line) {
             if ($idx > 0) {
                 $contentStream .= "0 -{$lineHeight} Td\n";
             }
-            $contentStream .= '(' . self::escapePdfString($line) . ") Tj\n";
+            $contentStream .= '('.self::escapePdfString($line).") Tj\n";
         }
         $contentStream .= "ET\n";
 
@@ -253,17 +266,19 @@ class DepartmentReportsExport
 
         $body = "%PDF-1.4\n%\xE2\xE3\xCF\xD3\n"; // binary marker to mark file as binary
         $offsets = [];
+
         foreach ($objects as $id => $objectBody) {
             $offsets[$id] = strlen($body);
             $body .= $objectBody;
         }
         $xrefStart = strlen($body);
-        $body .= "xref\n0 " . (count($objects) + 1) . "\n";
+        $body .= "xref\n0 ".(count($objects) + 1)."\n";
         $body .= "0000000000 65535 f \n";
+
         for ($id = 1; $id <= count($objects); $id++) {
-            $body .= str_pad((string) ($offsets[$id] ?? 0), 10, '0', STR_PAD_LEFT) . " 00000 n \n";
+            $body .= str_pad((string) ($offsets[$id] ?? 0), 10, '0', STR_PAD_LEFT)." 00000 n \n";
         }
-        $body .= "trailer\n<< /Size " . (count($objects) + 1) . " /Root 1 0 R >>\n";
+        $body .= "trailer\n<< /Size ".(count($objects) + 1)." /Root 1 0 R >>\n";
         $body .= "startxref\n{$xrefStart}\n%%EOF\n";
 
         return $body;

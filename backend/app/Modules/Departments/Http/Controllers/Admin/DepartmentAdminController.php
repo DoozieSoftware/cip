@@ -15,7 +15,6 @@ use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-
 /**
  * T-M11-009 — Department admin endpoints.
  *
@@ -147,6 +146,7 @@ class DepartmentAdminController extends BaseController
     private function resolveDepartment(string $id): Department
     {
         $dept = $this->repository->findById($id);
+
         if ($dept === null) {
             throw ApiException::notFound('Department');
         }
@@ -166,6 +166,7 @@ class DepartmentAdminController extends BaseController
     private function ensureCanManage(Request $request, Department $dept): void
     {
         $u = $request->user('sanctum');
+
         if (! $u instanceof User) {
             throw new ApiException('FORBIDDEN', 'Authentication required.', 403);
         }

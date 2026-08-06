@@ -23,14 +23,28 @@ export default function OverviewPage(): JSX.Element {
       </header>
 
       {stats.isLoading ? (
-        <div className="flex items-center justify-center py-16"><Spinner label="Loading statistics" /></div>
+        <div className="flex items-center justify-center py-16">
+          <Spinner label="Loading statistics" />
+        </div>
       ) : stats.isError || !stats.data ? (
         <EmptyState title="Statistics unavailable" description="Please try again shortly." />
       ) : (
         <div className="grid grid-cols-1 gap-6 rounded-3xl border border-slate-200 bg-white p-8 sm:grid-cols-3">
-          <Stat label="Reports processed" value={stats.data.total_reports.toLocaleString()} sub="all time" />
-          <Stat label="AI-classified" value={`${stats.data.ai_classified_percent}%`} sub="before human review" />
-          <Stat label="Median time to assign" value={formatDuration(stats.data.median_assign_seconds)} sub="submit → department" />
+          <Stat
+            label="Reports processed"
+            value={stats.data.total_reports.toLocaleString()}
+            sub="all time"
+          />
+          <Stat
+            label="AI-classified"
+            value={`${stats.data.ai_classified_percent}%`}
+            sub="before human review"
+          />
+          <Stat
+            label="Median time to assign"
+            value={formatDuration(stats.data.median_assign_seconds)}
+            sub="submit → department"
+          />
         </div>
       )}
     </div>

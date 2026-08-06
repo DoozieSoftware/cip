@@ -48,17 +48,15 @@ Laravel 12
 
 PHP 8.4
 
-PostgreSQL 17
+MySQL 8.4
 
 Redis
 
 MinIO
 
-Laravel Horizon
-
 Laravel Scheduler
 
-Sanctum
+Laravel Sanctum
 
 Spatie Permission
 
@@ -72,7 +70,7 @@ TypeScript
 
 Vite
 
-TailwindCSS v4
+Tailwind CSS v4
 
 TanStack Query
 
@@ -85,6 +83,8 @@ React Router
 Apache ECharts
 
 Leaflet
+
+Service Worker (PWA)
 
 ---
 
@@ -628,19 +628,17 @@ Containers
 
 nginx
 
-php
+php (Laravel/PHP 8.4)
 
-postgres
+mysql (8.4)
 
-redis
+redis (7.4)
 
 minio
 
-queue
+queue (Laravel worker)
 
-scheduler
-
-frontend
+scheduler (Laravel scheduler)
 
 No application installed directly on host.
 
@@ -659,10 +657,10 @@ Production
 Single command
 
 ```text
-docker compose up
+docker compose up -d
 ```
 
-starts complete platform.
+starts complete platform (Nginx, PHP, MySQL 8.4, Redis, MinIO, queue, scheduler).
 
 ---
 
@@ -672,31 +670,27 @@ GitHub Actions
 
 Pipeline
 
-Install
+Install (Composer, NPM)
 
 ↓
 
-Lint
+Lint (Pint, ESLint, Prettier)
 
 ↓
 
-Static Analysis
+Static Analysis (PHPStan, TypeScript)
 
 ↓
 
-Unit Tests
+Unit Tests (Pest, Vitest)
 
 ↓
 
-Feature Tests
+Feature Tests (Pest)
 
 ↓
 
-Build
-
-↓
-
-Docker Build
+Build (Vite production build)
 
 ↓
 
@@ -704,7 +698,7 @@ Security Scan
 
 ↓
 
-Deploy
+Deploy (cPanel via rsync)
 
 Deployment blocked on failure.
 

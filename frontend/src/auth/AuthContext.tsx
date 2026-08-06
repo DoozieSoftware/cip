@@ -1,8 +1,23 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { type JSX } from 'react';
 import { readSession, writeSession, type PersistedSession } from './storage';
 
-export type Role = 'citizen' | 'moderator' | 'department_officer' | 'department_admin' | 'super_admin' | 'system' | 'auditor';
+export type Role =
+  | 'citizen'
+  | 'moderator'
+  | 'department_officer'
+  | 'department_admin'
+  | 'super_admin'
+  | 'system'
+  | 'auditor';
 
 export interface SessionUser {
   id: string;

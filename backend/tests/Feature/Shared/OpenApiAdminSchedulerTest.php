@@ -3,11 +3,12 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Symfony\Component\Yaml\Yaml;
 
 uses(RefreshDatabase::class);
 
 it('declares the scheduler endpoints under the Scheduler tag', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
+    $doc = Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
     $paths = $doc['paths'] ?? [];
 
     $expected = [
@@ -18,16 +19,19 @@ it('declares the scheduler endpoints under the Scheduler tag', function (): void
     ];
 
     $missing = [];
+
     foreach ($expected as $path => $methods) {
         if (! array_key_exists($path, $paths)) {
             $missing[] = $path;
             continue;
         }
+
         foreach ($methods as $method) {
             if (! array_key_exists($method, $paths[$path])) {
                 $missing[] = "{$method} on {$path}";
                 continue;
             }
+
             if (! in_array('Scheduler', $paths[$path][$method]['tags'] ?? [], true)) {
                 $missing[] = "tag Scheduler on {$method} {$path}";
             }
@@ -38,7 +42,7 @@ it('declares the scheduler endpoints under the Scheduler tag', function (): void
 });
 
 it('declares the scheduler schemas', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
+    $doc = Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
     $schemas = $doc['components']['schemas'] ?? [];
 
     foreach (['SchedulerJob', 'SchedulerJobsResponse', 'SchedulerRunNowResponse', 'SchedulerPauseResponse'] as $name) {
@@ -47,7 +51,7 @@ it('declares the scheduler schemas', function (): void {
 });
 
 it('declares the organization endpoints under the Organizations tag', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
+    $doc = Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
     $paths = $doc['paths'] ?? [];
 
     $expected = [
@@ -57,16 +61,19 @@ it('declares the organization endpoints under the Organizations tag', function (
     ];
 
     $missing = [];
+
     foreach ($expected as $path => $methods) {
         if (! array_key_exists($path, $paths)) {
             $missing[] = $path;
             continue;
         }
+
         foreach ($methods as $method) {
             if (! array_key_exists($method, $paths[$path])) {
                 $missing[] = "{$method} on {$path}";
                 continue;
             }
+
             if (! in_array('Organizations', $paths[$path][$method]['tags'] ?? [], true)) {
                 $missing[] = "tag Organizations on {$method} {$path}";
             }
@@ -77,7 +84,7 @@ it('declares the organization endpoints under the Organizations tag', function (
 });
 
 it('declares the organization schemas', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
+    $doc = Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
     $schemas = $doc['components']['schemas'] ?? [];
 
     foreach (['Organization', 'OrganizationResponse', 'OrganizationListResponse', 'OrganizationStoreRequest', 'OrganizationUpdateRequest'] as $name) {
@@ -86,7 +93,7 @@ it('declares the organization schemas', function (): void {
 });
 
 it('declares the platform health endpoints under the PlatformHealth tag', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
+    $doc = Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
     $paths = $doc['paths'] ?? [];
 
     $expected = [
@@ -95,16 +102,19 @@ it('declares the platform health endpoints under the PlatformHealth tag', functi
     ];
 
     $missing = [];
+
     foreach ($expected as $path => $methods) {
         if (! array_key_exists($path, $paths)) {
             $missing[] = $path;
             continue;
         }
+
         foreach ($methods as $method) {
             if (! array_key_exists($method, $paths[$path])) {
                 $missing[] = "{$method} on {$path}";
                 continue;
             }
+
             if (! in_array('PlatformHealth', $paths[$path][$method]['tags'] ?? [], true)) {
                 $missing[] = "tag PlatformHealth on {$method} {$path}";
             }
@@ -115,7 +125,7 @@ it('declares the platform health endpoints under the PlatformHealth tag', functi
 });
 
 it('declares the platform health schemas', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
+    $doc = Yaml::parseFile(base_path('storage/api-docs/openapi.yaml'));
     $schemas = $doc['components']['schemas'] ?? [];
 
     foreach (['HealthComponent', 'PlatformHealthResponse', 'PlatformHealthComponentsResponse'] as $name) {

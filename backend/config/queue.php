@@ -9,7 +9,7 @@ return [
     | Default Queue Connection Name
     |--------------------------------------------------------------------------
     |
-    | Laravel's queue supports a variety of backends via a single, unified
+    | Laravel's queue supports a variety of backends via a single unified
     | API, giving you convenient access to each backend using identical
     | syntax for each. The default queue connection is defined below.
     |
@@ -31,6 +31,47 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Production Worker Topology (cPanel)
+    |--------------------------------------------------------------------------
+    |
+    | The platform uses four named queues. Each queue MUST have a dedicated
+    | worker (or be listed in a multi-queue worker's --queue argument) or
+    | jobs dispatched to it will never be processed.
+    |
+    |   queue          | jobs routed here
+    |   ---------------+-------------------------------------------------------
+    |   media          | ComputeHashesJob, GenerateThumbnailJob,
+    |                  | ExtractVideoMetadataJob
+    |   ai             | AiPipelineOrchestrator
+    |   notifications  | SendNotificationJob
+    |   default        | CheckSlaBreaches (scheduled), any job that does not
+    |                  | call onQueue()
+    |
+    | cPanel cron (every minute) — one worker per queue, --stop-when-empty
+    | so the process exits cleanly and the next cron tick picks up new work:
+    |
+    |   * * * * * cd ~/cip && php artisan queue:work --queue=media --stop-when-empty --tries=1 --timeout=180
+    |   * * * * * cd ~/cip && php artisan queue:work --queue=ai --stop-when-empty --tries=1 --timeout=300
+    |   * * * * * cd ~/cip && php artisan queue:work --queue=notifications --stop-when-empty --tries=1 --timeout=60
+    |   * * * * * cd ~/cip && php artisan queue:work --queue=default --stop-when-empty --tries=1 --timeout=120
+    |
+    | Alternatively, a single multi-queue worker (priority left-to-right):
+    |
+    |   * * * * * cd ~/cip && php artisan queue:work --queue=media,ai,notifications,default --stop-when-empty --tries=1 --timeout=300
+    |
+    | IMPORTANT: retry_after MUST exceed the longest --timeout across all
+    | workers. If retry_after < timeout, the worker marks the job as
+    | timed-out and re-dispatches it while the original is still running,
+    | causing duplicate execution. The default below (300s) covers the AI
+    | worker's 300s timeout with margin.
+    |
+    | The scheduler (schedule:run) MUST also be installed as a cron —
+    | without it, CheckSlaBreaches and PurgeRetentionCommand never fire.
+    | See docs/production-setup.md for the full cron table.
+    */
+
     'connections' => [
 
         'sync' => [
@@ -42,7 +83,7 @@ return [
             'connection' => env('DB_QUEUE_CONNECTION'),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
-            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),
+            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 360),
             'after_commit' => false,
         ],
 

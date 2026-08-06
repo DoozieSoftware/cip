@@ -44,9 +44,9 @@ The platform shall follow these principles.
 # 3. High Level Architecture
 
 ```text
-                Flutter Citizen App
+                React Citizen PWA
                        │
-                       │ REST
+                       │ REST (HTTPS)
                        ▼
 
                 Laravel API Gateway
@@ -55,31 +55,31 @@ The platform shall follow these principles.
  │                     │                      │
  ▼                     ▼                      ▼
 
-Workflow Engine     AI Engine         Notification Engine
+ Workflow Engine     AI Engine         Notification Engine
 
- │                     │                      │
+  │                     │                      │
 
- ▼                     ▼                      ▼
+  ▼                     ▼                      ▼
 
-Routing Engine    External AI      Push / Email / SMS
+ Routing Engine    External AI      Push / Email / SMS
 
- │
+  │
 
- ▼
+  ▼
 
-Department Services
+ Department Services
 
- │
+  │
 
- ▼
+  ▼
 
-Database + Object Storage
+ Database + Object Storage
 
- │
+  │
 
- ▼
+  ▼
 
-Public Dashboard APIs
+ Public Dashboard APIs
 ```
 
 ---
@@ -88,18 +88,19 @@ Public Dashboard APIs
 
 The system consists of five deployable applications.
 
-## Citizen Mobile App
+## Citizen Portal
 
 Technology
 
-Flutter
+React PWA (TypeScript, Vite)
 
 Responsibilities
 
 * Authentication
 * Evidence Capture
-* Offline Queue
+* Offline Support
 * Report Tracking
+* Service Worker / Push Notifications
 
 ---
 
@@ -107,7 +108,7 @@ Responsibilities
 
 Technology
 
-Laravel
+Laravel 12
 
 Responsibilities
 
@@ -124,7 +125,7 @@ Responsibilities
 
 Technology
 
-React
+React (TypeScript, Vite)
 
 Responsibilities
 
@@ -138,7 +139,7 @@ Responsibilities
 
 Technology
 
-React
+React (TypeScript, Vite)
 
 Responsibilities
 
@@ -152,7 +153,7 @@ Responsibilities
 
 Technology
 
-React PWA
+React PWA (TypeScript, Vite)
 
 Responsibilities
 
@@ -362,11 +363,11 @@ Routing logic shall be database driven.
 
 Primary Database
 
-PostgreSQL
+MySQL 8.4
 
 GIS
 
-PostGIS
+MySQL Spatial (SRID 4326)
 
 Object Storage
 
@@ -677,7 +678,7 @@ Nginx
 
 ↓
 
-Laravel
+Laravel 12 (PHP 8.4)
 
 ↓
 
@@ -685,7 +686,7 @@ Redis
 
 ↓
 
-PostgreSQL
+MySQL 8.4
 
 ↓
 
@@ -803,17 +804,21 @@ PHP 8.4
 
 Frontend
 
-React
+React 19
 
 TypeScript
 
+Vite
+
+Tailwind CSS v4
+
 Mobile
 
-Flutter
+React PWA (responsive web app)
 
 Database
 
-PostgreSQL + PostGIS
+MySQL 8.4 (InnoDB, utf8mb4)
 
 Cache
 
@@ -821,7 +826,7 @@ Redis
 
 Storage
 
-MinIO
+MinIO (S3-compatible)
 
 Queue
 
@@ -835,7 +840,7 @@ Leaflet
 
 AI
 
-Qwen VL
+Qwen VL (pluggable via provider interface)
 
 Container
 

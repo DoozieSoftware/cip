@@ -23,14 +23,16 @@ export interface Department {
 
 export interface ReportSummary {
   id: string;
+  tracking_number: string;
   title: string;
   description?: string | null;
-  status: { code: string; name: string };
+  status: { code: string; name: string; is_terminal?: boolean };
   type?: { code: string; name: string; icon?: string | null } | null;
   priority?: { code: string; name: string } | null;
   created_at?: string | null;
   updated_at?: string | null;
   assigned_department?: { id: string; name: string; code: string } | null;
+  department?: { id: string; name: string; code: string } | null;
   location?: { latitude: number; longitude: number; address?: string | null } | null;
   is_verified?: boolean;
   media_count?: number;
@@ -58,6 +60,35 @@ interface ApiReportPayload extends Omit<ReportDetail, 'type' | 'media' | 'timeli
   type?: ReportSummary['type'];
   media?: ReportDetail['media'];
   timeline?: ReportDetail['timeline'];
+}
+
+export const OPEN_STATUSES = [
+  'submitted',
+  'ai_processing',
+  'pending_moderator',
+  'assigned',
+  'accepted',
+  'in_progress',
+  'escalated',
+] as const;
+
+export const AWAITING_CITIZEN_STATUSES = ['resolved'] as const;
+
+export const CLOSED_STATUSES = ['verified', 'closed'] as const;
+
+export const REJECTED_STATUSES = ['rejected'] as const;
+
+export const MERGED_STATUSES = ['merged'] as const;
+
+export type LifecycleGroup = 'open' | 'awaiting_citizen' | 'closed' | 'rejected' | 'merged';
+
+export function lifecycleGroup(code: string): LifecycleGroup {
+  if ((OPEN_STATUSES as readonly string[]).includes(code)) return 'open';
+  if ((AWAITING_CITIZEN_STATUSES as readonly string[]).includes(code)) return 'awaiting_citizen';
+  if ((CLOSED_STATUSES as readonly string[]).includes(code)) return 'closed';
+  if ((REJECTED_STATUSES as readonly string[]).includes(code)) return 'rejected';
+  if ((MERGED_STATUSES as readonly string[]).includes(code)) return 'merged';
+  return 'open';
 }
 
 interface ApiMediaPayload {

@@ -34,8 +34,9 @@ class AdminRoleController extends BaseController
         $this->ensureAdmin($request);
 
         $q = Role::query()->with('permissions');
+
         if ($search = $request->query('q')) {
-            $q->where('name', 'like', '%' . $search . '%');
+            $q->where('name', 'like', '%'.$search.'%');
         }
         $perPage = max(1, min(200, (int) $request->query('per_page', 25)));
         $page = $q->orderBy('name')->paginate($perPage);
@@ -85,9 +86,11 @@ class AdminRoleController extends BaseController
             && in_array($model->name, self::PROTECTED_ROLES, true)) {
             throw ApiException::forbidden('Protected role names cannot be changed.');
         }
+
         if (array_key_exists('name', $data)) {
             $model->name = $data['name'];
         }
+
         if (array_key_exists('guard_name', $data)) {
             $model->guard_name = $data['guard_name'];
         }
@@ -161,10 +164,11 @@ class AdminRoleController extends BaseController
             ->pluck('name')
             ->all();
         $missing = array_values(array_diff($permissionNames, $existing));
+
         if ($missing !== []) {
             throw new ApiException(
                 'UNKNOWN_PERMISSIONS',
-                'One or more permission names do not exist on guard ' . $role->guard_name . ': ' . implode(', ', $missing),
+                'One or more permission names do not exist on guard '.$role->guard_name.': '.implode(', ', $missing),
                 422,
                 ['missing' => $missing],
             );
@@ -194,6 +198,7 @@ class AdminRoleController extends BaseController
         $role = is_numeric($id)
             ? Role::query()->where('id', (int) $id)->first()
             : Role::query()->where('name', $id)->first();
+
         if ($role === null) {
             throw ApiException::notFound('Role');
         }

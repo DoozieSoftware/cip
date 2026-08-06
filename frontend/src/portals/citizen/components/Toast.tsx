@@ -1,4 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode, type JSX } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+  type JSX,
+} from 'react';
 import { cx } from '../../moderator/design/cx';
 
 type ToastKind = 'info' | 'success' | 'error';
@@ -57,10 +66,7 @@ export function ToastProvider({ children }: { children: ReactNode }): JSX.Elemen
 export function useToast(): ToastApi {
   const ctx = useContext(ToastCtx);
   // No-op fallback for tests / unmounted contexts.
-  return useMemo<ToastApi>(
-    () => ctx ?? { show: () => {} },
-    [ctx],
-  );
+  return useMemo<ToastApi>(() => ctx ?? { show: () => {} }, [ctx]);
 }
 
 // Re-export the no-op toast for places that need to render without provider.
@@ -70,7 +76,9 @@ export function NoopToast({ message }: { message: string }): JSX.Element {
 
 // Helps consumers that mount the provider themselves and need to test the
 // auto-dismiss behavior.
-export function __useToastInternalForTest(setToasts: (fn: (prev: Toast[]) => Toast[]) => void): void {
+export function __useToastInternalForTest(
+  setToasts: (fn: (prev: Toast[]) => Toast[]) => void,
+): void {
   useEffect(() => {
     setToasts(() => []);
   }, [setToasts]);

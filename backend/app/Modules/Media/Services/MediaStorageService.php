@@ -32,12 +32,15 @@ class MediaStorageService
         return [
             'disk' => (function (): string {
                 $cfg = (string) config('cip.media.disk', 'local');
+
                 if ($cfg === 'local') {
                     return 'media_local';
                 }
+
                 if (in_array($cfg, ['media_local', 'media_minio', 'media_s3'], true)) {
                     return $cfg;
                 }
+
                 return 'media_local';
             })(),
             'region' => null,
@@ -57,6 +60,7 @@ class MediaStorageService
     public function current(): array
     {
         $row = Setting::query()->where('key', self::SETTINGS_KEY)->first();
+
         if ($row === null) {
             return $this->defaults();
         }
@@ -104,6 +108,7 @@ class MediaStorageService
 
         try {
             $exists = Storage::disk($disk)->exists('.cip-probe');
+
             if (! $exists) {
                 Storage::disk($disk)->put('.cip-probe', (string) now());
                 Storage::disk($disk)->delete('.cip-probe');

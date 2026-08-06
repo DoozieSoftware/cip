@@ -39,7 +39,7 @@ class UserRepository
         }
 
         if (! empty($filters['q'])) {
-            $term = '%' . $filters['q'] . '%';
+            $term = '%'.$filters['q'].'%';
             $query->where(function (Builder $q) use ($term): void {
                 $q->where('name', 'like', $term)
                     ->orWhere('mobile', 'like', $term)

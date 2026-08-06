@@ -7,6 +7,7 @@ use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportPriority;
 use App\Modules\Reports\Models\ReportType;
 use App\Modules\Routing\Models\RoutingRule;
+use App\Modules\Routing\Repositories\RoutingRepository;
 use App\Modules\Routing\Services\RoutingCondition;
 use App\Modules\Routing\Services\RoutingEngine;
 use App\Modules\Routing\ValueObjects\RoutingDecision;
@@ -14,7 +15,7 @@ use App\Modules\Users\Models\User;
 
 beforeEach(function (): void {
     $this->evaluator = new RoutingCondition;
-    $this->repository = new \App\Modules\Routing\Repositories\RoutingRepository;
+    $this->repository = new RoutingRepository;
     $this->engine = new RoutingEngine($this->evaluator, $this->repository);
 
     $this->typePothole = new ReportType(['code' => 'pothole', 'name' => 'Pothole']);

@@ -84,7 +84,9 @@ export function mockGpsLikely(
 
   // Implausibly perfect altitude repeated across samples.
   if (history.length >= 2 && altitude !== null) {
-    const sameAlt = history.every((h) => h.altitude !== null && Math.abs((h.altitude ?? 0) - altitude) < 0.5);
+    const sameAlt = history.every(
+      (h) => h.altitude !== null && Math.abs((h.altitude ?? 0) - altitude) < 0.5,
+    );
     if (sameAlt) {
       score += 0.3;
       reasons.push('altitude is implausibly constant across samples');

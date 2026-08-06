@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * T-M12-031 (partial) — OpenAPI contract check for the
@@ -10,9 +11,8 @@ declare(strict_types=1);
  * YAML and asserting structure. This first slice covers the
  * M12-001 user CRUD.
  */
-
 it('declares a Super Admin tag', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(
+    $doc = Yaml::parseFile(
         base_path('storage/api-docs/openapi.yaml'),
     );
     $tags = collect($doc['tags'] ?? [])->pluck('name')->all();
@@ -20,7 +20,7 @@ it('declares a Super Admin tag', function (): void {
 });
 
 it('declares the six admin user endpoints under the Super Admin tag', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(
+    $doc = Yaml::parseFile(
         base_path('storage/api-docs/openapi.yaml'),
     );
     $paths = $doc['paths'] ?? [];
@@ -32,27 +32,30 @@ it('declares the six admin user endpoints under the Super Admin tag', function (
     ];
 
     $missing = [];
+
     foreach ($expected as $path => $methods) {
         if (! array_key_exists($path, $paths)) {
             $missing[] = $path;
             continue;
         }
+
         foreach ($methods as $method) {
             if (! array_key_exists($method, $paths[$path])) {
                 $missing[] = "{$method} on {$path}";
                 continue;
             }
+
             if (! in_array('Super Admin', $paths[$path][$method]['tags'] ?? [], true)) {
                 $missing[] = "tag Super Admin on {$method} {$path}";
             }
         }
     }
 
-    expect($missing)->toBe([], "OpenAPI gaps: " . implode(', ', $missing));
+    expect($missing)->toBe([], 'OpenAPI gaps: '.implode(', ', $missing));
 });
 
 it('declares the UserStoreRequest, UserUpdateRequest, UserListResponse schemas', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(
+    $doc = Yaml::parseFile(
         base_path('storage/api-docs/openapi.yaml'),
     );
     $schemas = $doc['components']['schemas'] ?? [];
@@ -63,7 +66,7 @@ it('declares the UserStoreRequest, UserUpdateRequest, UserListResponse schemas',
 });
 
 it('the UserStoreRequest requires mobile', function (): void {
-    $doc = \Symfony\Component\Yaml\Yaml::parseFile(
+    $doc = Yaml::parseFile(
         base_path('storage/api-docs/openapi.yaml'),
     );
     $required = $doc['components']['schemas']['UserStoreRequest']['required'] ?? [];

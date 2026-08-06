@@ -4,7 +4,10 @@ import '@testing-library/jest-dom/vitest';
 // an in-memory polyfill so production code paths (e.g. the PWA
 // install-prompt's dismissal timestamp) can call setItem/getItem
 // without falling back to a try/catch.
-if (typeof window !== 'undefined' && (!window.localStorage || typeof window.localStorage.setItem !== 'function')) {
+if (
+  typeof window !== 'undefined' &&
+  (!window.localStorage || typeof window.localStorage.setItem !== 'function')
+) {
   const store = new Map<string, string>();
   const fakeStorage = {
     getItem: (key: string): string | null => (store.has(key) ? (store.get(key) as string) : null),

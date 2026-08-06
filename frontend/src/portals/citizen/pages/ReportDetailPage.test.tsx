@@ -6,6 +6,12 @@ import type { ReportDetail } from '../api/client';
 vi.mock('../api/client', () => ({
   useReportDetail: vi.fn(),
   useReportTimeline: vi.fn(() => ({ isLoading: false, error: null, data: [] })),
+  lifecycleGroup: vi.fn((code: string) => {
+    if (code === 'closed' || code === 'verified') return 'closed';
+    if (code === 'rejected') return 'rejected';
+    if (code === 'merged') return 'merged';
+    return 'open';
+  }),
 }));
 
 vi.mock('../components/LocationMap', () => ({
@@ -20,6 +26,7 @@ import { useReportDetail } from '../api/client';
 function baseReport(overrides: Partial<ReportDetail>): ReportDetail {
   return {
     id: '11111111-1111-1111-1111-111111111111',
+    tracking_number: 'CIV-2026-000001',
     title: 'Pothole on Main St',
     description: 'Deep pothole',
     status: { code: 'open', name: 'Open' },
@@ -38,48 +45,61 @@ describe('ReportDetailPage', () => {
     cleanup();
   });
 
-  it('shows a "Verified" badge when the report is_verified is true', () => {
+  it('renders the real tracking number instead of an invented reference', () => {
     (useReportDetail as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       isLoading: false,
       error: null,
-      data: baseReport({ id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', is_verified: true }),
+      data: baseReport({ tracking_number: 'CIV-2026-00042' }),
     });
     render(
-      <MemoryRouter initialEntries={['/citizen/reports/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa']}>
+      <MemoryRouter initialEntries={['/citizen/reports/11111111-1111-1111-1111-111111111111']}>
         <ReportDetailPage />
       </MemoryRouter>,
     );
-    expect(screen.queryByText('Verified')).not.toBeNull();
+    expect(screen.queryByText('CIV-2026-00042')).not.toBeNull();
+    expect(screen.queryByText(/REF-/)).toBeNull();
   });
 
-  it('omits the verification badge when is_verified is false', () => {
+  it('shows "In Progress" badge for open status', () => {
     (useReportDetail as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       isLoading: false,
       error: null,
-      data: baseReport({ id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', is_verified: false }),
+      data: baseReport({ status: { code: 'submitted', name: 'Submitted' } }),
     });
     render(
-      <MemoryRouter initialEntries={['/citizen/reports/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb']}>
+      <MemoryRouter initialEntries={['/citizen/reports/11111111-1111-1111-1111-111111111111']}>
         <ReportDetailPage />
       </MemoryRouter>,
     );
-    expect(screen.queryByText('Verified')).toBeNull();
-    expect(screen.queryByText('GPS verified')).toBeNull();
+    expect(screen.queryByText('In Progress')).not.toBeNull();
   });
 
-  it('omits the verification badge when is_verified is absent', () => {
+  it('shows "Closed" badge for closed status', () => {
     (useReportDetail as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       isLoading: false,
       error: null,
-      data: baseReport({ id: 'cccccccc-cccc-cccc-cccc-cccccccccccc' }),
+      data: baseReport({ status: { code: 'closed', name: 'Closed' } }),
     });
     render(
-      <MemoryRouter initialEntries={['/citizen/reports/cccccccc-cccc-cccc-cccc-cccccccccccc']}>
+      <MemoryRouter initialEntries={['/citizen/reports/11111111-1111-1111-1111-111111111111']}>
         <ReportDetailPage />
       </MemoryRouter>,
     );
-    expect(screen.queryByText('Verified')).toBeNull();
-    expect(screen.queryByText('GPS verified')).toBeNull();
+    expect(screen.queryByText('Closed')).not.toBeNull();
+  });
+
+  it('shows "Rejected" badge for rejected status', () => {
+    (useReportDetail as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: baseReport({ status: { code: 'rejected', name: 'Rejected' } }),
+    });
+    render(
+      <MemoryRouter initialEntries={['/citizen/reports/11111111-1111-1111-1111-111111111111']}>
+        <ReportDetailPage />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByText('Rejected')).not.toBeNull();
   });
 
   it('renders video evidence with a video element instead of an image placeholder', () => {

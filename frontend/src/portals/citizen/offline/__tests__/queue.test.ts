@@ -1,12 +1,29 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OfflineQueue, MemoryAdapter, type QueueItem } from '../queue';
 
-function makeQueue(opts?: Partial<{ retry: (item: QueueItem) => Promise<void>; backoff: (a: number) => number; now: () => number; max_attempts: number }>): { q: OfflineQueue; calls: number; failures: number } {
+function makeQueue(
+  opts?: Partial<{
+    retry: (item: QueueItem) => Promise<void>;
+    backoff: (a: number) => number;
+    now: () => number;
+    max_attempts: number;
+  }>,
+): { q: OfflineQueue; calls: number; failures: number } {
   const calls = { count: 0, failures: 0 };
-  const retry = opts?.retry ?? (async () => { calls.count++; });
+  const retry =
+    opts?.retry ??
+    (async () => {
+      calls.count++;
+    });
   const backoff = opts?.backoff ?? (() => 1000);
   const now = opts?.now ?? (() => 1_000_000);
-  const q = new OfflineQueue({ adapter: new MemoryAdapter(), retry, backoff, now, max_attempts: opts?.max_attempts ?? 3 });
+  const q = new OfflineQueue({
+    adapter: new MemoryAdapter(),
+    retry,
+    backoff,
+    now,
+    max_attempts: opts?.max_attempts ?? 3,
+  });
   return { q, calls: calls.count as unknown as number, failures: calls.failures };
 }
 
@@ -44,8 +61,16 @@ describe('OfflineQueue (T-M13-006 / T-M13-026)', () => {
   it('increments attempts on failure and reschedules with backoff', async () => {
     let now = 1_000_000;
     const backoff = vi.fn((a: number) => 5_000 * a);
-    const retry = vi.fn(async () => { throw new Error('network down'); });
-    const q = new OfflineQueue({ adapter: new MemoryAdapter(), retry, backoff, now: () => now, max_attempts: 5 });
+    const retry = vi.fn(async () => {
+      throw new Error('network down');
+    });
+    const q = new OfflineQueue({
+      adapter: new MemoryAdapter(),
+      retry,
+      backoff,
+      now: () => now,
+      max_attempts: 5,
+    });
     const item = await q.enqueue({ kind: 'report.create', payload: {} });
     const result = await q.processOne(item);
     expect(result.status).toBe('failed');
@@ -55,7 +80,9 @@ describe('OfflineQueue (T-M13-006 / T-M13-026)', () => {
   });
 
   it('moves an item to dead after max_attempts', async () => {
-    const retry = vi.fn(async () => { throw new Error('persistent failure'); });
+    const retry = vi.fn(async () => {
+      throw new Error('persistent failure');
+    });
     const { q } = makeQueue({ retry, max_attempts: 2 });
     const item = await q.enqueue({ kind: 'report.create', payload: {} });
     const a = await q.processOne(item);
@@ -67,7 +94,13 @@ describe('OfflineQueue (T-M13-006 / T-M13-026)', () => {
   it('drain() picks up due items and skips items in the future', async () => {
     let now = 1_000_000;
     const retry = vi.fn(async () => undefined);
-    const q = new OfflineQueue({ adapter: new MemoryAdapter(), retry, backoff: () => 0, now: () => now, max_attempts: 5 });
+    const q = new OfflineQueue({
+      adapter: new MemoryAdapter(),
+      retry,
+      backoff: () => 0,
+      now: () => now,
+      max_attempts: 5,
+    });
     await q.enqueue({ kind: 'report.create', payload: { a: 1 }, id: 'due-1' });
     await q.enqueue({ kind: 'report.create', payload: { a: 2 }, id: 'future-1' });
     // Force future-1's next_attempt_at into the future.

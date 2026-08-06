@@ -10,7 +10,6 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
-
 function seedParentNotification(): string
 {
     $user = User::factory()->create();

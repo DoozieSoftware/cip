@@ -25,8 +25,10 @@ class IntegrationResource extends JsonResource
         /** @var array<string, mixed>|null $raw */
         $raw = $this->credentials;
         $masked = null;
+
         if (is_array($raw)) {
             $masked = [];
+
             foreach ($raw as $key => $_value) {
                 $masked[(string) $key] = '********';
             }

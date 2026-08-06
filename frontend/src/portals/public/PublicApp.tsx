@@ -22,7 +22,10 @@ function RouteError(): JSX.Element {
       title="Page not found"
       description="The page you were looking for doesn't exist or has moved."
       action={
-        <a href="/public" className="rounded-md bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-rose-700">
+        <a
+          href="/public"
+          className="rounded-md bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-rose-700"
+        >
           Back to overview
         </a>
       }

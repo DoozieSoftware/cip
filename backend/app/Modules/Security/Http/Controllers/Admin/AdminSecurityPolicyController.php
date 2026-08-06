@@ -33,8 +33,9 @@ class AdminSecurityPolicyController extends BaseController
         $this->ensureAdmin($request);
 
         $q = SecurityPolicy::query();
+
         if ($search = $request->query('q')) {
-            $needle = '%' . $search . '%';
+            $needle = '%'.$search.'%';
             $q->where(static function ($w) use ($needle): void {
                 $w->where('key', 'like', $needle)
                     ->orWhere('description', 'like', $needle);
@@ -95,6 +96,7 @@ class AdminSecurityPolicyController extends BaseController
     private function findByKey(string $key): SecurityPolicy
     {
         $model = SecurityPolicy::query()->where('key', $key)->first();
+
         if ($model === null) {
             throw ApiException::notFound('Security policy');
         }

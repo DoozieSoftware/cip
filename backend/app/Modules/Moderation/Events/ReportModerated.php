@@ -30,8 +30,11 @@ final class ReportModerated
     use SerializesModels;
 
     public const DECISION_APPROVE = 'approve';
+
     public const DECISION_REJECT = 'reject';
+
     public const DECISION_MERGE = 'merge';
+
     public const DECISION_ESCALATE = 'escalate';
 
     /**

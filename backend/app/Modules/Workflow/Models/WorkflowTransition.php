@@ -47,6 +47,7 @@ class WorkflowTransition extends Model
 {
     /** @use HasFactory<WorkflowTransitionFactory> */
     use HasFactory;
+
     use HasUuids;
 
     protected $table = 'workflow_transitions';

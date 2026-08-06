@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\AI\Jobs\AiPipelineOrchestrator;
 use App\Modules\AI\Models\AiJob;
 use App\Modules\AI\Models\AiLabel;
@@ -15,12 +14,11 @@ use Database\Seeders\ReportPrioritiesSeeder;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
-
-
 
 beforeEach(function (): void {
     Bus::fake([AiPipelineOrchestrator::class]);

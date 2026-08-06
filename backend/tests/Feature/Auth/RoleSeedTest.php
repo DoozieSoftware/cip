@@ -9,7 +9,6 @@ use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
-
 /**
  * Invoke the seeder directly. We avoid the Pest `artisan()` helper
  * here because the test already gets a clean in-memory database

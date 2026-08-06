@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * M10 OpenAPI contract test for the moderation surface.
@@ -10,7 +11,6 @@ declare(strict_types=1);
  * test asserts the moderation paths, schemas, tag, decision
  * enum, and standard error envelopes are all present.
  */
-
 it('exposes every M10 moderation endpoint in the OpenAPI document', function (): void {
     $yaml = file_get_contents(storage_path('api-docs/openapi.yaml'));
     expect($yaml)->not->toBeFalse();
@@ -105,7 +105,7 @@ it('the OpenAPI document is parseable as YAML and uses OpenAPI 3', function (): 
     $raw = file_get_contents(storage_path('api-docs/openapi.yaml'));
     expect($raw)->toContain('openapi: 3.0.0');
 
-    $spec = \Symfony\Component\Yaml\Yaml::parseFile(storage_path('api-docs/openapi.yaml'));
+    $spec = Yaml::parseFile(storage_path('api-docs/openapi.yaml'));
     expect($spec)->toBeArray();
     expect($spec['openapi'])->toStartWith('3.');
 });

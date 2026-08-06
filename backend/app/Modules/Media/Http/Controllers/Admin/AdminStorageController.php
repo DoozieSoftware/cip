@@ -67,6 +67,7 @@ class AdminStorageController extends BaseController
     private function ensureRow(): Setting
     {
         $row = Setting::query()->where('key', MediaStorageService::SETTINGS_KEY)->first();
+
         if ($row !== null) {
             return $row;
         }
@@ -77,6 +78,7 @@ class AdminStorageController extends BaseController
     private function ensureAdmin(Request $request): void
     {
         $user = $request->user();
+
         if ($user === null || ! method_exists($user, 'hasRole') || ! $user->hasRole('super_admin')) {
             throw ApiException::forbidden('super_admin role is required.');
         }

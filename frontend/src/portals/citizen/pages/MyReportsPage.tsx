@@ -11,16 +11,16 @@ import {
   IconPlus,
 } from '@tabler/icons-react';
 import { Spinner } from '../../moderator/design';
-import { useCitizenReports } from '../api/client';
+import { useCitizenReports, lifecycleGroup } from '../api/client';
 import { StatusBadge } from '../components/StatusBadge';
 
-type StatusFilter = 'all' | 'open' | 'closed';
+type StatusFilter = 'all' | 'open' | 'awaiting_citizen' | 'closed' | 'rejected' | 'merged';
 type SortField = 'date' | 'status' | 'reference';
 type SortDir = 'asc' | 'desc';
 
 interface ReportRow {
   id: string;
-  reference: string;
+  tracking_number: string;
   title: string;
   description?: string | null;
   status: { code: string; name?: string };
@@ -35,31 +35,17 @@ function formatDate(value: string): string {
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function buildTrackingId(uuid: string): string {
-  const hex = uuid.replace(/-/g, '').slice(0, 8).toUpperCase();
-  return `CIP-${hex}`;
-}
-
-function isOpenStatus(code: string): boolean {
-  return [
-    'submitted',
-    'pending_moderator',
-    'pending_review',
-    'ai_processing',
-    'approved',
-    'assigned',
-    'in_progress',
-    'escalated',
-  ].includes(code);
-}
-
 const FILTER_TABS: { key: StatusFilter; label: string; icon?: JSX.Element }[] = [
   { key: 'all', label: 'All', icon: <IconFilter className="h-3.5 w-3.5" stroke={1.6} /> },
   { key: 'open', label: 'Pending', icon: <IconClock className="h-3.5 w-3.5" stroke={1.6} /> },
-  { key: 'closed', label: 'Resolved', icon: <IconCheck className="h-3.5 w-3.5" stroke={1.6} /> },
+  { key: 'awaiting_citizen', label: 'Awaiting You', icon: <IconClock className="h-3.5 w-3.5" stroke={1.6} /> },
+  { key: 'closed', label: 'Closed', icon: <IconCheck className="h-3.5 w-3.5" stroke={1.6} /> },
+  { key: 'rejected', label: 'Rejected', icon: <IconExclamationCircle className="h-3.5 w-3.5" stroke={1.6} /> },
+  { key: 'merged', label: 'Merged', icon: <IconCheck className="h-3.5 w-3.5" stroke={1.6} /> },
 ];
 
 function ReportRow({ report }: { report: ReportRow }): JSX.Element {
+  const group = lifecycleGroup(report.status.code);
   return (
     <Link
       to={`/citizen/reports/${report.id}`}
@@ -67,7 +53,7 @@ function ReportRow({ report }: { report: ReportRow }): JSX.Element {
     >
       <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#efeee9]">
-          {['resolved', 'verified', 'closed'].includes(report.status.code) ? (
+          {group === 'closed' || group === 'merged' ? (
             <IconCheck className="h-5 w-5" stroke={1.8} />
           ) : (
             <IconClock className="h-5 w-5" stroke={1.7} />
@@ -81,7 +67,7 @@ function ReportRow({ report }: { report: ReportRow }): JSX.Element {
           <p className="mt-1 line-clamp-1 text-xs text-[#6f6e69]">{report.description}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#85847f]">
             <span className="font-mono text-[10px] uppercase tracking-[0.08em]">
-              {report.reference}
+              {report.tracking_number}
             </span>
             <span className="text-[#d0cec8]">·</span>
             <span>{formatDate(report.created_at)}</span>
@@ -120,7 +106,7 @@ export default function MyReportsPage(): JSX.Element {
       .filter((r) => r.created_at != null)
       .map((r) => ({
         id: r.id,
-        reference: buildTrackingId(r.id),
+        tracking_number: r.tracking_number,
         title: r.title,
         description: r.description,
         status: r.status,
@@ -130,14 +116,15 @@ export default function MyReportsPage(): JSX.Element {
       }));
 
     let filtered = rows;
-    if (statusFilter === 'open') filtered = rows.filter((r) => isOpenStatus(r.status.code));
-    if (statusFilter === 'closed') filtered = rows.filter((r) => !isOpenStatus(r.status.code));
+    if (statusFilter !== 'all') {
+      filtered = rows.filter((r) => lifecycleGroup(r.status.code) === statusFilter);
+    }
 
     filtered.sort((a, b) => {
       let cmp = 0;
       if (sortField === 'date') cmp = a.created_at.localeCompare(b.created_at);
       else if (sortField === 'status') cmp = a.status.code.localeCompare(b.status.code);
-      else if (sortField === 'reference') cmp = a.reference.localeCompare(b.reference);
+      else if (sortField === 'reference') cmp = a.tracking_number.localeCompare(b.tracking_number);
       return sortDir === 'asc' ? cmp : -cmp;
     });
 
@@ -246,7 +233,7 @@ export default function MyReportsPage(): JSX.Element {
           <>
             <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
               {meta.total} report{meta.total === 1 ? '' : 's'}
-              {statusFilter !== 'all' && ` (${statusFilter === 'open' ? 'pending' : 'resolved'})`}
+              {statusFilter !== 'all' && ` (${statusFilter})`}
             </p>
 
             <div className="divide-y divide-[#e4e2dc]">

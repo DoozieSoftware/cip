@@ -10,7 +10,6 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
-
 /**
  * Roundtrip test for the otps migration introduced in T-M2-004.
  *

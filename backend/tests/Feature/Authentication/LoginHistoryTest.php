@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Modules\Authentication\Models\LoginHistory;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Users\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 

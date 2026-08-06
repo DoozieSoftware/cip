@@ -62,7 +62,10 @@ export function InstallPrompt(): JSX.Element | null {
     window.addEventListener('appinstalled', onInstalled);
 
     // If running as installed PWA, hide the prompt immediately.
-    if (typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches) {
+    if (
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(display-mode: standalone)').matches
+    ) {
       setInstalled(true);
     }
 
@@ -101,18 +104,24 @@ export function InstallPrompt(): JSX.Element | null {
       className="fixed inset-x-0 bottom-20 z-40 mx-auto flex max-w-md items-start gap-3 rounded-xl border border-emerald-200 bg-white p-4 shadow-lg sm:bottom-6"
       style={{ left: '50%', transform: 'translateX(-50%)' }}
     >
-      <div aria-hidden className="grid h-10 w-10 flex-none place-items-center rounded-lg bg-emerald-600 text-white">
+      <div
+        aria-hidden
+        className="grid h-10 w-10 flex-none place-items-center rounded-lg bg-emerald-600 text-white"
+      >
         📲
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold text-slate-900">Install the app</div>
         <p className="mt-0.5 text-xs text-slate-600">
-          Add Civic Intelligence Platform to your home screen for offline report drafting and one-tap camera capture.
+          Add Civic Intelligence Platform to your home screen for offline report drafting and
+          one-tap camera capture.
         </p>
         <div className="mt-3 flex gap-2">
           <button
             type="button"
-            onClick={() => { void onInstall(); }}
+            onClick={() => {
+              void onInstall();
+            }}
             className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700"
           >
             Install

@@ -35,6 +35,7 @@ class AuditLogController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+
         if (! $user instanceof User) {
             throw new ApiException('UNAUTHENTICATED', 'Authentication required.', 401);
         }
@@ -42,11 +43,13 @@ class AuditLogController extends Controller
         // the latter is what the Super Admin's Roles & Permissions screen
         // actually edits, so it needs a real effect here.
         $hasPermission = false;
+
         try {
             $hasPermission = $user->hasPermissionTo('audit.view');
         } catch (\Throwable) {
             // Permission not seeded/registered — fall through to the role check.
         }
+
         if (! $user->hasAnyRole(['super_admin', 'system', 'auditor', 'department_admin']) && ! $hasPermission) {
             throw new ApiException('FORBIDDEN', 'Audit log is read-only for auditors and admins.', 403);
         }
@@ -56,21 +59,27 @@ class AuditLogController extends Controller
         if ($request->filled('user_id')) {
             $query->where('user_id', (string) $request->string('user_id'));
         }
+
         if ($request->filled('action')) {
-            $query->where('action', 'like', '%' . (string) $request->string('action') . '%');
+            $query->where('action', 'like', '%'.(string) $request->string('action').'%');
         }
+
         if ($request->filled('entity')) {
             $query->where('entity', (string) $request->string('entity'));
         }
+
         if ($request->filled('entity_id')) {
             $query->where('entity_id', (string) $request->string('entity_id'));
         }
+
         if ($request->filled('ip')) {
             $query->where('ip', (string) $request->string('ip'));
         }
+
         if ($request->filled('device_fingerprint')) {
-            $query->where('device_fingerprint', 'like', '%' . (string) $request->string('device_fingerprint') . '%');
+            $query->where('device_fingerprint', 'like', '%'.(string) $request->string('device_fingerprint').'%');
         }
+
         if ($request->filled('role')) {
             $roleName = (string) $request->string('role');
             $query->whereHas('user', function ($q) use ($roleName): void {
@@ -79,14 +88,17 @@ class AuditLogController extends Controller
                 });
             });
         }
+
         if ($request->filled('date_from')) {
             $query->where('created_at', '>=', (string) $request->string('date_from'));
         }
+
         if ($request->filled('date_to')) {
             $query->where('created_at', '<=', (string) $request->string('date_to'));
         }
+
         if ($request->filled('search')) {
-            $term = '%' . (string) $request->string('search') . '%';
+            $term = '%'.(string) $request->string('search').'%';
             $query->where(function ($q) use ($term): void {
                 $q->where('action', 'like', $term)
                     ->orWhere('entity', 'like', $term)
@@ -102,6 +114,7 @@ class AuditLogController extends Controller
         $rows = collect($page->items())->map(static function (AuditLog $row): array {
             $user = $row->user;
             $roles = $user?->roles?->pluck('name')->all() ?? [];
+
             return [
                 'id' => $row->id,
                 'user_id' => $row->user_id,

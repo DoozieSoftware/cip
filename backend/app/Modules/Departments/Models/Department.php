@@ -128,6 +128,6 @@ class Department extends Model
             'department_id',
             'user_id',
         )->withPivot(['id', 'is_manager', 'assigned_at'])
-         ->withTimestamps();
+            ->withTimestamps();
     }
 }

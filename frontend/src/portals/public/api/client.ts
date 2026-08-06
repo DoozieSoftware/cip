@@ -57,7 +57,9 @@ export function usePublicDepartmentPerformance() {
   return useQuery({
     queryKey: ['public', 'departments', 'performance'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<{ departments: DepartmentPerformance[] }>>('/public/departments/performance');
+      const res = await apiRequest<ApiEnvelope<{ departments: DepartmentPerformance[] }>>(
+        '/public/departments/performance',
+      );
       return res.data.departments;
     },
     staleTime: FIVE_MINUTES,

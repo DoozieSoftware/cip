@@ -39,7 +39,10 @@ const APP_SHELL = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(SHELL_CACHE).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()),
+    caches
+      .open(SHELL_CACHE)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -48,9 +51,7 @@ self.addEventListener('activate', (event) => {
     (async () => {
       const keys = await caches.keys();
       await Promise.all(
-        keys
-          .filter((key) => !key.startsWith(VERSION))
-          .map((key) => caches.delete(key)),
+        keys.filter((key) => !key.startsWith(VERSION)).map((key) => caches.delete(key)),
       );
       await self.clients.claim();
     })(),

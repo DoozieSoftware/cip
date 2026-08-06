@@ -40,13 +40,34 @@ export function BulkActionsBar({
         className="sticky bottom-4 z-20 mx-auto flex w-fit items-center gap-3 rounded-full bg-slate-900 px-4 py-2 text-sm text-white shadow-lg"
       >
         <span>{count} selected</span>
-        <Button size="sm" variant="secondary" onClick={() => { setType('approve'); setOpen(true); }}>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            setType('approve');
+            setOpen(true);
+          }}
+        >
           Bulk approve
         </Button>
-        <Button size="sm" variant="danger" onClick={() => { setType('reject'); setOpen(true); }}>
+        <Button
+          size="sm"
+          variant="danger"
+          onClick={() => {
+            setType('reject');
+            setOpen(true);
+          }}
+        >
           Bulk reject
         </Button>
-        <Button size="sm" variant="secondary" onClick={() => { setType('merge'); setOpen(true); }}>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            setType('merge');
+            setOpen(true);
+          }}
+        >
           Bulk merge
         </Button>
       </div>
@@ -64,7 +85,12 @@ export function BulkActionsBar({
               variant={type === 'reject' ? 'danger' : 'primary'}
               loading={loading}
               onClick={() => {
-                onApply({ type, reason_code: reason || undefined, remarks: remarks || undefined, canonical_id: canonical || undefined });
+                onApply({
+                  type,
+                  reason_code: reason || undefined,
+                  remarks: remarks || undefined,
+                  canonical_id: canonical || undefined,
+                });
                 setOpen(false);
               }}
             >

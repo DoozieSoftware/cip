@@ -85,7 +85,10 @@ class AiPipelineOrchestrator implements ShouldQueue
     /** @var AiJob|null the row created at the start of a successful attempt */
     private ?AiJob $jobRow = null;
 
-    public function __construct(public readonly string $reportId) {}
+    public function __construct(public readonly string $reportId)
+    {
+        $this->onQueue('ai');
+    }
 
     public function handle(
         ProviderFailoverService $failover,

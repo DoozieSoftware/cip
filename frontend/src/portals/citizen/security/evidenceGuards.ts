@@ -86,7 +86,18 @@ const EXIF_IFD_POINTER = 0x8769;
 
 /** TIFF field type -> byte size, per the TIFF 6.0 spec. */
 const TIFF_TYPE_SIZE: Record<number, number> = {
-  1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 6: 1, 7: 1, 8: 2, 9: 4, 10: 8, 11: 4, 12: 8,
+  1: 1,
+  2: 1,
+  3: 2,
+  4: 4,
+  5: 8,
+  6: 1,
+  7: 1,
+  8: 2,
+  9: 4,
+  10: 8,
+  11: 4,
+  12: 8,
 };
 
 /**
@@ -127,8 +138,7 @@ export function stripExif(buffer: ArrayBuffer): ArrayBuffer {
       if (exifHeader.startsWith('Exif')) {
         const tiffStart = segStart + 6;
         if (tiffStart + 8 <= bytes.length) {
-          const littleEndian =
-            bytes[tiffStart] === 0x49 && bytes[tiffStart + 1] === 0x49;
+          const littleEndian = bytes[tiffStart] === 0x49 && bytes[tiffStart + 1] === 0x49;
           const read16 = (off: number): number => view.getUint16(off, littleEndian);
           const read32 = (off: number): number => view.getUint32(off, littleEndian);
 
@@ -251,10 +261,18 @@ export function guardVideoDuration(
     return { ok: false, kind: 'too_short', message: 'Video length is unreadable.' };
   }
   if (durationMs < minMs) {
-    return { ok: false, kind: 'too_short', message: `Video must be at least ${minMs / 1000} seconds.` };
+    return {
+      ok: false,
+      kind: 'too_short',
+      message: `Video must be at least ${minMs / 1000} seconds.`,
+    };
   }
   if (durationMs > maxMs) {
-    return { ok: false, kind: 'too_long', message: `Video must be at most ${maxMs / 1000} seconds.` };
+    return {
+      ok: false,
+      kind: 'too_long',
+      message: `Video must be at most ${maxMs / 1000} seconds.`,
+    };
   }
   return { ok: true };
 }

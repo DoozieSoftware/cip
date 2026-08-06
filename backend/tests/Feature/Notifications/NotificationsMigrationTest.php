@@ -10,7 +10,6 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
-
 it('creates the notifications table with the expected columns', function (): void {
     expect(Schema::hasTable('notifications'))->toBeTrue();
 

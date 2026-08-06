@@ -97,6 +97,7 @@ class AdminUserController extends BaseController
     {
         $this->ensureAdmin($request);
         $model = $this->findUser($user, withTrashed: true);
+
         if ($model->deleted_at === null) {
             return $this->respond((new UserResource($model))->toArray($request), 'User was not deleted.');
         }
@@ -118,6 +119,7 @@ class AdminUserController extends BaseController
     {
         $query = $withTrashed ? User::query()->withTrashed() : User::query();
         $user = $query->where('id', $id)->first();
+
         if ($user === null) {
             throw ApiException::notFound('User');
         }

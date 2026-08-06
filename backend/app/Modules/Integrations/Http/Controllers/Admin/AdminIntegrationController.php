@@ -126,10 +126,12 @@ class AdminIntegrationController extends BaseController
     private function find(string $id, bool $withTrashed = false): Integration
     {
         $q = Integration::query();
+
         if ($withTrashed) {
             $q->withTrashed();
         }
         $row = $q->where('id', $id)->first();
+
         if ($row === null) {
             throw ApiException::notFound('Integration');
         }

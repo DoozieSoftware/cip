@@ -37,7 +37,9 @@ describe('moderator api client — ApiResponse envelope unwrapping', () => {
     );
 
     const { api } = await import('../client');
-    const result = await api.get<{ title: string; mock_gps_score: number }>('/moderator/reports/abc');
+    const result = await api.get<{ title: string; mock_gps_score: number }>(
+      '/moderator/reports/abc',
+    );
 
     expect(result.title).toBe('Pothole on MG Road');
     expect(result.mock_gps_score).toBe(0.42);
@@ -46,12 +48,19 @@ describe('moderator api client — ApiResponse envelope unwrapping', () => {
   });
 
   it('still throws ApiError on a non-ok response, using the envelope message', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({ success: false, message: 'Report not found', data: null, code: 'NOT_FOUND' }),
-        { status: 404, headers: { 'content-type': 'application/json' } },
-      ),
-    );
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            success: false,
+            message: 'Report not found',
+            data: null,
+            code: 'NOT_FOUND',
+          }),
+          { status: 404, headers: { 'content-type': 'application/json' } },
+        ),
+      );
 
     const { api, ApiError } = await import('../client');
 

@@ -27,7 +27,9 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('citizen — offline submission (T-M13-024)', () => {
-  test('a report enqueued through the real singleton is delivered when queue:drain fires', async ({ page }) => {
+  test('a report enqueued through the real singleton is delivered when queue:drain fires', async ({
+    page,
+  }) => {
     let submitCalled = false;
 
     // Intercept the real network calls the offline-queue retry handler
@@ -97,10 +99,12 @@ test.describe('citizen — offline submission (T-M13-024)', () => {
     // The real listener calls getQueue().drain(), which calls the real
     // submitReportPayload, which makes the intercepted network calls.
     await expect
-      .poll(async () => page.evaluate(async () => {
-        const { getQueue } = await import('/src/portals/citizen/offline/queue.ts');
-        return getQueue().size();
-      }))
+      .poll(async () =>
+        page.evaluate(async () => {
+          const { getQueue } = await import('/src/portals/citizen/offline/queue.ts');
+          return getQueue().size();
+        }),
+      )
       .toBe(0);
 
     expect(submitCalled).toBe(true);

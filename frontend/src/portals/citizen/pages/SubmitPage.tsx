@@ -541,7 +541,7 @@ export default function SubmitPage(): JSX.Element {
           </section>
         )}
 
-         {/* Step 3: Location Verification */}
+        {/* Step 3: Location Verification */}
         {currentViewStep === 'Location' && (
           <section className="space-y-4">
             <div className="rounded-xl bg-white p-4">
@@ -650,7 +650,7 @@ export default function SubmitPage(): JSX.Element {
           </section>
         )}
 
-         {/* Step 4: Evidence Upload */}
+        {/* Step 4: Evidence Upload */}
         {currentViewStep === 'Evidence' && (
           <section className="space-y-4">
             <div className="rounded-xl bg-white p-4">
@@ -677,7 +677,10 @@ export default function SubmitPage(): JSX.Element {
             {/* Safety advisory */}
             <div className="rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200">
               <div className="flex items-start gap-3">
-                <IconAlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" stroke={1.6} />
+                <IconAlertTriangle
+                  className="mt-0.5 h-5 w-5 shrink-0 text-amber-600"
+                  stroke={1.6}
+                />
                 <div className="text-sm leading-relaxed text-amber-800">
                   <p className="font-semibold text-amber-900">Safety First</p>
                   <p className="mt-0.5">
@@ -782,7 +785,7 @@ export default function SubmitPage(): JSX.Element {
           </section>
         )}
 
-         {/* Step 5: Review & Submit */}
+        {/* Step 5: Review & Submit */}
         {currentViewStep === 'Review' && (
           <section className="space-y-4">
             <div className="rounded-xl bg-white p-4">

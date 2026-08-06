@@ -15,6 +15,7 @@ class InternalNoteResource extends JsonResource
     public function toArray(Request $request): array
     {
         $n = $this->resource;
+
         return [
             'id' => $n->id,
             'report_id' => $n->report_id,

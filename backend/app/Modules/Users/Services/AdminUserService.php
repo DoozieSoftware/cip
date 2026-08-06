@@ -10,7 +10,6 @@ use App\Modules\Users\Events\UserCreated;
 use App\Modules\Users\Events\UserDeleted;
 use App\Modules\Users\Events\UserUpdated;
 use App\Modules\Users\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
@@ -36,6 +35,7 @@ class AdminUserService extends BaseService
         return $this->transaction(function () use ($payload): User {
             $user = new User;
             $user->fill($this->withoutPassword($payload));
+
             if (! empty($payload['password'])) {
                 $user->password = Hash::make($payload['password']);
             }
@@ -62,9 +62,11 @@ class AdminUserService extends BaseService
         return $this->transaction(function () use ($user, $payload): User {
             $before = $user->only(['name', 'email', 'mobile', 'status', 'anonymous_enabled']);
             $user->fill($this->withoutPassword($payload));
+
             if (! empty($payload['password'])) {
                 $user->password = Hash::make($payload['password']);
             }
+
             if (array_key_exists('status', $payload)) {
                 $user->status = $payload['status'];
             }
@@ -109,10 +111,11 @@ class AdminUserService extends BaseService
             ->pluck('name')
             ->all();
         $missing = array_values(array_diff($roleNames, $existing));
+
         if ($missing !== []) {
             throw new ApiException(
                 'UNKNOWN_ROLES',
-                'One or more role names do not exist: ' . implode(', ', $missing),
+                'One or more role names do not exist: '.implode(', ', $missing),
                 422,
                 ['missing' => $missing],
             );
@@ -138,10 +141,11 @@ class AdminUserService extends BaseService
     {
         if (! $partial || array_key_exists('status', $payload)) {
             $status = $payload['status'] ?? null;
+
             if ($status !== null && ! in_array($status, self::ALLOWED_STATUSES, true)) {
                 throw new ApiException(
                     'INVALID_STATUS',
-                    'Status must be one of: ' . implode(', ', self::ALLOWED_STATUSES),
+                    'Status must be one of: '.implode(', ', self::ALLOWED_STATUSES),
                     422,
                     ['allowed' => self::ALLOWED_STATUSES],
                 );

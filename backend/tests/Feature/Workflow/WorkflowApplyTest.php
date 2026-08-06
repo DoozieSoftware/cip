@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Modules\Reports\Events\ReportStatusChanged;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Reports\Models\ReportStatusHistory;
@@ -15,11 +14,11 @@ use App\Modules\Workflow\Services\ConditionEvaluator;
 use App\Modules\Workflow\Services\TransitionGuard;
 use App\Modules\Workflow\Services\WorkflowEngine;
 use App\Modules\Workflow\ValueObjects\WorkflowDecision;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
-
 
 beforeEach(function (): void {
     $this->engine = new WorkflowEngine(new TransitionGuard(new ConditionEvaluator));
