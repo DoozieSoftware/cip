@@ -1,15 +1,25 @@
 import { type JSX } from 'react';
 import { useSchedulerJobs, useSchedulerAction, type SchedulerJob } from '../api/client';
-import { Spinner } from '../../moderator/design';
-import { cx } from '../../moderator/design/cx';
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Button,
+  Spinner,
+  EmptyState,
+  ErrorState,
+} from '../../moderator/design';
+import { IconPlayerPlay, IconPlayerPause, IconPlayerSkipForward } from '@tabler/icons-react';
 
 function StatusPill({ paused }: { paused: boolean }): JSX.Element {
   return (
     <span
-      className={cx(
-        'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide',
-        paused ? 'bg-rose-100 text-rose-800 border-rose-200' : 'bg-emerald-100 text-emerald-800 border-emerald-200',
-      )}
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide ring-1 ring-inset ${
+        paused
+          ? 'bg-[#fbeeed] text-[#9f3731] ring-[#ecccc8]'
+          : 'bg-[#edf7f0] text-[#256b45] ring-[#c8e6d2]'
+      }`}
     >
       <span aria-hidden>{paused ? '⏸' : '▶'}</span>
       {paused ? 'paused' : 'running'}
@@ -17,51 +27,61 @@ function StatusPill({ paused }: { paused: boolean }): JSX.Element {
   );
 }
 
-function JobRow({ job, busy, onAction }: { job: SchedulerJob; busy: boolean; onAction: (a: 'run-now' | 'pause' | 'resume') => void }): JSX.Element {
+function JobRow({
+  job,
+  busy,
+  onAction,
+}: {
+  job: SchedulerJob;
+  busy: boolean;
+  onAction: (a: 'run-now' | 'pause' | 'resume') => void;
+}): JSX.Element {
   return (
     <tr>
       <td className="px-5 py-3">
-        <div className="text-sm font-medium text-slate-900">{job.id}</div>
-        {job.command ? <div className="font-mono text-xs text-slate-500">{job.command}</div> : null}
+        <div className="text-sm font-medium text-[#1d1d1b]">{job.id}</div>
+        {job.command ? <div className="font-mono text-xs text-[#85847f]">{job.command}</div> : null}
       </td>
-      <td className="px-5 py-3 text-sm text-slate-700">
-        <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{job.expression || '—'}</code>
+      <td className="px-5 py-3 text-sm text-[#6f6e69]">
+        <code className="rounded bg-[#efeee9] px-1.5 py-0.5 text-xs">{job.expression || '—'}</code>
       </td>
-      <td className="px-5 py-3 text-sm tabular-nums text-slate-700">
+      <td className="px-5 py-3 text-sm tabular-nums text-[#6f6e69]">
         {job.next_due_at ? new Date(job.next_due_at).toLocaleString() : '—'}
       </td>
       <td className="px-5 py-3 text-sm">
         <StatusPill paused={job.paused} />
       </td>
       <td className="px-5 py-3 text-right">
-        <div className="flex justify-end gap-1.5">
-          <button
-            type="button"
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
             disabled={busy}
             onClick={() => onAction('run-now')}
-            className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-            aria-label={`Run ${job.id} now`}
+            leftIcon={<IconPlayerSkipForward className="h-3.5 w-3.5" stroke={1.6} />}
           >
             Run now
-          </button>
+          </Button>
           {job.paused ? (
-            <button
-              type="button"
+            <Button
+              variant="success"
+              size="sm"
               disabled={busy}
               onClick={() => onAction('resume')}
-              className="rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+              leftIcon={<IconPlayerPlay className="h-3.5 w-3.5" stroke={1.6} />}
             >
               Resume
-            </button>
+            </Button>
           ) : (
-            <button
-              type="button"
+            <Button
+              variant="danger"
+              size="sm"
               disabled={busy}
               onClick={() => onAction('pause')}
-              className="rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+              leftIcon={<IconPlayerPause className="h-3.5 w-3.5" stroke={1.6} />}
             >
               Pause
-            </button>
+            </Button>
           )}
         </div>
       </td>
@@ -81,80 +101,134 @@ export default function AdminScheduler(): JSX.Element {
     action.mutate({ id, action: a });
   };
 
+  if (jobs.isError) {
+    return (
+      <div className="min-h-screen bg-[#f3f2ed] p-6">
+        <ErrorState
+          title="Failed to load scheduler"
+          description="The scheduler jobs could not be loaded. Try again in a moment."
+          error={jobs.error instanceof Error ? jobs.error : null}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Scheduler</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Every registered queue + scheduled job. Pause, resume, or run them on demand.
-          </p>
-        </div>
-        {jobs.isFetching ? <Spinner label="Refreshing" /> : null}
-      </header>
-
-      <section aria-label="Counts" className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total jobs</div>
-          <div className="mt-1 text-2xl font-bold text-slate-900">{list.length}</div>
-        </div>
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-          <div className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Running</div>
-          <div className="mt-1 text-2xl font-bold text-emerald-900">{running}</div>
-        </div>
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
-          <div className="text-xs font-semibold uppercase tracking-wider text-rose-700">Paused</div>
-          <div className="mt-1 text-2xl font-bold text-rose-900">{paused}</div>
-        </div>
-      </section>
-
-      <section aria-label="Jobs" className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-        {jobs.isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Spinner label="Loading jobs" />
+    <div className="min-h-screen bg-[#f3f2ed] p-6">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <header className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">Scheduler</h1>
+            <p className="mt-1 text-sm text-[#6f6e69]">
+              Every registered queue + scheduled job. Pause, resume, or run them on demand.
+            </p>
           </div>
-        ) : list.length === 0 ? (
-          <div className="px-5 py-10 text-center text-sm text-slate-500">No scheduled jobs registered.</div>
-        ) : (
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
-                <th scope="col" className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Job
-                </th>
-                <th scope="col" className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Schedule
-                </th>
-                <th scope="col" className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Next run
-                </th>
-                <th scope="col" className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Status
-                </th>
-                <th scope="col" className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {list.map((job) => (
-                <JobRow key={job.id} job={job} busy={action.isPending} onAction={(a) => handleAction(job.id, a)} />
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+          {jobs.isFetching ? <Spinner label="Refreshing" /> : null}
+        </header>
 
-      {action.isError ? (
-        <div role="alert" className="rounded-md border border-rose-300 bg-rose-50 px-4 py-2 text-sm text-rose-800">
-          Action failed: {(action.error)?.message ?? 'unknown error'}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Card>
+            <CardBody>
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                Total jobs
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-[#1d1d1b]">{list.length}</p>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody>
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#256b45]">
+                Running
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-[#256b45]">{running}</p>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody>
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#9f3731]">
+                Paused
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-[#9f3731]">{paused}</p>
+            </CardBody>
+          </Card>
         </div>
-      ) : null}
-      {action.isSuccess ? (
-        <div role="status" className="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
-          Last action: {action.variables?.action} on {action.variables?.id}
-        </div>
-      ) : null}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Scheduled jobs</CardTitle>
+          </CardHeader>
+          {jobs.isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Spinner label="Loading jobs" />
+            </div>
+          ) : list.length === 0 ? (
+            <div className="px-5 py-10">
+              <EmptyState
+                title="No scheduled jobs"
+                description="No scheduled jobs are registered."
+              />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-[#e4e2dc] bg-[#f3f2ed]">
+                    <th
+                      scope="col"
+                      className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]"
+                    >
+                      Job
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]"
+                    >
+                      Schedule
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]"
+                    >
+                      Next run
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]"
+                    >
+                      Status
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-5 py-3 text-right font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#e4e2dc]">
+                  {list.map((job) => (
+                    <JobRow
+                      key={job.id}
+                      job={job}
+                      busy={action.isPending}
+                      onAction={(a) => handleAction(job.id, a)}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+
+        {action.isError ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-[#ecccc8] bg-[#fbeeed] px-4 py-3 text-sm text-[#9f3731]"
+          >
+            Action failed: {action.error?.message ?? 'unknown error'}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

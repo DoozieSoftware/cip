@@ -62,7 +62,9 @@ describe('AdminReports', () => {
     expect(screen.getByRole('heading', { name: 'All reports' })).toBeTruthy();
     expect(screen.getByText('Broken water main')).toBeTruthy();
     expect(screen.getByText('secondary')).toBeTruthy();
-    fireEvent.change(screen.getByLabelText('Assignment'), { target: { value: 'secondary' } });
+    fireEvent.change(screen.getByDisplayValue('All assignments'), {
+      target: { value: 'secondary' },
+    });
 
     expect(mocks.useAdminReports).toHaveBeenLastCalledWith(
       expect.objectContaining({ assignment_type: 'secondary' }),

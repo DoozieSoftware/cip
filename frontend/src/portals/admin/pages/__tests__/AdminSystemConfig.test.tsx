@@ -12,16 +12,60 @@ vi.mock('../../api/client', () => ({
   useDeleteSetting: vi.fn(() => ({ mutate: mutateMock, isPending: false })),
 }));
 
- 
 const { useSettings } = await import('../../api/client');
 const AdminSystemConfig = (await import('../AdminSystemConfig')).default;
 
 const ROWS = [
-  { id: 's1', key: 'limits.upload.per_hour', value: 20, type: 'int' as const, description: 'Max uploads per citizen per hour', is_public: false, created_at: null, updated_at: null },
-  { id: 's2', key: 'locale.default', value: 'en-IN', type: 'string' as const, description: 'Default UI locale', is_public: true, created_at: null, updated_at: null },
-  { id: 's3', key: 'retention.media.days', value: 90, type: 'int' as const, description: 'Media retention', is_public: false, created_at: null, updated_at: null },
-  { id: 's4', key: 'media_storage', value: {}, type: 'json' as const, description: null, is_public: false, created_at: null, updated_at: null },
-  { id: 's5', key: 'app_configs', value: {}, type: 'json' as const, description: null, is_public: false, created_at: null, updated_at: null },
+  {
+    id: 's1',
+    key: 'limits.upload.per_hour',
+    value: 20,
+    type: 'int' as const,
+    description: 'Max uploads per citizen per hour',
+    is_public: false,
+    created_at: null,
+    updated_at: null,
+  },
+  {
+    id: 's2',
+    key: 'locale.default',
+    value: 'en-IN',
+    type: 'string' as const,
+    description: 'Default UI locale',
+    is_public: true,
+    created_at: null,
+    updated_at: null,
+  },
+  {
+    id: 's3',
+    key: 'retention.media.days',
+    value: 90,
+    type: 'int' as const,
+    description: 'Media retention',
+    is_public: false,
+    created_at: null,
+    updated_at: null,
+  },
+  {
+    id: 's4',
+    key: 'media_storage',
+    value: {},
+    type: 'json' as const,
+    description: null,
+    is_public: false,
+    created_at: null,
+    updated_at: null,
+  },
+  {
+    id: 's5',
+    key: 'app_configs',
+    value: {},
+    type: 'json' as const,
+    description: null,
+    is_public: false,
+    created_at: null,
+    updated_at: null,
+  },
 ];
 
 describe('AdminSystemConfig (T-M12-028)', () => {
@@ -29,14 +73,19 @@ describe('AdminSystemConfig (T-M12-028)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mutateMock.mockClear();
-    (useSettings as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ data: ROWS, isLoading: false });
+    (useSettings as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: ROWS,
+      isLoading: false,
+    });
     client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   });
 
   it('renders the page title', async () => {
     render(
       <QueryClientProvider client={client}>
-        <MemoryRouter><AdminSystemConfig /></MemoryRouter>
+        <MemoryRouter>
+          <AdminSystemConfig />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
     expect(await screen.findByText('System configuration')).toBeTruthy();
@@ -45,7 +94,9 @@ describe('AdminSystemConfig (T-M12-028)', () => {
   it('only shows system keys (excludes retention/media_storage/app_configs)', async () => {
     render(
       <QueryClientProvider client={client}>
-        <MemoryRouter><AdminSystemConfig /></MemoryRouter>
+        <MemoryRouter>
+          <AdminSystemConfig />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
     const table = await screen.findByRole('table');
@@ -59,7 +110,9 @@ describe('AdminSystemConfig (T-M12-028)', () => {
   it('renders the new setting button and the save / delete actions per row', async () => {
     render(
       <QueryClientProvider client={client}>
-        <MemoryRouter><AdminSystemConfig /></MemoryRouter>
+        <MemoryRouter>
+          <AdminSystemConfig />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
     expect(await screen.findByRole('button', { name: 'New setting' })).toBeTruthy();

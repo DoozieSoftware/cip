@@ -1,7 +1,18 @@
+import { useState, type JSX } from 'react';
 import { useSecurityPolicies, useUpsertSecurityPolicy, type SecurityPolicy } from '../api/client';
-import { type JSX } from 'react';
-import { Spinner, EmptyState } from '../../moderator/design';
-import { useState } from 'react';
+import {
+  Spinner,
+  EmptyState,
+  ErrorState,
+  Dialog,
+  Button,
+  Card,
+  Table,
+  TR,
+  TH,
+  TD,
+} from '../../moderator/design';
+import { IconPencil } from '@tabler/icons-react';
 
 export default function AdminSecurityPolicies(): JSX.Element {
   const list = useSecurityPolicies();
@@ -25,7 +36,12 @@ export default function AdminSecurityPolicies(): JSX.Element {
       return;
     }
     try {
-      await upsert.mutateAsync({ key: editing.key, value: parsed, type: editing.type, description: editing.description ?? '' });
+      await upsert.mutateAsync({
+        key: editing.key,
+        value: parsed,
+        type: editing.type,
+        description: editing.description ?? '',
+      });
       setEditing(null);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Save failed');
@@ -33,71 +49,98 @@ export default function AdminSecurityPolicies(): JSX.Element {
   }
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-900">Security policies</h1>
-        <p className="text-sm text-slate-600">Database-driven knobs the platform reads at runtime.</p>
-      </header>
-
-      {list.isLoading ? (
-        <Spinner label="Loading policies" />
-      ) : (list.data ?? []).length === 0 ? (
-        <EmptyState title="No policies" description="Run database/seeders/DatabaseSeeder to install the defaults." />
-      ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-4 py-2">Key</th>
-                <th className="px-4 py-2">Value</th>
-                <th className="px-4 py-2">Type</th>
-                <th className="px-4 py-2 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {(list.data ?? []).map((p: SecurityPolicy) => (
-                <tr key={p.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-2 font-mono text-xs text-slate-900">{p.key}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-slate-600">
-                    {JSON.stringify(p.value)}
-                  </td>
-                  <td className="px-4 py-2 text-xs text-slate-500">{p.type}</td>
-                  <td className="px-4 py-2 text-right">
-                    <button
-                      type="button"
-                      onClick={() => startEdit(p)}
-                      className="rounded-full bg-fuchsia-50 px-3 py-1 text-xs font-medium text-fuchsia-700 hover:bg-fuchsia-100"
-                    >
-                      Edit
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {editing !== null && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 grid place-items-center bg-slate-900/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
-            <h2 className="text-lg font-semibold text-slate-900">Edit {editing.key}</h2>
-            <p className="mt-1 text-xs text-slate-500">JSON value, e.g. {`{"min": 8}`}</p>
-            <textarea
-              value={draftValue}
-              onChange={(e) => setDraftValue(e.target.value)}
-              rows={8}
-              className="mt-3 w-full rounded-md border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-fuchsia-500 focus:ring-fuchsia-500"
-            />
-            <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setEditing(null)} className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700">Cancel</button>
-              <button type="button" onClick={() => { void save(); }} disabled={upsert.isPending} className="rounded-md bg-fuchsia-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-fuchsia-700 disabled:bg-fuchsia-300">
-                {upsert.isPending ? 'Saving…' : 'Save'}
-              </button>
-            </div>
+    <div className="min-h-screen bg-[#f3f2ed] p-6">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">
+              Security policies
+            </h1>
+            <p className="mt-1 text-sm text-[#6f6e69]">
+              Database-driven knobs the platform reads at runtime.
+            </p>
           </div>
-        </div>
-      )}
+        </header>
+
+        <Card>
+          {list.isLoading ? (
+            <div className="flex justify-center py-12" aria-live="polite">
+              <Spinner label="Loading policies" />
+            </div>
+          ) : list.isError ? (
+            <ErrorState title="Failed to load policies" error={list.error} />
+          ) : (list.data ?? []).length === 0 ? (
+            <EmptyState
+              title="No policies"
+              description="Run database/seeders/DatabaseSeeder to install the defaults."
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <Table className="ring-[#e4e2dc]">
+                <thead className="bg-[#f3f2ed] text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                  <tr>
+                    <TH>Key</TH>
+                    <TH>Value</TH>
+                    <TH>Type</TH>
+                    <TH className="text-right">Action</TH>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#e4e2dc]">
+                  {(list.data ?? []).map((p: SecurityPolicy) => (
+                    <TR key={p.id}>
+                      <TD className="font-mono text-xs text-[#1d1d1b]">{p.key}</TD>
+                      <TD className="font-mono text-xs text-[#6f6e69]">
+                        {JSON.stringify(p.value)}
+                      </TD>
+                      <TD className="text-xs text-[#6f6e69]">{p.type}</TD>
+                      <TD className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          leftIcon={<IconPencil className="h-3.5 w-3.5" stroke={1.6} />}
+                          onClick={() => startEdit(p)}
+                        >
+                          Edit
+                        </Button>
+                      </TD>
+                    </TR>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
+          )}
+        </Card>
+
+        <Dialog
+          open={editing !== null}
+          onClose={() => setEditing(null)}
+          title={`Edit ${editing?.key ?? ''}`}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setEditing(null)} disabled={upsert.isPending}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                loading={upsert.isPending}
+                onClick={() => {
+                  void save();
+                }}
+              >
+                Save
+              </Button>
+            </>
+          }
+        >
+          <p className="text-xs text-[#6f6e69]">JSON value, e.g. {`{"min": 8}`}</p>
+          <textarea
+            value={draftValue}
+            onChange={(e) => setDraftValue(e.target.value)}
+            rows={8}
+            className="mt-3 w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 font-mono text-xs focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+          />
+        </Dialog>
+      </div>
     </div>
   );
 }

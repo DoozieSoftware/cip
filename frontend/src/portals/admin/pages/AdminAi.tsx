@@ -13,8 +13,25 @@ import {
   type AiProviderInput,
   type PromptVersion,
 } from '../api/client';
-import { Spinner } from '../../moderator/design';
+import {
+  Button,
+  Card,
+  CardBody,
+  Spinner,
+  EmptyState,
+  ErrorState,
+  Badge,
+} from '../../moderator/design';
 import { cx } from '../../moderator/design/cx';
+import {
+  IconPlus,
+  IconEdit,
+  IconBolt,
+  IconCheck,
+  IconX,
+  IconArrowBack,
+  IconRosetteDiscountCheck,
+} from '@tabler/icons-react';
 
 const DRIVERS: { value: AiProviderDriver; label: string }[] = [
   { value: 'qwen_vl', label: 'Qwen-VL (DashScope)' },
@@ -23,7 +40,14 @@ const DRIVERS: { value: AiProviderDriver; label: string }[] = [
 
 type TestResult = { healthy: boolean; error?: string } | null;
 
-function ProviderRow({ p, busy, testResult, onTest, onActivate, onEdit }: {
+function ProviderRow({
+  p,
+  busy,
+  testResult,
+  onTest,
+  onActivate,
+  onEdit,
+}: {
   p: AiProvider;
   busy: boolean;
   testResult: TestResult;
@@ -34,47 +58,82 @@ function ProviderRow({ p, busy, testResult, onTest, onActivate, onEdit }: {
   return (
     <tr>
       <td className="px-5 py-3 text-sm">
-        <div className="font-mono text-xs text-slate-500">{p.code}</div>
-        <div className="font-medium text-slate-900">{p.name}</div>
-        <div className="text-xs text-slate-500">driver: {p.driver} · model: {p.model}</div>
+        <div className="font-mono text-xs text-[#6f6e69]">{p.code}</div>
+        <div className="font-medium text-[#1d1d1b]">{p.name}</div>
+        <div className="text-xs text-[#6f6e69]">
+          driver: {p.driver} · model: {p.model}
+        </div>
       </td>
-      <td className="px-5 py-3 text-sm tabular-nums text-slate-700">{p.priority}</td>
+      <td className="px-5 py-3 text-sm tabular-nums text-[#1d1d1b]">{p.priority}</td>
       <td className="px-5 py-3 text-sm">
-        <span
-          className={cx(
-            'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide',
-            p.active
-              ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-              : 'bg-slate-200 text-slate-700 border-slate-300',
-          )}
-        >
-          {p.active ? 'active' : 'inactive'}
-        </span>
+        <Badge tone={p.active ? 'success' : 'neutral'}>{p.active ? 'active' : 'inactive'}</Badge>
       </td>
-      <td className="px-5 py-3 text-sm text-slate-700">
-        {p.has_secret ? 'set' : <span className="text-slate-500">not set</span>}
-      </td>
-      <td className="px-5 py-3 text-sm text-slate-700">
-        {testResult === null ? (
-          <span className="text-slate-400">not tested yet</span>
-        ) : testResult.healthy ? (
-          <span className="text-emerald-700">reachable</span>
+      <td className="px-5 py-3 text-sm text-[#1d1d1b]">
+        {p.has_secret ? (
+          <span className="inline-flex items-center gap-1 text-[#226b46]">
+            <IconCheck className="h-3.5 w-3.5" stroke={1.8} />
+            set
+          </span>
         ) : (
-          <span className="text-rose-700" title={testResult.error}>unreachable</span>
+          <span className="text-[#85847f]">not set</span>
+        )}
+      </td>
+      <td className="px-5 py-3 text-sm">
+        {testResult === null ? (
+          <span className="text-[#85847f]">not tested yet</span>
+        ) : testResult.healthy ? (
+          <span className="inline-flex items-center gap-1 text-[#226b46]">
+            <IconCheck className="h-3.5 w-3.5" stroke={1.8} />
+            reachable
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[#9f3731]" title={testResult.error}>
+            <IconX className="h-3.5 w-3.5" stroke={1.8} />
+            unreachable
+          </span>
         )}
       </td>
       <td className="px-5 py-3 text-right">
-        <div className="flex justify-end gap-1.5">
-          <button type="button" disabled={busy} onClick={onEdit} className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-50">Edit</button>
-          <button type="button" disabled={busy} onClick={onTest} className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-50">Test</button>
-          <button type="button" disabled={busy || p.active} onClick={onActivate} className="rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs text-emerald-800 hover:bg-emerald-100 disabled:opacity-50">Activate</button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={busy}
+            onClick={onEdit}
+            leftIcon={<IconEdit className="h-3.5 w-3.5" stroke={1.6} />}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={busy}
+            onClick={onTest}
+            leftIcon={<IconBolt className="h-3.5 w-3.5" stroke={1.6} />}
+          >
+            Test
+          </Button>
+          <Button
+            variant="success"
+            size="sm"
+            disabled={busy || p.active}
+            onClick={onActivate}
+            leftIcon={<IconRosetteDiscountCheck className="h-3.5 w-3.5" stroke={1.6} />}
+          >
+            Activate
+          </Button>
         </div>
       </td>
     </tr>
   );
 }
 
-function PromptRow({ p, busy, onApprove, onRollback }: {
+function PromptRow({
+  p,
+  busy,
+  onApprove,
+  onRollback,
+}: {
   p: PromptVersion;
   busy: boolean;
   onApprove: () => void;
@@ -83,36 +142,50 @@ function PromptRow({ p, busy, onApprove, onRollback }: {
   return (
     <tr>
       <td className="px-5 py-3 text-sm">
-        <div className="font-mono text-xs text-slate-500">{p.name}</div>
-        <div className="font-medium text-slate-900">v{p.version}</div>
+        <div className="font-mono text-xs text-[#6f6e69]">{p.name}</div>
+        <div className="font-medium text-[#1d1d1b]">v{p.version}</div>
       </td>
       <td className="px-5 py-3 text-sm">
-        <span
-          className={cx(
-            'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide',
-            p.status === 'approved'
-              ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-              : p.status === 'draft'
-                ? 'bg-amber-100 text-amber-800 border-amber-200'
-                : 'bg-slate-200 text-slate-700 border-slate-300',
-          )}
+        <Badge
+          tone={p.status === 'approved' ? 'success' : p.status === 'draft' ? 'warning' : 'neutral'}
         >
           {p.status}
-        </span>
+        </Badge>
       </td>
-      <td className="px-5 py-3 text-sm text-slate-600">
-        <code className="block max-w-md truncate rounded bg-slate-100 px-1.5 py-0.5 text-xs">{p.purpose ?? '—'}</code>
+      <td className="px-5 py-3 text-sm text-[#6f6e69]">
+        <code className="block max-w-md truncate rounded bg-[#efeee9] px-1.5 py-0.5 text-xs text-[#1d1d1b]">
+          {p.purpose ?? '—'}
+        </code>
       </td>
-      <td className="px-5 py-3 text-sm text-slate-600">
-        <code className="block max-w-md truncate rounded bg-slate-100 px-1.5 py-0.5 text-xs">{p.prompt_text.slice(0, 80)}{p.prompt_text.length > 80 ? '…' : ''}</code>
+      <td className="px-5 py-3 text-sm text-[#6f6e69]">
+        <code className="block max-w-md truncate rounded bg-[#efeee9] px-1.5 py-0.5 text-xs text-[#1d1d1b]">
+          {p.prompt_text.slice(0, 80)}
+          {p.prompt_text.length > 80 ? '…' : ''}
+        </code>
       </td>
-      <td className="px-5 py-3 text-sm tabular-nums text-slate-700">
+      <td className="px-5 py-3 text-sm tabular-nums text-[#1d1d1b]">
         {p.approved_at ? new Date(p.approved_at).toLocaleDateString() : '—'}
       </td>
       <td className="px-5 py-3 text-right">
-        <div className="flex justify-end gap-1.5">
-          <button type="button" disabled={busy || p.status === 'approved'} onClick={onApprove} className="rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs text-emerald-800 hover:bg-emerald-100 disabled:opacity-50">Approve</button>
-          <button type="button" disabled={busy || p.status !== 'deprecated'} onClick={onRollback} className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-800 hover:bg-amber-100 disabled:opacity-50">Rollback</button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            variant="success"
+            size="sm"
+            disabled={busy || p.status === 'approved'}
+            onClick={onApprove}
+            leftIcon={<IconCheck className="h-3.5 w-3.5" stroke={1.6} />}
+          >
+            Approve
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={busy || p.status !== 'deprecated'}
+            onClick={onRollback}
+            leftIcon={<IconArrowBack className="h-3.5 w-3.5" stroke={1.6} />}
+          >
+            Rollback
+          </Button>
         </div>
       </td>
     </tr>
@@ -136,7 +209,12 @@ const EMPTY_FORM: AiProviderInput = {
   active: false,
 };
 
-function ProviderForm({ initial, onCancel, onSubmit, busy }: {
+function ProviderForm({
+  initial,
+  onCancel,
+  onSubmit,
+  busy,
+}: {
   initial: AiProviderInput;
   onCancel: () => void;
   onSubmit: (input: AiProviderInput) => void;
@@ -154,64 +232,72 @@ function ProviderForm({ initial, onCancel, onSubmit, busy }: {
   }
 
   return (
-    <form onSubmit={handleSubmit} aria-label="Provider form" className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-5">
-      <div className="grid grid-cols-2 gap-4">
+    <form
+      onSubmit={handleSubmit}
+      aria-label="Provider form"
+      className="space-y-5 rounded-xl border border-[#e4e2dc] bg-[#f3f2ed] p-5"
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <label className="block text-sm">
-          <span className="text-slate-700">Code</span>
+          <span className="font-medium text-[#1d1d1b]">Code</span>
           <input
             required
             value={form.code}
             onChange={(e) => setForm({ ...form, code: e.target.value })}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
           />
         </label>
         <label className="block text-sm">
-          <span className="text-slate-700">Driver</span>
+          <span className="font-medium text-[#1d1d1b]">Driver</span>
           <select
             value={form.driver}
             onChange={(e) => setForm({ ...form, driver: e.target.value as AiProviderDriver })}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
           >
             {DRIVERS.map((d) => (
-              <option key={d.value} value={d.value}>{d.label}</option>
+              <option key={d.value} value={d.value}>
+                {d.label}
+              </option>
             ))}
           </select>
         </label>
         <label className="block text-sm">
-          <span className="text-slate-700">Name</span>
+          <span className="font-medium text-[#1d1d1b]">Name</span>
           <input
             required
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
           />
         </label>
         <label className="block text-sm">
-          <span className="text-slate-700">Model</span>
+          <span className="font-medium text-[#1d1d1b]">Model</span>
           <input
             required
             value={form.model}
             onChange={(e) => setForm({ ...form, model: e.target.value })}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
           />
         </label>
         <label className="col-span-2 block text-sm">
-          <span className="text-slate-700">Base URL</span>
+          <span className="font-medium text-[#1d1d1b]">Base URL</span>
           <input
             required
             type="url"
             placeholder="https://openrouter.ai/api or your Modal.com endpoint"
             value={form.base_url}
             onChange={(e) => setForm({ ...form, base_url: e.target.value })}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
           />
         </label>
         <label className="block text-sm">
-          <span className="text-slate-700">Auth type</span>
+          <span className="font-medium text-[#1d1d1b]">Auth type</span>
           <select
             value={form.auth_type}
-            onChange={(e) => setForm({ ...form, auth_type: e.target.value as AiProviderInput['auth_type'] })}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+            onChange={(e) =>
+              setForm({ ...form, auth_type: e.target.value as AiProviderInput['auth_type'] })
+            }
+            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
           >
             <option value="bearer">Bearer token</option>
             <option value="api_key">API key</option>
@@ -219,49 +305,57 @@ function ProviderForm({ initial, onCancel, onSubmit, busy }: {
           </select>
         </label>
         <label className="block text-sm">
-          <span className="text-slate-700">API key</span>
+          <span className="font-medium text-[#1d1d1b]">API key</span>
           <input
             type="password"
             placeholder="Leave blank to keep the existing key"
             value={form.credentials?.api_key ?? ''}
             onChange={(e) => setForm({ ...form, credentials: { api_key: e.target.value } })}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
           />
         </label>
         <label className="block text-sm">
-          <span className="text-slate-700">Temperature</span>
+          <span className="font-medium text-[#1d1d1b]">Temperature</span>
           <input
-            type="number" step="0.1" min={0} max={2}
+            type="number"
+            step="0.1"
+            min={0}
+            max={2}
             value={form.temperature}
             onChange={(e) => setForm({ ...form, temperature: Number(e.target.value) })}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
           />
         </label>
         <label className="block text-sm">
-          <span className="text-slate-700">Timeout (ms)</span>
+          <span className="font-medium text-[#1d1d1b]">Timeout (ms)</span>
           <input
-            type="number" min={1000} max={120000}
+            type="number"
+            min={1000}
+            max={120000}
             value={form.timeout_ms}
             onChange={(e) => setForm({ ...form, timeout_ms: Number(e.target.value) })}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
           />
         </label>
         <label className="block text-sm">
-          <span className="text-slate-700">Retry count</span>
+          <span className="font-medium text-[#1d1d1b]">Retry count</span>
           <input
-            type="number" min={0} max={5}
+            type="number"
+            min={0}
+            max={5}
             value={form.retry_count}
             onChange={(e) => setForm({ ...form, retry_count: Number(e.target.value) })}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
           />
         </label>
         <label className="block text-sm">
-          <span className="text-slate-700">Priority</span>
+          <span className="font-medium text-[#1d1d1b]">Priority</span>
           <input
-            type="number" min={0}
+            type="number"
+            min={0}
             value={form.priority}
             onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
           />
         </label>
         <label className="flex items-center gap-2 text-sm">
@@ -269,32 +363,36 @@ function ProviderForm({ initial, onCancel, onSubmit, busy }: {
             type="checkbox"
             checked={form.is_fallback}
             onChange={(e) => setForm({ ...form, is_fallback: e.target.checked })}
+            className="h-4 w-4 rounded border-[#d0cec8] text-[#1d1d1b] focus:ring-[#1d1d1b]"
           />
-          <span className="text-slate-700">Fallback provider</span>
+          <span className="font-medium text-[#1d1d1b]">Fallback provider</span>
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
             checked={form.active}
             onChange={(e) => setForm({ ...form, active: e.target.checked })}
+            className="h-4 w-4 rounded border-[#d0cec8] text-[#1d1d1b] focus:ring-[#1d1d1b]"
           />
-          <span className="text-slate-700">Active</span>
+          <span className="font-medium text-[#1d1d1b]">Active</span>
         </label>
       </div>
 
       <div>
         <div className="mb-1 flex items-center justify-between">
-          <span className="text-sm text-slate-700">Extra headers</span>
-          <button
+          <span className="text-sm font-medium text-[#1d1d1b]">Extra headers</span>
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={() => setHeaderRows([...headerRows, ['', '']])}
-            className="rounded-md border border-slate-300 bg-white px-2 py-0.5 text-xs hover:bg-slate-50"
           >
             + Add header
-          </button>
+          </Button>
         </div>
-        <p className="mb-2 text-xs text-slate-500">
-          Static headers for the request (e.g. OpenRouter&apos;s <code>HTTP-Referer</code> / <code>X-Title</code>).
+        <p className="mb-2 text-xs text-[#85847f]">
+          Static headers for the request (e.g. OpenRouter&apos;s <code>HTTP-Referer</code> /{' '}
+          <code>X-Title</code>).
         </p>
         {headerRows.map(([key, value], i) => (
           <div key={i} className="mb-1.5 flex gap-2">
@@ -306,7 +404,7 @@ function ProviderForm({ initial, onCancel, onSubmit, busy }: {
                 next[i] = [e.target.value, value];
                 setHeaderRows(next);
               }}
-              className="block w-1/2 rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+              className="block w-1/2 rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
             />
             <input
               placeholder="Header value"
@@ -316,12 +414,12 @@ function ProviderForm({ initial, onCancel, onSubmit, busy }: {
                 next[i] = [key, e.target.value];
                 setHeaderRows(next);
               }}
-              className="block w-1/2 rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+              className="block w-1/2 rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
             />
             <button
               type="button"
               onClick={() => setHeaderRows(headerRows.filter((_, idx) => idx !== i))}
-              className="rounded-md border border-slate-300 bg-white px-2 text-xs hover:bg-slate-50"
+              className="rounded-xl border border-[#d0cec8] bg-white px-2 text-sm hover:bg-[#f3f2ed]"
               aria-label={`Remove header row ${i + 1}`}
             >
               ✕
@@ -330,11 +428,13 @@ function ProviderForm({ initial, onCancel, onSubmit, busy }: {
         ))}
       </div>
 
-      <div className="flex justify-end gap-2">
-        <button type="button" onClick={onCancel} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-50">Cancel</button>
-        <button type="submit" disabled={busy} className="rounded-md border border-fuchsia-300 bg-fuchsia-50 px-3 py-1.5 text-sm text-fuchsia-800 hover:bg-fuchsia-100 disabled:opacity-50">
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button type="button" variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={busy}>
           {busy ? 'Saving…' : 'Save'}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -360,7 +460,8 @@ export default function AdminAi(): JSX.Element {
   function handleTest(id: string): void {
     testProvider.mutate(id, {
       onSuccess: (result) => setTestResults((prev) => ({ ...prev, [id]: result })),
-      onError: () => setTestResults((prev) => ({ ...prev, [id]: { healthy: false, error: 'request failed' } })),
+      onError: () =>
+        setTestResults((prev) => ({ ...prev, [id]: { healthy: false, error: 'request failed' } })),
     });
   }
 
@@ -373,141 +474,236 @@ export default function AdminAi(): JSX.Element {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">AI providers & prompts</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Manage AI vision pipeline providers and prompt versions. Secrets are write-only; rollback is non-destructive.
-          </p>
-        </div>
-        {tab === 'providers' && editing === null ? (
+    <div className="min-h-screen bg-[#f3f2ed] p-4 sm:p-6">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">
+              AI providers & prompts
+            </h1>
+            <p className="mt-1 text-sm text-[#6f6e69]">
+              Manage AI vision pipeline providers and prompt versions. Secrets are write-only;
+              rollback is non-destructive.
+            </p>
+          </div>
+          {tab === 'providers' && editing === null ? (
+            <Button
+              onClick={() => setEditing('new')}
+              leftIcon={<IconPlus className="h-4 w-4" stroke={1.6} />}
+            >
+              New provider
+            </Button>
+          ) : null}
+        </header>
+
+        <div className="flex gap-1">
           <button
             type="button"
-            onClick={() => setEditing('new')}
-            className="rounded-md border border-fuchsia-300 bg-fuchsia-50 px-3 py-1.5 text-sm text-fuchsia-800 hover:bg-fuchsia-100"
-          >
-            + New provider
-          </button>
-        ) : null}
-      </header>
-
-      <div className="flex gap-1 border-b border-slate-200">
-        <button
-          type="button"
-          onClick={() => setTab('providers')}
-          className={cx(
-            'border-b-2 px-4 py-2 text-sm font-medium',
-            tab === 'providers' ? 'border-fuchsia-600 text-fuchsia-700' : 'border-transparent text-slate-600 hover:text-slate-900',
-          )}
-        >
-          Providers ({providerList.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('prompts')}
-          className={cx(
-            'border-b-2 px-4 py-2 text-sm font-medium',
-            tab === 'prompts' ? 'border-fuchsia-600 text-fuchsia-700' : 'border-transparent text-slate-600 hover:text-slate-900',
-          )}
-        >
-          Prompts ({promptList.length})
-        </button>
-      </div>
-
-      {tab === 'providers' ? (
-        <div className="space-y-4">
-          {editing !== null ? (
-            <ProviderForm
-              initial={editing === 'new' ? EMPTY_FORM : {
-                code: editing.code,
-                driver: editing.driver,
-                name: editing.name,
-                base_url: editing.base_url ?? '',
-                auth_type: editing.auth_type,
-                credentials: { api_key: '' },
-                extra_headers: editing.extra_headers ?? {},
-                model: editing.model,
-                temperature: editing.temperature,
-                timeout_ms: editing.timeout_ms,
-                retry_count: editing.retry_count,
-                priority: editing.priority,
-                is_fallback: editing.is_fallback,
-                active: editing.active,
-              }}
-              busy={formBusy}
-              onCancel={() => setEditing(null)}
-              onSubmit={handleFormSubmit}
-            />
-          ) : null}
-
-          <section aria-label="Providers" className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-            {providers.isLoading ? (
-              <div className="flex items-center justify-center py-16"><Spinner label="Loading providers" /></div>
-            ) : providerList.length === 0 ? (
-              <div className="px-5 py-10 text-center text-sm text-slate-500">No AI providers configured.</div>
-            ) : (
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Code / driver / model</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Priority</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Active</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Secret</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Last test</th>
-                    <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {providerList.map((p) => (
-                    <ProviderRow
-                      key={p.id}
-                      p={p}
-                      busy={testProvider.isPending || activateProvider.isPending}
-                      testResult={testResults[p.id] ?? null}
-                      onTest={() => handleTest(p.id)}
-                      onActivate={() => activateProvider.mutate(p.id)}
-                      onEdit={() => setEditing(p)}
-                    />
-                  ))}
-                </tbody>
-              </table>
+            onClick={() => setTab('providers')}
+            className={cx(
+              'rounded-full px-4 py-2 text-sm font-medium transition',
+              tab === 'providers' ? 'bg-[#1d1d1b] text-white' : 'text-[#6f6e69] hover:bg-[#efeee9]',
             )}
-          </section>
+          >
+            Providers ({providerList.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('prompts')}
+            className={cx(
+              'rounded-full px-4 py-2 text-sm font-medium transition',
+              tab === 'prompts' ? 'bg-[#1d1d1b] text-white' : 'text-[#6f6e69] hover:bg-[#efeee9]',
+            )}
+          >
+            Prompts ({promptList.length})
+          </button>
         </div>
-      ) : (
-        <section aria-label="Prompts" className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          {prompts.isLoading ? (
-            <div className="flex items-center justify-center py-16"><Spinner label="Loading prompts" /></div>
-          ) : promptList.length === 0 ? (
-            <div className="px-5 py-10 text-center text-sm text-slate-500">No prompt versions registered.</div>
-          ) : (
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Name / version</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Variables</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Template</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Approved</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {promptList.map((p) => (
-                  <PromptRow
-                    key={p.id}
-                    p={p}
-                    busy={approvePrompt.isPending || rollbackPrompt.isPending}
-                    onApprove={() => approvePrompt.mutate(p.id)}
-                    onRollback={() => rollbackPrompt.mutate(p.id)}
+
+        {tab === 'providers' ? (
+          <div className="space-y-5">
+            {editing !== null ? (
+              <ProviderForm
+                initial={
+                  editing === 'new'
+                    ? EMPTY_FORM
+                    : {
+                        code: editing.code,
+                        driver: editing.driver,
+                        name: editing.name,
+                        base_url: editing.base_url ?? '',
+                        auth_type: editing.auth_type,
+                        credentials: { api_key: '' },
+                        extra_headers: editing.extra_headers ?? {},
+                        model: editing.model,
+                        temperature: editing.temperature,
+                        timeout_ms: editing.timeout_ms,
+                        retry_count: editing.retry_count,
+                        priority: editing.priority,
+                        is_fallback: editing.is_fallback,
+                        active: editing.active,
+                      }
+                }
+                busy={formBusy}
+                onCancel={() => setEditing(null)}
+                onSubmit={handleFormSubmit}
+              />
+            ) : null}
+
+            <Card>
+              <CardBody className="p-0">
+                {providers.isLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <Spinner label="Loading providers" />
+                  </div>
+                ) : providers.isError ? (
+                  <div className="p-6">
+                    <ErrorState
+                      title="Failed to load providers"
+                      description="There was a problem fetching the AI providers."
+                      error={providers.error instanceof Error ? providers.error : null}
+                      action={
+                        <Button
+                          variant="secondary"
+                          onClick={() => {
+                            void providers.refetch();
+                          }}
+                        >
+                          Try again
+                        </Button>
+                      }
+                    />
+                  </div>
+                ) : providerList.length === 0 ? (
+                  <div className="p-6">
+                    <EmptyState
+                      title="No AI providers configured"
+                      description="Add a provider to start processing reports with AI vision."
+                      action={
+                        <Button variant="secondary" onClick={() => setEditing('new')}>
+                          Add provider
+                        </Button>
+                      }
+                    />
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                      <thead className="bg-[#f3f2ed]">
+                        <tr>
+                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                            Code / driver / model
+                          </th>
+                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                            Priority
+                          </th>
+                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                            Active
+                          </th>
+                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                            Secret
+                          </th>
+                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                            Last test
+                          </th>
+                          <th className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#e4e2dc]">
+                        {providerList.map((p) => (
+                          <ProviderRow
+                            key={p.id}
+                            p={p}
+                            busy={testProvider.isPending || activateProvider.isPending}
+                            testResult={testResults[p.id] ?? null}
+                            onTest={() => handleTest(p.id)}
+                            onActivate={() => activateProvider.mutate(p.id)}
+                            onEdit={() => setEditing(p)}
+                          />
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          </div>
+        ) : (
+          <Card>
+            <CardBody className="p-0">
+              {prompts.isLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Spinner label="Loading prompts" />
+                </div>
+              ) : prompts.isError ? (
+                <div className="p-6">
+                  <ErrorState
+                    title="Failed to load prompts"
+                    description="There was a problem fetching the prompt versions."
+                    error={prompts.error instanceof Error ? prompts.error : null}
+                    action={
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          void prompts.refetch();
+                        }}
+                      >
+                        Try again
+                      </Button>
+                    }
                   />
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
-      )}
+                </div>
+              ) : promptList.length === 0 ? (
+                <div className="p-6">
+                  <EmptyState
+                    title="No prompt versions registered"
+                    description="Prompt versions will appear here once created."
+                  />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead className="bg-[#f3f2ed]">
+                      <tr>
+                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                          Name / version
+                        </th>
+                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                          Status
+                        </th>
+                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                          Variables
+                        </th>
+                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                          Template
+                        </th>
+                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                          Approved
+                        </th>
+                        <th className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#e4e2dc]">
+                      {promptList.map((p) => (
+                        <PromptRow
+                          key={p.id}
+                          p={p}
+                          busy={approvePrompt.isPending || rollbackPrompt.isPending}
+                          onApprove={() => approvePrompt.mutate(p.id)}
+                          onRollback={() => rollbackPrompt.mutate(p.id)}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

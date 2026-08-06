@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type JSX, type ReactNode } from 'react';
+import { useState, type FormEvent, type JSX } from 'react';
 import {
   type AdminDepartment,
   type AdminDepartmentInput,
@@ -7,14 +7,48 @@ import {
   useDeleteDepartment,
   useUpdateDepartment,
 } from '../api/client';
-import { Button, Dialog, EmptyState, Spinner } from '../../moderator/design';
+import {
+  Badge,
+  Button,
+  Card,
+  CardHeader,
+  CardTitle,
+  Dialog,
+  EmptyState,
+  ErrorState,
+  Input,
+  Spinner,
+} from '../../moderator/design';
+import {
+  IconBuilding,
+  IconPlus,
+  IconEdit,
+  IconTrash,
+  IconMapPin,
+  IconClock,
+  IconCheck,
+  IconX,
+} from '@tabler/icons-react';
 
 const blank: AdminDepartmentInput = {
-  name: '', code: '', parent_id: null, jurisdiction: null, address: null,
-  email: null, phone: null, default_sla_minutes: 1440, active: true,
+  name: '',
+  code: '',
+  parent_id: null,
+  jurisdiction: null,
+  address: null,
+  email: null,
+  phone: null,
+  default_sla_minutes: 1440,
+  active: true,
 };
 
-function DepartmentForm({ initial, departments, busy, onCancel, onSubmit }: {
+function DepartmentForm({
+  initial,
+  departments,
+  busy,
+  onCancel,
+  onSubmit,
+}: {
   initial: AdminDepartmentInput;
   departments: AdminDepartment[];
   busy: boolean;
@@ -37,34 +71,104 @@ function DepartmentForm({ initial, departments, busy, onCancel, onSubmit }: {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Name" value={draft.name} required onChange={(name) => setDraft({ ...draft, name })} />
-        <Field label="Code" value={draft.code} required onChange={(code) => setDraft({ ...draft, code })} />
-        <label className="text-sm">
-          <span className="font-medium text-slate-700">Parent department</span>
-          <select value={draft.parent_id ?? ''} onChange={(event) => setDraft({ ...draft, parent_id: event.target.value || null })} className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2">
+    <form onSubmit={submit} className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Input
+          label="Name"
+          name="name"
+          value={draft.name}
+          required
+          onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+          className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+        />
+        <Input
+          label="Code"
+          name="code"
+          value={draft.code}
+          required
+          onChange={(event) => setDraft({ ...draft, code: event.target.value })}
+          className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+        />
+        <label className="block">
+          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+            Parent department
+          </span>
+          <select
+            value={draft.parent_id ?? ''}
+            onChange={(event) => setDraft({ ...draft, parent_id: event.target.value || null })}
+            className="mt-1 block h-12 w-full rounded-xl border border-[#d0cec8] bg-white px-4 text-sm text-[#1d1d1b] focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+          >
             <option value="">None</option>
-            {departments.map((item) => <option key={item.id} value={item.id}>{item.name} ({item.code})</option>)}
+            {departments.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name} ({item.code})
+              </option>
+            ))}
           </select>
         </label>
-        <Field label="Jurisdiction" value={draft.jurisdiction ?? ''} onChange={(jurisdiction) => setDraft({ ...draft, jurisdiction })} />
-        <Field label="Email" type="email" value={draft.email ?? ''} onChange={(email) => setDraft({ ...draft, email })} />
-        <Field label="Phone" value={draft.phone ?? ''} onChange={(phone) => setDraft({ ...draft, phone })} />
-        <Field label="Default SLA (minutes)" type="number" value={String(draft.default_sla_minutes ?? '')} onChange={(value) => setDraft({ ...draft, default_sla_minutes: Number(value) })} />
+        <Input
+          label="Jurisdiction"
+          name="jurisdiction"
+          value={draft.jurisdiction ?? ''}
+          onChange={(event) => setDraft({ ...draft, jurisdiction: event.target.value })}
+          className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+        />
+        <Input
+          label="Email"
+          name="email"
+          type="email"
+          value={draft.email ?? ''}
+          onChange={(event) => setDraft({ ...draft, email: event.target.value })}
+          className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+        />
+        <Input
+          label="Phone"
+          name="phone"
+          value={draft.phone ?? ''}
+          onChange={(event) => setDraft({ ...draft, phone: event.target.value })}
+          className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+        />
+        <Input
+          label="Default SLA (minutes)"
+          name="default_sla_minutes"
+          type="number"
+          value={String(draft.default_sla_minutes ?? '')}
+          onChange={(event) =>
+            setDraft({ ...draft, default_sla_minutes: Number(event.target.value) })
+          }
+          className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+        />
       </div>
-      <label className="block text-sm">
-        <span className="font-medium text-slate-700">Office address</span>
-        <textarea value={draft.address ?? ''} onChange={(event) => setDraft({ ...draft, address: event.target.value })} rows={2} className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2" />
+      <label className="block">
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+          Office address
+        </span>
+        <textarea
+          value={draft.address ?? ''}
+          onChange={(event) => setDraft({ ...draft, address: event.target.value })}
+          rows={2}
+          className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm text-[#1d1d1b] focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+        />
       </label>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={draft.active} onChange={(event) => setDraft({ ...draft, active: event.target.checked })} /> Active</label>
-      <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button><Button type="submit" disabled={busy}>{busy ? 'Saving...' : 'Save department'}</Button></div>
+      <label className="flex items-center gap-2 text-sm text-[#1d1d1b]">
+        <input
+          type="checkbox"
+          checked={draft.active}
+          onChange={(event) => setDraft({ ...draft, active: event.target.checked })}
+          className="h-4 w-4 rounded border-[#d0cec8] text-[#1d1d1b] focus:ring-[#1d1d1b]"
+        />
+        Active
+      </label>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={busy}>
+          {busy ? 'Saving...' : 'Save department'}
+        </Button>
+      </div>
     </form>
   );
-}
-
-function Field({ label, value, type = 'text', required = false, onChange }: { label: string; value: string; type?: string; required?: boolean; onChange: (value: string) => void }): JSX.Element {
-  return <label className="text-sm"><span className="font-medium text-slate-700">{label}{required ? ' *' : ''}</span><input type={type} value={value} required={required} onChange={(event) => onChange(event.target.value)} className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2" /></label>;
 }
 
 export default function AdminDepartments(): JSX.Element {
@@ -78,15 +182,181 @@ export default function AdminDepartments(): JSX.Element {
   const initial: AdminDepartmentInput = editing ? { ...editing } : blank;
   const submit = (input: AdminDepartmentInput): void => {
     const done = (): void => setOpen(false);
-    editing ? update.mutate({ id: editing.id, ...input }, { onSuccess: done }) : create.mutate(input, { onSuccess: done });
+    if (editing) {
+      update.mutate({ id: editing.id, ...input }, { onSuccess: done });
+    } else {
+      create.mutate(input, { onSuccess: done });
+    }
   };
 
-  return <div className="space-y-6">
-    <header className="flex items-end justify-between"><div><h1 className="text-2xl font-bold text-slate-900">Departments</h1><p className="text-sm text-slate-600">Manage civic departments, hierarchy, jurisdiction, and default SLA.</p></div><Button onClick={() => { setEditing(null); setOpen(true); }}>+ New department</Button></header>
-    {list.isLoading ? <Spinner label="Loading departments" /> : departments.length === 0 ? <EmptyState title="No departments" /> : <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white"><table className="min-w-full divide-y divide-slate-200"><thead className="bg-slate-50"><tr><TH>Name</TH><TH>Jurisdiction</TH><TH>SLA</TH><TH>Status</TH><TH>Actions</TH></tr></thead><tbody className="divide-y divide-slate-200">{departments.map((item) => <tr key={item.id}><TD><strong>{item.name}</strong><div className="text-xs text-slate-500">{item.code}</div></TD><TD>{item.jurisdiction ?? '-'}</TD><TD>{item.default_sla_minutes ? `${item.default_sla_minutes} min` : '-'}</TD><TD>{item.active ? 'Active' : 'Inactive'}</TD><TD><div className="flex gap-2"><Button size="sm" variant="ghost" onClick={() => { setEditing(item); setOpen(true); }}>Edit</Button><Button size="sm" variant="danger" onClick={() => { if (confirm(`Delete ${item.name}?`)) remove.mutate(item.id); }}>Delete</Button></div></TD></tr>)}</tbody></table></div>}
-    <Dialog open={open} onClose={() => setOpen(false)} title={editing ? `Edit: ${editing.name}` : 'New department'}><DepartmentForm key={editing?.id ?? 'new'} initial={initial} departments={departments.filter((item) => item.id !== editing?.id)} busy={create.isPending || update.isPending} onCancel={() => setOpen(false)} onSubmit={submit} /></Dialog>
-  </div>;
-}
+  return (
+    <div className="min-h-screen bg-[#f3f2ed] p-4 sm:p-6">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#85847f]">
+              Platform configuration
+            </p>
+            <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">
+              Departments
+            </h1>
+            <p className="mt-1 text-sm text-[#6f6e69]">
+              Manage civic departments, hierarchy, jurisdiction, and default SLA.
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+            leftIcon={<IconPlus className="h-4 w-4" stroke={1.8} />}
+          >
+            New department
+          </Button>
+        </header>
 
-function TH({ children }: { children: string }): JSX.Element { return <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">{children}</th>; }
-function TD({ children }: { children: ReactNode }): JSX.Element { return <td className="px-4 py-3 text-sm text-slate-700">{children}</td>; }
+        {list.isLoading ? (
+          <div className="flex min-h-[200px] items-center justify-center">
+            <Spinner label="Loading departments" />
+          </div>
+        ) : list.isError || !list.data ? (
+          <ErrorState
+            title="Could not load departments"
+            description="The departments endpoint did not respond."
+            action={
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  void list.refetch();
+                }}
+              >
+                Retry
+              </Button>
+            }
+          />
+        ) : departments.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-[#d0cec8] bg-white p-10 text-center">
+            <EmptyState
+              title="No departments"
+              description="Create a department to start organizing civic response teams."
+            />
+          </div>
+        ) : (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-[#efeee9]">
+                  <IconBuilding className="h-4 w-4 text-[#6f6e69]" stroke={1.6} />
+                </span>
+                <CardTitle>All departments</CardTitle>
+              </div>
+              <span className="text-sm text-[#85847f]">
+                {departments.length} {departments.length === 1 ? 'department' : 'departments'}
+              </span>
+            </CardHeader>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left text-sm">
+                <thead className="bg-[#f3f2ed] text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                  <tr className="border-b border-[#e4e2dc]">
+                    <th className="px-5 py-3 font-medium">Name</th>
+                    <th className="px-5 py-3 font-medium">Jurisdiction</th>
+                    <th className="px-5 py-3 font-medium">SLA</th>
+                    <th className="px-5 py-3 font-medium">Status</th>
+                    <th className="px-5 py-3 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#e4e2dc]">
+                  {departments.map((item) => (
+                    <tr key={item.id}>
+                      <td className="px-5 py-3">
+                        <div className="text-sm font-medium text-[#1d1d1b]">{item.name}</div>
+                        <div className="font-mono text-xs text-[#85847f]">{item.code}</div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-2">
+                          <IconMapPin className="h-3.5 w-3.5 text-[#85847f]" stroke={1.6} />
+                          <span className="text-sm text-[#1d1d1b]">{item.jurisdiction ?? '—'}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-2">
+                          <IconClock className="h-3.5 w-3.5 text-[#85847f]" stroke={1.6} />
+                          <span className="text-sm text-[#1d1d1b]">
+                            {item.default_sla_minutes ? `${item.default_sla_minutes} min` : '—'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <Badge
+                          tone={item.active ? 'success' : 'neutral'}
+                          className={
+                            item.active
+                              ? 'bg-[#edf7f0] text-[#256b45] ring-0'
+                              : 'bg-[#efeee9] text-[#6f6e69] ring-0'
+                          }
+                        >
+                          <span className="flex items-center gap-1">
+                            {item.active ? (
+                              <IconCheck className="h-3 w-3" stroke={2} />
+                            ) : (
+                              <IconX className="h-3 w-3" stroke={2} />
+                            )}
+                            {item.active ? 'Active' : 'Inactive'}
+                          </span>
+                        </Badge>
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditing(item);
+                              setOpen(true);
+                            }}
+                            leftIcon={<IconEdit className="h-3.5 w-3.5" stroke={1.6} />}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => {
+                              if (confirm(`Delete ${item.name}?`)) remove.mutate(item.id);
+                            }}
+                            leftIcon={<IconTrash className="h-3.5 w-3.5" stroke={1.6} />}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
+
+        <Dialog
+          open={open}
+          onClose={() => setOpen(false)}
+          title={editing ? `Edit: ${editing.name}` : 'New department'}
+          size="lg"
+        >
+          <DepartmentForm
+            key={editing?.id ?? 'new'}
+            initial={initial}
+            departments={departments.filter((item) => item.id !== editing?.id)}
+            busy={create.isPending || update.isPending}
+            onCancel={() => setOpen(false)}
+            onSubmit={submit}
+          />
+        </Dialog>
+      </div>
+    </div>
+  );
+}

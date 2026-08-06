@@ -100,7 +100,7 @@ export function AdminLayout() {
       brandSubtitle="Civic Intelligence Platform"
       brandColor="brand"
       accent="brand"
-      sidebarTone="dark"
+      sidebarTone="light"
       nav={NAV}
       user={{
         name: user?.name ?? user?.mobile ?? '—',
@@ -108,13 +108,13 @@ export function AdminLayout() {
       }}
       headerContent={
         <div className="flex items-center gap-3 text-xs">
-          <span className="font-semibold text-blue-900">Super Administration</span>
-          <span className="h-4 w-px bg-slate-200" />
-          <span className="inline-flex items-center gap-1.5 text-slate-600">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+          <span className="font-semibold text-[#1d1d1b]">Super Administration</span>
+          <span className="h-4 w-px bg-[#d9d7d0]" />
+          <span className="inline-flex items-center gap-1.5 text-[#6f6e69]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#226b46]" />
             System operational
           </span>
-          <span className="rounded border border-slate-300 bg-slate-100 px-2 py-0.5 font-medium text-slate-600">
+          <span className="rounded border border-[#d0cec8] bg-[#efeee9] px-2 py-0.5 font-medium text-[#6f6e69]">
             LOCAL
           </span>
         </div>

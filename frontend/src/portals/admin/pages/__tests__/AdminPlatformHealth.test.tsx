@@ -8,25 +8,51 @@ vi.mock('../../api/client', () => ({
   usePlatformHealthComponents: vi.fn(),
 }));
 
- 
 const { usePlatformHealth, usePlatformHealthComponents } = await import('../../api/client');
- 
+
 const AdminPlatformHealth = (await import('../AdminPlatformHealth')).default;
 
 const SUMMARY = {
   status: 'ok' as const,
   checked_at: '2026-06-29T10:00:00Z',
   components: {
-    database: { status: 'ok' as const, latency_ms: 5, detail: 'select 1 succeeded', checked_at: '2026-06-29T10:00:00Z', driver: 'sqlite' },
-    redis: { status: 'degraded' as const, latency_ms: 50, detail: 'slow', checked_at: '2026-06-29T10:00:00Z' },
+    database: {
+      status: 'ok' as const,
+      latency_ms: 5,
+      detail: 'select 1 succeeded',
+      checked_at: '2026-06-29T10:00:00Z',
+      driver: 'sqlite',
+    },
+    redis: {
+      status: 'degraded' as const,
+      latency_ms: 50,
+      detail: 'slow',
+      checked_at: '2026-06-29T10:00:00Z',
+    },
   },
 };
 const COMPONENTS = {
   checked_at: '2026-06-29T10:00:00Z',
   components: {
-    database: { status: 'ok' as const, latency_ms: 5, detail: 'select 1 succeeded', checked_at: '2026-06-29T10:00:00Z', driver: 'sqlite' },
-    redis: { status: 'degraded' as const, latency_ms: 50, detail: 'slow', checked_at: '2026-06-29T10:00:00Z' },
-    queue: { status: 'ok' as const, latency_ms: 1, detail: 'queue reachable', checked_at: '2026-06-29T10:00:00Z' },
+    database: {
+      status: 'ok' as const,
+      latency_ms: 5,
+      detail: 'select 1 succeeded',
+      checked_at: '2026-06-29T10:00:00Z',
+      driver: 'sqlite',
+    },
+    redis: {
+      status: 'degraded' as const,
+      latency_ms: 50,
+      detail: 'slow',
+      checked_at: '2026-06-29T10:00:00Z',
+    },
+    queue: {
+      status: 'ok' as const,
+      latency_ms: 1,
+      detail: 'queue reachable',
+      checked_at: '2026-06-29T10:00:00Z',
+    },
   },
 };
 
@@ -58,8 +84,8 @@ describe('AdminPlatformHealth (T-M12-025)', () => {
       </QueryClientProvider>,
     );
     expect(await screen.findByText('Platform health')).toBeTruthy();
-    const overall = await screen.findByLabelText('Overall status');
-    expect(within(overall).getByText('OK')).toBeTruthy();
+    const overall = screen.getByText('Overall').closest('div');
+    expect(within(overall!).getByText('OK')).toBeTruthy();
   });
 
   it('renders one row per component', async () => {
@@ -70,7 +96,7 @@ describe('AdminPlatformHealth (T-M12-025)', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     );
-    const table = await screen.findByLabelText('Components');
+    const table = await screen.findByRole('table');
     expect(within(table).getByText('Database')).toBeTruthy();
     expect(within(table).getByText('Redis cache')).toBeTruthy();
     expect(within(table).getByText('Job queue')).toBeTruthy();
@@ -84,7 +110,7 @@ describe('AdminPlatformHealth (T-M12-025)', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     );
-    const table = await screen.findByLabelText('Components');
+    const table = await screen.findByRole('table');
     expect(within(table).getAllByText('degraded').length).toBeGreaterThan(0);
   });
 });

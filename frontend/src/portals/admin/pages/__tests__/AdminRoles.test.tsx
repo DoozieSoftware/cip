@@ -9,7 +9,13 @@ const syncMock = vi.fn();
 
 vi.mock('../../api/client', () => ({
   useAdminRoles: vi.fn(() => ({ data: [], isLoading: false })),
-  useAdminPermissions: vi.fn(() => ({ data: [{ id: 1, name: 'audit.view' }, { id: 2, name: 'report.view' }], isLoading: false })),
+  useAdminPermissions: vi.fn(() => ({
+    data: [
+      { id: 1, name: 'audit.view' },
+      { id: 2, name: 'report.view' },
+    ],
+    isLoading: false,
+  })),
   useCreateRole: vi.fn(() => ({ mutate: createMock, isPending: false })),
   useUpdateRole: vi.fn(() => ({ mutate: updateMock, isPending: false })),
   useSyncRolePermissions: vi.fn(() => ({ mutate: syncMock, isPending: false })),
@@ -20,8 +26,17 @@ const AdminRoles = (await import('../AdminRoles')).default;
 
 describe('AdminRoles (T-M12-002 create/edit)', () => {
   beforeEach(() => {
-    (useAdminRoles as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false });
-    (useAdminPermissions as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ data: [{ id: 1, name: 'audit.view' }, { id: 2, name: 'report.view' }], isLoading: false });
+    (useAdminRoles as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
+    (useAdminPermissions as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [
+        { id: 1, name: 'audit.view' },
+        { id: 2, name: 'report.view' },
+      ],
+      isLoading: false,
+    });
     createMock.mockReset();
     updateMock.mockReset();
     syncMock.mockReset();
@@ -29,8 +44,12 @@ describe('AdminRoles (T-M12-002 create/edit)', () => {
 
   it('renders the title and the partial-enforcement note', async () => {
     render(
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <MemoryRouter><AdminRoles /></MemoryRouter>
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <MemoryRouter>
+          <AdminRoles />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
     expect(await screen.findByText('Roles & permissions')).toBeTruthy();
@@ -39,8 +58,12 @@ describe('AdminRoles (T-M12-002 create/edit)', () => {
 
   it('creates a role with selected permissions', async () => {
     render(
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <MemoryRouter><AdminRoles /></MemoryRouter>
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <MemoryRouter>
+          <AdminRoles />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
     fireEvent.click(await screen.findByRole('button', { name: '+ New role' }));

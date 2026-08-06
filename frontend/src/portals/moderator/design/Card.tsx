@@ -6,7 +6,7 @@ export function Card({ className, children, ...rest }: HTMLAttributes<HTMLDivEle
     <div
       {...rest}
       className={cx(
-        'rounded-xl bg-white shadow-sm ring-1 ring-slate-200/70',
+        'rounded-xl bg-white shadow-sm ring-1 ring-black/5',
         className,
       )}
     >
@@ -19,7 +19,7 @@ export function CardHeader({ children, className }: { children: ReactNode; class
   return (
     <div
       className={cx(
-        'flex items-center justify-between border-b border-slate-200/70 px-5 py-4',
+        'flex items-center justify-between border-b border-[#e4e2dc] px-5 py-4',
         className,
       )}
     >
@@ -28,8 +28,8 @@ export function CardHeader({ children, className }: { children: ReactNode; class
   );
 }
 
-export function CardTitle({ children }: { children: ReactNode }) {
-  return <h2 className="text-base font-semibold text-slate-900">{children}</h2>;
+export function CardTitle({ children, className }: { children: ReactNode; className?: string }) {
+  return <h2 className={cx('text-base font-semibold text-[#1d1d1b]', className)}>{children}</h2>;
 }
 
 export function CardBody({ children, className }: { children: ReactNode; className?: string }) {
@@ -40,7 +40,7 @@ export function CardFooter({ children, className }: { children: ReactNode; class
   return (
     <div
       className={cx(
-        'flex items-center justify-end gap-2 border-t border-slate-200/70 px-5 py-3',
+        'flex items-center justify-end gap-2 border-t border-[#e4e2dc] px-5 py-3',
         className,
       )}
     >

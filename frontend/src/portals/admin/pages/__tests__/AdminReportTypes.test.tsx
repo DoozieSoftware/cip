@@ -17,28 +17,39 @@ const AdminReportTypes = (await import('../AdminReportTypes')).default;
 
 describe('AdminReportTypes (T-M12-003 create/edit)', () => {
   beforeEach(() => {
-    (useAdminReportTypes as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false });
+    (useAdminReportTypes as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
     mutateMock.mockClear();
   });
 
   it('shows the empty list and a new-type button', async () => {
     render(
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <MemoryRouter><AdminReportTypes /></MemoryRouter>
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <MemoryRouter>
+          <AdminReportTypes />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
     expect(await screen.findByText('Report types')).toBeTruthy();
-    expect(screen.getByRole('button', { name: '+ New type' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'New type' })).toBeTruthy();
     expect(screen.getByText('No report types')).toBeTruthy();
   });
 
   it('opens the form and submits a create payload with the required fields', async () => {
     render(
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <MemoryRouter><AdminReportTypes /></MemoryRouter>
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <MemoryRouter>
+          <AdminReportTypes />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
-    fireEvent.click(await screen.findByRole('button', { name: '+ New type' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'New type' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.change(within(dialog).getByLabelText(/Name/), { target: { value: 'Pothole' } });
     fireEvent.change(within(dialog).getByLabelText(/Code/), { target: { value: 'pothole' } });

@@ -11,13 +11,28 @@ vi.mock('../../api/client', () => ({
   useDeleteNotificationConfig: vi.fn(() => ({ mutate: mutateMock, isPending: false })),
 }));
 
- 
 const { useNotificationConfigs } = await import('../../api/client');
 const AdminNotificationConfigs = (await import('../AdminNotificationConfigs')).default;
 
 const ROWS = [
-  { id: 'c1', channel: 'mail' as const, code: 'default_mail', display_name: 'Default SMTP', active: true, credentials: {}, retry_policy: { tries: 3, backoff: [60, 300, 900] } },
-  { id: 'c2', channel: 'sms' as const, code: 'log_sms', display_name: 'Log SMS (dev)', active: false, credentials: {}, retry_policy: { tries: 2, backoff: [60, 300] } },
+  {
+    id: 'c1',
+    channel: 'mail' as const,
+    code: 'default_mail',
+    display_name: 'Default SMTP',
+    active: true,
+    credentials: {},
+    retry_policy: { tries: 3, backoff: [60, 300, 900] },
+  },
+  {
+    id: 'c2',
+    channel: 'sms' as const,
+    code: 'log_sms',
+    display_name: 'Log SMS (dev)',
+    active: false,
+    credentials: {},
+    retry_policy: { tries: 2, backoff: [60, 300] },
+  },
 ];
 
 describe('AdminNotificationConfigs (T-M12-022)', () => {
@@ -25,14 +40,19 @@ describe('AdminNotificationConfigs (T-M12-022)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mutateMock.mockClear();
-    (useNotificationConfigs as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ data: ROWS, isLoading: false });
+    (useNotificationConfigs as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: ROWS,
+      isLoading: false,
+    });
     client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   });
 
   it('renders the page title', async () => {
     render(
       <QueryClientProvider client={client}>
-        <MemoryRouter><AdminNotificationConfigs /></MemoryRouter>
+        <MemoryRouter>
+          <AdminNotificationConfigs />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
     expect(await screen.findByText('Notification configs')).toBeTruthy();
@@ -41,7 +61,9 @@ describe('AdminNotificationConfigs (T-M12-022)', () => {
   it('renders one row per config with the channel pill', async () => {
     render(
       <QueryClientProvider client={client}>
-        <MemoryRouter><AdminNotificationConfigs /></MemoryRouter>
+        <MemoryRouter>
+          <AdminNotificationConfigs />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
     const table = await screen.findByRole('table');
@@ -54,7 +76,9 @@ describe('AdminNotificationConfigs (T-M12-022)', () => {
   it('renders the toggle switch and delete button for each row', async () => {
     render(
       <QueryClientProvider client={client}>
-        <MemoryRouter><AdminNotificationConfigs /></MemoryRouter>
+        <MemoryRouter>
+          <AdminNotificationConfigs />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
     const toggles = await screen.findAllByRole('button', { name: /Toggle/ });
@@ -65,12 +89,18 @@ describe('AdminNotificationConfigs (T-M12-022)', () => {
   it('offers only backend-supported channels when creating a config', async () => {
     render(
       <QueryClientProvider client={client}>
-        <MemoryRouter><AdminNotificationConfigs /></MemoryRouter>
+        <MemoryRouter>
+          <AdminNotificationConfigs />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
-    fireEvent.click(await screen.findByRole('button', { name: '+ New config' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'New config' }));
     const dialog = screen.getByRole('dialog');
     const channel = within(dialog).getByLabelText('Channel');
-    expect(within(channel).getAllByRole('option').map((option) => option.textContent)).toEqual(['mail', 'sms', 'push', 'webhook']);
+    expect(
+      within(channel)
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['mail', 'sms', 'push', 'webhook']);
   });
 });

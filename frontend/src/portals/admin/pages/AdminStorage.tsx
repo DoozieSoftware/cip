@@ -1,6 +1,20 @@
 import { useState, useEffect, type FormEvent, type JSX } from 'react';
-import { useMediaStorage, useUpdateMediaStorage, useProbeMediaStorage, type MediaStorage } from '../api/client';
-import { Spinner } from '../../moderator/design';
+import {
+  useMediaStorage,
+  useUpdateMediaStorage,
+  useProbeMediaStorage,
+  type MediaStorage,
+} from '../api/client';
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Input,
+  Select,
+  Spinner,
+} from '../../moderator/design';
 
 const DISKS = ['media_local', 'media_minio', 'media_s3'];
 
@@ -58,141 +72,158 @@ export default function AdminStorage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-900">Media storage</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Disk + bucket + retention for the media pipeline. The selected disk takes effect on the next upload.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">Media storage</h1>
+          <p className="mt-1 text-sm text-[#6f6e69]">
+            Disk + bucket + retention for the media pipeline. The selected disk takes effect on the
+            next upload.
+          </p>
+        </div>
       </header>
 
       {storage.isLoading ? (
-        <div className="flex items-center justify-center py-16"><Spinner label="Loading storage" /></div>
+        <div className="flex items-center justify-center py-16">
+          <Spinner label="Loading storage" />
+        </div>
       ) : (
-        <form onSubmit={handle} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="text-sm">
-              <span className="block font-medium text-slate-700">Disk</span>
-              <select
-                value={disk}
-                onChange={(e) => setDisk(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
-              >
-                {DISKS.map((d) => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </label>
-            <label className="text-sm">
-              <span className="block font-medium text-slate-700">Bucket</span>
-              <input
-                type="text"
-                value={bucket}
-                onChange={(e) => setBucket(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
-              />
-            </label>
-            <label className="text-sm">
-              <span className="block font-medium text-slate-700">Endpoint (MinIO/S3)</span>
-              <input
-                type="url"
-                value={endpoint}
-                onChange={(e) => setEndpoint(e.target.value)}
-                placeholder="https://minio.example.in"
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
-              />
-            </label>
-            <label className="text-sm">
-              <span className="block font-medium text-slate-700">Region (S3)</span>
-              <input
-                type="text"
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                placeholder="ap-south-1"
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
-              />
-            </label>
-            <label className="text-sm">
-              <span className="block font-medium text-slate-700">Retention (days)</span>
-              <input
-                type="number"
-                value={retentionDays}
-                min={1}
-                onChange={(e) => setRetentionDays(Number(e.target.value))}
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
-              />
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={encryptionAtRest}
-                onChange={(e) => setEncryptionAtRest(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300"
-              />
-              <span className="font-medium text-slate-700">Encryption at rest</span>
-            </label>
-            <label className="text-sm">
-              <span className="block font-medium text-slate-700">Max photo size (MB)</span>
-              <input
-                type="number"
-                value={maxPhotoMb}
-                min={1}
-                onChange={(e) => setMaxPhotoMb(Number(e.target.value))}
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
-              />
-            </label>
-            <label className="text-sm">
-              <span className="block font-medium text-slate-700">Max video size (MB)</span>
-              <input
-                type="number"
-                value={maxVideoMb}
-                min={1}
-                onChange={(e) => setMaxVideoMb(Number(e.target.value))}
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
-              />
-            </label>
-            <label className="text-sm sm:col-span-2">
-              <span className="block font-medium text-slate-700">Max document size (MB)</span>
-              <input
-                type="number"
-                value={maxDocumentMb}
-                min={1}
-                onChange={(e) => setMaxDocumentMb(Number(e.target.value))}
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
-              />
-            </label>
-          </div>
+        <form onSubmit={handle}>
+          <Card>
+            <CardHeader>
+              <CardTitle>Storage configuration</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Select
+                  label="Disk"
+                  name="disk"
+                  value={disk}
+                  onChange={(e) => setDisk(e.target.value)}
+                  options={DISKS.map((d) => ({ value: d, label: d }))}
+                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                />
+                <Input
+                  label="Bucket"
+                  name="bucket"
+                  value={bucket}
+                  onChange={(e) => setBucket(e.target.value)}
+                  placeholder="cip-media"
+                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                />
+                <Input
+                  label="Endpoint (MinIO/S3)"
+                  name="endpoint"
+                  type="url"
+                  value={endpoint}
+                  onChange={(e) => setEndpoint(e.target.value)}
+                  placeholder="https://minio.example.in"
+                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                />
+                <Input
+                  label="Region (S3)"
+                  name="region"
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
+                  placeholder="ap-south-1"
+                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                />
+                <Input
+                  label="Retention (days)"
+                  name="retention_days"
+                  type="number"
+                  min={1}
+                  value={retentionDays}
+                  onChange={(e) => setRetentionDays(Number(e.target.value))}
+                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                />
+                <Input
+                  label="Max photo size (MB)"
+                  name="max_photo_mb"
+                  type="number"
+                  min={1}
+                  value={maxPhotoMb}
+                  onChange={(e) => setMaxPhotoMb(Number(e.target.value))}
+                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                />
+                <Input
+                  label="Max video size (MB)"
+                  name="max_video_mb"
+                  type="number"
+                  min={1}
+                  value={maxVideoMb}
+                  onChange={(e) => setMaxVideoMb(Number(e.target.value))}
+                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                />
+                <Input
+                  label="Max document size (MB)"
+                  name="max_document_mb"
+                  type="number"
+                  min={1}
+                  value={maxDocumentMb}
+                  onChange={(e) => setMaxDocumentMb(Number(e.target.value))}
+                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                />
+                <label className="flex items-center gap-3 sm:col-span-2">
+                  <input
+                    type="checkbox"
+                    checked={encryptionAtRest}
+                    onChange={(e) => setEncryptionAtRest(e.target.checked)}
+                    className="h-4 w-4 rounded border-[#d0cec8] text-[#1d1d1b] focus:ring-[#1d1d1b]"
+                  />
+                  <span className="text-sm text-[#1d1d1b]">Encryption at rest</span>
+                </label>
+              </div>
+            </CardBody>
+          </Card>
 
           {update.isSuccess ? (
-            <div role="status" className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Storage configuration updated.</div>
+            <div
+              role="status"
+              className="rounded-xl border border-[#d0cec8] bg-[#edf7f0] px-4 py-3 text-sm text-[#256b45]"
+            >
+              Storage configuration updated.
+            </div>
           ) : null}
           {update.isError ? (
-            <div role="alert" className="rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800">Update failed: {update.error?.message}</div>
+            <div
+              role="alert"
+              className="rounded-xl border border-[#d0cec8] bg-[#fbeeed] px-4 py-3 text-sm text-[#9f3731]"
+            >
+              Update failed: {update.error?.message}
+            </div>
           ) : null}
-
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <button
-              type="button"
-              disabled={probe.isPending}
-              onClick={() => probe.mutate()}
-              className="rounded-md border border-sky-300 bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-800 hover:bg-sky-100 disabled:opacity-50"
-            >
-              {probe.isPending ? 'Probing…' : 'Probe reachability'}
-            </button>
-            <button
-              type="submit"
-              disabled={update.isPending}
-              className="rounded-md bg-fuchsia-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-fuchsia-700 disabled:opacity-50"
-            >
-              {update.isPending ? 'Saving…' : 'Save storage config'}
-            </button>
-          </div>
 
           {probe.data ? (
             <div
               role="status"
-              className={`rounded-md border px-3 py-2 text-sm ${probe.data.reachable ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-rose-300 bg-rose-50 text-rose-800'}`}
+              className={`rounded-xl border px-4 py-3 text-sm ${
+                probe.data.reachable
+                  ? 'border-[#d0cec8] bg-[#edf7f0] text-[#256b45]'
+                  : 'border-[#d0cec8] bg-[#fbeeed] text-[#9f3731]'
+              }`}
             >
               {probe.data.reachable ? 'Reachable' : 'Unreachable'}: {probe.data.detail}
             </div>
           ) : null}
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Button
+              variant="secondary"
+              type="button"
+              disabled={probe.isPending}
+              onClick={() => probe.mutate()}
+            >
+              {probe.isPending ? 'Probing…' : 'Probe reachability'}
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={update.isPending}
+              loading={update.isPending}
+            >
+              Save storage config
+            </Button>
+          </div>
         </form>
       )}
     </div>

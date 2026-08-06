@@ -1,5 +1,13 @@
 import { useState, type FormEvent, type JSX } from 'react';
 import {
+  IconSearch,
+  IconUserPlus,
+  IconEdit,
+  IconTrash,
+  IconX,
+  IconCheck,
+} from '@tabler/icons-react';
+import {
   useAdminUsers,
   useAdminRoles,
   useCreateUser,
@@ -8,7 +16,15 @@ import {
   type AdminUser,
   type AdminUserInput,
 } from '../api/client';
-import { Spinner, EmptyState, Dialog, Button } from '../../moderator/design';
+import {
+  Spinner,
+  EmptyState,
+  ErrorState,
+  Dialog,
+  Button,
+  Card,
+  CardBody,
+} from '../../moderator/design';
 
 interface UserDraft {
   id?: string;
@@ -31,7 +47,13 @@ const blank: UserDraft = {
   roles: [],
 };
 
-function UserForm({ initial, roles, onSubmit, onCancel, busy }: {
+function UserForm({
+  initial,
+  roles,
+  onSubmit,
+  onCancel,
+  busy,
+}: {
   initial: UserDraft;
   roles: { name: string }[];
   onSubmit: (v: AdminUserInput & { id?: string }) => void;
@@ -62,72 +84,107 @@ function UserForm({ initial, roles, onSubmit, onCancel, busy }: {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="space-y-4">
       <label className="block text-sm">
-        <span className="font-medium text-slate-700">Name</span>
+        <span className="font-medium text-[#1d1d1b]">Name</span>
         <input
           value={draft.name}
           onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-          className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+          className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
         />
       </label>
       <label className="block text-sm">
-        <span className="font-medium text-slate-700">Mobile <span className="text-rose-600">*</span></span>
+        <span className="font-medium text-[#1d1d1b]">
+          Mobile <span className="text-[#a42f29]">*</span>
+        </span>
         <input
           value={draft.mobile}
           onChange={(e) => setDraft({ ...draft, mobile: e.target.value })}
           required
-          className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+          className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
         />
       </label>
       <label className="block text-sm">
-        <span className="font-medium text-slate-700">Email</span>
+        <span className="font-medium text-[#1d1d1b]">Email</span>
         <input
           type="email"
           value={draft.email}
           onChange={(e) => setDraft({ ...draft, email: e.target.value })}
-          className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+          className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
         />
       </label>
       <label className="block text-sm">
-        <span className="font-medium text-slate-700">
-          {initial.id ? 'Password (leave blank to keep)' : 'Password'} {!initial.id && <span className="text-rose-600">*</span>}
+        <span className="font-medium text-[#1d1d1b]">
+          {initial.id ? 'Password (leave blank to keep)' : 'Password'}{' '}
+          {!initial.id && <span className="text-[#a42f29]">*</span>}
         </span>
         <input
           type="password"
           value={draft.password}
           onChange={(e) => setDraft({ ...draft, password: e.target.value })}
           required={!initial.id}
-          className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+          className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
         />
       </label>
       <label className="block text-sm">
-        <span className="font-medium text-slate-700">Status</span>
+        <span className="font-medium text-[#1d1d1b]">Status</span>
         <select
           value={draft.status}
           onChange={(e) => setDraft({ ...draft, status: e.target.value })}
-          className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+          className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
         >
-          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
         </select>
       </label>
       <fieldset className="text-sm">
-        <legend className="font-medium text-slate-700">Roles</legend>
-        <div className="mt-1 flex flex-wrap gap-2">
+        <legend className="font-medium text-[#1d1d1b]">Roles</legend>
+        <div className="mt-2 flex flex-wrap gap-2">
           {roles.map((r) => {
             const checked = draft.roles.includes(r.name);
             return (
-              <label key={r.name} className="flex items-center gap-1.5 text-xs">
-                <input type="checkbox" checked={checked} onChange={() => toggleRole(r.name)} className="h-4 w-4 rounded border-slate-300" />
-                <span>{r.name}</span>
+              <label
+                key={r.name}
+                className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                  checked
+                    ? 'bg-[#1d1d1b] text-white'
+                    : 'bg-[#efeee9] text-[#6f6e69] hover:bg-[#e4e2dc]'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleRole(r.name)}
+                  className="sr-only"
+                />
+                {checked && <IconCheck className="h-3 w-3" stroke={2} />}
+                {r.name}
               </label>
             );
           })}
         </div>
       </fieldset>
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>Cancel</Button>
-        <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save user'}</Button>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          disabled={busy}
+          leftIcon={<IconX className="h-4 w-4" stroke={1.6} />}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={busy}
+          loading={busy}
+          leftIcon={<IconCheck className="h-4 w-4" stroke={1.6} />}
+        >
+          Save user
+        </Button>
       </div>
     </form>
   );
@@ -157,7 +214,15 @@ export default function AdminUsers(): JSX.Element {
 
   const toDraft = (u: AdminUser | null): UserDraft =>
     u
-      ? { id: u.id, name: u.name ?? '', mobile: u.mobile, email: u.email ?? '', password: '', status: u.status ?? 'active', roles: u.roles }
+      ? {
+          id: u.id,
+          name: u.name ?? '',
+          mobile: u.mobile,
+          email: u.email ?? '',
+          password: '',
+          status: u.status ?? 'active',
+          roles: u.roles,
+        }
       : blank;
 
   const onSubmit = (v: AdminUserInput & { id?: string }): void => {
@@ -179,92 +244,173 @@ export default function AdminUsers(): JSX.Element {
   const busy = create.isPending || update.isPending;
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Users</h1>
-          <p className="text-sm text-slate-600">Every account in the platform.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search by name, mobile, or email…"
-            className="w-72 rounded-md border-slate-300 px-3 py-1.5 text-sm shadow-sm focus:border-fuchsia-500 focus:ring-fuchsia-500"
+    <div className="min-h-screen bg-[#f3f2ed] p-4 sm:p-6">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">Users</h1>
+            <p className="mt-1 text-sm text-[#6f6e69]">Every account in the platform.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative w-full sm:w-auto">
+              <IconSearch
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#85847f]"
+                stroke={1.6}
+              />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search by name, mobile, or email…"
+                className="w-full sm:w-72 rounded-xl border border-[#d0cec8] bg-white px-4 py-2.5 pl-10 text-sm text-[#1d1d1b] placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+              />
+            </div>
+            <Button onClick={openNew} leftIcon={<IconUserPlus className="h-4 w-4" stroke={1.6} />}>
+              New user
+            </Button>
+          </div>
+        </header>
+
+        {users.isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Spinner label="Loading users" />
+          </div>
+        ) : users.isError ? (
+          <ErrorState
+            title="Failed to load users"
+            description="Something went wrong while loading the user list."
           />
-          <Button onClick={openNew}>+ New user</Button>
-        </div>
-      </header>
+        ) : (users.data ?? []).length === 0 ? (
+          <EmptyState
+            title="No users"
+            description="The platform has no users yet (or none match the search)."
+            action={
+              <Button
+                onClick={openNew}
+                leftIcon={<IconUserPlus className="h-4 w-4" stroke={1.6} />}
+              >
+                Create first user
+              </Button>
+            }
+          />
+        ) : (
+          <Card className="ring-1 ring-black/5">
+            <CardBody className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="bg-[#f3f2ed]">
+                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                        Name
+                      </th>
+                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                        Mobile
+                      </th>
+                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                        Email
+                      </th>
+                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                        Status
+                      </th>
+                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                        Roles
+                      </th>
+                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                        Joined
+                      </th>
+                      <th className="px-4 py-2.5 text-right text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#e4e2dc]">
+                    {(users.data ?? []).map((u: AdminUser) => (
+                      <tr key={u.id} className="transition hover:bg-[#f3f2ed]">
+                        <td className="px-4 py-3 font-medium text-[#1d1d1b]">{u.name ?? '—'}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-[#6f6e69]">{u.mobile}</td>
+                        <td className="px-4 py-3 text-[#6f6e69]">{u.email ?? '—'}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                              u.status === 'active'
+                                ? 'bg-[#edf7f0] text-[#256b45]'
+                                : u.status === 'suspended'
+                                  ? 'bg-[#fbeeed] text-[#9f3731]'
+                                  : 'bg-[#fff6e4] text-[#805913]'
+                            }`}
+                          >
+                            {u.status ?? 'active'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {u.roles.map((r) => (
+                              <span
+                                key={r}
+                                className="inline-flex items-center rounded-full bg-[#f3eef6] px-2 py-0.5 text-xs font-medium text-[#6b4593]"
+                              >
+                                {r}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[#6f6e69]">
+                          {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEdit(u)}
+                              leftIcon={<IconEdit className="h-3.5 w-3.5" stroke={1.6} />}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => onDelete(u)}
+                              leftIcon={<IconTrash className="h-3.5 w-3.5" stroke={1.6} />}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardBody>
+          </Card>
+        )}
 
-      {users.isLoading ? (
-        <Spinner label="Loading users" />
-      ) : (users.data ?? []).length === 0 ? (
-        <EmptyState title="No users" description="The platform has no users yet (or none match the search)." />
-      ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-4 py-2">Name</th>
-                <th className="px-4 py-2">Mobile</th>
-                <th className="px-4 py-2">Email</th>
-                <th className="px-4 py-2">Status</th>
-                <th className="px-4 py-2">Roles</th>
-                <th className="px-4 py-2">Joined</th>
-                <th className="px-4 py-2 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {(users.data ?? []).map((u: AdminUser) => (
-                <tr key={u.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-2 font-medium text-slate-900">{u.name ?? '—'}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-slate-700">{u.mobile}</td>
-                  <td className="px-4 py-2 text-slate-700">{u.email ?? '—'}</td>
-                  <td className="px-4 py-2">
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{u.status ?? 'active'}</span>
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex flex-wrap gap-1">
-                      {u.roles.map((r) => (
-                        <span key={r} className="rounded-full bg-fuchsia-50 px-2 py-0.5 text-xs text-fuchsia-800">{r}</span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-2 text-xs text-slate-500">
-                    {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(u)}>Edit</Button>
-                      <Button variant="danger" size="sm" onClick={() => onDelete(u)}>Delete</Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <Dialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        title={editing ? 'Edit user' : 'New user'}
-      >
-        <UserForm
-          initial={toDraft(editing)}
-          roles={roles}
-          onSubmit={onSubmit}
-          onCancel={() => setDialogOpen(false)}
-          busy={busy}
-        />
-        {create.isError ? (
-          <p role="alert" className="mt-2 text-sm text-rose-700">{create.error?.message}</p>
-        ) : null}
-        {update.isError ? (
-          <p role="alert" className="mt-2 text-sm text-rose-700">{update.error?.message}</p>
-        ) : null}
-      </Dialog>
+        <Dialog
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          title={editing ? 'Edit user' : 'New user'}
+          size="lg"
+          footer={null}
+        >
+          <UserForm
+            initial={toDraft(editing)}
+            roles={roles}
+            onSubmit={onSubmit}
+            onCancel={() => setDialogOpen(false)}
+            busy={busy}
+          />
+          {create.isError ? (
+            <p role="alert" className="mt-3 text-sm text-[#9f3731]">
+              {create.error?.message}
+            </p>
+          ) : null}
+          {update.isError ? (
+            <p role="alert" className="mt-3 text-sm text-[#9f3731]">
+              {update.error?.message}
+            </p>
+          ) : null}
+        </Dialog>
+      </div>
     </div>
   );
 }

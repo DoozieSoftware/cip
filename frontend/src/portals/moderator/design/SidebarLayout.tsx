@@ -68,19 +68,22 @@ export function SidebarLayout(props: SidebarLayoutProps): JSX.Element {
   const accent = ACCENT_MAP[props.accent] ?? ACCENT_MAP.brand;
   const brandAccent = ACCENT_MAP[props.brandColor] ?? ACCENT_MAP.brand;
   const darkSidebar = props.sidebarTone === 'dark';
-  const navGroups = props.nav.reduce<Array<{ label: string; items: SidebarNavItem[] }>>((groups, item) => {
-    const label = item.group ?? '';
-    const current = groups.at(-1);
-    if (current?.label === label) {
-      current.items.push(item);
-    } else {
-      groups.push({ label, items: [item] });
-    }
-    return groups;
-  }, []);
+  const navGroups = props.nav.reduce<Array<{ label: string; items: SidebarNavItem[] }>>(
+    (groups, item) => {
+      const label = item.group ?? '';
+      const current = groups.at(-1);
+      if (current?.label === label) {
+        current.items.push(item);
+      } else {
+        groups.push({ label, items: [item] });
+      }
+      return groups;
+    },
+    [],
+  );
 
   return (
-    <div className="flex min-h-screen w-full overflow-x-hidden bg-slate-50 text-slate-900">
+    <div className="flex min-h-screen w-full overflow-x-hidden bg-[#f3f2ed] text-[#1d1d1b]">
       {/* Mobile overlay */}
       {open && (
         <div
@@ -93,25 +96,53 @@ export function SidebarLayout(props: SidebarLayoutProps): JSX.Element {
       <aside
         className={cx(
           'fixed inset-y-0 left-0 z-40 flex w-64 transform flex-col border-r transition-transform duration-200 lg:static lg:translate-x-0',
-          darkSidebar ? 'border-blue-800 bg-blue-900' : 'border-slate-200 bg-white',
+          darkSidebar ? 'border-blue-800 bg-blue-900' : 'border-[#d9d7d0] bg-white',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className={cx('flex items-center gap-3 border-b px-4 py-4', darkSidebar ? 'border-blue-800' : 'border-slate-200')}>
-          <span aria-hidden className={cx('grid h-9 w-9 place-items-center rounded-lg text-sm font-bold', darkSidebar ? 'bg-white text-blue-900' : cx('text-white', brandAccent.brandBg))}>
+        <div
+          className={cx(
+            'flex items-center gap-3 border-b px-4 py-4',
+            darkSidebar ? 'border-blue-800' : 'border-[#e4e2dc]',
+          )}
+        >
+          <span
+            aria-hidden
+            className={cx(
+              'grid h-9 w-9 place-items-center rounded-[10px] text-sm font-bold',
+              darkSidebar ? 'bg-white text-blue-900' : 'bg-[#1d1d1b] text-white',
+            )}
+          >
             {props.brandMark ?? (props.brand.length > 2 ? props.brand.slice(0, 2) : props.brand)}
           </span>
           <div className="min-w-0">
-            <div className={cx('truncate text-sm font-semibold', darkSidebar ? 'text-white' : 'text-slate-900')}>{props.brand}</div>
+            <div
+              className={cx(
+                'truncate text-sm font-semibold',
+                darkSidebar ? 'text-white' : 'text-[#1d1d1b]',
+              )}
+            >
+              {props.brand}
+            </div>
             {props.brandSubtitle && (
-              <div className={cx('truncate text-xs', darkSidebar ? 'text-blue-100/75' : 'text-slate-500')}>{props.brandSubtitle}</div>
+              <div
+                className={cx(
+                  'truncate text-xs',
+                  darkSidebar ? 'text-blue-100/75' : 'text-[#777670]',
+                )}
+              >
+                {props.brandSubtitle}
+              </div>
             )}
           </div>
           <button
             type="button"
             aria-label="Close sidebar"
             onClick={() => setOpen(false)}
-            className={cx('ml-auto rounded-md p-1 lg:hidden', darkSidebar ? 'text-blue-100 hover:bg-blue-800' : 'text-slate-500 hover:bg-slate-100')}
+            className={cx(
+              'ml-auto rounded-md p-1 lg:hidden',
+              darkSidebar ? 'text-blue-100 hover:bg-blue-800' : 'text-[#6f6e69] hover:bg-[#f3f2ed]',
+            )}
           >
             ✕
           </button>
@@ -119,45 +150,83 @@ export function SidebarLayout(props: SidebarLayoutProps): JSX.Element {
 
         <nav aria-label={props.brand} className="flex-1 overflow-y-auto px-2 py-3">
           <div className="space-y-4">
-            {navGroups.map((group) => <section key={group.label || 'navigation'}>
-              {group.label ? <div className={cx('mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.16em]', darkSidebar ? 'text-blue-200/60' : 'text-slate-400')}>{group.label}</div> : null}
-              <ul className="space-y-0.5">
-                {group.items.map((n) => <li key={n.to}>
-                <NavLink
-                  to={n.to}
-                  end={n.end}
-                  onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
-                    cx(
-                      'flex items-center gap-2.5 rounded-md border-l-2 px-3 py-2 text-sm font-medium transition',
-                      darkSidebar
-                        ? isActive ? 'border-blue-200 bg-blue-800 text-white' : 'border-transparent text-blue-100/80 hover:bg-blue-800 hover:text-white'
-                        : isActive
-                        ? cx(accent.activeBg, accent.activeText, accent.activeBorder)
-                        : cx('border-transparent text-slate-600', accent.hover),
-                    )
-                  }
-                >
-                  {n.icon && <span aria-hidden className="grid h-5 w-5 shrink-0 place-items-center">{n.icon}</span>}
-                  <span className="truncate">{n.label}</span>
-                </NavLink>
-                </li>)}
-              </ul>
-            </section>)}
+            {navGroups.map((group) => (
+              <section key={group.label || 'navigation'}>
+                {group.label ? (
+                  <div
+                    className={cx(
+                      'mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.16em]',
+                      darkSidebar ? 'text-blue-200/60' : 'text-[#85847f]',
+                    )}
+                  >
+                    {group.label}
+                  </div>
+                ) : null}
+                <ul className="space-y-0.5">
+                  {group.items.map((n) => (
+                    <li key={n.to}>
+                      <NavLink
+                        to={n.to}
+                        end={n.end}
+                        onClick={() => setOpen(false)}
+                        className={({ isActive }) =>
+                          cx(
+                            'flex items-center gap-2.5 rounded-md border-l-2 px-3 py-2 text-sm font-medium transition',
+                            darkSidebar
+                              ? isActive
+                                ? 'border-blue-200 bg-blue-800 text-white'
+                                : 'border-transparent text-blue-100/80 hover:bg-blue-800 hover:text-white'
+                              : isActive
+                                ? 'border-[#1d1d1b] bg-[#1d1d1b] text-white'
+                                : 'border-transparent text-[#6f6e69] hover:bg-[#efeee9] hover:text-[#1d1d1b]',
+                          )
+                        }
+                      >
+                        {n.icon && (
+                          <span aria-hidden className="grid h-5 w-5 shrink-0 place-items-center">
+                            {n.icon}
+                          </span>
+                        )}
+                        <span className="truncate">{n.label}</span>
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
           </div>
         </nav>
 
-        <div className={cx('border-t px-4 py-3', darkSidebar ? 'border-blue-800' : 'border-slate-200')}>
+        <div
+          className={cx('border-t px-4 py-3', darkSidebar ? 'border-blue-800' : 'border-[#e4e2dc]')}
+        >
           <div className="mb-2 flex items-center gap-2">
-            <span aria-hidden className={cx('grid h-8 w-8 place-items-center rounded-full text-xs font-bold text-white', brandAccent.brandBg)}>
+            <span
+              aria-hidden
+              className={cx(
+                'grid h-8 w-8 place-items-center rounded-full text-xs font-bold',
+                darkSidebar ? 'text-white' : 'bg-[#efeee9] text-[#1d1d1b]',
+                brandAccent.brandBg,
+              )}
+            >
               {(props.user.name ?? props.user.mobile ?? '?').slice(0, 1).toUpperCase()}
             </span>
             <div className="min-w-0 flex-1">
-              <div className={cx('truncate text-xs font-semibold', darkSidebar ? 'text-slate-100' : 'text-slate-900')}>
+              <div
+                className={cx(
+                  'truncate text-xs font-semibold',
+                  darkSidebar ? 'text-slate-100' : 'text-[#1d1d1b]',
+                )}
+              >
                 {props.user.name ?? props.user.mobile ?? '—'}
               </div>
               <div className="flex items-center gap-1">
-                <span className={cx('rounded px-1.5 py-0.5 text-[10px] font-medium', accent.badge)}>
+                <span
+                  className={cx(
+                    'rounded px-1.5 py-0.5 text-[10px] font-medium',
+                    darkSidebar ? accent.badge : 'bg-[#efeee9] text-[#6f6e69]',
+                  )}
+                >
                   {props.user.roleLabel}
                 </span>
               </div>
@@ -166,15 +235,30 @@ export function SidebarLayout(props: SidebarLayoutProps): JSX.Element {
           <div className="flex gap-1">
             <button
               type="button"
-              onClick={() => { void navigate('/'); }}
-              className={cx('flex-1 rounded-md border px-2 py-1.5 text-xs font-medium', darkSidebar ? 'border-blue-700 text-blue-100 hover:bg-blue-800' : 'border-slate-300 text-slate-700 hover:bg-slate-50')}
+              onClick={() => {
+                void navigate('/');
+              }}
+              className={cx(
+                'flex-1 rounded-md border px-2 py-1.5 text-xs font-medium',
+                darkSidebar
+                  ? 'border-blue-700 text-blue-100 hover:bg-blue-800'
+                  : 'border-[#d0cec8] text-[#6f6e69] hover:bg-[#efeee9]',
+              )}
             >
               Home
             </button>
             <button
               type="button"
-              onClick={() => { logout(); void navigate('/'); }}
-              className={cx('flex-1 rounded-md border px-2 py-1.5 text-xs font-medium', darkSidebar ? 'border-blue-700 text-blue-100 hover:bg-blue-800' : 'border-slate-300 text-slate-700 hover:bg-slate-50')}
+              onClick={() => {
+                logout();
+                void navigate('/');
+              }}
+              className={cx(
+                'flex-1 rounded-md border px-2 py-1.5 text-xs font-medium',
+                darkSidebar
+                  ? 'border-blue-700 text-blue-100 hover:bg-blue-800'
+                  : 'border-[#d0cec8] text-[#6f6e69] hover:bg-[#efeee9]',
+              )}
             >
               Sign out
             </button>
@@ -183,21 +267,27 @@ export function SidebarLayout(props: SidebarLayoutProps): JSX.Element {
       </aside>
 
       <div className="flex min-w-0 w-full flex-1 flex-col">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white shadow-sm">
+        <header className="sticky top-0 z-20 border-b border-[#d9d7d0] bg-[#f3f2ed]/95 backdrop-blur-xl">
           <div className="flex items-center gap-3 px-4 py-3 lg:px-6">
             <button
               type="button"
               aria-label="Open sidebar"
               onClick={() => setOpen(true)}
-              className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 lg:hidden"
+              className="rounded-md p-1.5 text-[#6f6e69] hover:bg-[#efeee9] lg:hidden"
             >
               ☰
             </button>
-            {props.headerContent ?? (props.keyboardShortcuts && (
-              <div className="hidden text-xs text-slate-500 sm:block">{props.keyboardShortcuts}</div>
-            ))}
+            {props.headerContent ??
+              (props.keyboardShortcuts && (
+                <div className="hidden text-xs text-[#85847f] sm:block">
+                  {props.keyboardShortcuts}
+                </div>
+              ))}
             <div className="ml-auto flex items-center gap-2 sm:hidden">
-              <span aria-hidden className={cx('grid h-7 w-7 place-items-center rounded-full text-xs font-bold text-white', brandAccent.brandBg)}>
+              <span
+                aria-hidden
+                className="grid h-7 w-7 place-items-center rounded-full bg-[#1d1d1b] text-xs font-bold text-white"
+              >
                 {(props.user.name ?? props.user.mobile ?? '?').slice(0, 1).toUpperCase()}
               </span>
             </div>

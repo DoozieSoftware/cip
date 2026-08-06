@@ -13,13 +13,30 @@ vi.mock('../../api/client', () => ({
   useProbeIntegration: vi.fn(() => ({ mutate: mutateMock, isPending: false })),
 }));
 
- 
 const { useIntegrations } = await import('../../api/client');
 const AdminIntegrations = (await import('../AdminIntegrations')).default;
 
 const ROWS = [
-  { id: 'i1', code: 'bbmp_311', display_name: 'BBMP 311', provider: 'bbmp', status: 'active' as const, credentials: {}, settings: {}, created_at: null },
-  { id: 'i2', code: 'btp_helpdesk', display_name: 'BTP Helpdesk', provider: 'btp', status: 'degraded' as const, credentials: {}, settings: {}, created_at: null },
+  {
+    id: 'i1',
+    code: 'bbmp_311',
+    display_name: 'BBMP 311',
+    provider: 'bbmp',
+    status: 'active' as const,
+    credentials: {},
+    settings: {},
+    created_at: null,
+  },
+  {
+    id: 'i2',
+    code: 'btp_helpdesk',
+    display_name: 'BTP Helpdesk',
+    provider: 'btp',
+    status: 'degraded' as const,
+    credentials: {},
+    settings: {},
+    created_at: null,
+  },
 ];
 
 describe('AdminIntegrations (T-M12-022)', () => {
@@ -27,14 +44,19 @@ describe('AdminIntegrations (T-M12-022)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mutateMock.mockClear();
-    (useIntegrations as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ data: ROWS, isLoading: false });
+    (useIntegrations as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: ROWS,
+      isLoading: false,
+    });
     client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   });
 
   it('renders the page title', async () => {
     render(
       <QueryClientProvider client={client}>
-        <MemoryRouter><AdminIntegrations /></MemoryRouter>
+        <MemoryRouter>
+          <AdminIntegrations />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
     expect(await screen.findByText('Integrations')).toBeTruthy();
@@ -43,7 +65,9 @@ describe('AdminIntegrations (T-M12-022)', () => {
   it('renders one row per integration with masked credentials (none shown)', async () => {
     render(
       <QueryClientProvider client={client}>
-        <MemoryRouter><AdminIntegrations /></MemoryRouter>
+        <MemoryRouter>
+          <AdminIntegrations />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
     expect(await screen.findByText('BBMP 311')).toBeTruthy();
@@ -53,7 +77,9 @@ describe('AdminIntegrations (T-M12-022)', () => {
   it('shows the status pill for each row', async () => {
     render(
       <QueryClientProvider client={client}>
-        <MemoryRouter><AdminIntegrations /></MemoryRouter>
+        <MemoryRouter>
+          <AdminIntegrations />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
     const table = await screen.findByRole('table');
