@@ -69,6 +69,18 @@ class ReportResource extends JsonResource
                 'name' => $department->name,
             ],
             'media_count' => Media::query()->where('report_id', $report->id)->where('is_replaced', false)->count(),
+            'ai_summary' => $report->ai_label === null ? null : [
+                'labels' => [[
+                    'name' => $report->ai_label,
+                    'confidence' => $report->ai_confidence === null ? 0 : ($report->ai_confidence / 100),
+                ]],
+                'fraud_score' => $report->fraud_score === null ? null : ($report->fraud_score / 100),
+                'duplicate_of' => null,
+                'recommended_department' => $department === null ? null : [
+                    'name' => $department->name,
+                    'code' => $department->code,
+                ],
+            ],
             'location' => $location === null ? null : [
                 'id' => $location->id,
                 'latitude' => $location->latitude,

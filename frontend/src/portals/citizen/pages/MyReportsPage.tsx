@@ -13,8 +13,8 @@ import {
 import { Spinner } from '../../moderator/design';
 import { useCitizenReports, lifecycleGroup } from '../api/client';
 import { StatusBadge } from '../components/StatusBadge';
+import type { StatusFilter } from '../types';
 
-type StatusFilter = 'all' | 'open' | 'awaiting_citizen' | 'closed' | 'rejected' | 'merged';
 type SortField = 'date' | 'status' | 'reference';
 type SortDir = 'asc' | 'desc';
 
