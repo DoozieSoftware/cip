@@ -1,94 +1,45 @@
 import { apiRequest, buildApiUrl, getToken, type ApiEnvelope } from '../../../auth/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  type ReportType,
+  type Department,
+  type ReportSummary,
+  type ReportDetail,
+  type NotificationItem,
+  type PaginationMeta,
+  type LifecycleGroup,
+  OPEN_STATUSES,
+  AWAITING_CITIZEN_STATUSES,
+  CLOSED_STATUSES,
+  REJECTED_STATUSES,
+  MERGED_STATUSES,
+  lifecycleGroup,
+} from '../types';
 
-export interface ReportType {
-  id: string;
-  name: string;
-  code: string;
-  icon?: string | null;
-  color?: string | null;
-  description?: string | null;
-  requires_video: boolean;
-  requires_photo: boolean;
-  min_photos: number;
-  max_photos: number;
-}
+export type {
+  ReportType,
+  Department,
+  ReportSummary,
+  ReportDetail,
+  NotificationItem,
+  PaginationMeta,
+  LifecycleGroup,
+};
+export { lifecycleGroup };
 
-export interface Department {
-  id: string;
-  name: string;
-  code: string;
-  description?: string | null;
-}
-
-export interface ReportSummary {
-  id: string;
-  tracking_number: string;
-  title: string;
-  description?: string | null;
-  status: { code: string; name: string; is_terminal?: boolean };
-  type?: { code: string; name: string; icon?: string | null } | null;
-  priority?: { code: string; name: string } | null;
-  created_at?: string | null;
-  updated_at?: string | null;
-  assigned_department?: { id: string; name: string; code: string } | null;
-  department?: { id: string; name: string; code: string } | null;
-  location?: { latitude: number; longitude: number; address?: string | null } | null;
-  is_verified?: boolean;
-  media_count?: number;
-}
-
-export interface ReportDetail extends ReportSummary {
-  timeline: Array<{ at: string; actor?: string | null; event: string; note?: string | null }>;
-  media: Array<{
-    id: string;
-    kind: 'photo' | 'video';
-    url?: string;
-    signed_url?: string;
-    audit?: unknown;
-  }>;
-  ai_summary?: {
-    labels: Array<{ name: string; confidence: number }>;
-    fraud_score: number;
-    duplicate_of?: string | null;
-    recommended_department?: { name: string; code: string } | null;
-  } | null;
-}
+export {
+  OPEN_STATUSES,
+  AWAITING_CITIZEN_STATUSES,
+  CLOSED_STATUSES,
+  REJECTED_STATUSES,
+  MERGED_STATUSES,
+};
 
 interface ApiReportPayload extends Omit<ReportDetail, 'type' | 'media' | 'timeline'> {
   report_type?: ReportSummary['type'];
   type?: ReportSummary['type'];
   media?: ReportDetail['media'];
   timeline?: ReportDetail['timeline'];
-}
-
-export const OPEN_STATUSES = [
-  'submitted',
-  'ai_processing',
-  'pending_moderator',
-  'assigned',
-  'accepted',
-  'in_progress',
-  'escalated',
-] as const;
-
-export const AWAITING_CITIZEN_STATUSES = ['resolved'] as const;
-
-export const CLOSED_STATUSES = ['verified', 'closed'] as const;
-
-export const REJECTED_STATUSES = ['rejected'] as const;
-
-export const MERGED_STATUSES = ['merged'] as const;
-
-export type LifecycleGroup = 'open' | 'awaiting_citizen' | 'closed' | 'rejected' | 'merged';
-
-export function lifecycleGroup(code: string): LifecycleGroup {
-  if ((OPEN_STATUSES as readonly string[]).includes(code)) return 'open';
-  if ((AWAITING_CITIZEN_STATUSES as readonly string[]).includes(code)) return 'awaiting_citizen';
-  if ((CLOSED_STATUSES as readonly string[]).includes(code)) return 'closed';
-  if ((REJECTED_STATUSES as readonly string[]).includes(code)) return 'rejected';
-  if ((MERGED_STATUSES as readonly string[]).includes(code)) return 'merged';
-  return 'open';
 }
 
 interface ApiMediaPayload {
@@ -117,16 +68,6 @@ export function shouldRefreshSubmittedReport(report: ReportDetail | undefined): 
   );
 }
 
-export interface NotificationItem {
-  id: string;
-  title: string;
-  body: string;
-  channel: string;
-  read_at?: string | null;
-  created_at: string;
-  data?: Record<string, unknown> | null;
-}
-
 interface ApiNotificationItem {
   id: string;
   subject?: string | null;
@@ -153,13 +94,6 @@ export function normalizeNotification(item: ApiNotificationItem): NotificationIt
     created_at: item.created_at,
     data: item.metadata ?? null,
   };
-}
-
-export interface PaginationMeta {
-  page: number;
-  per_page: number;
-  total: number;
-  last_page: number;
 }
 
 function normalizePaginationMeta(
@@ -227,17 +161,9 @@ export interface CreateReportInput {
   address?: string;
   accuracy_m?: number;
   media_files?: File[];
-  /** 0..1 mock-GPS heuristic score from GpsCapture/mockGpsLikely; never auto-rejects, surfaced to moderators. */
   mock_gps_score?: number;
 }
 
-/**
- * The actual create → upload media → submit flow, extracted out of
- * the `useCreateReport` mutation hook so the offline-queue retry
- * handler (registered outside any React component) can replay the
- * exact same submission after the device reconnects, instead of
- * re-implementing it.
- */
 export async function submitReportPayload(
   input: CreateReportInput,
 ): Promise<{ id: string; status: string }> {
@@ -250,21 +176,12 @@ export async function submitReportPayload(
       latitude: input.latitude,
       longitude: input.longitude,
       address: input.address ?? null,
-      // Wire key is `accuracy` (matches SubmitReportRequest/locations.accuracy
-      // server-side) — `accuracy_m` was being silently dropped by validation
-      // on every citizen submission before this fix.
       accuracy: input.accuracy_m ?? null,
       mock_gps_score: input.mock_gps_score ?? null,
     },
   });
   const reportId = create.data.id;
 
-  // Upload files (best-effort) in the background. The report already
-  // exists at this point, so we must NOT block the submission on media:
-  // a slow or hung video upload over a phone/LAN connection would keep
-  // the submit promise pending forever and leave the button frozen on
-  // "Submitting…". Each upload is bounded by a timeout and failures are
-  // non-fatal — the moderator can still attach evidence later.
   if (input.media_files && input.media_files.length > 0) {
     const token = getToken();
     void Promise.all(input.media_files.map((file) => uploadMedia(reportId, file, token))).catch(
@@ -305,7 +222,6 @@ async function uploadMedia(reportId: string, file: File, token: string | null): 
       console.warn('media upload failed', file.name, res.status);
     }
   } catch (err) {
-    // Network error or timeout — non-fatal, the report is already created.
     console.warn('media upload error', file.name, err);
   } finally {
     clearTimeout(timer);
@@ -333,13 +249,11 @@ export function useReportDetail(id: string | undefined) {
       const report = await apiRequest<ApiEnvelope<ApiReportPayload>>(`/citizen/reports/${id}`);
       let media: ApiMediaPayload[] = [];
 
-      try {
-        const response = await apiRequest<ApiEnvelope<{ media: ApiMediaPayload[] }>>(
-          `/reports/${id}/media`,
-        );
-        media = response.data.media;
-      } catch {
-        // Report details remain useful when evidence storage is temporarily unavailable.
+      const mediaResponse = await apiRequest<ApiEnvelope<{ media: ApiMediaPayload[] }>>(
+        `/reports/${id}/media`,
+      ).catch(() => null);
+      if (mediaResponse !== null) {
+        media = mediaResponse.data.media;
       }
 
       return normalizeReport({

@@ -14,10 +14,11 @@ import {
   IconCamera,
   IconAlertTriangle,
 } from '@tabler/icons-react';
-import { type ReportDetail, useReportDetail, useReportTimeline, lifecycleGroup } from '../api/client';
+import { useReportDetail, useReportTimeline, lifecycleGroup } from '../api/client';
 import { EmptyState, Spinner } from '../../moderator/design';
 import { StatusBadge } from '../components/StatusBadge';
 import LocationMap from '../components/LocationMap';
+import type { ReportDetail } from '../types';
 
 type ReportMedia = ReportDetail['media'][number];
 
@@ -110,6 +111,12 @@ export default function ReportDetailPage(): JSX.Element {
   const sortedTimeline = useMemo(() => {
     if (!timeline.data) return [];
     return [...timeline.data].sort((a, b) => b.at.localeCompare(a.at));
+  }, [timeline.data]);
+
+  const latestTimestamp = useMemo(() => {
+    if (!timeline.data || timeline.data.length === 0) return null;
+    return timeline.data.reduce((latest, entry) =>
+      entry.at > latest ? entry.at : latest, timeline.data[0].at);
   }, [timeline.data]);
 
   if (detail.isLoading) {
@@ -254,10 +261,10 @@ export default function ReportDetailPage(): JSX.Element {
                 <span className="text-sm text-[#6f6e69]">Loading status history...</span>
               </div>
             ) : sortedTimeline.length > 0 ? (
-              <ol className="relative">
-                {sortedTimeline.map((t, i) => {
-                  const isLatest = i === 0;
-                  return (
+                <ol className="relative">
+                  {sortedTimeline.map((t, i) => {
+                    const isLatest = t.is_current === true || (latestTimestamp !== null && t.at === latestTimestamp);
+                    return (
                     <li key={i} className="relative flex gap-3 pb-4 last:pb-0">
                       {i < sortedTimeline.length - 1 ? (
                         <span
