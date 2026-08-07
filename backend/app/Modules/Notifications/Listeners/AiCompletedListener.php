@@ -5,24 +5,13 @@ declare(strict_types=1);
 namespace App\Modules\Notifications\Listeners;
 
 use App\Modules\AI\Events\AiCompleted;
+use App\Modules\Notifications\Models\Notification;
 use App\Modules\Notifications\Services\NotificationDispatcher;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * Translates an `AiCompleted` event into a citizen
- * notification when the AI produced a high-confidence
- * classification (so the citizen gets an immediate
- * acknowledgement). The template code is
- * `ai.classified`; the AI label, confidence, and the
- * recommended category are passed as variables.
- *
- * The listener intentionally does NOT push a notification
- * for low-confidence cases — those go to the moderator
- * queue (M10), not the citizen inbox.
- */
 class AiCompletedListener
 {
     public function __construct(private readonly NotificationDispatcher $dispatcher) {}
@@ -43,7 +32,7 @@ class AiCompletedListener
 
         try {
             $this->dispatcher->dispatch($user, 'ai.classified', [
-                'report_id' => $report->id,
+                'name' => (string) ($user->name ?? ''),
                 'tracking_number' => $report->tracking_number,
                 'title' => $report->title,
                 'ai_label' => (string) ($event->aiLabel ?? ''),
@@ -53,17 +42,28 @@ class AiCompletedListener
                 'channel' => 'email',
             ]);
         } catch (Throwable $e) {
-            // Swallow logging failures too — the routing
-            // event is the source of truth and the
-            // notification is a downstream side effect.
-            try {
-                Log::warning('failed to dispatch ai.classified notification', [
-                    'report_id' => $event->reportId,
-                    'error' => $e->getMessage(),
-                ]);
-            } catch (Throwable) {
-                // ignore
-            }
+            $this->recordFailure($user, 'ai.classified', $e);
+        }
+    }
+
+    private function recordFailure(User $user, string $code, Throwable $e): void
+    {
+        try {
+            Notification::query()->create([
+                'user_id' => $user->id,
+                'type' => $code,
+                'channel' => 'email',
+                'payload' => ['error' => $e->getMessage(), 'class' => $e::class],
+                'status' => Notification::STATUS_DEAD,
+                'last_error' => $e->getMessage(),
+                'retry_count' => 0,
+            ]);
+        } catch (Throwable $logError) {
+            Log::warning('failed to dispatch ai.classified notification', [
+                'report_id' => $user->id,
+                'error' => $e->getMessage(),
+                'log_error' => $logError->getMessage(),
+            ]);
         }
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Notifications\Listeners;
 
+use App\Modules\Departments\Models\Department;
+use App\Modules\Notifications\Models\Notification;
 use App\Modules\Notifications\Services\NotificationDispatcher;
 use App\Modules\Reports\Events\ReportAssigned;
 use App\Modules\Reports\Models\Report;
@@ -11,16 +13,6 @@ use App\Modules\Users\Models\User;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * Translates a `ReportAssigned` event into a citizen
- * notification. The template code is `report.assigned`;
- * the recipient is the report's citizen (or skip when
- * the report was filed anonymously).
- *
- * Any dispatcher exception is logged but does NOT
- * bubble — the assignment is the source of truth and
- * the notification is a downstream side effect.
- */
 class ReportAssignedListener
 {
     public function __construct(private readonly NotificationDispatcher $dispatcher) {}
@@ -34,7 +26,6 @@ class ReportAssignedListener
         }
 
         if ($report->citizen_id === null || $report->citizen_id === '') {
-            // Anonymous report — no recipient.
             return;
         }
 
@@ -44,27 +35,44 @@ class ReportAssignedListener
             return;
         }
 
+        $departmentName = Department::query()->whereKey($event->departmentId)->value('name');
+        $departmentName = is_string($departmentName) ? $departmentName : '';
+        $cityName = $report->location?->ward?->city?->name;
+        $cityName = is_string($cityName) ? $cityName : '';
+
         try {
             $this->dispatcher->dispatch($user, 'report.assigned', [
-                'report_id' => $report->id,
+                'name' => (string) ($user->name ?? ''),
                 'tracking_number' => $report->tracking_number,
                 'title' => $report->title,
-                'department' => $event->departmentId,
-                'officer' => $event->officerId,
+                'department' => $departmentName,
+                'city' => $cityName,
             ], null, [
                 'channel' => 'email',
             ]);
         } catch (Throwable $e) {
-            // Swallow log failures too — the assignment is
-            // the source of truth.
-            try {
-                Log::warning('failed to dispatch report.assigned notification', [
-                    'report_id' => $event->reportId,
-                    'error' => $e->getMessage(),
-                ]);
-            } catch (Throwable) {
-                // ignore
-            }
+            $this->recordFailure($user, 'report.assigned', $e);
+        }
+    }
+
+    private function recordFailure(User $user, string $code, Throwable $e): void
+    {
+        try {
+            Notification::query()->create([
+                'user_id' => $user->id,
+                'type' => $code,
+                'channel' => 'email',
+                'payload' => ['error' => $e->getMessage(), 'class' => $e::class],
+                'status' => Notification::STATUS_DEAD,
+                'last_error' => $e->getMessage(),
+                'retry_count' => 0,
+            ]);
+        } catch (Throwable $logError) {
+            Log::warning('failed to dispatch report.assigned notification', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'log_error' => $logError->getMessage(),
+            ]);
         }
     }
 }

@@ -6,18 +6,17 @@ use App\Modules\AI\Events\AiCompleted;
 use App\Modules\Departments\Models\Department;
 use App\Modules\Notifications\Jobs\SendNotificationJob;
 use App\Modules\Notifications\Models\Notification;
-use App\Modules\Notifications\Models\NotificationTemplate;
 use App\Modules\Reports\Events\ReportAssigned;
 use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Settings\Models\AppConfig;
 use App\Modules\Users\Models\User;
+use Database\Seeders\NotificationTemplatesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -36,23 +35,8 @@ beforeEach(function (): void {
         ],
     );
 
-    NotificationTemplate::query()->delete();
+    (new NotificationTemplatesSeeder)->run();
     $this->user = User::factory()->create(['email' => 'citizen@example.test']);
-
-    foreach (['report.assigned', 'report.status_changed', 'ai.classified', 'security.alert'] as $code) {
-        $tpl = new NotificationTemplate([
-            'code' => $code,
-            'name' => Str::title(str_replace('.', ' ', $code)),
-            'channel' => 'email',
-            'subject' => 'Subject',
-            'body' => 'Body for {tracking_number}',
-            'locale' => 'en',
-            'version' => 1,
-            'active' => true,
-        ]);
-        $tpl->id = (string) Str::uuid();
-        $tpl->save();
-    }
 });
 
 it('creates a report.assigned notification on ReportAssigned', function (): void {
