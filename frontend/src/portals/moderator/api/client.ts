@@ -1,97 +1,14 @@
-/**
- * Fetch wrapper for the moderator REST surface.
- *
- * Uses `import.meta.env.VITE_API_BASE_URL` to find the backend; defaults to
- * the Vite dev proxy at `/api/v1`. Attaches the Sanctum bearer token from
- * `localStorage` when present so a logged-in moderator can call the API.
- */
+import { request, type RequestOptions } from '../../../shared/api/client';
+import { ApiError } from '../../../shared/api/errors';
+import type { ApiEnvelope } from '../../../shared/api/envelope';
 
-import { getToken } from '../../../auth/api';
-import { handleUnauthorized } from '../../../auth/storage';
-
-export class ApiError extends Error {
-  status: number;
-  payload: unknown;
-  constructor(status: number, message: string, payload: unknown) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-    this.payload = payload;
-  }
-}
-
-const BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1';
-
-function authHeader(): Record<string, string> {
-  const t = getToken();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
-
-function buildUrl(path: string, query?: Record<string, unknown>): string {
-  const url = new URL(BASE.replace(/\/$/, '') + path, window.location.origin);
-  if (query) {
-    for (const [k, v] of Object.entries(query)) {
-      if (v === undefined || v === null || v === '') continue;
-      if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
-        url.searchParams.set(k, String(v));
-      }
-    }
-  }
-  return url.toString();
-}
-
-async function parse(res: Response): Promise<unknown> {
-  const ct = res.headers.get('content-type') ?? '';
-  if (ct.includes('application/json')) return res.json();
-  return res.text();
-}
-
-async function request<T>(
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
-  path: string,
-  body?: unknown,
-  query?: Record<string, unknown>,
-): Promise<T> {
-  const res = await fetch(buildUrl(path, query), {
-    method,
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': body ? 'application/json' : 'application/json',
-      ...authHeader(),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-    // Auth is a Bearer token (localStorage), not cookies. Sending
-    // credentials cross-origin ('include') makes the browser reject the
-    // API's `Access-Control-Allow-Origin: *` response, so the fetch fails
-    // with a network error ("did not respond"). Stay same-origin like the
-    // citizen client.
-    credentials: 'same-origin',
-  });
-  const payload = await parse(res);
-  if (!res.ok) {
-    if (res.status === 401) {
-      // Token missing / expired: send the moderator to login instead of
-      // surfacing a bare "could not load the queue" error.
-      handleUnauthorized();
-    }
-    const message =
-      (typeof payload === 'object' && payload !== null && 'message' in payload
-        ? String((payload).message)
-        : null) ?? `Request failed (${res.status})`;
-    throw new ApiError(res.status, message, payload);
-  }
-  // Every backend response uses the standard ApiResponse envelope
-  // (`{success, message, data, ...}` — docs/03 §20). This client used
-  // to return the raw envelope cast as if it were the payload itself,
-  // so every caller's `data.someField` was actually
-  // `envelope.someField` (undefined). Unwrap it here, once.
-  if (typeof payload === 'object' && payload !== null && 'data' in payload) {
-    return (payload as { data: T }).data;
-  }
-  return payload as T;
-}
+export { ApiError };
 
 export const api = {
-  get: <T>(path: string, query?: Record<string, unknown>) => request<T>('GET', path, undefined, query),
-  post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
+  get: <T>(path: string, query?: Record<string, unknown>) =>
+    request<ApiEnvelope<T>>(path, { method: 'GET', query: query as RequestOptions['query'] }).then(
+      (env) => env.data,
+    ),
+  post: <T>(path: string, body?: unknown) =>
+    request<ApiEnvelope<T>>(path, { method: 'POST', body }).then((env) => env.data),
 };

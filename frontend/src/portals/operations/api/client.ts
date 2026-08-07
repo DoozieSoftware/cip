@@ -1,23 +1,20 @@
-/**
- * Fetch wrapper for the operations REST surface.
- *
- * Uses `import.meta.env.VITE_API_BASE_URL` to find the backend; defaults to
- * the Vite dev proxy at `/api/v1`. Attaches the shared session bearer token
- * when present so a logged-in department officer can call the API.
- */
-
 import { getToken } from '../../../auth/api';
+import { request, type RequestOptions } from '../../../shared/api/client';
+import { ApiError } from '../../../shared/api/errors';
 
-export class ApiError extends Error {
-  status: number;
-  payload: unknown;
-  constructor(status: number, message: string, payload: unknown) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-    this.payload = payload;
-  }
-}
+export { ApiError };
+
+export const api = {
+  get: <T>(path: string, query?: Record<string, unknown>) =>
+    request<T>(path, { method: 'GET', query: query as RequestOptions['query'] }),
+  post: <T>(path: string, body?: unknown, query?: Record<string, unknown>) =>
+    request<T>(path, { method: 'POST', body, query: query as RequestOptions['query'] }),
+  put: <T>(path: string, body?: unknown) => request<T>(path, { method: 'PUT', body }),
+  patch: <T>(path: string, body?: unknown) => request<T>(path, { method: 'PATCH', body }),
+  delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+  download,
+  upload,
+};
 
 const BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1';
 
@@ -39,52 +36,6 @@ function buildUrl(path: string, query?: Record<string, unknown>): string {
   return url.toString();
 }
 
-async function parse(res: Response): Promise<unknown> {
-  const ct = res.headers.get('content-type') ?? '';
-  if (ct.includes('application/json')) return res.json();
-  return res.text();
-}
-
-async function request<T>(
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
-  path: string,
-  body?: unknown,
-  query?: Record<string, unknown>,
-): Promise<T> {
-  const res = await fetch(buildUrl(path, query), {
-    method,
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': body ? 'application/json' : 'application/json',
-      ...authHeader(),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-    // Bearer-token auth (no cookie session), so sending credentials
-    // cross-origin makes the browser reject the API's wildcard CORS
-    // response. Stay same-origin.
-    credentials: 'same-origin',
-  });
-  const payload = await parse(res);
-  if (!res.ok) {
-    const message =
-      (typeof payload === 'object' && payload !== null && 'message' in payload
-        ? String(payload.message)
-        : null) ?? `Request failed (${res.status})`;
-    throw new ApiError(res.status, message, payload);
-  }
-  return payload as T;
-}
-
-/**
- * Downloads a file endpoint and saves it via a Blob URL.
- *
- * A plain `<a href="...">` / `window.location` navigation to an
- * `auth:sanctum` bearer-token endpoint has no way to attach the
- * Authorization header — this app has no cookie session for Sanctum to
- * fall back to, so that always 401s. Fetch the bytes with the same auth
- * header every other request uses, then hand the browser a local Blob
- * URL to save.
- */
 async function download(
   path: string,
   query: Record<string, unknown> | undefined,
@@ -92,18 +43,20 @@ async function download(
 ): Promise<void> {
   const res = await fetch(buildUrl(path, query), {
     headers: { ...authHeader() },
-    // Bearer-token auth (no cookie session), so sending credentials
-    // cross-origin makes the browser reject the API's wildcard CORS
-    // response. Stay same-origin.
     credentials: 'same-origin',
   });
   if (!res.ok) {
-    const payload = await parse(res);
-    const message =
-      (typeof payload === 'object' && payload !== null && 'message' in payload
-        ? String(payload.message)
-        : null) ?? `Request failed (${res.status})`;
-    throw new ApiError(res.status, message, payload);
+    const contentType = res.headers.get('content-type') ?? '';
+    const isJson = contentType.includes('application/json');
+    const payload: unknown = isJson ? await res.json() : await res.text();
+    const errorEnv = payload as { message?: string; errors?: unknown; code?: string; trace_id?: string };
+    throw new ApiError(
+      res.status,
+      errorEnv.code ?? `HTTP_${res.status}`,
+      errorEnv.message ?? `Request failed: ${res.status}`,
+      errorEnv.errors ?? null,
+      errorEnv.trace_id ?? 'unknown',
+    );
   }
   const blob = await res.blob();
   const blobUrl = URL.createObjectURL(blob);
@@ -116,12 +69,6 @@ async function download(
   URL.revokeObjectURL(blobUrl);
 }
 
-/**
- * Multipart upload for endpoints that accept form-data (e.g. proof photo
- * uploads). Unlike `request()`, the body is passed through untouched and no
- * `Content-Type` header is set, so the browser can attach the multipart
- * boundary itself.
- */
 async function upload<T>(path: string, body: FormData): Promise<T> {
   const res = await fetch(buildUrl(path), {
     method: 'POST',
@@ -130,30 +77,20 @@ async function upload<T>(path: string, body: FormData): Promise<T> {
       ...authHeader(),
     },
     body,
-    // Bearer-token auth (no cookie session), so sending credentials
-    // cross-origin makes the browser reject the API's wildcard CORS
-    // response. Stay same-origin.
     credentials: 'same-origin',
   });
-  const payload = await parse(res);
+  const contentType = res.headers.get('content-type') ?? '';
+  const isJson = contentType.includes('application/json');
+  const payload: unknown = isJson ? await res.json() : await res.text();
   if (!res.ok) {
-    const message =
-      (typeof payload === 'object' && payload !== null && 'message' in payload
-        ? String(payload.message)
-        : null) ?? `Request failed (${res.status})`;
-    throw new ApiError(res.status, message, payload);
+    const errorEnv = payload as { message?: string; errors?: unknown; code?: string; trace_id?: string };
+    throw new ApiError(
+      res.status,
+      errorEnv.code ?? `HTTP_${res.status}`,
+      errorEnv.message ?? `Request failed: ${res.status}`,
+      errorEnv.errors ?? null,
+      errorEnv.trace_id ?? 'unknown',
+    );
   }
   return payload as T;
 }
-
-export const api = {
-  get: <T>(path: string, query?: Record<string, unknown>) =>
-    request<T>('GET', path, undefined, query),
-  post: <T>(path: string, body?: unknown, query?: Record<string, unknown>) =>
-    request<T>('POST', path, body, query),
-  put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),
-  patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
-  delete: <T>(path: string) => request<T>('DELETE', path),
-  download,
-  upload,
-};
