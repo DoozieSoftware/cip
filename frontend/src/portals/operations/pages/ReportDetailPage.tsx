@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
+
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -17,7 +17,7 @@ import {
   IconLink,
   IconCircleDotted,
 } from '@tabler/icons-react';
-import { Badge, EmptyState, Spinner, Textarea } from '../shared/ui';
+import { Badge, EmptyState, Spinner, Textarea } from '../../../shared/ui';
 import { departmentApi } from '../api/operations';
 import type {
   DepartmentReportDetail,
@@ -215,7 +215,7 @@ export default function ReportDetailPage() {
     [action, pendingAction],
   );
 
-  const handleProofFiles = (e: ChangeEvent<HTMLInputElement>): void => {
+  const handleProofFiles = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = '';
     if (files.length > 0) uploadProof.mutate(files);
@@ -693,7 +693,7 @@ export default function ReportDetailPage() {
               ref={noteRef}
               id="note-body"
               value={noteBody}
-              onChange={(e) => setNoteBody(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNoteBody(e.target.value)}
               placeholder="Site visit notes, contact log, etc."
               rows={3}
               aria-keyshortcuts="N"

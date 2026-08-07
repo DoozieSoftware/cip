@@ -14,7 +14,7 @@ import {
   IconCamera,
   IconAlertTriangle,
 } from '@tabler/icons-react';
-import { type ReportDetail, useReportDetail, useReportTimeline, lifecycleGroup } from '../api/client';
+import { useReportDetail, useReportTimeline, lifecycleGroup } from '../api/client';
 import { EmptyState, Spinner } from '../../../shared/ui';
 import { StatusBadge } from '../components/StatusBadge';
 import LocationMap from '../components/LocationMap';

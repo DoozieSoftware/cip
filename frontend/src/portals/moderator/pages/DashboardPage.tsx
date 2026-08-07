@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Spinner, EmptyState } from '../shared/ui';
+import { Spinner, EmptyState } from '../../../shared/ui';
 import { analyticsApi, queueApi } from '../api/moderator';
 import type { AnalyticsSummary, ReportListItem } from '../types';
 import {

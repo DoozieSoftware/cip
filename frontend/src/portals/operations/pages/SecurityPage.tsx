@@ -14,7 +14,7 @@ import {
   TR,
   TH,
   TD,
-} from '../shared/ui';
+} from '../../../shared/ui';
 import {
   securityApi,
   type SecurityDashboardSnapshot,

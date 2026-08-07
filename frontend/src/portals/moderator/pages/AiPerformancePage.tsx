@@ -8,7 +8,7 @@ import {
   Select,
   Spinner,
   Badge,
-} from '../shared/ui';
+} from '../../../shared/ui';
 import { analyticsApi } from '../api/moderator';
 import { useState } from 'react';
 

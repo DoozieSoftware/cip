@@ -3,6 +3,7 @@ import { type JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../../auth/AuthContext';
 import { apiRequest, type ApiEnvelope } from '../../../auth/api';
+import { type ApiReportPayload } from '../api/client';
 import { Spinner, EmptyState } from '../../../shared/ui';
 import { StatusBadge } from '../components/StatusBadge';
 import { getQueue } from '../offline/queue';
@@ -37,7 +38,7 @@ export default function DashboardPage(): JSX.Element {
       const res = await apiRequest<ApiEnvelope<ReportSummary[]>>('/citizen/reports', {
         query: { per_page: 3 },
       });
-      return res.data.map((report) => normalizeReport(report));
+      return res.data.map((report) => normalizeReport(report as ApiReportPayload));
     },
   });
   const queue = useQuery({

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { ErrorBoundary, ErrorState } from '../index';
+import { ErrorBoundary, ErrorState } from './index';
 
 function Boom(): ReactNode {
   throw new Error('boom');

@@ -7,7 +7,7 @@ import {
   IconListDetails,
   IconRefresh,
 } from '@tabler/icons-react';
-import { Card, CardBody, Spinner, EmptyState } from '../shared/ui';
+import { Card, CardBody, Spinner, EmptyState } from '../../../shared/ui';
 import { departmentApi } from '../api/operations';
 import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 import type { DepartmentDashboardCounts } from '../types';

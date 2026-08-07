@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent, type JSX } from 'react';
+import { useState, type FormEvent, type JSX } from 'react';
 import {
   type AdminDepartment,
   type AdminDepartmentInput,
@@ -78,7 +78,7 @@ function DepartmentForm({
           name="name"
           value={draft.name}
           required
-          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          onChange={(event) =>
             setDraft({ ...draft, name: event.target.value })
           }
           className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
@@ -88,7 +88,7 @@ function DepartmentForm({
           name="code"
           value={draft.code}
           required
-          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          onChange={(event) =>
             setDraft({ ...draft, code: event.target.value })
           }
           className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
@@ -114,7 +114,7 @@ function DepartmentForm({
           label="Jurisdiction"
           name="jurisdiction"
           value={draft.jurisdiction ?? ''}
-          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          onChange={(event) =>
             setDraft({ ...draft, jurisdiction: event.target.value })
           }
           className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
@@ -124,7 +124,7 @@ function DepartmentForm({
           name="email"
           type="email"
           value={draft.email ?? ''}
-          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          onChange={(event) =>
             setDraft({ ...draft, email: event.target.value })
           }
           className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
@@ -133,7 +133,7 @@ function DepartmentForm({
           label="Phone"
           name="phone"
           value={draft.phone ?? ''}
-          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          onChange={(event) =>
             setDraft({ ...draft, phone: event.target.value })
           }
           className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
@@ -143,7 +143,7 @@ function DepartmentForm({
           name="default_sla_minutes"
           type="number"
           value={String(draft.default_sla_minutes ?? '')}
-          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          onChange={(event) =>
             setDraft({ ...draft, default_sla_minutes: Number(event.target.value) })
           }
           className="w-full rounded-xl border border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"

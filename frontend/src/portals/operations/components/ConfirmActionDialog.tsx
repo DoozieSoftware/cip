@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Dialog, Textarea } from '../shared/ui';
+import { Button, Dialog, Textarea } from '../../../shared/ui';
 
 /**
  * Confirmation step for a workflow action. Workflow transitions must be

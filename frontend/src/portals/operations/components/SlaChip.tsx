@@ -1,4 +1,4 @@
-import { Badge } from '../shared/ui';
+import { Badge } from '../../../shared/ui';
 import { formatSla } from './slaInfo';
 
 export function SlaChip({

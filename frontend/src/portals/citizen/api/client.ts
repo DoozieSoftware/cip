@@ -35,7 +35,7 @@ export {
   MERGED_STATUSES,
 };
 
-interface ApiReportPayload extends Omit<ReportDetail, 'type' | 'media' | 'timeline'> {
+export interface ApiReportPayload extends Omit<ReportDetail, 'type' | 'media' | 'timeline'> {
   report_type?: ReportSummary['type'];
   type?: ReportSummary['type'];
   media?: ReportDetail['media'];

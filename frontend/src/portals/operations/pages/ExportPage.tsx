@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, CardBody, CardHeader, CardTitle, Input, Button, Badge } from '../shared/ui';
+import { Card, CardBody, CardHeader, CardTitle, Input, Button, Badge } from '../../../shared/ui';
 import { departmentApi, type ReportListFilters } from '../api/operations';
 import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 

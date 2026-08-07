@@ -98,7 +98,7 @@ export default function AdminStorage(): JSX.Element {
                   label="Disk"
                   name="disk"
                   value={disk}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setDisk(e.target.value)}
+                  onChange={(e) => setDisk(e.target.value)}
                   options={DISKS.map((d) => ({ value: d, label: d }))}
                   className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
                 />
@@ -106,7 +106,7 @@ export default function AdminStorage(): JSX.Element {
                   label="Bucket"
                   name="bucket"
                   value={bucket}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setBucket(e.target.value)}
+                  onChange={(e) => setBucket(e.target.value)}
                   placeholder="cip-media"
                   className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
                 />
@@ -115,7 +115,7 @@ export default function AdminStorage(): JSX.Element {
                   name="endpoint"
                   type="url"
                   value={endpoint}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setEndpoint(e.target.value)}
+                  onChange={(e) => setEndpoint(e.target.value)}
                   placeholder="https://minio.example.in"
                   className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
                 />
@@ -123,7 +123,7 @@ export default function AdminStorage(): JSX.Element {
                   label="Region (S3)"
                   name="region"
                   value={region}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setRegion(e.target.value)}
+                  onChange={(e) => setRegion(e.target.value)}
                   placeholder="ap-south-1"
                   className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
                 />

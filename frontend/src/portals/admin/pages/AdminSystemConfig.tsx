@@ -87,7 +87,7 @@ function SettingRow({
         <input
           type="text"
           value={value}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
+          onChange={(e) => setValue(e.target.value)}
           disabled={busy}
           className="block w-full rounded-xl border border-[#d0cec8] bg-white px-3 py-1.5 font-mono text-xs text-[#1d1d1b] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
         />
@@ -234,7 +234,7 @@ export default function AdminSystemConfig(): JSX.Element {
                     label="Key"
                     name="key"
                     value={draftKey}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setDraftKey(e.target.value)}
+                    onChange={(e) => setDraftKey(e.target.value)}
                     required
                     placeholder="limits.upload.per_hour"
                     className="font-mono"
@@ -251,7 +251,7 @@ export default function AdminSystemConfig(): JSX.Element {
                       label="Value"
                       name="value"
                       value={draftValue}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => setDraftValue(e.target.value)}
+                      onChange={(e) => setDraftValue(e.target.value)}
                       required
                       className="font-mono"
                     />
@@ -261,7 +261,7 @@ export default function AdminSystemConfig(): JSX.Element {
                       label="Description"
                       name="description"
                       value={draftDescription}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      onChange={(e) =>
                         setDraftDescription(e.target.value)
                       }
                       placeholder="Optional description"
@@ -286,7 +286,7 @@ export default function AdminSystemConfig(): JSX.Element {
             <input
               type="search"
               value={q}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setQ(e.target.value)}
+              onChange={(e) => setQ(e.target.value)}
               placeholder="Search keys…"
               className="rounded-xl border border-[#d0cec8] bg-white px-4 py-2.5 pl-10 text-sm text-[#1d1d1b] placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
             />

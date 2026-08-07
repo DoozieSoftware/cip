@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ModeratorLayout } from './layout/ModeratorLayout';
-import { Spinner } from '../shared/ui';
+import { Spinner } from '../../shared/ui';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ReviewQueuePage = lazy(() => import('./pages/ReviewQueuePage'));

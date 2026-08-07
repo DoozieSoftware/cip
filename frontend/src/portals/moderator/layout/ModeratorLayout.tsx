@@ -11,7 +11,7 @@ import {
   IconRobot,
 } from '@tabler/icons-react';
 import { useAuth } from '../../../auth/AuthContext';
-import { cx } from '../design/cx';
+import { cx } from '../../../shared/ui/cx';
 
 const NAV: Array<{
   to: string;

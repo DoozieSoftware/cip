@@ -28,7 +28,7 @@ import {
   Select,
   Spinner,
   Textarea,
-} from '../shared/ui';
+} from '../../../shared/ui';
 import { actionsApi, queueApi } from '../api/moderator';
 import type { MergePayload, ReportDetail, ReportStatusCode, ReviewPayload } from '../types';
 import { EvidenceViewer } from '../components/EvidenceViewer';

@@ -47,7 +47,7 @@ export function Dialog({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4"
       role="presentation"
-      onClick={(e) => {
+      onClick={(e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >

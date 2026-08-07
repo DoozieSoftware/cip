@@ -8,7 +8,7 @@ import {
   IconAlertTriangle,
   IconChecklist,
 } from '@tabler/icons-react';
-import { Spinner } from '../shared/ui';
+import { Spinner } from '../../../shared/ui';
 import { departmentApi } from '../api/operations';
 import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 import type { DepartmentDashboardCounts, DepartmentReportListItem } from '../types';

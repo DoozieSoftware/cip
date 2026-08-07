@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type JSX } from 'react';
+import { useState, type JSX } from 'react';
 import {
   useAdminDepartments,
   useAdminReportTypes,
@@ -140,7 +140,7 @@ export default function AdminReports(): JSX.Element {
                 />
                 <Input
                   value={search}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                  onChange={(event) => {
                     setSearch(event.target.value);
                     updateFilter('q', event.target.value);
                   }}

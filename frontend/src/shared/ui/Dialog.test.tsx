@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { useState } from 'react';
-import { Dialog, Textarea } from '../index';
+import { Dialog, Textarea } from './index';
 
 /**
  * Mirrors how ReportDetailPage wires the reject dialog: an inline
@@ -19,7 +19,7 @@ function RejectLikeDialog() {
         label="Notes"
         name="remarks"
         value={remarks}
-        onChange={(e) => setRemarks(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setRemarks(e.target.value)}
       />
     </Dialog>
   );
