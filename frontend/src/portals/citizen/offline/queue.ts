@@ -253,7 +253,7 @@ export class OfflineQueue {
       enqueued_at: this.now(),
       updated_at: this.now(),
     };
-    await this.adapter.put(item as QueueItem);
+    await this.adapter.put(item);
     this.emit();
     return item;
   }

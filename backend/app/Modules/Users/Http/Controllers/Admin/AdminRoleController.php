@@ -40,16 +40,21 @@ class AdminRoleController extends BaseController
         }
         $perPage = max(1, min(200, (int) $request->query('per_page', 25)));
         $page = $q->orderBy('name')->paginate($perPage);
-        $transformed = $page->through(static fn (Role $role): array => [
+        $items = $page->getCollection()->map(static fn (Role $role): array => [
             'id' => $role->id,
             'name' => $role->name,
             'guard_name' => $role->guard_name,
             'protected' => in_array($role->name, self::PROTECTED_ROLES, true),
             'permissions' => $role->permissions->pluck('name')->values()->all(),
             'created_at' => $role->created_at?->toIso8601String(),
-        ]);
+        ])->all();
 
-        return $this->respondPaginated($transformed);
+        return $this->respond($items, 'OK', 200, [
+            'page' => $page->currentPage(),
+            'per_page' => $page->perPage(),
+            'total' => $page->total(),
+            'last_page' => $page->lastPage(),
+        ]);
     }
 
     public function store(Request $request): JsonResponse
@@ -58,11 +63,11 @@ class AdminRoleController extends BaseController
         $data = $this->validatePayload($request);
 
         $role = Role::firstOrCreate(
-            ['name' => $data['name'], 'guard_name' => $data['guard_name']],
+            ['name' => is_string($data['name']) ? $data['name'] : '', 'guard_name' => is_string($data['guard_name']) ? $data['guard_name'] : 'web'],
         );
 
-        if (! empty($data['permissions'])) {
-            $this->syncPermissions($role, $data['permissions']);
+        if (! empty($data['permissions']) && is_array($data['permissions'])) {
+            $this->syncPermissions($role, array_values(array_filter($data['permissions'], is_string(...))));
         }
 
         return $this->respond($this->serialize($role), 'Role created.', 201);
@@ -87,20 +92,22 @@ class AdminRoleController extends BaseController
             throw ApiException::forbidden('Protected role names cannot be changed.');
         }
 
-        if (array_key_exists('name', $data)) {
+        if (array_key_exists('name', $data) && is_string($data['name'])) {
             $model->name = $data['name'];
         }
 
-        if (array_key_exists('guard_name', $data)) {
+        if (array_key_exists('guard_name', $data) && is_string($data['guard_name'])) {
             $model->guard_name = $data['guard_name'];
         }
         $model->save();
 
-        if (! empty($data['permissions'])) {
-            $this->syncPermissions($model, $data['permissions']);
+        if (! empty($data['permissions']) && is_array($data['permissions'])) {
+            $this->syncPermissions($model, array_values(array_filter($data['permissions'], is_string(...))));
         }
 
-        return $this->respond($this->serialize($model->fresh(['permissions'])), 'Role updated.');
+        $fresh = $model->fresh(['permissions']);
+
+        return $this->respond($fresh !== null ? $this->serialize($fresh) : $this->serialize($model), 'Role updated.');
     }
 
     public function destroy(Request $request, string $role): JsonResponse
@@ -130,9 +137,26 @@ class AdminRoleController extends BaseController
             'permissions.*' => ['string', 'max:128'],
         ]);
 
-        $this->syncPermissions($model, $payload['permissions']);
+        $permissions = is_array($payload) && is_array($payload['permissions'] ?? null)
+            ? array_values(array_filter($payload['permissions'], is_string(...)))
+            : [];
+        $this->syncPermissions($model, $permissions);
 
-        return $this->respond($this->serialize($model->fresh(['permissions'])), 'Permissions synced.');
+        $fresh = $model->fresh(['permissions']);
+
+        return $this->respond($fresh !== null ? $this->serialize($fresh) : $this->serialize($model), 'Permissions synced.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $rules
+     * @return array<string, mixed>
+     */
+    private function runValidation(Request $request, array $rules): array
+    {
+        /** @var array<string, mixed> $data */
+        $data = $request->validate($rules);
+
+        return $data;
     }
 
     /**
@@ -140,15 +164,14 @@ class AdminRoleController extends BaseController
      */
     private function validatePayload(Request $request, bool $partial = false): array
     {
-        $rules = [
+        $data = $this->runValidation($request, [
             'name' => [$partial ? 'sometimes' : 'required', 'string', 'max:64'],
             'guard_name' => ['nullable', 'string', 'max:64'],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', 'max:128'],
-        ];
+        ]);
 
-        $data = $request->validate($rules);
-        $data['guard_name'] = $data['guard_name'] ?? 'web';
+        $data['guard_name'] = is_string($data['guard_name'] ?? null) ? $data['guard_name'] : 'web';
 
         return $data;
     }
@@ -158,11 +181,14 @@ class AdminRoleController extends BaseController
      */
     private function syncPermissions(Role $role, array $permissionNames): void
     {
-        $existing = Permission::query()
-            ->whereIn('name', $permissionNames)
-            ->where('guard_name', $role->guard_name)
-            ->pluck('name')
-            ->all();
+        $existing = array_map(
+            static fn ($name): string => is_string($name) ? $name : '',
+            Permission::query()
+                ->whereIn('name', $permissionNames)
+                ->where('guard_name', $role->guard_name)
+                ->pluck('name')
+                ->all(),
+        );
         $missing = array_values(array_diff($permissionNames, $existing));
 
         if ($missing !== []) {

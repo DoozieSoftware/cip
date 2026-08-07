@@ -159,7 +159,7 @@ class SecurityDashboardService
                 'severity' => $e->severity,
                 'user_id' => $e->user_id,
                 'ip' => $e->ip,
-                'created_at' => $e->created_at?->toIso8601String(),
+                'created_at' => $e->created_at->toIso8601String(),
             ])->all(),
         ];
     }
@@ -202,7 +202,7 @@ class SecurityDashboardService
                 'user_id' => $e->user_id,
                 'ip' => $e->ip,
                 'user_agent' => $e->user_agent,
-                'created_at' => $e->created_at?->toIso8601String(),
+                'created_at' => $e->created_at->toIso8601String(),
             ])->all(),
         ];
     }
@@ -259,7 +259,7 @@ class SecurityDashboardService
                 'user_id' => $e->user_id,
                 'ip' => $e->ip,
                 'metadata' => $e->metadata,
-                'created_at' => $e->created_at?->toIso8601String(),
+                'created_at' => $e->created_at->toIso8601String(),
             ])->all(),
         ];
     }

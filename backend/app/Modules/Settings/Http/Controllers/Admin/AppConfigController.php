@@ -65,12 +65,12 @@ class AppConfigController extends BaseController
         $payload = $request->validated();
 
         $flag = new AppConfig;
-        $flag->key = (string) $payload['key'];
+        $flag->key = is_string($payload['key'] ?? null) ? $payload['key'] : '';
         $flag->value = $payload['value'] ?? null;
         $flag->enabled = (bool) ($payload['enabled'] ?? false);
-        $flag->rollout_percentage = (int) ($payload['rollout_percentage'] ?? 0);
+        $flag->rollout_percentage = is_numeric($payload['rollout_percentage'] ?? null) ? (int) $payload['rollout_percentage'] : 0;
         $flag->cohort = $payload['cohort'] ?? null;
-        $flag->description = $payload['description'] ?? null;
+        $flag->description = is_string($payload['description'] ?? null) ? $payload['description'] : null;
         $flag->save();
 
         return $this->respond((new AppConfigResource($flag))->toArray($request), 'Feature flag created.', 201);
@@ -113,7 +113,7 @@ class AppConfigController extends BaseController
             $flag->enabled = (bool) $payload['enabled'];
         }
 
-        if (array_key_exists('rollout_percentage', $payload)) {
+        if (array_key_exists('rollout_percentage', $payload) && is_numeric($payload['rollout_percentage'])) {
             $flag->rollout_percentage = (int) $payload['rollout_percentage'];
         }
 
@@ -121,7 +121,7 @@ class AppConfigController extends BaseController
             $flag->cohort = $payload['cohort'];
         }
 
-        if (array_key_exists('description', $payload)) {
+        if (array_key_exists('description', $payload) && is_string($payload['description'])) {
             $flag->description = $payload['description'];
         }
         $flag->save();

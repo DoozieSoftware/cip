@@ -36,19 +36,21 @@ class AdminUserService extends BaseService
             $user = new User;
             $user->fill($this->withoutPassword($payload));
 
-            if (! empty($payload['password'])) {
+            if (! empty($payload['password']) && is_string($payload['password'])) {
                 $user->password = Hash::make($payload['password']);
             }
-            $user->status = $payload['status'] ?? 'active';
+            $user->status = is_string($payload['status'] ?? null) ? $payload['status'] : 'active';
             $user->save();
 
             if (! empty($payload['roles']) && is_array($payload['roles'])) {
-                $this->syncRolesByName($user, $payload['roles']);
+                $this->syncRolesByName($user, array_values(array_filter($payload['roles'], is_string(...))));
             }
 
             event(new UserCreated($user->id, $payload));
 
-            return $user->fresh(['roles']);
+            $fresh = $user->fresh(['roles']);
+
+            return $fresh instanceof User ? $fresh : $user;
         });
     }
 
@@ -63,23 +65,25 @@ class AdminUserService extends BaseService
             $before = $user->only(['name', 'email', 'mobile', 'status', 'anonymous_enabled']);
             $user->fill($this->withoutPassword($payload));
 
-            if (! empty($payload['password'])) {
+            if (! empty($payload['password']) && is_string($payload['password'])) {
                 $user->password = Hash::make($payload['password']);
             }
 
-            if (array_key_exists('status', $payload)) {
+            if (array_key_exists('status', $payload) && is_string($payload['status'])) {
                 $user->status = $payload['status'];
             }
             $user->save();
 
             if (! empty($payload['roles']) && is_array($payload['roles'])) {
-                $this->syncRolesByName($user, $payload['roles']);
+                $this->syncRolesByName($user, array_values(array_filter($payload['roles'], is_string(...))));
             }
 
             $after = $user->only(['name', 'email', 'mobile', 'status', 'anonymous_enabled']);
             event(new UserUpdated($user->id, $before, $after, $payload));
 
-            return $user->fresh(['roles']);
+            $fresh = $user->fresh(['roles']);
+
+            return $fresh instanceof User ? $fresh : $user;
         });
     }
 
@@ -97,19 +101,24 @@ class AdminUserService extends BaseService
         return $this->transaction(function () use ($user): User {
             $user->restore();
 
-            return $user->fresh(['roles']);
+            $fresh = $user->fresh(['roles']);
+
+            return $fresh instanceof User ? $fresh : $user;
         });
     }
 
     /**
-     * @param  array<string>  $roleNames
+     * @param  list<string>  $roleNames
      */
     private function syncRolesByName(User $user, array $roleNames): void
     {
-        $existing = Role::query()
-            ->whereIn('name', $roleNames)
-            ->pluck('name')
-            ->all();
+        $existing = array_map(
+            static fn ($name): string => is_string($name) ? $name : '',
+            Role::query()
+                ->whereIn('name', $roleNames)
+                ->pluck('name')
+                ->all(),
+        );
         $missing = array_values(array_diff($roleNames, $existing));
 
         if ($missing !== []) {

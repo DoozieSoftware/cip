@@ -42,8 +42,8 @@ class AiProviderConfigResource extends JsonResource
             'is_fallback' => $cfg->is_fallback,
             'priority' => $cfg->priority,
             'active' => $cfg->active,
-            'created_at' => $cfg->created_at?->toIso8601String(),
-            'updated_at' => $cfg->updated_at?->toIso8601String(),
+            'created_at' => $cfg->created_at->toIso8601String(),
+            'updated_at' => $cfg->updated_at->toIso8601String(),
         ];
     }
 }

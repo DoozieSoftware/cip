@@ -5,10 +5,7 @@ export function Card({ className, children, ...rest }: HTMLAttributes<HTMLDivEle
   return (
     <div
       {...rest}
-      className={cx(
-        'rounded-xl bg-white shadow-sm ring-1 ring-slate-200/70',
-        className,
-      )}
+      className={cx('rounded-xl bg-white shadow-sm ring-1 ring-slate-200/70', className)}
     >
       {children}
     </div>

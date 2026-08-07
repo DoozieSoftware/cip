@@ -33,6 +33,8 @@ use Illuminate\Support\Carbon;
  * @property string $type
  * @property string|null $description
  * @property bool $is_public
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class Setting extends Model
 {

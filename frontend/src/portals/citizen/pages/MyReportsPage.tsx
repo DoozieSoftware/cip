@@ -38,9 +38,17 @@ function formatDate(value: string): string {
 const FILTER_TABS: { key: StatusFilter; label: string; icon?: JSX.Element }[] = [
   { key: 'all', label: 'All', icon: <IconFilter className="h-3.5 w-3.5" stroke={1.6} /> },
   { key: 'open', label: 'Pending', icon: <IconClock className="h-3.5 w-3.5" stroke={1.6} /> },
-  { key: 'awaiting_citizen', label: 'Awaiting You', icon: <IconClock className="h-3.5 w-3.5" stroke={1.6} /> },
+  {
+    key: 'awaiting_citizen',
+    label: 'Awaiting You',
+    icon: <IconClock className="h-3.5 w-3.5" stroke={1.6} />,
+  },
   { key: 'closed', label: 'Closed', icon: <IconCheck className="h-3.5 w-3.5" stroke={1.6} /> },
-  { key: 'rejected', label: 'Rejected', icon: <IconExclamationCircle className="h-3.5 w-3.5" stroke={1.6} /> },
+  {
+    key: 'rejected',
+    label: 'Rejected',
+    icon: <IconExclamationCircle className="h-3.5 w-3.5" stroke={1.6} />,
+  },
   { key: 'merged', label: 'Merged', icon: <IconCheck className="h-3.5 w-3.5" stroke={1.6} /> },
 ];
 

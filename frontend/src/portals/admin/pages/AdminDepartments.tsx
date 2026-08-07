@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type JSX } from 'react';
+import { useState, type ChangeEvent, type FormEvent, type JSX } from 'react';
 import {
   type AdminDepartment,
   type AdminDepartmentInput,
@@ -78,7 +78,9 @@ function DepartmentForm({
           name="name"
           value={draft.name}
           required
-          onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            setDraft({ ...draft, name: event.target.value })
+          }
           className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
         />
         <Input
@@ -86,7 +88,9 @@ function DepartmentForm({
           name="code"
           value={draft.code}
           required
-          onChange={(event) => setDraft({ ...draft, code: event.target.value })}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            setDraft({ ...draft, code: event.target.value })
+          }
           className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
         />
         <label className="block">
@@ -110,7 +114,9 @@ function DepartmentForm({
           label="Jurisdiction"
           name="jurisdiction"
           value={draft.jurisdiction ?? ''}
-          onChange={(event) => setDraft({ ...draft, jurisdiction: event.target.value })}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            setDraft({ ...draft, jurisdiction: event.target.value })
+          }
           className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
         />
         <Input
@@ -118,14 +124,18 @@ function DepartmentForm({
           name="email"
           type="email"
           value={draft.email ?? ''}
-          onChange={(event) => setDraft({ ...draft, email: event.target.value })}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            setDraft({ ...draft, email: event.target.value })
+          }
           className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
         />
         <Input
           label="Phone"
           name="phone"
           value={draft.phone ?? ''}
-          onChange={(event) => setDraft({ ...draft, phone: event.target.value })}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            setDraft({ ...draft, phone: event.target.value })
+          }
           className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
         />
         <Input
@@ -133,10 +143,10 @@ function DepartmentForm({
           name="default_sla_minutes"
           type="number"
           value={String(draft.default_sla_minutes ?? '')}
-          onChange={(event) =>
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
             setDraft({ ...draft, default_sla_minutes: Number(event.target.value) })
           }
-          className="w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+          className="w-full rounded-xl border border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
         />
       </div>
       <label className="block">

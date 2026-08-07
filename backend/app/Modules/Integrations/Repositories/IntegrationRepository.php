@@ -19,6 +19,7 @@ class IntegrationRepository
 {
     /**
      * @param  array<string, mixed>  $filters
+     * @return LengthAwarePaginator<int, Integration>
      */
     public function search(array $filters, int $perPage = 25): LengthAwarePaginator
     {

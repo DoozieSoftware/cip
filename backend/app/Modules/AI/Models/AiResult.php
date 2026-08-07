@@ -40,7 +40,11 @@ use Illuminate\Support\Carbon;
  */
 class AiResult extends Model
 {
+    /**
+     * @use HasFactory<AiResultFactory>
+     */
     use HasFactory;
+
     use HasUuids;
 
     protected $table = 'ai_results';

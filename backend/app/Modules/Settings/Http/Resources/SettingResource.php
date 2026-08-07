@@ -34,8 +34,8 @@ class SettingResource extends JsonResource
             'type' => $setting->type,
             'description' => $setting->description,
             'is_public' => (bool) $setting->is_public,
-            'created_at' => $setting->created_at?->toIso8601String(),
-            'updated_at' => $setting->updated_at?->toIso8601String(),
+            'created_at' => $setting->created_at->toIso8601String(),
+            'updated_at' => $setting->updated_at->toIso8601String(),
             'deleted_at' => $setting->deleted_at?->toIso8601String(),
         ];
     }

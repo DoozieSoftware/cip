@@ -117,7 +117,7 @@ export async function subscribeToPush(opts: SubscribeOptions = {}): Promise<Subs
     // route to the push service. Surface the real error so it is
     // diagnosable instead of a generic failure.
     const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
-    // eslint-disable-next-line no-console
+
     console.error('[push] pushManager.subscribe failed:', err);
     return { ok: false, reason: 'subscription_failed', detail };
   }

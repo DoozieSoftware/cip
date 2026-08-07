@@ -1,4 +1,4 @@
-import { test as setup, expect, type Page } from '@playwright/test';
+import { test as setup, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { DEMO_PASSWORD, type DemoAccount } from './auth';
 

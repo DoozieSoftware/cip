@@ -79,9 +79,7 @@ describe('ReviewQueuePage', () => {
   });
 
   it('shows loading state', () => {
-    (queueApi.list as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-      new Promise(() => {}),
-    );
+    (queueApi.list as unknown as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
     render(
       <QueryClientProvider client={client}>
         <MemoryRouter>

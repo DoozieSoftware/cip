@@ -12,6 +12,7 @@ class OrganizationRepository
 {
     /**
      * @param  array<string, mixed>  $filters
+     * @return LengthAwarePaginator<int, Organization>
      */
     public function search(array $filters, int $perPage = 25): LengthAwarePaginator
     {

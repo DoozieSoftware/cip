@@ -65,14 +65,14 @@ class SettingController extends BaseController
     public function store(StoreSettingRequest $request): JsonResponse
     {
         $payload = $request->validated();
-        $key = (string) $payload['key'];
+        $key = is_string($payload['key'] ?? null) ? $payload['key'] : '';
         $value = $payload['value'];
-        $type = (string) $payload['type'];
+        $type = is_string($payload['type'] ?? null) ? $payload['type'] : 'string';
 
         $setting = $this->service->set($key, $value, $type);
 
-        if (array_key_exists('description', $payload) && $payload['description'] !== null) {
-            $setting->description = (string) $payload['description'];
+        if (array_key_exists('description', $payload) && $payload['description'] !== null && is_string($payload['description'])) {
+            $setting->description = $payload['description'];
         }
 
         if (array_key_exists('is_public', $payload) && $payload['is_public'] !== null) {
@@ -118,10 +118,11 @@ class SettingController extends BaseController
             $value = $valueChanged ? $payload['value'] : $row->value;
             // value is stored as JSON, so a non-array value still
             // round-trips through Setting::set.
-            $row = $this->service->set($row->key, $value, (string) ($typeChanged ? $payload['type'] : $row->type));
+            $typeValue = $typeChanged && is_string($payload['type']) ? $payload['type'] : $row->type;
+            $row = $this->service->set($row->key, $value, $typeValue);
         }
 
-        if (array_key_exists('description', $payload)) {
+        if (array_key_exists('description', $payload) && is_string($payload['description'])) {
             $row->description = $payload['description'];
         }
 

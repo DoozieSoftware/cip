@@ -41,7 +41,7 @@ class AiResultResource extends JsonResource
             'mismatch_reason' => $r->mismatch_reason,
             'synthetic_score' => $r->synthetic_score,
             'raw_response' => $r->raw_response,
-            'created_at' => $r->created_at?->toIso8601String(),
+            'created_at' => $r->created_at->toIso8601String(),
             'labels' => $r->relationLoaded('labels')
                 ? $r->labels->map(fn ($l) => [
                     'id' => $l->id,

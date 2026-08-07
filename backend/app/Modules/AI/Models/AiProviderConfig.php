@@ -55,7 +55,11 @@ use Illuminate\Support\Carbon;
  */
 class AiProviderConfig extends Model
 {
+    /**
+     * @use HasFactory<AiProviderConfigFactory>
+     */
     use HasFactory;
+
     use HasUuids;
 
     protected $table = 'ai_provider_configs';

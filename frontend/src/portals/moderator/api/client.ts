@@ -11,4 +11,8 @@ export const api = {
     ),
   post: <T>(path: string, body?: unknown) =>
     request<ApiEnvelope<T>>(path, { method: 'POST', body }).then((env) => env.data),
+  put: <T>(path: string, body?: unknown) =>
+    request<ApiEnvelope<T>>(path, { method: 'PUT', body }).then((env) => env.data),
+  del: <T>(path: string) =>
+    request<ApiEnvelope<T>>(path, { method: 'DELETE' }).then((env) => env.data),
 };

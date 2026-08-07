@@ -28,7 +28,11 @@ use Illuminate\Support\Carbon;
  */
 class AiLabel extends Model
 {
+    /**
+     * @use HasFactory<AiLabelFactory>
+     */
     use HasFactory;
+
     use HasUuids;
 
     protected $table = 'ai_labels';

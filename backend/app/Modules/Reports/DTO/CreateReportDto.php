@@ -35,13 +35,13 @@ final readonly class CreateReportDto
     public static function fromArray(array $validated): self
     {
         return new self(
-            citizenId: (string) ($validated['citizen_id'] ?? ''),
-            reportTypeId: (string) ($validated['report_type_id'] ?? ''),
-            locationId: (string) ($validated['location_id'] ?? ''),
-            priorityId: (string) ($validated['priority_id'] ?? ''),
-            currentStatusId: (string) ($validated['current_status_id'] ?? ''),
-            title: (string) ($validated['title'] ?? ''),
-            description: (string) ($validated['description'] ?? ''),
+            citizenId: is_scalar($validated['citizen_id'] ?? null) ? (string) $validated['citizen_id'] : '',
+            reportTypeId: is_scalar($validated['report_type_id'] ?? null) ? (string) $validated['report_type_id'] : '',
+            locationId: is_scalar($validated['location_id'] ?? null) ? (string) $validated['location_id'] : '',
+            priorityId: is_scalar($validated['priority_id'] ?? null) ? (string) $validated['priority_id'] : '',
+            currentStatusId: is_scalar($validated['current_status_id'] ?? null) ? (string) $validated['current_status_id'] : '',
+            title: is_scalar($validated['title'] ?? null) ? (string) $validated['title'] : '',
+            description: is_scalar($validated['description'] ?? null) ? (string) $validated['description'] : '',
             isAnonymous: (bool) ($validated['is_anonymous'] ?? false),
             departmentId: isset($validated['department_id']) && is_string($validated['department_id'])
                 ? $validated['department_id']

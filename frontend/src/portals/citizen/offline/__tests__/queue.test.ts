@@ -24,7 +24,7 @@ function makeQueue(
     now,
     max_attempts: opts?.max_attempts ?? 3,
   });
-  return { q, calls: calls.count as unknown as number, failures: calls.failures };
+  return { q, calls: calls.count, failures: calls.failures };
 }
 
 describe('OfflineQueue (T-M13-006 / T-M13-026)', () => {
@@ -59,7 +59,7 @@ describe('OfflineQueue (T-M13-006 / T-M13-026)', () => {
   });
 
   it('increments attempts on failure and reschedules with backoff', async () => {
-    let now = 1_000_000;
+    const now = 1_000_000;
     const backoff = vi.fn((a: number) => 5_000 * a);
     const retry = vi.fn(async () => {
       throw new Error('network down');
@@ -92,7 +92,7 @@ describe('OfflineQueue (T-M13-006 / T-M13-026)', () => {
   });
 
   it('drain() picks up due items and skips items in the future', async () => {
-    let now = 1_000_000;
+    const now = 1_000_000;
     const retry = vi.fn(async () => undefined);
     const q = new OfflineQueue({
       adapter: new MemoryAdapter(),

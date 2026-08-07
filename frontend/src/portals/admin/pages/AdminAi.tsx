@@ -22,7 +22,7 @@ import {
   ErrorState,
   Badge,
 } from '../../moderator/design';
-import { cx } from '../../moderator/design/cx';
+import { cx } from '../../../shared/ui/cx';
 import {
   IconPlus,
   IconEdit,

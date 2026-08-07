@@ -123,16 +123,18 @@ class AiPipelineOrchestrator implements ShouldQueue
                 throw new AiEvidenceNotReadyException;
             }
 
-            $this->jobRow = $this->createJobRow();
+            $jobRow = $this->createJobRow();
+            $this->jobRow = $jobRow;
 
             $actor = $report->citizen;
 
             $qualityScore = $media ? $quality->score($media) : 0;
             $ocrText = ''; // OCR provider not yet wired.
 
-            $maskedText = (string) $pii->mask([
+            $maskedResult = $pii->mask([
                 'text' => $report->title."\n".$report->description."\n".$ocrText,
-            ])['text'];
+            ]);
+            $maskedText = is_string($maskedResult['text'] ?? null) ? $maskedResult['text'] : '';
             $maskedMetadata = $pii->mask([
                 'ward' => null, // The M3 GeographySeeder already binds these
                 'district' => null,
@@ -202,7 +204,7 @@ class AiPipelineOrchestrator implements ShouldQueue
             $calibratedConfidence = $this->applyMismatchPenalty($calibratedConfidence, $response);
 
             $result = $this->writeResult(
-                $this->jobRow,
+                $jobRow,
                 $response,
                 $effectiveQualityScore,
                 $duplicateResult['score'],
@@ -223,7 +225,7 @@ class AiPipelineOrchestrator implements ShouldQueue
             $report->ai_confidence = $calibratedConfidence * 100;
             $report->save();
 
-            $this->markJobSucceeded($this->jobRow, $response, $result, $providerCode, $model);
+            $this->markJobSucceeded($jobRow, $response, $result, $providerCode, $model);
 
             AiCompleted::dispatch(
                 $report->id,
@@ -311,8 +313,8 @@ class AiPipelineOrchestrator implements ShouldQueue
         $response = $failover->execute($request);
         $validator->validate($response);
 
-        $providerCode = $failover->lastUsedProvider?->code ?? 'unknown';
-        $model = $failover->lastUsedProvider?->model ?? 'unknown';
+        $providerCode = $failover->lastUsedProvider->code ?? 'unknown';
+        $model = $failover->lastUsedProvider->model ?? 'unknown';
 
         return [$response, $providerCode, $model];
     }
@@ -469,7 +471,7 @@ class AiPipelineOrchestrator implements ShouldQueue
 
         return AiJob::query()->create([
             'report_id' => $this->reportId,
-            'prompt_version_id' => $promptVersion?->id ?? (string) Str::uuid(),
+            'prompt_version_id' => $promptVersion->id ?? (string) Str::uuid(),
             // Which provider/model actually answers isn't known until
             // classify() returns; markJobSucceeded() overwrites these
             // with the real values.
@@ -511,9 +513,6 @@ class AiPipelineOrchestrator implements ShouldQueue
         ]);
     }
 
-    /**
-     * @param  array<int, array{label: string, confidence: float, is_primary: bool}>  $labels
-     */
     private function writeLabels(AiResult $result, AiResponse $response, float $calibratedConfidence): void
     {
         foreach ($response->labels as $l) {
@@ -585,7 +584,7 @@ class AiPipelineOrchestrator implements ShouldQueue
         string $providerCode,
         string $model,
     ): void {
-        $startMs = (int) $job->started_at?->valueOf() ?? (int) (microtime(true) * 1000);
+        $startMs = $job->started_at !== null ? (int) $job->started_at->valueOf() : (int) (microtime(true) * 1000);
         $endMs = (int) (microtime(true) * 1000);
 
         $job->update([
@@ -594,8 +593,8 @@ class AiPipelineOrchestrator implements ShouldQueue
             'provider_code' => $providerCode,
             'model' => $model,
             'processing_time_ms' => max(0, $endMs - $startMs),
-            'tokens_in' => isset($response->raw['usage']['prompt_tokens']) ? (int) $response->raw['usage']['prompt_tokens'] : null,
-            'tokens_out' => isset($response->raw['usage']['completion_tokens']) ? (int) $response->raw['usage']['completion_tokens'] : null,
+            'tokens_in' => is_array($response->raw['usage'] ?? null) && isset($response->raw['usage']['prompt_tokens']) && is_int($response->raw['usage']['prompt_tokens']) ? $response->raw['usage']['prompt_tokens'] : null,
+            'tokens_out' => is_array($response->raw['usage'] ?? null) && isset($response->raw['usage']['completion_tokens']) && is_int($response->raw['usage']['completion_tokens']) ? $response->raw['usage']['completion_tokens'] : null,
         ]);
     }
 

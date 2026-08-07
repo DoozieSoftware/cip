@@ -9,7 +9,10 @@ vi.mock('../api/operations', () => ({
   },
 }));
 
-const { auditApi } = await import('../api/operations');
+const opsMod = (await import('../api/operations')) as {
+  auditApi: { list: ReturnType<typeof vi.fn> };
+};
+const { auditApi } = opsMod;
 const AuditLogPage = (await import('../AuditLogPage')).default;
 
 const AUDIT_ROWS = [
@@ -34,7 +37,7 @@ describe('OperationsAuditLogPage', () => {
   let client: QueryClient;
   beforeEach(() => {
     vi.clearAllMocks();
-    (auditApi.list as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    auditApi.list.mockResolvedValue({
       success: true,
       data: AUDIT_ROWS,
       meta: { current_page: 1, per_page: 50, total: 1, last_page: 1 },
@@ -66,9 +69,7 @@ describe('OperationsAuditLogPage', () => {
   });
 
   it('shows loading state', () => {
-    (auditApi.list as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-      new Promise(() => {}),
-    );
+    auditApi.list.mockReturnValue(new Promise(() => {}));
     render(
       <QueryClientProvider client={client}>
         <MemoryRouter>
@@ -80,7 +81,7 @@ describe('OperationsAuditLogPage', () => {
   });
 
   it('shows error state', async () => {
-    (auditApi.list as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('fail'));
+    auditApi.list.mockRejectedValue(new Error('fail'));
     render(
       <QueryClientProvider client={client}>
         <MemoryRouter>
@@ -92,7 +93,7 @@ describe('OperationsAuditLogPage', () => {
   });
 
   it('shows empty state when no entries', async () => {
-    (auditApi.list as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    auditApi.list.mockResolvedValue({
       success: true,
       data: [],
       meta: { current_page: 1, per_page: 50, total: 0, last_page: 1 },

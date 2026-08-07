@@ -49,7 +49,11 @@ use Illuminate\Support\Carbon;
  */
 class AiJob extends Model
 {
+    /**
+     * @use HasFactory<AiJobFactory>
+     */
     use HasFactory;
+
     use HasUuids;
 
     protected $table = 'ai_jobs';

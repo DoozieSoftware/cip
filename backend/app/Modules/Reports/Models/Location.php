@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -35,6 +36,7 @@ use Illuminate\Support\Facades\DB;
  * @property string|null $address
  * @property string|null $ward_id
  * @property string|null $district_id
+ * @property Expression<string>|string $geom
  */
 class Location extends Model
 {
@@ -147,7 +149,7 @@ class Location extends Model
     private static function supportsSrid(): bool
     {
         $versionRow = DB::selectOne('select version() as version');
-        $version = strtolower((string) ($versionRow->version ?? ''));
+        $version = strtolower((string) (is_object($versionRow) ? ($versionRow->version ?? '') : ''));
 
         if (str_contains($version, 'mariadb')) {
             return false;

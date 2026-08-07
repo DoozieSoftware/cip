@@ -83,9 +83,7 @@ describe('ModeratorReportDetailPage', () => {
   });
 
   it('shows loading state', () => {
-    (queueApi.show as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-      new Promise(() => {}),
-    );
+    (queueApi.show as unknown as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
     renderPage('r-1');
     expect(screen.getByText('Loading report')).toBeTruthy();
   });

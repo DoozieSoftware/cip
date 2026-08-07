@@ -9,6 +9,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * M11 — Department dashboard summary per `docs/08` §4.
+ *
+ * @property-read array{department_id?: string, open?: int, due_today?: int, sla_breached?: int, by_category?: array<string, int>} $resource
  */
 class DashboardResource extends JsonResource
 {

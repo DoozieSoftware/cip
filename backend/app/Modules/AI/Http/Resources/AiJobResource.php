@@ -32,7 +32,7 @@ class AiJobResource extends JsonResource
             'provider_code' => $job->provider_code,
             'model' => $job->model,
             'status' => $job->status,
-            'requested_at' => $job->requested_at?->toIso8601String(),
+            'requested_at' => $job->requested_at->toIso8601String(),
             'started_at' => $job->started_at?->toIso8601String(),
             'completed_at' => $job->completed_at?->toIso8601String(),
             'processing_time_ms' => $job->processing_time_ms,
@@ -41,8 +41,8 @@ class AiJobResource extends JsonResource
             'tokens_in' => $job->tokens_in,
             'tokens_out' => $job->tokens_out,
             'cost_cents' => $job->cost_cents,
-            'created_at' => $job->created_at?->toIso8601String(),
-            'updated_at' => $job->updated_at?->toIso8601String(),
+            'created_at' => $job->created_at->toIso8601String(),
+            'updated_at' => $job->updated_at->toIso8601String(),
         ];
     }
 }

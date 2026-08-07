@@ -50,11 +50,12 @@ class PurgeRetentionCommand extends Command
 
     public function handle(SettingsService $settings): int
     {
-        $dryRun = $this->option('dry-run');
+        $dryRun = filter_var($this->option('dry-run'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true;
         $totalDeleted = 0;
 
         foreach (self::TARGETS as $target) {
-            $days = (int) $settings->get($target['key'], 0);
+            $daysSetting = $settings->get($target['key'], 0);
+            $days = is_numeric($daysSetting) ? (int) $daysSetting : 0;
 
             if ($days <= 0) {
                 $this->line("skip  {$target['key']} — not configured (retain forever)");
@@ -78,13 +79,19 @@ class PurgeRetentionCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * @param  array{key: string, model: class-string<Model>, column: string, orphaned?: bool}  $target
+     */
     private function purge(array $target, int $days, bool $dryRun): int
     {
         try {
-            /** @var Builder $query */
-            $query = ($target['model'])::query()->where($target['column'], '<', now()->subDays($days));
+            $model = $target['model'];
+            $column = $target['column'];
 
-            if (($target['orphaned'] ?? false) && method_exists($target['model'], 'report')) {
+            /** @var Builder<Model> $query */
+            $query = $model::query()->where($column, '<', now()->subDays($days));
+
+            if (($target['orphaned'] ?? false) && method_exists($model, 'report')) {
                 $query->whereNull('report_id');
             }
 
@@ -98,7 +105,7 @@ class PurgeRetentionCommand extends Command
                 return $ids->count();
             }
 
-            ($target['model'])::query()->whereIn('id', $ids)->delete();
+            $model::query()->whereIn('id', $ids)->delete();
 
             return $ids->count();
         } catch (\Throwable $e) {

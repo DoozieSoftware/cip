@@ -97,7 +97,7 @@ class PlatformHealthService
                 'latency_ms' => $latency,
                 'detail' => $ok ? 'select 1 succeeded' : 'unexpected result',
                 'checked_at' => now()->toIso8601String(),
-                'driver' => (string) config('database.default'),
+                'driver' => is_string(config('database.default')) ? config('database.default') : 'unknown',
             ];
         } catch (Throwable $e) {
             return $this->down('database', $e);
@@ -109,8 +109,11 @@ class PlatformHealthService
      */
     private function probeRedis(): array
     {
-        if (! in_array((string) config('cache.default'), ['redis', 'predis'], true)
-            && ! in_array((string) config('queue.default'), ['redis', 'predis'], true)
+        $cacheDefault = config('cache.default');
+        $queueDefault = config('queue.default');
+
+        if (! in_array(is_string($cacheDefault) ? $cacheDefault : '', ['redis', 'predis'], true)
+            && ! in_array(is_string($queueDefault) ? $queueDefault : '', ['redis', 'predis'], true)
             && ! class_exists(RedisManager::class)) {
             return [
                 'status' => 'ok',
@@ -157,9 +160,9 @@ class PlatformHealthService
             return [
                 'status' => 'ok',
                 'latency_ms' => $latency,
-                'detail' => 'driver='.config('queue.default').' size='.$size,
+                'detail' => 'driver='.(is_string(config('queue.default')) ? config('queue.default') : 'unknown').' size='.$size,
                 'checked_at' => now()->toIso8601String(),
-                'driver' => (string) config('queue.default'),
+                'driver' => is_string(config('queue.default')) ? config('queue.default') : 'unknown',
                 'size' => (int) $size,
             ];
         } catch (Throwable $e) {
@@ -208,12 +211,13 @@ class PlatformHealthService
         try {
             $disk = Setting::query()->where('key', MediaStorageService::SETTINGS_KEY)->first();
             $current = $disk !== null && is_array($disk->value) ? $disk->value : [];
-            $name = (string) ($current['disk'] ?? (string) config('cip.media.disk', 'local'));
+            $diskConfig = config('cip.media.disk', 'local');
+            $name = is_string($current['disk'] ?? null) ? $current['disk'] : (is_string($diskConfig) ? $diskConfig : 'local');
 
             if ($name === 'local') {
                 $name = 'media_local';
             }
-            Storage::disk($name)->put('.cip-probe', (string) now());
+            Storage::disk($name)->put('.cip-probe', now()->toIso8601String());
             Storage::disk($name)->delete('.cip-probe');
             $latency = (int) round((microtime(true) - $start) * 1000);
 
