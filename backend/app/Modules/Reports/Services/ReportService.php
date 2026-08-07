@@ -18,30 +18,8 @@ use App\Modules\Users\Models\User;
 use App\Modules\Workflow\Repositories\WorkflowRepository;
 use App\Modules\Workflow\Services\WorkflowEngine;
 
-/**
- * ReportService per docs/03 §16 and docs/14 §8.
- *
- * Owns the business rules for report CRUD:
- *  - createDraft   : a new report in the `draft` status
- *  - updateDraft   : partial update (title / description /
- *                    department_id only) while still in `draft`
- *  - submit        : moves `draft → submitted`; emits
- *                    `ReportStatusChanged`; the listener appends
- *                    a `report_status_history` row
- *  - transitionTo  : generic state machine (used by the
- *                    Workflow engine in M6; the moderator / API
- *                    does not call this directly)
- *
- * Every public method returns the persisted `Report` model.
- */
 class ReportService
 {
-    /**
-     * Mirrors the citizen PWA's `mockGpsLikely()` threshold
-     * (`frontend/src/portals/citizen/security/mockGps.ts`) — a score
-     * at or above this is "likely mock" and worth a security event,
-     * but never a reason to auto-reject the report.
-     */
     private const MOCK_GPS_LIKELY_THRESHOLD = 0.5;
 
     public function __construct(
@@ -108,8 +86,6 @@ class ReportService
         $draftStatusId = $this->resolveStatusId('draft');
         $priorityId = $dto->priorityId ?? $this->defaultPriorityId();
 
-        // Anchor the report to the default civic workflow so the
-        // M6 engine can drive it through the lifecycle.
         $workflow = $this->workflowRepository->findActiveByCode('civic_default');
 
         $report = $this->repository->create([
@@ -125,9 +101,6 @@ class ReportService
             'mock_gps_score' => $dto->mockGpsScore,
         ]);
 
-        // Drive the citizen's submit through the workflow
-        // engine so the audit + event chain stays consistent
-        // with every other transition.
         $actor = $dto->isAnonymous
             ? null
             : User::query()->find($dto->citizenId);
@@ -140,9 +113,6 @@ class ReportService
         $report->submitted_at = now();
         $report->save();
 
-        // Never auto-rejects — only records a security event for the
-        // dashboard + moderator triage. The FraudScorer pipeline reads
-        // this same column later via AiPipelineOrchestrator.
         if ($dto->mockGpsScore !== null && $dto->mockGpsScore >= self::MOCK_GPS_LIKELY_THRESHOLD) {
             $this->securityEvents->recordSafe(
                 'mock_gps',
@@ -155,6 +125,9 @@ class ReportService
         return $report->refresh();
     }
 
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
     public function transitionTo(
         Report $report,
         string $toStatusId,
@@ -184,6 +157,21 @@ class ReportService
         return $report;
     }
 
+    public function resolveStatusId(string $code): string
+    {
+        $id = ReportStatus::query()->where('code', $code)->value('id');
+
+        if (! is_string($id) || $id === '') {
+            throw new ApiException(
+                'MISSING_REFERENCE_DATA',
+                "Status '{$code}' is not seeded.",
+                500,
+            );
+        }
+
+        return $id;
+    }
+
     private function assertReportTypeExists(string $id): void
     {
         if (! ReportType::query()->where('id', $id)->exists()) {
@@ -203,21 +191,6 @@ class ReportService
         if (! ReportStatus::query()->where('id', $id)->exists()) {
             throw ApiException::notFound('ReportStatus');
         }
-    }
-
-    private function resolveStatusId(string $code): string
-    {
-        $id = ReportStatus::query()->where('code', $code)->value('id');
-
-        if (! is_string($id) || $id === '') {
-            throw new ApiException(
-                'MISSING_REFERENCE_DATA',
-                "Status '{$code}' is not seeded.",
-                500,
-            );
-        }
-
-        return $id;
     }
 
     private function defaultPriorityId(): string

@@ -13,13 +13,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator as ConcreteLengthAwarePaginator;
 
-/**
- * Read/write access to the `reports` table and the
- * `report_status_history` timeline.
- *
- * Pure data access — no business rules, no events, no audit
- * emission. The ReportService owns those concerns.
- */
 class ReportRepository
 {
     /**
@@ -33,6 +26,13 @@ class ReportRepository
     public function findById(string $id): ?Report
     {
         return Report::query()->find($id);
+    }
+
+    public function findByIdWithRelations(string $id): ?Report
+    {
+        return Report::query()
+            ->with(['status', 'reportType', 'priority', 'location', 'location.ward', 'location.district', 'department', 'statusHistory.fromStatus', 'statusHistory.toStatus'])
+            ->find($id);
     }
 
     public function findByTrackingNumber(string $trackingNumber): ?Report
@@ -141,10 +141,6 @@ class ReportRepository
         $q = Report::query()->where('citizen_id', $citizenId);
         $total = (int) (clone $q)->count();
 
-        // "open" = any status that is neither terminal nor the explicit
-        // rejected state. Driven by `is_terminal` so the count stays
-        // correct as workflow states evolve (covers pending_moderator,
-        // assigned, in_progress, escalated, etc.).
         $resolvedStatusIds = ReportStatus::query()
             ->whereIn('code', ['resolved', 'closed'])
             ->pluck('id')

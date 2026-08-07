@@ -6,15 +6,22 @@ namespace App\Modules\Reports\Repositories;
 
 use App\Modules\Reports\Models\ReportType;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
-/**
- * T-M12-003 — read-side repository for `report_types`.
- *
- * Owns the search filters used by the Super Admin
- * `report-types` index screen (`docs/09` §6).
- */
 class ReportTypeRepository
 {
+    /**
+     * @return Collection<int, ReportType>
+     */
+    public function active(): Collection
+    {
+        return ReportType::query()
+            ->where('active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+    }
+
     /**
      * @param  array<string, mixed>  $filters
      * @return LengthAwarePaginator<int, ReportType>
@@ -26,7 +33,7 @@ class ReportTypeRepository
         if (! empty($filters['q'])) {
             $search = is_string($filters['q']) ? $filters['q'] : '';
             $needle = '%'.$search.'%';
-            $q->where(static function ($w) use ($needle): void {
+            $q->where(function ($w) use ($needle): void {
                 $w->where('name', 'like', $needle)
                     ->orWhere('code', 'like', $needle);
             });
