@@ -61,11 +61,11 @@ return [
     |
     |   * * * * * cd ~/cip && php artisan queue:work --queue=media,ai,notifications,default --stop-when-empty --tries=1 --timeout=300
     |
-    | IMPORTANT: retry_after MUST exceed the longest --timeout across all
-    | workers. If retry_after < timeout, the worker marks the job as
-    | timed-out and re-dispatches it while the original is still running,
-    | causing duplicate execution. The default below (300s) covers the AI
-    | worker's 300s timeout with margin.
+            | IMPORTANT: retry_after MUST exceed the longest --timeout across all
+            | workers. If retry_after < timeout, the worker marks the job as
+            | timed-out and re-dispatches it while the original is still running,
+            | causing duplicate execution. The database default below (360s) covers
+            | the AI worker's 300s timeout with 60s of margin.
     |
     | The scheduler (schedule:run) MUST also be installed as a cron —
     | without it, CheckSlaBreaches and PurgeRetentionCommand never fire.

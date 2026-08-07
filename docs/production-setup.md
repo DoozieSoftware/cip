@@ -80,11 +80,11 @@ If `retry_after` < `--timeout`:
 
 | Setting | Value |
 |---------|-------|
-| `DB_QUEUE_RETRY_AFTER` | 300s |
+| `DB_QUEUE_RETRY_AFTER` | 360s (config default in `config/queue.php`) |
 | Longest worker `--timeout` | 300s (ai queue) |
-| Margin | 0s — increase to 360s if AI provider latency grows |
+| Margin | 60s |
 
-The AI job (`AiPipelineOrchestrator`) has `$tries = 40` with exponential backoff up to 300s. This is the job most likely to hit timeout boundaries. If the AI provider consistently responds in < 200s, consider lowering the ai worker `--timeout` to 240s and raising `retry_after` to 360s for safety.
+The AI job (`AiPipelineOrchestrator`) has `$tries = 40` with exponential backoff up to 300s. This is the job most likely to hit timeout boundaries. If the AI provider latency grows beyond 300s, raise `DB_QUEUE_RETRY_AFTER` further (e.g. 420s) — it must always exceed the longest worker `--timeout`.
 
 ---
 
@@ -162,7 +162,7 @@ The deploy workflow (`.github/workflows/deploy-production.yml`) currently instal
 3. **Add ai queue worker** — currently missing. AI pipeline never runs.
 4. **Add notifications queue worker** — currently missing. Notifications are never delivered.
 5. **Remove `--max-time=300`** from the final `queue:work` call — this overlaps with the per-minute cron and can cause duplicate job processing.
-6. **Add `DB_QUEUE_RETRY_AFTER=300`** to the `.env.cpanel` merge logic (or ensure it's already in `.env.cpanel`).
+6. **Ensure `DB_QUEUE_RETRY_AFTER=360`** is set in `.env.cpanel` (or rely on the config default of 360s in `config/queue.php`). This exceeds the longest worker `--timeout` (300s) by 60s.
 
 The deploy workflow's crontab install block should look like:
 
