@@ -4,18 +4,15 @@ declare(strict_types=1);
 
 namespace App\Modules\Notifications\Listeners;
 
+use App\Modules\Notifications\Models\Notification;
 use App\Modules\Notifications\Services\NotificationDispatcher;
 use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * Translates a `ReportStatusChanged` event into a citizen
- * notification. The template code is `report.status_changed`
- * with the from/to status codes as variables.
- */
 class ReportStatusChangedListener
 {
     public function __construct(private readonly NotificationDispatcher $dispatcher) {}
@@ -34,26 +31,50 @@ class ReportStatusChangedListener
             return;
         }
 
+        $fromStatusName = '';
+
+        if ($event->fromStatusId !== null) {
+            $from = ReportStatus::query()->whereKey($event->fromStatusId)->value('name');
+            $fromStatusName = is_string($from) ? $from : '';
+        }
+
+        $to = ReportStatus::query()->whereKey($event->toStatusId)->value('name');
+        $toStatusName = is_string($to) ? $to : '';
+
         try {
             $this->dispatcher->dispatch($user, 'report.status_changed', [
                 'report_id' => $report->id,
+                'name' => (string) ($user->name ?? ''),
                 'tracking_number' => $report->tracking_number,
                 'title' => $report->title,
-                'from_status' => $event->fromStatusId,
-                'to_status' => $event->toStatusId,
-                'actor' => $event->actorId,
+                'from_status' => $fromStatusName,
+                'to_status' => $toStatusName,
             ], null, [
                 'channel' => 'email',
             ]);
         } catch (Throwable $e) {
-            try {
-                Log::warning('failed to dispatch report.status_changed notification', [
-                    'report_id' => $event->reportId,
-                    'error' => $e->getMessage(),
-                ]);
-            } catch (Throwable) {
-                // ignore
-            }
+            $this->recordFailure($user, 'report.status_changed', $e);
+        }
+    }
+
+    private function recordFailure(User $user, string $code, Throwable $e): void
+    {
+        try {
+            Notification::query()->create([
+                'user_id' => $user->id,
+                'type' => $code,
+                'channel' => 'email',
+                'payload' => ['error' => $e->getMessage(), 'class' => $e::class],
+                'status' => Notification::STATUS_DEAD,
+                'last_error' => $e->getMessage(),
+                'retry_count' => 0,
+            ]);
+        } catch (Throwable $logError) {
+            Log::warning('failed to dispatch report.status_changed notification', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'log_error' => $logError->getMessage(),
+            ]);
         }
     }
 }

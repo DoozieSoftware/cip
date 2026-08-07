@@ -16,15 +16,6 @@ use App\Modules\Reports\Events\ReportStatusChanged;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
-/**
- * Notifications module service provider.
- *
- * - Binds SmsGatewayInterface to the configured driver
- *   (`config('cip.notifications.sms_driver')`). Default = 'log'.
- * - The driver registry is intentionally tiny in V1 — only `log` is
- *   shipped. M14 (External Connector Framework) will introduce the
- *   provider-discovery mechanism and the real driver implementations.
- */
 class NotificationsServiceProvider extends ServiceProvider
 {
     /**
@@ -34,12 +25,6 @@ class NotificationsServiceProvider extends ServiceProvider
         'log' => LogSmsGateway::class,
     ];
 
-    /**
-     * Wire the cross-module events that should produce a citizen
-     * inbox notification. The listeners were previously never
-     * registered, so no `notifications` rows were created and the
-     * citizen "Updates" feed stayed empty.
-     */
     public function boot(): void
     {
         Event::listen(ReportStatusChanged::class, ReportStatusChangedListener::class);

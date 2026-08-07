@@ -7,28 +7,8 @@ namespace App\Modules\Notifications\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
+use InvalidArgumentException;
 
-/**
- * `notification_templates` row per docs/04 §13.
- *
- * Reusable template keyed by (code, locale, version). The
- * dispatcher picks the active row for (code, locale) and
- * renders `body` via the TemplateEngine (T-M9-011).
- *
- * @property string $id
- * @property string $code
- * @property string $name
- * @property string $channel
- * @property string|null $subject
- * @property string $body
- * @property array|null $variables
- * @property string $locale
- * @property int $version
- * @property bool $active
- * @property Carbon $created_at
- * @property Carbon $updated_at
- */
 class NotificationTemplate extends Model
 {
     use HasFactory;
@@ -46,4 +26,47 @@ class NotificationTemplate extends Model
         'version' => 'integer',
         'active' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $template): void {
+            $template->validateVariables();
+        });
+    }
+
+    public function validateVariables(): void
+    {
+        $haystack = (string) ($this->subject ?? '')."\n".(string) ($this->body ?? '');
+        preg_match_all('/(?<!\\\\)\{([a-zA-Z0-9_\\.]+)\}/', $haystack, $matches);
+
+        $placeholders = array_values(array_unique($matches[1] ?? []));
+        sort($placeholders);
+
+        $declared = [];
+
+        foreach ((array) ($this->variables ?? []) as $v) {
+            if (is_string($v)) {
+                $declared[] = $v;
+            }
+        }
+
+        $declared = array_values(array_unique($declared));
+        sort($declared);
+
+        $missing = array_diff($placeholders, $declared);
+
+        if ($missing !== []) {
+            throw new InvalidArgumentException(
+                "Template '{$this->code}' placeholders [".implode(', ', $missing).'] are not declared in variables.',
+            );
+        }
+
+        $unused = array_diff($declared, $placeholders);
+
+        if ($unused !== []) {
+            throw new InvalidArgumentException(
+                "Template '{$this->code}' declared variables [".implode(', ', $unused).'] are not used in subject or body.',
+            );
+        }
+    }
 }
