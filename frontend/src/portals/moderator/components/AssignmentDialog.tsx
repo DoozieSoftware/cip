@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, Button, Textarea, Input } from '../design';
+import { Dialog, Button, Textarea, Input } from '../shared/ui';
 
 export interface AssignmentResult {
   department_id: string;

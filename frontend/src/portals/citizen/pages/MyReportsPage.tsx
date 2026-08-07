@@ -10,7 +10,7 @@ import {
   IconMapPin,
   IconPlus,
 } from '@tabler/icons-react';
-import { Spinner } from '../../moderator/design';
+import { Spinner } from '../../../shared/ui';
 import { useCitizenReports, lifecycleGroup } from '../api/client';
 import { StatusBadge } from '../components/StatusBadge';
 import type { StatusFilter } from '../types';

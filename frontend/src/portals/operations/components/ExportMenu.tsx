@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '../design';
+import { Button } from '../shared/ui';
 import { departmentApi, type ReportListFilters } from '../api/operations';
 
 type ExportFormat = 'csv' | 'xlsx' | 'pdf';

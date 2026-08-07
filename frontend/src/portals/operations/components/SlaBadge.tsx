@@ -1,4 +1,4 @@
-import { Badge } from '../design';
+import { Badge } from '../shared/ui';
 import type { DepartmentReportListItem, ReportAssignment } from '../types';
 import { formatSla } from './slaInfo';
 

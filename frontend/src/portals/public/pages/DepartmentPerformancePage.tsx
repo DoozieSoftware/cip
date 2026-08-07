@@ -1,6 +1,6 @@
 import { type JSX } from 'react';
 import { usePublicDepartmentPerformance } from '../api/client';
-import { Spinner, EmptyState, Table, THead, TBody, TR, TH, TD } from '../../moderator/design';
+import { Spinner, EmptyState, Table, THead, TBody, TR, TH, TD } from '../../../shared/ui';
 
 function formatHours(hours: number | null): string {
   if (hours === null) return '—';

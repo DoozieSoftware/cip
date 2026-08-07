@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { IconMaximize } from '@tabler/icons-react';
 import type { MediaItem } from '../types';
-import { Card, CardHeader, CardTitle, CardBody, Badge, Dialog, EmptyState } from '../design';
+import { Card, CardHeader, CardTitle, CardBody, Badge, Dialog, EmptyState } from '../shared/ui';
 
 export function EvidenceViewer({ media }: { media: MediaItem[] }) {
   const [selectedImage, setSelectedImage] = useState<MediaItem | null>(null);

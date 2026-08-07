@@ -6,15 +6,15 @@ type Size = 'sm' | 'md' | 'lg';
 
 const VARIANT: Record<Variant, string> = {
   primary:
-    'bg-[#1d1d1b] text-white hover:bg-black focus-visible:ring-[#1d1d1b] disabled:bg-[#85847f]',
+    'bg-[var(--color-ink)] text-white hover:bg-black focus-visible:ring-[var(--color-ink)] disabled:bg-[var(--color-text-tertiary)]',
   secondary:
-    'bg-white text-[#1d1d1b] ring-1 ring-[#d0cec8] hover:bg-[#f3f2ed] hover:ring-[#aaa9a4] focus-visible:ring-[#1d1d1b] disabled:text-[#a8a7a1]',
+    'bg-white text-[var(--color-ink)] ring-1 ring-[var(--color-border)] hover:bg-[var(--color-canvas)] hover:ring-[var(--color-border-strong)] focus-visible:ring-[var(--color-ink)] disabled:text-[var(--color-text-quaternary)]',
   danger:
-    'bg-[#a42f29] text-white hover:bg-[#8a2621] focus-visible:ring-[#a42f29] disabled:bg-[#d8a5a1]',
+    'bg-[var(--color-danger)] text-white hover:bg-[var(--color-danger-hover)] focus-visible:ring-[var(--color-danger)] disabled:bg-[var(--color-danger-muted)]',
   success:
-    'bg-[#226b46] text-white hover:bg-[#1b5738] focus-visible:ring-[#226b46] disabled:bg-[#9bc3ab]',
+    'bg-[var(--color-success)] text-white hover:bg-[var(--color-success-hover)] focus-visible:ring-[var(--color-success)] disabled:bg-[var(--color-success-muted)]',
   ghost:
-    'bg-transparent text-[#4f4e4a] hover:bg-[#f3f2ed] hover:text-[#1d1d1b] focus-visible:ring-[#1d1d1b]',
+    'bg-transparent text-[var(--color-ink-soft)] hover:bg-[var(--color-canvas)] hover:text-[var(--color-ink)] focus-visible:ring-[var(--color-ink)]',
 };
 
 const SIZE: Record<Size, string> = {
@@ -58,7 +58,7 @@ export function Button({
           className={cx(
             'h-4 w-4 animate-spin rounded-full border-2',
             variant === 'secondary' || variant === 'ghost'
-              ? 'border-[#1d1d1b]/30 border-t-[#1d1d1b]'
+              ? 'border-[var(--color-ink)]/30 border-t-[var(--color-ink)]'
               : 'border-white/40 border-t-white',
           )}
         />

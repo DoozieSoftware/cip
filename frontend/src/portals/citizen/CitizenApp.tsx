@@ -3,7 +3,7 @@ import { type JSX } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { CitizenLayout } from './layout/CitizenLayout';
-import { ErrorBoundary, ErrorState, Spinner } from '../moderator/design';
+import { ErrorBoundary, ErrorState, Spinner } from '../../shared/ui';
 import { registerOfflineQueueRetry } from './offline/registerQueueRetry';
 import { getQueue } from './offline/queue';
 import {

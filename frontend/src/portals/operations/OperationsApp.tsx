@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { OperationsLayout } from './layout/OperationsLayout';
 import { DepartmentSelectionProvider } from './context/DepartmentSelectionContext';
-import { Spinner } from './design';
+import { Spinner } from '../shared/ui';
 import { ProtectedRoute } from '../../auth/ProtectedRoute';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));

@@ -10,7 +10,7 @@ import {
   IconChevronLeft,
   IconChevronRight,
 } from '@tabler/icons-react';
-import { Spinner, EmptyState, Badge } from '../design';
+import { Spinner, EmptyState, Badge } from '../shared/ui';
 import { api } from '../api/client';
 import { departmentApi, type ReportListFilters } from '../api/operations';
 import { ExportMenu } from '../components/ExportMenu';

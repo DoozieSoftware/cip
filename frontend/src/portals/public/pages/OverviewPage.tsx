@@ -1,6 +1,6 @@
 import { type JSX } from 'react';
 import { usePublicStats } from '../api/client';
-import { Spinner, EmptyState } from '../../moderator/design';
+import { Spinner, EmptyState } from '../../../shared/ui';
 
 function formatDuration(seconds: number | null): string {
   if (seconds === null) return '—';

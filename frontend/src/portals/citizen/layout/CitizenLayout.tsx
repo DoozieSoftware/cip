@@ -13,7 +13,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../auth/AuthContext';
 import { InstallPrompt } from '../../../pwa/InstallPrompt';
 import { ToastProvider } from '../components/Toast';
-import { cx } from '../../moderator/design/cx';
+import { cx } from '../../../shared/ui/cx';
 
 const NAV: Array<{
   to: string;

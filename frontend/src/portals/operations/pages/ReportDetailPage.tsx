@@ -17,7 +17,7 @@ import {
   IconLink,
   IconCircleDotted,
 } from '@tabler/icons-react';
-import { Badge, EmptyState, Spinner, Textarea } from '../design';
+import { Badge, EmptyState, Spinner, Textarea } from '../shared/ui';
 import { departmentApi } from '../api/operations';
 import type {
   DepartmentReportDetail,

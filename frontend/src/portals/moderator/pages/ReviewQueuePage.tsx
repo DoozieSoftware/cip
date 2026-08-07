@@ -12,7 +12,7 @@ import {
   IconClock,
   IconArrowUpRight,
 } from '@tabler/icons-react';
-import { Badge, Card, CardBody, EmptyState, Spinner } from '../design';
+import { Badge, Card, CardBody, EmptyState, Spinner } from '../shared/ui';
 import { queueApi, type QueueFilters } from '../api/moderator';
 import type { ReportListItem, ReportStatusCode } from '../types';
 import { useState } from 'react';

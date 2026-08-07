@@ -1,5 +1,5 @@
 import { type JSX } from 'react';
-import { cx } from '../../moderator/design/cx';
+import { cx } from '../../../shared/ui/cx';
 
 /**
  * Citizen-side status badge for a report.

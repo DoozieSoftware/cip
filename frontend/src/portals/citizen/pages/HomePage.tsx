@@ -15,7 +15,7 @@ import {
 import { useAuth } from '../../../auth/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest, type ApiEnvelope } from '../../../auth/api';
-import { Spinner } from '../../moderator/design';
+import { Spinner } from '../../../shared/ui';
 import { getQueue } from '../offline/queue';
 import { useCitizenReports } from '../api/client';
 
