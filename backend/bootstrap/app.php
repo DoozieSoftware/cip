@@ -9,6 +9,7 @@ use App\Modules\Settings\Models\Setting;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Middleware\IdempotencyKey;
 use App\Modules\Shared\Http\Middleware\RequestId;
+use App\Modules\Shared\Services\PlatformHeartbeatService;
 use App\Modules\Workflow\Jobs\CheckSlaBreaches;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -35,6 +36,13 @@ return Application::configure(basePath: dirname(__DIR__))
         PurgeRetentionCommand::class,
     ])
     ->withSchedule(function (Schedule $schedule): void {
+        $schedule->call(static function (): void {
+            app(PlatformHeartbeatService::class)->touchScheduler();
+        })
+            ->everyMinute()
+            ->name('platform:heartbeat:scheduler')
+            ->withoutOverlapping();
+
         $schedule->job(new CheckSlaBreaches)
             ->everyFiveMinutes()
             ->name('workflow:check-sla-breaches')

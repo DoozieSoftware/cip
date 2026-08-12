@@ -14,8 +14,11 @@ use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Listeners\WriteStatusHistory;
 use App\Modules\Security\Models\SecurityEvent;
 use App\Modules\Security\Services\SecurityPolicyService;
+use App\Modules\Shared\Services\PlatformHeartbeatService;
 use App\Modules\Workflow\Listeners\RefreshSlaDueAt;
+use Illuminate\Queue\Events\Looping;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -50,6 +53,16 @@ class AppServiceProvider extends ServiceProvider
         // NotificationsServiceProvider. Keep only the cross-cutting
         // security listener here to avoid duplicate delivery.
         Event::listen(SecurityEvent::class, SecurityEventListener::class);
+
+        // A reachable queue broker does not prove that a worker is alive.
+        // Queue::looping fires for every daemon iteration, including workers
+        // launched with a comma-separated multi-queue list.
+        Queue::looping(static function (Looping $event): void {
+            app(PlatformHeartbeatService::class)->touchWorker(
+                (string) $event->connectionName,
+                (string) $event->queue,
+            );
+        });
 
         // session.timeout_minutes security policy overrides the
         // framework session lifetime at boot. Defensive: falls back to

@@ -32,6 +32,8 @@ use Throwable;
  */
 class PlatformHealthService
 {
+    public function __construct(private readonly PlatformHeartbeatService $heartbeats) {}
+
     /**
      * @return array<string, array<string, mixed>>
      */
@@ -156,14 +158,18 @@ class PlatformHealthService
         try {
             $size = Queue::size();
             $latency = (int) round((microtime(true) - $start) * 1000);
+            $worker = $this->heartbeats->workerStatus();
+            $status = $worker['ok'] ? 'ok' : 'degraded';
+            $workerMessage = is_string($worker['message'] ?? null) ? $worker['message'] : 'worker heartbeat unavailable';
 
             return [
-                'status' => 'ok',
+                'status' => $status,
                 'latency_ms' => $latency,
-                'detail' => 'driver='.(is_string(config('queue.default')) ? config('queue.default') : 'unknown').' size='.$size,
+                'detail' => 'driver='.(is_string(config('queue.default')) ? config('queue.default') : 'unknown').' size='.$size.'; '.$workerMessage,
                 'checked_at' => now()->toIso8601String(),
                 'driver' => is_string(config('queue.default')) ? config('queue.default') : 'unknown',
                 'size' => (int) $size,
+                'worker_heartbeat' => $worker,
             ];
         } catch (Throwable $e) {
             return $this->down('queue', $e);
@@ -245,13 +251,17 @@ class PlatformHealthService
             $events = Schedule::events();
             $latency = (int) round((microtime(true) - $start) * 1000);
             $count = is_array($events) ? count($events) : iterator_count($events);
+            $heartbeat = $this->heartbeats->schedulerStatus();
+            $status = $heartbeat['ok'] ? 'ok' : 'degraded';
+            $heartbeatMessage = is_string($heartbeat['message'] ?? null) ? $heartbeat['message'] : 'scheduler heartbeat unavailable';
 
             return [
-                'status' => 'ok',
+                'status' => $status,
                 'latency_ms' => $latency,
-                'detail' => $count.' scheduled event(s)',
+                'detail' => $count.' scheduled event(s); '.$heartbeatMessage,
                 'checked_at' => now()->toIso8601String(),
                 'event_count' => $count,
+                'heartbeat' => $heartbeat,
             ];
         } catch (Throwable $e) {
             return $this->down('scheduler', $e);

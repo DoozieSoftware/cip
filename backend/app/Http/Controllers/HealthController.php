@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Modules\Media\Contracts\VirusScanServiceInterface;
 use App\Modules\Shared\Http\Controllers\BaseController;
+use App\Modules\Shared\Services\PlatformHeartbeatService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
@@ -16,6 +17,8 @@ use Throwable;
 
 class HealthController extends BaseController
 {
+    public function __construct(private readonly PlatformHeartbeatService $heartbeats) {}
+
     #[OA\Get(
         path: '/api/v1/health',
         operationId: 'health.live',
@@ -110,6 +113,8 @@ class HealthController extends BaseController
             'redis' => $this->checkRedis(),
             'storage' => $this->checkStorage(),
             'queue' => $this->checkQueue(),
+            'worker' => $this->heartbeats->workerStatus(),
+            'scheduler' => $this->heartbeats->schedulerStatus(),
             'scanner' => $this->checkScanner(),
         ];
 

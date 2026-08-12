@@ -10,6 +10,14 @@ return [
     'notifications' => [
         'sms_driver' => env('CIP_NOTIFICATIONS_SMS_DRIVER', 'log'),
     ],
+    'health' => [
+        // Queue workers and the scheduler refresh these cache records while
+        // alive. Readiness fails after this window, even when the broker is
+        // reachable but no process is consuming work.
+        'heartbeat_ttl_seconds' => (int) env('CIP_HEALTH_HEARTBEAT_TTL_SECONDS', 180),
+        'heartbeat_write_interval_seconds' => (int) env('CIP_HEALTH_HEARTBEAT_WRITE_INTERVAL_SECONDS', 15),
+        'required_queues' => env('CIP_HEALTH_REQUIRED_QUEUES', 'media,ai,notifications,default'),
+    ],
     'auth' => [
         'otp_expiry_minutes' => env('OTP_TTL_SECONDS', 300) > 0 ? (int) ceil(env('OTP_TTL_SECONDS', 300) / 60) : 5,
         'refresh_ttl_days' => 14,
