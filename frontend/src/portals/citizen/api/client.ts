@@ -168,13 +168,20 @@ export interface CreateReportInput {
   captured_at?: string;
   media_files?: File[];
   mock_gps_score?: number;
+  idempotency_key?: string;
 }
 
 export async function submitReportPayload(
   input: CreateReportInput,
 ): Promise<{ id: string; status: string }> {
+  const idempotencyKey =
+    input.idempotency_key ??
+    (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `report-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const created = await request<ApiReportPayload>('/reports', {
     method: 'POST',
+    headers: { 'Idempotency-Key': idempotencyKey },
     body: {
       report_type_id: input.report_type_id,
       title: input.title,
@@ -198,10 +205,6 @@ export async function submitReportPayload(
     await Promise.all(files.map((file) => uploadMedia(reportId, file)));
   }
 
-  const idempotencyKey =
-    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-      ? crypto.randomUUID()
-      : `${reportId}-${Date.now()}`;
   const finalize = async () =>
     request<ApiReportPayload>(`/reports/${reportId}/finalize`, {
       method: 'POST',

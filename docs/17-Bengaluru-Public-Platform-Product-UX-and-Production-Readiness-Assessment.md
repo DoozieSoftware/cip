@@ -1511,7 +1511,7 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | P1-18 | **Partial** | Enqueue requests Background Sync, app-level retry timers schedule future attempts, and startup/online drains resume work; fully closed-app authenticated delivery still requires a secure SW session architecture. |
 | P1-19 | **Done** | Queue size counts actionable statuses only; acknowledged `done` items are removed after retention and dead items remain separately actionable (`queue.ts`, queue regression tests). |
 | P1-22 | **Done** | Report step progress, location, and media handles persist in an account-scoped IndexedDB draft and auto-resume; logout clears the leaving account draft (`drafts.ts`, `drafts.test.ts`). |
-| P1-01 | **Done** | Citizen client uses a durable draft UUID/idempotency key for finalization; server middleware/status guard replay concurrent retries safely (`43d3f302`). |
+| P1-01 | **Partial** | Citizen client now sends one idempotency key across draft creation and finalization; server middleware/status guards replay successful retries (`43d3f302`, current client). Durable key persistence across a crashed/restarted browser submission still needs binding to the IndexedDB draft record. |
 | P1-02..P1-03 | Not started | Tracking-number contract is present; anonymous recovery/secret flow is still a product decision and implementation gap. |
 | P1-10 | **Done** | Report-type requirements are exposed and server evidence manifest enforces required media, hashes, storage, and video readiness (`43d3f302`). |
 | P1-11 | **Done** | Citizen media modification is restricted to draft/request-for-information lifecycle; lifecycle authorization regression test added (`dfabe1a8`). |
