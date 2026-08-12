@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Media\Http\Middleware\MediaUploadLimit;
+use App\Modules\Public\Console\RebuildPublicAnalyticsCommand;
 use App\Modules\Security\Http\Middleware\AuditMiddleware;
 use App\Modules\Settings\Console\PurgeRetentionCommand;
 use App\Modules\Settings\Models\Setting;
@@ -34,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withCommands([
         PurgeRetentionCommand::class,
+        RebuildPublicAnalyticsCommand::class,
     ])
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->call(static function (): void {
@@ -53,6 +55,11 @@ return Application::configure(basePath: dirname(__DIR__))
             ->name('settings:purge-retention')
             ->withoutOverlapping()
             ->when(fn (): bool => (bool) Setting::get('retention.purge_enabled', false));
+
+        $schedule->command(RebuildPublicAnalyticsCommand::class)
+            ->dailyAt('02:30')
+            ->name('public:rebuild-analytics')
+            ->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         // Laravel 12's ApplicationBuilder defaults redirectGuestsTo() to

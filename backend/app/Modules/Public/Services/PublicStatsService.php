@@ -9,6 +9,8 @@ use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Reports\Models\ReportStatusHistory;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Aggregate, privacy-safe platform statistics for the public landing
@@ -48,6 +50,38 @@ class PublicStatsService
     public function summaryWithMetadata(): array
     {
         return Cache::remember(self::CACHE_KEY, self::CACHE_TTL_SECONDS, function (): array {
+            $aggregate = null;
+
+            if (Schema::hasTable('public_daily_metrics')) {
+                $aggregate = DB::table('public_daily_metrics')
+                    ->where('metric_date', '>=', today()->subDay()->toDateString())
+                    ->latest('metric_date')
+                    ->first();
+            }
+
+            if ($aggregate !== null) {
+                $total = is_numeric($aggregate->total_reports) ? (int) $aggregate->total_reports : 0;
+                $classified = is_numeric($aggregate->ai_classified_reports) ? (int) $aggregate->ai_classified_reports : 0;
+
+                return [
+                    'data' => [
+                        'total_reports' => $total,
+                        'ai_classified_percent' => $total > 0 ? round(($classified / $total) * 100, 1) : 0.0,
+                        'median_assign_seconds' => $aggregate->median_assign_seconds === null || ! is_numeric($aggregate->median_assign_seconds) ? null : (int) $aggregate->median_assign_seconds,
+                    ],
+                    'metadata' => [
+                        'generated_at' => is_string($aggregate->generated_at) ? Carbon::parse($aggregate->generated_at)->toIso8601String() : now()->toIso8601String(),
+                        'cache_ttl_seconds' => self::CACHE_TTL_SECONDS,
+                        'aggregate_date' => is_string($aggregate->metric_date) ? $aggregate->metric_date : today()->toDateString(),
+                        'definitions' => [
+                            'total_reports' => 'Reports with an active workflow status, excluding drafts, rejected reports, and merged duplicates.',
+                            'ai_classified_percent' => 'Reports with a persisted AI label divided by the public report denominator; human review may still change the final classification.',
+                            'median_assign_seconds' => 'Median elapsed seconds from submitted to assigned for the daily aggregate sample.',
+                        ],
+                    ],
+                ];
+            }
+
             // Drafts, rejected reports, and merge duplicates are not part of
             // public throughput or classification denominators. A report with
             // an unknown status remains eligible until it is explicitly moved
