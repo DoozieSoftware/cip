@@ -1,7 +1,7 @@
 # cPanel Deployment Guide
 
 This guide covers deploying the Civic Intelligence Platform to a cPanel
-shared hosting account with **MySQL + PHP** (no Redis, no MinIO).
+shared hosting account with **MySQL + PHP + Redis + ClamAV** (no MinIO).
 
 ## Architecture on cPanel
 
@@ -42,6 +42,8 @@ web-accessible. Only `public_html/` is served.
   - `fileinfo`, `gd` (or `imagick` for thumbnail generation)
   - `simplexml`, `tokenizer`, `curl`
 - **MySQL 8.0+** (MySQL 5.7 may work but spatial columns require 8.0+)
+- **Redis 7+** reachable from PHP 8.4 with the `ext-redis` extension
+- **ClamAV** (`clamscan` and a current signature database) for evidence uploads
 - **SSH access** (cPanel Terminal is sufficient)
 - **Cron jobs** (for queue worker + scheduler)
 
@@ -305,11 +307,11 @@ ownership should already be correct.
 | Component | Production (Docker) | cPanel (Pilot) |
 |-----------|-------------------|----------------|
 | Queue | Redis + Horizon daemon | Database + cron worker |
-| Cache | Redis | File (`storage/framework/cache/`) |
+| Cache | Redis | Redis (`ext-redis`, tagged routing cache) |
 | Session | Redis | Database (`sessions` table) |
 | File storage | MinIO (S3) | Local filesystem (`storage/app/media/`) |
 | AI provider | Mock (dev default) | Modal vision endpoint |
-| Virus scan | ClamAV | Log scanner (always clean) |
+| Virus scan | ClamAV | ClamAV (`clamscan`, readiness-gated) |
 | SMS | Real gateway | Log driver (OTP in `laravel.log`) |
 | Process manager | Supervisor | cPanel cron |
 | Web server | Nginx | Apache/LiteSpeed (`.htaccess`) |
