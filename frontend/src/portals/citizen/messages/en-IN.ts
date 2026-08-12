@@ -128,6 +128,13 @@ export const en_IN: MessageCatalog = {
   'submit.location.capture': 'Capture Location',
   'submit.location.captureHint': 'Tap the button to detect your position',
   'submit.location.captured': 'Location captured',
+  'submit.location.issueTitle': 'Where is the issue?',
+  'submit.location.issueDetail':
+    'Your device location is the starting point. Tap the map to pin the issue if it is somewhere else, such as a pothole you are passing or a blocked drain nearby.',
+  'submit.location.issueMapLabel': 'Map for choosing the issue location',
+  'submit.location.issueManual': 'Issue pin chosen on the map',
+  'submit.location.issueFromGps': 'Issue pin matches your captured location',
+  'submit.location.useReporterLocation': 'Use my location',
   'submit.location.coarseWarning':
     'Coarse fix detected. For best results, try again in an open area.',
   'submit.location.suspiciousWarning':
@@ -285,7 +292,25 @@ export const en_IN: MessageCatalog = {
   'profile.noRoles': 'No roles assigned.',
   'profile.needToUpdate': 'Need to update your information?',
   'profile.updateDetail':
-    'Account details are managed by the civic administration. Contact your local office to correct your name, mobile number, or email.',
+    'You can update your preferred name, language, notification channel, and optional email here. Your verified mobile number remains protected.',
+  'profile.completeTitle': 'Complete your profile',
+  'profile.completeDetail':
+    'Choose how we address you and how you want to receive report updates. You can change these choices at any time.',
+  'profile.editTitle': 'Profile preferences',
+  'profile.editDetail':
+    'Keep your contact and notification choices up to date. Your verified mobile number cannot be changed here.',
+  'profile.preferredName': 'Preferred name',
+  'profile.emailForNotifications': 'Email for notifications',
+  'profile.language': 'Language',
+  'profile.languageEnglish': 'English',
+  'profile.languageKannada': 'ಕನ್ನಡ (Kannada)',
+  'profile.notificationChannel': 'Notification channel',
+  'profile.channelSms': 'SMS',
+  'profile.channelPush': 'Push notification',
+  'profile.channelEmail': 'Email',
+  'profile.saving': 'Saving…',
+  'profile.save': 'Save profile',
+  'profile.saveError': 'Could not save your profile. Please try again.',
 
   // Notifications page
   'notifications.title': 'Notifications',

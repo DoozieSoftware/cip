@@ -1,5 +1,5 @@
-import { type JSX } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState, type FormEvent, type JSX } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../auth/AuthContext';
 import { apiRequest, type ApiEnvelope } from '../../../auth/api';
 import { Spinner } from '../../../shared/ui';
@@ -16,8 +16,11 @@ import { useMessages } from '../messages';
 interface ProfileData {
   id: string;
   name?: string | null;
+  preferred_name?: string | null;
   mobile?: string | null;
   email?: string | null;
+  preferred_locale?: 'en-IN' | 'kn-IN' | null;
+  notification_channel?: 'sms' | 'push' | 'email' | null;
   roles: string[];
 }
 
@@ -60,7 +63,14 @@ function Section({ title, icon, children }: SectionProps): JSX.Element {
 
 export default function ProfilePage(): JSX.Element {
   const { user, logout } = useAuth();
-  const { t } = useMessages();
+  const { t, locale, setLocale } = useMessages();
+  const queryClient = useQueryClient();
+  const [preferredName, setPreferredName] = useState('');
+  const [email, setEmail] = useState('');
+  const [profileLocale, setProfileLocale] = useState<'en-IN' | 'kn-IN'>(locale);
+  const [notificationChannel, setNotificationChannel] = useState<'sms' | 'push' | 'email'>('sms');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const me = useQuery({
     queryKey: ['me'],
     queryFn: async () => {
@@ -68,6 +78,41 @@ export default function ProfilePage(): JSX.Element {
       return res.data;
     },
   });
+
+  useEffect(() => {
+    if (!me.data) return;
+    setPreferredName(me.data.preferred_name ?? '');
+    setEmail(me.data.email ?? '');
+    setProfileLocale(me.data.preferred_locale ?? locale);
+    setNotificationChannel(me.data.notification_channel ?? 'sms');
+  }, [me.data, locale]);
+
+  const profileNeedsCompletion =
+    me.data != null &&
+    (!me.data.preferred_name || !me.data.preferred_locale || !me.data.notification_channel);
+
+  async function saveProfile(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const response = await apiRequest<ApiEnvelope<ProfileData>>('/auth/profile', {
+        method: 'PATCH',
+        body: {
+          preferred_name: preferredName.trim() || null,
+          email: email.trim() || null,
+          preferred_locale: profileLocale,
+          notification_channel: notificationChannel,
+        },
+      });
+      queryClient.setQueryData(['me'], response.data);
+      setLocale(profileLocale);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : t('profile.saveError'));
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -133,11 +178,92 @@ export default function ProfilePage(): JSX.Element {
           </div>
         ) : (
           <>
+            <form
+              onSubmit={(event) => void saveProfile(event)}
+              className="rounded-2xl border border-[var(--color-ink)]/15 bg-[var(--color-surface-alt)] p-5"
+              aria-labelledby="profile-completion-title"
+            >
+              <h2
+                id="profile-completion-title"
+                className="text-base font-semibold text-[var(--color-ink)]"
+              >
+                {profileNeedsCompletion ? t('profile.completeTitle') : t('profile.editTitle')}
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+                {profileNeedsCompletion ? t('profile.completeDetail') : t('profile.editDetail')}
+              </p>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <label className="text-sm font-medium text-[var(--color-ink)]">
+                  {t('profile.preferredName')}
+                  <input
+                    value={preferredName}
+                    onChange={(event) => setPreferredName(event.target.value)}
+                    autoComplete="nickname"
+                    maxLength={120}
+                    className="mt-1 min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-base font-normal"
+                  />
+                </label>
+                <label className="text-sm font-medium text-[var(--color-ink)]">
+                  {t('profile.emailForNotifications')}{' '}
+                  <span className="font-normal text-[var(--color-text-tertiary)]">
+                    ({t('common.optional')})
+                  </span>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    autoComplete="email"
+                    className="mt-1 min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-base font-normal"
+                  />
+                </label>
+                <label className="text-sm font-medium text-[var(--color-ink)]">
+                  {t('profile.language')}
+                  <select
+                    value={profileLocale}
+                    onChange={(event) => setProfileLocale(event.target.value as 'en-IN' | 'kn-IN')}
+                    className="mt-1 min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-base font-normal"
+                  >
+                    <option value="en-IN">{t('profile.languageEnglish')}</option>
+                    <option value="kn-IN">{t('profile.languageKannada')}</option>
+                  </select>
+                </label>
+                <label className="text-sm font-medium text-[var(--color-ink)]">
+                  {t('profile.notificationChannel')}
+                  <select
+                    value={notificationChannel}
+                    onChange={(event) =>
+                      setNotificationChannel(event.target.value as 'sms' | 'push' | 'email')
+                    }
+                    className="mt-1 min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-base font-normal"
+                  >
+                    <option value="sms">{t('profile.channelSms')}</option>
+                    <option value="push">{t('profile.channelPush')}</option>
+                    <option value="email">{t('profile.channelEmail')}</option>
+                  </select>
+                </label>
+              </div>
+              {saveError ? (
+                <p role="alert" className="mt-3 text-sm text-red-700">
+                  {saveError}
+                </p>
+              ) : null}
+              <button
+                type="submit"
+                disabled={saving || preferredName.trim().length === 0}
+                className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {saving ? t('profile.saving') : t('profile.save')}
+              </button>
+            </form>
+
             <Section
               title={t('profile.personalInfo')}
               icon={<IconUser className="h-4 w-4" stroke={1.6} />}
             >
-              <InfoRow label={t('profile.fullName')} value={me.data?.name} />
+              <InfoRow
+                label={t('profile.fullName')}
+                value={me.data?.preferred_name ?? me.data?.name}
+              />
               <InfoRow label={t('profile.mobileNumber')} value={me.data?.mobile ?? user?.mobile} />
             </Section>
 

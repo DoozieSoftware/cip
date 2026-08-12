@@ -46,6 +46,7 @@ use App\Modules\Shared\Http\Controllers\Admin\SchedulerController;
 use App\Modules\Users\Http\Controllers\Admin\AdminPermissionController;
 use App\Modules\Users\Http\Controllers\Admin\AdminRoleController;
 use App\Modules\Users\Http\Controllers\Admin\AdminUserController;
+use App\Modules\Users\Http\Controllers\Api\ProfileController;
 use App\Modules\Workflow\Http\Controllers\Admin\WorkflowAdminController;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Route;
@@ -90,6 +91,7 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:sanctum', 'throttle:'.RouteServiceProvider::LIMITER_CITIZEN])->group(function (): void {
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
         Route::get('auth/me', [AuthController::class, 'me'])->name('api.v1.auth.me');
+        Route::patch('auth/profile', [ProfileController::class, 'update'])->name('api.v1.auth.profile.update');
 
         // Notifications inbox (T-M9-015/016)
         Route::get('notifications', [NotificationsController::class, 'index'])->name('notifications.index');

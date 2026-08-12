@@ -128,6 +128,13 @@ export const kn_IN: MessageCatalog = {
   'submit.location.capture': 'ಸ್ಥಳ ಕಪ್ಚರ್',
   'submit.location.captureHint': 'ನಿಮ್ಮ ಸ್ಥಾನವನ್ನು ಪತ್ತೆ ಮಾಡಲು ಬಟನ್ ಒತ್ತಿ',
   'submit.location.captured': 'ಸ್ಥಳ ಕಪ್ಚರ್ ಆಗಿದೆ',
+  'submit.location.issueTitle': 'ಸಮಸ್ಯೆ ಎಲ್ಲಿದೆ?',
+  'submit.location.issueDetail':
+    'ನಿಮ್ಮ ಸಾಧನದ ಸ್ಥಳ ಆರಂಭಿಕ ಬಿಂದುವಾಗಿದೆ. ಸಮಸ್ಯೆ ಬೇರೆಡೆ ಇದ್ದರೆ, ಉದಾಹರಣೆಗೆ ನೀವು ಹಾದುಹೋಗುತ್ತಿರುವ ಗುಂಡಿ ಅಥವಾ ಹತ್ತಿರದ ಮುಚ್ಚಿದ ಚರಂಡಿ, ನಕ್ಷೆಯಲ್ಲಿ ಟ್ಯಾಪ್ ಮಾಡಿ ಸಮಸ್ಯೆಯ ಸ್ಥಳವನ್ನು ಗುರುತಿಸಿ.',
+  'submit.location.issueMapLabel': 'ಸಮಸ್ಯೆಯ ಸ್ಥಳವನ್ನು ಆಯ್ಕೆಮಾಡುವ ನಕ್ಷೆ',
+  'submit.location.issueManual': 'ನಕ್ಷೆಯಲ್ಲಿ ಸಮಸ್ಯೆಯ ಪಿನ್ ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ',
+  'submit.location.issueFromGps': 'ಸಮಸ್ಯೆಯ ಪಿನ್ ನಿಮ್ಮ ಸ್ಥಳಕ್ಕೆ ಹೊಂದಿದೆ',
+  'submit.location.useReporterLocation': 'ನನ್ನ ಸ್ಥಳ ಬಳಸಿ',
   'submit.location.coarseWarning':
     'ಅಚೋಟ ಪತ್ತೆ ಆಗಿದೆ. ಉತ್ತಮ ಫಲಿತಾಂಶಕ್ಕೆ, ಮುಕ್ತ ಪ್ರದೇಶದಲ್ಲಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
   'submit.location.suspiciousWarning':
@@ -289,8 +296,25 @@ export const kn_IN: MessageCatalog = {
   'profile.noRoles': 'ಯಾವುದೇ ಪಾತ್ರಗಳನ್ನು ನಿಯೋಜಿಸಲಾಗಿಲ್ಲ.',
   'profile.needToUpdate': 'ನಿಮ್ಮ ಮಾಹಿತಿಯನ್ನು ನವೀಕರಿಸಬೇಕೇ?',
   'profile.updateDetail':
-    'ಖಾತೆ ವಿವರಗಳನ್ನು ನಾಗರಿಕ ಆಡಳಿತವು ನಿರ್ವಹಿಸುತ್ತದೆ. ನಿಮ್ಮ ಹೆಸರು, ಮೊಬೈಲ್ ಸಂಖ್ಯೆ, ' +
-    'ಅಥವಾ ಇಮೇಲ್ ತಿದ್ದುಪಡಿ ಮಾಡಲು ನಿಮ್ಮ ಸ್ಥಳೀಯ ಕಚೇರಿಯನ್ನು ಸಂಪರ್ಕಿಸಿ.',
+    'ನಿಮ್ಮ ಇಷ್ಟದ ಹೆಸರು, ಭಾಷೆ, ಸೂಚನೆ ಚಾನೆಲ್ ಮತ್ತು ಐಚ್ಛಿಕ ಇಮೇಲ್ ಅನ್ನು ಇಲ್ಲಿ ನವೀಕರಿಸಬಹುದು. ಪರಿಶೀಲಿಸಿದ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯನ್ನು ರಕ್ಷಿಸಲಾಗಿದೆ.',
+  'profile.completeTitle': 'ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಪೂರ್ಣಗೊಳಿಸಿ',
+  'profile.completeDetail':
+    'ನಿಮ್ಮನ್ನು ಹೇಗೆ ಕರೆಯಬೇಕು ಮತ್ತು ವರದಿ ನವೀಕರಣಗಳನ್ನು ಹೇಗೆ ಪಡೆಯಬೇಕು ಎಂಬುದನ್ನು ಆಯ್ಕೆಮಾಡಿ. ಈ ಆಯ್ಕೆಗಳನ್ನು ಯಾವಾಗ ಬೇಕಾದರೂ ಬದಲಾಯಿಸಬಹುದು.',
+  'profile.editTitle': 'ಪ್ರೊಫೈಲ್ ಆದ್ಯತೆಗಳು',
+  'profile.editDetail':
+    'ನಿಮ್ಮ ಸಂಪರ್ಕ ಮತ್ತು ಸೂಚನೆ ಆಯ್ಕೆಗಳನ್ನು ನವೀಕರಿಸಿ. ಪರಿಶೀಲಿಸಿದ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯನ್ನು ಇಲ್ಲಿ ಬದಲಾಯಿಸಲಾಗುವುದಿಲ್ಲ.',
+  'profile.preferredName': 'ಇಷ್ಟದ ಹೆಸರು',
+  'profile.emailForNotifications': 'ಸೂಚನೆಗಳಿಗಾಗಿ ಇಮೇಲ್',
+  'profile.language': 'ಭಾಷೆ',
+  'profile.languageEnglish': 'English (ಇಂಗ್ಲಿಷ್)',
+  'profile.languageKannada': 'ಕನ್ನಡ',
+  'profile.notificationChannel': 'ಸೂಚನೆ ಚಾನೆಲ್',
+  'profile.channelSms': 'SMS',
+  'profile.channelPush': 'ಪುಶ್ ಸೂಚನೆ',
+  'profile.channelEmail': 'ಇಮೇಲ್',
+  'profile.saving': 'ಉಳಿಸಲಾಗುತ್ತಿದೆ…',
+  'profile.save': 'ಪ್ರೊಫೈಲ್ ಉಳಿಸಿ',
+  'profile.saveError': 'ಪ್ರೊಫೈಲ್ ಉಳಿಸಲಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
 
   // Notifications page
   'notifications.title': 'ಸೂಚನೆಗಳು',

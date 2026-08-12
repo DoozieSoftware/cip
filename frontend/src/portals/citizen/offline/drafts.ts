@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { CapturedLocation } from '../components/GpsCapture';
+import type { IssueLocation } from '../components/issueLocation';
 
 const DB_NAME = 'cip-citizen-queue';
 const DB_VERSION = 2;
@@ -14,6 +15,7 @@ export interface CitizenDraft {
   title: string;
   description: string;
   location: CapturedLocation | null;
+  issue_location?: IssueLocation | null;
   address: string;
   current_step: string;
   /** File handles are structured-cloned into IndexedDB. */

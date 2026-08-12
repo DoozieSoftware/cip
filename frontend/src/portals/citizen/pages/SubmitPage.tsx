@@ -28,6 +28,8 @@ import {
   type CapturedLocation,
   type GpsCaptureHandle,
 } from '../components/GpsCapture';
+import IssueLocationPicker from '../components/IssueLocationPicker';
+import { type IssueLocation } from '../components/issueLocation';
 import { getQueue } from '../offline/queue';
 import { useToast } from '../components/Toast';
 import { evidencePreviewHandlers } from '../security/evidenceGuards';
@@ -101,8 +103,12 @@ export default function SubmitPage(): JSX.Element {
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [location, setLocation] = useState<CapturedLocation | null>(null);
+  const [issueLocation, setIssueLocation] = useState<IssueLocation | null>(null);
   const [address, setAddress] = useState<string>('');
-  const placeName = useReverseGeocode(location?.latitude ?? NaN, location?.longitude ?? NaN);
+  const placeName = useReverseGeocode(
+    issueLocation?.latitude ?? NaN,
+    issueLocation?.longitude ?? NaN,
+  );
   const [files, setFiles] = useState<File[]>([]);
   const [showVideo, setShowVideo] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -141,6 +147,16 @@ export default function SubmitPage(): JSX.Element {
         setTitle(draft.title);
         setDescription(draft.description);
         setLocation(draft.location);
+        setIssueLocation(
+          draft.issue_location ??
+            (draft.location
+              ? {
+                  latitude: draft.location.latitude,
+                  longitude: draft.location.longitude,
+                  source: 'reporter_gps',
+                }
+              : null),
+        );
         setAddress(draft.address);
         setFiles(draft.files ?? []);
         setIdempotencyKey(draft.idempotency_key || newIdempotencyKey());
@@ -163,6 +179,7 @@ export default function SubmitPage(): JSX.Element {
       title,
       description,
       location,
+      issue_location: issueLocation,
       address,
       current_step: currentViewStep,
       files,
@@ -174,6 +191,7 @@ export default function SubmitPage(): JSX.Element {
     title,
     description,
     location,
+    issueLocation,
     address,
     currentViewStep,
     files,
@@ -274,7 +292,7 @@ export default function SubmitPage(): JSX.Element {
   }
 
   function handleLocationNext(): void {
-    if (!location) {
+    if (!location || !issueLocation) {
       setFieldError('location', t('submit.location.allowAccess'));
       return;
     }
@@ -335,18 +353,26 @@ export default function SubmitPage(): JSX.Element {
     }
 
     const preciseAddress = address.trim() || placeName.trim();
+    const issuePoint = issueLocation ?? {
+      latitude: activeLocation.latitude,
+      longitude: activeLocation.longitude,
+      source: 'reporter_gps' as const,
+    };
+    const manuallyPinned = issuePoint.source === 'manual_pin';
     const payload: CreateReportInput = {
       report_type_id: typeId,
       title,
       description,
-      latitude: activeLocation.latitude,
-      longitude: activeLocation.longitude,
-      accuracy_m: activeLocation.accuracy_m ?? undefined,
-      altitude: activeLocation.altitude,
-      heading: activeLocation.heading,
-      speed: activeLocation.speed,
-      gps_provider: activeLocation.gps_provider,
-      captured_at: new Date(activeLocation.captured_at).toISOString(),
+      latitude: issuePoint.latitude,
+      longitude: issuePoint.longitude,
+      // A manual issue pin is not a claim about the reporter's device
+      // accuracy. Preserve reporter provenance only for GPS-derived pins.
+      accuracy_m: manuallyPinned ? undefined : (activeLocation.accuracy_m ?? undefined),
+      altitude: manuallyPinned ? null : activeLocation.altitude,
+      heading: manuallyPinned ? null : activeLocation.heading,
+      speed: manuallyPinned ? null : activeLocation.speed,
+      gps_provider: manuallyPinned ? 'manual_pin' : activeLocation.gps_provider,
+      captured_at: manuallyPinned ? undefined : new Date(activeLocation.captured_at).toISOString(),
       address: preciseAddress || undefined,
       media_files: files,
       mock_gps_score: activeLocation.mock_heuristic.score,
@@ -794,7 +820,21 @@ export default function SubmitPage(): JSX.Element {
                   </p>
                 </div>
               </div>
-              <GpsCapture ref={gpsRef} onCapture={setLocation} />
+              <GpsCapture
+                ref={gpsRef}
+                onCapture={(captured) => {
+                  setLocation(captured);
+                  setIssueLocation((current) =>
+                    current?.source === 'manual_pin'
+                      ? current
+                      : {
+                          latitude: captured.latitude,
+                          longitude: captured.longitude,
+                          source: 'reporter_gps',
+                        },
+                  );
+                }}
+              />
             </div>
 
             {fieldErrors.location ? (
@@ -832,6 +872,13 @@ export default function SubmitPage(): JSX.Element {
                       reasons: location.mock_heuristic.reasons.join('; '),
                     })}
                   </p>
+                ) : null}
+                {issueLocation ? (
+                  <IssueLocationPicker
+                    reporterLocation={location}
+                    value={issueLocation}
+                    onChange={setIssueLocation}
+                  />
                 ) : null}
               </div>
             ) : null}
@@ -1113,7 +1160,7 @@ export default function SubmitPage(): JSX.Element {
                     {t('submit.review.location')}
                   </p>
                   <p className="mt-1 text-sm font-medium text-[var(--color-ink)]">
-                    {location
+                    {issueLocation
                       ? placeName || address || t('submit.location.captured')
                       : t('submit.review.locationNotCaptured')}
                   </p>

@@ -39,8 +39,11 @@ class UserResource extends JsonResource
         $payload = [
             'id' => $user->id,
             'name' => $user->name,
+            'preferred_name' => $user->preferred_name,
             'mobile' => $user->mobile,
             'email' => $user->email,
+            'preferred_locale' => $user->preferred_locale,
+            'notification_channel' => $user->notification_channel,
             'anonymous_enabled' => (bool) $user->anonymous_enabled,
             'status' => $user->status,
             'otp_verified_at' => $user->otp_verified_at?->toIso8601String(),
