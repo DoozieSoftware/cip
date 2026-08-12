@@ -57,6 +57,13 @@ export function setLocale(next: Locale): void {
   listeners.forEach((listener) => listener());
 }
 
+/** Reset the in-memory locale between isolated test renders. */
+export function resetLocaleForTests(): void {
+  activeLocale = DEFAULT_LOCALE;
+  if (typeof localStorage !== 'undefined') localStorage.removeItem(LOCALE_STORAGE_KEY);
+  listeners.forEach((listener) => listener());
+}
+
 function resolveCatalog(locale: Locale): MessageCatalog {
   return catalogs[`${locale.replace('-', '_')}` as keyof Messages] ?? catalogs.en_IN;
 }

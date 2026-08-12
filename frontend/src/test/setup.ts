@@ -34,7 +34,9 @@ if (
 
 import { afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
+import { resetLocaleForTests } from '../portals/citizen/messages';
 
 afterEach(() => {
   cleanup();
+  resetLocaleForTests();
 });

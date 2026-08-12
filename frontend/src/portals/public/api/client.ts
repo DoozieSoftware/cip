@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { request, requestEnvelope } from '../../../shared/api/client';
+import { requestEnvelope } from '../../../shared/api/client';
+import { apiRequest } from '../../../auth/api';
 
 export interface PublicStats {
   total_reports: number;
@@ -61,7 +62,8 @@ export function usePublicHeatmap() {
   return useQuery({
     queryKey: ['public', 'heatmap'],
     queryFn: async () => {
-      const data = await request<{ points: HeatmapPoint[] }>('/public/heatmap');
+      const response = await apiRequest<{ data: { points: HeatmapPoint[] } }>('/public/heatmap');
+      const data = response.data;
       return data.points;
     },
     staleTime: FIVE_MINUTES,
@@ -72,9 +74,10 @@ export function usePublicDepartmentPerformance() {
   return useQuery({
     queryKey: ['public', 'departments', 'performance'],
     queryFn: async () => {
-      const data = await request<{ departments: DepartmentPerformance[] }>(
+      const response = await apiRequest<{ data: { departments: DepartmentPerformance[] } }>(
         '/public/departments/performance',
       );
+      const data = response.data;
       return data.departments;
     },
     staleTime: FIVE_MINUTES,

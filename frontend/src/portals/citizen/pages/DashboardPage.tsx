@@ -157,7 +157,7 @@ export default function DashboardPage(): JSX.Element {
         <div className="flex min-h-[40vh] items-center justify-center py-16">
           <div className="flex flex-col items-center gap-4 text-center">
             <Spinner label={t('spinner.loadingYourDashboard')} />
-            <p className="text-sm text-slate-500">{t('spinner.loadingYourDashboard')}…</p>
+            <p className="text-sm text-slate-500">{t('spinner.loadingYourDashboard')}</p>
           </div>
         </div>
       </div>
