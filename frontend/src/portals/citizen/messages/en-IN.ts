@@ -103,6 +103,9 @@ export const en_IN: MessageCatalog = {
   'submit.category.emergencyTitle': 'Emergency? Call 112',
   'submit.category.emergencyBody':
     'This service is for civic issues. For immediate danger, fire, medical help, or a crime in progress, call 112 first.',
+  'submit.category.agencyTitle': 'Need another civic agency?',
+  'submit.category.agencyBody':
+    'Some services are handled by specialist agencies. Electricity outages: BESCOM 1912. Water or sewage: BWSSB 1916. Traffic emergencies: Bengaluru Traffic Police 103.',
   'submit.details.title': 'Issue Details',
   'submit.details.subtitle':
     'Provide a clear description of the issue to help officials address it promptly.',
