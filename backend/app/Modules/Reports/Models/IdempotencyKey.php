@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property string $key
  * @property string|null $user_id
  * @property string $route
+ * @property string $method
  * @property string $request_hash
  * @property int $response_status
  * @property array<string, mixed>|null $response_body

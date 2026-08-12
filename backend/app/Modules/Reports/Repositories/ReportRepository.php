@@ -12,6 +12,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator as ConcreteLengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class ReportRepository
 {
@@ -221,11 +222,19 @@ class ReportRepository
         }
 
         if (! empty($filters['search']) && is_string($filters['search'])) {
-            $needle = '%'.$filters['search'].'%';
-            $q->where(function (Builder $w) use ($needle): void {
-                $w->where('tracking_number', 'like', $needle)
-                    ->orWhere('title', 'like', $needle)
-                    ->orWhere('description', 'like', $needle);
+            $search = trim($filters['search']);
+            $q->where(function (Builder $w) use ($search): void {
+                // Tracking references are exact/prefix lookups, preserving
+                // the unique index instead of forcing a leading wildcard.
+                $w->where('tracking_number', 'like', $search.'%');
+
+                if (DB::getDriverName() === 'mysql') {
+                    $w->orWhereFullText(['title', 'description'], $search);
+                } else {
+                    $needle = '%'.$search.'%';
+                    $w->orWhere('title', 'like', $needle)
+                        ->orWhere('description', 'like', $needle);
+                }
             });
         }
 

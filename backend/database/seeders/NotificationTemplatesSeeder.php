@@ -67,6 +67,14 @@ class NotificationTemplatesSeeder extends Seeder
             'variables' => ['report_id', 'ai_label', 'category', 'severity', 'confidence'],
         ],
         [
+            'code' => 'report.sla_breached',
+            'name' => 'Report SLA Breached',
+            'channel' => 'email',
+            'subject' => 'SLA breached for report {tracking_number}',
+            'body' => 'Report {tracking_number} ({title}) has exceeded the {event} SLA by {elapsed_minutes} minutes.',
+            'variables' => ['tracking_number', 'title', 'event', 'elapsed_minutes'],
+        ],
+        [
             'code' => 'security.alert',
             'name' => 'Security Alert',
             'channel' => 'email',

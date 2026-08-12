@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * `reports` row per docs/04 §7.
@@ -47,6 +48,7 @@ use Illuminate\Support\Carbon;
  * @property bool $is_anonymous
  * @property bool $is_verified
  * @property Carbon|null $submitted_at
+ * @property Carbon|null $sla_due_at
  * @property Carbon|null $closed_at
  * @property Carbon|null $resolved_at
  * @property Carbon|null $verification_deadline_at
@@ -98,6 +100,7 @@ class Report extends Model
         'is_anonymous',
         'is_verified',
         'submitted_at',
+        'sla_due_at',
         'closed_at',
         'merged_into',
         'merged_at',
@@ -116,6 +119,7 @@ class Report extends Model
             'is_anonymous' => 'boolean',
             'is_verified' => 'boolean',
             'submitted_at' => 'datetime',
+            'sla_due_at' => 'datetime',
             'closed_at' => 'datetime',
             'resolved_at' => 'datetime',
             'verification_deadline_at' => 'datetime',
@@ -133,33 +137,38 @@ class Report extends Model
     }
 
     /**
-     * Generate the next tracking number for the current calendar
-     * year. Format: `CIV-YYYY-NNNNNN` (6-digit zero-padded
-     * per-year sequence). The DB-side `unique` constraint is
-     * the safety net; a race that returns the same number is
-     * recovered by the unique-violation retry in the service
-     * layer.
+     * Reserve the next tracking number for the current calendar year.
+     * The counter row is locked inside a transaction, so concurrent
+     * submissions cannot observe the same latest report and collide.
      */
     public static function nextTrackingNumber(): string
     {
         $year = (int) date('Y');
-        $prefix = "CIV-{$year}-";
-        $latest = static::query()
-            ->where('tracking_number', 'like', $prefix.'%')
-            ->orderByDesc('tracking_number')
-            ->value('tracking_number');
+        $next = DB::transaction(function () use ($year): int {
+            // `insertOrIgnore` safely bootstraps the year row when two
+            // first-ever submissions arrive at the same time.
+            DB::table('report_number_sequences')->insertOrIgnore([
+                'year' => $year,
+                'next_value' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
-        $next = 1;
+            $sequence = DB::table('report_number_sequences')
+                ->where('year', $year)
+                ->lockForUpdate()
+                ->first();
 
-        if (is_string($latest) && $latest !== '') {
-            $tail = substr($latest, strlen($prefix));
+            $rawNextValue = $sequence !== null ? $sequence->next_value : null;
+            $nextValue = is_numeric($rawNextValue) ? max(1, (int) $rawNextValue) : 1;
+            DB::table('report_number_sequences')
+                ->where('year', $year)
+                ->update(['next_value' => $nextValue + 1, 'updated_at' => now()]);
 
-            if (ctype_digit($tail)) {
-                $next = (int) $tail + 1;
-            }
-        }
+            return $nextValue;
+        });
 
-        return $prefix.str_pad((string) $next, 6, '0', STR_PAD_LEFT);
+        return "CIV-{$year}-".str_pad((string) $next, 6, '0', STR_PAD_LEFT);
     }
 
     /**

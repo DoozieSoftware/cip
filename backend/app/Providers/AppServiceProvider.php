@@ -14,6 +14,7 @@ use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Listeners\WriteStatusHistory;
 use App\Modules\Security\Models\SecurityEvent;
 use App\Modules\Security\Services\SecurityPolicyService;
+use App\Modules\Workflow\Listeners\RefreshSlaDueAt;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -36,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         // the test suite (and any future auto-discovery change)
         // does not silently lose the status-history write.
         Event::listen(ReportStatusChanged::class, WriteStatusHistory::class);
+        Event::listen(ReportStatusChanged::class, RefreshSlaDueAt::class);
 
         // M7: wire AI completion -> routing -> assignment -> workflow.
         Event::listen(AiCompleted::class, AiCompletedListener::class);

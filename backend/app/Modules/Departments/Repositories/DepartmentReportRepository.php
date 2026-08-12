@@ -8,6 +8,7 @@ use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportAssignment;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 /**
  * M11 — Repository for the operations-portal report views.
@@ -179,10 +180,17 @@ class DepartmentReportRepository
         }
 
         if (! empty($filters['search']) && is_string($filters['search'])) {
-            $term = '%'.$filters['search'].'%';
-            $query->where(function (Builder $q) use ($term): void {
-                $q->where('tracking_number', 'like', $term)
-                    ->orWhere('title', 'like', $term);
+            $search = trim($filters['search']);
+            $query->where(function (Builder $q) use ($search): void {
+                $q->where('tracking_number', 'like', $search.'%');
+
+                if (DB::getDriverName() === 'mysql') {
+                    $q->orWhereFullText(['title', 'description'], $search);
+                } else {
+                    $term = '%'.$search.'%';
+                    $q->orWhere('title', 'like', $term)
+                        ->orWhere('description', 'like', $term);
+                }
             });
         }
     }

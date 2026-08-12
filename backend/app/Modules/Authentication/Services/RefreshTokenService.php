@@ -11,6 +11,7 @@ use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Services\BaseService;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -48,12 +49,12 @@ class RefreshTokenService extends BaseService
      */
     public function issue(User $user, ?string $ip = null, ?string $userAgent = null): array
     {
-        $plain = $this->generateOpaqueToken();
-        $hash = password_hash($plain, PASSWORD_BCRYPT);
+        [$plain, $selector, $hash] = $this->generateOpaqueToken();
 
         $token = new RefreshToken([
             'user_id' => $user->id,
             'token_hash' => $hash,
+            'token_selector' => $selector,
             'parent_id' => null,
             'expires_at' => now()->addDays($this->ttlDays),
             'revoked_at' => null,
@@ -80,64 +81,66 @@ class RefreshTokenService extends BaseService
      */
     public function rotate(string $plaintext, ?string $ip = null, ?string $userAgent = null): array
     {
-        $current = $this->findByPlaintext($plaintext);
+        // Lock the parent for the entire rotate-and-insert transaction. Two
+        // simultaneous requests can therefore never create sibling children.
+        return DB::transaction(function () use ($plaintext, $ip, $userAgent): array {
+            $current = $this->findByPlaintext($plaintext, lock: true);
 
-        if ($current === null) {
-            throw new ApiException(
-                'REFRESH_TOKEN_INVALID',
-                'Refresh token not recognised.',
-                401,
-            );
-        }
+            if ($current === null) {
+                throw new ApiException(
+                    'REFRESH_TOKEN_INVALID',
+                    'Refresh token not recognised.',
+                    401,
+                );
+            }
 
-        if ($current->isExpired()) {
-            throw new ApiException(
-                'REFRESH_TOKEN_EXPIRED',
-                'Refresh token has expired.',
-                401,
-            );
-        }
+            if ($current->isExpired()) {
+                throw new ApiException(
+                    'REFRESH_TOKEN_EXPIRED',
+                    'Refresh token has expired.',
+                    401,
+                );
+            }
 
-        if ($current->isRevoked()) {
-            // Reuse of a revoked token = treat as theft.
-            $this->revokeChain($current);
+            if ($current->isRevoked()) {
+                $this->revokeChain($current);
 
-            throw new ApiException(
-                'REFRESH_TOKEN_REPLAY',
-                'Refresh token reuse detected; session terminated.',
-                401,
-            );
-        }
+                throw new ApiException(
+                    'REFRESH_TOKEN_REPLAY',
+                    'Refresh token reuse detected; session terminated.',
+                    401,
+                );
+            }
 
-        $user = $current->user;
+            $user = $current->user;
 
-        if ($user === null) {
-            throw new ApiException('ORPHAN_REFRESH_TOKEN', 'Refresh token has no user.', 401);
-        }
+            if ($user === null) {
+                throw new ApiException('ORPHAN_REFRESH_TOKEN', 'Refresh token has no user.', 401);
+            }
 
-        $current->markRevoked();
+            $current->markRevoked();
 
-        $plain = $this->generateOpaqueToken();
-        $hash = password_hash($plain, PASSWORD_BCRYPT);
+            [$plain, $selector, $hash] = $this->generateOpaqueToken();
+            $next = new RefreshToken([
+                'user_id' => $user->id,
+                'token_hash' => $hash,
+                'token_selector' => $selector,
+                'parent_id' => $current->id,
+                'expires_at' => now()->addDays($this->ttlDays),
+                'revoked_at' => null,
+                'ip' => $ip,
+                'user_agent' => $userAgent,
+                'created_at' => now(),
+            ]);
+            $next->save();
 
-        $next = new RefreshToken([
-            'user_id' => $user->id,
-            'token_hash' => $hash,
-            'parent_id' => $current->id,
-            'expires_at' => now()->addDays($this->ttlDays),
-            'revoked_at' => null,
-            'ip' => $ip,
-            'user_agent' => $userAgent,
-            'created_at' => now(),
-        ]);
-        $next->save();
-
-        return [
-            'token' => $next,
-            'plain' => $plain,
-            'expires_at' => $next->expires_at,
-            'user' => $user,
-        ];
+            return [
+                'token' => $next,
+                'plain' => $plain,
+                'expires_at' => $next->expires_at,
+                'user' => $user,
+            ];
+        });
     }
 
     /**
@@ -176,15 +179,39 @@ class RefreshTokenService extends BaseService
      * is matched against the bcrypt hash, which is constant-time and
      * immune to timing attacks.
      */
-    private function findByPlaintext(string $plaintext): ?RefreshToken
+    private function findByPlaintext(string $plaintext, bool $lock = false): ?RefreshToken
     {
-        $candidates = RefreshToken::query()
-            ->whereNull('revoked_at')
-            ->orWhere('expires_at', '>=', now())
-            ->get();
+        // New tokens carry a random selector in the first 16 characters;
+        // only that indexed candidate set is loaded and bcrypt verifies the
+        // remaining secret. Legacy rows without a selector retain a bounded
+        // compatibility fallback until their normal TTL expires.
+        $selector = strlen($plaintext) >= 16 ? substr($plaintext, 0, 16) : null;
+        $verifier = strlen($plaintext) >= 16 ? substr($plaintext, 16) : $plaintext;
+        $query = RefreshToken::query()
+            ->where('expires_at', '>=', now())
+            ->when($selector !== null, fn ($q) => $q->where('token_selector', $selector));
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        $candidates = $query->get();
+
+        if ($candidates->isEmpty() && $selector !== null) {
+            $legacy = RefreshToken::query()
+                ->whereNull('token_selector')
+                ->where('expires_at', '>=', now());
+
+            if ($lock) {
+                $legacy->lockForUpdate();
+            }
+
+            $candidates = $legacy->get();
+            $verifier = $plaintext;
+        }
 
         foreach ($candidates as $candidate) {
-            if (password_verify($plaintext, $candidate->token_hash)) {
+            if (password_verify($verifier, $candidate->token_hash)) {
                 return $candidate;
             }
         }
@@ -223,10 +250,16 @@ class RefreshTokenService extends BaseService
     }
 
     /**
-     * 64-char URL-safe opaque random token. Roughly 384 bits of entropy.
+     * 64-char URL-safe opaque random token. The first 16 characters are an
+     * indexed selector; the remaining 48 are the bcrypt-verified secret.
      */
-    private function generateOpaqueToken(): string
+    /** @return array{0: string, 1: string, 2: string} */
+    private function generateOpaqueToken(): array
     {
-        return Str::random(64);
+        $selector = Str::random(16);
+        $verifier = Str::random(48);
+        $hash = password_hash($verifier, PASSWORD_BCRYPT);
+
+        return [$selector.$verifier, $selector, $hash];
     }
 }

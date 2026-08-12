@@ -8,6 +8,7 @@ use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportAssignment;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Read-side repository for the Super Admin cross-department report view.
@@ -120,11 +121,16 @@ class AdminReportRepository
         $search = $this->stringFilter($filters, 'q', 'search');
 
         if ($search !== null) {
-            $term = '%'.$search.'%';
-            $query->where(function (Builder $searchQuery) use ($term): void {
-                $searchQuery->where('tracking_number', 'like', $term)
-                    ->orWhere('title', 'like', $term)
-                    ->orWhere('description', 'like', $term);
+            $query->where(function (Builder $searchQuery) use ($search): void {
+                $searchQuery->where('tracking_number', 'like', $search.'%');
+
+                if (DB::getDriverName() === 'mysql') {
+                    $searchQuery->orWhereFullText(['title', 'description'], $search);
+                } else {
+                    $term = '%'.$search.'%';
+                    $searchQuery->orWhere('title', 'like', $term)
+                        ->orWhere('description', 'like', $term);
+                }
             });
         }
     }
