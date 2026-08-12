@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Modules\AI\Jobs\AiPipelineOrchestrator;
+use App\Modules\AI\Services\AiResponsePolicy;
 use App\Modules\AI\ValueObjects\AiResponse;
 use Tests\TestCase;
 
@@ -10,13 +10,7 @@ uses(TestCase::class);
 
 function penaltyFor(AiResponse $response): float
 {
-    $orchestrator = new AiPipelineOrchestrator('00000000-0000-0000-0000-000000000000');
-    $method = new ReflectionMethod($orchestrator, 'applyMismatchPenalty');
-
-    /** @var float $result */
-    $result = $method->invoke($orchestrator, 0.90, $response);
-
-    return $result;
+    return (new AiResponsePolicy)->calibrateConfidence(0.90, $response);
 }
 
 function makeResponse(

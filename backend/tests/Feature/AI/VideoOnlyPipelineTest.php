@@ -8,15 +8,10 @@ use App\Modules\AI\Models\AiJob;
 use App\Modules\AI\Models\AiResult;
 use App\Modules\AI\Models\PromptVersion;
 use App\Modules\AI\Services\AiMediaReferenceResolver;
-use App\Modules\AI\Services\AiResponseValidator;
-use App\Modules\AI\Services\DuplicateDetector;
-use App\Modules\AI\Services\FraudScorer;
-use App\Modules\AI\Services\ImageQualityAnalyzer;
-use App\Modules\AI\Services\PiiMaskingService;
+use App\Modules\AI\Services\AiPipelineRunner;
 use App\Modules\AI\Services\ProviderFailoverService;
 use App\Modules\Media\Models\Media;
 use App\Modules\Reports\Models\Report;
-use App\Modules\Settings\Services\FeatureFlagService;
 use Database\Seeders\ReportPrioritiesSeeder;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
@@ -62,16 +57,10 @@ it('routes video-only evidence to manual review without calling the image provid
     /** @var AiMediaReferenceResolver&MockInterface $mediaReferences */
     $mediaReferences = Mockery::mock(AiMediaReferenceResolver::class);
     $mediaReferences->shouldNotReceive('resolve');
-    (new AiPipelineOrchestrator($report->id))->handle(
-        $failover,
-        app(AiResponseValidator::class),
-        app(ImageQualityAnalyzer::class),
-        app(DuplicateDetector::class),
-        app(FraudScorer::class),
-        app(PiiMaskingService::class),
-        app(FeatureFlagService::class),
-        $mediaReferences,
-    );
+    $this->app->instance(ProviderFailoverService::class, $failover);
+    $this->app->instance(AiMediaReferenceResolver::class, $mediaReferences);
+
+    (new AiPipelineOrchestrator($report->id))->handle(app(AiPipelineRunner::class));
 
     $job = AiJob::query()->where('report_id', $report->id)->firstOrFail();
     $result = AiResult::query()->where('job_id', $job->id)->firstOrFail();
