@@ -452,6 +452,8 @@ export const en_IN: MessageCatalog = {
   'camera.recordingStarted': 'Recording started.',
   'camera.photoReady': 'Photo captured and ready to attach.',
   'camera.videoReady': 'Video captured and ready to attach.',
+  'camera.compressing': 'Optimizing evidence for upload…',
+  'camera.compressionProgress': 'Evidence optimization progress',
   'camera.tryAgain': 'Try camera again',
   'camera.httpsRequired':
     'Camera access requires HTTPS or localhost. Open the app with https:// and try again.',

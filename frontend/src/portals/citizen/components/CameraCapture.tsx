@@ -73,6 +73,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
   const [error, setError] = useState<CameraError | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [recordingMs, setRecordingMs] = useState(0);
+  const [processingProgress, setProcessingProgress] = useState<number | null>(null);
   const stoppedAtRef = useRef<number>(0);
 
   useEffect(() => {
@@ -165,6 +166,8 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
 
   async function takePhoto(): Promise<void> {
     if (!videoRef.current) return;
+    setProcessingProgress(10);
+    setStatusMessage(t('camera.compressing'));
     const v = videoRef.current;
     const canvas = document.createElement('canvas');
     canvas.width = v.videoWidth;
@@ -176,11 +179,14 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
       canvas.toBlob(resolve, 'image/jpeg', 0.85),
     );
     if (!blob) return;
+    setProcessingProgress(70);
     const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
     const cleaned = await scrubFile(file);
+    setProcessingProgress(100);
     onCapture(cleaned);
     setStatusMessage(t('camera.photoReady'));
     stopStream();
+    setProcessingProgress(null);
   }
 
   function startRecording(): void {
@@ -246,12 +252,16 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
         return;
       }
       const blobType = rec.mimeType || mimeType;
+      setProcessingProgress(25);
+      setStatusMessage(t('camera.compressing'));
       const blob = new Blob(chunksRef.current, { type: blobType });
       const ext = blobType.includes('mp4') ? 'mp4' : 'webm';
       const file = new File([blob], `video-${Date.now()}.${ext}`, { type: blobType });
+      setProcessingProgress(100);
       onCapture(file);
       setStatusMessage(t('camera.videoReady'));
       stopStream();
+      setProcessingProgress(null);
     };
     recorderRef.current = rec;
     startedAtRef.current = Date.now();
@@ -307,6 +317,25 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
       <div className="sr-only" aria-live="polite">
         {statusMessage}
       </div>
+
+      {processingProgress !== null ? (
+        <div className="space-y-1" role="status" aria-live="polite">
+          <div
+            role="progressbar"
+            aria-label={t('camera.compressionProgress')}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={processingProgress}
+            className="h-2 overflow-hidden rounded-full bg-slate-200"
+          >
+            <span
+              className="block h-full rounded-full bg-blue-600 transition-[width]"
+              style={{ width: `${processingProgress}%` }}
+            />
+          </div>
+          <p className="text-xs text-slate-600">{t('camera.compressing')}</p>
+        </div>
+      ) : null}
 
       {active && mode === 'video' && recording ? (
         <div className="space-y-1" role="group" aria-label={t('camera.recordingProgressLabel')}>

@@ -453,6 +453,8 @@ export const kn_IN: MessageCatalog = {
   'camera.recordingStarted': 'ರೆಕಾರ್ಡಿಂಗ್ ಪ್ರಾರಂಭವಾಗಿದೆ.',
   'camera.photoReady': 'ಫೋಟೋ ಕಪ್ಚರ್ ಆಗಿದೆ ಮತ್ತು ಲಗತ್ತಿಸಲು ಸಿದ್ಧವಾಗಿದೆ.',
   'camera.videoReady': 'ವೀಡಿಯೊ ಕಪ್ಚರ್ ಆಗಿದೆ ಮತ್ತು ಲಗತ್ತಿಸಲು ಸಿದ್ಧವಾಗಿದೆ.',
+  'camera.compressing': 'ಅಪ್‌ಲೋಡ್‌ಗಾಗಿ ಸಾಕ್ಷ್ಯವನ್ನು ಆಪ್ಟಿಮೈಸ್ ಮಾಡಲಾಗುತ್ತಿದೆ…',
+  'camera.compressionProgress': 'ಸಾಕ್ಷ್ಯ ಆಪ್ಟಿಮೈಸೇಶನ್ ಪ್ರಗತಿ',
   'camera.tryAgain': 'ಕ್ಯಾಮರಾವನ್ನು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ',
   'camera.httpsRequired':
     'ಕ್ಯಾಮರಾ ಪ್ರವೇಶಕ್ಕೆ HTTPS ಅಥವಾ localhost ಅಗತ್ಯವಿದೆ. ಅಪ್ಲಿಕೇಶನ್ ಅನ್ನು https:// ನೊಂದಿಗೆ ತೆರೆದು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
