@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\AI\Listeners;
 
-use App\Modules\AI\Jobs\AiPipelineOrchestrator;
-use App\Modules\AI\Models\AiProviderConfig;
-use App\Modules\AI\Models\PromptVersion;
 use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Shared\Services\SystemUserService;
@@ -16,9 +13,9 @@ use Illuminate\Support\Facades\Log;
 /**
  * Bridges the M4/M6 report lifecycle into the M8 AI
  * vision pipeline. The listener is registered for the
- * `ReportStatusChanged` event and dispatches the
- * `AiPipelineOrchestrator` job whenever a report moves
- * into the `ai_processing` state.
+ * `ReportStatusChanged` event and advances a finalized report
+ * into `ai_processing`. Dispatch is intentionally owned by
+ * `ReportEvidenceReadyListener` after the evidence gate.
  *
  * Why this event and not a brand-new `ReportSubmitted`
  * event:
@@ -31,14 +28,8 @@ use Illuminate\Support\Facades\Log;
  *    ReportService, which would couple it to the
  *    Citizen PWA and bypass the workflow engine
  *
- * Failure handling:
- *  - if the orchestrator job is dispatched but later
- *    fails, the orchestrator itself marks the
- *    `ai_jobs` row as `failed` and rethrows; the
- *    queue worker records the failure and the M7
- *    RoutingFallbackService + M6 workflow
- *    `moderator_review` transition route the report
- *    to a human as the safety net
+ * Failure handling remains in the orchestrator once the evidence-ready
+ * event has dispatched it; AI never runs on an incomplete draft.
  */
 class ReportSubmittedListener
 {
@@ -87,28 +78,8 @@ class ReportSubmittedListener
             return;
         }
 
-        // Only dispatch if the pipeline is actually wired. The
-        // orchestrator inserts an ai_jobs row that FK-restricts
-        // on prompt_versions and ai_provider_configs, so dispatching
-        // blindly would 500 in test environments that haven't seeded
-        // the AI stack.
-        $hasApprovedPrompt = PromptVersion::query()
-            ->where('name', 'category_classifier')
-            ->where('status', PromptVersion::STATUS_APPROVED)
-            ->exists();
-        $hasActiveProvider = AiProviderConfig::query()
-            ->where('active', true)
-            ->exists();
-
-        if (! $hasApprovedPrompt || ! $hasActiveProvider) {
-            Log::debug('ai.ReportSubmittedListener: pipeline not wired', [
-                'has_approved_prompt' => $hasApprovedPrompt,
-                'has_active_provider' => $hasActiveProvider,
-            ]);
-
-            return;
-        }
-
-        AiPipelineOrchestrator::dispatch($report->id);
+        // AI is deliberately not dispatched here. Finalization emits the
+        // report-scoped ReportEvidenceReady event only after every required
+        // asset is durable and hash-ready; that event is the sole AI boundary.
     }
 }

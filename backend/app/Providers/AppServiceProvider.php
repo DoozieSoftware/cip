@@ -6,10 +6,10 @@ namespace App\Providers;
 
 use App\Modules\AI\Events\AiCompleted;
 use App\Modules\AI\Listeners\AiCompletedListener;
-use App\Modules\AI\Listeners\ReportMediaUploadedListener;
+use App\Modules\AI\Listeners\ReportEvidenceReadyListener;
 use App\Modules\AI\Listeners\ReportSubmittedListener;
-use App\Modules\Media\Events\ReportMediaUploaded;
 use App\Modules\Notifications\Listeners\SecurityEventListener;
+use App\Modules\Reports\Events\ReportEvidenceReady;
 use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Listeners\WriteStatusHistory;
 use App\Modules\Security\Models\SecurityEvent;
@@ -41,9 +41,8 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(AiCompleted::class, AiCompletedListener::class);
         // M8: wire report submission (status -> ai_processing) -> vision pipeline.
         Event::listen(ReportStatusChanged::class, ReportSubmittedListener::class);
-        // M8: re-arm the vision pipeline once evidence is uploaded (report may
-        // have entered ai_processing before its photo/video landed).
-        Event::listen(ReportMediaUploaded::class, ReportMediaUploadedListener::class);
+        // M8: one evidence-ready event is the only AI dispatch boundary.
+        Event::listen(ReportEvidenceReady::class, ReportEvidenceReadyListener::class);
 
         // Module-owned notification fan-out is registered by
         // NotificationsServiceProvider. Keep only the cross-cutting

@@ -36,7 +36,7 @@ beforeEach(function (): void {
     (new PromptsSeeder)->run();
 });
 
-it('dispatches the AI pipeline when a photo is uploaded to an ai_processing report', function (): void {
+it('does not dispatch AI directly when a photo is uploaded', function (): void {
     $report = Report::factory()->create();
     $aiProcessing = ReportStatus::query()->where('code', 'ai_processing')->firstOrFail();
     $report->update(['current_status_id' => $aiProcessing->id]);
@@ -45,9 +45,7 @@ it('dispatches the AI pipeline when a photo is uploaded to an ai_processing repo
 
     app(MediaService::class)->uploadPhoto($report->id, $file, (string) $report->citizen_id);
 
-    Bus::assertDispatched(AiPipelineOrchestrator::class, function (AiPipelineOrchestrator $job) use ($report): bool {
-        return $job->reportId === $report->id;
-    });
+    Bus::assertNotDispatched(AiPipelineOrchestrator::class);
 });
 
 it('does NOT re-arm the pipeline when media is uploaded to a non-ai_processing report', function (): void {
@@ -90,7 +88,7 @@ it('does NOT re-arm an already-succeeded pipeline on a later upload', function (
     Bus::assertNotDispatched(AiPipelineOrchestrator::class);
 });
 
-it('fires ReportMediaUploaded on photo upload', function (): void {
+it('does not emit an AI trigger event on upload', function (): void {
     Event::fake([ReportMediaUploaded::class]);
 
     $report = Report::factory()->create();
@@ -98,7 +96,5 @@ it('fires ReportMediaUploaded on photo upload', function (): void {
 
     app(MediaService::class)->uploadPhoto($report->id, $file, (string) $report->citizen_id);
 
-    Event::assertDispatched(ReportMediaUploaded::class, function (ReportMediaUploaded $e) use ($report): bool {
-        return $e->reportId === $report->id && $e->mediaType === 'PHOTO';
-    });
+    Event::assertNotDispatched(ReportMediaUploaded::class);
 });

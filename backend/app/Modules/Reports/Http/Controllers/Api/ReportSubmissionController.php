@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Modules\Reports\Http\Controllers\Api;
 
 use App\Modules\Reports\DTO\SubmitReportDto;
+use App\Modules\Reports\Events\ReportEvidenceReady;
 use App\Modules\Reports\Http\Requests\SubmitReportRequest;
 use App\Modules\Reports\Http\Resources\ReportResource;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Repositories\ReportRepository;
+use App\Modules\Reports\Services\EvidenceManifestService;
 use App\Modules\Reports\Services\ReportService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Controllers\BaseController;
@@ -22,6 +24,7 @@ class ReportSubmissionController extends BaseController
     public function __construct(
         private readonly ReportRepository $repository,
         private readonly ReportService $service,
+        private readonly EvidenceManifestService $evidence,
     ) {}
 
     public function store(SubmitReportRequest $request): JsonResponse
@@ -51,7 +54,7 @@ class ReportSubmissionController extends BaseController
             mockGpsScore: $this->nullableFloat($request, 'mock_gps_score'),
         );
 
-        $report = $this->service->submit($dto);
+        $report = $this->service->createDraftFromSubmission($dto);
         $fresh = $report->fresh();
 
         if ($fresh === null) {
@@ -60,37 +63,46 @@ class ReportSubmissionController extends BaseController
 
         return $this->respond(
             (new ReportResource($fresh->load(['location', 'status', 'priority', 'reportType'])))->toArray($request),
-            'Report submitted.',
+            'Draft created. Upload the required evidence before finalizing.',
             201,
         );
     }
 
-    public function submit(Request $request, string $id): JsonResponse
+    public function manifest(Request $request, string $id): JsonResponse
     {
-        $user = $request->user();
-
-        if (! $user instanceof User) {
-            throw ApiException::forbidden('Authentication is required.');
-        }
-
         $report = $this->repository->findById($id);
+        $user = $request->user();
 
         if ($report === null) {
             throw ApiException::notFound('Report');
         }
 
-        $isOwner = ! $report->is_anonymous
-            && $report->citizen_id !== null
-            && (string) $report->citizen_id === (string) $user->id;
-        $isStaff = $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system']);
+        if (! $user instanceof User) {
+            throw ApiException::forbidden('Authentication is required.');
+        }
+        $this->assertCanSubmit($user, $report);
 
-        if (! $isOwner && ! $isStaff) {
-            throw ApiException::forbidden('You cannot submit this report.');
+        return $this->respond($this->evidence->manifest($report), 'Evidence manifest.');
+    }
+
+    /**
+     * Finalize one draft after all required evidence is durable and hashed.
+     * Idempotency-Key middleware replays successful responses; the status
+     * guard below also makes a retry safe when the key was not persisted.
+     */
+    public function finalize(Request $request, string $id): JsonResponse
+    {
+        $report = $this->repository->findById($id);
+        $user = $request->user();
+
+        if ($report === null) {
+            throw ApiException::notFound('Report');
         }
 
-        if (! $isOwner) {
-            $this->assertDepartmentScopeAllows($user, $report);
+        if (! $user instanceof User) {
+            throw ApiException::forbidden('Authentication is required.');
         }
+        $this->assertCanSubmit($user, $report);
 
         $submittedStatusId = $this->service->resolveStatusId('submitted');
         $draftStatusId = $this->service->resolveStatusId('draft');
@@ -103,12 +115,50 @@ class ReportSubmissionController extends BaseController
         }
 
         if ((string) $report->current_status_id !== $draftStatusId) {
-            throw new ApiException('INVALID_STATUS', 'Only draft reports can be submitted.', 422);
+            throw new ApiException('INVALID_STATUS', 'Only draft reports can be finalized.', 422);
         }
 
-        $report = $this->service->transitionTo($report, $submittedStatusId, (string) $user->id, 'Citizen submitted.', ['source' => 'citizen_submit_endpoint']);
+        $manifest = $this->evidence->manifest($report);
+
+        if (! $manifest['ready']) {
+            throw new ApiException(
+                'EVIDENCE_NOT_READY',
+                'Required evidence must finish uploading and hashing before submission.',
+                409,
+                $manifest,
+            );
+        }
+        $revision = $manifest['revision'] ?? null;
+
+        if (! is_string($revision)) {
+            throw new ApiException('EVIDENCE_NOT_READY', 'Evidence revision is missing.', 409, $manifest);
+        }
+        $manifestAssets = $manifest['assets'] ?? [];
+        $mediaIds = [];
+
+        if (is_array($manifestAssets)) {
+            foreach ($manifestAssets as $asset) {
+                if (is_array($asset) && is_string($asset['id'] ?? null)) {
+                    $mediaIds[] = $asset['id'];
+                }
+            }
+        }
+
+        $report = $this->service->transitionTo(
+            $report,
+            $submittedStatusId,
+            (string) $user->id,
+            'Citizen finalized evidence-backed report.',
+            ['source' => 'citizen_finalize_endpoint', 'evidence_revision' => $revision],
+        );
         $report->submitted_at = now();
         $report->save();
+
+        ReportEvidenceReady::dispatch(
+            $report->id,
+            $revision,
+            $mediaIds,
+        );
 
         $fresh = $report->fresh();
 
@@ -122,10 +172,33 @@ class ReportSubmissionController extends BaseController
         );
     }
 
+    public function submit(Request $request, string $id): JsonResponse
+    {
+        // Preserve the legacy route while enforcing the same evidence gate as
+        // the canonical finalization endpoint.
+        return $this->finalize($request, $id);
+    }
+
     private function assertDepartmentScopeAllows(User $user, Report $report): void
     {
         if (! DepartmentScope::canViewReport($user, $report)) {
             throw ApiException::forbidden('This report is outside your department scope.');
+        }
+    }
+
+    private function assertCanSubmit(User $user, Report $report): void
+    {
+        $isOwner = ! $report->is_anonymous
+            && $report->citizen_id !== null
+            && (string) $report->citizen_id === (string) $user->id;
+        $isStaff = $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system']);
+
+        if (! $isOwner && ! $isStaff) {
+            throw ApiException::forbidden('You cannot submit this report.');
+        }
+
+        if (! $isOwner) {
+            $this->assertDepartmentScopeAllows($user, $report);
         }
     }
 

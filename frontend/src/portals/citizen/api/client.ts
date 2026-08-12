@@ -7,6 +7,7 @@ import {
   getToken,
   normalizePaginationMeta,
 } from '../../../shared/api/client';
+import { ApiError } from '../../../shared/api/errors';
 import {
   type ReportType,
   type Department,
@@ -53,6 +54,12 @@ interface ApiMediaPayload {
   id: string;
   type: string;
   signed_url?: string;
+}
+
+interface EvidenceManifest {
+  ready: boolean;
+  errors: Record<string, string>;
+  revision: string;
 }
 
 export function normalizeReport(payload: ApiReportPayload): ReportDetail {
@@ -176,17 +183,54 @@ export async function submitReportPayload(
   });
   const reportId = created.id;
 
-  if (input.media_files && input.media_files.length > 0) {
-    void Promise.all(input.media_files.map((file) => uploadMedia(reportId, file))).catch(
-      () => undefined,
-    );
+  const files = input.media_files ?? [];
+  if (files.length > 0) {
+    await Promise.all(files.map((file) => uploadMedia(reportId, file)));
   }
 
-  const createdReport = normalizeReport(created);
-  return {
-    id: createdReport.id,
-    status: createdReport.status?.code ?? 'submitted',
-  };
+  const idempotencyKey =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${reportId}-${Date.now()}`;
+  const finalize = async () =>
+    request<ApiReportPayload>(`/reports/${reportId}/finalize`, {
+      method: 'POST',
+      headers: { 'Idempotency-Key': idempotencyKey },
+    });
+
+  if (files.length > 0) {
+    // Hashing is asynchronous. Poll the server manifest so a successful
+    // response always means the durable evidence set was actually finalized.
+    const deadline = Date.now() + 30_000;
+    while (true) {
+      try {
+        const manifest = await request<EvidenceManifest>(`/reports/${reportId}/evidence-manifest`);
+        if (manifest.ready) break;
+      } catch {
+        // A transient manifest read is safe to retry while the upload queue
+        // settles; finalization below remains the authoritative gate.
+      }
+      if (Date.now() >= deadline) break;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
+
+  try {
+    const finalized = await finalize();
+    const normalized = normalizeReport(finalized);
+    return { id: normalized.id, status: normalized.status?.code ?? 'submitted' };
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 'EVIDENCE_NOT_READY') {
+      throw new ApiError(
+        error.status,
+        error.code,
+        'Evidence is still processing. Please retry when all uploads are ready.',
+        error.details,
+        error.traceId,
+      );
+    }
+    throw error;
+  }
 }
 
 const MEDIA_UPLOAD_TIMEOUT_MS = 60_000;
@@ -207,6 +251,7 @@ async function uploadMedia(reportId: string, file: File): Promise<void> {
     await upload<unknown>(path, fd, { signal: controller.signal });
   } catch (err) {
     console.warn('media upload error', file.name, err);
+    throw err;
   } finally {
     clearTimeout(timer);
   }

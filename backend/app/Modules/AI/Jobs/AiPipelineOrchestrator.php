@@ -22,15 +22,19 @@ use App\Modules\AI\ValueObjects\AiRequest;
 use App\Modules\AI\ValueObjects\AiResponse;
 use App\Modules\Media\Models\Media;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Services\EvidenceManifestService;
 use App\Modules\Settings\Services\FeatureFlagService;
 use App\Modules\Shared\Services\SystemUserService;
 use App\Modules\Users\Models\User;
 use App\Modules\Workflow\Services\WorkflowEngine;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -68,7 +72,7 @@ use Throwable;
  * `failed` with `error_code`, log the exception, and
  * rethrow so the queue worker records the failure.
  */
-class AiPipelineOrchestrator implements ShouldQueue
+class AiPipelineOrchestrator implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable;
     use InteractsWithQueue;
@@ -85,8 +89,10 @@ class AiPipelineOrchestrator implements ShouldQueue
     /** @var AiJob|null the row created at the start of a successful attempt */
     private ?AiJob $jobRow = null;
 
-    public function __construct(public readonly string $reportId)
-    {
+    public function __construct(
+        public readonly string $reportId,
+        public ?string $evidenceRevision = null,
+    ) {
         $this->onQueue('ai');
     }
 
@@ -99,28 +105,61 @@ class AiPipelineOrchestrator implements ShouldQueue
         PiiMaskingService $pii,
         FeatureFlagService $flags,
         AiMediaReferenceResolver $mediaReferences,
+        ?EvidenceManifestService $evidence = null,
     ): void {
         $this->jobRow = null;
 
         try {
             $report = Report::query()->findOrFail($this->reportId);
-            $media = Media::query()
-                ->where('report_id', $this->reportId)
-                ->where('type', 'PHOTO')
-                ->first()
-                ?? Media::query()
-                    ->where('report_id', $this->reportId)
-                    ->where('type', 'VIDEO')
-                    ->first();
+            $manifestService = $evidence ?? app(EvidenceManifestService::class);
+            $manifest = $manifestService->manifest($report);
 
-            // Report creation and evidence upload are separate API calls. A
-            // fast queue worker may receive this job before the photo request
-            // completes. ReportMediaUploaded re-dispatches this job the moment
-            // the asset lands, but we also retry on a long backoff here so a
-            // late or out-of-order upload still reaches the pipeline instead
-            // of being marked failed after a few seconds.
-            if ($media === null) {
+            if (($manifest['ready'] ?? false) !== true) {
                 throw new AiEvidenceNotReadyException;
+            }
+            $revisionValue = $manifest['revision'] ?? null;
+
+            if (! is_string($revisionValue)) {
+                throw new AiEvidenceNotReadyException;
+            }
+            $revision = $revisionValue;
+
+            if ($this->evidenceRevision !== null && ! hash_equals($this->evidenceRevision, $revision)) {
+                throw new AiEvidenceNotReadyException;
+            }
+
+            $manifestAssets = $manifest['assets'] ?? [];
+            $mediaIds = [];
+
+            if (is_array($manifestAssets)) {
+                foreach ($manifestAssets as $asset) {
+                    if (is_array($asset) && is_string($asset['id'] ?? null)) {
+                        $mediaIds[] = $asset['id'];
+                    }
+                }
+            }
+            $media = Media::query()
+                ->whereIn('id', $mediaIds)
+                ->where('role', 'evidence')
+                ->where('is_replaced', false)
+                ->whereIn('type', ['PHOTO', 'VIDEO'])
+                ->orderBy('uploaded_at')
+                ->get();
+
+            if ($media->isEmpty()) {
+                throw new AiEvidenceNotReadyException;
+            }
+
+            $this->evidenceRevision = $revision;
+
+            $existingSuccess = AiJob::query()
+                ->where('report_id', $this->reportId)
+                ->where('evidence_revision', $revision)
+                ->where('status', AiJob::STATUS_SUCCEEDED)
+                ->first();
+
+            if ($existingSuccess !== null) {
+                return;
             }
 
             $jobRow = $this->createJobRow();
@@ -128,7 +167,10 @@ class AiPipelineOrchestrator implements ShouldQueue
 
             $actor = $report->citizen;
 
-            $qualityScore = $media ? $quality->score($media) : 0;
+            $qualityScores = $media->map(fn (Media $asset): int => $quality->score($asset));
+            $qualityMinimum = $qualityScores->min();
+            $qualityScore = is_numeric($qualityMinimum) ? (int) $qualityMinimum : 0;
+            $visionMedia = $media->where('type', 'PHOTO')->values();
             $ocrText = ''; // OCR provider not yet wired.
 
             $maskedResult = $pii->mask([
@@ -140,7 +182,7 @@ class AiPipelineOrchestrator implements ShouldQueue
                 'district' => null,
             ]);
 
-            if ($media->type === 'VIDEO') {
+            if ($visionMedia->isEmpty()) {
                 // The configured OpenAI-compatible provider accepts image_url
                 // inputs, not raw MP4 data. Video-only reports must still
                 // reach moderators instead of repeatedly failing as an
@@ -155,8 +197,8 @@ class AiPipelineOrchestrator implements ShouldQueue
             } else {
                 $request = new AiRequest(
                     promptName: 'category_classifier',
-                    mediaUrls: [$mediaReferences->resolve($media)],
-                    mediaTypes: [$media->mime],
+                    mediaUrls: $visionMedia->map(fn (Media $asset): string => $mediaReferences->resolve($asset))->all(),
+                    mediaTypes: $visionMedia->map(static fn (Media $asset): string => $asset->mime)->all(),
                     text: $maskedText,
                     metadata: $maskedMetadata,
                 );
@@ -203,27 +245,33 @@ class AiPipelineOrchestrator implements ShouldQueue
             $calibratedConfidence = min($response->confidence, $effectiveQualityScore / 100);
             $calibratedConfidence = $this->applyMismatchPenalty($calibratedConfidence, $response);
 
-            $result = $this->writeResult(
+            $result = DB::transaction(function () use (
                 $jobRow,
                 $response,
                 $effectiveQualityScore,
-                $duplicateResult['score'],
+                $duplicateResult,
                 $fraudScore,
                 $calibratedConfidence,
-            );
-            $this->writeLabels($result, $response, $calibratedConfidence);
+                $report,
+            ): AiResult {
+                $result = $this->writeResult(
+                    $jobRow,
+                    $response,
+                    $effectiveQualityScore,
+                    $duplicateResult['score'],
+                    $fraudScore,
+                    $calibratedConfidence,
+                );
+                $this->writeLabels($result, $response, $calibratedConfidence);
 
-            // Mirror onto the reports row: QueueController's
-            // duplicates()/fraud() endpoints and the review queue's
-            // confidence filter/column all read reports.duplicate_score /
-            // reports.fraud_score / reports.ai_confidence directly — the
-            // ai_results row above is not queried by any of them.
-            // ai_results.confidence is 0..1; reports.ai_confidence is the
-            // 0..100 percentage the moderator UI displays/filters on.
-            $report->duplicate_score = $duplicateResult['score'];
-            $report->fraud_score = $fraudScore;
-            $report->ai_confidence = $calibratedConfidence * 100;
-            $report->save();
+                // Keep the report mirror and AI result atomically aligned.
+                $report->duplicate_score = $duplicateResult['score'];
+                $report->fraud_score = $fraudScore;
+                $report->ai_confidence = $calibratedConfidence * 100;
+                $report->save();
+
+                return $result;
+            });
 
             $this->markJobSucceeded($jobRow, $response, $result, $providerCode, $model);
 
@@ -294,6 +342,22 @@ class AiPipelineOrchestrator implements ShouldQueue
                 'exception' => $exception?->getMessage(),
             ]);
         }
+    }
+
+    public function uniqueId(): string
+    {
+        return $this->reportId.':'.($this->evidenceRevision ?? 'pending');
+    }
+
+    public function uniqueFor(): int
+    {
+        return 900;
+    }
+
+    /** @return list<object> */
+    public function middleware(): array
+    {
+        return [new WithoutOverlapping('ai-report:'.$this->uniqueId())->expireAfter(900)];
     }
 
     /**
@@ -469,19 +533,35 @@ class AiPipelineOrchestrator implements ShouldQueue
             ->orderByDesc('version')
             ->first();
 
-        return AiJob::query()->create([
-            'report_id' => $this->reportId,
-            'prompt_version_id' => $promptVersion->id ?? (string) Str::uuid(),
-            // Which provider/model actually answers isn't known until
-            // classify() returns; markJobSucceeded() overwrites these
-            // with the real values.
-            'provider_code' => 'pending',
-            'model' => 'pending',
-            'status' => AiJob::STATUS_RUNNING,
-            'requested_at' => now(),
-            'started_at' => now(),
-            'retry_count' => 0,
-        ]);
+        $job = AiJob::query()->firstOrCreate(
+            [
+                'report_id' => $this->reportId,
+                'evidence_revision' => $this->evidenceRevision,
+            ],
+            [
+                'prompt_version_id' => $promptVersion->id ?? (string) Str::uuid(),
+                // Which provider/model actually answers isn't known until
+                // classify() returns; markJobSucceeded() overwrites these
+                // with the real values.
+                'provider_code' => 'pending',
+                'model' => 'pending',
+                'status' => AiJob::STATUS_RUNNING,
+                'requested_at' => now(),
+                'started_at' => now(),
+                'retry_count' => 0,
+            ],
+        );
+
+        if ($job->status !== AiJob::STATUS_SUCCEEDED) {
+            $job->forceFill([
+                'status' => AiJob::STATUS_RUNNING,
+                'started_at' => now(),
+                'completed_at' => null,
+                'error_code' => null,
+            ])->save();
+        }
+
+        return $job;
     }
 
     private function writeResult(
@@ -492,29 +572,35 @@ class AiPipelineOrchestrator implements ShouldQueue
         int $fraudScore,
         float $calibratedConfidence,
     ): AiResult {
-        return AiResult::query()->create([
-            'job_id' => $job->id,
-            'predicted_type' => $response->predictedType,
-            'confidence' => $calibratedConfidence,
-            'recommended_department' => $response->recommendedDepartment,
-            'severity' => $response->severity,
-            'quality_score' => $qualityScore,
-            'duplicate_score' => $duplicateScore,
-            'fraud_score' => $fraudScore,
-            'summary' => $response->summary,
-            'license_plate' => $response->licensePlate,
-            'plate_confidence' => $response->plateConfidence,
-            'claim_matches_evidence' => $response->claimMatchesEvidence,
-            'consistency_score' => $response->consistencyScore,
-            'mismatch_reason' => $response->mismatchReason,
-            'synthetic_score' => $response->syntheticScore,
-            'raw_response' => $response->raw,
-            'created_at' => now(),
-        ]);
+        return AiResult::query()->firstOrCreate(
+            ['job_id' => $job->id],
+            [
+                'predicted_type' => $response->predictedType,
+                'confidence' => $calibratedConfidence,
+                'recommended_department' => $response->recommendedDepartment,
+                'severity' => $response->severity,
+                'quality_score' => $qualityScore,
+                'duplicate_score' => $duplicateScore,
+                'fraud_score' => $fraudScore,
+                'summary' => $response->summary,
+                'license_plate' => $response->licensePlate,
+                'plate_confidence' => $response->plateConfidence,
+                'claim_matches_evidence' => $response->claimMatchesEvidence,
+                'consistency_score' => $response->consistencyScore,
+                'mismatch_reason' => $response->mismatchReason,
+                'synthetic_score' => $response->syntheticScore,
+                'raw_response' => $response->raw,
+                'created_at' => now(),
+            ],
+        );
     }
 
     private function writeLabels(AiResult $result, AiResponse $response, float $calibratedConfidence): void
     {
+        if (AiLabel::query()->where('result_id', $result->id)->exists()) {
+            return;
+        }
+
         foreach ($response->labels as $l) {
             AiLabel::query()->create([
                 'result_id' => $result->id,
