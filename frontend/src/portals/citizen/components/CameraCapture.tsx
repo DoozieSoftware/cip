@@ -277,13 +277,20 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
         {active && mode === 'video' && recordingMs > 0 ? (
           <div
             aria-live="off"
-            aria-label={`Recording ${(recordingMs / 1000).toFixed(1)} seconds`}
+            aria-label={t('camera.recordingTime', {
+              elapsed: (recordingMs / 1000).toFixed(1),
+              remaining: (Math.max(0, videoMaxMs - recordingMs) / 1000).toFixed(1),
+            })}
             className={cx(
               'absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs text-white',
               recordingMs > videoMaxMs - 1000 ? 'text-rose-300' : 'text-blue-300',
             )}
           >
-            ● {(recordingMs / 1000).toFixed(1)}s
+            ●{' '}
+            {t('camera.recordingTime', {
+              elapsed: (recordingMs / 1000).toFixed(1),
+              remaining: (Math.max(0, videoMaxMs - recordingMs) / 1000).toFixed(1),
+            })}
           </div>
         ) : null}
       </div>

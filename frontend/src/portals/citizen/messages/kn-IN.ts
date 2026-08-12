@@ -403,6 +403,7 @@ export const kn_IN: MessageCatalog = {
   'camera.takePhoto': 'ಫೋಟೋ ತೆಗೆಯಿರಿ',
   'camera.startRecording': 'ರೆಕಾರ್ಡಿಂಗ್ ಪ್ರಾರಂಭಿಸಿ',
   'camera.stopRecording': 'ರೆಕಾರ್ಡಿಂಗ್ ನಿಲ್ಲಿಸಿ',
+  'camera.recordingTime': '{elapsed}s ರೆಕಾರ್ಡ್ ಆಗಿದೆ · {remaining}s ಉಳಿದಿದೆ',
   'camera.httpsRequired':
     'ಕ್ಯಾಮರಾ ಪ್ರವೇಶಕ್ಕೆ HTTPS ಅಥವಾ localhost ಅಗತ್ಯವಿದೆ. ಅಪ್ಲಿಕೇಶನ್ ಅನ್ನು https:// ನೊಂದಿಗೆ ತೆರೆದು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
   'camera.notAvailable': 'ಈ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಕ್ಯಾಮರಾ ಲಭ್ಯವಿಲ್ಲ.',

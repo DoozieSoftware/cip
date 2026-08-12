@@ -400,6 +400,7 @@ export const en_IN: MessageCatalog = {
   'camera.takePhoto': 'Take photo',
   'camera.startRecording': 'Start recording',
   'camera.stopRecording': 'Stop recording',
+  'camera.recordingTime': '{elapsed}s recorded · {remaining}s remaining',
   'camera.httpsRequired':
     'Camera access requires HTTPS or localhost. Open the app with https:// and try again.',
   'camera.notAvailable': 'Camera not available in this browser.',
