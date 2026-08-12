@@ -90,11 +90,20 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     if (!active) return;
     const t = window.setInterval(() => {
       if (mode === 'video' && startedAtRef.current > 0) {
-        setRecordingMs(Date.now() - startedAtRef.current);
+        const elapsed = Date.now() - startedAtRef.current;
+        setRecordingMs(elapsed);
+
+        // Stop at the configured upper bound even if the user misses the
+        // button. This keeps clips within the server's evidence policy and
+        // avoids asking citizens to hold a phone perfectly for five seconds.
+        if (elapsed >= videoMaxMs && recorderRef.current?.state === 'recording') {
+          stoppedAtRef.current = Date.now();
+          recorderRef.current.stop();
+        }
       }
     }, 100);
     return () => window.clearInterval(t);
-  }, [active, mode]);
+  }, [active, mode, videoMaxMs]);
 
   async function startCamera(): Promise<void> {
     setError(null);
@@ -250,7 +259,13 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
   return (
     <div className={cx('space-y-3', className)}>
       <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900">
-        <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          aria-label={t('camera.preview')}
+          className="h-full w-full object-cover"
+        />
         {!active ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-300">
             <span aria-hidden className="text-4xl">
@@ -261,7 +276,8 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
         ) : null}
         {active && mode === 'video' && recordingMs > 0 ? (
           <div
-            aria-live="polite"
+            aria-live="off"
+            aria-label={`Recording ${(recordingMs / 1000).toFixed(1)} seconds`}
             className={cx(
               'absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs text-white',
               recordingMs > videoMaxMs - 1000 ? 'text-rose-300' : 'text-blue-300',

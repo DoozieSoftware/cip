@@ -398,6 +398,7 @@ export const kn_IN: MessageCatalog = {
 
   // Camera Capture
   'camera.off': 'ಕ್ಯಾಮರಾ ಆಫ್',
+  'camera.preview': 'ಲೈವ್ ಕ್ಯಾಮರಾ ಪೂರ್ವವೀಕ್ಷಣೆ',
   'camera.openCamera': 'ಕ್ಯಾಮರಾ ತೆರೆಯಿರಿ',
   'camera.takePhoto': 'ಫೋಟೋ ತೆಗೆಯಿರಿ',
   'camera.startRecording': 'ರೆಕಾರ್ಡಿಂಗ್ ಪ್ರಾರಂಭಿಸಿ',

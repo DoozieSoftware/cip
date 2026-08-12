@@ -23,4 +23,9 @@ describe('CameraCapture open button label', () => {
     const buttons = screen.getAllByRole('button');
     expect(buttons.some((b) => b.textContent === 'Open camera')).toBe(true);
   });
+
+  it('labels the live preview for screen-reader users', () => {
+    render(<CameraCapture mode="video" onCapture={() => {}} />);
+    expect(screen.getByLabelText('Live camera preview')).toBeInTheDocument();
+  });
 });

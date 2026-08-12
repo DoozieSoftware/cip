@@ -395,6 +395,7 @@ export const en_IN: MessageCatalog = {
 
   // Camera Capture
   'camera.off': 'Camera off',
+  'camera.preview': 'Live camera preview',
   'camera.openCamera': 'Open camera',
   'camera.takePhoto': 'Take photo',
   'camera.startRecording': 'Start recording',
