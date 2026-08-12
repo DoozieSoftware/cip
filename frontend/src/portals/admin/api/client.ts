@@ -3,25 +3,8 @@ import { requestRaw as apiRequest } from '../../../shared/api/client';
 import { ApiError } from '../../../shared/api/errors';
 import type { ApiEnvelope } from '../../../shared/api/envelope';
 
-export interface AdminUser {
-  id: string;
-  name?: string | null;
-  mobile: string;
-  email?: string | null;
-  status?: string | null;
-  roles: string[];
-  created_at?: string | null;
-}
-
-export interface AdminUserInput {
-  name?: string | null;
-  mobile: string;
-  email?: string | null;
-  password?: string | null;
-  status?: string;
-  anonymous_enabled?: boolean;
-  roles?: string[];
-}
+export { useAdminUsers, useCreateUser, useUpdateUser, useDeleteUser } from './users';
+export type { AdminUser, AdminUserInput } from './users';
 
 export interface AdminRole {
   id: number | string;
@@ -57,20 +40,13 @@ export interface AdminReportType {
   created_at?: string | null;
 }
 
-export interface AdminDepartment {
-  id: string;
-  name: string;
-  code: string;
-  parent_id?: string | null;
-  jurisdiction?: string | null;
-  address?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  default_sla_minutes?: number | null;
-  active: boolean;
-}
-
-export type AdminDepartmentInput = Omit<AdminDepartment, 'id'>;
+export {
+  useAdminDepartments,
+  useCreateDepartment,
+  useUpdateDepartment,
+  useDeleteDepartment,
+} from './departments';
+export type { AdminDepartment, AdminDepartmentInput } from './departments';
 
 export interface AdminOrganization {
   id: string;
@@ -116,63 +92,6 @@ export interface AuditLog {
   created_at: string;
 }
 
-export function useAdminUsers(q: string, role?: string) {
-  return useQuery({
-    queryKey: ['admin', 'users', q, role],
-    queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<AdminUser[]>>('/admin/users', {
-        query: { q, role, per_page: 100 },
-      });
-      return res.data;
-    },
-  });
-}
-
-export function useAdminDepartments() {
-  return useQuery({
-    queryKey: ['admin', 'departments'],
-    queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<AdminDepartment[]>>('/admin/departments', {
-        query: { per_page: 100 },
-      });
-      return res.data;
-    },
-  });
-}
-
-export function useCreateDepartment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (input: AdminDepartmentInput) =>
-      apiRequest<ApiEnvelope<AdminDepartment>>('/admin/departments', {
-        method: 'POST',
-        body: input,
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'departments'] }),
-  });
-}
-
-export function useUpdateDepartment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, ...input }: AdminDepartmentInput & { id: string }) =>
-      apiRequest<ApiEnvelope<AdminDepartment>>(`/admin/departments/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        body: input,
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'departments'] }),
-  });
-}
-
-export function useDeleteDepartment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) =>
-      apiRequest<unknown>(`/admin/departments/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'departments'] }),
-  });
-}
-
 export function useAdminOrganizations() {
   return useQuery({
     queryKey: ['admin', 'organizations'],
@@ -215,36 +134,6 @@ export function useDeleteOrganization() {
     mutationFn: (id: string) =>
       apiRequest<unknown>(`/admin/organizations/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'organizations'] }),
-  });
-}
-
-export function useCreateUser() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: AdminUserInput) =>
-      apiRequest<ApiEnvelope<AdminUser>>('/admin/users', { method: 'POST', body: input }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
-  });
-}
-
-export function useUpdateUser() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, ...patch }: Partial<AdminUserInput> & { id: string }) =>
-      apiRequest<ApiEnvelope<AdminUser>>(`/admin/users/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        body: patch,
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
-  });
-}
-
-export function useDeleteUser() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) =>
-      apiRequest<unknown>(`/admin/users/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   });
 }
 
@@ -1168,5 +1057,75 @@ export function useDeleteSetting() {
     mutationFn: async (key: string) =>
       apiRequest<unknown>(`/admin/settings/${encodeURIComponent(key)}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'settings'] }),
+  });
+}
+
+/* ---------------------------------------------------------------------- *
+ *  BE-14 — Legal retention holds
+ * ---------------------------------------------------------------------- */
+
+export type RetentionHoldEntityType =
+  | 'media'
+  | 'security_event'
+  | 'notification'
+  | 'ai_job'
+  | 'ai_result'
+  | 'ai_label';
+
+export interface RetentionHold {
+  id: string;
+  entity_type: RetentionHoldEntityType;
+  entity_id: string;
+  reason: string;
+  held_by?: string | null;
+  expires_at?: string | null;
+  released_at?: string | null;
+  released_by?: string | null;
+  release_reason?: string | null;
+  active: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface RetentionHoldInput {
+  entity_type: RetentionHoldEntityType;
+  entity_id: string;
+  reason: string;
+  expires_at?: string | null;
+}
+
+export function useRetentionHolds(active = true) {
+  return useQuery({
+    queryKey: ['admin', 'retention-holds', active],
+    queryFn: async () => {
+      const res = await apiRequest<ApiEnvelope<RetentionHold[]>>('/admin/retention-holds', {
+        query: { active, per_page: 100 },
+      });
+      return res.data;
+    },
+  });
+}
+
+export function useCreateRetentionHold() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: RetentionHoldInput) =>
+      apiRequest<ApiEnvelope<RetentionHold>>('/admin/retention-holds', {
+        method: 'POST',
+        body: input,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'retention-holds'] }),
+  });
+}
+
+export function useReleaseRetentionHold() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, release_reason }: { id: string; release_reason: string }) =>
+      apiRequest<ApiEnvelope<RetentionHold>>(
+        `/admin/retention-holds/${encodeURIComponent(id)}/release`,
+        { method: 'POST', body: { release_reason } },
+      ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'retention-holds'] }),
   });
 }
