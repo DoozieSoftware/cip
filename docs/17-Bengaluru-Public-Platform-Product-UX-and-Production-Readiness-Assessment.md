@@ -1540,7 +1540,8 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | P2-03 | **Partial** | Citizen service-request search now sends URL-persisted query text to the server and retains status/pagination state (`8ef97697`); date/category/area filters and full cursor semantics remain. |
 | P2-08 | **Partial** | Reduced-motion CSS, focus/a11y scaffolding, and capture live-preview/timer accessibility are covered (`aef9b0da`); a full axe, screen-reader, and manual keyboard pass remains. |
 | P2-09 | **Partial** | Camera capture now exposes a live-preview label, non-spam timer, and max-duration auto-stop (`aef9b0da`); compression progress and broader device coverage remain. |
-| P2-06, P2-10..P2-15 | Not started | Profile onboarding, issue-pin separation, public metric definitions, landing redesign, analytics, and mobile E2E remain open. |
+| P2-06, P2-10, P2-12..P2-15 | Not started | Profile onboarding, issue-pin separation, landing redesign, analytics, and mobile E2E remain open. |
+| P2-11 | **Done** | Public stats now exclude drafts/rejected/merged duplicates and include generated-at, cache TTL, and metric definitions (`48b1bd82`). |
 
 ### Backend Performance And Correctness
 
