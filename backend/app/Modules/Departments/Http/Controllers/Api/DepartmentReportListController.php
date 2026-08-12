@@ -14,6 +14,7 @@ use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\CursorPaginator;
 
 class DepartmentReportListController extends Controller
 {
@@ -28,6 +29,19 @@ class DepartmentReportListController extends Controller
         $query = $request->query();
         $page = $this->repo->assignedTo($departmentId, is_array($query) ? $query : []);
         $request->merge(['department_id' => $departmentId]);
+
+        if ($page instanceof CursorPaginator) {
+            return response()->json([
+                'success' => true,
+                'data' => DepartmentReportListResource::collection($page->items())->resolve($request),
+                'meta' => [
+                    'per_page' => $page->perPage(),
+                    'next_cursor' => $page->nextCursor()?->encode(),
+                    'prev_cursor' => $page->previousCursor()?->encode(),
+                ],
+                'trace_id' => $request->attributes->get('trace_id'),
+            ]);
+        }
 
         return response()->json([
             'success' => true,

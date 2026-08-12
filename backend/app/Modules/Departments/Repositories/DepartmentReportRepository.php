@@ -7,6 +7,7 @@ namespace App\Modules\Departments\Repositories;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportAssignment;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -56,9 +57,9 @@ class DepartmentReportRepository
 
     /**
      * @param  array<array-key, mixed>  $filters
-     * @return LengthAwarePaginator<int, Report>
+     * @return LengthAwarePaginator<int, Report>|CursorPaginator<int, Report>
      */
-    public function assignedTo(string $departmentId, array $filters = []): LengthAwarePaginator
+    public function assignedTo(string $departmentId, array $filters = []): LengthAwarePaginator|CursorPaginator
     {
         $query = Report::query()
             ->where(function (Builder $query) use ($departmentId): void {
@@ -87,6 +88,17 @@ class DepartmentReportRepository
         $rawPerPage = $filters['per_page'] ?? 20;
         $perPage = is_numeric($rawPerPage) ? (int) $rawPerPage : 20;
         $perPage = max(1, min(self::MAX_PER_PAGE, $perPage));
+
+        $cursor = is_string($filters['cursor'] ?? null) && $filters['cursor'] !== ''
+            ? $filters['cursor']
+            : null;
+
+        if ($cursor !== null) {
+            return $query
+                ->orderByDesc('submitted_at')
+                ->orderByDesc('id')
+                ->cursorPaginate($perPage, ['*'], 'cursor', $cursor);
+        }
 
         return $query->orderByDesc('submitted_at')->paginate($perPage);
     }

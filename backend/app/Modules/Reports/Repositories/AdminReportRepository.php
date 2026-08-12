@@ -7,6 +7,7 @@ namespace App\Modules\Reports\Repositories;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportAssignment;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -22,9 +23,9 @@ class AdminReportRepository
 
     /**
      * @param  array<string, mixed>  $filters
-     * @return LengthAwarePaginator<int, Report>
+     * @return LengthAwarePaginator<int, Report>|CursorPaginator<int, Report>
      */
-    public function search(array $filters, int $perPage = 25): LengthAwarePaginator
+    public function search(array $filters, int $perPage = 25, ?string $cursor = null): LengthAwarePaginator|CursorPaginator
     {
         $query = Report::query()
             ->with([
@@ -40,10 +41,20 @@ class AdminReportRepository
 
         $this->applyFilters($query, $filters);
 
+        $perPage = max(1, min(self::MAX_PER_PAGE, $perPage));
+
+        if ($cursor !== null) {
+            return $query
+                ->orderByDesc('submitted_at')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->cursorPaginate($perPage, ['*'], 'cursor', $cursor);
+        }
+
         return $query
             ->orderByDesc('submitted_at')
             ->orderByDesc('created_at')
-            ->paginate(max(1, min(self::MAX_PER_PAGE, $perPage)));
+            ->paginate($perPage);
     }
 
     /**

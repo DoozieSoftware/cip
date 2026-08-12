@@ -11,6 +11,7 @@ use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Controllers\BaseController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\CursorPaginator;
 
 /**
  * Read-only Super Admin report index across all departments.
@@ -35,11 +36,23 @@ class AdminReportController extends BaseController
         ];
         $filters = array_filter($filters, static fn ($value): bool => $value !== null && $value !== '');
 
-        $page = $this->repository->search($filters, (int) $request->query('per_page', 25));
-        $items = $page->getCollection()
+        $page = $this->repository->search(
+            $filters,
+            (int) $request->query('per_page', 25),
+            is_string($request->query('cursor')) ? $request->query('cursor') : null,
+        );
+        $items = ($page instanceof CursorPaginator ? collect($page->items()) : $page->getCollection())
             ->map(static fn (Report $report): array => (new AdminReportListResource($report))->toArray($request))
             ->values()
             ->all();
+
+        if ($page instanceof CursorPaginator) {
+            return $this->respond($items, 'OK', 200, [
+                'per_page' => $page->perPage(),
+                'next_cursor' => $page->nextCursor()?->encode(),
+                'prev_cursor' => $page->previousCursor()?->encode(),
+            ]);
+        }
 
         return $this->respond($items, 'OK', 200, [
             'page' => $page->currentPage(),
