@@ -59,11 +59,14 @@ class IdempotencyKey
         $user = $request->user();
         $userId = $user instanceof User ? (string) $user->id : null;
         $route = (string) $request->route()?->getName();
+        $method = $request->getMethod();
         $requestHash = hash('sha256', (string) $request->getContent());
 
         $existing = IdempotencyKeyModel::query()
             ->where('key', $key)
             ->where('user_id', $userId)
+            ->where('route', $route)
+            ->where('method', $method)
             ->first();
 
         if ($existing !== null) {
@@ -97,6 +100,7 @@ class IdempotencyKey
                     'key' => $key,
                     'user_id' => $userId,
                     'route' => $route,
+                    'method' => $method,
                     'request_hash' => $requestHash,
                     'response_status' => $response->getStatusCode(),
                     'response_body' => $body,
