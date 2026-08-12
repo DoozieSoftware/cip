@@ -45,7 +45,7 @@ class CitizenReportActionsController extends BaseController
             throw ApiException::forbidden('Authentication is required.');
         }
 
-        $updated = $this->service->verify($report, $user);
+        $updated = $this->service->verify($report, $user, $this->expectedWorkflowVersion($request));
 
         return $this->respond([
             'report' => (new CitizenReportResource($updated->load([
@@ -75,7 +75,7 @@ class CitizenReportActionsController extends BaseController
             throw ApiException::validation('A reason is required when disputing a resolution.', ['reason' => ['Required.']]);
         }
 
-        $updated = $this->service->dispute($report, $user, $reason);
+        $updated = $this->service->dispute($report, $user, $reason, $this->expectedWorkflowVersion($request));
 
         return $this->respond([
             'report' => (new CitizenReportResource($updated->load([
@@ -105,7 +105,7 @@ class CitizenReportActionsController extends BaseController
             throw ApiException::validation('A reason is required when disputing a merge.', ['reason' => ['Required.']]);
         }
 
-        $updated = $this->service->disputeMerge($report, $user, $reason);
+        $updated = $this->service->disputeMerge($report, $user, $reason, $this->expectedWorkflowVersion($request));
 
         return $this->respond([
             'report' => (new CitizenReportResource($updated->load([
@@ -143,5 +143,12 @@ class CitizenReportActionsController extends BaseController
         }
 
         return $report;
+    }
+
+    private function expectedWorkflowVersion(StoreCitizenActionRequest $request): ?int
+    {
+        $version = $request->validated('expected_workflow_version');
+
+        return is_int($version) ? $version : null;
     }
 }

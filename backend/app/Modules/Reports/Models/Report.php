@@ -36,6 +36,7 @@ use Illuminate\Support\Facades\DB;
  * @property string $current_status_id
  * @property string $priority_id
  * @property string|null $workflow_id
+ * @property int $workflow_version
  * @property string $location_id
  * @property string|null $assigned_to
  * @property string $title
@@ -78,6 +79,16 @@ class Report extends Model
     protected $table = 'reports';
 
     /**
+     * Keep the in-memory value aligned with the database default so a report
+     * can be transitioned in the same request that creates it.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'workflow_version' => 1,
+    ];
+
+    /**
      * @var list<string>
      */
     protected $fillable = [
@@ -116,6 +127,7 @@ class Report extends Model
             'fraud_score' => 'float',
             'duplicate_score' => 'float',
             'mock_gps_score' => 'float',
+            'workflow_version' => 'integer',
             'is_anonymous' => 'boolean',
             'is_verified' => 'boolean',
             'submitted_at' => 'datetime',

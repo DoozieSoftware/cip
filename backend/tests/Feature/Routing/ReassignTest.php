@@ -167,3 +167,22 @@ it('reassign requires a reason (VALIDATION_FAILED otherwise)', function (): void
         'department_id' => $this->deptB->id,
     ])->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
 });
+
+it('rejects a stale reassignment without closing the current assignment', function (): void {
+    $admin = User::factory()->create();
+    $admin->assignRole('super_admin');
+    Sanctum::actingAs($admin);
+
+    $expectedVersion = $this->report->workflow_version;
+    $this->report->increment('workflow_version');
+
+    $this->postJson("/api/v1/admin/reports/{$this->report->id}/reassign", [
+        'department_id' => $this->deptB->id,
+        'reason' => 'This browser view is stale.',
+        'expected_workflow_version' => $expectedVersion,
+    ])->assertStatus(409)->assertJsonPath('code', 'REPORT_VERSION_CONFLICT');
+
+    expect($this->previousAssignment->fresh()->reassigned_at)->toBeNull()
+        ->and($this->report->fresh()->department_id)->toBe($this->deptA->id)
+        ->and(ReportAssignment::query()->where('report_id', $this->report->id)->count())->toBe(1);
+});

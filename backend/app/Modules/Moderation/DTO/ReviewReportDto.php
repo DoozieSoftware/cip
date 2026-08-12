@@ -52,6 +52,7 @@ final readonly class ReviewReportDto
         public bool $overrideAi = false,
         public ?string $mergeIntoReportId = null,
         public ?string $reasonCode = null,
+        public ?int $expectedWorkflowVersion = null,
         public array $extra = [],
     ) {}
 
@@ -65,7 +66,8 @@ final readonly class ReviewReportDto
      */
     public static function fromArray(array $validated): self
     {
-        $decision = strtolower(trim((string) ($validated['decision'] ?? '')));
+        $rawDecision = $validated['decision'] ?? null;
+        $decision = is_string($rawDecision) ? strtolower(trim($rawDecision)) : '';
 
         if (! in_array($decision, self::ALLOWED_DECISIONS, true)) {
             throw ApiException::validation(
@@ -128,9 +130,13 @@ final readonly class ReviewReportDto
             overrideAi: (bool) ($validated['override_ai'] ?? false),
             mergeIntoReportId: $mergeInto,
             reasonCode: $reasonCode,
+            expectedWorkflowVersion: is_int($validated['expected_workflow_version'] ?? null)
+                ? $validated['expected_workflow_version']
+                : null,
             extra: array_diff_key($validated, array_flip([
                 'decision', 'department_id', 'category_id', 'category_ids',
                 'remarks', 'override_ai', 'merge_into_report_id', 'reason_code',
+                'expected_workflow_version',
             ])),
         );
     }

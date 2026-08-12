@@ -37,6 +37,7 @@ class ReassignReportRequest extends FormRequest
             'officer_id' => ['nullable', 'string', 'exists:users,id'],
             'priority_id' => ['nullable', 'string', 'exists:report_priorities,id'],
             'reason' => ['required', 'string', 'min:3', 'max:500'],
+            'expected_workflow_version' => ['nullable', 'integer', 'min:1'],
         ];
     }
 }

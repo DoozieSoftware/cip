@@ -34,13 +34,17 @@ class CitizenReportActionService
         private readonly WorkflowEngine $engine,
     ) {}
 
-    public function verify(Report $report, User $citizen): Report
+    public function verify(Report $report, User $citizen, ?int $expectedWorkflowVersion = null): Report
     {
-        return $this->transition($report, $citizen, 'verify');
+        return $this->transition($report, $citizen, 'verify', $expectedWorkflowVersion);
     }
 
-    public function dispute(Report $report, User $citizen, string $reason): Report
-    {
+    public function dispute(
+        Report $report,
+        User $citizen,
+        string $reason,
+        ?int $expectedWorkflowVersion = null,
+    ): Report {
         if ($report->verification_deadline_at !== null
             && now()->greaterThan($report->verification_deadline_at)) {
             throw ApiException::validation(
@@ -49,7 +53,7 @@ class CitizenReportActionService
             );
         }
 
-        $updated = $this->transition($report, $citizen, 'dispute');
+        $updated = $this->transition($report, $citizen, 'dispute', $expectedWorkflowVersion);
 
         AuditLog::query()->create([
             'user_id' => $citizen->id,
@@ -71,8 +75,12 @@ class CitizenReportActionService
      * P1-07 — dispute an incorrect merge. Records the dispute and
      * transitions the report out of `merged` back to `pending_moderator`.
      */
-    public function disputeMerge(Report $report, User $citizen, string $reason): Report
-    {
+    public function disputeMerge(
+        Report $report,
+        User $citizen,
+        string $reason,
+        ?int $expectedWorkflowVersion = null,
+    ): Report {
         $mergedStatus = ReportStatus::query()->where('code', 'merged')->first();
 
         if ($mergedStatus === null || $report->current_status_id !== $mergedStatus->id) {
@@ -82,7 +90,7 @@ class CitizenReportActionService
             );
         }
 
-        return DB::transaction(function () use ($report, $citizen, $reason): Report {
+        return DB::transaction(function () use ($report, $citizen, $reason, $expectedWorkflowVersion): Report {
             ReportMergeDispute::query()->create([
                 'report_id' => $report->id,
                 'citizen_id' => $citizen->id,
@@ -108,7 +116,12 @@ class CitizenReportActionService
                 );
             }
 
-            $updated = $this->engine->apply($report, $decision, $citizen);
+            $updated = $this->engine->apply(
+                $report,
+                $decision,
+                $citizen,
+                expectedWorkflowVersion: $expectedWorkflowVersion,
+            );
 
             AuditLog::query()->create([
                 'user_id' => $citizen->id,
@@ -137,8 +150,12 @@ class CitizenReportActionService
         });
     }
 
-    private function transition(Report $report, User $citizen, string $event): Report
-    {
+    private function transition(
+        Report $report,
+        User $citizen,
+        string $event,
+        ?int $expectedWorkflowVersion = null,
+    ): Report {
         $decision = $this->engine->evaluate($report, $event, $citizen);
 
         if (! $decision->allowed) {
@@ -148,8 +165,13 @@ class CitizenReportActionService
             );
         }
 
-        return DB::transaction(function () use ($report, $decision, $citizen): Report {
-            $updated = $this->engine->apply($report, $decision, $citizen);
+        return DB::transaction(function () use ($report, $decision, $citizen, $expectedWorkflowVersion): Report {
+            $updated = $this->engine->apply(
+                $report,
+                $decision,
+                $citizen,
+                expectedWorkflowVersion: $expectedWorkflowVersion,
+            );
 
             AuditLog::query()->create([
                 'user_id' => $citizen->id,

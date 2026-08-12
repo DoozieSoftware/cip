@@ -128,8 +128,13 @@ class WorkflowEngine
      * @throws \InvalidArgumentException when the decision
      *                                   is not a positive one
      */
-    public function apply(Report $report, WorkflowDecision $decision, ?User $actor, array $metadata = []): Report
-    {
+    public function apply(
+        Report $report,
+        WorkflowDecision $decision,
+        ?User $actor,
+        array $metadata = [],
+        ?int $expectedWorkflowVersion = null,
+    ): Report {
         if (! $decision->allowed) {
             throw new \InvalidArgumentException('Cannot apply a denied decision.');
         }
@@ -145,8 +150,9 @@ class WorkflowEngine
         }
 
         $fromStateId = $report->current_status_id;
+        $expectedWorkflowVersion ??= (int) $report->workflow_version;
 
-        DB::transaction(function () use ($report, $toState, $decision, $actor, $fromStateId, $metadata): void {
+        DB::transaction(function () use ($report, $toState, $decision, $actor, $fromStateId, $metadata, $expectedWorkflowVersion): void {
             $lockedReport = Report::query()->lockForUpdate()->find($report->id);
 
             if ($lockedReport === null) {
@@ -165,6 +171,18 @@ class WorkflowEngine
                 );
             }
 
+            if ((int) $lockedReport->workflow_version !== $expectedWorkflowVersion) {
+                throw new ApiException(
+                    'REPORT_VERSION_CONFLICT',
+                    'Report workflow or assignment changed before this transition could be applied.',
+                    409,
+                    [
+                        'expected_workflow_version' => $expectedWorkflowVersion,
+                        'actual_workflow_version' => (int) $lockedReport->workflow_version,
+                    ],
+                );
+            }
+
             // Bridge the M4/M6 gap: the destination workflow
             // state's code matches a `report_statuses` row.
             $toStatus = ReportStatus::query()->where('code', $toState->code)->first();
@@ -176,6 +194,7 @@ class WorkflowEngine
                     $lockedReport->closed_at = now();
                 }
 
+                $lockedReport->workflow_version = $expectedWorkflowVersion + 1;
                 $lockedReport->save();
             }
 
@@ -214,10 +233,12 @@ class WorkflowEngine
                 'before' => [
                     'current_status_id' => $fromStateId,
                     'workflow_id' => $lockedReport->workflow_id,
+                    'workflow_version' => $expectedWorkflowVersion,
                 ],
                 'after' => [
                     'current_status_id' => $toStatusId,
                     'workflow_id' => $lockedReport->workflow_id,
+                    'workflow_version' => (int) $lockedReport->workflow_version,
                 ],
                 'ip' => $request->ip(),
                 'device_fingerprint' => null,

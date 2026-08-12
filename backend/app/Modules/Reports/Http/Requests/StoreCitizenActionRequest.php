@@ -21,6 +21,7 @@ class StoreCitizenActionRequest extends FormRequest
     {
         return [
             'reason' => ['nullable', 'string', 'min:5', 'max:1000'],
+            'expected_workflow_version' => ['nullable', 'integer', 'min:1'],
         ];
     }
 }

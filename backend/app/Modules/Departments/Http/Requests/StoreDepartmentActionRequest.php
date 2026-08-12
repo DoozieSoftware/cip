@@ -13,11 +13,15 @@ class StoreDepartmentActionRequest extends FormRequest
         return true;
     }
 
+    /**
+     * @return array<string, array<int, string>>
+     */
     public function rules(): array
     {
         return [
             'note' => ['nullable', 'string', 'max:2000'],
             'reason_code' => ['nullable', 'string', 'max:64'],
+            'expected_workflow_version' => ['nullable', 'integer', 'min:1'],
         ];
     }
 }

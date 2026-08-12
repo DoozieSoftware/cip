@@ -42,6 +42,7 @@ class StoreReviewRequest extends FormRequest
             'override_ai' => ['nullable', 'boolean'],
             'merge_into_report_id' => ['nullable', 'string', 'uuid', 'different:report'],
             'reason_code' => ['nullable', 'string', 'max:64'],
+            'expected_workflow_version' => ['nullable', 'integer', 'min:1'],
         ];
     }
 

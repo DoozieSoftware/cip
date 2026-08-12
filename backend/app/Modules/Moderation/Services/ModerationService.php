@@ -97,7 +97,12 @@ class ModerationService
                     ?? $this->routingFallback->decisionFor($report);
             }
 
-            $this->engine->apply($report, $decision, $moderator);
+            $this->engine->apply(
+                $report,
+                $decision,
+                $moderator,
+                expectedWorkflowVersion: $dto->expectedWorkflowVersion,
+            );
 
             if ($routingDecision !== null) {
                 $this->assignments->assign($report, $routingDecision, $moderator, reason: 'moderator_approve_routing');

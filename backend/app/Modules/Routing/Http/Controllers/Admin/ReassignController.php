@@ -47,28 +47,30 @@ class ReassignController extends BaseController
             throw ApiException::notFound('Department');
         }
 
-        $officerId = $request->input('officer_id');
+        $officerValue = $request->validated('officer_id');
+        $officerId = is_string($officerValue) ? $officerValue : null;
         $officer = $officerId !== null ? User::query()->find($officerId) : null;
 
         if ($officerId !== null && $officer === null) {
             throw ApiException::notFound('Officer');
         }
 
-        $priority = $this->service->resolvePriority(
-            $reportModel,
-            $request->input('priority_id') !== null
-                ? (string) $request->input('priority_id')
-                : null,
-        );
+        $priorityValue = $request->validated('priority_id');
+        $priorityId = is_string($priorityValue) ? $priorityValue : null;
+        $reason = $request->validated('reason');
+        $expectedVersion = $request->validated('expected_workflow_version');
+
+        $priority = $this->service->resolvePriority($reportModel, $priorityId);
 
         $assignment = $this->service->reassign(
             report: $reportModel,
             department: $department,
             officer: $officer,
             priority: $priority,
-            reason: (string) $request->input('reason'),
+            reason: is_string($reason) ? $reason : '',
             actor: $request->user(),
             request: $request,
+            expectedWorkflowVersion: is_int($expectedVersion) ? $expectedVersion : null,
         );
 
         return $this->respond(

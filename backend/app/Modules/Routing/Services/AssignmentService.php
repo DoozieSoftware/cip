@@ -8,6 +8,7 @@ use App\Modules\Reports\Events\ReportAssigned;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportAssignment;
 use App\Modules\Routing\ValueObjects\RoutingDecision;
+use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -40,9 +41,34 @@ class AssignmentService
 
     public function __construct() {}
 
-    public function assign(Report $report, RoutingDecision $decision, ?User $actor, ?string $reason = null): ReportAssignment
-    {
-        $assignment = DB::transaction(function () use ($report, $decision, $actor): ReportAssignment {
+    public function assign(
+        Report $report,
+        RoutingDecision $decision,
+        ?User $actor,
+        ?string $reason = null,
+        ?int $expectedWorkflowVersion = null,
+    ): ReportAssignment {
+        $expectedWorkflowVersion ??= (int) $report->workflow_version;
+
+        $assignment = DB::transaction(function () use ($report, $decision, $actor, $expectedWorkflowVersion): ReportAssignment {
+            $lockedReport = Report::query()->lockForUpdate()->find($report->id);
+
+            if ($lockedReport === null) {
+                throw ApiException::notFound('Report');
+            }
+
+            if ((int) $lockedReport->workflow_version !== $expectedWorkflowVersion) {
+                throw new ApiException(
+                    'REPORT_VERSION_CONFLICT',
+                    'Report workflow or assignment changed before this assignment could be applied.',
+                    409,
+                    [
+                        'expected_workflow_version' => $expectedWorkflowVersion,
+                        'actual_workflow_version' => (int) $lockedReport->workflow_version,
+                    ],
+                );
+            }
+
             $department = $decision->destinationDepartment;
             $officer = $decision->defaultOfficer ?? $this->pickOfficer($department->id);
 
@@ -65,12 +91,15 @@ class AssignmentService
             // itself so list / search queries can filter on
             // the resolved department + priority without a
             // join to `report_assignments`.
-            $report->department_id = $department->id;
-            $report->priority_id = $decision->defaultPriority->id;
-            $report->save();
+            $lockedReport->department_id = $department->id;
+            $lockedReport->priority_id = $decision->defaultPriority->id;
+            $lockedReport->workflow_version = $expectedWorkflowVersion + 1;
+            $lockedReport->save();
 
             return $assignment;
         });
+
+        $report->refresh();
 
         ReportAssigned::dispatch(
             reportId: $report->id,
