@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { installCitizenSession } from './helpers/citizen-session';
 
 /**
  * T-M13-023 — Citizen PWA structural smoke + a11y gate.
@@ -11,17 +12,29 @@ import AxeBuilder from '@axe-core/playwright';
  */
 
 test.describe('citizen — shell (T-M13-023)', () => {
+  test.beforeEach(async ({ page }) => {
+    await installCitizenSession(page);
+  });
+
   test('lands on the citizen home with the bottom nav', async ({ page }) => {
     await page.goto('/citizen');
     await expect(page.getByRole('navigation', { name: /citizen sections/i })).toBeVisible();
   });
 
-  test('routes: home → reports → notifications → profile → settings', async ({ page }) => {
+  test('routes through the primary citizen navigation', async ({ page }) => {
     await page.goto('/citizen');
-    await expect(page.getByRole('link', { name: /my reports/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /updates/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /profile/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /settings/i })).toBeVisible();
+
+    await page.getByRole('link', { name: /^reports$/i }).click();
+    await expect(page).toHaveURL(/\/citizen\/reports$/);
+
+    await page.getByRole('link', { name: /new report/i }).click();
+    await expect(page).toHaveURL(/\/citizen\/submit$/);
+
+    await page.getByRole('link', { name: /account/i }).click();
+    await expect(page).toHaveURL(/\/citizen\/profile$/);
+
+    await page.getByRole('link', { name: /settings/i }).click();
+    await expect(page).toHaveURL(/\/citizen\/settings$/);
   });
 
   test('has no serious / critical axe violations on the home page', async ({ page }) => {

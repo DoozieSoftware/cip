@@ -702,6 +702,13 @@ Deploy (cPanel via rsync)
 
 Deployment blocked on failure.
 
+The CI workflow also runs nightly at midnight IST. Nightly runs keep MySQL 8.4
+and Redis isolated as GitHub Actions services, execute the complete Pest and
+Vitest suites, build the production frontend, and run the critical citizen
+Playwright journey in Chromium. Pull requests and branch pushes retain the
+changed-test fast path, with a full-suite fallback when application source is
+changed without a corresponding test file.
+
 ---
 
 # 30. Static Analysis
