@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Modules\Workflow\Models\WorkflowDefinition;
 use App\Modules\Workflow\Models\WorkflowState;
 use App\Modules\Workflow\Models\WorkflowTransition;
-use Illuminate\Database\Migration;
+use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
