@@ -85,6 +85,16 @@ class IdempotencyKey
                 $existing = $query->first();
 
                 if ($existing !== null) {
+                    if ($existing->response_status === 0
+                        && $existing->pending_expires_at !== null
+                        && $existing->pending_expires_at->isPast()) {
+                        // Recover a reservation left behind by a crashed
+                        // worker without allowing two live handlers.
+                        $existing->pending_expires_at = now()->addMinutes(5);
+                        $existing->save();
+                        $claimed = true;
+                    }
+
                     return $existing;
                 }
 
@@ -98,6 +108,7 @@ class IdempotencyKey
                     'request_hash' => $requestHash,
                     'response_status' => 0,
                     'response_body' => null,
+                    'pending_expires_at' => now()->addMinutes(5),
                     'created_at' => now(),
                 ]);
 
@@ -161,6 +172,7 @@ class IdempotencyKey
                 ->update([
                     'response_status' => $response->getStatusCode(),
                     'response_body' => $body,
+                    'pending_expires_at' => null,
                 ]);
         } elseif ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
             // Validation/server failures must release the reservation so a
