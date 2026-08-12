@@ -1014,7 +1014,11 @@ export default function SubmitPage(): JSX.Element {
               <div className="rounded-xl bg-white p-4">
                 <div className="flex items-center gap-2 mb-4">
                   <IconUpload className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
-                  <p className="text-sm font-medium text-[var(--color-ink)]">
+                  <p
+                    className="text-sm font-medium text-[var(--color-ink)]"
+                    role="status"
+                    aria-live="polite"
+                  >
                     {t('submit.evidence.filesAttached', {
                       count: files.length,
                       plural: files.length === 1 ? '' : 's',
@@ -1028,7 +1032,7 @@ export default function SubmitPage(): JSX.Element {
                         {f.type.startsWith('image/') ? (
                           <img
                             src={previewUrls[i]}
-                            alt=""
+                            alt={f.name}
                             className="h-full w-full object-cover"
                             {...evidencePreviewHandlers()}
                           />

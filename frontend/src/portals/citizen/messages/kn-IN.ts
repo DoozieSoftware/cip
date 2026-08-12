@@ -431,6 +431,12 @@ export const kn_IN: MessageCatalog = {
   'camera.startRecording': 'ರೆಕಾರ್ಡಿಂಗ್ ಪ್ರಾರಂಭಿಸಿ',
   'camera.stopRecording': 'ರೆಕಾರ್ಡಿಂಗ್ ನಿಲ್ಲಿಸಿ',
   'camera.recordingTime': '{elapsed}s ರೆಕಾರ್ಡ್ ಆಗಿದೆ · {remaining}s ಉಳಿದಿದೆ',
+  'camera.recordingProgressLabel': 'ವೀಡಿಯೊ ರೆಕಾರ್ಡಿಂಗ್ ಪ್ರಗತಿ',
+  'camera.recordProgressHint': 'ಕನಿಷ್ಠ ಅವಧಿಯವರೆಗೆ ರೆಕಾರ್ಡ್ ಮಾಡಿ, ನಂತರ ಮಿತಿಯೊಳಗೆ ನಿಲ್ಲಿಸಿ.',
+  'camera.recordingStarted': 'ರೆಕಾರ್ಡಿಂಗ್ ಪ್ರಾರಂಭವಾಗಿದೆ.',
+  'camera.photoReady': 'ಫೋಟೋ ಕಪ್ಚರ್ ಆಗಿದೆ ಮತ್ತು ಲಗತ್ತಿಸಲು ಸಿದ್ಧವಾಗಿದೆ.',
+  'camera.videoReady': 'ವೀಡಿಯೊ ಕಪ್ಚರ್ ಆಗಿದೆ ಮತ್ತು ಲಗತ್ತಿಸಲು ಸಿದ್ಧವಾಗಿದೆ.',
+  'camera.tryAgain': 'ಕ್ಯಾಮರಾವನ್ನು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ',
   'camera.httpsRequired':
     'ಕ್ಯಾಮರಾ ಪ್ರವೇಶಕ್ಕೆ HTTPS ಅಥವಾ localhost ಅಗತ್ಯವಿದೆ. ಅಪ್ಲಿಕೇಶನ್ ಅನ್ನು https:// ನೊಂದಿಗೆ ತೆರೆದು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
   'camera.notAvailable': 'ಈ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಕ್ಯಾಮರಾ ಲಭ್ಯವಿಲ್ಲ.',

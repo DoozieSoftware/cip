@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import { CameraCapture } from './CameraCapture';
 
 describe('CameraCapture open button label', () => {
@@ -27,5 +27,19 @@ describe('CameraCapture open button label', () => {
   it('labels the live preview for screen-reader users', () => {
     render(<CameraCapture mode="video" onCapture={() => {}} />);
     expect(screen.getByLabelText('Live camera preview')).toBeInTheDocument();
+  });
+
+  it('offers a keyboard-accessible retry when camera permission fails', async () => {
+    Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
+    const getUserMedia = vi.fn().mockRejectedValue(new DOMException('blocked', 'NotAllowedError'));
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+    render(<CameraCapture mode="photo" onCapture={() => {}} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open camera' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/camera permission is blocked/i);
+    const retry = screen.getByRole('button', { name: 'Try camera again' });
+    expect(retry).toHaveAttribute('type', 'button');
+    fireEvent.click(retry);
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalledTimes(2));
   });
 });

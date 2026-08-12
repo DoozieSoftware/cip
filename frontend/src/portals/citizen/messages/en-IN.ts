@@ -429,6 +429,13 @@ export const en_IN: MessageCatalog = {
   'camera.startRecording': 'Start recording',
   'camera.stopRecording': 'Stop recording',
   'camera.recordingTime': '{elapsed}s recorded · {remaining}s remaining',
+  'camera.recordingProgressLabel': 'Video recording progress',
+  'camera.recordProgressHint':
+    'Keep recording until the minimum length, then stop before the limit.',
+  'camera.recordingStarted': 'Recording started.',
+  'camera.photoReady': 'Photo captured and ready to attach.',
+  'camera.videoReady': 'Video captured and ready to attach.',
+  'camera.tryAgain': 'Try camera again',
   'camera.httpsRequired':
     'Camera access requires HTTPS or localhost. Open the app with https:// and try again.',
   'camera.notAvailable': 'Camera not available in this browser.',

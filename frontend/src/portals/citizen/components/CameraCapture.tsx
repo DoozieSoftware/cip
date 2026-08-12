@@ -69,7 +69,9 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
   const chunksRef = useRef<Blob[]>([]);
 
   const [active, setActive] = useState(false);
+  const [recording, setRecording] = useState(false);
   const [error, setError] = useState<CameraError | null>(null);
+  const [statusMessage, setStatusMessage] = useState('');
   const [recordingMs, setRecordingMs] = useState(0);
   const stoppedAtRef = useRef<number>(0);
 
@@ -158,6 +160,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
       streamRef.current = null;
     }
     setActive(false);
+    setRecording(false);
   }
 
   async function takePhoto(): Promise<void> {
@@ -176,6 +179,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
     const cleaned = await scrubFile(file);
     onCapture(cleaned);
+    setStatusMessage(t('camera.photoReady'));
     stopStream();
   }
 
@@ -207,6 +211,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
           message: t('camera.videoNotSupported'),
         };
         setError(err);
+        setRecording(false);
         onError?.(err);
         return;
       }
@@ -218,6 +223,8 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     // start() is *called* (MediaRecorder has a short warm-up delay).
     rec.onstart = () => {
       startedAtRef.current = Date.now();
+      setRecording(true);
+      setStatusMessage(t('camera.recordingStarted'));
     };
     rec.onstop = () => {
       // Measure to the instant stop() was clicked, not to onstop firing
@@ -233,6 +240,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
           message: result.message,
         };
         setError(err);
+        setRecording(false);
         onError?.(err);
         stopStream();
         return;
@@ -242,6 +250,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
       const ext = blobType.includes('mp4') ? 'mp4' : 'webm';
       const file = new File([blob], `video-${Date.now()}.${ext}`, { type: blobType });
       onCapture(file);
+      setStatusMessage(t('camera.videoReady'));
       stopStream();
     };
     recorderRef.current = rec;
@@ -295,13 +304,46 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
         ) : null}
       </div>
 
+      <div className="sr-only" aria-live="polite">
+        {statusMessage}
+      </div>
+
+      {active && mode === 'video' && recording ? (
+        <div className="space-y-1" role="group" aria-label={t('camera.recordingProgressLabel')}>
+          <div
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={videoMaxMs}
+            aria-valuenow={Math.min(recordingMs, videoMaxMs)}
+            aria-valuetext={t('camera.recordingTime', {
+              elapsed: (recordingMs / 1000).toFixed(1),
+              remaining: (Math.max(0, videoMaxMs - recordingMs) / 1000).toFixed(1),
+            })}
+            className="h-2 overflow-hidden rounded-full bg-slate-200"
+          >
+            <span
+              className="block h-full rounded-full bg-rose-600 transition-[width]"
+              style={{ width: `${Math.min(100, (recordingMs / videoMaxMs) * 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-slate-600">{t('camera.recordProgressHint')}</p>
+        </div>
+      ) : null}
+
       {error ? (
-        <p
+        <div
           role="alert"
           className="rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800"
         >
-          {error.message}
-        </p>
+          <p>{error.message}</p>
+          <button
+            type="button"
+            onClick={() => void startCamera()}
+            className="mt-2 min-h-10 rounded-full border border-rose-400 bg-white px-3 font-medium text-rose-900 hover:bg-rose-100"
+          >
+            {t('camera.tryAgain')}
+          </button>
+        </div>
       ) : mode === 'video' && !active ? (
         <p className="text-xs text-slate-500">
           {t('camera.recordHint', { min: videoMinMs / 1000, max: videoMaxMs / 1000 })}
@@ -326,7 +368,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
           >
             <span aria-hidden className="block h-12 w-12 rounded-full bg-blue-600" />
           </button>
-        ) : recorderRef.current?.state === 'recording' ? (
+        ) : recording ? (
           <button
             type="button"
             onClick={stopRecording}
