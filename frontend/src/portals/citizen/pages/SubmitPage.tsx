@@ -37,6 +37,7 @@ import { useMessages } from '../messages';
 import { readSession } from '../../../auth/storage';
 import { clearDraft, loadDraft, saveDraft } from '../offline/drafts';
 import { requestBackgroundSync } from '../offline/swBridge';
+import { trackProductEvent } from '../../../shared/analytics';
 
 const FORM_STEPS = ['Category', 'Details', 'Location', 'Evidence', 'Review'] as const;
 type Step = (typeof FORM_STEPS)[number];
@@ -99,12 +100,25 @@ export default function SubmitPage(): JSX.Element {
   const [showVideo, setShowVideo] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<'type' | 'title' | 'description' | 'location' | 'evidence', string>>
   >({});
   const [currentViewStep, setCurrentViewStep] = useState<Step>('Category');
   const draftReadyRef = useRef(false);
   const draftCompleteRef = useRef(false);
+
+  // Keep media previews scoped to the current draft and release each object
+  // URL when files change/unmount. Creating URLs inline during render leaks a
+  // blob reference on every state update, which is especially costly on
+  // mobile devices capturing several photos.
+  useEffect(() => {
+    const urls = files.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [files]);
 
   useEffect(() => {
     if (!ownerId) {
@@ -205,6 +219,7 @@ export default function SubmitPage(): JSX.Element {
 
   useEffect(() => {
     headingRef.current?.focus();
+    trackProductEvent('report_step_viewed', { step: currentViewStep });
   }, [currentViewStep]);
 
   function handleCategoryNext(): void {
@@ -319,12 +334,14 @@ export default function SubmitPage(): JSX.Element {
     setSubmitting(true);
     try {
       const res = await create.mutateAsync(payload);
+      trackProductEvent('report_completed');
       draftCompleteRef.current = true;
       if (ownerId) void clearDraft(ownerId);
       void navigate(`/citizen/reports/${res.id}`);
     } catch (err) {
       if (isNetworkFailure(err)) {
         await getQueue(ownerId).enqueue({ kind: 'report.create', payload });
+        trackProductEvent('report_queued_offline');
         void requestBackgroundSync();
         draftCompleteRef.current = true;
         if (ownerId) void clearDraft(ownerId);
@@ -480,6 +497,15 @@ export default function SubmitPage(): JSX.Element {
                 {t('submit.category.emergencyTitle')}
               </p>
               <p className="mt-1 text-sm text-amber-900">{t('submit.category.emergencyBody')}</p>
+            </aside>
+
+            <aside className="rounded-xl border border-sky-200 bg-sky-50 p-4" role="note">
+              <p className="text-sm font-semibold text-sky-950">
+                {t('submit.category.agencyTitle')}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-sky-900">
+                {t('submit.category.agencyBody')}
+              </p>
             </aside>
 
             {types.isLoading ? (
@@ -932,18 +958,20 @@ export default function SubmitPage(): JSX.Element {
                       <div className="aspect-square overflow-hidden rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)]">
                         {f.type.startsWith('image/') ? (
                           <img
-                            src={URL.createObjectURL(f)}
+                            src={previewUrls[i]}
                             alt=""
                             className="h-full w-full object-cover"
                             {...evidencePreviewHandlers()}
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-[var(--color-surface-alt)]">
-                            <IconCamera
-                              className="h-8 w-8 text-[var(--color-text-tertiary)]"
-                              stroke={1.6}
-                            />
-                          </div>
+                          <video
+                            src={previewUrls[i]}
+                            controls
+                            muted
+                            preload="metadata"
+                            className="h-full w-full object-contain bg-black"
+                            aria-label={t('detail.video')}
+                          />
                         )}
                       </div>
                       <button
