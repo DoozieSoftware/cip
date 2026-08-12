@@ -1,4 +1,4 @@
-import { useMemo, useState, type JSX } from 'react';
+import { useMemo, useState, type FormEvent, type JSX } from 'react';
 import {
   IconDatabase,
   IconAlertTriangle,
@@ -6,7 +6,15 @@ import {
   IconClock,
   IconShield,
 } from '@tabler/icons-react';
-import { useSettings, useUpdateSetting, type Setting } from '../api/client';
+import {
+  useSettings,
+  useUpdateSetting,
+  useRetentionHolds,
+  useCreateRetentionHold,
+  useReleaseRetentionHold,
+  type Setting,
+  type RetentionHoldEntityType,
+} from '../api/client';
 import {
   Card,
   CardHeader,
@@ -40,6 +48,15 @@ const RETENTION_KEYS = [
   'retention.backup.days',
 ];
 
+const HOLD_ENTITY_TYPES: Array<{ value: RetentionHoldEntityType; label: string }> = [
+  { value: 'media', label: 'Evidence media' },
+  { value: 'security_event', label: 'Security event' },
+  { value: 'notification', label: 'Notification' },
+  { value: 'ai_job', label: 'AI job' },
+  { value: 'ai_result', label: 'AI result' },
+  { value: 'ai_label', label: 'AI label' },
+];
+
 function asInt(value: unknown, fallback: number): number {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'string') {
@@ -52,7 +69,14 @@ function asInt(value: unknown, fallback: number): number {
 export default function AdminDataRetention(): JSX.Element {
   const list = useSettings();
   const update = useUpdateSetting();
+  const holds = useRetentionHolds(true);
+  const createHold = useCreateRetentionHold();
+  const releaseHold = useReleaseRetentionHold();
   const [filter, setFilter] = useState('');
+  const [holdType, setHoldType] = useState<RetentionHoldEntityType>('media');
+  const [holdEntityId, setHoldEntityId] = useState('');
+  const [holdReason, setHoldReason] = useState('');
+  const [holdExpiry, setHoldExpiry] = useState('');
 
   const rows = useMemo(() => {
     const all = list.data ?? [];
@@ -70,6 +94,38 @@ export default function AdminDataRetention(): JSX.Element {
   const purgeEnabled = asInt(purgeEnabledRow?.value, 0) === 1;
   const togglePurgeEnabled = (): void => {
     update.mutate({ key: PURGE_ENABLED_KEY, value: purgeEnabled ? 0 : 1, type: 'int' });
+  };
+
+  const submitHold = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    if (holdEntityId.trim() === '' || holdReason.trim().length < 10) return;
+    createHold.mutate(
+      {
+        entity_type: holdType,
+        entity_id: holdEntityId.trim(),
+        reason: holdReason.trim(),
+        expires_at: holdExpiry === '' ? null : new Date(holdExpiry).toISOString(),
+      },
+      {
+        onSuccess: () => {
+          setHoldEntityId('');
+          setHoldReason('');
+          setHoldExpiry('');
+        },
+      },
+    );
+  };
+
+  const release = (holdId: string): void => {
+    if (
+      !window.confirm('Release this legal hold? The release will be recorded in the audit trail.')
+    )
+      return;
+    const reason = window.prompt(
+      'Enter the approval or legal basis for release (at least 10 characters):',
+    );
+    if (reason === null || reason.trim().length < 10) return;
+    releaseHold.mutate({ id: holdId, release_reason: reason.trim() });
   };
 
   if (list.isLoading) {
@@ -120,7 +176,9 @@ export default function AdminDataRetention(): JSX.Element {
                 <IconShield className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
               </span>
               <div>
-                <p className="text-sm font-semibold text-[var(--color-ink)]">Enable scheduled purge</p>
+                <p className="text-sm font-semibold text-[var(--color-ink)]">
+                  Enable scheduled purge
+                </p>
                 <p className="text-xs text-[var(--color-text-secondary)]">
                   Master switch for the daily retention sweep. Off by default — no data is deleted
                   until this is on.
@@ -219,7 +277,9 @@ export default function AdminDataRetention(): JSX.Element {
                         <td className="px-5 py-3 text-sm font-mono font-medium text-[var(--color-ink)]">
                           {s.key}
                         </td>
-                        <td className="px-5 py-3 text-sm text-[var(--color-text-secondary)]">{s.description ?? '—'}</td>
+                        <td className="px-5 py-3 text-sm text-[var(--color-text-secondary)]">
+                          {s.description ?? '—'}
+                        </td>
                         <td className="px-5 py-3 text-sm">
                           <Badge
                             tone="neutral"
@@ -258,7 +318,9 @@ export default function AdminDataRetention(): JSX.Element {
           <CardHeader className="flex items-center justify-between border-b border-[var(--color-border-subtle)] px-5 py-4">
             <div className="flex items-center gap-2">
               <IconClock className="h-5 w-5 text-[var(--color-text-secondary)]" stroke={1.6} />
-              <CardTitle className="text-sm font-semibold text-[var(--color-ink)]">Backup policy</CardTitle>
+              <CardTitle className="text-sm font-semibold text-[var(--color-ink)]">
+                Backup policy
+              </CardTitle>
             </div>
           </CardHeader>
           <CardBody>
@@ -277,6 +339,147 @@ export default function AdminDataRetention(): JSX.Element {
               </code>
               .
             </p>
+          </CardBody>
+        </Card>
+
+        <Card className="rounded-xl bg-white shadow-sm ring-1 ring-black/5">
+          <CardHeader className="border-b border-[var(--color-border-subtle)] px-5 py-4">
+            <div className="flex items-center gap-2">
+              <IconShield className="h-5 w-5 text-[var(--color-text-secondary)]" stroke={1.6} />
+              <div>
+                <CardTitle className="text-sm font-semibold text-[var(--color-ink)]">
+                  Active legal holds
+                </CardTitle>
+                <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+                  Preserve evidence or operational records until an authorised release is recorded.
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardBody className="space-y-5">
+            <form
+              onSubmit={submitHold}
+              className="grid gap-3 rounded-xl bg-[var(--color-canvas)] p-4 sm:grid-cols-2"
+            >
+              <label className="text-xs font-medium text-[var(--color-text-secondary)]">
+                Entity type
+                <select
+                  aria-label="Hold entity type"
+                  value={holdType}
+                  onChange={(event) => setHoldType(event.target.value as RetentionHoldEntityType)}
+                  className="mt-1 block min-h-[44px] w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)]"
+                >
+                  {HOLD_ENTITY_TYPES.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs font-medium text-[var(--color-text-secondary)]">
+                Entity UUID
+                <input
+                  required
+                  aria-label="Hold entity UUID"
+                  value={holdEntityId}
+                  onChange={(event) => setHoldEntityId(event.target.value)}
+                  placeholder="UUID of the record to preserve"
+                  className="mt-1 block min-h-[44px] w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)]"
+                />
+              </label>
+              <label className="text-xs font-medium text-[var(--color-text-secondary)] sm:col-span-2">
+                Legal basis / investigation reference
+                <textarea
+                  required
+                  minLength={10}
+                  aria-label="Legal basis for retention hold"
+                  value={holdReason}
+                  onChange={(event) => setHoldReason(event.target.value)}
+                  rows={2}
+                  className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm text-[var(--color-ink)]"
+                />
+              </label>
+              <label className="text-xs font-medium text-[var(--color-text-secondary)]">
+                Optional expiry
+                <input
+                  type="datetime-local"
+                  aria-label="Retention hold expiry"
+                  value={holdExpiry}
+                  onChange={(event) => setHoldExpiry(event.target.value)}
+                  className="mt-1 block min-h-[44px] w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)]"
+                />
+              </label>
+              <div className="flex items-end justify-end">
+                <button
+                  type="submit"
+                  disabled={
+                    createHold.isPending ||
+                    holdEntityId.trim() === '' ||
+                    holdReason.trim().length < 10
+                  }
+                  className="min-h-[44px] rounded-full bg-[var(--color-ink)] px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {createHold.isPending ? 'Creating…' : 'Create hold'}
+                </button>
+              </div>
+            </form>
+            {createHold.isError && (
+              <p role="alert" className="text-sm text-[var(--color-danger)]">
+                {createHold.error instanceof Error
+                  ? createHold.error.message
+                  : 'Could not create the hold.'}
+              </p>
+            )}
+            {holds.isLoading ? (
+              <Spinner label="Loading active legal holds" />
+            ) : holds.isError ? (
+              <ErrorState title="Failed to load legal holds" error={holds.error} />
+            ) : (holds.data ?? []).length === 0 ? (
+              <EmptyState title="No active legal holds" description="New holds will appear here." />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead className="bg-[var(--color-canvas)] text-left text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                    <tr>
+                      <th className="px-4 py-3">Entity</th>
+                      <th className="px-4 py-3">Legal basis</th>
+                      <th className="px-4 py-3">Expiry</th>
+                      <th className="px-4 py-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--color-border-subtle)]">
+                    {(holds.data ?? []).map((hold) => (
+                      <tr key={hold.id}>
+                        <td className="px-4 py-3 text-xs text-[var(--color-ink)]">
+                          <span className="font-semibold">{hold.entity_type}</span>
+                          <span className="mt-0.5 block max-w-[220px] truncate font-mono text-[10px] text-[var(--color-text-tertiary)]">
+                            {hold.entity_id}
+                          </span>
+                        </td>
+                        <td className="max-w-sm px-4 py-3 text-xs text-[var(--color-text-secondary)]">
+                          {hold.reason}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-xs text-[var(--color-text-secondary)]">
+                          {hold.expires_at
+                            ? new Date(hold.expires_at).toLocaleString()
+                            : 'Indefinite'}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => release(hold.id)}
+                            disabled={releaseHold.isPending}
+                            className="min-h-[44px] rounded-full border border-[var(--color-border)] px-4 text-xs font-semibold text-[var(--color-ink)] disabled:opacity-50"
+                          >
+                            Release
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </CardBody>
         </Card>
       </div>

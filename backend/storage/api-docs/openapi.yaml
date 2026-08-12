@@ -3055,6 +3055,111 @@ paths:
               schema: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }, { type: object, properties: { data: { type: object, properties: { deleted: { type: boolean, example: true } } } } }] }
         404:
           $ref: '#/components/responses/NotFound'
+  /api/v1/admin/retention-holds:
+    get:
+      tags:
+        - Settings
+      summary: 'List legal retention holds (super_admin only)'
+      operationId: admin.retention-holds.index
+      parameters:
+        -
+          in: query
+          name: entity_type
+          schema:
+            type: string
+            enum: [media, security_event, notification, ai_job, ai_result, ai_label]
+        -
+          in: query
+          name: entity_id
+          schema:
+            type: string
+            format: uuid
+        -
+          in: query
+          name: active
+          schema:
+            type: boolean
+        -
+          in: query
+          name: per_page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        200:
+          description: 'Paginated legal hold list.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RetentionHoldListResponse' }
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        422:
+          $ref: '#/components/responses/ValidationError'
+    post:
+      tags:
+        - Settings
+      summary: 'Create a legal retention hold (super_admin only)'
+      operationId: admin.retention-holds.store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetentionHoldStoreRequest'
+      responses:
+        201:
+          description: 'Retention hold created.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RetentionHoldResponse' }
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
+        422:
+          $ref: '#/components/responses/ValidationError'
+  '/api/v1/admin/retention-holds/{retention_hold}/release':
+    post:
+      tags:
+        - Settings
+      summary: 'Release a legal retention hold (super_admin only)'
+      operationId: admin.retention-holds.release
+      parameters:
+        -
+          in: path
+          name: retention_hold
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetentionHoldReleaseRequest'
+      responses:
+        200:
+          description: 'Retention hold released and custody fields recorded.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RetentionHoldResponse' }
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        422:
+          $ref: '#/components/responses/ValidationError'
   /api/v1/admin/app-configs:
     get:
       tags:
@@ -6018,6 +6123,96 @@ components:
             data:
               type: array
               items: { $ref: '#/components/schemas/Setting' }
+            meta:
+              $ref: '#/components/schemas/PaginationMeta'
+    RetentionHoldStoreRequest:
+      type: object
+      required: [entity_type, entity_id, reason]
+      properties:
+        entity_type:
+          type: string
+          enum: [media, security_event, notification, ai_job, ai_result, ai_label]
+        entity_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 2000
+          description: 'Legal basis or investigation reference for preserving the entity.'
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: 'Optional future expiry. Null means indefinite until explicitly released.'
+    RetentionHoldReleaseRequest:
+      type: object
+      required: [release_reason]
+      properties:
+        release_reason:
+          type: string
+          minLength: 10
+          maxLength: 2000
+          description: 'Approval or legal basis for releasing the hold.'
+    RetentionHold:
+      type: object
+      required: [id, entity_type, entity_id, reason, active, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        entity_type:
+          type: string
+          enum: [media, security_event, notification, ai_job, ai_result, ai_label]
+        entity_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+        held_by:
+          type: string
+          format: uuid
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        released_at:
+          type: string
+          format: date-time
+          nullable: true
+        released_by:
+          type: string
+          format: uuid
+          nullable: true
+        release_reason:
+          type: string
+          nullable: true
+        active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    RetentionHoldResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        -
+          type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/RetentionHold'
+    RetentionHoldListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        -
+          type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/RetentionHold' }
             meta:
               $ref: '#/components/schemas/PaginationMeta'
     AppConfigStoreRequest:

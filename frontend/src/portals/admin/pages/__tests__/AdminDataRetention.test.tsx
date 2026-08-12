@@ -10,6 +10,9 @@ vi.mock('../../api/client', () => ({
   useUpdateSetting: vi.fn(() => ({ mutate: mutateMock, isPending: false })),
   useCreateSetting: vi.fn(() => ({ mutate: mutateMock, isPending: false })),
   useDeleteSetting: vi.fn(() => ({ mutate: mutateMock, isPending: false })),
+  useRetentionHolds: vi.fn(() => ({ data: [], isLoading: false, isError: false })),
+  useCreateRetentionHold: vi.fn(() => ({ mutate: mutateMock, isPending: false, isError: false })),
+  useReleaseRetentionHold: vi.fn(() => ({ mutate: mutateMock, isPending: false })),
 }));
 
 const { useSettings } = await import('../../api/client');
