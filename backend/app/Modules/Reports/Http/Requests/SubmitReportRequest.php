@@ -39,7 +39,9 @@ class SubmitReportRequest extends FormRequest
         return [
             'report_type_id' => ['required', 'uuid', 'exists:report_types,id'],
             'title' => ['required', 'string', 'min:5', 'max:255'],
-            'description' => ['required', 'string', 'min:10', 'max:5000'],
+            // A photo plus a short issue title is sufficient for low-literacy
+            // and time-sensitive reports; text detail remains optional.
+            'description' => ['nullable', 'string', 'min:10', 'max:5000'],
             'is_anonymous' => ['nullable', 'boolean'],
 
             'latitude' => ['required', 'numeric', 'between:-90,90'],

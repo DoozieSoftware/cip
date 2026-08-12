@@ -186,7 +186,7 @@ export default function SubmitPage(): JSX.Element {
     if (title.trim().length < 5) {
       errors.title = t('submit.details.titleTooShort');
     }
-    if (description.trim().length < 10) {
+    if (description.trim().length > 0 && description.trim().length < 10) {
       errors.description = t('submit.details.descriptionTooShort');
     }
     setFieldErrors(errors);
@@ -216,7 +216,7 @@ export default function SubmitPage(): JSX.Element {
     if (title.trim().length < 5) {
       errors.title = t('submit.details.titleTooShort');
     }
-    if (description.trim().length < 10) {
+    if (description.trim().length > 0 && description.trim().length < 10) {
       errors.description = t('submit.details.descriptionTooShort');
     }
     if (Object.keys(errors).length > 0) {
@@ -336,7 +336,11 @@ export default function SubmitPage(): JSX.Element {
 
   const completedSteps: Step[] = [];
   if (typeId) completedSteps.push('Category');
-  if (typeId && title.trim().length >= 5 && description.trim().length >= 10)
+  if (
+    typeId &&
+    title.trim().length >= 5 &&
+    (description.trim().length === 0 || description.trim().length >= 10)
+  )
     completedSteps.push('Details');
   if (location) completedSteps.push('Location');
   if (location && (!evidenceRequired || files.length > 0)) completedSteps.push('Evidence');
@@ -622,7 +626,8 @@ export default function SubmitPage(): JSX.Element {
                   htmlFor="report-description"
                   className="text-sm font-medium text-[var(--color-ink)]"
                 >
-                  {t('submit.details.descriptionLabel')} <span className="text-red-500">*</span>
+                  {t('submit.details.descriptionLabel')}{' '}
+                  <span className="text-slate-500">({t('common.optional')})</span>
                 </label>
                 <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
                   {t('submit.details.descriptionHint')}

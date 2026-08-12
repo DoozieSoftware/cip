@@ -118,7 +118,7 @@ describe('SubmitPage', () => {
     // Step 4: Evidence
     await waitFor(() => expect(screen.getByText('Attach Evidence')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('camera-photo'));
-    fireEvent.click(screen.getByRole('button', { name: /^review$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /review your report/i }));
 
     // Step 5: Review & Submit
     await waitFor(() => expect(screen.getByText('Review Your Report')).toBeInTheDocument());
