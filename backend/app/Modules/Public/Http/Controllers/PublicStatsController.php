@@ -21,6 +21,8 @@ class PublicStatsController extends BaseController
 
     public function index(): JsonResponse
     {
-        return $this->respond($this->stats->summary());
+        $summary = $this->stats->summaryWithMetadata();
+
+        return $this->respond($summary['data'], meta: $summary['metadata']);
     }
 }

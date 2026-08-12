@@ -34,14 +34,45 @@ class PublicStatsService
      */
     public function summary(): array
     {
+        return $this->summaryWithMetadata()['data'];
+    }
+
+    /**
+     * Return the public metrics with the definitions and computation time
+     * that callers need to interpret them correctly. The metric payload is
+     * cached together with its timestamp so the freshness label always
+     * describes the values actually being shown.
+     *
+     * @return array{data: array{total_reports: int, ai_classified_percent: float, median_assign_seconds: int|null}, metadata: array<string, mixed>}
+     */
+    public function summaryWithMetadata(): array
+    {
         return Cache::remember(self::CACHE_KEY, self::CACHE_TTL_SECONDS, function (): array {
-            $total = Report::query()->count();
-            $aiClassified = Report::query()->whereNotNull('ai_label')->count();
+            // Drafts, rejected reports, and merge duplicates are not part of
+            // public throughput or classification denominators. A report with
+            // an unknown status remains eligible until it is explicitly moved
+            // into one of those excluded states.
+            $eligible = Report::query()->whereHas('status', static function ($query): void {
+                $query->whereNotIn('code', ['draft', 'rejected', 'merged']);
+            });
+            $total = (clone $eligible)->count();
+            $aiClassified = (clone $eligible)->whereNotNull('ai_label')->count();
 
             return [
-                'total_reports' => $total,
-                'ai_classified_percent' => $total > 0 ? round(($aiClassified / $total) * 100, 1) : 0.0,
-                'median_assign_seconds' => $this->medianAssignSeconds(),
+                'data' => [
+                    'total_reports' => $total,
+                    'ai_classified_percent' => $total > 0 ? round(($aiClassified / $total) * 100, 1) : 0.0,
+                    'median_assign_seconds' => $this->medianAssignSeconds(),
+                ],
+                'metadata' => [
+                    'generated_at' => now()->toIso8601String(),
+                    'cache_ttl_seconds' => self::CACHE_TTL_SECONDS,
+                    'definitions' => [
+                        'total_reports' => 'Reports with an active workflow status, excluding drafts, rejected reports, and merged duplicates.',
+                        'ai_classified_percent' => 'Reports with a persisted AI label divided by the public report denominator; human review may still change the final classification.',
+                        'median_assign_seconds' => 'Median elapsed seconds from submitted to assigned for the latest 500 reports with both transitions.',
+                    ],
+                ],
             ];
         });
     }
