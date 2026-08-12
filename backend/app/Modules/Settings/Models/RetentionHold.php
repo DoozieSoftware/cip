@@ -40,8 +40,20 @@ class RetentionHold extends Model
     public function isActive(?Carbon $at = null): bool
     {
         $at ??= now();
+        $attributes = $this->getAttributes();
+        $releasedAt = $this->getRawOriginal('released_at') ?? ($attributes['released_at'] ?? null);
+        $expiresAt = $this->getRawOriginal('expires_at') ?? ($attributes['expires_at'] ?? null);
 
-        return $this->released_at === null
-            && ($this->expires_at === null || $this->expires_at->isFuture() || $this->expires_at->equalTo($at));
+        if ($releasedAt !== null) {
+            return false;
+        }
+
+        if ($expiresAt === null) {
+            return true;
+        }
+
+        $expiresAt = $expiresAt instanceof Carbon ? $expiresAt : Carbon::parse((string) $expiresAt);
+
+        return $expiresAt->greaterThanOrEqualTo($at);
     }
 }
