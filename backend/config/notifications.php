@@ -30,6 +30,7 @@ return [
     // browser; generate a keypair with `php artisan notifications:vapid`.
     'vapid' => [
         'public_key' => env('VAPID_PUBLIC_KEY', 'BNqWPWTS8SziFJjKgN2sD8_WV2pZ39Q0jyucmC6uQd_Skc_i64s8xJkn7g6MkWQ5bDrJ05Mnhxujxp7oBLM6BbM'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
         'subject' => env('VAPID_SUBJECT', 'mailto:no-reply@cip.local'),
     ],
 ];
