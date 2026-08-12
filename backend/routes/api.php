@@ -30,6 +30,7 @@ use App\Modules\Public\Http\Controllers\PublicHeatmapController;
 use App\Modules\Public\Http\Controllers\PublicStatsController;
 use App\Modules\Reports\Http\Controllers\Admin\AdminReportController;
 use App\Modules\Reports\Http\Controllers\Admin\AdminReportTypeController;
+use App\Modules\Reports\Http\Controllers\Api\CitizenReportActionsController;
 use App\Modules\Reports\Http\Controllers\Api\ReportsController;
 use App\Modules\Routing\Http\Controllers\Admin\ReassignController;
 use App\Modules\Routing\Http\Controllers\Admin\RoutingAdminController;
@@ -370,6 +371,12 @@ Route::prefix('v1')->group(function (): void {
         // T-M4-028 — GET /api/v1/citizen/reports and /{id}
         Route::get('citizen/reports', [ReportsController::class, 'citizenIndex'])->name('api.v1.citizen.reports.index');
         Route::get('citizen/reports/{id}', [ReportsController::class, 'citizenShow'])->name('api.v1.citizen.reports.show');
+        Route::post('citizen/reports/{report}/verify', [CitizenReportActionsController::class, 'verify'])
+            ->name('api.v1.citizen.reports.verify');
+        Route::post('citizen/reports/{report}/dispute', [CitizenReportActionsController::class, 'dispute'])
+            ->name('api.v1.citizen.reports.dispute');
+        Route::post('citizen/reports/{report}/dispute-merge', [CitizenReportActionsController::class, 'disputeMerge'])
+            ->name('api.v1.citizen.reports.dispute-merge');
     });
 
     // Staff (moderator / super_admin) — report search and timeline (M4)

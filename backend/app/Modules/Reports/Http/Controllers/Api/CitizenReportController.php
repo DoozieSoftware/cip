@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Reports\Http\Controllers\Api;
 
-use App\Modules\Reports\Http\Resources\ReportResource;
+use App\Modules\Reports\Http\Resources\CitizenReportListResource;
+use App\Modules\Reports\Http\Resources\CitizenReportResource;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Repositories\ReportRepository;
 use App\Modules\Shared\Exceptions\ApiException;
@@ -52,7 +53,7 @@ class CitizenReportController extends BaseController
         $page = $this->repository->searchForCitizen($user, $filters, perPage: (int) $request->query('per_page', 25));
 
         $items = $page->getCollection()
-            ->map(static fn (Report $r): array => (new ReportResource($r))->toArray($request))
+            ->map(static fn (Report $r): array => (new CitizenReportListResource($r))->toArray($request))
             ->values()
             ->all();
 
@@ -91,7 +92,15 @@ class CitizenReportController extends BaseController
         }
 
         return $this->respond(
-            (new ReportResource($report->load(['location', 'status', 'priority', 'reportType'])))->toArray($request),
+            (new CitizenReportResource($report->load([
+                'location',
+                'status',
+                'priority',
+                'reportType',
+                'canonicalReport',
+                'mergeDisputes',
+                'media',
+            ])))->toArray($request),
         );
     }
 

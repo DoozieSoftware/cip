@@ -19,7 +19,8 @@ class ModerationQueueService
     public function baseQueueQuery(): Builder
     {
         return Report::query()
-            ->with(['status', 'reportType', 'priority', 'location'])
+            ->with(['status', 'reportType', 'priority', 'location', 'department'])
+            ->withCount('media')
             ->whereNull('reports.deleted_at');
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Reports\Http\Controllers\Api;
 
+use App\Modules\Reports\Http\Resources\ReportListResource;
 use App\Modules\Reports\Http\Resources\ReportResource;
 use App\Modules\Reports\Http\Resources\ReportStatusHistoryResource;
 use App\Modules\Reports\Models\Report;
@@ -55,7 +56,7 @@ class StaffReportController extends BaseController
         );
 
         $items = $page->getCollection()
-            ->map(static fn (Report $r): array => (new ReportResource($r))->toArray($request))
+            ->map(static fn (Report $r): array => (new ReportListResource($r))->toArray($request))
             ->values()
             ->all();
 

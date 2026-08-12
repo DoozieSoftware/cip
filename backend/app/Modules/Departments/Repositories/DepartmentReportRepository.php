@@ -25,11 +25,12 @@ use Illuminate\Pagination\LengthAwarePaginator;
  *   - date_from / date_to (on `submitted_at`)
  *   - search (tracking_number LIKE, title LIKE)
  *
- * Pagination is capped at 500 per `docs/08` §24.
+ * Pagination is capped at MAX_PER_PAGE so a single list page can
+ * never fan out into an unbounded response.
  */
 class DepartmentReportRepository
 {
-    public const MAX_PER_PAGE = 500;
+    public const MAX_PER_PAGE = 100;
 
     /**
      * Statuses that are actually in the department's hands and
@@ -68,7 +69,15 @@ class DepartmentReportRepository
                             ->where('department_id', $departmentId);
                     });
             })
-            ->with(['reportType', 'department', 'status', 'priority', 'location']);
+            ->with([
+                'reportType',
+                'department',
+                'status',
+                'priority',
+                'location',
+                'activeAssignments.officer',
+            ])
+            ->withCount('media');
 
         $this->applyInHandScope($query);
         $this->applyAssignmentKindScope($query, $departmentId, $filters);
@@ -90,6 +99,11 @@ class DepartmentReportRepository
             'priority',
             'location',
             'internalNotes.author',
+            'media',
+            'statusHistory.fromStatus',
+            'statusHistory.toStatus',
+            'assignments.department',
+            'assignments.officer',
         ]);
     }
 

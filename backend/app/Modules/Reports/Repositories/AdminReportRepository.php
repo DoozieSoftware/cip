@@ -17,7 +17,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
  */
 class AdminReportRepository
 {
-    public const MAX_PER_PAGE = 500;
+    public const MAX_PER_PAGE = 100;
 
     /**
      * @param  array<string, mixed>  $filters
@@ -25,15 +25,17 @@ class AdminReportRepository
      */
     public function search(array $filters, int $perPage = 25): LengthAwarePaginator
     {
-        $query = Report::query()->with([
-            'reportType',
-            'status',
-            'priority',
-            'department',
-            'location',
-            'assignments.department',
-            'assignments.officer',
-        ]);
+        $query = Report::query()
+            ->with([
+                'reportType',
+                'status',
+                'priority',
+                'department',
+                'location',
+                'activeAssignments.department',
+                'activeAssignments.officer',
+            ])
+            ->withCount('media');
 
         $this->applyFilters($query, $filters);
 

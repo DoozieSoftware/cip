@@ -186,6 +186,8 @@ class ModerationService
 
                 if ($mergedStatus !== null) {
                     $dup->current_status_id = $mergedStatus->id;
+                    $dup->merged_into = $canonical->id;
+                    $dup->merged_at = now();
                     $dup->save();
 
                     // This bypasses WorkflowEngine::apply() (a duplicate can be

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Modules\Reports\Models;
 
 use App\Modules\Departments\Models\Department;
+use App\Modules\Media\Models\Media;
 use App\Modules\Users\Models\User;
 use Database\Factories\Modules\Reports\Models\ReportFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -46,6 +48,10 @@ use Illuminate\Support\Carbon;
  * @property bool $is_verified
  * @property Carbon|null $submitted_at
  * @property Carbon|null $closed_at
+ * @property Carbon|null $resolved_at
+ * @property Carbon|null $verification_deadline_at
+ * @property string|null $merged_into
+ * @property Carbon|null $merged_at
  */
 class Report extends Model
 {
@@ -93,6 +99,8 @@ class Report extends Model
         'is_verified',
         'submitted_at',
         'closed_at',
+        'merged_into',
+        'merged_at',
     ];
 
     /**
@@ -109,6 +117,9 @@ class Report extends Model
             'is_verified' => 'boolean',
             'submitted_at' => 'datetime',
             'closed_at' => 'datetime',
+            'resolved_at' => 'datetime',
+            'verification_deadline_at' => 'datetime',
+            'merged_at' => 'datetime',
         ];
     }
 
@@ -160,6 +171,41 @@ class Report extends Model
     }
 
     /**
+     * Self-referencing FK to the canonical report this duplicate was
+     * merged into. Null when this report is not a merge duplicate.
+     *
+     * @return BelongsTo<Report, $this>
+     */
+    public function canonicalReport(): BelongsTo
+    {
+        return $this->belongsTo(Report::class, 'merged_into');
+    }
+
+    /**
+     * Citizen disputes of an incorrect merge. The active (open) dispute
+     * drives the citizen-facing merge-dispute UI.
+     *
+     * @return HasMany<ReportMergeDispute, $this>
+     */
+    public function mergeDisputes(): HasMany
+    {
+        return $this->hasMany(ReportMergeDispute::class, 'report_id');
+    }
+
+    /**
+     * The active merge dispute (open status), if any.
+     */
+    public function activeMergeDispute(): ?ReportMergeDispute
+    {
+        /** @var Collection<int, ReportMergeDispute> $disputes */
+        $disputes = $this->relationLoaded('mergeDisputes')
+            ? $this->mergeDisputes
+            : $this->mergeDisputes()->get();
+
+        return $disputes->firstWhere('status', 'open');
+    }
+
+    /**
      * @return BelongsTo<ReportType, $this>
      */
     public function reportType(): BelongsTo
@@ -205,6 +251,35 @@ class Report extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(ReportAssignment::class, 'report_id');
+    }
+
+    /**
+     * Assignments that are still live for the report: never reassigned
+     * away, never completed, never cancelled. List endpoints eager-load
+     * this narrow relation instead of the full `assignments` history so a
+     * page of rows cannot fan out into a long assignment trail per row.
+     *
+     * @return HasMany<ReportAssignment, $this>
+     */
+    public function activeAssignments(): HasMany
+    {
+        return $this->assignments()
+            ->whereNull('reassigned_at')
+            ->whereNull('completed_at')
+            ->where('task_status', '!=', ReportAssignment::TASK_STATUS_CANCELLED);
+    }
+
+    /**
+     * Evidence and proof media rows for this report. Only metadata lives
+     * here; the bytes are served from the configured disk through signed
+     * URLs. List endpoints use `withCount('media')` rather than loading
+     * the rows.
+     *
+     * @return HasMany<Media, $this>
+     */
+    public function media(): HasMany
+    {
+        return $this->hasMany(Media::class, 'report_id');
     }
 
     /**

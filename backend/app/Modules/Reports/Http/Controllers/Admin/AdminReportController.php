@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Reports\Http\Controllers\Admin;
 
-use App\Modules\Reports\Http\Resources\AdminReportResource;
+use App\Modules\Reports\Http\Resources\AdminReportListResource;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Repositories\AdminReportRepository;
 use App\Modules\Shared\Exceptions\ApiException;
@@ -37,7 +37,7 @@ class AdminReportController extends BaseController
 
         $page = $this->repository->search($filters, (int) $request->query('per_page', 25));
         $items = $page->getCollection()
-            ->map(static fn (Report $report): array => (new AdminReportResource($report))->toArray($request))
+            ->map(static fn (Report $report): array => (new AdminReportListResource($report))->toArray($request))
             ->values()
             ->all();
 

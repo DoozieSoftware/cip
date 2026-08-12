@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Departments\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Departments\Http\Resources\DepartmentReportListResource;
 use App\Modules\Departments\Http\Resources\DepartmentReportResource;
 use App\Modules\Departments\Repositories\DepartmentReportRepository;
 use App\Modules\Departments\Services\OperationDepartmentResolver;
@@ -26,10 +27,11 @@ class DepartmentReportListController extends Controller
         $departmentId = $this->resolveDepartmentId($request);
         $query = $request->query();
         $page = $this->repo->assignedTo($departmentId, is_array($query) ? $query : []);
+        $request->merge(['department_id' => $departmentId]);
 
         return response()->json([
             'success' => true,
-            'data' => DepartmentReportResource::collection($page->items())->resolve($request),
+            'data' => DepartmentReportListResource::collection($page->items())->resolve($request),
             'meta' => [
                 'current_page' => $page->currentPage(),
                 'per_page' => $page->perPage(),

@@ -15,6 +15,8 @@ use Illuminate\Pagination\LengthAwarePaginator as ConcreteLengthAwarePaginator;
 
 class ReportRepository
 {
+    public const MAX_PER_PAGE = 100;
+
     /**
      * @return Builder<Report>
      */
@@ -31,7 +33,18 @@ class ReportRepository
     public function findByIdWithRelations(string $id): ?Report
     {
         return Report::query()
-            ->with(['status', 'reportType', 'priority', 'location', 'location.ward', 'location.district', 'department', 'statusHistory.fromStatus', 'statusHistory.toStatus'])
+            ->with([
+                'status',
+                'reportType',
+                'priority',
+                'location',
+                'location.ward',
+                'location.district',
+                'department',
+                'media',
+                'statusHistory.fromStatus',
+                'statusHistory.toStatus',
+            ])
             ->find($id);
     }
 
@@ -82,7 +95,9 @@ class ReportRepository
      */
     public function searchByRole(array $filters, int $perPage = 25, ?array $departmentScope = null): LengthAwarePaginator
     {
-        $q = $this->baseSearch($filters);
+        $q = $this->baseSearch($filters)
+            ->with(['reportType', 'status', 'priority', 'location', 'department'])
+            ->withCount('media');
 
         if ($departmentScope !== null) {
             $q->where(function (Builder $w) use ($departmentScope): void {
@@ -98,7 +113,7 @@ class ReportRepository
             : 'created_at';
         $dir = strtolower((string) ($filters['dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        return $q->orderBy($sort, $dir)->paginate($perPage);
+        return $q->orderBy($sort, $dir)->paginate(max(1, min(self::MAX_PER_PAGE, $perPage)));
     }
 
     /**
@@ -110,9 +125,12 @@ class ReportRepository
      */
     public function searchForCitizen(User $citizen, array $filters, int $perPage = 25): LengthAwarePaginator
     {
-        $q = $this->baseSearch($filters)->where('citizen_id', $citizen->id);
+        $q = $this->baseSearch($filters)
+            ->where('citizen_id', $citizen->id)
+            ->with(['reportType', 'status', 'priority', 'location', 'department'])
+            ->withCount('media');
 
-        return $q->orderByDesc('created_at')->paginate($perPage);
+        return $q->orderByDesc('created_at')->paginate(max(1, min(self::MAX_PER_PAGE, $perPage)));
     }
 
     /**

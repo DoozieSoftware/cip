@@ -9,11 +9,7 @@ use App\Modules\AI\Listeners\AiCompletedListener;
 use App\Modules\AI\Listeners\ReportMediaUploadedListener;
 use App\Modules\AI\Listeners\ReportSubmittedListener;
 use App\Modules\Media\Events\ReportMediaUploaded;
-use App\Modules\Notifications\Listeners\AiCompletedListener as NotificationsAiCompletedListener;
-use App\Modules\Notifications\Listeners\ReportAssignedListener;
-use App\Modules\Notifications\Listeners\ReportStatusChangedListener;
 use App\Modules\Notifications\Listeners\SecurityEventListener;
-use App\Modules\Reports\Events\ReportAssigned;
 use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Listeners\WriteStatusHistory;
 use App\Modules\Security\Models\SecurityEvent;
@@ -49,14 +45,9 @@ class AppServiceProvider extends ServiceProvider
         // have entered ai_processing before its photo/video landed).
         Event::listen(ReportMediaUploaded::class, ReportMediaUploadedListener::class);
 
-        // M9: notification fan-out for platform events. The
-        // ReportStatusChanged event is shared with the AI
-        // pipeline; the notification listener is a separate
-        // subscriber that looks at the actual status and
-        // decides whether to push a citizen notification.
-        Event::listen(ReportAssigned::class, ReportAssignedListener::class);
-        Event::listen(ReportStatusChanged::class, ReportStatusChangedListener::class);
-        Event::listen(AiCompleted::class, NotificationsAiCompletedListener::class);
+        // Module-owned notification fan-out is registered by
+        // NotificationsServiceProvider. Keep only the cross-cutting
+        // security listener here to avoid duplicate delivery.
         Event::listen(SecurityEvent::class, SecurityEventListener::class);
 
         // session.timeout_minutes security policy overrides the
