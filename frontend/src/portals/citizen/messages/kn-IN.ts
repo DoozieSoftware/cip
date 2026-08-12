@@ -217,6 +217,7 @@ export const kn_IN: MessageCatalog = {
   'reports.filterCount': '({filter})',
   'reports.pagination.previous': 'ಹಿಂದಿನ',
   'reports.pagination.next': 'ಮುಂದಿನ',
+  'reports.pagination.cursorMode': 'ಹೆಚ್ಚಿನ ವರದಿಗಳು',
   'reports.pagination.pageCount': 'ಪುಟ {current} / {total}',
   'reports.tapHint':
     'ವರದಿಯ ಪೂರ್ಣ ಕಾಲರೇಖೆ ಮತ್ತು ಯಾವುದೇ ನಿಯೋಜಿತ ಕ್ರಿಯೆಗಳನ್ನು ವೀಕ್ಷಿಸಲು ವರದಿಯನ್ನು ಟ್ಯಾಪ್ ಮಾಡಿ. ಬೆಂಬಲವನ್ನು ಸಂಪರ್ಕಿಸುವಾಗ ಉಲ್ಲೇಖ ID ಬಳಸಿ.',

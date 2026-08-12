@@ -215,6 +215,7 @@ export const en_IN: MessageCatalog = {
   'reports.filterCount': '({filter})',
   'reports.pagination.previous': 'Previous',
   'reports.pagination.next': 'Next',
+  'reports.pagination.cursorMode': 'More reports',
   'reports.pagination.pageCount': 'Page {current} of {total}',
   'reports.tapHint':
     'Tap a report to view its full timeline and any assigned actions. Use the Reference ID when contacting support.',

@@ -327,6 +327,7 @@ export interface CitizenReportFilters {
   date_from?: string;
   date_to?: string;
   cursor?: string;
+  cursor_mode?: boolean;
 }
 
 export function useCitizenReports(
@@ -351,6 +352,7 @@ export function useCitizenReports(
             date_from: filters.date_from || undefined,
             date_to: filters.date_to || undefined,
             cursor: filters.cursor || undefined,
+            cursor_mode: filters.cursor_mode || undefined,
           },
         },
         perPage,

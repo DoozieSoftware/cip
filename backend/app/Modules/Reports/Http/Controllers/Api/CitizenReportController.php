@@ -54,11 +54,13 @@ class CitizenReportController extends BaseController
         $filters = array_filter($filters, static fn ($v): bool => $v !== null && $v !== '');
 
         $cursor = $request->query('cursor');
+        $cursorMode = filter_var($request->query('cursor_mode', false), FILTER_VALIDATE_BOOLEAN);
         $page = $this->repository->searchForCitizen(
             $user,
             $filters,
             perPage: (int) $request->query('per_page', 25),
             cursor: is_string($cursor) && $cursor !== '' ? $cursor : null,
+            cursorMode: $cursorMode,
         );
 
         $items = ($page instanceof CursorPaginator ? collect($page->items()) : $page->getCollection())

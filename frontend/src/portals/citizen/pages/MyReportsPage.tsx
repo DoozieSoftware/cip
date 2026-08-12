@@ -203,6 +203,7 @@ export default function MyReportsPage(): JSX.Element {
   const area = searchParams.get('area') ?? '';
   const dateFrom = searchParams.get('date_from') ?? '';
   const dateTo = searchParams.get('date_to') ?? '';
+  const cursor = searchParams.get('cursor') ?? '';
   const [searchInput, setSearchInput] = useState(search);
   const [categoryInput, setCategoryInput] = useState(category);
   const [areaInput, setAreaInput] = useState(area);
@@ -216,6 +217,8 @@ export default function MyReportsPage(): JSX.Element {
     area: area || undefined,
     date_from: dateFrom || undefined,
     date_to: dateTo || undefined,
+    cursor: cursor || undefined,
+    cursor_mode: true,
   });
   const meta = reports.data?.meta ?? { page: 1, per_page: 12, total: 0, last_page: 1 };
 
@@ -260,6 +263,10 @@ export default function MyReportsPage(): JSX.Element {
 
   function goToPage(nextPage: number): void {
     updateParams({ page: nextPage <= 1 ? null : String(nextPage) });
+  }
+
+  function goToCursor(nextCursor: string | null | undefined): void {
+    updateParams({ cursor: nextCursor || null, page: null });
   }
 
   function applyFilter(next: StatusFilter): void {
@@ -570,7 +577,33 @@ export default function MyReportsPage(): JSX.Element {
               ))}
             </div>
 
-            {totalPages > 1 && (
+            {meta.next_cursor || meta.prev_cursor ? (
+              <nav aria-label="Cursor pagination" className="mt-6 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => goToCursor(meta.prev_cursor)}
+                  disabled={!meta.prev_cursor}
+                  className="inline-flex h-11 items-center gap-1 rounded-full bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label={t('reports.pagination.previous')}
+                >
+                  <IconChevronRight className="h-4 w-4 rotate-180" stroke={1.6} />
+                  <span className="hidden sm:inline">{t('reports.pagination.previous')}</span>
+                </button>
+                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                  {t('reports.pagination.cursorMode')}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => goToCursor(meta.next_cursor)}
+                  disabled={!meta.next_cursor}
+                  className="inline-flex h-11 items-center gap-1 rounded-full bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label={t('reports.pagination.next')}
+                >
+                  <span className="hidden sm:inline">{t('reports.pagination.next')}</span>
+                  <IconChevronRight className="h-4 w-4" stroke={1.6} />
+                </button>
+              </nav>
+            ) : totalPages > 1 && (
               <nav aria-label="Pagination" className="mt-6 flex items-center justify-center gap-2">
                 <button
                   type="button"

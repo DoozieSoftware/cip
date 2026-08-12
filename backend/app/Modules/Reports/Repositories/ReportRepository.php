@@ -136,7 +136,7 @@ class ReportRepository
      * @param  array<string, mixed>  $filters
      * @return ConcreteLengthAwarePaginator<int, Report>|CursorPaginator<int, Report>
      */
-    public function searchForCitizen(User $citizen, array $filters, int $perPage = 25, ?string $cursor = null): LengthAwarePaginator|CursorPaginator
+    public function searchForCitizen(User $citizen, array $filters, int $perPage = 25, ?string $cursor = null, bool $cursorMode = false): LengthAwarePaginator|CursorPaginator
     {
         $q = $this->baseSearch($filters)
             ->where('citizen_id', $citizen->id)
@@ -145,7 +145,7 @@ class ReportRepository
 
         $perPage = max(1, min(self::MAX_PER_PAGE, $perPage));
 
-        if ($cursor !== null) {
+        if ($cursorMode || $cursor !== null) {
             return $q
                 ->orderByDesc('created_at')
                 ->orderByDesc('id')
