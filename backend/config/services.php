@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 return [
 
+    'geocoder' => ['url' => env('GEOCODER_URL', 'https://nominatim.openstreetmap.org/reverse')],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

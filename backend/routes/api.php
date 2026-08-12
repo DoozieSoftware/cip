@@ -27,6 +27,7 @@ use App\Modules\Notifications\Http\Controllers\Api\NotificationsController;
 use App\Modules\Notifications\Http\Controllers\Api\PushSubscriptionController;
 use App\Modules\Public\Http\Controllers\PublicDepartmentPerformanceController;
 use App\Modules\Public\Http\Controllers\PublicHeatmapController;
+use App\Modules\Public\Http\Controllers\PublicReverseGeocodeController;
 use App\Modules\Public\Http\Controllers\PublicStatsController;
 use App\Modules\Reports\Http\Controllers\Admin\AdminReportController;
 use App\Modules\Reports\Http\Controllers\Admin\AdminReportTypeController;
@@ -66,6 +67,7 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware('throttle:'.RouteServiceProvider::LIMITER_PUBLIC)->group(function (): void {
         Route::get('public/stats', [PublicStatsController::class, 'index'])->name('api.v1.public.stats');
         Route::get('public/heatmap', [PublicHeatmapController::class, 'index'])->name('api.v1.public.heatmap');
+        Route::get('public/geocode', PublicReverseGeocodeController::class)->name('api.v1.public.geocode');
         Route::get('public/departments/performance', [PublicDepartmentPerformanceController::class, 'index'])->name('api.v1.public.departments.performance');
     });
 
@@ -362,10 +364,12 @@ Route::prefix('v1')->group(function (): void {
         Route::post('reports/{id}/video', [MediaController::class, 'uploadVideo'])->name('api.v1.reports.video.store');
         // T-M5-014 — GET /api/v1/reports/{id}/media
         Route::get('reports/{id}/media', [MediaController::class, 'index'])->name('api.v1.reports.media.index');
+        Route::get('reports/{id}/evidence-manifest', [ReportsController::class, 'evidenceManifest'])->name('api.v1.reports.evidence-manifest');
         // T-M5-016 — GET /api/v1/reports/{id}/media/{media}/audit (staff)
         Route::get('reports/{id}/media/{media}/audit', [MediaController::class, 'audit'])->name('api.v1.reports.media.audit');
         // T-M4-023 — POST /api/v1/reports/{id}/submit
         Route::post('reports/{id}/submit', [ReportsController::class, 'submit'])->name('api.v1.reports.submit');
+        Route::post('reports/{id}/finalize', [ReportsController::class, 'finalize'])->name('api.v1.reports.finalize');
         // T-M4-027 — GET /api/v1/citizen/dashboard
         Route::get('citizen/dashboard', [ReportsController::class, 'citizenDashboard'])->name('api.v1.citizen.dashboard');
         // T-M4-028 — GET /api/v1/citizen/reports and /{id}

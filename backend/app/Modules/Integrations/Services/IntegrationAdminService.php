@@ -30,18 +30,18 @@ class IntegrationAdminService
      */
     public function create(array $attributes): Integration
     {
-        $code = (string) ($attributes['code'] ?? '');
+        $code = $this->stringValue($attributes['code'] ?? null);
         $this->assertUniqueCode($code, null);
 
         return DB::transaction(function () use ($attributes, $code): Integration {
             return Integration::query()->create([
                 'code' => $code,
-                'provider' => (string) $attributes['provider'],
-                'display_name' => (string) $attributes['display_name'],
-                'base_url' => (string) $attributes['base_url'],
+                'provider' => $this->stringValue($attributes['provider'] ?? null),
+                'display_name' => $this->stringValue($attributes['display_name'] ?? null),
+                'base_url' => $this->stringValue($attributes['base_url'] ?? null),
                 'credentials' => $attributes['credentials'] ?? [],
                 'settings' => $attributes['settings'] ?? null,
-                'status' => (string) ($attributes['status'] ?? 'active'),
+                'status' => $this->stringValue($attributes['status'] ?? null, 'active'),
             ]);
         });
     }
@@ -52,18 +52,49 @@ class IntegrationAdminService
     public function update(Integration $integration, array $attributes): Integration
     {
         if (array_key_exists('code', $attributes)) {
-            $this->assertUniqueCode((string) $attributes['code'], $integration->id);
+            $this->assertUniqueCode($this->stringValue($attributes['code']), $integration->id);
         }
 
         return DB::transaction(function () use ($integration, $attributes): Integration {
-            $integration->fill(array_intersect_key($attributes, array_flip([
+            $updates = array_intersect_key($attributes, array_flip([
                 'code', 'provider', 'display_name', 'base_url',
                 'credentials', 'settings', 'status',
-            ])));
+            ]));
+
+            if (array_key_exists('credentials', $updates)) {
+                $updates['credentials'] = $this->mergeCredentials($integration->credentials, $updates['credentials']);
+            }
+            $integration->fill($updates);
             $integration->save();
 
             return $integration->refresh();
         });
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $existing
+     * @return array<string, mixed>|null
+     */
+    private function mergeCredentials(?array $existing, mixed $incoming): ?array
+    {
+        if (! is_array($incoming)) {
+            return $existing;
+        }
+        $merged = $existing ?? [];
+
+        foreach ($incoming as $key => $value) {
+            if (! is_string($key) || $value === null || $value === '' || $value === '********') {
+                continue;
+            }
+            $merged[$key] = $value;
+        }
+
+        return $merged === [] ? null : $merged;
+    }
+
+    private function stringValue(mixed $value, string $fallback = ''): string
+    {
+        return is_string($value) ? $value : $fallback;
     }
 
     public function delete(Integration $integration): void

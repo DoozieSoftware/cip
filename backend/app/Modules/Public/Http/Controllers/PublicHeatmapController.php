@@ -19,6 +19,14 @@ class PublicHeatmapController extends BaseController
 
     public function index(): JsonResponse
     {
-        return $this->respond(['points' => $this->heatmap->grid()]);
+        return $this->respond([
+            'points' => $this->heatmap->grid(),
+            'privacy' => [
+                'minimum_group_size' => 5,
+                'cell_precision_decimals' => 2,
+                'delayed_publication_hours' => 24,
+            ],
+            'generated_at' => now()->toIso8601String(),
+        ]);
     }
 }

@@ -23,15 +23,15 @@ class NotificationChannelConfigService
      */
     public function create(array $attributes): NotificationChannelConfig
     {
-        $channel = (string) $attributes['channel'];
-        $code = (string) $attributes['code'];
+        $channel = $this->stringValue($attributes['channel'] ?? null);
+        $code = $this->stringValue($attributes['code'] ?? null);
         $this->assertUnique($channel, $code, null);
 
         $row = DB::transaction(function () use ($attributes, $channel, $code): NotificationChannelConfig {
             return NotificationChannelConfig::query()->create([
                 'channel' => $channel,
                 'code' => $code,
-                'display_name' => (string) $attributes['display_name'],
+                'display_name' => $this->stringValue($attributes['display_name'] ?? null),
                 'credentials' => $attributes['credentials'] ?? [],
                 'retry_policy' => $attributes['retry_policy'] ?? NotificationChannelConfig::DEFAULT_RETRY,
                 'settings' => $attributes['settings'] ?? null,
@@ -51,10 +51,15 @@ class NotificationChannelConfigService
     public function update(NotificationChannelConfig $row, array $attributes): NotificationChannelConfig
     {
         $row = DB::transaction(function () use ($row, $attributes): NotificationChannelConfig {
-            $row->fill(array_intersect_key($attributes, array_flip([
+            $updates = array_intersect_key($attributes, array_flip([
                 'display_name', 'credentials', 'retry_policy',
                 'settings', 'per_locale_defaults', 'active',
-            ])));
+            ]));
+
+            if (array_key_exists('credentials', $updates)) {
+                $updates['credentials'] = $this->mergeCredentials($row->credentials, $updates['credentials']);
+            }
+            $row->fill($updates);
             $row->save();
 
             return $row->refresh();
@@ -63,6 +68,32 @@ class NotificationChannelConfigService
         $this->invalidate($row);
 
         return $row;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $existing
+     * @return array<string, mixed>|null
+     */
+    private function mergeCredentials(?array $existing, mixed $incoming): ?array
+    {
+        if (! is_array($incoming)) {
+            return $existing;
+        }
+        $merged = $existing ?? [];
+
+        foreach ($incoming as $key => $value) {
+            if (! is_string($key) || $value === null || $value === '' || $value === '********') {
+                continue;
+            }
+            $merged[$key] = $value;
+        }
+
+        return $merged === [] ? null : $merged;
+    }
+
+    private function stringValue(mixed $value, string $fallback = ''): string
+    {
+        return is_string($value) ? $value : $fallback;
     }
 
     public function delete(NotificationChannelConfig $row): void

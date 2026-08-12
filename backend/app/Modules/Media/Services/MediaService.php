@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Modules\Media\Services;
 
 use App\Modules\Media\Contracts\VirusScanServiceInterface;
-use App\Modules\Media\Events\ReportMediaUploaded;
 use App\Modules\Media\Jobs\ComputeHashesJob;
 use App\Modules\Media\Jobs\ExtractVideoMetadataJob;
 use App\Modules\Media\Jobs\GenerateThumbnailJob;
@@ -131,17 +130,6 @@ class MediaService
 
         if ($type === 'VIDEO') {
             ExtractVideoMetadataJob::dispatch($media->id);
-        }
-
-        // Vision-classifiable evidence just landed. The AI pipeline
-        // may already be waiting on this exact asset (report enters
-        // `ai_processing` before the upload in the standard submit
-        // flow), so signal it to (re)run. Documents are not used by
-        // the vision classifier, so they don't trigger a re-arm.
-        // Officer proof-of-completion uploads never re-arm the AI
-        // pipeline — the report is past moderation by then.
-        if ($role === 'evidence' && ($type === 'PHOTO' || $type === 'VIDEO')) {
-            ReportMediaUploaded::dispatch($reportId, $media->id, $type);
         }
 
         return $media;
