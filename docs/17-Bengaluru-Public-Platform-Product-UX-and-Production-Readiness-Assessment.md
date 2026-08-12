@@ -1538,8 +1538,8 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | P2-05 | **Done** | `SettingsPage` reachable and routed; profile logout functional; `ProfilePage.test.tsx`. |
 | P2-07 | **Done** | Reactive `en-IN`/`kn-IN` catalogs, persisted language selection, `<html lang>` updates, locale-aware dates, and localized layout/Home/Dashboard/Submit/Detail/Resolution/Notifications/Profile/Settings/legal/capture/category/merge-dispute surfaces are implemented with focused component/page coverage. |
 | P2-02 | **Done** | Description is now optional in backend validation and citizen progression; short detail remains validated when supplied (`19d64fdb`). |
-| P2-03 | **Partial** | Citizen service-request search now sends URL-persisted query, status, date, category, and area filters to the server and supports cursor metadata alongside the existing page UI (`8ef97697`, current citizen search); a cursor-first citizen navigation surface and production filter-query validation remain. |
-| P2-08 | **Partial** | Reduced-motion CSS, focus/a11y scaffolding, and capture live-preview/timer accessibility are covered (`aef9b0da`); a full axe, screen-reader, and manual keyboard pass remains. |
+| P2-03 | **Partial** | Citizen service-request search now sends URL-persisted query, status, date, category, and area filters to the server, uses cursor-first navigation with stable URL cursors, and retains accessible previous/next controls (`59a1bb51`); production filter-query validation remains. |
+| P2-08 | **Partial** | Reduced-motion CSS, focus/a11y scaffolding, styled touch targets, live-preview/timer accessibility, and public/citizen navigation affordances are covered (`aef9b0da`, `fe6abf08`, `c35fe43f`); a full axe, screen-reader, and manual keyboard pass remains. |
 | P2-09 | **Partial** | Camera capture now exposes a live-preview label, non-spam timer, max-duration auto-stop, lifecycle-managed video previews, accessible recording progress, live announcements, keyboard retry, and attached-file feedback (`aef9b0da`, `154c9c85`, `fa14c5fe`); compression progress and broader device coverage remain. |
 | P2-06 | **Done** | Citizen profile onboarding now captures preferred name, locale, and notification channel with validated PATCH persistence and an accessible completion/edit form (`401131e4`). |
 | P2-10 | **Done** | Issue location is explicitly separated from reporter location through a manual-pin/map picker, provenance metadata, draft persistence, reporter-coordinate persistence, distance warning, and submit payload wiring (`401131e4`, `3198d702`). |
@@ -1568,7 +1568,9 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | BE-14 | **Partial** | Retention purge now requires explicit `--approve`, supports dry-run/chunked deletion, skips append-only audit rows, removes orphaned media bytes, and honors active legal holds via `retention_holds` (`0d8e49c0`, `e3fd62d4`). Hold-management API, custody export, and production restore/retention drills remain. |
 | BE-15 | **Not started** | Scheduled aggregate tables and privacy suppression are still open. |
 | BE-16 | **Done** | Worker and scheduler heartbeats now gate readiness, with queue-specific freshness and dependency checks; focused heartbeat/health tests pass (`6e7f13f3`). |
-| BE-17..BE-19 | **Not started** | Structured tracing/metrics, dependency exception workflow, and production source-map/header validation remain open. |
+| BE-17 | **Partial** | Structured tracing/metrics and correlation evidence remain in progress; the observability workstream is adding bounded request/worker correlation and verification. |
+| BE-18 | **Done** | Composer/npm audit gates, dependency exception expiry validation, and patched vulnerable Composer/npm packages are enforced in CI (`027983f0`). |
+| BE-19 | **Partial** | Production source maps are disabled by default with explicit debug opt-in and a CI artifact gate (`0c3f8e90`); deployed trusted-proxy/header smoke verification remains operational. |
 
 ### Maintainability
 
