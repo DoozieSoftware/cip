@@ -106,7 +106,8 @@ it('end-to-end happy path produces a persisted AiResult matching the schema', fu
         ->and($result->predicted_type)->toBe('pothole')
         ->and($result->severity)->toBe('high')
         ->and($result->quality_score)->toBeGreaterThanOrEqual(0)
-        ->and($result->summary)->toContain('pothole');
+        ->and($result->summary)->toContain('pothole')
+        ->and($report->fresh()->ai_label)->toBe($result->primaryLabel()?->label ?? $result->predicted_type);
 });
 
 it('writes a single AiJob row in succeeded state with timing and token counts', function (): void {

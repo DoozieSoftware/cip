@@ -265,6 +265,10 @@ class AiPipelineOrchestrator implements ShouldBeUnique, ShouldQueue
                 $this->writeLabels($result, $response, $calibratedConfidence);
 
                 // Keep the report mirror and AI result atomically aligned.
+                // The canonical primary label is persisted on reports so the
+                // routing engine and public classification metrics read the
+                // same committed value as ai_results/ai_labels.
+                $report->ai_label = $response->primaryLabel() ?? $response->predictedType;
                 $report->duplicate_score = $duplicateResult['score'];
                 $report->fraud_score = $fraudScore;
                 $report->ai_confidence = $calibratedConfidence * 100;
