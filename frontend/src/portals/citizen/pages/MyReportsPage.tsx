@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { type JSX, useMemo } from 'react';
+import { type JSX, useMemo, useState } from 'react';
 import {
   IconAlertCircle,
   IconCheck,
@@ -11,6 +11,7 @@ import {
   IconMapPin,
   IconPlus,
   IconRefresh,
+  IconSearch,
   IconWifiOff,
 } from '@tabler/icons-react';
 import { Spinner } from '../../../shared/ui';
@@ -197,8 +198,10 @@ export default function MyReportsPage(): JSX.Element {
   const statusFilter = (searchParams.get('status') as StatusFilter) ?? 'all';
   const sortField = (searchParams.get('sort') as SortField) ?? 'date';
   const sortDir = (searchParams.get('dir') as SortDir) ?? 'desc';
+  const search = searchParams.get('q') ?? '';
+  const [searchInput, setSearchInput] = useState(search);
 
-  const reports = useCitizenReports(page, 12);
+  const reports = useCitizenReports(page, 12, search);
   const meta = reports.data?.meta ?? { page: 1, per_page: 12, total: 0, last_page: 1 };
 
   const filteredReports = useMemo<ReportRow[]>(() => {
@@ -346,6 +349,38 @@ export default function MyReportsPage(): JSX.Element {
 
       <main className="mx-auto max-w-3xl px-4 pb-24 pt-5">
         <div className="mb-5">
+          <form
+            className="mb-4 flex gap-2"
+            role="search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              updateParams({ q: searchInput.trim() || null, page: null });
+            }}
+          >
+            <label className="sr-only" htmlFor="report-search">
+              {t('reports.searchLabel')}
+            </label>
+            <div className="relative flex-1">
+              <IconSearch
+                className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-[var(--color-text-tertiary)]"
+                stroke={1.6}
+                aria-hidden
+              />
+              <input
+                id="report-search"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder={t('reports.searchPlaceholder')}
+                className="h-11 w-full rounded-full border border-[var(--color-border-subtle)] bg-white pl-10 pr-4 text-sm outline-none focus:border-[var(--color-ink)]"
+              />
+            </div>
+            <button
+              type="submit"
+              className="inline-flex h-11 items-center rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white"
+            >
+              {t('reports.search')}
+            </button>
+          </form>
           <div
             role="tablist"
             aria-label="Filter reports by status"

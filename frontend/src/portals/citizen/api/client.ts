@@ -307,13 +307,13 @@ export function useReportDetail(id: string | undefined) {
   });
 }
 
-export function useCitizenReports(page = 1, perPage = 25) {
+export function useCitizenReports(page = 1, perPage = 25, search = '') {
   return useQuery({
     queryKey: ['citizen', 'reports', page, perPage],
     queryFn: async () => {
       const { data, meta } = await requestPaginated<ApiReportPayload>(
         '/citizen/reports',
-        { query: { page, per_page: perPage } },
+        { query: { page, per_page: perPage, q: search || undefined } },
         perPage,
       );
 
