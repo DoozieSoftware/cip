@@ -225,6 +225,7 @@ export const kn_IN: MessageCatalog = {
   'detail.backToReports': 'ನನ್ನ ವರದಿಗಳಿಗೆ ಹಿಂತಿರುಗಿ',
   'detail.unavailable': 'ಲಭ್ಯವಿಲ್ಲ',
   'detail.video': 'ವೀಡಿಯೊ',
+  'detail.videoEvidence': 'ವೀಡಿಯೊ ಸಾಕ್ಷ್ಯ',
   'detail.officialReference': 'ಅಧಿಕೃತ ಉಲ್ಲೇಖ',
   'detail.closed': 'ಮುಕ್ತ',
   'detail.rejected': 'ತಿರಸ್ಕರಿಸಲಾಗಿದೆ',

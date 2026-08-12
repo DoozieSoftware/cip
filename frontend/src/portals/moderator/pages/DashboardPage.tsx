@@ -199,7 +199,7 @@ export default function DashboardPage() {
             onClick={() => {
               void navigate('/moderator/queue');
             }}
-            className="inline-flex items-center gap-1 text-xs font-medium text-[#1d1d1b] transition-colors hover:text-[#6f6e69]"
+            className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-white px-4 text-xs font-medium text-[#1d1d1b] ring-1 ring-[#d8d6cf] transition-colors hover:text-[#6f6e69]"
           >
             View all
             <IconArrowRight className="h-3.5 w-3.5" stroke={1.6} />

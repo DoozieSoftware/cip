@@ -12,6 +12,7 @@ vi.mock('../context/DepartmentSelectionContext', () => ({
 vi.mock('../api/operations', () => ({
   departmentApi: {
     exportDownload: vi.fn(),
+    exportUrl: vi.fn(() => '/api/v1/department/reports/export'),
   },
 }));
 

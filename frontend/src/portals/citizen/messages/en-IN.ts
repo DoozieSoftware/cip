@@ -223,6 +223,7 @@ export const en_IN: MessageCatalog = {
   'detail.backToReports': 'Back to My Reports',
   'detail.unavailable': 'Unavailable',
   'detail.video': 'Video',
+  'detail.videoEvidence': 'Video evidence',
   'detail.officialReference': 'Official Reference',
   'detail.closed': 'Closed',
   'detail.rejected': 'Rejected',

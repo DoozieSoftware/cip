@@ -62,12 +62,22 @@ export default function ExportPage() {
           <CardTitle>Filters</CardTitle>
         </CardHeader>
         <CardBody className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <Input
-            label="Status code"
-            placeholder="assigned, accepted, in_progress…"
-            value={filters.status ?? ''}
-            onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-          />
+          <label className="space-y-1">
+            <span className="block text-sm font-medium text-slate-700">Status</span>
+            <select
+              aria-label="Status"
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              value={filters.status ?? ''}
+              onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
+            >
+              <option value="">All statuses</option>
+              <option value="assigned">Assigned</option>
+              <option value="accepted">Accepted</option>
+              <option value="in_progress">In progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
+            </select>
+          </label>
           <Input
             label="Search"
             placeholder="Tracking number or title"

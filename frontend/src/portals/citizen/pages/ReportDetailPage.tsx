@@ -61,7 +61,7 @@ function EvidencePreview({
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
         <video
           src={url}
-          aria-label={t('detail.video')}
+          aria-label={t('detail.videoEvidence')}
           className="h-full w-full object-cover"
           controls={!compact}
           muted={compact}

@@ -62,6 +62,12 @@ export default function ReviewQueuePage() {
     refetchInterval: 15_000,
   });
 
+  const reportTypesQuery = useQuery({
+    queryKey: ['moderator', 'report-types'],
+    queryFn: () => queueApi.reportTypes(),
+    staleTime: 5 * 60_000,
+  });
+
   function update<K extends keyof QueueFilters>(key: K, value: QueueFilters[K]) {
     setFilters((prev) => ({ ...prev, [key]: value, cursor: undefined }));
     setCursorStack([]);
@@ -140,13 +146,19 @@ export default function ReviewQueuePage() {
                 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#85847f]"
                 stroke={1.6}
               />
-              <input
-                type="text"
+              <select
                 value={filters.category ?? ''}
                 onChange={(e) => update('category', e.target.value)}
-                placeholder="Category code (e.g. roads)"
+                aria-label="Category"
                 className="min-h-[44px] w-full rounded-lg border-0 bg-[#f3f2ed] pl-10 pr-4 text-sm text-[#1d1d1b] placeholder:text-[#85847f] focus:outline-none focus:ring-2 focus:ring-[#1d1d1b]/20"
-              />
+              >
+                <option value="">All categories</option>
+                {(reportTypesQuery.data ?? []).map((type) => (
+                  <option key={type.id} value={type.code}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="relative">
               <IconFilter
