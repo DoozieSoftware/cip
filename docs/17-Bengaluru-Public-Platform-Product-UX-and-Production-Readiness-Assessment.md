@@ -1568,7 +1568,7 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | BE-14 | **Partial** | Retention purge now requires explicit `--approve`, supports dry-run/chunked deletion, skips append-only audit rows, removes orphaned media bytes, and honors active legal holds via `retention_holds` (`0d8e49c0`, `e3fd62d4`). Hold-management API, custody export, and production restore/retention drills remain. |
 | BE-15 | **Not started** | Scheduled aggregate tables and privacy suppression are still open. |
 | BE-16 | **Done** | Worker and scheduler heartbeats now gate readiness, with queue-specific freshness and dependency checks; focused heartbeat/health tests pass (`6e7f13f3`). |
-| BE-17 | **Partial** | Structured tracing/metrics and correlation evidence remain in progress; the observability workstream is adding bounded request/worker correlation and verification. |
+| BE-17 | **Partial** | Request IDs now propagate into queue payloads, worker log context, and outbound AI/integration calls with regression coverage (`c20cbfa9`); full metrics/tracing dashboards and alert routing remain. |
 | BE-18 | **Done** | Composer/npm audit gates, dependency exception expiry validation, and patched vulnerable Composer/npm packages are enforced in CI (`027983f0`). |
 | BE-19 | **Partial** | Production source maps are disabled by default with explicit debug opt-in and a CI artifact gate (`0c3f8e90`); deployed trusted-proxy/header smoke verification remains operational. |
 
