@@ -1483,7 +1483,19 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | P0-06 | **Done** | Notification template/listener wiring repaired (`efb5c131`). |
 | P0-08 | **Done** | Worker queue + scheduler topology corrected and documented (`161148d1`). |
 | BE-12 | **Done** | Notification listeners are registered only by `NotificationsServiceProvider`; duplicate registrations were removed from `AppServiceProvider`. |
-| P0-01, P0-03..P0-05, P0-07, P0-09..P0-15 | Not started | Still open. |
+| P0-05 | **Done** | Offline queue items and durable drafts carry a stable account owner; queue draining filters by owner, logout stops/clears the leaving account, and shared-device regressions cover isolation (`frontend/src/portals/citizen/offline/queue.ts`, `drafts.test.ts`). |
+| P0-01 | **Not started (explicitly deferred)** | Real production OTP delivery remains intentionally excluded from this implementation pass per user instruction; current demo/mock OTP flow is unchanged. |
+| P0-03 | **Done** | Citizen POST creates a draft; evidence manifest/hash readiness is enforced by `/reports/{id}/finalize`; legacy submit delegates to the same gate (`43d3f302`, `EvidenceFinalizationTest.php`). Local Pest is blocked by missing `pdo_sqlite`; CI MySQL is required. |
+| P0-04 | **Done** | `ReportEvidenceReady` dispatches one revision-keyed, unique AI orchestration job after finalization; media-upload listener no longer starts AI early (`43d3f302`). |
+| P0-05 | **Done** | Offline queue items and durable drafts carry a stable account owner; queue draining filters by owner, logout stops/clears the leaving account, and shared-device regressions cover isolation (`frontend/src/portals/citizen/offline/queue.ts`, `drafts.test.ts`). |
+| P0-07 | **Partial** | Browser Web Push subscription/VAPID registration is wired, but the server `PushChannel` still sends FCM only; a Web Push provider package could not be added without the current PHP 8.5 dependency conflict. |
+| P0-09 | **Done** | Production template requires Redis cache/phpredis; deploy and readiness probes verify Redis round-trip (`c82aed3e`, `39753c56`). cPanel must provide ext-redis. |
+| P0-10 | **Done** | Production deploy and `/health/ready` verify ClamAV executable/signatures; production rejects the `none` scanner (`c82aed3e`, `39753c56`). |
+| P0-11 | **Done** | Executable three-domain backup and guarded rollback scripts include database/evidence/code/App-Key integrity checks (`deploy/production/*`, `docs/production-rollback-runbook.md`, `c82aed3e`). |
+| P0-12 | **Done** | Production workflow runs only after successful CI, uses a protected production environment, and performs pre-rsync backup/capability checks (`.github/workflows/deploy-production.yml`, `c82aed3e`). |
+| P0-13 | **Partial** | Privacy and Terms now contain substantive product copy and localization, but final legal/privacy-owner review remains required before publication. |
+| P0-14 | **Done** | Integration and notification credential updates preserve omitted/masked secrets while encrypted casts remain authoritative (`d2df4696`). |
+| P0-15 | **Done** | Login/refresh deny suspended, disabled, pending, and deleted users; refresh rotation and logout revocation have feature coverage. |
 
 ### P1 — Citizen And Public Experience
 
@@ -1495,7 +1507,26 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | P1-07 | **Done** | Canonical link and merge-dispute flow are wired end to end; `ReportsMergedListener` is registered; canonical status changes notify both the canonical owner and citizens whose reports remain linked through `merged_into`. |
 | P1-08 | **Done** | Versioned `CitizenReportResource` emits exactly the citizen detail contract consumed by `frontend/src/portals/citizen/types.ts`. |
 | P1-09 | **Done** | Misleading verification badge removed from citizen surfaces; resolution state derives from `lifecycleGroup`. |
-| P1-01..P1-03, P1-10..P1-23 | Not started | Still open. |
+| P1-17 | **Done** | Service worker accepts only an explicit public GET allowlist on `cip-api.dgisipl.com`; authenticated responses are never cached (`frontend/public/sw.js`). |
+| P1-18 | **Partial** | Enqueue requests Background Sync, app-level retry timers schedule future attempts, and startup/online drains resume work; fully closed-app authenticated delivery still requires a secure SW session architecture. |
+| P1-19 | **Done** | Queue size counts actionable statuses only; acknowledged `done` items are removed after retention and dead items remain separately actionable (`queue.ts`, queue regression tests). |
+| P1-22 | **Done** | Report step progress, location, and media handles persist in an account-scoped IndexedDB draft and auto-resume; logout clears the leaving account draft (`drafts.ts`, `drafts.test.ts`). |
+| P1-01 | **Done** | Citizen client uses a durable draft UUID/idempotency key for finalization; server middleware/status guard replay concurrent retries safely (`43d3f302`). |
+| P1-02..P1-03 | Not started | Tracking-number contract is present; anonymous recovery/secret flow is still a product decision and implementation gap. |
+| P1-10 | **Done** | Report-type requirements are exposed and server evidence manifest enforces required media, hashes, storage, and video readiness (`43d3f302`). |
+| P1-11 | **Done** | Citizen media modification is restricted to draft/request-for-information lifecycle; lifecycle authorization regression test added (`dfabe1a8`). |
+| P1-12 | **Done** | Browser capture forwards accuracy, altitude, heading, speed, provider, and captured timestamp into the location record; EXIF is not trusted blindly (`dfabe1a8`). |
+| P1-13 | **Done** | Shared client GPS threshold (`100m`) blocks progression and matches backend `LocationAccuracy` (`89922433`). |
+| P1-14 | **Partial** | MySQL point-in-polygon enrichment is implemented, but authoritative Bengaluru boundary data and unresolved-jurisdiction operations still need rollout. |
+| P1-15 | **Done** | Reverse geocoding is proxied through `/public/geocode`, cached, timeout-limited, and browser-side direct Overpass access removed (`d2df4696`). |
+| P1-16 | **Done** | Manifest, service-worker shell, scope, and shortcuts use `/citizen/*` (`f24ddc8e`). |
+| P1-17 | **Done** | Service worker accepts only an explicit public GET allowlist on `cip-api.dgisipl.com`; authenticated responses are never cached (`c82aed3e`). |
+| P1-18 | **Partial** | Enqueue requests Background Sync, app-level retry timers schedule future attempts, and startup/online drains resume work; fully closed-app authenticated delivery still requires a secure SW session architecture. |
+| P1-19 | **Done** | Queue size counts actionable statuses only; acknowledged `done` items are removed after retention and dead items remain separately actionable (`queue.ts`, queue regression tests). |
+| P1-20 | **Done** | Refresh tokens persist and rotate in the shared client; AuthContext performs best-effort server logout before clearing local state (`7993bf54`). |
+| P1-21 | **Partial** | HSTS and CSP report-only are deployed at the web edge; enforcement/trusted-proxy rollout and API-host header verification remain operational tasks (`c82aed3e`). |
+| P1-22 | **Done** | Report step progress, location, and media handles persist in an account-scoped IndexedDB draft and auto-resume; logout clears the leaving account draft (`drafts.ts`, `drafts.test.ts`). |
+| P1-23 | **Done** | Public heatmap applies 24-hour delay and k>=5 suppression and exposes privacy/freshness metadata (`d2df4696`). |
 
 ### P2 — Usability
 
@@ -1505,14 +1536,17 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | P2-04 | **Done** | Distinct loading/empty/error states across citizen pages; `DashboardPage`, `SubmitPage.states`, `PageStates.a11y` tests. |
 | P2-05 | **Done** | `SettingsPage` reachable and routed; profile logout functional; `ProfilePage.test.tsx`. |
 | P2-07 | **Done** | Reactive `en-IN`/`kn-IN` catalogs, persisted language selection, `<html lang>` updates, locale-aware dates, and localized layout/Home/Dashboard/Submit/Detail/Resolution/Notifications/Profile/Settings/legal/capture/category/merge-dispute surfaces are implemented with focused component/page coverage. |
-| P2-02, P2-03, P2-06, P2-08..P2-15 | Not started | Still open. Accessibility (P2-08) has only test scaffolding (`*.a11y.test.*`), no full axe/screen-reader pass. |
+| P2-02 | **Done** | Description is now optional in backend validation and citizen progression; short detail remains validated when supplied (`19d64fdb`). |
+| P2-03, P2-06, P2-08..P2-15 | Not started | Search/filter backend groundwork exists, but citizen URL search, profile onboarding, axe/manual accessibility, media usability, issue-pin separation, public metric definitions, landing redesign, analytics, and mobile E2E remain open. |
 
 ### Backend Performance And Correctness
 
 | ID | Status | Notes / Evidence |
 |----|--------|------------------|
 | BE-09 | **Done** | List queries eager-load `department` and `media_count`; lean `ReportListResource`/`AdminReportListResource`/`DepartmentReportListResource`; `ReportListQueryCountTest` guards N+1 regressions. |
-| BE-01..BE-08, BE-10..BE-19 | Not started | Still open. |
+| BE-01..BE-02 | **Partial** | Refresh rotation and submission idempotency are implemented; broader selector/index and concurrency characterization remains. |
+| BE-03..BE-08, BE-10..BE-11, BE-13..BE-19 | Not started | Still open. |
+| BE-12 | **Done** | Notification listeners are registered only by `NotificationsServiceProvider`; duplicate registrations were removed from `AppServiceProvider`. |
 
 ### Maintainability
 
@@ -1521,8 +1555,8 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | MAINT-01 | **Done** | Shared UI primitives extracted to `frontend/src/shared/ui/` with ownership test (`worktree/ui-extraction`, `cf50db96`). |
 | MAINT-02 | **Done** | Centralized design tokens in `shared/ui/tokens.css`; `TokenMigration` / `DesignTokenUsage` tests. |
 | MAINT-05 | **Done** | Citizen, operations, moderator, public, and admin clients use `frontend/src/shared/api/client.ts`; `auth/api.ts` is now a compatibility facade over that transport. Shared refresh/retry behavior has regression coverage. |
-| MAINT-03, MAINT-04, MAINT-06..MAINT-12 | Not started | Controller boundary work exists only as incremental refactors; MAINT-08/09 addressed partially via broader CI/test usage but not to the documented target. |
+| MAINT-03, MAINT-04, MAINT-06..MAINT-12 | Not started | Controller boundary work exists only as incremental refactors; CI/static-quality and test-journey target work remains. |
 
 ### Recommended Next Step
 
-P2-01 and P2-07 are now complete. Resume the highest-risk Phase 0 production-safety findings, beginning with P0-01 (real production OTP delivery) and P0-03 (evidence-gated report finalization), and run the full backend suite in an environment with `pdo_sqlite` or isolated CI MySQL before staging.
+The non-OTP production-safety work is now implemented in reviewable commits. P0-01 remains explicitly deferred (mock OTP unchanged). Before any production release, run the full backend suite in isolated CI MySQL, complete legal review for P0-13, provision cPanel Redis/ClamAV prerequisites, and resolve the remaining Partial/Not-started P1/P2/BE/maintainability items.
