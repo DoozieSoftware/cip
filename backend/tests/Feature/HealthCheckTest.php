@@ -17,5 +17,5 @@ it('exposes a ready health endpoint with 200 or 503', function (): void {
     expect($response->status())->toBeIn([200, 503]);
     $body = $response->json();
     expect($body['data'])->toHaveKey('checks');
-    expect($body['data']['checks'])->toHaveKeys(['database', 'redis', 'storage', 'queue']);
+    expect($body['data']['checks'])->toHaveKeys(['database', 'redis', 'storage', 'queue', 'scanner']);
 });

@@ -258,10 +258,14 @@ jobs:
         run: |
           set -e
           if composer --version 2>/dev/null | head -1 | grep -q 'Composer version 2'; then
-            composer audit --no-interaction || true
+            # Any advisory reported by Composer blocks the CI gate. Keep the
+            # audit strict so a newly disclosed high/critical package cannot
+            # reach the production workflow.
+            composer audit --no-interaction
           else
-            echo "composer audit requires Composer 2.4+"
+            echo "composer audit requires Composer 2.4+" >&2
+            exit 1
           fi
       - name: NPM audit
         working-directory: ${{ env.FRONTEND_DIR }}
-        run: npm audit --audit-level=high || true
+        run: npm audit --audit-level=high
