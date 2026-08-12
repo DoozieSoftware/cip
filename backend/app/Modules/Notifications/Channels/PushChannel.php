@@ -47,18 +47,18 @@ class PushChannel implements ChannelInterface
         $bearer = $this->configString($config, 'access_token');
         $project = $this->configString($config, 'project_id');
 
+        $token = $this->resolveDeviceToken($notification);
+
+        if ($token === null) {
+            return $this->sendWebPush($notification, $template, $start);
+        }
+
         if ($endpoint === '' || $bearer === '' || $project === '') {
             return ChannelResult::fail(
                 error: 'fcm.push_not_configured — set FCM_ENDPOINT, FCM_PROJECT_ID, FCM_ACCESS_TOKEN',
                 transient: false,
                 latencyMs: $this->elapsedMs($start),
             );
-        }
-
-        $token = $this->resolveDeviceToken($notification);
-
-        if ($token === null) {
-            return $this->sendWebPush($notification, $template, $start);
         }
 
         $body = [
