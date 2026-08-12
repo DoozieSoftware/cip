@@ -40,6 +40,7 @@ use App\Modules\Security\Http\Controllers\Admin\AdminSecurityPolicyController;
 use App\Modules\Security\Http\Controllers\Api\AuditLogController;
 use App\Modules\Security\Http\Controllers\Api\SecurityDashboardController;
 use App\Modules\Settings\Http\Controllers\Admin\AppConfigController;
+use App\Modules\Settings\Http\Controllers\Admin\RetentionHoldController;
 use App\Modules\Settings\Http\Controllers\Admin\SettingController;
 use App\Modules\Shared\Http\Controllers\Admin\PlatformHealthController;
 use App\Modules\Shared\Http\Controllers\Admin\SchedulerController;
@@ -206,6 +207,13 @@ Route::prefix('v1')->group(function (): void {
         Route::get('settings/{setting}', [SettingController::class, 'show'])->name('settings.show');
         Route::put('settings/{setting}', [SettingController::class, 'update'])->name('settings.update');
         Route::delete('settings/{setting}', [SettingController::class, 'destroy'])->name('settings.destroy');
+
+        // Legal retention holds (BE-14). Holds are never deleted; release
+        // records the actor and legal basis in custody fields and audit logs.
+        Route::get('retention-holds', [RetentionHoldController::class, 'index'])->name('retention-holds.index');
+        Route::post('retention-holds', [RetentionHoldController::class, 'store'])->name('retention-holds.store');
+        Route::post('retention-holds/{retention_hold}/release', [RetentionHoldController::class, 'release'])
+            ->name('retention-holds.release');
 
         // Feature flag CRUD (T-M3-018)
         Route::get('app-configs', [AppConfigController::class, 'index'])->name('app-configs.index');

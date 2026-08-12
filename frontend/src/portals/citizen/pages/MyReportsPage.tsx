@@ -578,7 +578,10 @@ export default function MyReportsPage(): JSX.Element {
             </div>
 
             {meta.next_cursor || meta.prev_cursor ? (
-              <nav aria-label="Cursor pagination" className="mt-6 flex items-center justify-center gap-2">
+              <nav
+                aria-label="Cursor pagination"
+                className="mt-6 flex items-center justify-center gap-2"
+              >
                 <button
                   type="button"
                   onClick={() => goToCursor(meta.prev_cursor)}
@@ -603,34 +606,39 @@ export default function MyReportsPage(): JSX.Element {
                   <IconChevronRight className="h-4 w-4" stroke={1.6} />
                 </button>
               </nav>
-            ) : totalPages > 1 && (
-              <nav aria-label="Pagination" className="mt-6 flex items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => goToPage(meta.page - 1)}
-                  disabled={meta.page <= 1}
-                  className="inline-flex h-11 items-center gap-1 rounded-full bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label={t('reports.pagination.previous')}
+            ) : (
+              totalPages > 1 && (
+                <nav
+                  aria-label="Pagination"
+                  className="mt-6 flex items-center justify-center gap-2"
                 >
-                  <IconChevronRight className="h-4 w-4 rotate-180" stroke={1.6} />
-                  <span className="hidden sm:inline">{t('reports.pagination.previous')}</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => goToPage(meta.page - 1)}
+                    disabled={meta.page <= 1}
+                    className="inline-flex h-11 items-center gap-1 rounded-full bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label={t('reports.pagination.previous')}
+                  >
+                    <IconChevronRight className="h-4 w-4 rotate-180" stroke={1.6} />
+                    <span className="hidden sm:inline">{t('reports.pagination.previous')}</span>
+                  </button>
 
-                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                  {t('reports.pagination.pageCount', { current: meta.page, total: totalPages })}
-                </span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                    {t('reports.pagination.pageCount', { current: meta.page, total: totalPages })}
+                  </span>
 
-                <button
-                  type="button"
-                  onClick={() => goToPage(meta.page + 1)}
-                  disabled={meta.page >= totalPages}
-                  className="inline-flex h-11 items-center gap-1 rounded-full bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label={t('reports.pagination.next')}
-                >
-                  <span className="hidden sm:inline">{t('reports.pagination.next')}</span>
-                  <IconChevronRight className="h-4 w-4" stroke={1.6} />
-                </button>
-              </nav>
+                  <button
+                    type="button"
+                    onClick={() => goToPage(meta.page + 1)}
+                    disabled={meta.page >= totalPages}
+                    className="inline-flex h-11 items-center gap-1 rounded-full bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label={t('reports.pagination.next')}
+                  >
+                    <span className="hidden sm:inline">{t('reports.pagination.next')}</span>
+                    <IconChevronRight className="h-4 w-4" stroke={1.6} />
+                  </button>
+                </nav>
+              )
             )}
 
             <p className="mt-6 text-xs text-[var(--color-text-secondary)]">
