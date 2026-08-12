@@ -39,7 +39,7 @@ final class TraceContext
             }
         }
 
-        if (! app()->bound('log')) {
+        if (! self::loggingAvailable()) {
             return null;
         }
 
@@ -67,7 +67,7 @@ final class TraceContext
         $value = $payload[self::PAYLOAD_KEY] ?? null;
 
         if (is_string($value) && $value !== '') {
-            if (! app()->bound('log')) {
+            if (! self::loggingAvailable()) {
                 return;
             }
 
@@ -77,7 +77,7 @@ final class TraceContext
 
     public static function clear(): void
     {
-        if (! app()->bound('log')) {
+        if (! self::loggingAvailable()) {
             return;
         }
 
@@ -95,5 +95,10 @@ final class TraceContext
         $value = self::id();
 
         return $value === null ? [] : [RequestId::HEADER => $value];
+    }
+
+    private static function loggingAvailable(): bool
+    {
+        return Log::getFacadeRoot() !== null;
     }
 }

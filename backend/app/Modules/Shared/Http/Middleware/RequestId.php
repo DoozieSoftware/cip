@@ -22,7 +22,7 @@ class RequestId
         $request->attributes->set(self::ATTRIBUTE, $id);
         $request->headers->set(self::HEADER, $id);
 
-        if (app()->bound('log')) {
+        if (Log::getFacadeRoot() !== null) {
             Log::withContext([self::ATTRIBUTE => $id]);
         }
 
@@ -34,7 +34,7 @@ class RequestId
         } finally {
             // Workers may serve multiple requests in one process. Never leak
             // one request's id into the next request's log context.
-            if (app()->bound('log')) {
+            if (Log::getFacadeRoot() !== null) {
                 Log::withoutContext([self::ATTRIBUTE]);
             }
         }
