@@ -67,6 +67,10 @@ jobs:
         working-directory: ${{ env.BACKEND_DIR }}
         run: composer install ${{ env.COMPOSER_FLAGS }} --no-progress
 
+      - name: Validate OpenAPI structural contract
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: php scripts/validate-openapi.php
+
       - name: Prepare environment
         working-directory: ${{ env.BACKEND_DIR }}
         run: |
