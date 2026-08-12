@@ -67,6 +67,13 @@ jobs:
         working-directory: ${{ env.BACKEND_DIR }}
         run: composer install ${{ env.COMPOSER_FLAGS }} --no-progress
 
+      - name: Validate dependency exception register
+        run: php backend/scripts/validate-dependency-exceptions.php
+
+      - name: Composer security audit
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: composer audit --locked --no-interaction
+
       - name: Validate OpenAPI structural contract
         working-directory: ${{ env.BACKEND_DIR }}
         run: php scripts/validate-openapi.php
@@ -166,6 +173,10 @@ jobs:
       - name: Install dependencies
         working-directory: ${{ env.FRONTEND_DIR }}
         run: npm ci --no-audit --no-fund
+
+      - name: npm production dependency audit
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm audit --omit=dev --audit-level=high
 
       - name: ESLint changed frontend files
         working-directory: ${{ env.FRONTEND_DIR }}
