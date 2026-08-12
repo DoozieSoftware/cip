@@ -29,6 +29,9 @@ import { evidencePreviewHandlers } from '../security/evidenceGuards';
 import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 import { ApiError } from '../../../auth/api';
 import { useMessages } from '../messages';
+import { readSession } from '../../../auth/storage';
+import { clearDraft, loadDraft, saveDraft } from '../offline/drafts';
+import { requestBackgroundSync } from '../offline/swBridge';
 
 const FORM_STEPS = ['Category', 'Details', 'Location', 'Evidence', 'Review'] as const;
 type Step = (typeof FORM_STEPS)[number];
@@ -76,6 +79,7 @@ export default function SubmitPage(): JSX.Element {
   const navigate = useNavigate();
   const { t } = useMessages();
   const toast = useToast();
+  const ownerId = readSession()?.user.id ?? null;
   const types = useReportTypes();
   const create = useCreateReport();
   const gpsRef = useRef<GpsCaptureHandle | null>(null);
@@ -94,6 +98,48 @@ export default function SubmitPage(): JSX.Element {
     Partial<Record<'type' | 'title' | 'description' | 'location' | 'evidence', string>>
   >({});
   const [currentViewStep, setCurrentViewStep] = useState<Step>('Category');
+  const draftReadyRef = useRef(false);
+  const draftCompleteRef = useRef(false);
+
+  useEffect(() => {
+    if (!ownerId) {
+      draftReadyRef.current = true;
+      return;
+    }
+    let cancelled = false;
+    void loadDraft(ownerId).then((draft) => {
+      if (cancelled) return;
+      if (draft) {
+        setTypeId(draft.type_id);
+        setTitle(draft.title);
+        setDescription(draft.description);
+        setLocation(draft.location);
+        setAddress(draft.address);
+        setFiles(draft.files ?? []);
+        if (FORM_STEPS.includes(draft.current_step as Step)) {
+          setCurrentViewStep(draft.current_step as Step);
+        }
+      }
+      draftReadyRef.current = true;
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [ownerId]);
+
+  useEffect(() => {
+    if (!ownerId || !draftReadyRef.current || draftCompleteRef.current) return;
+    void saveDraft(ownerId, {
+      updated_at: Date.now(),
+      type_id: typeId,
+      title,
+      description,
+      location,
+      address,
+      current_step: currentViewStep,
+      files,
+    });
+  }, [ownerId, typeId, title, description, location, address, currentViewStep, files]);
 
   function onCameraError(err: CameraError): void {
     setError(err.message);
@@ -255,10 +301,15 @@ export default function SubmitPage(): JSX.Element {
     setSubmitting(true);
     try {
       const res = await create.mutateAsync(payload);
+      draftCompleteRef.current = true;
+      if (ownerId) void clearDraft(ownerId);
       void navigate(`/citizen/reports/${res.id}`);
     } catch (err) {
       if (isNetworkFailure(err)) {
-        await getQueue().enqueue({ kind: 'report.create', payload });
+        await getQueue(ownerId).enqueue({ kind: 'report.create', payload });
+        void requestBackgroundSync();
+        draftCompleteRef.current = true;
+        if (ownerId) void clearDraft(ownerId);
         toast.show(t('submit.offlineSaved'), 'info', 6000);
         void navigate('/citizen');
         return;

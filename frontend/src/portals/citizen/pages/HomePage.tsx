@@ -44,8 +44,8 @@ export default function HomePage(): JSX.Element {
     },
   });
   const queue = useQuery({
-    queryKey: ['citizen', 'queue', 'size'],
-    queryFn: async () => getQueue().size(),
+    queryKey: ['citizen', user?.id, 'queue', 'size'],
+    queryFn: async () => getQueue(user?.id).size(),
     refetchInterval: 5_000,
   });
   const reports = useCitizenReports(1, 100);

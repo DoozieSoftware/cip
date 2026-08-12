@@ -13,6 +13,9 @@ import {
   onPushNavigate,
 } from './offline/swBridge';
 import { useMessages } from './messages';
+import { readSession } from '../../auth/storage';
+import { stopAndClearQueue } from './offline/queue';
+import { clearDraft } from './offline/drafts';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const SubmitPage = lazy(() => import('./pages/SubmitPage'));
@@ -64,17 +67,18 @@ function RouteError() {
 function OfflineBridge(): null {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const ownerId = readSession()?.user.id ?? null;
 
   useEffect(() => {
-    registerOfflineQueueRetry();
+    registerOfflineQueueRetry(ownerId);
+
+    const queue = getQueue(ownerId);
 
     function drainAndRefresh(): void {
-      void getQueue()
-        .drain()
-        .then(() => {
-          void qc.invalidateQueries({ queryKey: ['citizen'] });
-          void qc.invalidateQueries({ queryKey: ['me'] });
-        });
+      void queue.drain().then(() => {
+        void qc.invalidateQueries({ queryKey: ['citizen'] });
+        void qc.invalidateQueries({ queryKey: ['me'] });
+      });
     }
 
     // Catch items queued while this tab was closed/backgrounded —
@@ -86,6 +90,15 @@ function OfflineBridge(): null {
     const offOnline = (): void => drainAndRefresh();
     window.addEventListener('online', offOnline);
 
+    const offLogout = (event: Event): void => {
+      const detail = (event as CustomEvent<{ ownerId?: string }>).detail;
+      if (detail?.ownerId) {
+        void stopAndClearQueue(detail.ownerId);
+        void clearDraft(detail.ownerId);
+      }
+    };
+    window.addEventListener('cip:auth-logout', offLogout);
+
     const offPush = onPushReceived(() => {
       void qc.invalidateQueries({ queryKey: ['notifications'] });
     });
@@ -96,10 +109,11 @@ function OfflineBridge(): null {
     return () => {
       offDrain();
       window.removeEventListener('online', offOnline);
+      window.removeEventListener('cip:auth-logout', offLogout);
       offPush();
       offNavigate();
     };
-  }, [qc, navigate]);
+  }, [qc, navigate, ownerId]);
 
   return null;
 }

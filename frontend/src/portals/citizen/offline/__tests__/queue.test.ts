@@ -12,8 +12,9 @@ function makeQueue(
   const calls = { count: 0, failures: 0 };
   const retry =
     opts?.retry ??
-    (async () => {
+    (() => {
       calls.count++;
+      return Promise.resolve();
     });
   const backoff = opts?.backoff ?? (() => 1000);
   const now = opts?.now ?? (() => 1_000_000);
@@ -50,7 +51,7 @@ describe('OfflineQueue (T-M13-006 / T-M13-026)', () => {
   });
 
   it('processes a pending item successfully and marks it done', async () => {
-    const retry = vi.fn(async () => undefined);
+    const retry = vi.fn(() => Promise.resolve());
     const { q } = makeQueue({ retry });
     const item = await q.enqueue({ kind: 'report.create', payload: { ok: true } });
     const result = await q.processOne(item);
@@ -61,9 +62,7 @@ describe('OfflineQueue (T-M13-006 / T-M13-026)', () => {
   it('increments attempts on failure and reschedules with backoff', async () => {
     const now = 1_000_000;
     const backoff = vi.fn((a: number) => 5_000 * a);
-    const retry = vi.fn(async () => {
-      throw new Error('network down');
-    });
+    const retry = vi.fn(() => Promise.reject(new Error('network down')));
     const q = new OfflineQueue({
       adapter: new MemoryAdapter(),
       retry,
@@ -80,9 +79,7 @@ describe('OfflineQueue (T-M13-006 / T-M13-026)', () => {
   });
 
   it('moves an item to dead after max_attempts', async () => {
-    const retry = vi.fn(async () => {
-      throw new Error('persistent failure');
-    });
+    const retry = vi.fn(() => Promise.reject(new Error('persistent failure')));
     const { q } = makeQueue({ retry, max_attempts: 2 });
     const item = await q.enqueue({ kind: 'report.create', payload: {} });
     const a = await q.processOne(item);
@@ -93,7 +90,7 @@ describe('OfflineQueue (T-M13-006 / T-M13-026)', () => {
 
   it('drain() picks up due items and skips items in the future', async () => {
     const now = 1_000_000;
-    const retry = vi.fn(async () => undefined);
+    const retry = vi.fn(() => Promise.resolve());
     const q = new OfflineQueue({
       adapter: new MemoryAdapter(),
       retry,
@@ -116,9 +113,9 @@ describe('OfflineQueue (T-M13-006 / T-M13-026)', () => {
   });
 
   it('drain() counts succeeded / failed / dead correctly', async () => {
-    const retry = vi.fn(async (item: QueueItem) => {
-      if (item.payload === null) throw new Error('x');
-    });
+    const retry = vi.fn((item: QueueItem) =>
+      item.payload === null ? Promise.reject(new Error('x')) : Promise.resolve(),
+    );
     const { q } = makeQueue({ retry, max_attempts: 1 });
     await q.enqueue({ kind: 'report.create', payload: null, id: 'will-die' });
     await q.enqueue({ kind: 'report.create', payload: 'ok', id: 'will-succeed' });
@@ -129,7 +126,7 @@ describe('OfflineQueue (T-M13-006 / T-M13-026)', () => {
   });
 
   it('subscribe is invoked after enqueue and drain', async () => {
-    const retry = vi.fn(async () => undefined);
+    const retry = vi.fn(() => Promise.resolve());
     const { q } = makeQueue({ retry });
     const listener = vi.fn();
     const unsub = q.subscribe(listener);
@@ -149,5 +146,54 @@ describe('OfflineQueue (T-M13-006 / T-M13-026)', () => {
     await q.enqueue({ kind: 'report.create', payload: {}, id: 'b' });
     await q.clear();
     expect(await q.size()).toBe(0);
+  });
+
+  it("partitions items by account and never drains another account's item", async () => {
+    const adapter = new MemoryAdapter();
+    const first = new OfflineQueue({
+      adapter,
+      owner_id: 'citizen-a',
+      retry: vi.fn(() => Promise.resolve()),
+    });
+    const secondRetry = vi.fn(() => Promise.resolve());
+    const second = new OfflineQueue({ adapter, owner_id: 'citizen-b', retry: secondRetry });
+    await first.enqueue({
+      id: 'shared-device-item',
+      kind: 'report.create',
+      payload: { owner: 'a' },
+    });
+
+    expect(await second.size()).toBe(0);
+    expect((await second.drain()).processed).toBe(0);
+    expect(secondRetry).not.toHaveBeenCalled();
+    await expect(
+      second.enqueue({ id: 'shared-device-item', kind: 'report.create', payload: { owner: 'b' } }),
+    ).rejects.toThrow(/another account/i);
+    expect(await first.size()).toBe(1);
+  });
+
+  it('does not count done entries and removes them after retention', async () => {
+    let now = Date.now();
+    const q = new OfflineQueue({
+      adapter: new MemoryAdapter(),
+      owner_id: 'citizen-a',
+      retry: vi.fn(() => Promise.resolve()),
+      now: () => now,
+    });
+    const item = await q.enqueue({ kind: 'report.create', payload: {} });
+    await q.processOne(item);
+    expect(await q.size()).toBe(0);
+    now += 2 * 24 * 60 * 60 * 1000;
+    expect(await q.cleanupDone()).toBe(1);
+    expect(await q.size()).toBe(0);
+  });
+
+  it('stops draining after logout until a new account queue is created', async () => {
+    const retry = vi.fn(() => Promise.resolve());
+    const q = new OfflineQueue({ adapter: new MemoryAdapter(), owner_id: 'citizen-a', retry });
+    await q.enqueue({ kind: 'report.create', payload: {} });
+    q.stop();
+    expect((await q.drain()).processed).toBe(0);
+    expect(retry).not.toHaveBeenCalled();
   });
 });

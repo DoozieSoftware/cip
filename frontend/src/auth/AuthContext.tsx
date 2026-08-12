@@ -81,10 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   }, []);
 
   const logout = useCallback((): void => {
+    const ownerId = user?.id;
+    if (typeof window !== 'undefined' && ownerId) {
+      window.dispatchEvent(new CustomEvent('cip:auth-logout', { detail: { ownerId } }));
+    }
     setToken(null);
     setUser(null);
     writeSession(null);
-  }, []);
+  }, [user]);
 
   const hasAnyRole = useCallback(
     (roles: Role[]): boolean => {
