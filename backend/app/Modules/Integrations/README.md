@@ -8,7 +8,9 @@ Provides a configurable connector framework for external government APIs and thi
 
 | Class | Role |
 |-------|------|
-| `IntegrationAdminService` | CRUD operations for connector configuration |
+| `IntegrationAdminService` | CRUD operations and audited connector probe execution |
+| `ProbeIntegrationHealthJob` | Asynchronous health probe with bounded retries |
+| `IntegrationUrlGuard` | Public-address and optional production host allow-list boundary |
 | `IntegrationRepository` | Persistence for connector records |
 | `AdminIntegrationController` | Admin API for managing connectors |
 | `Integration` | Connector configuration model |
@@ -16,9 +18,16 @@ Provides a configurable connector framework for external government APIs and thi
 ## Connector Features
 
 - Configurable base URL, authentication, timeout, retry count
-- Health check endpoint per connector
+- Asynchronous health check endpoint per connector
+- Append-only probe results in `security_events` with correlation IDs
+- Optional explicit production host allow-list (`CIP_INTEGRATION_PROBE_ALLOWED_HOSTS`)
 - Request/response logging for audit
 - Enable/disable toggle
+
+Production defaults to fail-closed when the host allow-list is empty. Configure
+only the approved upstream API hosts; do not add internal, wildcard-TLD, or
+metadata endpoints. Network-level egress policy should independently restrict
+the worker to those same public hosts.
 
 ## Dependencies
 

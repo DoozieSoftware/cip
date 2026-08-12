@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Modules\Integrations\Services;
 
+use App\Modules\Integrations\Jobs\ProbeIntegrationHealthJob;
 use App\Modules\Integrations\Models\Integration;
+use App\Modules\Security\Services\SecurityEventService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Support\TraceContext;
+use App\Modules\Users\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 /**
  * T-M12-007 — Super Admin write-side for `integrations`.
@@ -26,7 +30,10 @@ use Illuminate\Support\Facades\Http;
  */
 class IntegrationAdminService
 {
-    public function __construct(private readonly IntegrationUrlGuard $urlGuard) {}
+    public function __construct(
+        private readonly IntegrationUrlGuard $urlGuard,
+        private readonly SecurityEventService $securityEvents,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $attributes
@@ -116,17 +123,36 @@ class IntegrationAdminService
         return $integration->refresh();
     }
 
-    /**
-     * Probe the integration's `base_url`. Flips the row
-     * to `degraded` on a non-2xx and stores the error.
-     */
-    public function probe(Integration $integration): Integration
+    public function queueProbe(Integration $integration, User $actor): void
+    {
+        $this->assertProbeable($integration);
+
+        $actorId = $actor->getKey();
+
+        if (! is_string($actorId) && ! is_int($actorId)) {
+            throw ApiException::serverError('The acting user has no valid identifier.');
+        }
+
+        ProbeIntegrationHealthJob::dispatch($integration->id, (string) $actorId);
+    }
+
+    public function assertProbeable(Integration $integration): void
     {
         if ($integration->status === 'disabled') {
             throw ApiException::conflict('Integration is disabled; enable it before probing.');
         }
 
         $this->urlGuard->assertSafe($integration->base_url);
+    }
+
+    /**
+     * Probe the integration's `base_url` from queued work. Every result is
+     * appended to the security-event ledger without storing credentials,
+     * response bodies, query strings, or other sensitive connector data.
+     */
+    public function probe(Integration $integration, ?User $actor = null): Integration
+    {
+        $this->assertProbeable($integration);
 
         $settings = is_array($integration->settings) ? $integration->settings : [];
         $timeoutMs = isset($settings['timeout_ms']) && is_int($settings['timeout_ms'])
@@ -143,21 +169,25 @@ class IntegrationAdminService
                     TraceContext::headers(),
                 ))
                 ->get($integration->base_url);
-        } catch (\Throwable $e) {
-            return DB::transaction(function () use ($integration, $e): Integration {
+        } catch (Throwable $e) {
+            $degraded = DB::transaction(function () use ($integration): Integration {
                 $integration->status = 'degraded';
                 $integration->last_check_at = now();
-                $integration->last_error = 'connect_failed: '.$e->getMessage();
+                $integration->last_error = 'connect_failed';
                 $integration->save();
 
                 return $integration->refresh();
             });
+
+            $this->recordProbe($degraded, $actor, 'connect_failed', null, null, $e::class);
+
+            throw $e;
         }
         $latencyMs = (int) round((microtime(true) - $start) * 1000);
 
         $healthy = $response->successful();
 
-        return DB::transaction(function () use ($integration, $healthy, $latencyMs, $response): Integration {
+        $probed = DB::transaction(function () use ($integration, $healthy, $latencyMs, $response): Integration {
             $integration->status = $healthy ? 'active' : 'degraded';
             $integration->last_check_at = now();
             $integration->last_error = $healthy
@@ -167,6 +197,49 @@ class IntegrationAdminService
 
             return $integration->refresh();
         });
+
+        $this->recordProbe(
+            $probed,
+            $actor,
+            $healthy ? 'healthy' : 'http_error',
+            $response->status(),
+            $latencyMs,
+        );
+
+        if (in_array($response->status(), [429, 503, 504], true)) {
+            throw new \RuntimeException('Transient integration probe failure: HTTP '.$response->status());
+        }
+
+        return $probed;
+    }
+
+    private function recordProbe(
+        Integration $integration,
+        ?User $actor,
+        string $outcome,
+        ?int $httpStatus,
+        ?int $latencyMs,
+        ?string $errorType = null,
+    ): void {
+        $host = parse_url($integration->base_url, PHP_URL_HOST);
+
+        $this->securityEvents->recordSafe(
+            'integration.probe.completed',
+            $outcome === 'healthy'
+                ? SecurityEventService::SEVERITY_INFO
+                : SecurityEventService::SEVERITY_WARNING,
+            array_filter([
+                'integration_id' => $integration->id,
+                'integration_code' => $integration->code,
+                'target_host' => is_string($host) ? strtolower($host) : null,
+                'outcome' => $outcome,
+                'http_status' => $httpStatus,
+                'latency_ms' => $latencyMs,
+                'trace_id' => TraceContext::id(),
+                'error_type' => $errorType,
+            ], static fn (mixed $value): bool => $value !== null),
+            $actor,
+        );
     }
 
     private function assertUniqueCode(string $code, ?string $ignoreId): void

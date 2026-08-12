@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Modules\Integrations\Jobs\ProbeIntegrationHealthJob;
 use App\Modules\Integrations\Models\Integration;
+use App\Modules\Integrations\Services\IntegrationAdminService;
 use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 
@@ -84,11 +87,13 @@ it('rejects a duplicate code on create with 422', function (): void {
 });
 
 it('runs a health probe and flips status to active on 2xx', function (): void {
+    Bus::fake([ProbeIntegrationHealthJob::class]);
     Http::fake([
         'integration-good.example.com/*' => Http::response('OK', 200),
     ]);
 
-    Sanctum::actingAs(integrationSuperAdmin());
+    $admin = integrationSuperAdmin();
+    Sanctum::actingAs($admin);
     $row = Integration::factory()->create([
         'code' => 'good',
         'display_name' => 'Good',
@@ -98,17 +103,27 @@ it('runs a health probe and flips status to active on 2xx', function (): void {
     ]);
 
     $r = $this->postJson("/api/v1/admin/integrations/{$row->id}/health");
-    $r->assertOk()->assertJsonPath('data.status', 'active')
-        ->assertJsonPath('data.last_error', null);
-    expect($r->json('data.last_check_at'))->not->toBeNull();
+    $r->assertAccepted()->assertJsonPath('message', 'Health probe queued.');
+    Bus::assertDispatched(
+        ProbeIntegrationHealthJob::class,
+        fn (ProbeIntegrationHealthJob $job): bool => $job->integrationId === $row->id
+            && $job->requestedBy === $admin->id,
+    );
+
+    $probed = app(IntegrationAdminService::class)->probe($row, $admin);
+    expect($probed->status)->toBe('active')
+        ->and($probed->last_error)->toBeNull()
+        ->and($probed->last_check_at)->not->toBeNull();
 });
 
 it('flips status to degraded on non-2xx response', function (): void {
+    Bus::fake([ProbeIntegrationHealthJob::class]);
     Http::fake([
-        'integration-bad.example.com/*' => Http::response('boom', 503),
+        'integration-bad.example.com/*' => Http::response('boom', 500),
     ]);
 
-    Sanctum::actingAs(integrationSuperAdmin());
+    $admin = integrationSuperAdmin();
+    Sanctum::actingAs($admin);
     $row = Integration::factory()->create([
         'code' => 'bad',
         'display_name' => 'Bad',
@@ -117,8 +132,11 @@ it('flips status to degraded on non-2xx response', function (): void {
     ]);
 
     $r = $this->postJson("/api/v1/admin/integrations/{$row->id}/health");
-    $r->assertOk()->assertJsonPath('data.status', 'degraded');
-    expect($r->json('data.last_error'))->toContain('http_503');
+    $r->assertAccepted();
+
+    $probed = app(IntegrationAdminService::class)->probe($row, $admin);
+    expect($probed->status)->toBe('degraded')
+        ->and($probed->last_error)->toContain('http_500');
 });
 
 it('rejects probing a disabled integration', function (): void {

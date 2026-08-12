@@ -12,6 +12,7 @@ use App\Modules\Integrations\Repositories\IntegrationRepository;
 use App\Modules\Integrations\Services\IntegrationAdminService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Controllers\BaseController;
+use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -115,11 +116,22 @@ class AdminIntegrationController extends BaseController
     {
         $this->ensureAdmin($request);
         $row = $this->find($integration);
-        $probed = $this->service->probe($row);
+        $actor = $request->user();
+
+        if (! $actor instanceof User) {
+            throw ApiException::forbidden('super_admin role is required.');
+        }
+
+        $this->service->queueProbe($row, $actor);
+        $request->attributes->set('audit.entity', 'integration');
+        $request->attributes->set('audit.entity_id', $row->id);
+        $request->attributes->set('audit.action', 'integration.health.requested');
+        $request->attributes->set('audit.after', ['queued' => true]);
 
         return $this->respond(
-            (new IntegrationResource($probed))->toArray($request),
-            'Health probe complete.',
+            (new IntegrationResource($row))->toArray($request),
+            'Health probe queued.',
+            202,
         );
     }
 

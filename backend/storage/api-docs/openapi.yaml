@@ -2288,7 +2288,7 @@ paths:
     post:
       tags:
         - Integrations
-      summary: 'Run a health probe against the integration (super_admin only)'
+      summary: 'Queue a health probe against the integration (super_admin only)'
       operationId: admin.integrations.health
       parameters:
         -
@@ -2299,8 +2299,8 @@ paths:
             type: string
             format: uuid
       responses:
-        200:
-          description: 'Health probe complete.'
+        202:
+          description: 'Health probe accepted for asynchronous execution.'
           content:
             application/json:
               schema: { $ref: '#/components/schemas/IntegrationResponse' }
