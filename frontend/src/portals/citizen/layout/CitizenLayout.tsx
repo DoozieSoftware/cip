@@ -50,6 +50,17 @@ export function CitizenLayout(): JSX.Element {
     }
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof performance === 'undefined') return;
+    const entry = performance.getEntriesByType('navigation')[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    if (!entry || entry.loadEventEnd <= 0) return;
+    const duration = entry.loadEventEnd - entry.startTime;
+    const bucket = duration < 1000 ? 'under_1s' : duration < 3000 ? '1_to_3s' : 'over_3s';
+    trackProductEvent('performance_metric', { surface: 'citizen_shell', load_bucket: bucket });
+  }, []);
+
   const handleSignOut = () => {
     logout();
     void navigate('/');

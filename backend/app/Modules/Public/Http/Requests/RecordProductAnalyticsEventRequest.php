@@ -32,6 +32,7 @@ class RecordProductAnalyticsEventRequest extends FormRequest
                     'notification_delivery_failed',
                     'report_reopened',
                     'accessibility_preference_changed',
+                    'performance_metric',
                 ]),
             ],
             'properties' => ['sometimes', 'array', 'max:8'],

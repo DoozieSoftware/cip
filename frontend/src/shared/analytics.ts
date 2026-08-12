@@ -12,7 +12,8 @@ export type ProductEventCode =
   | 'media_upload_failed'
   | 'notification_delivery_failed'
   | 'report_reopened'
-  | 'accessibility_preference_changed';
+  | 'accessibility_preference_changed'
+  | 'performance_metric';
 
 const API_BASE = (import.meta.env['VITE_API_BASE'] as string | undefined) ?? '/api/v1';
 
