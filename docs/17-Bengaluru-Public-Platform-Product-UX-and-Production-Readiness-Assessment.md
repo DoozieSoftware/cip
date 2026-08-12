@@ -1544,7 +1544,7 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | P2-14 | **Partial** | Privacy-safe, allowlisted telemetry endpoint and browser fire-and-forget client now cover report start/steps/completion/offline queue, GPS and media failures, notification inbox failures, and reopen actions (`d5eea66b`, `c1a0b2a6`); accessibility-preference and performance call sites remain to be wired. |
 | P2-12 | **Done** | Public landing now leads with resident report/track/transparency actions and moves staff portals into a separate entry point (`71796d7b`). |
 | P2-13 | **Done** | Emergency 112 guidance appears before category selection and on the public landing; unsupported/non-emergency scope is explicit (`71796d7b`). |
-| P2-11 | **Done** | Public stats now exclude drafts/rejected/merged duplicates and include generated-at, cache TTL, and metric definitions (`48b1bd82`). |
+| P2-11 | **Partial** | Public stats now exclude drafts/rejected/merged duplicates and expose generated-at, cache TTL, and metric definitions (`48b1bd82`); public UI surfaces still need to render the returned freshness/denominator metadata explicitly. |
 
 ### Backend Performance And Correctness
 
