@@ -1540,7 +1540,8 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | P2-03 | **Partial** | Citizen service-request search now sends URL-persisted query text to the server and retains status/pagination state (`8ef97697`); date/category/area filters and full cursor semantics remain. |
 | P2-08 | **Partial** | Reduced-motion CSS, focus/a11y scaffolding, and capture live-preview/timer accessibility are covered (`aef9b0da`); a full axe, screen-reader, and manual keyboard pass remains. |
 | P2-09 | **Partial** | Camera capture now exposes a live-preview label, non-spam timer, max-duration auto-stop, and lifecycle-managed video previews (`aef9b0da`, `154c9c85`); compression progress and broader device coverage remain. |
-| P2-06, P2-10, P2-15 | Not started | Profile onboarding, issue-pin separation, and mobile E2E remain open. |
+| P2-06, P2-10 | Not started | Profile onboarding and issue-pin separation remain open. |
+| P2-15 | **Partial** | Playwright now defines Chromium, Pixel 7, and iPhone 13 projects (`39e347a9`); real-device/browser permission and installed-PWA runs remain. |
 | P2-14 | **Partial** | Privacy-safe, allowlisted telemetry endpoint and browser fire-and-forget client now cover report start/steps/completion/offline queue, GPS and media failures, notification inbox failures, and reopen actions (`d5eea66b`, `c1a0b2a6`); accessibility-preference and performance call sites remain to be wired. |
 | P2-12 | **Done** | Public landing now leads with resident report/track/transparency actions and moves staff portals into a separate entry point (`71796d7b`). |
 | P2-13 | **Done** | Emergency 112 guidance appears before category selection and on the public landing; unsupported/non-emergency scope is explicit (`71796d7b`). |
