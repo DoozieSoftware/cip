@@ -11,6 +11,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { getQueue } from '../offline/queue';
 import { normalizeReport } from '../api/client';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { useMessages } from '../messages';
 
 interface ReportSummary {
   id: string;
@@ -35,6 +36,7 @@ interface ReportSummary {
  */
 export default function DashboardPage(): JSX.Element {
   const { user } = useAuth();
+  const { t, locale } = useMessages();
   const online = useOnlineStatus();
   const reports = useQuery({
     queryKey: ['citizen', 'reports', 'recent'],
@@ -60,7 +62,7 @@ export default function DashboardPage(): JSX.Element {
         <div className="space-y-6">
           <header>
             <h1 className="text-2xl font-bold text-slate-900">
-              Welcome, {user?.name ?? 'citizen'}
+              {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
             </h1>
           </header>
           <div className="flex items-center justify-center py-16">
@@ -68,10 +70,8 @@ export default function DashboardPage(): JSX.Element {
               <span className="grid h-14 w-14 place-items-center rounded-full bg-slate-100">
                 <IconWifiOff className="h-7 w-7 text-slate-500" stroke={1.5} aria-hidden />
               </span>
-              <p className="mt-4 text-base font-medium text-slate-900">You are offline</p>
-              <p className="mt-1 text-sm text-slate-500">
-                Connect to the internet to view your reports
-              </p>
+              <p className="mt-4 text-base font-medium text-slate-900">{t('home.offline.title')}</p>
+              <p className="mt-1 text-sm text-slate-500">{t('home.offline.detail')}</p>
               <button
                 type="button"
                 onClick={() => {
@@ -80,7 +80,7 @@ export default function DashboardPage(): JSX.Element {
                 className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
                 <IconRefresh className="h-4 w-4" stroke={1.6} aria-hidden />
-                Try again
+                {t('home.offline.action')}
               </button>
             </div>
           </div>
@@ -93,7 +93,7 @@ export default function DashboardPage(): JSX.Element {
         <div className="space-y-6">
           <header>
             <h1 className="text-2xl font-bold text-slate-900">
-              Welcome, {user?.name ?? 'citizen'}
+              {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
             </h1>
           </header>
           <div className="flex items-center justify-center py-16">
@@ -101,15 +101,13 @@ export default function DashboardPage(): JSX.Element {
               <span className="grid h-14 w-14 place-items-center rounded-full bg-slate-100">
                 <IconAlertCircle className="h-7 w-7 text-slate-500" stroke={1.5} aria-hidden />
               </span>
-              <p className="mt-4 text-base font-medium text-slate-900">Session expired</p>
-              <p className="mt-1 text-sm text-slate-500">
-                Your session has expired. Please sign in again.
-              </p>
+              <p className="mt-4 text-base font-medium text-slate-900">{t('home.session.title')}</p>
+              <p className="mt-1 text-sm text-slate-500">{t('home.session.detail')}</p>
               <Link
                 to="/citizen/login"
                 className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
-                Sign in again
+                {t('home.session.action')}
               </Link>
             </div>
           </div>
@@ -120,12 +118,14 @@ export default function DashboardPage(): JSX.Element {
     return (
       <div className="space-y-6">
         <header>
-          <h1 className="text-2xl font-bold text-slate-900">Welcome, {user?.name ?? 'citizen'}</h1>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
+          </h1>
         </header>
         <div className="flex items-center justify-center py-16">
           <ErrorState
-            title="Unable to load reports"
-            description="Check your connection and try again."
+            title={t('home.error.title')}
+            description={t('home.error.detail')}
             error={err instanceof Error ? err : null}
             action={
               <button
@@ -136,7 +136,7 @@ export default function DashboardPage(): JSX.Element {
                 className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
                 <IconRefresh className="h-4 w-4" stroke={1.6} aria-hidden />
-                Try again
+                {t('home.error.action')}
               </button>
             }
           />
@@ -149,13 +149,15 @@ export default function DashboardPage(): JSX.Element {
     return (
       <div className="space-y-6">
         <header>
-          <h1 className="text-2xl font-bold text-slate-900">Welcome, {user?.name ?? 'citizen'}</h1>
-          <p className="mt-1 text-sm text-slate-600">Report a civic issue in under 60 seconds.</p>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
+          </h1>
+          <p className="mt-1 text-sm text-slate-600">{t('home.tagline')}</p>
         </header>
         <div className="flex min-h-[40vh] items-center justify-center py-16">
           <div className="flex flex-col items-center gap-4 text-center">
-            <Spinner label="Loading your dashboard" />
-            <p className="text-sm text-slate-500">Loading your dashboard…</p>
+            <Spinner label={t('spinner.loadingYourDashboard')} />
+            <p className="text-sm text-slate-500">{t('spinner.loadingYourDashboard')}…</p>
           </div>
         </div>
       </div>
@@ -168,8 +170,10 @@ export default function DashboardPage(): JSX.Element {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold text-slate-900">Welcome, {user?.name ?? 'citizen'}</h1>
-        <p className="mt-1 text-sm text-slate-600">Report a civic issue in under 60 seconds.</p>
+        <h1 className="text-2xl font-bold text-slate-900">
+          {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
+        </h1>
+        <p className="mt-1 text-sm text-slate-600">{t('home.tagline')}</p>
       </header>
 
       {reports.isError && reports.data && (
@@ -179,7 +183,7 @@ export default function DashboardPage(): JSX.Element {
         >
           <div className="flex items-center gap-2">
             <IconAlertCircle className="h-4 w-4 shrink-0" stroke={1.6} aria-hidden />
-            <span className="flex-1">Showing cached reports. Could not refresh.</span>
+            <span className="flex-1">{t('home.stale.message')}</span>
             <button
               type="button"
               onClick={() => {
@@ -188,7 +192,7 @@ export default function DashboardPage(): JSX.Element {
               className="inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline"
             >
               <IconRefresh className="h-4 w-4" stroke={1.6} aria-hidden />
-              Retry
+              {t('home.stale.retry')}
             </button>
           </div>
         </div>
@@ -199,8 +203,8 @@ export default function DashboardPage(): JSX.Element {
           role="status"
           className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800"
         >
-          {queueSize} item{queueSize === 1 ? '' : 's'} waiting to sync. They will upload when your
-          connection is back.
+          {t('home.offlineSync', { count: queueSize, plural: queueSize === 1 ? '' : 's' })}.{' '}
+          {t('home.offlineSyncDetail')}
         </div>
       ) : null}
 
@@ -208,29 +212,29 @@ export default function DashboardPage(): JSX.Element {
         to="/citizen/submit"
         className="block rounded-lg bg-blue-600 px-5 py-4 text-center text-base font-semibold text-white shadow-sm transition hover:bg-blue-700"
       >
-        + Report a new issue
+        + {t('home.fileNewReport')}
       </Link>
 
       <section aria-labelledby="recent-reports">
         <h2 id="recent-reports" className="text-sm font-semibold text-slate-700">
-          Recent reports
+          {t('home.recentActivity')}
         </h2>
         <div className="mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white">
           {reports.isLoading ? (
             <div className="flex items-center justify-center py-16">
-              <Spinner label="Loading reports" />
+              <Spinner label={t('home.loadingReports')} />
             </div>
           ) : list.length === 0 ? (
             <div className="p-4">
               <EmptyState
-                title="No reports yet"
-                description="Your submitted reports will appear here."
+                title={t('home.dashboardEmptyTitle')}
+                description={t('home.empty.description')}
                 action={
                   <Link
                     to="/citizen/submit"
                     className="mt-2 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
                   >
-                    Report your first issue
+                    {t('home.empty.action')}
                   </Link>
                 }
               />
@@ -247,7 +251,7 @@ export default function DashboardPage(): JSX.Element {
                       {r.title}
                     </Link>
                     <div className="mt-0.5 text-xs text-slate-500">
-                      {r.created_at ? new Date(r.created_at).toLocaleString() : '—'}
+                      {r.created_at ? new Date(r.created_at).toLocaleString(locale) : '—'}
                     </div>
                   </div>
                   <StatusBadge status={r.status} />

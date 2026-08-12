@@ -39,6 +39,7 @@ function EvidencePreview({
   compact?: boolean;
 }): JSX.Element {
   const [failed, setFailed] = useState(false);
+  const { t } = useMessages();
   const url = media.signed_url ?? media.url;
 
   if (!url || failed) {
@@ -46,7 +47,9 @@ function EvidencePreview({
       <div className="grid h-full w-full place-items-center px-3 text-center">
         <div className="flex flex-col items-center gap-2">
           <IconCamera className="h-6 w-6 text-[#bfbbb2]" />
-          <span className="text-[11px] text-[var(--color-text-tertiary)]">Unavailable</span>
+          <span className="text-[11px] text-[var(--color-text-tertiary)]">
+            {t('detail.unavailable')}
+          </span>
         </div>
       </div>
     );
@@ -58,7 +61,7 @@ function EvidencePreview({
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
         <video
           src={url}
-          aria-label="Video evidence"
+          aria-label={t('detail.video')}
           className="h-full w-full object-cover"
           controls={!compact}
           muted={compact}
@@ -68,7 +71,7 @@ function EvidencePreview({
         />
         {compact ? (
           <span className="pointer-events-none absolute bottom-2 left-2 rounded-md bg-black/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
-            Video
+            {t('detail.video')}
           </span>
         ) : null}
       </div>
@@ -78,42 +81,42 @@ function EvidencePreview({
   return (
     <img
       src={url}
-      alt="Report evidence"
+      alt={t('detail.evidence')}
       className="h-full w-full object-cover"
       onError={() => setFailed(true)}
     />
   );
 }
 
-function formatDate(value: string | null | undefined): string {
+function formatDate(value: string | null | undefined, locale = 'en-IN'): string {
   if (!value) return '—';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-US', {
+  return d.toLocaleDateString(locale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
 }
 
-function formatTime(value: string | null | undefined): string {
+function formatTime(value: string | null | undefined, locale = 'en-IN'): string {
   if (!value) return '';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleTimeString('en-US', {
+  return d.toLocaleTimeString(locale, {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
   });
 }
 
-function formatLocation(address?: string | null): string {
-  return address ?? 'Address not available';
+function formatLocation(address: string | null | undefined, unavailable: string): string {
+  return address ?? unavailable;
 }
 
 export default function ReportDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
-  const { t } = useMessages();
+  const { t, locale } = useMessages();
   const detail = useReportDetail(id);
   const timeline = useReportTimeline(id);
   const verifyResolution = useVerifyResolution(id ?? '');
@@ -157,7 +160,7 @@ export default function ReportDetailPage(): JSX.Element {
               to="/citizen/reports"
               className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-full border border-black/15 bg-white px-6 text-sm font-medium text-[var(--color-ink)] hover:border-black/30"
             >
-              Return to My Reports
+              {t('detail.backToReports')}
             </Link>
           }
         />
@@ -175,7 +178,7 @@ export default function ReportDetailPage(): JSX.Element {
           <Link
             to="/citizen/reports"
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#d8d6cf] bg-[#faf9f6] text-[var(--color-ink)] hover:bg-white"
-            aria-label="Back to My Reports"
+            aria-label={t('detail.backToReports')}
           >
             <IconArrowLeft className="h-5 w-5" stroke={1.6} />
           </Link>
@@ -283,7 +286,7 @@ export default function ReportDetailPage(): JSX.Element {
             <DetailBlock
               icon={<IconCalendar className="h-3.5 w-3.5" stroke={1.6} />}
               label={t('detail.submitted')}
-              value={`${formatDate(r.created_at)}${formatTime(r.created_at) ? ` · ${formatTime(r.created_at)}` : ''}`}
+              value={`${formatDate(r.created_at, locale)}${formatTime(r.created_at, locale) ? ` · ${formatTime(r.created_at, locale)}` : ''}`}
             />
             <DetailBlock
               icon={<IconBuilding className="h-3.5 w-3.5" stroke={1.6} />}
@@ -350,8 +353,10 @@ export default function ReportDetailPage(): JSX.Element {
                             ) : null}
                           </div>
                           <time className="text-xs text-[var(--color-text-tertiary)]">
-                            {formatDate(entry.at)}
-                            {formatTime(entry.at) ? ` · ${formatTime(entry.at)}` : ''}
+                            {formatDate(entry.at, locale)}
+                            {formatTime(entry.at, locale)
+                              ? ` · ${formatTime(entry.at, locale)}`
+                              : ''}
                           </time>
                         </div>
                         {entry.actor ? (
@@ -401,7 +406,7 @@ export default function ReportDetailPage(): JSX.Element {
               </div>
               <div>
                 <p className="text-sm font-medium text-[var(--color-ink)]">
-                  {r.assigned_department?.name ?? r.department?.name ?? 'Pending'}
+                  {r.assigned_department?.name ?? r.department?.name ?? t('detail.pending')}
                 </p>
                 <p className="text-xs text-[var(--color-text-tertiary)]">
                   {t('detail.responsibleFor')}
@@ -434,7 +439,7 @@ export default function ReportDetailPage(): JSX.Element {
                   className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]"
                   stroke={1.6}
                 />
-                {formatLocation(r.location.address)}
+                {formatLocation(r.location.address, t('detail.addressNotAvailable'))}
               </p>
             </div>
             <div className="mt-2 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
@@ -481,7 +486,7 @@ export default function ReportDetailPage(): JSX.Element {
                   {m.kind === 'video' ? (
                     <div className="pointer-events-none absolute inset-0 grid place-items-center">
                       <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                        Video
+                        {t('detail.video')}
                       </span>
                     </div>
                   ) : null}
@@ -508,13 +513,13 @@ export default function ReportDetailPage(): JSX.Element {
               <span className="grid h-7 w-7 place-items-center rounded-full bg-sky-100">
                 <IconShield className="h-3.5 w-3.5 text-sky-600" stroke={1.7} />
               </span>
-              Automated Analysis
+              {t('detail.automatedAnalysis')}
             </h2>
             <div className="mt-3 space-y-4">
               {r.ai_summary.labels && r.ai_summary.labels.length > 0 ? (
                 <div>
                   <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                    Detected Labels
+                    {t('detail.detectedLabels')}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {r.ai_summary.labels.map((l) => (
@@ -535,23 +540,21 @@ export default function ReportDetailPage(): JSX.Element {
                 {r.ai_summary.recommended_department ? (
                   <DetailBlock
                     icon={<IconBuilding className="h-3.5 w-3.5" stroke={1.6} />}
-                    label="Recommended Department"
+                    label={t('detail.recommendedDepartment')}
                     value={r.ai_summary.recommended_department.name}
                   />
                 ) : null}
                 {typeof r.ai_summary.fraud_score === 'number' ? (
                   <DetailBlock
                     icon={<IconShield className="h-3.5 w-3.5" stroke={1.6} />}
-                    label="Evidence Review Score"
+                    label={t('detail.evidenceReviewScore')}
                     value={`${Math.round(r.ai_summary.fraud_score * 100)}%`}
                   />
                 ) : null}
               </div>
             </div>
             <p className="mt-4 rounded-lg border border-sky-200 bg-white px-3 py-2 text-xs leading-relaxed text-sky-800">
-              <strong>Note:</strong> This automated analysis is for informational purposes only. All
-              reports are subject to official review by a moderator or department officer before
-              action is taken.
+              <strong>{t('detail.aiNote')}</strong> {t('detail.aiNoteBody')}
             </p>
           </section>
         ) : null}
@@ -571,7 +574,7 @@ export default function ReportDetailPage(): JSX.Element {
                   stroke={1.7}
                 />
               </span>
-              Audit History
+              {t('detail.auditHistory')}
             </h2>
             <IconChevronDown
               className={`h-5 w-5 shrink-0 text-[var(--color-text-tertiary)] transition-transform duration-200 ${auditExpanded ? 'rotate-180' : ''}`}
@@ -582,17 +585,19 @@ export default function ReportDetailPage(): JSX.Element {
             <div className="px-4 py-4">
               {timeline.isLoading ? (
                 <div className="flex items-center gap-3 py-4">
-                  <Spinner label="Loading audit history" />
-                  <span className="text-sm text-[var(--color-text-secondary)]">Loading...</span>
+                  <Spinner label={t('detail.loadingAudit')} />
+                  <span className="text-sm text-[var(--color-text-secondary)]">
+                    {t('detail.loadingDots')}
+                  </span>
                 </div>
               ) : sortedTimeline.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
                       <tr className="border-b border-[var(--color-border-subtle)] font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                        <th className="pb-2.5 pr-3 font-semibold">Event</th>
-                        <th className="pb-2.5 pr-3 font-semibold">Date</th>
-                        <th className="pb-2.5 font-semibold">Actor</th>
+                        <th className="pb-2.5 pr-3 font-semibold">{t('detail.auditEvent')}</th>
+                        <th className="pb-2.5 pr-3 font-semibold">{t('detail.auditDate')}</th>
+                        <th className="pb-2.5 font-semibold">{t('detail.auditActor')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -605,9 +610,9 @@ export default function ReportDetailPage(): JSX.Element {
                             {entry.event}
                           </td>
                           <td className="py-2.5 pr-3 whitespace-nowrap text-[var(--color-text-secondary)]">
-                            {formatDate(entry.at)}
-                            {formatTime(entry.at) ? (
-                              <span className="ml-1 text-xs">{formatTime(entry.at)}</span>
+                            {formatDate(entry.at, locale)}
+                            {formatTime(entry.at, locale) ? (
+                              <span className="ml-1 text-xs">{formatTime(entry.at, locale)}</span>
                             ) : null}
                           </td>
                           <td className="py-2.5 text-[var(--color-text-secondary)]">
@@ -620,7 +625,7 @@ export default function ReportDetailPage(): JSX.Element {
                 </div>
               ) : (
                 <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">
-                  No audit entries yet.
+                  {t('detail.noAuditEntries')}
                 </p>
               )}
             </div>
@@ -630,11 +635,7 @@ export default function ReportDetailPage(): JSX.Element {
         {/* Footer Notice */}
         <div className="rounded-xl bg-white p-4">
           <p className="text-center text-xs leading-relaxed text-[var(--color-text-secondary)]">
-            This is an official record generated by the Civic Intelligence Platform. Reference{' '}
-            <span className="font-mono font-semibold text-[var(--color-ink)]">
-              {r.tracking_number}
-            </span>{' '}
-            must be quoted in all correspondence.
+            {t('detail.officialRecordNotice', { reference: r.tracking_number })}
           </p>
         </div>
       </div>

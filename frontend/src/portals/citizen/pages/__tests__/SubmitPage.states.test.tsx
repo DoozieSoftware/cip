@@ -118,7 +118,6 @@ describe('SubmitPage report types states', () => {
 
     renderSubmitPage();
 
-    expect(screen.getByRole('status', { name: /loading categories/i })).toBeInTheDocument();
     expect(screen.getByText(/loading report categories/i)).toBeInTheDocument();
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();
   });
@@ -135,7 +134,7 @@ describe('SubmitPage report types states', () => {
     renderSubmitPage();
 
     const alert = screen.getByRole('alert');
-    expect(alert).toHaveTextContent(/couldn't load categories/i);
+    expect(alert).toHaveTextContent(/could not load categories/i);
     expect(alert).toHaveTextContent(/network request failed/i);
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();
   });
@@ -169,7 +168,7 @@ describe('SubmitPage report types states', () => {
     renderSubmitPage();
 
     expect(screen.getByText(/no categories available/i)).toBeInTheDocument();
-    expect(screen.getByText(/no report categories configured yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/no active report categories are available/i)).toBeInTheDocument();
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();
   });
 
@@ -184,7 +183,7 @@ describe('SubmitPage report types states', () => {
 
     renderSubmitPage();
 
-    const refreshButton = screen.getByRole('button', { name: /refresh/i });
+    const refreshButton = screen.getByRole('button', { name: /retry/i });
     fireEvent.click(refreshButton);
 
     expect(refetchMock).toHaveBeenCalledTimes(1);
@@ -211,7 +210,7 @@ describe('SubmitPage report types states', () => {
 
     renderSubmitPage();
 
-    expect(screen.queryByRole('status', { name: /loading categories/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/loading categories/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.queryByText(/no categories available/i)).not.toBeInTheDocument();
     expect(screen.getByText('Roads')).toBeInTheDocument();

@@ -112,7 +112,7 @@ describe('DashboardPage — distinct failure states (P2-04)', () => {
     await waitFor(() => {
       expect(screen.getByText('No reports yet')).toBeInTheDocument();
     });
-    expect(screen.getByRole('link', { name: 'Report your first issue' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'File a report' })).toBeInTheDocument();
   });
 
   it('renders the report list when data is returned', async () => {

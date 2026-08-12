@@ -28,6 +28,7 @@ import { useToast } from '../components/Toast';
 import { evidencePreviewHandlers } from '../security/evidenceGuards';
 import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 import { ApiError } from '../../../auth/api';
+import { useMessages } from '../messages';
 
 const FORM_STEPS = ['Category', 'Details', 'Location', 'Evidence', 'Review'] as const;
 type Step = (typeof FORM_STEPS)[number];
@@ -73,6 +74,7 @@ function sortByPracticalOrder(types: ReportType[]): ReportType[] {
 
 export default function SubmitPage(): JSX.Element {
   const navigate = useNavigate();
+  const { t } = useMessages();
   const toast = useToast();
   const types = useReportTypes();
   const create = useCreateReport();
@@ -116,7 +118,7 @@ export default function SubmitPage(): JSX.Element {
   function addPhoto(f: File): void {
     const photoCount = files.filter((x) => x.type.startsWith('image/')).length;
     if (photoCount >= 5) {
-      setError('You can attach up to 5 photos.');
+      setError(t('submit.evidence.tooManyPhotos'));
       return;
     }
     setFiles((prev) => [...prev, f].slice(0, 6));
@@ -133,13 +135,13 @@ export default function SubmitPage(): JSX.Element {
   function validateForm(): boolean {
     const errors: typeof fieldErrors = {};
     if (!typeId) {
-      errors.type = 'Pick a category.';
+      errors.type = t('submit.category.pickCategory');
     }
     if (title.trim().length < 5) {
-      errors.title = 'Title should be at least 5 characters.';
+      errors.title = t('submit.details.titleTooShort');
     }
     if (description.trim().length < 10) {
-      errors.description = 'Description should be at least 10 characters.';
+      errors.description = t('submit.details.descriptionTooShort');
     }
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -156,7 +158,7 @@ export default function SubmitPage(): JSX.Element {
 
   function handleCategoryNext(): void {
     if (!typeId) {
-      setFieldError('type', 'Pick a category.');
+      setFieldError('type', t('submit.category.pickCategory'));
       return;
     }
     setFieldError('type', null);
@@ -166,10 +168,10 @@ export default function SubmitPage(): JSX.Element {
   function handleDetailsNext(): void {
     const errors: Partial<typeof fieldErrors> = {};
     if (title.trim().length < 5) {
-      errors.title = 'Title should be at least 5 characters.';
+      errors.title = t('submit.details.titleTooShort');
     }
     if (description.trim().length < 10) {
-      errors.description = 'Description should be at least 10 characters.';
+      errors.description = t('submit.details.descriptionTooShort');
     }
     if (Object.keys(errors).length > 0) {
       setFieldErrors((prev) => ({ ...prev, ...errors }));
@@ -186,7 +188,7 @@ export default function SubmitPage(): JSX.Element {
 
   function handleLocationNext(): void {
     if (!location) {
-      setFieldError('location', 'Allow location access to tag the report.');
+      setFieldError('location', t('submit.location.allowAccess'));
       return;
     }
     setFieldError('location', null);
@@ -197,11 +199,11 @@ export default function SubmitPage(): JSX.Element {
     const hasPhoto = files.some((f) => f.type.startsWith('image/'));
     const hasVideo = files.some((f) => f.type.startsWith('video/'));
     if (selectedType?.requires_photo && !hasPhoto) {
-      setFieldError('evidence', 'This category requires at least one photo.');
+      setFieldError('evidence', t('submit.evidence.requiresPhoto'));
       return;
     }
     if (selectedType?.requires_video && !hasVideo) {
-      setFieldError('evidence', 'This category requires a video.');
+      setFieldError('evidence', t('submit.evidence.requiresVideo'));
       return;
     }
     setFieldError('evidence', null);
@@ -219,7 +221,7 @@ export default function SubmitPage(): JSX.Element {
 
     const activeLocation = location ?? (await gpsRef.current?.requestLocation()) ?? null;
     if (activeLocation === null) {
-      setFieldError('location', 'Allow location access to tag the report.');
+      setFieldError('location', t('submit.location.allowAccess'));
       goToStep('Location');
       return;
     }
@@ -227,12 +229,12 @@ export default function SubmitPage(): JSX.Element {
     const hasPhoto = files.some((f) => f.type.startsWith('image/'));
     const hasVideo = files.some((f) => f.type.startsWith('video/'));
     if (selectedType?.requires_photo && !hasPhoto) {
-      setFieldError('evidence', 'This category requires at least one photo.');
+      setFieldError('evidence', t('submit.evidence.requiresPhoto'));
       goToStep('Evidence');
       return;
     }
     if (selectedType?.requires_video && !hasVideo) {
-      setFieldError('evidence', 'This category requires a video.');
+      setFieldError('evidence', t('submit.evidence.requiresVideo'));
       goToStep('Evidence');
       return;
     }
@@ -257,11 +259,11 @@ export default function SubmitPage(): JSX.Element {
     } catch (err) {
       if (isNetworkFailure(err)) {
         await getQueue().enqueue({ kind: 'report.create', payload });
-        toast.show("Saved offline - we'll submit it when you're back online.", 'info', 6000);
+        toast.show(t('submit.offlineSaved'), 'info', 6000);
         void navigate('/citizen');
         return;
       }
-      setError(err instanceof Error ? err.message : 'Submit failed');
+      setError(err instanceof Error ? err.message : t('submit.submitFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -272,6 +274,14 @@ export default function SubmitPage(): JSX.Element {
   const reportTypes = sortByPracticalOrder(types.data ?? []);
   const activeStep = currentStep(typeId, location);
   const stepIndex = FORM_STEPS.indexOf(currentViewStep);
+  const stepLabel = (step: Step): string =>
+    ({
+      Category: t('submit.step.category'),
+      Details: t('submit.step.details'),
+      Location: t('submit.step.location'),
+      Evidence: t('submit.step.evidence'),
+      Review: t('submit.step.review'),
+    })[step];
 
   const completedSteps: Step[] = [];
   if (typeId) completedSteps.push('Category');
@@ -305,10 +315,10 @@ export default function SubmitPage(): JSX.Element {
             </button>
             <div className="flex-1 min-w-0">
               <h1 className="text-lg font-medium tracking-[-0.015em] text-[var(--color-ink)]">
-                New Report
+                {t('submit.newReport')}
               </h1>
               <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                Step {stepIndex + 1} of {FORM_STEPS.length}
+                {t('submit.stepCount', { current: stepIndex + 1, total: FORM_STEPS.length })}
               </p>
             </div>
           </div>
@@ -332,7 +342,7 @@ export default function SubmitPage(): JSX.Element {
                     'group flex flex-1 items-center gap-1.5 rounded-full py-1 transition',
                     isActive || isComplete ? 'cursor-pointer' : 'cursor-not-allowed opacity-40',
                   )}
-                  aria-label={`Step ${i + 1}: ${step}${isComplete ? ' (completed)' : ''}${isActive ? ' (current)' : ''}`}
+                  aria-label={`${t('submit.stepCount', { current: i + 1, total: FORM_STEPS.length })}: ${stepLabel(step)}${isComplete ? ` (${t('detail.current')})` : ''}`}
                   aria-current={isActive ? 'step' : undefined}
                 >
                   <span
@@ -357,7 +367,7 @@ export default function SubmitPage(): JSX.Element {
                           : 'text-[var(--color-text-tertiary)]',
                     )}
                   >
-                    {step}
+                    {stepLabel(step)}
                   </span>
                 </button>
               );
@@ -372,7 +382,7 @@ export default function SubmitPage(): JSX.Element {
           aria-live="polite"
           role="status"
           className="sr-only"
-          aria-label={`Step ${stepIndex + 1} of ${FORM_STEPS.length}: ${currentViewStep}`}
+          aria-label={`${t('submit.stepCount', { current: stepIndex + 1, total: FORM_STEPS.length })}: ${stepLabel(currentViewStep)}`}
         />
 
         {/* Step 1: Category Selection */}
@@ -385,24 +395,24 @@ export default function SubmitPage(): JSX.Element {
                 tabIndex={-1}
                 className="text-xl font-medium tracking-[-0.015em] text-[var(--color-ink)] focus:outline-none"
               >
-                Report Category
+                {t('submit.category.title')}
               </h2>
               <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                Select the category that best describes the civic issue you wish to report.
+                {t('submit.category.subtitle')}
               </p>
             </div>
 
             {types.isLoading ? (
               <div className="rounded-xl bg-white p-12 flex flex-col items-center justify-center gap-3">
-                <Spinner label="Loading categories" />
+                <Spinner label={t('submit.category.loading')} />
                 <p className="text-sm text-[var(--color-text-secondary)]">
-                  Loading report categories…
+                  {t('submit.category.loading')}…
                 </p>
               </div>
             ) : types.isError ? (
               <ErrorState
-                title="Couldn't load categories"
-                description="We couldn't fetch the report categories. Check your connection and try again."
+                title={t('submit.category.errorTitle')}
+                description={t('submit.category.error')}
                 error={types.error instanceof Error ? types.error : null}
                 action={
                   <button
@@ -411,14 +421,14 @@ export default function SubmitPage(): JSX.Element {
                     className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white transition hover:bg-black active:scale-[0.98]"
                   >
                     <IconRefresh className="h-4 w-4" stroke={1.6} />
-                    Retry
+                    {t('common.retry')}
                   </button>
                 }
               />
             ) : reportTypes.length === 0 ? (
               <EmptyState
-                title="No categories available"
-                description="There are no report categories configured yet. Please contact an administrator."
+                title={t('submit.category.emptyTitle')}
+                description={t('submit.category.empty')}
                 action={
                   <button
                     type="button"
@@ -426,51 +436,59 @@ export default function SubmitPage(): JSX.Element {
                     className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-5 text-sm font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
                   >
                     <IconRefresh className="h-4 w-4" stroke={1.6} />
-                    Refresh
+                    {t('common.retry')}
                   </button>
                 }
               />
             ) : (
               <div className="rounded-xl bg-white divide-y divide-[var(--color-border-subtle)]">
-                {reportTypes.map((t) => (
+                {reportTypes.map((reportType) => (
                   <label
-                    key={t.id}
+                    key={reportType.id}
                     className={cx(
                       'flex cursor-pointer items-center gap-4 p-4 transition',
-                      typeId === t.id ? 'bg-[var(--color-surface-alt)]' : 'hover:bg-[#faf9f6]',
+                      typeId === reportType.id
+                        ? 'bg-[var(--color-surface-alt)]'
+                        : 'hover:bg-[#faf9f6]',
                       fieldErrors.type && !typeId ? 'bg-red-50' : '',
                     )}
                   >
                     <input
                       type="radio"
                       name="report-category"
-                      value={t.id}
-                      checked={typeId === t.id}
-                      onChange={() => setTypeId(t.id)}
+                      value={reportType.id}
+                      checked={typeId === reportType.id}
+                      onChange={() => setTypeId(reportType.id)}
                       className="sr-only"
                     />
                     <span
                       aria-hidden
                       className={cx(
                         'flex h-12 w-12 shrink-0 items-center justify-center rounded-lg transition',
-                        typeId === t.id
+                        typeId === reportType.id
                           ? 'bg-[var(--color-ink)] text-white'
                           : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]',
                       )}
-                      style={{ color: typeId === t.id ? 'white' : (t.color ?? '#334155') }}
+                      style={{
+                        color: typeId === reportType.id ? 'white' : (reportType.color ?? '#334155'),
+                      }}
                     >
-                      <IssueIcon code={t.code} />
+                      <IssueIcon code={reportType.code} />
                     </span>
                     <span className="flex-1 min-w-0">
                       <span className="block text-sm font-medium text-[var(--color-ink)]">
-                        {t.name}
+                        {reportType.name}
                       </span>
                       <span className="block text-xs text-[var(--color-text-secondary)]">
-                        {t.requires_photo ? 'Evidence required' : 'Evidence optional'}
-                        {t.requires_video ? ' · Video required' : ''}
+                        {reportType.requires_photo
+                          ? t('submit.category.evidenceRequired')
+                          : t('submit.category.evidenceOptional')}
+                        {reportType.requires_video
+                          ? ` · ${t('submit.category.videoRequired')}`
+                          : ''}
                       </span>
                     </span>
-                    {typeId === t.id && (
+                    {typeId === reportType.id && (
                       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--color-ink)]">
                         <IconCheck className="h-3.5 w-3.5 text-white" stroke={1.8} />
                       </span>
@@ -490,7 +508,7 @@ export default function SubmitPage(): JSX.Element {
               onClick={handleCategoryNext}
               className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
             >
-              Continue
+              {t('common.continue')}
               <IconArrowRight className="h-4 w-4" stroke={1.6} />
             </button>
           </section>
@@ -506,10 +524,10 @@ export default function SubmitPage(): JSX.Element {
                 tabIndex={-1}
                 className="text-xl font-medium tracking-[-0.015em] text-[var(--color-ink)] focus:outline-none"
               >
-                Issue Details
+                {t('submit.details.title')}
               </h2>
               <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                Provide a clear description of the issue to help officials address it promptly.
+                {t('submit.details.subtitle')}
               </p>
             </div>
 
@@ -519,16 +537,16 @@ export default function SubmitPage(): JSX.Element {
                   htmlFor="report-title"
                   className="text-sm font-medium text-[var(--color-ink)]"
                 >
-                  Report Title <span className="text-red-500">*</span>
+                  {t('submit.details.titleLabel')} <span className="text-red-500">*</span>
                 </label>
                 <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-                  A brief, descriptive headline (minimum 5 characters).
+                  {t('submit.details.titleHint')}
                 </p>
                 <input
                   id="report-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Large pothole near metro gate 3"
+                  placeholder={t('submit.details.titlePlaceholder')}
                   aria-invalid={fieldErrors.title ? true : undefined}
                   aria-describedby={fieldErrors.title ? 'title-error' : undefined}
                   className={cx(
@@ -553,17 +571,17 @@ export default function SubmitPage(): JSX.Element {
                   htmlFor="report-description"
                   className="text-sm font-medium text-[var(--color-ink)]"
                 >
-                  Detailed Description <span className="text-red-500">*</span>
+                  {t('submit.details.descriptionLabel')} <span className="text-red-500">*</span>
                 </label>
                 <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-                  Include size, duration, safety concerns (minimum 10 characters).
+                  {t('submit.details.descriptionHint')}
                 </p>
                 <textarea
                   id="report-description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={4}
-                  placeholder="Describe the issue: how long it exists, who it affects, any safety hazards…"
+                  placeholder={t('submit.details.descriptionPlaceholder')}
                   aria-invalid={fieldErrors.description ? true : undefined}
                   aria-describedby={fieldErrors.description ? 'desc-error' : undefined}
                   className={cx(
@@ -587,14 +605,14 @@ export default function SubmitPage(): JSX.Element {
                 className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconArrowLeft className="h-4 w-4" stroke={1.6} />
-                Back
+                {t('common.back')}
               </button>
               <button
                 type="button"
                 onClick={handleDetailsNext}
                 className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
               >
-                Continue
+                {t('common.continue')}
                 <IconArrowRight className="h-4 w-4" stroke={1.6} />
               </button>
             </div>
@@ -611,10 +629,10 @@ export default function SubmitPage(): JSX.Element {
                 tabIndex={-1}
                 className="text-xl font-medium tracking-[-0.015em] text-[var(--color-ink)] focus:outline-none"
               >
-                Location Verification
+                {t('submit.location.title')}
               </h2>
               <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                Your precise location is required to route this report to the correct department.
+                {t('submit.location.subtitle')}
               </p>
             </div>
 
@@ -625,8 +643,10 @@ export default function SubmitPage(): JSX.Element {
                 stroke={1.6}
               />
               <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                <strong className="font-medium text-[var(--color-ink)]">Privacy notice:</strong>{' '}
-                Your GPS coordinates are used solely for report routing and are not shared publicly.
+                <strong className="font-medium text-[var(--color-ink)]">
+                  {t('submit.location.privacyTitle')}
+                </strong>{' '}
+                {t('submit.location.privacyBody')}
               </p>
             </div>
 
@@ -637,9 +657,11 @@ export default function SubmitPage(): JSX.Element {
                   <IconMapPin className="h-5 w-5 text-[var(--color-text-secondary)]" stroke={1.6} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-[var(--color-ink)]">Capture Location</p>
+                  <p className="text-sm font-medium text-[var(--color-ink)]">
+                    {t('submit.location.capture')}
+                  </p>
                   <p className="text-xs text-[var(--color-text-secondary)]">
-                    Tap the button to detect your position
+                    {t('submit.location.captureHint')}
                   </p>
                 </div>
               </div>
@@ -659,9 +681,11 @@ export default function SubmitPage(): JSX.Element {
                     <IconCheck className="h-5 w-5 text-white" stroke={1.8} />
                   </div>
                   <div className="text-sm">
-                    <p className="font-semibold text-emerald-900">Location captured</p>
+                    <p className="font-semibold text-emerald-900">
+                      {t('submit.location.captured')}
+                    </p>
                     <p className="mt-1 text-sm text-emerald-700">
-                      {placeName || 'Location captured'}
+                      {placeName || t('submit.location.captured')}
                       {location.accuracy_m !== null
                         ? ` · ±${Math.round(location.accuracy_m)} m accuracy`
                         : ''}
@@ -670,13 +694,14 @@ export default function SubmitPage(): JSX.Element {
                 </div>
                 {location.accuracy_m !== null && location.accuracy_m > 100 ? (
                   <p className="mt-3 rounded-lg bg-amber-100 px-4 py-2.5 text-sm font-medium text-amber-800">
-                    Coarse fix detected. For best results, try again in an open area.
+                    {t('submit.location.coarseWarning')}
                   </p>
                 ) : null}
                 {location.mock_heuristic.likely ? (
                   <p className="mt-3 rounded-lg bg-amber-100 px-4 py-2.5 text-sm font-medium text-amber-800">
-                    This location appears suspicious ({location.mock_heuristic.reasons.join('; ')}).
-                    It may be rejected during review.
+                    {t('submit.location.suspiciousWarning', {
+                      reasons: location.mock_heuristic.reasons.join('; '),
+                    })}
                   </p>
                 ) : null}
               </div>
@@ -687,17 +712,20 @@ export default function SubmitPage(): JSX.Element {
                 htmlFor="report-address"
                 className="text-sm font-medium text-[var(--color-ink)]"
               >
-                Nearest Landmark or Address
-                <span className="text-[var(--color-text-tertiary)] font-normal"> (optional)</span>
+                {t('submit.location.addressLabel')}
+                <span className="text-[var(--color-text-tertiary)] font-normal">
+                  {' '}
+                  {t('submit.location.addressOptional')}
+                </span>
               </label>
               <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-                A street name or nearby landmark helps officers locate the exact spot.
+                {t('submit.location.addressHint')}
               </p>
               <input
                 id="report-address"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="e.g. Near BESCOM office, 8th Main Road"
+                placeholder={t('submit.location.addressPlaceholder')}
                 className="mt-2 block w-full rounded-lg border border-[#d8d6cf] bg-[#faf9f6] px-4 py-3.5 min-h-12 text-base placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
               />
             </div>
@@ -709,14 +737,14 @@ export default function SubmitPage(): JSX.Element {
                 className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconArrowLeft className="h-4 w-4" stroke={1.6} />
-                Back
+                {t('common.back')}
               </button>
               <button
                 type="button"
                 onClick={handleLocationNext}
                 className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
               >
-                Continue
+                {t('common.continue')}
                 <IconArrowRight className="h-4 w-4" stroke={1.6} />
               </button>
             </div>
@@ -735,10 +763,10 @@ export default function SubmitPage(): JSX.Element {
                     tabIndex={-1}
                     className="text-xl font-medium tracking-[-0.015em] text-[var(--color-ink)] focus:outline-none"
                   >
-                    Attach Evidence
+                    {t('submit.evidence.title')}
                   </h2>
                   <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                    Up to 5 photos and 1 short video (3–5 seconds). Max 25 MB per file.
+                    {t('submit.evidence.subtitle')}
                   </p>
                 </div>
                 <span
@@ -749,7 +777,7 @@ export default function SubmitPage(): JSX.Element {
                       : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]',
                   )}
                 >
-                  {evidenceRequired ? 'Required' : 'Optional'}
+                  {evidenceRequired ? t('common.required') : t('common.optional')}
                 </span>
               </div>
             </div>
@@ -762,11 +790,8 @@ export default function SubmitPage(): JSX.Element {
                   stroke={1.6}
                 />
                 <div className="text-sm leading-relaxed text-amber-800">
-                  <p className="font-semibold text-amber-900">Safety First</p>
-                  <p className="mt-0.5">
-                    Never capture evidence while operating a vehicle. Pull over to a safe location
-                    first.
-                  </p>
+                  <p className="font-semibold text-amber-900">{t('submit.evidence.safetyFirst')}</p>
+                  <p className="mt-0.5">{t('submit.evidence.safetyBody')}</p>
                 </div>
               </div>
             </div>
@@ -784,9 +809,11 @@ export default function SubmitPage(): JSX.Element {
                   <IconCamera className="h-5 w-5 text-[var(--color-text-secondary)]" stroke={1.6} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-[var(--color-ink)]">Camera</p>
+                  <p className="text-sm font-medium text-[var(--color-ink)]">
+                    {t('submit.evidence.camera')}
+                  </p>
                   <p className="text-xs text-[var(--color-text-secondary)]">
-                    Capture photos or record video
+                    {t('submit.evidence.cameraHint')}
                   </p>
                 </div>
               </div>
@@ -798,8 +825,8 @@ export default function SubmitPage(): JSX.Element {
               >
                 <IconCamera className="h-4 w-4" stroke={1.6} />
                 {showVideo
-                  ? 'Hide video recorder'
-                  : `Record video${selectedType?.requires_video ? ' (required)' : ' (optional)'}`}
+                  ? t('submit.evidence.hideVideo')
+                  : `${t('submit.evidence.recordVideo')}${selectedType?.requires_video ? t('submit.evidence.videoRequiredSuffix') : t('submit.evidence.videoOptionalSuffix')}`}
               </button>
               {showVideo ? (
                 <CameraCapture mode="video" onCapture={addVideo} onError={onCameraError} />
@@ -812,7 +839,10 @@ export default function SubmitPage(): JSX.Element {
                 <div className="flex items-center gap-2 mb-4">
                   <IconUpload className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
                   <p className="text-sm font-medium text-[var(--color-ink)]">
-                    {files.length} file{files.length !== 1 ? 's' : ''} attached
+                    {t('submit.evidence.filesAttached', {
+                      count: files.length,
+                      plural: files.length === 1 ? '' : 's',
+                    })}
                   </p>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -839,7 +869,7 @@ export default function SubmitPage(): JSX.Element {
                         type="button"
                         onClick={() => removeFile(i)}
                         className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-ink)] text-xs font-medium text-white transition hover:bg-red-600"
-                        aria-label={`Remove ${f.name}`}
+                        aria-label={t('submit.evidence.removeFile', { name: f.name })}
                       >
                         ×
                       </button>
@@ -856,14 +886,14 @@ export default function SubmitPage(): JSX.Element {
                 className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconArrowLeft className="h-4 w-4" stroke={1.6} />
-                Back
+                {t('common.back')}
               </button>
               <button
                 type="button"
                 onClick={handleEvidenceNext}
                 className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
               >
-                Review
+                {t('submit.review.title')}
                 <IconArrowRight className="h-4 w-4" stroke={1.6} />
               </button>
             </div>
@@ -880,10 +910,10 @@ export default function SubmitPage(): JSX.Element {
                 tabIndex={-1}
                 className="text-xl font-medium tracking-[-0.015em] text-[var(--color-ink)] focus:outline-none"
               >
-                Review Your Report
+                {t('submit.review.title')}
               </h2>
               <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                Please review all details before submitting your official report.
+                {t('submit.review.subtitle')}
               </p>
             </div>
 
@@ -892,10 +922,10 @@ export default function SubmitPage(): JSX.Element {
               <div className="flex items-center justify-between p-4">
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                    Category
+                    {t('submit.review.category')}
                   </p>
                   <p className="mt-1 text-sm font-medium text-[var(--color-ink)]">
-                    {selectedType?.name ?? 'Unknown'}
+                    {selectedType?.name ?? t('submit.review.unknown')}
                   </p>
                 </div>
                 <button
@@ -904,14 +934,14 @@ export default function SubmitPage(): JSX.Element {
                   className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
-                  Edit
+                  {t('common.edit')}
                 </button>
               </div>
 
               <div className="flex items-center justify-between p-4">
                 <div className="flex-1 min-w-0">
                   <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                    Title
+                    {t('submit.review.titleLabel')}
                   </p>
                   <p className="mt-1 text-sm font-medium text-[var(--color-ink)] truncate">
                     {title}
@@ -923,14 +953,14 @@ export default function SubmitPage(): JSX.Element {
                   className="ml-2 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
-                  Edit
+                  {t('common.edit')}
                 </button>
               </div>
 
               <div className="p-4">
                 <div className="flex items-start justify-between">
                   <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                    Description
+                    {t('submit.review.description')}
                   </p>
                   <button
                     type="button"
@@ -938,7 +968,7 @@ export default function SubmitPage(): JSX.Element {
                     className="ml-2 inline-flex shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                   >
                     <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
-                    Edit
+                    {t('common.edit')}
                   </button>
                 </div>
                 <p className="mt-1 text-sm text-[var(--color-text-secondary)] whitespace-pre-wrap">
@@ -949,10 +979,12 @@ export default function SubmitPage(): JSX.Element {
               <div className="flex items-center justify-between p-4">
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                    Location
+                    {t('submit.review.location')}
                   </p>
                   <p className="mt-1 text-sm font-medium text-[var(--color-ink)]">
-                    {location ? placeName || address || 'Location captured' : 'Not captured'}
+                    {location
+                      ? placeName || address || t('submit.location.captured')
+                      : t('submit.review.locationNotCaptured')}
                   </p>
                 </div>
                 <button
@@ -961,17 +993,20 @@ export default function SubmitPage(): JSX.Element {
                   className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
-                  Edit
+                  {t('common.edit')}
                 </button>
               </div>
 
               <div className="flex items-center justify-between p-4">
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                    Evidence
+                    {t('submit.review.evidence')}
                   </p>
                   <p className="mt-1 text-sm font-medium text-[var(--color-ink)]">
-                    {files.length} file{files.length !== 1 ? 's' : ''} attached
+                    {t('submit.evidence.filesAttached', {
+                      count: files.length,
+                      plural: files.length === 1 ? '' : 's',
+                    })}
                   </p>
                 </div>
                 <button
@@ -980,7 +1015,7 @@ export default function SubmitPage(): JSX.Element {
                   className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
-                  Edit
+                  {t('common.edit')}
                 </button>
               </div>
             </div>
@@ -1001,8 +1036,7 @@ export default function SubmitPage(): JSX.Element {
             {/* Submit section */}
             <div className="rounded-xl bg-white p-4 space-y-4">
               <p className="text-center text-sm text-[var(--color-text-secondary)]">
-                By submitting, you confirm the information is accurate to the best of your
-                knowledge.
+                {t('submit.review.confirmation')}
               </p>
               <button
                 type="submit"
@@ -1010,7 +1044,7 @@ export default function SubmitPage(): JSX.Element {
                 className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[var(--color-text-tertiary)]"
               >
                 <IconFileText className="h-5 w-5" stroke={1.6} />
-                {submitting ? 'Submitting…' : 'File Report'}
+                {submitting ? t('submit.review.submitting') : t('submit.review.submitButton')}
               </button>
             </div>
 
@@ -1020,7 +1054,7 @@ export default function SubmitPage(): JSX.Element {
               className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
             >
               <IconArrowLeft className="h-4 w-4" stroke={1.6} />
-              Back to Evidence
+              {t('submit.review.backToEvidence')}
             </button>
           </section>
         )}

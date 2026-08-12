@@ -1501,10 +1501,10 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 
 | ID | Status | Notes / Evidence |
 |----|--------|------------------|
-| P2-01 | **Partial** | `CategoryPicker` is searchable and locale-aware with tests, but `ReportTypeResource` still does not return localized labels/aliases/sort order, so the production API contract is not complete. |
+| P2-01 | **Done** | `CategoryPicker` is searchable and locale-aware; `ReportType` casts and validates `localizations`, `aliases`, and `sort_order`; `ReportTypeResource` and admin CRUD responses expose the complete contract with backend resource tests. |
 | P2-04 | **Done** | Distinct loading/empty/error states across citizen pages; `DashboardPage`, `SubmitPage.states`, `PageStates.a11y` tests. |
 | P2-05 | **Done** | `SettingsPage` reachable and routed; profile logout functional; `ProfilePage.test.tsx`. |
-| P2-07 | **Partial** | Reactive `en-IN`/`kn-IN` catalogs, persisted language selection, `<html lang>` updates, and localized layout/Home/Notifications/Profile/Settings/legal/capture/category/merge-dispute surfaces are implemented. Dashboard, Submit, parts of Detail/resolution, locale-aware formatting, and backend localized report-type payloads remain. |
+| P2-07 | **Done** | Reactive `en-IN`/`kn-IN` catalogs, persisted language selection, `<html lang>` updates, locale-aware dates, and localized layout/Home/Dashboard/Submit/Detail/Resolution/Notifications/Profile/Settings/legal/capture/category/merge-dispute surfaces are implemented with focused component/page coverage. |
 | P2-02, P2-03, P2-06, P2-08..P2-15 | Not started | Still open. Accessibility (P2-08) has only test scaffolding (`*.a11y.test.*`), no full axe/screen-reader pass. |
 
 ### Backend Performance And Correctness
@@ -1525,4 +1525,4 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 
 ### Recommended Next Step
 
-Finish P2-07 on Dashboard, Submit, remaining Detail/resolution strings and locale-aware formatting; then expose localized report-type labels, aliases, and ordering from the backend to complete P2-01. After that, resume the highest-risk Phase 0 production-safety findings, beginning with P0-01/P0-03, and run the full backend suite in an environment with `pdo_sqlite` or isolated CI MySQL before staging.
+P2-01 and P2-07 are now complete. Resume the highest-risk Phase 0 production-safety findings, beginning with P0-01 (real production OTP delivery) and P0-03 (evidence-gated report finalization), and run the full backend suite in an environment with `pdo_sqlite` or isolated CI MySQL before staging.

@@ -5,17 +5,11 @@ import { cx } from '../../../shared/ui';
 import { IssueIcon } from './issueIcons';
 import { useMessages, type Locale } from '../messages';
 
-type LocalizedReportType = ReportType & {
-  localizations?: Record<string, string>;
-  aliases?: string[];
-  sort_order?: number;
-};
-
-function localizedLabel(t: LocalizedReportType, locale: Locale): string {
+function localizedLabel(t: ReportType, locale: Locale): string {
   return t.localizations?.[locale] ?? t.name;
 }
 
-function matches(t: LocalizedReportType, locale: Locale, q: string): boolean {
+function matches(t: ReportType, locale: Locale, q: string): boolean {
   const needle = q.trim().toLowerCase();
   if (needle === '') return true;
   const label = localizedLabel(t, locale);
@@ -25,8 +19,8 @@ function matches(t: LocalizedReportType, locale: Locale, q: string): boolean {
   return t.aliases?.some((a) => a.toLowerCase().includes(needle)) ?? false;
 }
 
-function rankTypes(types: ReportType[]): LocalizedReportType[] {
-  return ([...types] as LocalizedReportType[]).sort((a, b) => {
+function rankTypes(types: ReportType[]): ReportType[] {
+  return [...types].sort((a, b) => {
     const aOther = a.code === 'other' ? 1 : 0;
     const bOther = b.code === 'other' ? 1 : 0;
     if (aOther !== bOther) return aOther - bOther;

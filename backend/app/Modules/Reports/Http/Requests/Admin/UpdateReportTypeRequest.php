@@ -47,6 +47,10 @@ class UpdateReportTypeRequest extends FormRequest
             'description' => ['sometimes', 'nullable', 'string', 'max:1000'],
             'icon' => ['sometimes', 'nullable', 'string', 'max:64'],
             'color' => ['sometimes', 'nullable', 'string', 'max:16'],
+            'localizations' => ['sometimes', 'nullable', 'array'],
+            'localizations.*' => ['nullable', 'string', 'max:255'],
+            'aliases' => ['sometimes', 'nullable', 'array', 'max:50'],
+            'aliases.*' => ['string', 'max:255'],
             'department_default_id' => ['sometimes', 'nullable', 'string', 'uuid', 'exists:departments,id'],
             'requires_video' => ['sometimes', 'boolean'],
             'requires_photo' => ['sometimes', 'boolean'],
@@ -55,6 +59,7 @@ class UpdateReportTypeRequest extends FormRequest
             'workflow_definition_id' => ['sometimes', 'nullable', 'string', 'uuid'],
             'validation_rules' => ['sometimes', 'nullable', 'array'],
             'active' => ['sometimes', 'boolean'],
+            'sort_order' => ['sometimes', 'integer', 'min:0', 'max:65535'],
         ];
     }
 }

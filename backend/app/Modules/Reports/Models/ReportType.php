@@ -25,6 +25,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $description
  * @property string|null $icon
  * @property string|null $color
+ * @property array<string, string>|null $localizations
+ * @property array<int, string>|null $aliases
  * @property string|null $department_default_id
  * @property bool $requires_video
  * @property bool $requires_photo
@@ -32,6 +34,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $max_photos
  * @property string|null $workflow_definition_id
  * @property array<string, mixed>|null $validation_rules
+ * @property int $sort_order
  * @property bool $active
  */
 class ReportType extends Model
@@ -55,6 +58,8 @@ class ReportType extends Model
         'description',
         'icon',
         'color',
+        'localizations',
+        'aliases',
         'department_default_id',
         'requires_video',
         'requires_photo',
@@ -62,8 +67,8 @@ class ReportType extends Model
         'max_photos',
         'workflow_definition_id',
         'validation_rules',
-        'active',
         'sort_order',
+        'active',
     ];
 
     /**
@@ -74,9 +79,12 @@ class ReportType extends Model
         return [
             'requires_video' => 'boolean',
             'requires_photo' => 'boolean',
+            'localizations' => 'array',
+            'aliases' => 'array',
             'min_photos' => 'integer',
             'max_photos' => 'integer',
             'validation_rules' => 'array',
+            'sort_order' => 'integer',
             'active' => 'boolean',
         ];
     }

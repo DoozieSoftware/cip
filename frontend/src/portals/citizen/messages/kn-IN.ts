@@ -53,6 +53,7 @@ export const kn_IN: MessageCatalog = {
   'home.yourLatestReports': 'ನಿಮ್ಮ ಇತ್ತೀಚಿನ ವರದಿಗಳು',
   'home.loadingReports': 'ವರದಿಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ',
   'home.noReportsYet': 'ಇನ್ನೂ ಯಾವುದೇ ವರದಿಗಳನ್ನು ಸಲ್ಲಿಸಲಾಗಿಲ್ಲ.',
+  'home.dashboardEmptyTitle': 'ಇನ್ನೂ ವರದಿಗಳಿಲ್ಲ',
   'home.fromReportToResolution': 'ವರದಿಯಿಂದ ಪರಿಹಾರದವರೆಗೆ',
   'home.whatHappensNext': 'ಮುಂದೆ ಏನಾಗುತ್ತದೆ',
   'home.step.evidence.title': 'ಪ್ರಮಾಣ ಪರಿಶೀಲನೆ',
@@ -81,10 +82,17 @@ export const kn_IN: MessageCatalog = {
   // Submit page
   'submit.newReport': 'ಹೊಸ ವರದಿ',
   'submit.stepCount': 'ಹಂತ {current} / {total}',
+  'submit.step.category': 'ವರ್ಗ',
+  'submit.step.details': 'ವಿವರಗಳು',
+  'submit.step.location': 'ಸ್ಥಳ',
+  'submit.step.evidence': 'ಪ್ರಮಾಣ',
+  'submit.step.review': 'ಪರಿಶೀಲನೆ',
   'submit.category.title': 'ವರದಿ ವರ್ಗ',
   'submit.category.subtitle':
     'ನೀವು ವರದಿ ಮಾಡಲು ಬಯಸುವ ನಾಗರಿಕ ಸಮಸ್ಯೆಯನ್ನು ಉತ್ತಮವಾಗಿ ವಿವರಿಸುವ ವರ್ಗವನ್ನು ಆಯ್ಕೆ ಮಾಡಿ.',
-  'submit.category.loading': 'ವರ್ಗಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ',
+  'submit.category.loading': 'ವರದಿ ವರ್ಗಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ',
+  'submit.category.errorTitle': 'ವರ್ಗಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗಲಿಲ್ಲ',
+  'submit.category.emptyTitle': 'ಯಾವುದೇ ವರ್ಗಗಳು ಲಭ್ಯವಿಲ್ಲ',
   'submit.category.error':
     'ವರ್ಗಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗಲಿಲ್ಲ. ನಿಮ್ಮ ಸೆಷನ್ ಅವಧಿ ಮುಗಿರಬಹುದು. ದಯವಿಟ್ಟು ಮತ್ತೆ ಲಾಗಿನ್ ಮಾಡಿ.',
   'submit.category.empty':
@@ -236,6 +244,28 @@ export const kn_IN: MessageCatalog = {
     'ಎಲ್ಲಾ ಪತ್ರವ್ಯವಹಾರದಲ್ಲಿ {reference} ಉಲ್ಲೇಖಿಸಬೇಕು.',
   'detail.recordNotFound': 'ದಾಖಲೆ ಕಂಡುಬಂದಿಲ್ಲ',
   'detail.recordNotFoundDetail': 'ಬಹುಶಃ ಅದನ್ನು ಅಳಿಸಲಾಗಿದೆ ಅಥವಾ ನಿಮಗೆ ಪ್ರವೇಶವಿಲ್ಲಿರಬಹುದು.',
+
+  // Resolution verification
+  'resolution.title': 'ಪರಿಹಾರ ನಿಮ್ಮ ಪರಿಶೀಲನೆಗಾಗಿ ಕಾಯುತ್ತಿದೆ',
+  'resolution.description':
+    'ಇಲಾಖೆಯು ಈ ವರದಿಯನ್ನು ಪರಿಹರಿಸಲಾಗಿದೆ ಎಂದು ಗುರುತಿಸಿದೆ. ಕೆಳಗಿನ ಪೂರ್ಣಗೊಂಡಿರುವ ಪ್ರಮಾಣವನ್ನು ಪರಿಶೀಲಿಸಿ ಸಮಸ್ಯೆ ಸರಿಯಾಗಿದೆಯೇ ಎಂದು ದೃಢೀಕರಿಸಿ.',
+  'resolution.windowClosed': '{date} ರಂದು ಪರಿಶೀಲನಾ ಅವಧಿ ಮುಗಿದಿದೆ.',
+  'resolution.verifyBy': '{date} ರೊಳಗೆ ಪರಿಶೀಲಿಸಿ (ಆಕ್ಷೇಪಣೆ ಅವಧಿ ಆಗ ಮುಗಿಯುತ್ತದೆ).',
+  'resolution.proofCount': 'ಪೂರ್ಣಗೊಂಡಿರುವ ಪ್ರಮಾಣ ({count} {plural})',
+  'resolution.photo': 'ಫೋಟೋ',
+  'resolution.photos': 'ಫೋಟೋಗಳು',
+  'resolution.noProof': 'ಯಾವುದೇ ಪ್ರಮಾಣದ ಫೋಟೋಗಳನ್ನು ಲಗತ್ತಿಸಲಾಗಿಲ್ಲ.',
+  'resolution.verifying': 'ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ…',
+  'resolution.verify': 'ಪರಿಹಾರ ಪರಿಶೀಲಿಸಿ',
+  'resolution.disputeAction': 'ಸಮಸ್ಯೆ ಸರಿಯಾಗಿಲ್ಲ ಎಂದು ವರದಿ ಮಾಡಿ',
+  'resolution.disputeTitle': 'ಈ ಪರಿಹಾರವನ್ನು ಆಕ್ಷೇಪಿಸಿ',
+  'resolution.disputeHelp':
+    'ಸಮಸ್ಯೆ ಇನ್ನೂ ಸರಿಯಾಗಿಲ್ಲದ ಕಾರಣವನ್ನು ವಿವರಿಸಿ. ಮಡರೇಟರ್ ನಿಮ್ಮ ಆಕ್ಷೇಪಣೆಯನ್ನು ಪರಿಶೀಲಿಸುತ್ತಾರೆ.',
+  'resolution.disputePlaceholder': 'ಉಳಿದಿರುವ ಸಮಸ್ಯೆಯನ್ನು ವಿವರಿಸಿ…',
+  'resolution.validation': 'ದಯವಿಟ್ಟು ಕನಿಷ್ಠ 5 ಅಕ್ಷರಗಳನ್ನು ನೀಡಿ.',
+  'resolution.submitting': 'ಸಲ್ಲಿಸಲಾಗುತ್ತಿದೆ…',
+  'resolution.submit': 'ಆಕ್ಷೇಪಣೆ ಸಲ್ಲಿಸಿ',
+  'resolution.proofAlt': 'ಪೂರ್ಣಗೊಂಡಿರುವ ಪ್ರಮಾಣ',
 
   // Profile page
   'profile.title': 'ಪ್ರೊಫೈಲ್',
@@ -396,6 +426,7 @@ export const kn_IN: MessageCatalog = {
   'spinner.retrievingRecord': 'ನಿಮ್ಮ ಅಧಿಕೃತ ದಾಖಲೆಯನ್ನು ಹಿಂಪಡೆಯಲಾಗುತ್ತಿದೆ...',
   'spinner.loadingCategories': 'ವರ್ಗಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ',
   'spinner.loadingYourReports': 'ನಿಮ್ಮ ವರದಿಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ',
+  'spinner.loadingYourDashboard': 'ನಿಮ್ಮ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ',
   'spinner.loading': 'ಲೋಡ್ ಆಗುತ್ತಿದೆ',
 
   // Pull-to-refresh

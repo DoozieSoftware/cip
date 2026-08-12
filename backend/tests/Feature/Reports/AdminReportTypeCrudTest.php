@@ -45,10 +45,17 @@ it('lists, creates, updates, soft-deletes, and restores report types', function 
         'code' => 'illegal_parking',
         'icon' => 'parking',
         'color' => '#FF5722',
+        'localizations' => ['kn-IN' => 'ಅಕ್ರಮ ಪಾರ್ಕಿಂಗ್'],
+        'aliases' => ['wrong parking', 'footpath parking'],
+        'sort_order' => 6,
         'requires_video' => true,
         'requires_photo' => true,
     ]);
-    $created->assertCreated()->assertJsonPath('data.code', 'illegal_parking');
+    $created->assertCreated()
+        ->assertJsonPath('data.code', 'illegal_parking')
+        ->assertJsonPath('data.localizations.kn-IN', 'ಅಕ್ರಮ ಪಾರ್ಕಿಂಗ್')
+        ->assertJsonPath('data.aliases.0', 'wrong parking')
+        ->assertJsonPath('data.sort_order', 6);
     $newId = $created->json('data.id');
     expect(ReportType::withTrashed()->find($newId))->not->toBeNull();
 

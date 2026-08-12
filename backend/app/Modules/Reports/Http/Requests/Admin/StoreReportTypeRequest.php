@@ -42,6 +42,10 @@ class StoreReportTypeRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:1000'],
             'icon' => ['nullable', 'string', 'max:64'],
             'color' => ['nullable', 'string', 'max:16'],
+            'localizations' => ['nullable', 'array'],
+            'localizations.*' => ['nullable', 'string', 'max:255'],
+            'aliases' => ['nullable', 'array', 'max:50'],
+            'aliases.*' => ['string', 'max:255'],
             'department_default_id' => ['nullable', 'string', 'uuid', 'exists:departments,id'],
             'requires_video' => ['nullable', 'boolean'],
             'requires_photo' => ['nullable', 'boolean'],
@@ -50,6 +54,7 @@ class StoreReportTypeRequest extends FormRequest
             'workflow_definition_id' => ['nullable', 'string', 'uuid'],
             'validation_rules' => ['nullable', 'array'],
             'active' => ['nullable', 'boolean'],
+            'sort_order' => ['nullable', 'integer', 'min:0', 'max:65535'],
         ];
     }
 }

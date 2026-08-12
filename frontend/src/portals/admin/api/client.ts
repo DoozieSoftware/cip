@@ -46,6 +46,9 @@ export interface AdminReportType {
   description?: string | null;
   icon?: string | null;
   color?: string | null;
+  localizations?: Record<string, string> | null;
+  aliases?: string[] | null;
+  sort_order: number;
   requires_video: boolean;
   requires_photo: boolean;
   min_photos: number;
@@ -386,6 +389,9 @@ export interface AdminReportTypeInput {
   description?: string | null;
   icon?: string | null;
   color?: string | null;
+  localizations?: Record<string, string> | null;
+  aliases?: string[] | null;
+  sort_order?: number;
   requires_video?: boolean;
   requires_photo?: boolean;
   min_photos?: number;

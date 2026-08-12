@@ -5,6 +5,9 @@ export interface ReportType {
   icon?: string | null;
   color?: string | null;
   description?: string | null;
+  localizations?: Record<string, string> | null;
+  aliases?: string[] | null;
+  sort_order?: number;
   requires_video: boolean;
   requires_photo: boolean;
   min_photos: number;
