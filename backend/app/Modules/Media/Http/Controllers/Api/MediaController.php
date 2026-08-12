@@ -12,14 +12,15 @@ use App\Modules\Media\Services\MediaAuthorizationService;
 use App\Modules\Media\Services\MediaDeliveryService;
 use App\Modules\Media\Services\MediaIndexService;
 use App\Modules\Media\Services\MediaService;
+use App\Modules\Media\Support\MediaUrl;
 use App\Modules\Reports\Repositories\ReportRepository;
 use App\Modules\Shared\Http\Controllers\BaseController;
 use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MediaController extends BaseController
@@ -31,6 +32,7 @@ class MediaController extends BaseController
         private readonly MediaAuditService $auditService,
         private readonly MediaAuthorizationService $authorizationService,
         private readonly ReportRepository $repository,
+        private readonly MediaUrl $mediaUrl,
     ) {}
 
     public function uploadPhotos(string $reportId, UploadMediaRequest $request): JsonResponse
@@ -127,12 +129,9 @@ class MediaController extends BaseController
 
         $items = $media->map(function (Media $m) use ($request, $includePath): array {
             $row = (new MediaResource($m))->resolve($request);
-            $row['signed_url'] = URL::temporarySignedRoute(
-                'api.v1.media.serve',
-                now()->addMinutes(15),
-                ['media' => $m->id],
-            );
-            $row['signed_url_expires_at'] = now()->addMinutes(15)->toIso8601String();
+            $expiresAt = now()->addMinutes(MediaUrl::DEFAULT_TTL_MINUTES);
+            $row['signed_url'] = $this->mediaUrl->temporary($m, MediaUrl::DEFAULT_TTL_MINUTES);
+            $row['signed_url_expires_at'] = $expiresAt->toIso8601String();
 
             if (! $includePath) {
                 unset($row['storage_path'], $row['storage_disk']);
@@ -154,7 +153,7 @@ class MediaController extends BaseController
         return $this->auditService->audit($reportId, $media, $request);
     }
 
-    public function serve(string $media): StreamedResponse|BinaryFileResponse|JsonResponse
+    public function serve(string $media): StreamedResponse|BinaryFileResponse|RedirectResponse|JsonResponse
     {
         return $this->deliveryService->serve($media);
     }
