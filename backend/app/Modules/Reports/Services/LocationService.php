@@ -37,9 +37,21 @@ class LocationService
         $this->assertAccuracy($dto->accuracy);
         $this->assertSpeed($dto->speed);
 
+        if ($dto->reporterLatitude !== null && $dto->reporterLongitude !== null) {
+            $this->assertLatLng($dto->reporterLatitude, $dto->reporterLongitude);
+        }
+        $this->assertAccuracy($dto->reporterAccuracy);
+
         $location = new Location;
         $location->latitude = $dto->latitude;
         $location->longitude = $dto->longitude;
+        $location->reporter_latitude = $dto->reporterLatitude;
+        $location->reporter_longitude = $dto->reporterLongitude;
+        $location->reporter_accuracy = $dto->reporterAccuracy;
+        $location->reporter_gps_provider = $dto->reporterGpsProvider;
+        $location->reporter_captured_at = $dto->reporterCapturedAt === null
+            ? null
+            : Carbon::parse($dto->reporterCapturedAt->format(DATE_ATOM));
         $location->altitude = $dto->altitude;
         $location->accuracy = $dto->accuracy;
         $location->heading = $dto->heading;

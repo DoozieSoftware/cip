@@ -46,6 +46,11 @@ class SubmitReportRequest extends FormRequest
 
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'reporter_latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'reporter_longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'reporter_accuracy' => ['nullable', 'numeric', new LocationAccuracy],
+            'reporter_gps_provider' => ['nullable', 'string', 'max:64'],
+            'reporter_captured_at' => ['nullable', 'date'],
             'accuracy' => ['nullable', 'numeric', new LocationAccuracy],
             'altitude' => ['nullable', 'numeric'],
             'heading' => ['nullable', 'numeric', 'between:0,360'],

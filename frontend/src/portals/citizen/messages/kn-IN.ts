@@ -135,6 +135,7 @@ export const kn_IN: MessageCatalog = {
   'submit.location.issueManual': 'ನಕ್ಷೆಯಲ್ಲಿ ಸಮಸ್ಯೆಯ ಪಿನ್ ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ',
   'submit.location.issueFromGps': 'ಸಮಸ್ಯೆಯ ಪಿನ್ ನಿಮ್ಮ ಸ್ಥಳಕ್ಕೆ ಹೊಂದಿದೆ',
   'submit.location.useReporterLocation': 'ನನ್ನ ಸ್ಥಳ ಬಳಸಿ',
+  'submit.location.issueDistanceWarning': 'ಸಮಸ್ಯೆಯ ಪಿನ್ ನಿಮ್ಮ ಕಪ್ಚರ್ ಮಾಡಿದ ಸ್ಥಳದಿಂದ {distance} ಮೀ ದೂರದಲ್ಲಿದೆ. ಮುಂದುವರಿಯುವ ಮೊದಲು ಪಿನ್ ಅನ್ನು ಪರಿಶೀಲಿಸಿ.',
   'submit.location.coarseWarning':
     'ಅಚೋಟ ಪತ್ತೆ ಆಗಿದೆ. ಉತ್ತಮ ಫಲಿತಾಂಶಕ್ಕೆ, ಮುಕ್ತ ಪ್ರದೇಶದಲ್ಲಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
   'submit.location.suspiciousWarning':

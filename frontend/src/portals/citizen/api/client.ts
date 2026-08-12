@@ -159,6 +159,11 @@ export interface CreateReportInput {
   description: string;
   latitude: number;
   longitude: number;
+  reporter_latitude?: number;
+  reporter_longitude?: number;
+  reporter_accuracy_m?: number;
+  reporter_gps_provider?: string;
+  reporter_captured_at?: string;
   address?: string;
   accuracy_m?: number;
   altitude?: number | null;
@@ -188,6 +193,11 @@ export async function submitReportPayload(
       description: input.description,
       latitude: input.latitude,
       longitude: input.longitude,
+      reporter_latitude: input.reporter_latitude ?? input.latitude,
+      reporter_longitude: input.reporter_longitude ?? input.longitude,
+      reporter_accuracy: input.reporter_accuracy_m ?? null,
+      reporter_gps_provider: input.reporter_gps_provider ?? null,
+      reporter_captured_at: input.reporter_captured_at ?? null,
       address: input.address ?? null,
       accuracy: input.accuracy_m ?? null,
       altitude: input.altitude ?? null,

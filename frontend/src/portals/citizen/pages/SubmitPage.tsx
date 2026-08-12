@@ -40,6 +40,7 @@ import { readSession } from '../../../auth/storage';
 import { clearDraft, loadDraft, saveDraft } from '../offline/drafts';
 import { requestBackgroundSync } from '../offline/swBridge';
 import { trackProductEvent } from '../../../shared/analytics';
+import { issueReporterDistanceMeters } from './issueReporterDistance';
 
 const FORM_STEPS = ['Category', 'Details', 'Location', 'Evidence', 'Review'] as const;
 type Step = (typeof FORM_STEPS)[number];
@@ -365,6 +366,11 @@ export default function SubmitPage(): JSX.Element {
       description,
       latitude: issuePoint.latitude,
       longitude: issuePoint.longitude,
+      reporter_latitude: activeLocation.latitude,
+      reporter_longitude: activeLocation.longitude,
+      reporter_accuracy_m: activeLocation.accuracy_m ?? undefined,
+      reporter_gps_provider: activeLocation.gps_provider,
+      reporter_captured_at: new Date(activeLocation.captured_at).toISOString(),
       // A manual issue pin is not a claim about the reporter's device
       // accuracy. Preserve reporter provenance only for GPS-derived pins.
       accuracy_m: manuallyPinned ? undefined : (activeLocation.accuracy_m ?? undefined),
@@ -879,6 +885,23 @@ export default function SubmitPage(): JSX.Element {
                     value={issueLocation}
                     onChange={setIssueLocation}
                   />
+                ) : null}
+                {issueLocation?.source === 'manual_pin' ? (
+                  <p
+                    role="note"
+                    className="mt-3 rounded-lg bg-white/80 px-3 py-2 text-xs leading-5 text-amber-900"
+                  >
+                    {t('submit.location.issueDistanceWarning', {
+                      distance: Math.round(
+                        issueReporterDistanceMeters(
+                          issueLocation.latitude,
+                          issueLocation.longitude,
+                          location.latitude,
+                          location.longitude,
+                        ),
+                      ),
+                    })}
+                  </p>
                 ) : null}
               </div>
             ) : null}

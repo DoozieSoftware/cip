@@ -41,7 +41,8 @@ function MapClickHandler({
 /**
  * Lets a resident distinguish where they are from where the civic issue is.
  * GPS is the initial issue pin, while a map tap records an explicit manual
- * pin and intentionally omits reporter-device accuracy metadata at submit.
+ * pin while the submit payload preserves the reporter-device capture
+ * separately from the issue location.
  */
 export default function IssueLocationPicker({
   reporterLocation,

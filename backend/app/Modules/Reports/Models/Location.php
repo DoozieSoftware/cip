@@ -27,6 +27,11 @@ use Illuminate\Support\Facades\DB;
  * @property string $id
  * @property float $latitude
  * @property float $longitude
+ * @property float|null $reporter_latitude
+ * @property float|null $reporter_longitude
+ * @property float|null $reporter_accuracy
+ * @property string|null $reporter_gps_provider
+ * @property Carbon|null $reporter_captured_at
  * @property float|null $altitude
  * @property float|null $accuracy
  * @property float|null $heading
@@ -80,6 +85,11 @@ class Location extends Model
     protected $fillable = [
         'latitude',
         'longitude',
+        'reporter_latitude',
+        'reporter_longitude',
+        'reporter_accuracy',
+        'reporter_gps_provider',
+        'reporter_captured_at',
         'altitude',
         'accuracy',
         'heading',
@@ -99,6 +109,10 @@ class Location extends Model
         return [
             'latitude' => 'float',
             'longitude' => 'float',
+            'reporter_latitude' => 'float',
+            'reporter_longitude' => 'float',
+            'reporter_accuracy' => 'float',
+            'reporter_captured_at' => 'datetime',
             'altitude' => 'float',
             'accuracy' => 'float',
             'heading' => 'float',

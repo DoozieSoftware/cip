@@ -135,6 +135,7 @@ export const en_IN: MessageCatalog = {
   'submit.location.issueManual': 'Issue pin chosen on the map',
   'submit.location.issueFromGps': 'Issue pin matches your captured location',
   'submit.location.useReporterLocation': 'Use my location',
+  'submit.location.issueDistanceWarning': 'The issue pin is {distance} m from your captured location. Check the pin carefully before continuing.',
   'submit.location.coarseWarning':
     'Coarse fix detected. For best results, try again in an open area.',
   'submit.location.suspiciousWarning':
