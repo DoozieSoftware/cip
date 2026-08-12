@@ -1540,7 +1540,7 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | P2-02 | **Done** | Description is now optional in backend validation and citizen progression; short detail remains validated when supplied (`19d64fdb`). |
 | P2-03 | **Partial** | Citizen service-request search now sends URL-persisted query, status, date, category, and area filters to the server, uses cursor-first navigation with stable URL cursors, and retains accessible previous/next controls (`59a1bb51`); production filter-query validation remains. |
 | P2-08 | **Partial** | Reduced-motion CSS, focus/a11y scaffolding, styled touch targets, live-preview/timer accessibility, and public/citizen navigation affordances are covered (`aef9b0da`, `fe6abf08`, `c35fe43f`); a full axe, screen-reader, and manual keyboard pass remains. |
-| P2-09 | **Partial** | Camera capture now exposes a live-preview label, non-spam timer, max-duration auto-stop, lifecycle-managed video previews, accessible recording progress, live announcements, keyboard retry, and attached-file feedback (`aef9b0da`, `154c9c85`, `fa14c5fe`); compression progress and broader device coverage remain. |
+| P2-09 | **Partial** | Camera capture now exposes a live-preview label, non-spam timer, max-duration auto-stop, lifecycle-managed video previews, accessible recording/compression progress, live announcements, keyboard retry, and attached-file feedback (`aef9b0da`, `154c9c85`, `fa14c5fe`, `df6aa4db`); true device-specific compression and broader device coverage remain. |
 | P2-06 | **Done** | Citizen profile onboarding now captures preferred name, locale, and notification channel with validated PATCH persistence and an accessible completion/edit form (`401131e4`). |
 | P2-10 | **Done** | Issue location is explicitly separated from reporter location through a manual-pin/map picker, provenance metadata, draft persistence, reporter-coordinate persistence, distance warning, and submit payload wiring (`401131e4`, `3198d702`). |
 | P2-15 | **Partial** | Playwright now defines Chromium, Pixel 7, and iPhone 13 projects (`39e347a9`); real-device/browser permission and installed-PWA runs remain. |
@@ -1565,8 +1565,8 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | BE-11 | **Done** | Indexed SLA due-at selection, bounded bootstrap, idempotent breach rows, and downstream notification listener are implemented (\`d847f37b\`). |
 | BE-12 | **Done** | Notification listeners are registered only by `NotificationsServiceProvider`; duplicate registrations were removed from `AppServiceProvider`. |
 | BE-13 | **Partial** | Integration URL validation rejects unsafe schemes, credentials, ports, and private/link-local/metadata addresses before probing (\`97de1e6f\`); asynchronous restricted-egress execution and full probe audit remain. |
-| BE-14 | **Partial** | Retention purge now requires explicit `--approve`, supports dry-run/chunked deletion, skips append-only audit rows, removes orphaned media bytes, and honors active legal holds via `retention_holds` (`0d8e49c0`, `e3fd62d4`). Hold-management API, custody export, and production restore/retention drills remain. |
-| BE-15 | **Not started** | Scheduled aggregate tables and privacy suppression are still open. |
+| BE-14 | **Partial** | Retention purge now requires explicit `--approve`, supports dry-run/chunked deletion, skips append-only audit rows, removes orphaned media bytes, honors active legal holds, and exposes super-admin create/list/release custody APIs with admin controls (`0d8e49c0`, `e3fd62d4`, `74962ad6`, `cc78b850`). Custody export and production restore/retention drills remain. |
+| BE-15 | **Partial** | Daily privacy-safe report/AI/assignment aggregates and ward facts are materialized by `public:rebuild-analytics`, scheduled nightly, versioned, and consumed as a fast path by public stats (`eeb15076`); production backfill/monitoring and full public ward-fact presentation remain. |
 | BE-16 | **Done** | Worker and scheduler heartbeats now gate readiness, with queue-specific freshness and dependency checks; focused heartbeat/health tests pass (`6e7f13f3`). |
 | BE-17 | **Partial** | Request IDs now propagate into queue payloads, worker log context, and outbound AI/integration calls with regression coverage (`c20cbfa9`, `1cb35649`); the correlation/health response procedure is documented (`84472e15`), while full metrics/tracing dashboards and alert routing remain. |
 | BE-18 | **Done** | Composer/npm audit gates, dependency exception expiry validation, and patched vulnerable Composer/npm packages are enforced in CI (`027983f0`). |
@@ -1579,8 +1579,11 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | MAINT-01 | **Done** | Shared UI primitives extracted to `frontend/src/shared/ui/` with ownership test (`worktree/ui-extraction`, `cf50db96`). |
 | MAINT-02 | **Done** | Centralized design tokens in `shared/ui/tokens.css`; `TokenMigration` / `DesignTokenUsage` tests. |
 | MAINT-05 | **Done** | Citizen, operations, moderator, public, and admin clients use `frontend/src/shared/api/client.ts`; `auth/api.ts` is now a compatibility facade over that transport. Shared refresh/retry behavior has regression coverage. |
-| MAINT-03, MAINT-04, MAINT-06..MAINT-07, MAINT-09..MAINT-12 | Not started | Controller/page boundary work, admin client decomposition, static-quality baselines, architecture refresh, release hardening, and journey-target work remain. |
+| MAINT-03, MAINT-06..MAINT-07, MAINT-11..MAINT-12 | Not started | Controller/page boundary work, AI/page extraction, release hardening, and critical journey-target work remain. |
+| MAINT-04 | **Partial** | Admin client users/departments hooks are decomposed with compatibility re-exports (`a398219c`); remaining reports/integrations/notifications/AI/settings modules remain in the monolith. |
 | MAINT-08 | **Partial** | CI still runs changed tests by default, but now falls back to the full backend/frontend suites whenever application source changes without a corresponding test file (`b1da816a`); nightly MySQL and critical Playwright journey scheduling remain. |
+| MAINT-09 | **Partial** | PHPStan/ESLint/Prettier/Pint ratchet baselines now fail on newly introduced debt (`47c59e69`); baseline reduction and broader CI quality reporting remain. |
+| MAINT-10 | **Done** | Product, REST, architecture, and deployment references now identify the authoritative React PWA/MySQL 8.4 stack (`1c60bde1`). |
 
 ### Recommended Next Step
 
