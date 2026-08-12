@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { type JSX, type TouchEvent, useRef, useState } from 'react';
+import { type JSX, type TouchEvent, useEffect, useRef, useState } from 'react';
 import {
   IconBuildingCommunity,
   IconFileDescription,
@@ -15,6 +15,7 @@ import { InstallPrompt } from '../../../pwa/InstallPrompt';
 import { ToastProvider } from '../components/Toast';
 import { cx } from '../../../shared/ui/cx';
 import { useMessages, type MessageKey } from '../messages';
+import { trackProductEvent } from '../../../shared/analytics';
 
 const NAV: Array<{
   to: string;
@@ -32,6 +33,22 @@ export function CitizenLayout(): JSX.Element {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { t } = useMessages();
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const marker = 'cip.telemetry.reduced-motion.v1';
+    try {
+      if (window.sessionStorage.getItem(marker) === '1') return;
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      trackProductEvent('accessibility_preference_changed', {
+        preference: 'reduced_motion',
+        value: reduced ? 'enabled' : 'disabled',
+      });
+      window.sessionStorage.setItem(marker, '1');
+    } catch {
+      // Private browsing may deny sessionStorage; telemetry remains best effort.
+    }
+  }, []);
 
   const handleSignOut = () => {
     logout();

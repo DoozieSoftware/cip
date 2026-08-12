@@ -4,6 +4,7 @@ import { useAuth } from '../../../auth/AuthContext';
 import { useToast } from '../components/Toast';
 import { pushSupport, subscribeToPush, unsubscribeFromPush } from '../push/subscribe';
 import { useMessages, type Locale } from '../messages';
+import { trackProductEvent } from '../../../shared/analytics';
 
 /** VAPID public key comes from configuration, never hardcoded. */
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY ?? '';
@@ -83,6 +84,16 @@ export default function SettingsPage(): JSX.Element {
     });
   }
 
+  function onLocaleChange(nextLocale: Locale): void {
+    if (nextLocale !== locale) {
+      trackProductEvent('accessibility_preference_changed', {
+        preference: 'language',
+        value: nextLocale,
+      });
+    }
+    setLocale(nextLocale);
+  }
+
   return (
     <div className="space-y-6">
       <header>
@@ -133,7 +144,7 @@ export default function SettingsPage(): JSX.Element {
         <select
           id="citizen-language"
           value={locale}
-          onChange={(event) => setLocale(event.target.value as Locale)}
+          onChange={(event) => onLocaleChange(event.target.value as Locale)}
           className="mt-3 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 sm:max-w-xs"
         >
           <option value="en-IN">{t('settings.languageEnglish')}</option>

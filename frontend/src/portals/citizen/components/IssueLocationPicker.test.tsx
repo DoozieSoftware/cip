@@ -9,7 +9,7 @@ describe('issue location provenance', () => {
         longitude: 77.5946,
         accuracy_m: 12,
         captured_at: 1_700_000_000_000,
-        mock_heuristic: { likely: false, score: 0, reasons: [] },
+        mock_heuristic: { likely: false, score: 0, reasons: [], accuracy_m: 12, age_ms: 0 },
       }),
     ).toEqual({ latitude: 12.9716, longitude: 77.5946, source: 'reporter_gps' });
   });
