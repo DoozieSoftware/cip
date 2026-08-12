@@ -250,7 +250,9 @@ jobs:
 
       - name: Build
         working-directory: ${{ env.FRONTEND_DIR }}
-        run: npm run build
+        run: |
+          npm run build
+          npm run check:production-sourcemaps
 
   docker-build:
     name: Docker image build

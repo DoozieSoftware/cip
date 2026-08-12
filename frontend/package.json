@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "check:production-sourcemaps": "node scripts/assert-no-public-sourcemaps.mjs",
     "preview": "vite preview",
     "test": "vitest",
     "lint": "eslint .",

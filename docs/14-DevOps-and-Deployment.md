@@ -994,6 +994,20 @@ If ambiguity exists, implementation shall stop and request clarification rather 
 
 # 42. Architecture Compliance Checklist
 
+## 43. Frontend source-map policy
+
+Production Vite builds do not publish JavaScript or CSS source maps by default.
+The CI build runs `npm run check:production-sourcemaps` and fails if a `.map`
+artifact or `sourceMappingURL` reference is present in `frontend/dist`.
+
+Source maps may be enabled only for an explicitly approved local/debug build:
+
+```bash
+CIP_PUBLIC_SOURCEMAP=1 npm run build
+```
+
+Never deploy that debug output to the public web root.
+
 Every pull request shall verify
 
 ✓ Module boundaries respected

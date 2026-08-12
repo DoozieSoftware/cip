@@ -39,6 +39,9 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    // Public source maps expose the complete application source. They are
+    // opt-in for local debugging and must never be enabled by a production
+    // build unless the release owner explicitly accepts that exposure.
+    sourcemap: process.env['CIP_PUBLIC_SOURCEMAP'] === '1',
   },
 });
