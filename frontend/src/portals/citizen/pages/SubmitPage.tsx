@@ -81,6 +81,13 @@ function sortByPracticalOrder(types: ReportType[]): ReportType[] {
   });
 }
 
+function newIdempotencyKey(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `report-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export default function SubmitPage(): JSX.Element {
   const navigate = useNavigate();
   const { t } = useMessages();
@@ -105,6 +112,7 @@ export default function SubmitPage(): JSX.Element {
     Partial<Record<'type' | 'title' | 'description' | 'location' | 'evidence', string>>
   >({});
   const [currentViewStep, setCurrentViewStep] = useState<Step>('Category');
+  const [idempotencyKey, setIdempotencyKey] = useState<string>(newIdempotencyKey);
   const draftReadyRef = useRef(false);
   const draftCompleteRef = useRef(false);
 
@@ -135,6 +143,7 @@ export default function SubmitPage(): JSX.Element {
         setLocation(draft.location);
         setAddress(draft.address);
         setFiles(draft.files ?? []);
+        setIdempotencyKey(draft.idempotency_key || newIdempotencyKey());
         if (FORM_STEPS.includes(draft.current_step as Step)) {
           setCurrentViewStep(draft.current_step as Step);
         }
@@ -157,8 +166,19 @@ export default function SubmitPage(): JSX.Element {
       address,
       current_step: currentViewStep,
       files,
+      idempotency_key: idempotencyKey,
     });
-  }, [ownerId, typeId, title, description, location, address, currentViewStep, files]);
+  }, [
+    ownerId,
+    typeId,
+    title,
+    description,
+    location,
+    address,
+    currentViewStep,
+    files,
+    idempotencyKey,
+  ]);
 
   function onCameraError(err: CameraError): void {
     trackProductEvent('media_upload_failed', { reason: err.kind });
@@ -330,6 +350,7 @@ export default function SubmitPage(): JSX.Element {
       address: preciseAddress || undefined,
       media_files: files,
       mock_gps_score: activeLocation.mock_heuristic.score,
+      idempotency_key: idempotencyKey,
     };
 
     setSubmitting(true);

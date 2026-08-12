@@ -18,6 +18,8 @@ export interface CitizenDraft {
   current_step: string;
   /** File handles are structured-cloned into IndexedDB. */
   files: File[];
+  /** Stable submission idempotency key retained across crashes/restarts. */
+  idempotency_key?: string;
 }
 
 interface DraftSchema extends DBSchema {
@@ -48,7 +50,12 @@ export async function saveDraft(
   ownerId: string,
   draft: Omit<CitizenDraft, 'id' | 'owner_id'>,
 ): Promise<void> {
-  const record: CitizenDraft = { ...draft, id: ownerId, owner_id: ownerId };
+  const record: CitizenDraft = {
+    ...draft,
+    id: ownerId,
+    owner_id: ownerId,
+    idempotency_key: draft.idempotency_key ?? `${ownerId}-${Date.now()}`,
+  };
   if (typeof indexedDB !== 'undefined') {
     await (await getDb()).put(DRAFT_STORE, record);
     return;
