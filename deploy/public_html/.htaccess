@@ -50,6 +50,8 @@
     Header always set X-XSS-Protection "1; mode=block"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set Permissions-Policy "geolocation=(self), camera=(self), microphone=()"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    Header always set Content-Security-Policy-Report-Only "default-src 'self'; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; img-src 'self' data: blob: https://*.tile.openstreetmap.org; connect-src 'self' https://cip-api.dgisipl.com https://nominatim.openstreetmap.org; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'"
 </IfModule>
 
 # ─── Compression ──────────────────────────────────────────────
