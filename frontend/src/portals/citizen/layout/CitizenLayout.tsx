@@ -14,22 +14,24 @@ import { useAuth } from '../../../auth/AuthContext';
 import { InstallPrompt } from '../../../pwa/InstallPrompt';
 import { ToastProvider } from '../components/Toast';
 import { cx } from '../../../shared/ui/cx';
+import { useMessages, type MessageKey } from '../messages';
 
 const NAV: Array<{
   to: string;
-  label: string;
+  label: MessageKey;
   icon: typeof IconHome;
   end?: boolean;
 }> = [
-  { to: '/citizen', label: 'Home', icon: IconHome, end: true },
-  { to: '/citizen/reports', label: 'Reports', icon: IconFileDescription },
-  { to: '/citizen/submit', label: 'New report', icon: IconPlus },
-  { to: '/citizen/profile', label: 'Account', icon: IconUser },
+  { to: '/citizen', label: 'nav.home', icon: IconHome, end: true },
+  { to: '/citizen/reports', label: 'nav.reports', icon: IconFileDescription },
+  { to: '/citizen/submit', label: 'nav.newReport', icon: IconPlus },
+  { to: '/citizen/profile', label: 'nav.account', icon: IconUser },
 ];
 
 export function CitizenLayout(): JSX.Element {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const { t } = useMessages();
 
   const handleSignOut = () => {
     logout();
@@ -37,7 +39,14 @@ export function CitizenLayout(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f2ed] text-[#1d1d1b] lg:flex">
+    <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-ink)] lg:flex">
+      <a
+        href="#cip-main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-[var(--color-ink)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:outline-none focus:ring-2 focus:ring-white"
+      >
+        {t('nav.skipToContent')}
+      </a>
+
       {/* Desktop sidebar (lg+) */}
       <aside className="hidden w-64 shrink-0 flex-col border-r border-[#deddd7] bg-[#faf9f6] lg:flex">
         <div className="border-b border-[#e6e4de] px-6 py-7">
@@ -45,12 +54,12 @@ export function CitizenLayout(): JSX.Element {
             <BrandMark />
             <div className="min-w-0">
               <div className="truncate text-sm font-semibold tracking-[-0.01em]">CIP Karnataka</div>
-              <div className="truncate text-xs text-[#74736f]">Citizen services</div>
+              <div className="truncate text-xs text-[#74736f]">{t('citizenServices')}</div>
             </div>
           </div>
         </div>
 
-        <nav aria-label="Citizen sections" className="flex-1 px-3 py-4">
+        <nav aria-label={t('nav.sections')} className="flex-1 px-3 py-4">
           <ul className="space-y-1">
             {NAV.map((n) => {
               const Icon = n.icon;
@@ -63,13 +72,13 @@ export function CitizenLayout(): JSX.Element {
                       cx(
                         'flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors duration-150',
                         isActive
-                          ? 'bg-[#1d1d1b] text-white'
-                          : 'text-[#686762] hover:bg-[#efeee9] hover:text-[#1d1d1b]',
+                          ? 'bg-[var(--color-ink)] text-white'
+                          : 'text-[#686762] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)]',
                       )
                     }
                   >
                     <Icon className="h-5 w-5 shrink-0" stroke={1.7} />
-                    <span>{n.label}</span>
+                    <span>{t(n.label)}</span>
                   </NavLink>
                 </li>
               );
@@ -81,10 +90,10 @@ export function CitizenLayout(): JSX.Element {
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium text-[#686762] transition-colors hover:bg-[#efeee9] hover:text-[#1d1d1b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d1d1b] focus-visible:ring-offset-2"
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium text-[#686762] transition-colors hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
           >
             <IconLogout className="h-4 w-4" stroke={1.7} />
-            Sign out
+            {t('common.signOut')}
           </button>
         </div>
       </aside>
@@ -92,18 +101,20 @@ export function CitizenLayout(): JSX.Element {
       {/* Main content wrapper */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile header */}
-        <header className="sticky top-0 z-30 border-b border-[#e4e2dc] bg-[#faf9f6]/95 backdrop-blur-xl lg:hidden">
+        <header className="sticky top-0 z-30 border-b border-[var(--color-border-subtle)] bg-[#faf9f6]/95 backdrop-blur-xl lg:hidden">
           <div className="flex min-h-16 items-center gap-3 px-4">
             <BrandMark />
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-semibold tracking-[-0.01em]">CIP Karnataka</div>
-              <div className="truncate text-[11px] text-[#777670]">Citizen services</div>
+              <div className="truncate text-[11px] text-[var(--color-text-subtle)]">
+                {t('citizenServices')}
+              </div>
             </div>
             <button
               type="button"
               onClick={handleSignOut}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[#686762] transition-colors hover:bg-[#efeee9] hover:text-[#1d1d1b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d1d1b]"
-              aria-label="Sign out"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[#686762] transition-colors hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+              aria-label={t('common.signOut')}
             >
               <IconLogout className="h-5 w-5" stroke={1.7} />
             </button>
@@ -113,7 +124,11 @@ export function CitizenLayout(): JSX.Element {
         {/* Content area */}
         <ToastProvider>
           <PullToRefresh>
-            <main className="w-full flex-1 px-4 py-7 pb-28 sm:px-6 lg:px-10 lg:py-10 lg:pb-12">
+            <main
+              id="cip-main-content"
+              tabIndex={-1}
+              className="w-full flex-1 px-4 py-7 pb-28 focus:outline-none sm:px-6 lg:px-10 lg:py-10 lg:pb-12"
+            >
               <Outlet />
             </main>
           </PullToRefresh>
@@ -122,7 +137,7 @@ export function CitizenLayout(): JSX.Element {
 
         {/* Mobile bottom nav */}
         <nav
-          aria-label="Citizen sections"
+          aria-label={t('nav.sections')}
           className="fixed inset-x-3 bottom-3 z-30 rounded-2xl border border-black/10 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_12px_40px_rgba(29,29,27,0.16)] backdrop-blur-xl lg:hidden"
         >
           <ul className="grid grid-cols-4 items-stretch px-1">
@@ -136,16 +151,16 @@ export function CitizenLayout(): JSX.Element {
                     className={({ isActive }) =>
                       cx(
                         'relative flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium transition-colors',
-                        isActive ? 'text-[#1d1d1b]' : 'text-[#85847f]',
+                        isActive ? 'text-[var(--color-ink)]' : 'text-[var(--color-text-tertiary)]',
                       )
                     }
                   >
                     {({ isActive }) => (
                       <>
                         <Icon className="h-5 w-5" stroke={isActive ? 2.1 : 1.6} />
-                        <span className="max-w-full truncate leading-tight">{n.label}</span>
+                        <span className="max-w-full truncate leading-tight">{t(n.label)}</span>
                         {isActive && (
-                          <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[#1d1d1b]" />
+                          <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[var(--color-ink)]" />
                         )}
                       </>
                     )}
@@ -162,13 +177,14 @@ export function CitizenLayout(): JSX.Element {
 
 function BrandMark(): JSX.Element {
   return (
-    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#1d1d1b] text-white">
+    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[var(--color-ink)] text-white">
       <IconBuildingCommunity className="h-5 w-5" stroke={1.7} />
     </span>
   );
 }
 
 function PullToRefresh({ children }: { children: JSX.Element }): JSX.Element {
+  const { t } = useMessages();
   const queryClient = useQueryClient();
   const startY = useRef<number | null>(null);
   const [distance, setDistance] = useState(0);
@@ -210,11 +226,15 @@ function PullToRefresh({ children }: { children: JSX.Element }): JSX.Element {
     >
       <div
         aria-live="polite"
-        className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-center overflow-hidden text-xs text-[#6f6e69] transition-[height]"
+        className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-center overflow-hidden text-xs text-[var(--color-text-secondary)] transition-[height]"
         style={{ height: distance }}
       >
         <IconRefresh className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} stroke={1.7} />
-        {refreshing ? 'Refreshing' : distance >= 48 ? 'Release to refresh' : 'Pull to refresh'}
+        {refreshing
+          ? t('pullToRefresh.refreshing')
+          : distance >= 48
+            ? t('pullToRefresh.releaseToRefresh')
+            : t('pullToRefresh.pullToRefresh')}
       </div>
       <div
         className="flex flex-1 flex-col transition-transform"

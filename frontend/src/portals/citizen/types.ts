@@ -58,10 +58,31 @@ export interface MediaItem {
   audit?: unknown;
 }
 
+export type ProofMediaItem = MediaItem;
+
+export interface CanonicalReport {
+  id: string;
+  tracking_number: string;
+  title: string;
+  link: string;
+}
+
+export interface MergeDispute {
+  id: string;
+  status: 'open' | 'resolved' | 'rejected';
+  reason: string;
+}
+
 export interface ReportDetail extends ReportSummary {
   timeline: TimelineEntry[];
   media: MediaItem[];
   ai_summary?: AiSummary | null;
+  merged_into?: string | null;
+  merged_at?: string | null;
+  canonical_report?: CanonicalReport | null;
+  merge_dispute?: MergeDispute | null;
+  verification_deadline_at?: string | null;
+  proof_photos?: ProofMediaItem[];
 }
 
 export interface NotificationItem {
@@ -94,7 +115,7 @@ export const OPEN_STATUSES = [
   'escalated',
 ] as const;
 
-export const AWAITING_CITIZEN_STATUSES = ['resolved'] as const;
+export const AWAITING_CITIZEN_STATUSES = ['resolved_pending_verification'] as const;
 
 export const CLOSED_STATUSES = ['verified', 'closed'] as const;
 

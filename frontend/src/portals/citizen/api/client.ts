@@ -1,5 +1,12 @@
-import { apiRequest, buildApiUrl, getToken, type ApiEnvelope } from '../../../auth/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  request,
+  requestPaginated,
+  upload,
+  buildApiUrl,
+  getToken,
+  normalizePaginationMeta,
+} from '../../../shared/api/client';
 import {
   type ReportType,
   type Department,
@@ -96,24 +103,12 @@ export function normalizeNotification(item: ApiNotificationItem): NotificationIt
   };
 }
 
-function normalizePaginationMeta(
-  meta: Record<string, unknown> | undefined,
-  fallbackPerPage: number,
-): PaginationMeta {
-  return {
-    page: typeof meta?.page === 'number' ? meta.page : 1,
-    per_page: typeof meta?.per_page === 'number' ? meta.per_page : fallbackPerPage,
-    total: typeof meta?.total === 'number' ? meta.total : 0,
-    last_page: typeof meta?.last_page === 'number' ? meta.last_page : 1,
-  };
-}
-
 export function useReportTypes() {
   return useQuery({
     queryKey: ['report-types'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<ReportType[]>>('/report-types');
-      return res.data.filter((t) => t);
+      const data = await request<ReportType[]>('/report-types');
+      return data.filter((t) => t);
     },
   });
 }
@@ -122,10 +117,9 @@ export function useDepartments() {
   return useQuery({
     queryKey: ['departments'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<Department[]>>('/departments', {
+      return request<Department[]>('/departments', {
         query: { per_page: 100 },
       });
-      return res.data;
     },
   });
 }
@@ -134,10 +128,10 @@ export function useNotifications() {
   return useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<NotificationsInboxResponse>>('/notifications', {
+      const data = await request<NotificationsInboxResponse>('/notifications', {
         query: { per_page: 50 },
       });
-      return (res.data.items ?? []).map((item) => normalizeNotification(item));
+      return (data.items ?? []).map((item) => normalizeNotification(item));
     },
   });
 }
@@ -146,7 +140,7 @@ export function useMarkNotificationRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest<unknown>(`/notifications/${id}/read`, { method: 'POST' });
+      await request<unknown>(`/notifications/${id}/read`, { method: 'POST' });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
   });
@@ -167,7 +161,7 @@ export interface CreateReportInput {
 export async function submitReportPayload(
   input: CreateReportInput,
 ): Promise<{ id: string; status: string }> {
-  const create = await apiRequest<ApiEnvelope<ApiReportPayload>>('/reports', {
+  const created = await request<ApiReportPayload>('/reports', {
     method: 'POST',
     body: {
       report_type_id: input.report_type_id,
@@ -180,16 +174,15 @@ export async function submitReportPayload(
       mock_gps_score: input.mock_gps_score ?? null,
     },
   });
-  const reportId = create.data.id;
+  const reportId = created.id;
 
   if (input.media_files && input.media_files.length > 0) {
-    const token = getToken();
-    void Promise.all(input.media_files.map((file) => uploadMedia(reportId, file, token))).catch(
+    void Promise.all(input.media_files.map((file) => uploadMedia(reportId, file))).catch(
       () => undefined,
     );
   }
 
-  const createdReport = normalizeReport(create.data);
+  const createdReport = normalizeReport(created);
   return {
     id: createdReport.id,
     status: createdReport.status?.code ?? 'submitted',
@@ -198,9 +191,9 @@ export async function submitReportPayload(
 
 const MEDIA_UPLOAD_TIMEOUT_MS = 60_000;
 
-async function uploadMedia(reportId: string, file: File, token: string | null): Promise<void> {
+async function uploadMedia(reportId: string, file: File): Promise<void> {
   const isVideo = file.type.startsWith('video/');
-  const url = buildApiUrl(isVideo ? `/reports/${reportId}/video` : `/reports/${reportId}/photos`);
+  const path = isVideo ? `/reports/${reportId}/video` : `/reports/${reportId}/photos`;
   const fd = new FormData();
   if (isVideo) {
     fd.append('video', file);
@@ -211,16 +204,7 @@ async function uploadMedia(reportId: string, file: File, token: string | null): 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), MEDIA_UPLOAD_TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: fd,
-      credentials: 'same-origin',
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      console.warn('media upload failed', file.name, res.status);
-    }
+    await upload<unknown>(path, fd, { signal: controller.signal });
   } catch (err) {
     console.warn('media upload error', file.name, err);
   } finally {
@@ -246,18 +230,18 @@ export function useReportDetail(id: string | undefined) {
     queryKey: ['report', id],
     refetchInterval: (query) => (shouldRefreshSubmittedReport(query.state.data) ? 3_000 : false),
     queryFn: async () => {
-      const report = await apiRequest<ApiEnvelope<ApiReportPayload>>(`/citizen/reports/${id}`);
+      const report = await request<ApiReportPayload>(`/citizen/reports/${id}`);
       let media: ApiMediaPayload[] = [];
 
-      const mediaResponse = await apiRequest<ApiEnvelope<{ media: ApiMediaPayload[] }>>(
+      const mediaResponse = await request<{ media: ApiMediaPayload[] }>(
         `/reports/${id}/media`,
       ).catch(() => null);
       if (mediaResponse !== null) {
-        media = mediaResponse.data.media;
+        media = mediaResponse.media;
       }
 
       return normalizeReport({
-        ...report.data,
+        ...report,
         media: media.map((item) => ({
           id: item.id,
           kind: item.type.toUpperCase() === 'VIDEO' ? 'video' : 'photo',
@@ -272,13 +256,15 @@ export function useCitizenReports(page = 1, perPage = 25) {
   return useQuery({
     queryKey: ['citizen', 'reports', page, perPage],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<ApiReportPayload[]>>('/citizen/reports', {
-        query: { page, per_page: perPage },
-      });
+      const { data, meta } = await requestPaginated<ApiReportPayload>(
+        '/citizen/reports',
+        { query: { page, per_page: perPage } },
+        perPage,
+      );
 
       return {
-        data: res.data.map((report) => normalizeReport(report)),
-        meta: normalizePaginationMeta(res.meta, perPage),
+        data: data.map((report) => normalizeReport(report)),
+        meta,
       };
     },
   });
@@ -289,10 +275,60 @@ export function useReportTimeline(id: string | undefined) {
     enabled: id !== undefined,
     queryKey: ['report', id, 'timeline'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<ReportDetail['timeline']>>(
-        `/reports/${id}/timeline`,
-      );
-      return res.data;
+      return request<ReportDetail['timeline']>(`/reports/${id}/timeline`);
     },
   });
 }
+
+export function useMergeDispute(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (reason: string) => {
+      await request<unknown>(`/citizen/reports/${id}/dispute-merge`, {
+        method: 'POST',
+        body: { reason },
+      });
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['report', id] });
+    },
+  });
+}
+
+export function useVerifyResolution(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const data = await request<{ report: ApiReportPayload }>(`/citizen/reports/${id}/verify`, {
+        method: 'POST',
+      });
+      return normalizeReport(data.report);
+    },
+    onSuccess: (report) => {
+      qc.setQueryData(['report', id], report);
+      void qc.invalidateQueries({ queryKey: ['citizen', 'reports'] });
+      void qc.invalidateQueries({ queryKey: ['report', id, 'timeline'] });
+    },
+  });
+}
+
+export function useDisputeResolution(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (reason: string) => {
+      const data = await request<{ report: ApiReportPayload }>(`/citizen/reports/${id}/dispute`, {
+        method: 'POST',
+        body: { reason },
+      });
+      return normalizeReport(data.report);
+    },
+    onSuccess: (report) => {
+      qc.setQueryData(['report', id], report);
+      void qc.invalidateQueries({ queryKey: ['citizen', 'reports'] });
+      void qc.invalidateQueries({ queryKey: ['report', id, 'timeline'] });
+    },
+  });
+}
+
+// Re-export buildApiUrl for any callers that need to construct URLs.
+export { buildApiUrl, getToken, normalizePaginationMeta };

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
 import { cx } from '../../../shared/ui/cx';
 import { guardVideoDuration, scrubFile } from '../security/evidenceGuards';
+import { useMessages } from '../messages';
 
 /**
  * T-M13-008 / T-M13-019 — Camera capture component.
@@ -52,6 +53,7 @@ function pickVideoMimeType(): string {
 }
 
 export function CameraCapture(props: CameraCaptureProps): JSX.Element {
+  const { t } = useMessages();
   const {
     mode,
     onCapture,
@@ -99,8 +101,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     if (typeof window !== 'undefined' && !window.isSecureContext) {
       const e: CameraError = {
         kind: 'permission_denied',
-        message:
-          'Camera access requires HTTPS or localhost. Open the app with https:// and try again.',
+        message: t('camera.httpsRequired'),
       };
       setError(e);
       onError?.(e);
@@ -109,7 +110,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       const e: CameraError = {
         kind: 'not_found',
-        message: 'Camera not available in this browser.',
+        message: t('camera.notAvailable'),
       };
       setError(e);
       onError?.(e);
@@ -132,10 +133,10 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
       const e: CameraError = {
         kind: 'permission_denied',
         message: permissionBlocked
-          ? 'Camera permission is blocked. Open browser site settings for this site, allow Camera, then tap Open camera again.'
+          ? t('camera.permissionBlocked')
           : err instanceof Error
             ? err.message
-            : 'Camera access denied.',
+            : t('camera.accessDenied'),
       };
       setError(e);
       onError?.(e);
@@ -174,8 +175,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     if (typeof MediaRecorder === 'undefined') {
       const err: CameraError = {
         kind: 'not_found',
-        message:
-          'Video recording is not supported by this browser. Try Chrome or Safari 17+ on HTTPS.',
+        message: t('camera.videoNotSupported'),
       };
       setError(err);
       onError?.(err);
@@ -195,8 +195,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
       } catch {
         const err: CameraError = {
           kind: 'not_found',
-          message:
-            'Video recording is not supported by this browser. Try Chrome or Safari 17+ on HTTPS.',
+          message: t('camera.videoNotSupported'),
         };
         setError(err);
         onError?.(err);
@@ -257,7 +256,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
             <span aria-hidden className="text-4xl">
               ◎
             </span>
-            <p className="text-sm">Camera off</p>
+            <p className="text-sm">{t('camera.off')}</p>
           </div>
         ) : null}
         {active && mode === 'video' && recordingMs > 0 ? (
@@ -282,7 +281,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
         </p>
       ) : mode === 'video' && !active ? (
         <p className="text-xs text-slate-500">
-          Record a short clip between {videoMinMs / 1000} and {videoMaxMs / 1000} seconds.
+          {t('camera.recordHint', { min: videoMinMs / 1000, max: videoMaxMs / 1000 })}
         </p>
       ) : null}
 
@@ -293,14 +292,14 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
             onClick={() => void startCamera()}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
           >
-            Open camera
+            {t('camera.openCamera')}
           </button>
         ) : mode === 'photo' ? (
           <button
             type="button"
             onClick={() => void takePhoto()}
             className="rounded-full bg-white p-4 shadow ring-2 ring-blue-500 transition hover:bg-blue-50"
-            aria-label="Take photo"
+            aria-label={t('camera.takePhoto')}
           >
             <span aria-hidden className="block h-12 w-12 rounded-full bg-blue-600" />
           </button>
@@ -310,7 +309,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
             onClick={stopRecording}
             className="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700"
           >
-            Stop recording
+            {t('camera.stopRecording')}
           </button>
         ) : (
           <button
@@ -318,7 +317,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
             onClick={startRecording}
             className="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700"
           >
-            Start recording
+            {t('camera.startRecording')}
           </button>
         )}
       </div>

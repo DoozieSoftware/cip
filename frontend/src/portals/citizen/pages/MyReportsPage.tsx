@@ -1,6 +1,7 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { type JSX, useMemo } from 'react';
 import {
+  IconAlertCircle,
   IconCheck,
   IconChevronRight,
   IconClock,
@@ -9,10 +10,15 @@ import {
   IconFilter,
   IconMapPin,
   IconPlus,
+  IconRefresh,
+  IconWifiOff,
 } from '@tabler/icons-react';
 import { Spinner } from '../../../shared/ui';
+import { ApiError } from '../../../shared/api/errors';
 import { useCitizenReports, lifecycleGroup } from '../api/client';
 import { StatusBadge } from '../components/StatusBadge';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { useMessages } from '../messages';
 import type { StatusFilter } from '../types';
 
 type SortField = 'date' | 'status' | 'reference';
@@ -36,21 +42,103 @@ function formatDate(value: string): string {
 }
 
 const FILTER_TABS: { key: StatusFilter; label: string; icon?: JSX.Element }[] = [
-  { key: 'all', label: 'All', icon: <IconFilter className="h-3.5 w-3.5" stroke={1.6} /> },
-  { key: 'open', label: 'Pending', icon: <IconClock className="h-3.5 w-3.5" stroke={1.6} /> },
   {
-    key: 'awaiting_citizen',
-    label: 'Awaiting You',
+    key: 'all',
+    label: 'reports.filter.all',
+    icon: <IconFilter className="h-3.5 w-3.5" stroke={1.6} />,
+  },
+  {
+    key: 'open',
+    label: 'reports.filter.pending',
     icon: <IconClock className="h-3.5 w-3.5" stroke={1.6} />,
   },
-  { key: 'closed', label: 'Closed', icon: <IconCheck className="h-3.5 w-3.5" stroke={1.6} /> },
+  {
+    key: 'awaiting_citizen',
+    label: 'reports.filter.awaitingYou',
+    icon: <IconClock className="h-3.5 w-3.5" stroke={1.6} />,
+  },
+  {
+    key: 'closed',
+    label: 'reports.filter.closed',
+    icon: <IconCheck className="h-3.5 w-3.5" stroke={1.6} />,
+  },
   {
     key: 'rejected',
-    label: 'Rejected',
+    label: 'reports.filter.rejected',
     icon: <IconExclamationCircle className="h-3.5 w-3.5" stroke={1.6} />,
   },
-  { key: 'merged', label: 'Merged', icon: <IconCheck className="h-3.5 w-3.5" stroke={1.6} /> },
+  {
+    key: 'merged',
+    label: 'reports.filter.merged',
+    icon: <IconCheck className="h-3.5 w-3.5" stroke={1.6} />,
+  },
 ];
+
+function PageHeader({ t }: { t: (key: string) => string }): JSX.Element {
+  return (
+    <header className="flex items-start justify-between gap-5 border-b border-[var(--color-border-faint)] px-4 pb-5 pt-6">
+      <div>
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+          {t('nav.reports')}
+        </p>
+        <h1 className="mt-2 text-2xl font-normal tracking-[-0.025em] text-[var(--color-ink)]">
+          {t('reports.title')}
+        </h1>
+      </div>
+      <Link
+        to="/citizen/submit"
+        className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white transition hover:bg-black"
+        aria-label={t('reports.newReport')}
+      >
+        <IconPlus className="h-4 w-4" stroke={1.7} />
+        <span className="hidden sm:inline">{t('reports.newReport')}</span>
+      </Link>
+    </header>
+  );
+}
+
+function EmptyStateSection({
+  t,
+  statusFilter,
+  applyFilter,
+}: {
+  t: (key: string) => string;
+  statusFilter: StatusFilter;
+  applyFilter: (next: StatusFilter) => void;
+}): JSX.Element {
+  return (
+    <div className="py-16 text-center" role="status">
+      <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+        <IconFileDescription className="h-7 w-7 text-[var(--color-ink)]" stroke={1.6} />
+      </div>
+      <h2 className="text-base font-medium text-[var(--color-ink)]">
+        {statusFilter === 'all' ? t('reports.noReportsYet') : `No ${statusFilter} reports`}
+      </h2>
+      <p className="mx-auto mt-1 max-w-xs text-sm text-[var(--color-text-secondary)]">
+        {statusFilter === 'all'
+          ? t('reports.fileFirst')
+          : 'You have reports in other categories. Try a different filter.'}
+      </p>
+      {statusFilter === 'all' ? (
+        <Link
+          to="/citizen/submit"
+          className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white transition hover:bg-black"
+        >
+          <IconPlus className="h-4 w-4" stroke={1.7} />
+          {t('reports.fileYourFirst')}
+        </Link>
+      ) : (
+        <button
+          type="button"
+          onClick={() => applyFilter('all')}
+          className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white transition hover:bg-black"
+        >
+          Show all reports
+        </button>
+      )}
+    </div>
+  );
+}
 
 function ReportRow({ report }: { report: ReportRow }): JSX.Element {
   const group = lifecycleGroup(report.status.code);
@@ -60,7 +148,7 @@ function ReportRow({ report }: { report: ReportRow }): JSX.Element {
       className="group block rounded-xl bg-white p-4 transition hover:shadow-md"
     >
       <div className="flex items-start gap-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#efeee9]">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
           {group === 'closed' || group === 'merged' ? (
             <IconCheck className="h-5 w-5" stroke={1.8} />
           ) : (
@@ -69,19 +157,21 @@ function ReportRow({ report }: { report: ReportRow }): JSX.Element {
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="truncate text-sm font-medium text-[#1d1d1b]">{report.title}</p>
+            <p className="truncate text-sm font-medium text-[var(--color-ink)]">{report.title}</p>
             <StatusBadge status={report.status} />
           </div>
-          <p className="mt-1 line-clamp-1 text-xs text-[#6f6e69]">{report.description}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#85847f]">
+          <p className="mt-1 line-clamp-1 text-xs text-[var(--color-text-secondary)]">
+            {report.description}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-tertiary)]">
             <span className="font-mono text-[10px] uppercase tracking-[0.08em]">
               {report.tracking_number}
             </span>
-            <span className="text-[#d0cec8]">·</span>
+            <span className="text-[var(--color-border-subtle)]">·</span>
             <span>{formatDate(report.created_at)}</span>
             {report.location?.address && (
               <>
-                <span className="text-[#d0cec8]">·</span>
+                <span className="text-[var(--color-border-subtle)]">·</span>
                 <span className="inline-flex items-center gap-1 truncate">
                   <IconMapPin className="h-3 w-3 shrink-0" stroke={1.6} />
                   <span className="truncate max-w-32">{report.location.address}</span>
@@ -91,7 +181,7 @@ function ReportRow({ report }: { report: ReportRow }): JSX.Element {
           </div>
         </div>
         <IconChevronRight
-          className="h-5 w-5 shrink-0 text-[#aaa9a4] transition-transform group-hover:translate-x-0.5"
+          className="h-5 w-5 shrink-0 text-[var(--color-text-tertiary)] transition-transform group-hover:translate-x-0.5"
           stroke={1.5}
         />
       </div>
@@ -100,6 +190,8 @@ function ReportRow({ report }: { report: ReportRow }): JSX.Element {
 }
 
 export default function MyReportsPage(): JSX.Element {
+  const { t } = useMessages();
+  const online = useOnlineStatus();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Math.max(1, Number(searchParams.get('page') ?? '1') || 1);
   const statusFilter = (searchParams.get('status') as StatusFilter) ?? 'all';
@@ -158,26 +250,99 @@ export default function MyReportsPage(): JSX.Element {
 
   const totalPages = Math.max(meta.last_page, 1);
 
-  return (
-    <div className="min-h-screen bg-[#f3f2ed]">
-      <header className="flex items-start justify-between gap-5 border-b border-[#d9d7d0] px-4 pb-5 pt-6">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#85847f]">
-            My Reports
-          </p>
-          <h1 className="mt-2 text-2xl font-normal tracking-[-0.025em] text-[#1d1d1b]">
-            Service Requests
-          </h1>
+  if (reports.isError && !reports.data) {
+    const err = reports.error;
+    const isAuthError = err instanceof ApiError && err.status === 401;
+
+    if (isAuthError) {
+      return (
+        <div className="min-h-screen bg-[var(--color-canvas)]">
+          <PageHeader t={t} />
+          <main className="mx-auto max-w-3xl px-4 pb-24 pt-5">
+            <div className="py-16 text-center" role="alert" aria-live="assertive">
+              <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+                <IconAlertCircle className="h-6 w-6 text-[var(--color-ink)]" stroke={1.6} />
+              </div>
+              <p className="text-sm font-medium text-[var(--color-ink)]">
+                {t('banner.sessionExpired')}
+              </p>
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                {t('banner.sessionExpiredDetail')}
+              </p>
+              <Link
+                to="/citizen/login"
+                className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white transition hover:bg-black"
+              >
+                {t('banner.signInAgain')}
+              </Link>
+            </div>
+          </main>
         </div>
-        <Link
-          to="/citizen/submit"
-          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-[#1d1d1b] px-5 text-sm font-medium text-white transition hover:bg-black"
-          aria-label="New Report"
-        >
-          <IconPlus className="h-4 w-4" stroke={1.7} />
-          <span className="hidden sm:inline">New Report</span>
-        </Link>
-      </header>
+      );
+    }
+
+    if (!online) {
+      return (
+        <div className="min-h-screen bg-[var(--color-canvas)]">
+          <PageHeader t={t} />
+          <main className="mx-auto max-w-3xl px-4 pb-24 pt-5">
+            <div className="py-16 text-center" role="alert" aria-live="assertive">
+              <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+                <IconWifiOff className="h-6 w-6 text-[var(--color-ink)]" stroke={1.6} />
+              </div>
+              <p className="text-sm font-medium text-[var(--color-ink)]">{t('banner.offline')}</p>
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                {t('banner.offlineDetail')}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  void reports.refetch();
+                }}
+                className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white transition hover:bg-black"
+              >
+                <IconRefresh className="h-4 w-4" stroke={1.6} />
+                {t('common.retry')}
+              </button>
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-[var(--color-canvas)]">
+        <PageHeader t={t} />
+        <main className="mx-auto max-w-3xl px-4 pb-24 pt-5">
+          <div className="py-16 text-center" role="alert" aria-live="assertive">
+            <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+              <IconExclamationCircle className="h-6 w-6 text-[var(--color-ink)]" stroke={1.6} />
+            </div>
+            <p className="text-sm font-medium text-[var(--color-ink)]">
+              {t('reports.unableToLoad')}
+            </p>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+              {t('reports.checkConnection')}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                void reports.refetch();
+              }}
+              className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white transition hover:bg-black"
+            >
+              <IconRefresh className="h-4 w-4" stroke={1.6} />
+              {t('common.retry')}
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[var(--color-canvas)]">
+      <PageHeader t={t} />
 
       <main className="mx-auto max-w-3xl px-4 pb-24 pt-5">
         <div className="mb-5">
@@ -195,12 +360,12 @@ export default function MyReportsPage(): JSX.Element {
                 onClick={() => applyFilter(tab.key)}
                 className={`flex h-11 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-medium transition ${
                   statusFilter === tab.key
-                    ? 'bg-[#1d1d1b] text-white'
-                    : 'bg-slate-100 text-[#6f6e69] hover:bg-slate-200'
+                    ? 'bg-[var(--color-ink)] text-white'
+                    : 'bg-slate-100 text-[var(--color-text-secondary)] hover:bg-slate-200'
                 }`}
               >
                 {tab.icon}
-                {tab.label}
+                {t(tab.label)}
               </button>
             ))}
           </div>
@@ -208,43 +373,60 @@ export default function MyReportsPage(): JSX.Element {
 
         {reports.isLoading ? (
           <div className="flex items-center justify-center py-24">
-            <Spinner label="Loading your reports" />
+            <Spinner label={t('reports.loading')} />
           </div>
-        ) : reports.isError || !reports.data ? (
-          <div className="py-16 text-center">
-            <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[#efeee9]">
-              <IconExclamationCircle className="h-6 w-6 text-[#1d1d1b]" stroke={1.6} />
-            </div>
-            <p className="text-sm font-medium text-[#1d1d1b]">Unable to load reports</p>
-            <p className="mt-1 text-sm text-[#6f6e69]">
-              Please check your connection and try again.
-            </p>
-          </div>
-        ) : reports.data.data.length === 0 ? (
-          <div className="py-16 text-center">
-            <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-[#efeee9]">
-              <IconFileDescription className="h-7 w-7 text-[#1d1d1b]" stroke={1.6} />
-            </div>
-            <h2 className="text-base font-medium text-[#1d1d1b]">No reports yet</h2>
-            <p className="mx-auto mt-1 max-w-xs text-sm text-[#6f6e69]">
-              File your first service request and track its progress.
-            </p>
-            <Link
-              to="/citizen/submit"
-              className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[#1d1d1b] px-6 text-sm font-medium text-white transition hover:bg-black"
+        ) : reports.isError && reports.data ? (
+          <>
+            <div
+              className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+              role="status"
+              aria-live="polite"
             >
-              <IconPlus className="h-4 w-4" stroke={1.7} />
-              File Your First Report
-            </Link>
-          </div>
+              <IconAlertCircle className="h-5 w-5 shrink-0" stroke={1.6} aria-hidden />
+              <span className="flex-1">{t('banner.stale')}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  void reports.refetch();
+                }}
+                className="inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline"
+              >
+                <IconRefresh className="h-4 w-4" stroke={1.6} aria-hidden />
+                {t('common.retry')}
+              </button>
+            </div>
+            {filteredReports.length === 0 ? (
+              <EmptyStateSection t={t} statusFilter={statusFilter} applyFilter={applyFilter} />
+            ) : (
+              <>
+                <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                  {t('reports.reportCount', {
+                    count: meta.total,
+                    plural: meta.total === 1 ? '' : 's',
+                  })}
+                  {statusFilter !== 'all' && ` (${statusFilter})`}
+                </p>
+                <div className="divide-y divide-[var(--color-border-subtle)]">
+                  {filteredReports.map((report) => (
+                    <ReportRow key={report.id} report={report} />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        ) : filteredReports.length === 0 ? (
+          <EmptyStateSection t={t} statusFilter={statusFilter} applyFilter={applyFilter} />
         ) : (
           <>
-            <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
-              {meta.total} report{meta.total === 1 ? '' : 's'}
+            <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+              {t('reports.reportCount', {
+                count: meta.total,
+                plural: meta.total === 1 ? '' : 's',
+              })}
               {statusFilter !== 'all' && ` (${statusFilter})`}
             </p>
 
-            <div className="divide-y divide-[#e4e2dc]">
+            <div className="divide-y divide-[var(--color-border-subtle)]">
               {filteredReports.map((report) => (
                 <ReportRow key={report.id} report={report} />
               ))}
@@ -256,33 +438,32 @@ export default function MyReportsPage(): JSX.Element {
                   type="button"
                   onClick={() => goToPage(meta.page - 1)}
                   disabled={meta.page <= 1}
-                  className="inline-flex h-11 items-center gap-1 rounded-full bg-white px-4 text-sm font-medium text-[#1d1d1b] transition hover:bg-[#efeee9] disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label="Previous page"
+                  className="inline-flex h-11 items-center gap-1 rounded-full bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label={t('reports.pagination.previous')}
                 >
                   <IconChevronRight className="h-4 w-4 rotate-180" stroke={1.6} />
-                  <span className="hidden sm:inline">Previous</span>
+                  <span className="hidden sm:inline">{t('reports.pagination.previous')}</span>
                 </button>
 
-                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
-                  Page {meta.page} of {totalPages}
+                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                  {t('reports.pagination.pageCount', { current: meta.page, total: totalPages })}
                 </span>
 
                 <button
                   type="button"
                   onClick={() => goToPage(meta.page + 1)}
                   disabled={meta.page >= totalPages}
-                  className="inline-flex h-11 items-center gap-1 rounded-full bg-white px-4 text-sm font-medium text-[#1d1d1b] transition hover:bg-[#efeee9] disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label="Next page"
+                  className="inline-flex h-11 items-center gap-1 rounded-full bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label={t('reports.pagination.next')}
                 >
-                  <span className="hidden sm:inline">Next</span>
+                  <span className="hidden sm:inline">{t('reports.pagination.next')}</span>
                   <IconChevronRight className="h-4 w-4" stroke={1.6} />
                 </button>
               </nav>
             )}
 
-            <p className="mt-6 text-xs text-[#6f6e69]">
-              Tap a report to view its full timeline and any assigned actions. Use the Reference ID
-              when contacting support.
+            <p className="mt-6 text-xs text-[var(--color-text-secondary)]">
+              {t('reports.tapHint')}
             </p>
           </>
         )}

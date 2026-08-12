@@ -12,6 +12,7 @@ import {
   onPushReceived,
   onPushNavigate,
 } from './offline/swBridge';
+import { useMessages } from './messages';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const SubmitPage = lazy(() => import('./pages/SubmitPage'));
@@ -25,24 +26,26 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 
 function Fallback() {
+  const { t } = useMessages();
   return (
     <div className="flex items-center justify-center py-20" aria-live="polite">
-      <Spinner label="Loading" />
+      <Spinner label={t('common.loading')} />
     </div>
   );
 }
 
 function RouteError() {
+  const { t } = useMessages();
   return (
     <ErrorState
-      title="Page not found"
-      description="The page you were looking for doesn't exist or has moved."
+      title={t('notFound.title')}
+      description={t('notFound.description')}
       action={
         <a
           href="/citizen"
           className="rounded-md bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-rose-700"
         >
-          Back to home
+          {t('notFound.backToHome')}
         </a>
       }
     />

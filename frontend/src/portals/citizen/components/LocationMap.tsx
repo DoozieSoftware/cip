@@ -45,9 +45,10 @@ export default function LocationMap({
   return (
     <div className="space-y-2">
       <div
+        role="img"
         className="overflow-hidden rounded-lg border border-slate-200"
         style={{ height }}
-        aria-label={`Map showing the report location${placeLabel ? ` at ${placeLabel}` : ''}`}
+        aria-label={`Map showing the report location${placeLabel ? ` at ${placeLabel}` : ''} at coordinates ${latitude}, ${longitude}`}
       >
         <MapContainer
           center={[latitude, longitude]}

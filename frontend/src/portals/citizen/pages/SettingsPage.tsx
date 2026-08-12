@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../auth/AuthContext';
 import { useToast } from '../components/Toast';
 import { pushSupport, subscribeToPush, unsubscribeFromPush } from '../push/subscribe';
+import { useMessages, type Locale } from '../messages';
 
 /** VAPID public key comes from configuration, never hardcoded. */
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY ?? '';
@@ -24,6 +25,7 @@ export default function SettingsPage(): JSX.Element {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
+  const { t, locale, setLocale } = useMessages();
   const [pushOn, setPushOn] = useState<boolean>(false);
   const [busy, setBusy] = useState<boolean>(false);
 
@@ -49,7 +51,7 @@ export default function SettingsPage(): JSX.Element {
       if (pushOn) {
         await unsubscribeFromPush();
         setPushOn(false);
-        toast.show('Push notifications off', 'info');
+        toast.show(t('settings.pushOffToast'), 'info');
       } else {
         const res = await subscribeToPush({
           applicationServerKey: VAPID_PUBLIC_KEY,
@@ -57,13 +59,16 @@ export default function SettingsPage(): JSX.Element {
         });
         if (res.ok) {
           setPushOn(true);
-          toast.show('Push notifications on', 'success');
+          toast.show(t('settings.pushOnToast'), 'success');
         } else if (res.reason === 'permission_denied') {
-          toast.show('Notification permission denied in browser settings.', 'error');
+          toast.show(t('settings.permissionDeniedToast'), 'error');
         } else if (res.reason === 'unsupported') {
-          toast.show('Push not supported in this browser.', 'error');
+          toast.show(t('settings.unsupportedToast'), 'error');
         } else {
-          toast.show(`Could not enable push: ${res.detail ?? res.reason ?? 'unknown'}`, 'error');
+          toast.show(
+            t('settings.enableFailedToast', { detail: res.detail ?? res.reason ?? 'unknown' }),
+            'error',
+          );
         }
       }
     } finally {
@@ -81,29 +86,27 @@ export default function SettingsPage(): JSX.Element {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
-        <p className="mt-1 text-sm text-slate-600">Notification preferences, push, and account.</p>
+        <h1 className="text-2xl font-bold text-slate-900">{t('settings.title')}</h1>
+        <p className="mt-1 text-sm text-slate-600">{t('settings.subtitle')}</p>
       </header>
 
       <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-700">Account</h2>
+        <h2 className="text-sm font-semibold text-slate-700">{t('settings.account')}</h2>
         <dl className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-xs uppercase text-slate-500">Name</dt>
+            <dt className="text-xs uppercase text-slate-500">{t('settings.name')}</dt>
             <dd className="text-slate-900">{user?.name ?? '—'}</dd>
           </div>
           <div>
-            <dt className="text-xs uppercase text-slate-500">Mobile</dt>
+            <dt className="text-xs uppercase text-slate-500">{t('settings.mobile')}</dt>
             <dd className="text-slate-900">{user?.mobile ?? '—'}</dd>
           </div>
         </dl>
       </section>
 
       <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-700">Push notifications</h2>
-        <p className="mt-1 text-xs text-slate-500">
-          We use push to tell you when a report changes status. You can disable it any time.
-        </p>
+        <h2 className="text-sm font-semibold text-slate-700">{t('settings.pushNotifications')}</h2>
+        <p className="mt-1 text-xs text-slate-500">{t('settings.pushDetail')}</p>
         <div className="mt-3 flex items-center gap-2">
           <button
             type="button"
@@ -116,35 +119,53 @@ export default function SettingsPage(): JSX.Element {
               className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${pushOn ? 'translate-x-6' : 'translate-x-1'}`}
             />
           </button>
-          <span className="text-sm text-slate-700">{pushOn ? 'on' : 'off'}</span>
+          <span className="text-sm text-slate-700">
+            {pushOn ? t('settings.pushOn') : t('settings.pushOff')}
+          </span>
         </div>
       </section>
 
       <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-700">Privacy &amp; legal</h2>
+        <label htmlFor="citizen-language" className="text-sm font-semibold text-slate-700">
+          {t('settings.language')}
+        </label>
+        <p className="mt-1 text-xs text-slate-500">{t('settings.languageDetail')}</p>
+        <select
+          id="citizen-language"
+          value={locale}
+          onChange={(event) => setLocale(event.target.value as Locale)}
+          className="mt-3 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 sm:max-w-xs"
+        >
+          <option value="en-IN">{t('settings.languageEnglish')}</option>
+          <option value="kn-IN">{t('settings.languageKannada')}</option>
+        </select>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-slate-700">{t('settings.privacyLegal')}</h2>
         <ul className="mt-2 space-y-1 text-sm text-blue-700">
           <li>
             <Link to="/citizen/legal/privacy" className="underline">
-              Privacy policy
+              {t('settings.privacyPolicy')}
             </Link>
           </li>
           <li>
             <Link to="/citizen/legal/terms" className="underline">
-              Terms of use
+              {t('settings.termsOfUse')}
             </Link>
           </li>
         </ul>
       </section>
 
       <section className="rounded-lg border border-rose-200 bg-rose-50 p-4">
-        <h2 className="text-sm font-semibold text-rose-700">Sign out</h2>
-        <p className="mt-1 text-xs text-rose-600">Ends your session on this device.</p>
+        <h2 className="text-sm font-semibold text-rose-700">{t('settings.signOut')}</h2>
+        <p className="mt-1 text-xs text-rose-600">{t('settings.signOutDetail')}</p>
         <button
           type="button"
           onClick={onSignOut}
           className="mt-3 rounded-md border border-rose-300 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-100"
         >
-          Sign out
+          {t('settings.signOut')}
         </button>
       </section>
     </div>

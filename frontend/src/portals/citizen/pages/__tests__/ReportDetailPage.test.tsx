@@ -24,6 +24,21 @@ vi.mock('../../../../auth/api', () => ({
 vi.mock('../../api/client', () => ({
   useReportDetail: vi.fn(),
   useReportTimeline: vi.fn(() => ({ isLoading: false, error: null, data: [] })),
+  useVerifyResolution: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+    error: null,
+  })),
+  useDisputeResolution: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+    error: null,
+  })),
+  useMergeDispute: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+    isSuccess: false,
+  })),
   lifecycleGroup: vi.fn((code: string) => {
     if (code === 'closed' || code === 'verified') return 'closed';
     if (code === 'rejected') return 'rejected';
@@ -42,10 +57,6 @@ vi.mock('../components/StatusBadge', () => ({
   StatusBadge: ({ status }: { status: { code: string; name?: string } }) => (
     <span data-testid="status-badge">{status.name ?? status.code}</span>
   ),
-}));
-
-vi.mock('../../moderator/design/cx', () => ({
-  cx: (...args: unknown[]) => args.filter(Boolean).join(' '),
 }));
 
 const { useReportDetail } = await import('../../api/client');
@@ -85,8 +96,8 @@ describe('CitizenReportDetailPage', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     );
-    expect(await screen.findByText('Pothole on Main St')).toBeTruthy();
-    expect(screen.getByText('CIV-2026-00042')).toBeTruthy();
+    expect((await screen.findAllByText('Pothole on Main St')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('CIV-2026-00042').length).toBeGreaterThan(0);
   });
 
   it('shows loading state while fetching', () => {
@@ -102,7 +113,7 @@ describe('CitizenReportDetailPage', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     );
-    expect(screen.getByText('Loading official record')).toBeTruthy();
+    expect(screen.getByRole('status', { name: 'Loading official record' })).toBeTruthy();
   });
 
   it('shows error state when the report fails to load', async () => {
@@ -175,6 +186,28 @@ describe('CitizenReportDetailPage', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     );
-    expect(await screen.findByText('Closed')).toBeTruthy();
+    expect((await screen.findAllByText('Closed')).length).toBeGreaterThan(0);
+  });
+
+  it('renders citizen verification actions while resolution is awaiting confirmation', async () => {
+    (useReportDetail as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: baseReport({
+        status: { code: 'resolved_pending_verification', name: 'Awaiting verification' },
+        verification_deadline_at: '2099-08-15T12:00:00Z',
+      }),
+    });
+
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/citizen/reports/11111111-1111-1111-1111-111111111111']}>
+          <ReportDetailPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Verify resolution' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Report issue not fixed' })).toBeTruthy();
   });
 });
