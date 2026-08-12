@@ -149,7 +149,13 @@ jobs:
           mapfile -t changed < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" -- 'backend/tests/**/*.php' | sed 's#^backend/##')
 
           if [ "${#changed[@]}" -eq 0 ]; then
-            echo "No changed backend tests to run."
+            mapfile -t changed_source < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" -- 'backend/app/**/*.php')
+            if [ "${#changed_source[@]}" -gt 0 ]; then
+              echo "Backend source changed without a test file; running the full Pest suite."
+              vendor/bin/pest --parallel
+            else
+              echo "No changed backend tests or source files to run."
+            fi
             exit 0
           fi
 
@@ -242,7 +248,14 @@ jobs:
             | sed 's#^frontend/##')
 
           if [ "${#changed[@]}" -eq 0 ]; then
-            echo "No changed frontend unit tests to run."
+            mapfile -t changed_source < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" -- \
+              'frontend/src/**/*.ts' 'frontend/src/**/*.tsx' 'frontend/src/**/*.js' 'frontend/src/**/*.jsx')
+            if [ "${#changed_source[@]}" -gt 0 ]; then
+              echo "Frontend source changed without a test file; running the full Vitest suite."
+              npm run test -- --run
+            else
+              echo "No changed frontend tests or source files to run."
+            fi
             exit 0
           fi
 
