@@ -25,6 +25,8 @@ use Illuminate\Support\Facades\Http;
  */
 class IntegrationAdminService
 {
+    public function __construct(private readonly IntegrationUrlGuard $urlGuard) {}
+
     /**
      * @param  array<string, mixed>  $attributes
      */
@@ -122,6 +124,8 @@ class IntegrationAdminService
         if ($integration->status === 'disabled') {
             throw ApiException::conflict('Integration is disabled; enable it before probing.');
         }
+
+        $this->urlGuard->assertSafe($integration->base_url);
 
         $settings = is_array($integration->settings) ? $integration->settings : [];
         $timeoutMs = isset($settings['timeout_ms']) && is_int($settings['timeout_ms'])
