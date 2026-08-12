@@ -1579,7 +1579,8 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | MAINT-01 | **Done** | Shared UI primitives extracted to `frontend/src/shared/ui/` with ownership test (`worktree/ui-extraction`, `cf50db96`). |
 | MAINT-02 | **Done** | Centralized design tokens in `shared/ui/tokens.css`; `TokenMigration` / `DesignTokenUsage` tests. |
 | MAINT-05 | **Done** | Citizen, operations, moderator, public, and admin clients use `frontend/src/shared/api/client.ts`; `auth/api.ts` is now a compatibility facade over that transport. Shared refresh/retry behavior has regression coverage. |
-| MAINT-03, MAINT-04, MAINT-06..MAINT-12 | Not started | Controller boundary work exists only as incremental refactors; CI/static-quality and test-journey target work remains. |
+| MAINT-03, MAINT-04, MAINT-06..MAINT-07, MAINT-09..MAINT-12 | Not started | Controller/page boundary work, admin client decomposition, static-quality baselines, architecture refresh, release hardening, and journey-target work remain. |
+| MAINT-08 | **Partial** | CI still runs changed tests by default, but now falls back to the full backend/frontend suites whenever application source changes without a corresponding test file (`b1da816a`); nightly MySQL and critical Playwright journey scheduling remain. |
 
 ### Recommended Next Step
 
