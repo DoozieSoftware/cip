@@ -1565,7 +1565,10 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | BE-11 | **Done** | Indexed SLA due-at selection, bounded bootstrap, idempotent breach rows, and downstream notification listener are implemented (\`d847f37b\`). |
 | BE-12 | **Done** | Notification listeners are registered only by `NotificationsServiceProvider`; duplicate registrations were removed from `AppServiceProvider`. |
 | BE-13 | **Partial** | Integration URL validation rejects unsafe schemes, credentials, ports, and private/link-local/metadata addresses before probing (\`97de1e6f\`); asynchronous restricted-egress execution and full probe audit remain. |
-| BE-14..BE-19 | Not started | Still open. |
+| BE-14 | **Partial** | Retention purge now requires explicit `--approve`, supports dry-run/chunked deletion, skips append-only audit rows, removes orphaned media bytes, and honors active legal holds via `retention_holds` (current worktree). Hold-management API, custody export, and production restore/retention drills remain. |
+| BE-15 | **Not started** | Scheduled aggregate tables and privacy suppression are still open. |
+| BE-16 | **Done** | Worker and scheduler heartbeats now gate readiness, with queue-specific freshness and dependency checks; focused heartbeat/health tests pass (`6e7f13f3`). |
+| BE-17..BE-19 | **Not started** | Structured tracing/metrics, dependency exception workflow, and production source-map/header validation remain open. |
 
 ### Maintainability
 
