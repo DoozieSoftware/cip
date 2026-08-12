@@ -8,6 +8,7 @@ import {
 } from '@tabler/icons-react';
 import type { ReportDetail, ProofMediaItem } from '../types';
 import { useMessages } from '../messages';
+import { trackProductEvent } from '../../../shared/analytics';
 
 /**
  * P1-06 — citizen-facing resolution verification card.
@@ -59,6 +60,7 @@ export function CitizenResolutionCard({
     if (reason.trim().length < 5) {
       return;
     }
+    trackProductEvent('report_reopened');
     onDispute(reason.trim());
     setReason('');
   };

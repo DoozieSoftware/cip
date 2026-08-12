@@ -10,6 +10,7 @@ import {
 import { cx } from '../../../shared/ui/cx';
 import { mockGpsLikely, type MockGpsResult } from '../security/mockGps';
 import { useMessages } from '../messages';
+import { trackProductEvent } from '../../../shared/analytics';
 
 export interface CapturedLocation {
   latitude: number;
@@ -107,11 +108,13 @@ export const GpsCapture = forwardRef<GpsCaptureHandle, GpsCaptureProps>(
       if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
         setPermissionDenied(false);
         setError(t('gps.notSupported'));
+        trackProductEvent('gps_error', { reason: 'not_supported' });
         return null;
       }
       if (typeof window !== 'undefined' && window.isSecureContext === false) {
         setPermissionDenied(false);
         setError(t('gps.httpsRequired'));
+        trackProductEvent('gps_error', { reason: 'insecure_context' });
         return null;
       }
 
@@ -128,10 +131,13 @@ export const GpsCapture = forwardRef<GpsCaptureHandle, GpsCaptureProps>(
             if (err.code === 1) {
               setPermissionDenied(true);
               setError(t('gps.blocked'));
+              trackProductEvent('gps_error', { reason: 'permission_denied' });
             } else if (err.code === 3) {
               setError(t('gps.timeout'));
+              trackProductEvent('gps_error', { reason: 'timeout' });
             } else {
               setError(t('gps.unavailable'));
+              trackProductEvent('gps_error', { reason: 'unavailable' });
             }
             setBusy(false);
             resolve(null);

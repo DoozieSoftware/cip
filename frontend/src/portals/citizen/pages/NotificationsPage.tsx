@@ -1,5 +1,5 @@
 import { useNotifications, useMarkNotificationRead } from '../api/client';
-import { type JSX } from 'react';
+import { useEffect, type JSX } from 'react';
 import { Spinner } from '../../../shared/ui';
 import { Link } from 'react-router-dom';
 import { cx } from '../../../shared/ui/cx';
@@ -14,6 +14,7 @@ import {
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { ApiError } from '../../../shared/api/errors';
 import { useMessages, type Locale, type MessageKey } from '../messages';
+import { trackProductEvent } from '../../../shared/analytics';
 
 function formatDateTime(value: string | null | undefined, locale: Locale): string {
   if (!value) return '';
@@ -46,6 +47,10 @@ export default function NotificationsPage(): JSX.Element {
   const notifications = list.data ?? [];
   const unreadCount = notifications.filter((n) => !n.read_at).length;
   const { t, locale } = useMessages();
+
+  useEffect(() => {
+    if (list.isError) trackProductEvent('notification_delivery_failed', { surface: 'inbox' });
+  }, [list.isError]);
 
   return (
     <div className="space-y-8">

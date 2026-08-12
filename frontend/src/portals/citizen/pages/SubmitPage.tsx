@@ -161,6 +161,7 @@ export default function SubmitPage(): JSX.Element {
   }, [ownerId, typeId, title, description, location, address, currentViewStep, files]);
 
   function onCameraError(err: CameraError): void {
+    trackProductEvent('media_upload_failed', { reason: err.kind });
     setError(err.message);
   }
 
