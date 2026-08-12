@@ -21,6 +21,23 @@ const ROUTES: { path: string; heading: RegExp }[] = [
 ];
 
 test.describe('citizen — a11y (T-M13-021)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        'cip.session.v1',
+        JSON.stringify({
+          token: 'a11y-test-token',
+          user: {
+            id: '00000000-0000-4000-8000-000000000001',
+            name: 'A11y Citizen',
+            mobile: '9999900001',
+            roles: ['citizen'],
+          },
+        }),
+      );
+    });
+  });
+
   for (const route of ROUTES) {
     test(`axe-core passes on ${route.path}`, async ({ page }) => {
       await page.goto(route.path);
