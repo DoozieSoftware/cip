@@ -5,16 +5,15 @@ declare(strict_types=1);
 namespace App\Modules\Reports\Http\Controllers\Api;
 
 use App\Modules\Reports\DTO\SubmitReportDto;
-use App\Modules\Reports\Events\ReportEvidenceReady;
 use App\Modules\Reports\Http\Requests\SubmitReportRequest;
 use App\Modules\Reports\Http\Resources\ReportResource;
-use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Repositories\ReportRepository;
 use App\Modules\Reports\Services\EvidenceManifestService;
 use App\Modules\Reports\Services\ReportService;
+use App\Modules\Reports\Services\ReportSubmissionAccessService;
+use App\Modules\Reports\Services\ReportSubmissionFinalizer;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Controllers\BaseController;
-use App\Modules\Shared\Support\DepartmentScope;
 use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,6 +24,8 @@ class ReportSubmissionController extends BaseController
         private readonly ReportRepository $repository,
         private readonly ReportService $service,
         private readonly EvidenceManifestService $evidence,
+        private readonly ReportSubmissionAccessService $access,
+        private readonly ReportSubmissionFinalizer $finalizer,
     ) {}
 
     public function store(SubmitReportRequest $request): JsonResponse
@@ -35,29 +36,10 @@ class ReportSubmissionController extends BaseController
             throw ApiException::forbidden('Authentication is required.');
         }
 
-        $dto = new SubmitReportDto(
-            citizenId: (string) $user->id,
-            reportTypeId: $this->requiredString($request, 'report_type_id'),
-            latitude: $this->requiredFloat($request, 'latitude'),
-            longitude: $this->requiredFloat($request, 'longitude'),
-            reporterLatitude: $this->nullableFloat($request, 'reporter_latitude'),
-            reporterLongitude: $this->nullableFloat($request, 'reporter_longitude'),
-            reporterAccuracy: $this->nullableFloat($request, 'reporter_accuracy'),
-            reporterGpsProvider: $this->nullableString($request, 'reporter_gps_provider'),
-            reporterCapturedAt: $this->nullableDateTime($request, 'reporter_captured_at'),
-            accuracy: $this->nullableFloat($request, 'accuracy'),
-            altitude: $this->nullableFloat($request, 'altitude'),
-            heading: $this->nullableFloat($request, 'heading'),
-            speed: $this->nullableFloat($request, 'speed'),
-            gpsProvider: $this->nullableString($request, 'gps_provider'),
-            capturedAt: $this->nullableDateTime($request, 'captured_at'),
-            address: $this->nullableString($request, 'address'),
-            title: $this->requiredString($request, 'title'),
-            description: $this->requiredString($request, 'description'),
-            isAnonymous: (bool) $request->validated('is_anonymous', false),
-            priorityId: $this->nullableString($request, 'priority_id'),
-            mockGpsScore: $this->nullableFloat($request, 'mock_gps_score'),
-        );
+        $dto = SubmitReportDto::fromArray([
+            ...$request->validated(),
+            'citizen_id' => (string) $user->id,
+        ]);
 
         $report = $this->service->createDraftFromSubmission($dto);
         $fresh = $report->fresh();
@@ -85,7 +67,7 @@ class ReportSubmissionController extends BaseController
         if (! $user instanceof User) {
             throw ApiException::forbidden('Authentication is required.');
         }
-        $this->assertCanSubmit($user, $report);
+        $this->access->authorize($user, $report);
 
         return $this->respond($this->evidence->manifest($report), 'Evidence manifest.');
     }
@@ -107,73 +89,12 @@ class ReportSubmissionController extends BaseController
         if (! $user instanceof User) {
             throw ApiException::forbidden('Authentication is required.');
         }
-        $this->assertCanSubmit($user, $report);
-
-        $submittedStatusId = $this->service->resolveStatusId('submitted');
-        $draftStatusId = $this->service->resolveStatusId('draft');
-
-        if ((string) $report->current_status_id === $submittedStatusId) {
-            return $this->respond(
-                (new ReportResource($report->load(['location', 'status', 'priority', 'reportType'])))->toArray($request),
-                'Report already submitted.',
-            );
-        }
-
-        if ((string) $report->current_status_id !== $draftStatusId) {
-            throw new ApiException('INVALID_STATUS', 'Only draft reports can be finalized.', 422);
-        }
-
-        $manifest = $this->evidence->manifest($report);
-
-        if (! $manifest['ready']) {
-            throw new ApiException(
-                'EVIDENCE_NOT_READY',
-                'Required evidence must finish uploading and hashing before submission.',
-                409,
-                $manifest,
-            );
-        }
-        $revision = $manifest['revision'] ?? null;
-
-        if (! is_string($revision)) {
-            throw new ApiException('EVIDENCE_NOT_READY', 'Evidence revision is missing.', 409, $manifest);
-        }
-        $manifestAssets = $manifest['assets'] ?? [];
-        $mediaIds = [];
-
-        if (is_array($manifestAssets)) {
-            foreach ($manifestAssets as $asset) {
-                if (is_array($asset) && is_string($asset['id'] ?? null)) {
-                    $mediaIds[] = $asset['id'];
-                }
-            }
-        }
-
-        $report = $this->service->transitionTo(
-            $report,
-            $submittedStatusId,
-            (string) $user->id,
-            'Citizen finalized evidence-backed report.',
-            ['source' => 'citizen_finalize_endpoint', 'evidence_revision' => $revision],
-        );
-        $report->submitted_at = now();
-        $report->save();
-
-        ReportEvidenceReady::dispatch(
-            $report->id,
-            $revision,
-            $mediaIds,
-        );
-
-        $fresh = $report->fresh();
-
-        if ($fresh === null) {
-            throw ApiException::notFound('Report');
-        }
+        $this->access->authorize($user, $report);
+        $result = $this->finalizer->finalize($report, $user);
 
         return $this->respond(
-            (new ReportResource($fresh->load(['location', 'status', 'priority', 'reportType'])))->toArray($request),
-            'Report submitted.',
+            (new ReportResource($result->report->load(['location', 'status', 'priority', 'reportType'])))->toArray($request),
+            $result->alreadySubmitted ? 'Report already submitted.' : 'Report submitted.',
         );
     }
 
@@ -182,71 +103,5 @@ class ReportSubmissionController extends BaseController
         // Preserve the legacy route while enforcing the same evidence gate as
         // the canonical finalization endpoint.
         return $this->finalize($request, $id);
-    }
-
-    private function assertDepartmentScopeAllows(User $user, Report $report): void
-    {
-        if (! DepartmentScope::canViewReport($user, $report)) {
-            throw ApiException::forbidden('This report is outside your department scope.');
-        }
-    }
-
-    private function assertCanSubmit(User $user, Report $report): void
-    {
-        $isOwner = ! $report->is_anonymous
-            && $report->citizen_id !== null
-            && (string) $report->citizen_id === (string) $user->id;
-        $isStaff = $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system']);
-
-        if (! $isOwner && ! $isStaff) {
-            throw ApiException::forbidden('You cannot submit this report.');
-        }
-
-        if (! $isOwner) {
-            $this->assertDepartmentScopeAllows($user, $report);
-        }
-    }
-
-    private function requiredString(SubmitReportRequest $request, string $key): string
-    {
-        $value = $request->validated($key);
-
-        return is_string($value) ? $value : '';
-    }
-
-    private function requiredFloat(SubmitReportRequest $request, string $key): float
-    {
-        $value = $request->validated($key);
-
-        return is_numeric($value) ? (float) $value : 0.0;
-    }
-
-    private function nullableString(SubmitReportRequest $request, string $key): ?string
-    {
-        $value = $request->validated($key);
-
-        return is_string($value) && $value !== '' ? $value : null;
-    }
-
-    private function nullableFloat(SubmitReportRequest $request, string $key): ?float
-    {
-        $value = $request->validated($key);
-
-        return is_numeric($value) ? (float) $value : null;
-    }
-
-    private function nullableDateTime(SubmitReportRequest $request, string $key): ?\DateTimeInterface
-    {
-        $value = $request->validated($key);
-
-        if (! is_string($value) || $value === '') {
-            return null;
-        }
-
-        try {
-            return new \DateTimeImmutable($value);
-        } catch (\Exception) {
-            return null;
-        }
     }
 }
