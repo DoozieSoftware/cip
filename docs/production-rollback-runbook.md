@@ -32,12 +32,13 @@ The rollback script restores only immutable release files and preserves the
 live `.env` and `storage/` directory:
 
 ```bash
-CONFIRM_ROLLBACK=YES ~/cip/deploy/production/rollback-production.sh \
+CONFIRM_ROLLBACK=YES ~/cip/rollback-production.sh \
   ~/cip-backups/20260812T120000Z
 ```
 
-On the deployed server the script is also available from the release checkout
-or can be copied from `deploy/production/rollback-production.sh`.
+The deploy workflow installs this helper as `~/cip/rollback-production.sh`.
+For manual packaging, copy `deploy/production/rollback-production.sh` to that
+path before use.
 
 ## Database restore (explicit and disruptive)
 
@@ -47,7 +48,7 @@ then run:
 
 ```bash
 CONFIRM_ROLLBACK=YES RESTORE_DATABASE=YES \
-  ~/cip/deploy/production/rollback-production.sh \
+  ~/cip/rollback-production.sh \
   ~/cip-backups/20260812T120000Z
 ```
 

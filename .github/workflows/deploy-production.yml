@@ -138,6 +138,13 @@ jobs:
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             $REMOTE "set -e; $PHP_BIN -m | grep -qx redis; command -v clamscan >/dev/null; clamscan --no-summary --stdout /dev/null >/dev/null"
 
+          # Keep the rollback helper on the server so an operator can run a
+          # code-only rollback even if the next release cannot be built.
+          scp -P $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            deploy/production/rollback-production.sh $REMOTE:/tmp/cip-rollback-production.sh
+          ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            $REMOTE "chmod 700 /tmp/cip-rollback-production.sh && mv /tmp/cip-rollback-production.sh \$HOME/cip/rollback-production.sh"
+
           # Deploy backend (cip/)
           rsync -az --delete \
             --exclude='storage/' \
