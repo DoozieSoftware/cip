@@ -1558,7 +1558,7 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | BE-04 | **Done** | Report/search indexes and MySQL full-text search are added with SQLite fallback (`d847f37b`). |
 | BE-05 | **Done** | SLA due-at indexing, bounded breach scans, unique breach rows, and notification dispatch are implemented (`d847f37b`). |
 | BE-06..BE-08, BE-13..BE-19 | Not started | Still open. |
-| BE-10 | **Partial** | Prefix tracking search, MySQL FULLTEXT fallback, and composite list indexes are implemented; cursor pagination and production-shaped \`EXPLAIN ANALYZE\` validation remain. |
+| BE-10 | **Partial** | Staff report search now supports opt-in cursor pagination with stable tie-breakers, alongside prefix tracking search, MySQL FULLTEXT fallback, and composite indexes (\`6b523f7f\`, \`d847f37b\`); admin/department cursor coverage and production-shaped \`EXPLAIN ANALYZE\` validation remain. |
 | BE-11 | **Done** | Indexed SLA due-at selection, bounded bootstrap, idempotent breach rows, and downstream notification listener are implemented (\`d847f37b\`). |
 | BE-12 | **Done** | Notification listeners are registered only by `NotificationsServiceProvider`; duplicate registrations were removed from `AppServiceProvider`. |
 
