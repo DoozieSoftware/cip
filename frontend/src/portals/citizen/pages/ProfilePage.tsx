@@ -59,7 +59,7 @@ function Section({ title, icon, children }: SectionProps): JSX.Element {
 }
 
 export default function ProfilePage(): JSX.Element {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useMessages();
   const me = useQuery({
     queryKey: ['me'],
@@ -192,6 +192,7 @@ export default function ProfilePage(): JSX.Element {
 
             <button
               type="button"
+              onClick={logout}
               className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium text-[var(--color-ink)] transition hover:border-black/30 active:bg-[#faf9f6] sm:w-auto"
             >
               <IconLogout className="h-4 w-4" stroke={1.6} aria-hidden />
