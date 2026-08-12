@@ -22,7 +22,12 @@ import {
 } from '../api/client';
 import { Spinner, EmptyState, ErrorState, cx } from '../../../shared/ui';
 import { CameraCapture, type CameraError } from '../components/CameraCapture';
-import { GpsCapture, type CapturedLocation, type GpsCaptureHandle } from '../components/GpsCapture';
+import {
+  GpsCapture,
+  MAX_GPS_ACCURACY_M,
+  type CapturedLocation,
+  type GpsCaptureHandle,
+} from '../components/GpsCapture';
 import { getQueue } from '../offline/queue';
 import { useToast } from '../components/Toast';
 import { evidencePreviewHandlers } from '../security/evidenceGuards';
@@ -271,6 +276,14 @@ export default function SubmitPage(): JSX.Element {
       goToStep('Location');
       return;
     }
+    if (activeLocation.accuracy_m !== null && activeLocation.accuracy_m > MAX_GPS_ACCURACY_M) {
+      setFieldError(
+        'location',
+        t('gps.coarseFix', { accuracy: Math.round(activeLocation.accuracy_m) }),
+      );
+      goToStep('Location');
+      return;
+    }
 
     const hasPhoto = files.some((f) => f.type.startsWith('image/'));
     const hasVideo = files.some((f) => f.type.startsWith('video/'));
@@ -461,6 +474,13 @@ export default function SubmitPage(): JSX.Element {
                 {t('submit.category.subtitle')}
               </p>
             </div>
+
+            <aside className="rounded-xl border border-amber-200 bg-amber-50 p-4" role="note">
+              <p className="text-sm font-semibold text-amber-950">
+                {t('submit.category.emergencyTitle')}
+              </p>
+              <p className="mt-1 text-sm text-amber-900">{t('submit.category.emergencyBody')}</p>
+            </aside>
 
             {types.isLoading ? (
               <div className="rounded-xl bg-white p-12 flex flex-col items-center justify-center gap-3">
@@ -753,7 +773,7 @@ export default function SubmitPage(): JSX.Element {
                     </p>
                   </div>
                 </div>
-                {location.accuracy_m !== null && location.accuracy_m > 100 ? (
+                {location.accuracy_m !== null && location.accuracy_m > MAX_GPS_ACCURACY_M ? (
                   <p className="mt-3 rounded-lg bg-amber-100 px-4 py-2.5 text-sm font-medium text-amber-800">
                     {t('submit.location.coarseWarning')}
                   </p>

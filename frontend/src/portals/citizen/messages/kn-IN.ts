@@ -101,6 +101,9 @@ export const kn_IN: MessageCatalog = {
   'submit.category.evidenceOptional': 'ಪ್ರಮಾಣ ಐಚ್ಛಿಕ',
   'submit.category.videoRequired': 'ವೀಡಿಯೊ ಅಗತ್ಯವಿದೆ',
   'submit.category.pickCategory': 'ವರ್ಗವನ್ನು ಆಯ್ಕೆ ಮಾಡಿ.',
+  'submit.category.emergencyTitle': 'ತುರ್ತು ಪರಿಸ್ಥಿತಿ? 112 ಗೆ ಕರೆ ಮಾಡಿ',
+  'submit.category.emergencyBody':
+    'ಈ ಸೇವೆ ನಾಗರಿಕ ಸಮಸ್ಯೆಗಳಿಗೆ. ತಕ್ಷಣದ ಅಪಾಯ, ಬೆಂಕಿ, ವೈದ್ಯಕೀಯ ನೆರವು ಅಥವಾ ನಡೆಯುತ್ತಿರುವ ಅಪರಾಧಕ್ಕೆ ಮೊದಲು 112 ಗೆ ಕರೆ ಮಾಡಿ.',
   'submit.details.title': 'ಸಮಸ್ಯೆಯ ವಿವರಗಳು',
   'submit.details.subtitle':
     'ಅಧಿಕಾರಿಗಳು ಅದನ್ನು ತ್ವರಿತವಾಗಿ ಪರಿಹರಿಸಲು ಸಹಾಯ ಮಾಡಲು ಸಮಸ್ಯೆಯ ಸ್ಪಷ್ಟ ವಿವರಣೆಯನ್ನು ಒದಗಿಸಿ.',

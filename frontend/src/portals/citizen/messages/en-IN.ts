@@ -100,6 +100,9 @@ export const en_IN: MessageCatalog = {
   'submit.category.evidenceOptional': 'Evidence optional',
   'submit.category.videoRequired': 'Video required',
   'submit.category.pickCategory': 'Pick a category.',
+  'submit.category.emergencyTitle': 'Emergency? Call 112',
+  'submit.category.emergencyBody':
+    'This service is for civic issues. For immediate danger, fire, medical help, or a crime in progress, call 112 first.',
   'submit.details.title': 'Issue Details',
   'submit.details.subtitle':
     'Provide a clear description of the issue to help officials address it promptly.',

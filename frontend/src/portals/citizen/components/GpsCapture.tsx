@@ -45,13 +45,22 @@ export interface GpsCaptureProps {
   autoRequest?: boolean;
 }
 
+/** Server-side LocationAccuracy rule; keep the client gate in sync. */
+export const MAX_GPS_ACCURACY_M = 100;
+
 export interface GpsCaptureHandle {
   requestLocation: () => Promise<CapturedLocation | null>;
 }
 
 export const GpsCapture = forwardRef<GpsCaptureHandle, GpsCaptureProps>(
   function GpsCapture(props, ref): JSX.Element {
-    const { onCapture, maxAccuracyM = 100, className, watch = false, autoRequest = false } = props;
+    const {
+      onCapture,
+      maxAccuracyM = MAX_GPS_ACCURACY_M,
+      className,
+      watch = false,
+      autoRequest = false,
+    } = props;
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [permissionDenied, setPermissionDenied] = useState(false);
