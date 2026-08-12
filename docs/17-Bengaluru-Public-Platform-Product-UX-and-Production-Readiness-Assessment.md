@@ -1513,7 +1513,7 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | P1-22 | **Done** | Report step progress, location, and media handles persist in an account-scoped IndexedDB draft and auto-resume; logout clears the leaving account draft (`drafts.ts`, `drafts.test.ts`). |
 | P1-01 | **Done** | Citizen drafts now persist a stable submission key across browser crashes/restarts; the client sends it for draft creation and finalization, while middleware scopes replays by principal, route, and method (`2cc5086a`, `5160ee85`). Backend integration execution remains subject to CI MySQL verification. |
 | P1-02 | **Done** | Citizen list/detail, canonical merge links, notifications, and exports use the server-issued `tracking_number` contract; no invented `CIP-*`/`REF-*` values remain in production surfaces. |
-| P1-03 | Not started | Anonymous recovery/secret flow is still a product decision and implementation gap. |
+| P1-03 | Not started | Anonymous recovery/secret flow remains intentionally unimplemented because the product must first choose hidden-identity versus no-account semantics, allowed/sensitive categories, notification limits, expiry, and rate limits. Existing routes remain authenticated; no plaintext recovery secret is issued. |
 | P1-10 | **Done** | Report-type requirements are exposed and server evidence manifest enforces required media, hashes, storage, and video readiness (`43d3f302`). |
 | P1-11 | **Done** | Citizen media modification is restricted to draft/request-for-information lifecycle; lifecycle authorization regression test added (`dfabe1a8`). |
 | P1-12 | **Done** | Browser capture forwards accuracy, altitude, heading, speed, provider, and captured timestamp into the location record; EXIF is not trusted blindly (`dfabe1a8`). |
@@ -1565,7 +1565,7 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | BE-11 | **Done** | Indexed SLA due-at selection, bounded bootstrap, idempotent breach rows, and downstream notification listener are implemented (\`d847f37b\`). |
 | BE-12 | **Done** | Notification listeners are registered only by `NotificationsServiceProvider`; duplicate registrations were removed from `AppServiceProvider`. |
 | BE-13 | **Partial** | Integration URL validation rejects unsafe schemes, credentials, ports, and private/link-local/metadata addresses before probing (\`97de1e6f\`); asynchronous restricted-egress execution and full probe audit remain. |
-| BE-14 | **Partial** | Retention purge now requires explicit `--approve`, supports dry-run/chunked deletion, skips append-only audit rows, removes orphaned media bytes, and honors active legal holds via `retention_holds` (current worktree). Hold-management API, custody export, and production restore/retention drills remain. |
+| BE-14 | **Partial** | Retention purge now requires explicit `--approve`, supports dry-run/chunked deletion, skips append-only audit rows, removes orphaned media bytes, and honors active legal holds via `retention_holds` (`0d8e49c0`, `e3fd62d4`). Hold-management API, custody export, and production restore/retention drills remain. |
 | BE-15 | **Not started** | Scheduled aggregate tables and privacy suppression are still open. |
 | BE-16 | **Done** | Worker and scheduler heartbeats now gate readiness, with queue-specific freshness and dependency checks; focused heartbeat/health tests pass (`6e7f13f3`). |
 | BE-17..BE-19 | **Not started** | Structured tracing/metrics, dependency exception workflow, and production source-map/header validation remain open. |
