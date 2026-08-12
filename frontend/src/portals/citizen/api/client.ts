@@ -161,6 +161,11 @@ export interface CreateReportInput {
   longitude: number;
   address?: string;
   accuracy_m?: number;
+  altitude?: number | null;
+  heading?: number | null;
+  speed?: number | null;
+  gps_provider?: string;
+  captured_at?: string;
   media_files?: File[];
   mock_gps_score?: number;
 }
@@ -178,6 +183,11 @@ export async function submitReportPayload(
       longitude: input.longitude,
       address: input.address ?? null,
       accuracy: input.accuracy_m ?? null,
+      altitude: input.altitude ?? null,
+      heading: input.heading ?? null,
+      speed: input.speed ?? null,
+      gps_provider: input.gps_provider ?? null,
+      captured_at: input.captured_at ?? null,
       mock_gps_score: input.mock_gps_score ?? null,
     },
   });

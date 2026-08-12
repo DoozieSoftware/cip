@@ -16,6 +16,10 @@ export interface CapturedLocation {
   longitude: number;
   accuracy_m: number | null;
   captured_at: number;
+  altitude?: number | null;
+  heading?: number | null;
+  speed?: number | null;
+  gps_provider?: string;
   mock_heuristic: MockGpsResult;
 }
 
@@ -76,6 +80,12 @@ export const GpsCapture = forwardRef<GpsCaptureHandle, GpsCaptureProps>(
           longitude: pos.coords.longitude,
           accuracy_m: pos.coords.accuracy,
           captured_at: pos.timestamp,
+          altitude: pos.coords.altitude,
+          heading: pos.coords.heading,
+          speed: pos.coords.speed,
+          // The browser API does not expose the underlying chipset/provider;
+          // record the capture mechanism so server-side provenance is explicit.
+          gps_provider: 'browser_geolocation',
           mock_heuristic: mock,
         };
         onCapture(captured);

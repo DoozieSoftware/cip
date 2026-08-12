@@ -81,7 +81,32 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   }, []);
 
   const logout = useCallback((): void => {
+    const persisted = readSession();
     const ownerId = user?.id;
+
+    // Revoke the server-side Sanctum access token and all active refresh
+    // tokens before clearing local state. This is intentionally best effort:
+    // logout must still complete when the device is offline or the API is
+    // unavailable, while the backend endpoint remains the source of truth
+    // for token revocation.
+    if (persisted?.token && typeof window !== 'undefined') {
+      const apiBase = (import.meta.env['VITE_API_BASE'] as string | undefined) ?? '/api/v1';
+      try {
+        const url = new URL(`${apiBase}/auth/logout`, window.location.origin).toString();
+        void fetch(url, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${persisted.token}`,
+          },
+          credentials: 'same-origin',
+          keepalive: true,
+        }).catch(() => undefined);
+      } catch {
+        // Invalid runtime configuration must not prevent local logout.
+      }
+    }
+
     if (typeof window !== 'undefined' && ownerId) {
       window.dispatchEvent(new CustomEvent('cip:auth-logout', { detail: { ownerId } }));
     }

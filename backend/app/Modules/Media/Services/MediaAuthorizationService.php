@@ -31,10 +31,24 @@ class MediaAuthorizationService
             && $report->citizen_id !== null
             && (string) $report->citizen_id === (string) $user->id;
 
+        // Citizen evidence is immutable once the report leaves the draft
+        // state.  Proof-of-completion uploads use the department-scoped
+        // endpoint and the `proof` role; allowing staff through this route
+        // would let them append citizen evidence after moderation.
+        $statusCode = strtolower((string) $report->status?->code);
+
+        if ($isOwner && ($statusCode === '' || $statusCode === 'draft')) {
+            return null;
+        }
+
         if (! $isOwner && ! DepartmentScope::canViewReport($user, $report)) {
             return ApiResponse::error('You cannot add media to this report.', 403, 'FORBIDDEN');
         }
 
-        return null;
+        return ApiResponse::error(
+            'Citizen evidence can only be added while the report is a draft.',
+            422,
+            'MEDIA_LIFECYCLE_LOCKED',
+        );
     }
 }
