@@ -37,7 +37,11 @@ class MediaAuthorizationService
         // would let them append citizen evidence after moderation.
         $statusCode = strtolower((string) $report->status?->code);
 
-        if ($isOwner && ($statusCode === '' || $statusCode === 'draft')) {
+        if ($isOwner && ($statusCode === '' || in_array($statusCode, [
+            'draft',
+            'request_for_information',
+            'needs_more_information',
+        ], true))) {
             return null;
         }
 
