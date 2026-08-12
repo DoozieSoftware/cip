@@ -120,7 +120,7 @@ export const OPEN_STATUSES = [
   'escalated',
 ] as const;
 
-export const AWAITING_CITIZEN_STATUSES = ['resolved_pending_verification'] as const;
+export const AWAITING_CITIZEN_STATUSES = ['resolved', 'resolved_pending_verification'] as const;
 
 export const CLOSED_STATUSES = ['verified', 'closed'] as const;
 

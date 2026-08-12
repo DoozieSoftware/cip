@@ -191,8 +191,10 @@ export default function HomePage(): JSX.Element {
         </header>
         <main className="flex min-h-[40vh] items-center justify-center py-20">
           <div className="flex flex-col items-center gap-4 text-center">
-            <Spinner label={t('home.loadingReports')} />
-            <p className="text-sm text-[var(--color-text-subtle)]">{t('home.loadingReports')}</p>
+            <Spinner label={t('spinner.loadingYourDashboard')} />
+            <p className="text-sm text-[var(--color-text-subtle)]">
+              {t('spinner.loadingYourDashboard')}
+            </p>
           </div>
         </main>
       </div>

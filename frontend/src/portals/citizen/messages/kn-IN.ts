@@ -482,7 +482,7 @@ export const kn_IN: MessageCatalog = {
   'spinner.retrievingRecord': 'ನಿಮ್ಮ ಅಧಿಕೃತ ದಾಖಲೆಯನ್ನು ಹಿಂಪಡೆಯಲಾಗುತ್ತಿದೆ...',
   'spinner.loadingCategories': 'ವರ್ಗಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ',
   'spinner.loadingYourReports': 'ನಿಮ್ಮ ವರದಿಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ',
-  'spinner.loadingYourDashboard': 'ನಿಮ್ಮ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ',
+  'spinner.loadingYourDashboard': 'ನಿಮ್ಮ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ…',
   'spinner.loading': 'ಲೋಡ್ ಆಗುತ್ತಿದೆ',
 
   // Pull-to-refresh

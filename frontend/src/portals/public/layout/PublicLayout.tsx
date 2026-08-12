@@ -19,7 +19,11 @@ export function PublicLayout(): JSX.Element {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link to="/" className="flex items-center gap-3">
+          <Link
+            to="/"
+            aria-label="Civic Intelligence Platform home"
+            className="flex items-center gap-3"
+          >
             <span
               aria-hidden
               className="grid h-9 w-9 place-items-center rounded-xl bg-brand-600 text-sm font-bold text-white shadow-sm"
@@ -33,7 +37,7 @@ export function PublicLayout(): JSX.Element {
               <div className="text-xs text-slate-500">Public transparency portal</div>
             </div>
           </Link>
-          <nav aria-label="Public portal sections" className="flex gap-1">
+          <nav aria-label="Public portal sections" className="flex flex-wrap gap-1">
             {NAV.map((n) => (
               <NavLink
                 key={n.to}

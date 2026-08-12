@@ -7,6 +7,7 @@ import {
   IconLogout,
   IconPlus,
   IconRefresh,
+  IconSettings,
   IconUser,
 } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -27,6 +28,7 @@ const NAV: Array<{
   { to: '/citizen/reports', label: 'nav.reports', icon: IconFileDescription },
   { to: '/citizen/submit', label: 'nav.newReport', icon: IconPlus },
   { to: '/citizen/profile', label: 'nav.account', icon: IconUser },
+  { to: '/citizen/settings', label: 'nav.settings', icon: IconSettings },
 ];
 
 export function CitizenLayout(): JSX.Element {

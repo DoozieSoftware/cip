@@ -40,14 +40,14 @@ export function ToastProvider({ children }: { children: ReactNode }): JSX.Elemen
     <ToastCtx.Provider value={api}>
       {children}
       <div
-        aria-live="polite"
+        aria-live={toasts.some((toast) => toast.kind === 'error') ? 'assertive' : 'polite'}
         aria-atomic="true"
         className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 sm:bottom-6"
       >
         {toasts.map((t) => (
           <div
             key={t.id}
-            role="status"
+            role={t.kind === 'error' ? 'alert' : 'status'}
             className={cx(
               'pointer-events-auto max-w-sm rounded-md border px-4 py-2 text-sm shadow-lg',
               t.kind === 'success' && 'border-emerald-200 bg-emerald-50 text-emerald-900',
@@ -76,9 +76,7 @@ export function NoopToast({ message }: { message: string }): JSX.Element {
 
 // Helps consumers that mount the provider themselves and need to test the
 // auto-dismiss behavior.
-export function __useToastInternalForTest(
-  setToasts: (fn: (prev: Toast[]) => Toast[]) => void,
-): void {
+export function useToastInternalForTest(setToasts: (fn: (prev: Toast[]) => Toast[]) => void): void {
   useEffect(() => {
     setToasts(() => []);
   }, [setToasts]);

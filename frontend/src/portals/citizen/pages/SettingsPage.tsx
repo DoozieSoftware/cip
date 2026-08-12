@@ -39,6 +39,10 @@ export default function SettingsPage(): JSX.Element {
     // Reflect the *actual* push subscription, not just the browser
     // permission — permission can be "granted" while no subscription
     // exists, which made the toggle look stuck "on".
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
+      setPushOn(false);
+      return;
+    }
     navigator.serviceWorker
       .getRegistration()
       .then((reg) => (reg ? reg.pushManager.getSubscription() : Promise.resolve(null)))

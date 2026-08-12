@@ -481,7 +481,7 @@ export const en_IN: MessageCatalog = {
   'spinner.retrievingRecord': 'Retrieving your official record...',
   'spinner.loadingCategories': 'Loading categories',
   'spinner.loadingYourReports': 'Loading your reports',
-  'spinner.loadingYourDashboard': 'Loading your dashboard',
+  'spinner.loadingYourDashboard': 'Loading your dashboard…',
   'spinner.loading': 'Loading',
 
   // Pull-to-refresh
