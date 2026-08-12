@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Legal hold lifecycle and target policy.
@@ -57,41 +58,57 @@ final class RetentionHoldService
     public function paginate(array $filters, int $perPage = 50): LengthAwarePaginator
     {
         $perPage = max(1, min(100, $perPage));
-        $query = RetentionHold::query()
-            ->with(['holder:id,name,mobile', 'releaser:id,name,mobile'])
-            ->orderByDesc('created_at')
-            ->orderByDesc('id');
 
-        if (isset($filters['entity_type']) && is_string($filters['entity_type']) && $filters['entity_type'] !== '') {
-            $query->where('entity_type', $this->resolveEntityClass($filters['entity_type']));
-        }
+        return $this->buildQuery($filters)->paginate($perPage);
+    }
 
-        if (isset($filters['entity_id']) && is_string($filters['entity_id']) && $filters['entity_id'] !== '') {
-            $query->where('entity_id', $filters['entity_id']);
-        }
+    /**
+     * Stream a bounded-memory CSV custody export for legal/audit review.
+     * The export contains metadata only; evidence bytes are never copied.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    public function export(array $filters): StreamedResponse
+    {
+        $filename = 'retention-holds-'.now()->format('Ymd-His').'.csv';
+        $query = $this->buildQuery($filters);
 
-        if (array_key_exists('active', $filters) && is_bool($filters['active'])) {
-            $now = now();
-            $query->where(function (Builder $activeQuery) use ($filters, $now): void {
-                if ($filters['active'] === true) {
-                    $activeQuery
-                        ->whereNull('released_at')
-                        ->where(function (Builder $expiryQuery) use ($now): void {
-                            $expiryQuery->whereNull('expires_at')->orWhere('expires_at', '>=', $now);
-                        });
+        return response()->streamDownload(function () use ($query): void {
+            $output = fopen('php://output', 'wb');
 
-                    return;
+            if ($output === false) {
+                return;
+            }
+
+            fputcsv($output, [
+                'hold_id', 'entity_type', 'entity_id', 'reason', 'held_by', 'held_at',
+                'expires_at', 'released_by', 'released_at', 'release_reason', 'active',
+            ]);
+
+            $query->chunkById(500, function ($holds) use ($output): void {
+                foreach ($holds as $hold) {
+                    if (! $hold instanceof RetentionHold) {
+                        continue;
+                    }
+
+                    fputcsv($output, [
+                        $hold->id,
+                        $this->entityAlias((string) $hold->entity_type),
+                        $hold->entity_id,
+                        $this->csvCell($hold->reason),
+                        $hold->held_by,
+                        $hold->created_at->toIso8601String(),
+                        $hold->expires_at?->toIso8601String(),
+                        $hold->released_by,
+                        $hold->released_at?->toIso8601String(),
+                        $this->csvCell($hold->release_reason),
+                        $hold->isActive() ? 'true' : 'false',
+                    ]);
                 }
-
-                $activeQuery
-                    ->whereNotNull('released_at')
-                    ->orWhere(function (Builder $expiryQuery) use ($now): void {
-                        $expiryQuery->whereNull('released_at')->where('expires_at', '<', $now);
-                    });
             });
-        }
 
-        return $query->paginate($perPage);
+            fclose($output);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     /**
@@ -229,5 +246,57 @@ final class RetentionHoldService
         }
 
         return (string) $key;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Builder<RetentionHold>
+     */
+    private function buildQuery(array $filters): Builder
+    {
+        $query = RetentionHold::query()
+            ->with(['holder:id,name,mobile', 'releaser:id,name,mobile'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
+
+        if (isset($filters['entity_type']) && is_string($filters['entity_type']) && $filters['entity_type'] !== '') {
+            $query->where('entity_type', $this->resolveEntityClass($filters['entity_type']));
+        }
+
+        if (isset($filters['entity_id']) && is_string($filters['entity_id']) && $filters['entity_id'] !== '') {
+            $query->where('entity_id', $filters['entity_id']);
+        }
+
+        if (array_key_exists('active', $filters) && is_bool($filters['active'])) {
+            $now = now();
+            $query->where(function (Builder $activeQuery) use ($filters, $now): void {
+                if ($filters['active'] === true) {
+                    $activeQuery
+                        ->whereNull('released_at')
+                        ->where(function (Builder $expiryQuery) use ($now): void {
+                            $expiryQuery->whereNull('expires_at')->orWhere('expires_at', '>=', $now);
+                        });
+
+                    return;
+                }
+
+                $activeQuery
+                    ->whereNotNull('released_at')
+                    ->orWhere(function (Builder $expiryQuery) use ($now): void {
+                        $expiryQuery->whereNull('released_at')->where('expires_at', '<', $now);
+                    });
+            });
+        }
+
+        return $query;
+    }
+
+    private function csvCell(?string $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        return in_array($value[0], ['=', '+', '-', '@'], true) ? "\t{$value}" : $value;
     }
 }

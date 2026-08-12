@@ -211,6 +211,7 @@ Route::prefix('v1')->group(function (): void {
         // Legal retention holds (BE-14). Holds are never deleted; release
         // records the actor and legal basis in custody fields and audit logs.
         Route::get('retention-holds', [RetentionHoldController::class, 'index'])->name('retention-holds.index');
+        Route::get('retention-holds/export', [RetentionHoldController::class, 'export'])->name('retention-holds.export');
         Route::post('retention-holds', [RetentionHoldController::class, 'store'])->name('retention-holds.store');
         Route::post('retention-holds/{retention_hold}/release', [RetentionHoldController::class, 'release'])
             ->name('retention-holds.release');

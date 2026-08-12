@@ -117,3 +117,23 @@ it('releases a hold with custody fields and prevents a second release', function
         'release_reason' => 'This second release must be rejected.',
     ])->assertConflict()->assertJsonPath('code', 'RETENTION_HOLD_RELEASED');
 });
+
+it('exports hold custody metadata without evidence bytes', function (): void {
+    $admin = retentionHoldAdmin();
+    $media = Media::factory()->create();
+    RetentionHold::query()->create([
+        'entity_type' => Media::class,
+        'entity_id' => $media->id,
+        'reason' => 'Preserve media metadata for the legal review.',
+        'held_by' => $admin->id,
+    ]);
+    Sanctum::actingAs($admin);
+
+    $response = $this->get('/api/v1/admin/retention-holds/export?active=1');
+    $response->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+
+    expect($response->streamedContent())
+        ->toContain('hold_id,entity_type,entity_id')
+        ->toContain("media,{$media->id}")
+        ->not->toContain($media->storage_path);
+});

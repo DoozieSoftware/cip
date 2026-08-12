@@ -3124,6 +3124,44 @@ paths:
           $ref: '#/components/responses/Conflict'
         422:
           $ref: '#/components/responses/ValidationError'
+  /api/v1/admin/retention-holds/export:
+    get:
+      tags:
+        - Settings
+      summary: 'Export legal hold custody metadata as CSV (super_admin only)'
+      operationId: admin.retention-holds.export
+      parameters:
+        -
+          in: query
+          name: entity_type
+          schema:
+            type: string
+            enum: [media, security_event, notification, ai_job, ai_result, ai_label]
+        -
+          in: query
+          name: entity_id
+          schema:
+            type: string
+            format: uuid
+        -
+          in: query
+          name: active
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: 'CSV custody metadata export; evidence bytes are not included.'
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        422:
+          $ref: '#/components/responses/ValidationError'
   '/api/v1/admin/retention-holds/{retention_hold}/release':
     post:
       tags:

@@ -36,6 +36,7 @@ Manages global application settings and feature flags. Provides key/value storag
 | PUT | `/api/v1/admin/settings/{setting}` | `api.v1.admin.settings.update` |
 | DELETE | `/api/v1/admin/settings/{setting}` | `api.v1.admin.settings.destroy` |
 | GET | `/api/v1/admin/retention-holds` | `api.v1.admin.retention-holds.index` |
+| GET | `/api/v1/admin/retention-holds/export` | `api.v1.admin.retention-holds.export` |
 | POST | `/api/v1/admin/retention-holds` | `api.v1.admin.retention-holds.store` |
 | POST | `/api/v1/admin/retention-holds/{retention_hold}/release` | `api.v1.admin.retention-holds.release` |
 | GET | `/api/v1/admin/app-configs` | `api.v1.admin.app-configs.index` |

@@ -13,6 +13,7 @@ use App\Modules\Settings\Services\RetentionHoldService;
 use App\Modules\Shared\Http\Controllers\BaseController;
 use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /** Super-admin legal hold lifecycle endpoints. */
 final class RetentionHoldController extends BaseController
@@ -39,6 +40,11 @@ final class RetentionHoldController extends BaseController
             'total' => $page->total(),
             'last_page' => $page->lastPage(),
         ]);
+    }
+
+    public function export(IndexRetentionHoldsRequest $request): StreamedResponse
+    {
+        return $this->service->export($request->validated());
     }
 
     public function store(StoreRetentionHoldRequest $request): JsonResponse
