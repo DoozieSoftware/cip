@@ -1468,3 +1468,61 @@ Create implementation issues only for Phase 0 and Phase 1 first. The first engin
 6. Add characterization tests for report submission, evidence readiness, idempotency, notifications, lifecycle, and authorization.
 
 Do not start advanced AI, public leaderboards, predictive maintenance, or a native app until these exit criteria are met.
+
+---
+
+## 22. Implementation Status Tracker
+
+Status legend: **Done** = implemented and covered by tests in the current worktree; **Partial** = some layers shipped but not fully wired or rolled out; **Not started** = no code changes yet. Evidence paths point at the current worktree on branch `fix/moderator-view-all-affordance`.
+
+### P0 — Production Safety
+
+| ID | Status | Notes / Evidence |
+|----|--------|------------------|
+| P0-02 | **Done** | System role enforced on internal AI endpoints; admin role on prompt approve/rollback (`7234dbdd`). |
+| P0-06 | **Done** | Notification template/listener wiring repaired (`efb5c131`). |
+| P0-08 | **Done** | Worker queue + scheduler topology corrected and documented (`161148d1`). |
+| BE-12 | **Done** | Notification listeners are registered only by `NotificationsServiceProvider`; duplicate registrations were removed from `AppServiceProvider`. |
+| P0-01, P0-03..P0-05, P0-07, P0-09..P0-15 | Not started | Still open. |
+
+### P1 — Citizen And Public Experience
+
+| ID | Status | Notes / Evidence |
+|----|--------|------------------|
+| P1-04 | **Done** | Detail timeline sorted newest-first; `is_current` supported in types and rendered with a latest fallback (`frontend/src/portals/citizen/types.ts:50`, `ReportDetailPage.tsx`). |
+| P1-05 | **Done** | Central `lifecycleGroup` mapping (`open | awaiting_citizen | closed | rejected | merged`) backed by status constants, not component negative lists (`frontend/src/portals/citizen/types.ts`); regression tests reference P1-05. |
+| P1-06 | **Done** | Authenticated `verify`/`dispute` routes are registered; workflow/service ownership and deadline checks are implemented; `CitizenReportResource` exposes deadline/proof media; citizen mutations and `CitizenResolutionCard` are wired into report detail with regression coverage. |
+| P1-07 | **Done** | Canonical link and merge-dispute flow are wired end to end; `ReportsMergedListener` is registered; canonical status changes notify both the canonical owner and citizens whose reports remain linked through `merged_into`. |
+| P1-08 | **Done** | Versioned `CitizenReportResource` emits exactly the citizen detail contract consumed by `frontend/src/portals/citizen/types.ts`. |
+| P1-09 | **Done** | Misleading verification badge removed from citizen surfaces; resolution state derives from `lifecycleGroup`. |
+| P1-01..P1-03, P1-10..P1-23 | Not started | Still open. |
+
+### P2 — Usability
+
+| ID | Status | Notes / Evidence |
+|----|--------|------------------|
+| P2-01 | **Partial** | `CategoryPicker` is searchable and locale-aware with tests, but `ReportTypeResource` still does not return localized labels/aliases/sort order, so the production API contract is not complete. |
+| P2-04 | **Done** | Distinct loading/empty/error states across citizen pages; `DashboardPage`, `SubmitPage.states`, `PageStates.a11y` tests. |
+| P2-05 | **Done** | `SettingsPage` reachable and routed; profile logout functional; `ProfilePage.test.tsx`. |
+| P2-07 | **Partial** | Reactive `en-IN`/`kn-IN` catalogs, persisted language selection, `<html lang>` updates, and localized layout/Home/Notifications/Profile/Settings/legal/capture/category/merge-dispute surfaces are implemented. Dashboard, Submit, parts of Detail/resolution, locale-aware formatting, and backend localized report-type payloads remain. |
+| P2-02, P2-03, P2-06, P2-08..P2-15 | Not started | Still open. Accessibility (P2-08) has only test scaffolding (`*.a11y.test.*`), no full axe/screen-reader pass. |
+
+### Backend Performance And Correctness
+
+| ID | Status | Notes / Evidence |
+|----|--------|------------------|
+| BE-09 | **Done** | List queries eager-load `department` and `media_count`; lean `ReportListResource`/`AdminReportListResource`/`DepartmentReportListResource`; `ReportListQueryCountTest` guards N+1 regressions. |
+| BE-01..BE-08, BE-10..BE-19 | Not started | Still open. |
+
+### Maintainability
+
+| ID | Status | Notes / Evidence |
+|----|--------|------------------|
+| MAINT-01 | **Done** | Shared UI primitives extracted to `frontend/src/shared/ui/` with ownership test (`worktree/ui-extraction`, `cf50db96`). |
+| MAINT-02 | **Done** | Centralized design tokens in `shared/ui/tokens.css`; `TokenMigration` / `DesignTokenUsage` tests. |
+| MAINT-05 | **Done** | Citizen, operations, moderator, public, and admin clients use `frontend/src/shared/api/client.ts`; `auth/api.ts` is now a compatibility facade over that transport. Shared refresh/retry behavior has regression coverage. |
+| MAINT-03, MAINT-04, MAINT-06..MAINT-12 | Not started | Controller boundary work exists only as incremental refactors; MAINT-08/09 addressed partially via broader CI/test usage but not to the documented target. |
+
+### Recommended Next Step
+
+Finish P2-07 on Dashboard, Submit, remaining Detail/resolution strings and locale-aware formatting; then expose localized report-type labels, aliases, and ordering from the backend to complete P2-01. After that, resume the highest-risk Phase 0 production-safety findings, beginning with P0-01/P0-03, and run the full backend suite in an environment with `pdo_sqlite` or isolated CI MySQL before staging.
