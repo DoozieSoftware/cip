@@ -18,7 +18,6 @@ declare(strict_types=1);
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Users\Models\User;
-use App\Modules\Workflow\Models\WorkflowState;
 use App\Modules\Workflow\Models\WorkflowTransition;
 use App\Modules\Workflow\Repositories\WorkflowRepository;
 use App\Modules\Workflow\Services\ConditionEvaluator;
@@ -88,7 +87,7 @@ it('citizen can verify a resolved_pending_verification report', function (): voi
 });
 
 it('citizen can dispute a resolved_pending_verification report to reopen it', function (): void {
-    $status = ReportStatus::query()->where('code' => 'resolved_pending_verification')->first();
+    $status = ReportStatus::query()->where('code', 'resolved_pending_verification')->first();
     $report = Report::factory()->create([
         'workflow_id' => $this->repo->findActiveByCode('civic_default')->id,
         'current_status_id' => $status->id,

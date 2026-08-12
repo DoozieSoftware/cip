@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Modules\Reports\Http\Resources\ReportResource;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportMergeDispute;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Security\Models\AuditLog;
-use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
 use Database\Seeders\DefaultWorkflowSeeder;
 use Database\Seeders\ReportPrioritiesSeeder;
@@ -88,7 +88,7 @@ it('allows a citizen to dispute an incorrect merge', function (): void {
     expect($audit)->not->toBeNull();
 
     // The citizen-facing resource reflects the dispute.
-    $resource = new \App\Modules\Reports\Http\Resources\ReportResource($fresh);
+    $resource = new ReportResource($fresh);
     $arr = $resource->toArray(request());
     expect($arr['merged_into'])->toBeNull()
         ->and($arr['canonical_report'])->toBeNull();
