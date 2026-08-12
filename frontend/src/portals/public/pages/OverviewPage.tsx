@@ -18,7 +18,8 @@ export default function OverviewPage(): JSX.Element {
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Platform overview</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Live, aggregate statistics for every report on the platform. Updated every 5 minutes.
+          Live, aggregate statistics for public reports. Values are cached for five minutes and
+          exclude drafts, rejected reports, and merged duplicates.
         </p>
       </header>
 
@@ -35,6 +36,11 @@ export default function OverviewPage(): JSX.Element {
             value={stats.data.total_reports.toLocaleString()}
             sub="all time"
           />
+          <p className="col-span-full text-center text-xs text-slate-500">
+            {stats.data.generated_at
+              ? `Generated ${new Date(stats.data.generated_at).toLocaleString()}`
+              : 'Freshness timestamp unavailable'}
+          </p>
           <Stat
             label="AI-classified"
             value={`${stats.data.ai_classified_percent}%`}

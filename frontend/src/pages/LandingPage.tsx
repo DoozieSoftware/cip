@@ -20,6 +20,8 @@ interface PublicStats {
   total_reports: number;
   ai_classified_percent: number;
   median_assign_seconds: number | null;
+  generated_at?: string;
+  cache_ttl_seconds?: number;
 }
 
 function formatDuration(seconds: number | null): string {
@@ -35,7 +37,13 @@ function usePublicStats() {
     queryKey: ['public', 'stats'],
     queryFn: async () => {
       const res = await apiRequest<ApiEnvelope<PublicStats>>('/public/stats');
-      return res.data;
+      return {
+        ...res.data,
+        generated_at:
+          typeof res.meta?.generated_at === 'string' ? res.meta.generated_at : undefined,
+        cache_ttl_seconds:
+          typeof res.meta?.cache_ttl_seconds === 'number' ? res.meta.cache_ttl_seconds : undefined,
+      };
     },
     staleTime: 5 * 60_000,
   });
@@ -274,35 +282,42 @@ export function LandingPage(): JSX.Element {
               Live stats are unavailable right now.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-3">
-              {[
-                {
-                  label: 'Reports processed',
-                  value: stats.data.total_reports.toLocaleString(),
-                  sub: 'all time',
-                },
-                {
-                  label: 'AI-classified',
-                  value: `${stats.data.ai_classified_percent}%`,
-                  sub: 'before human review',
-                },
-                {
-                  label: 'Median time to assign',
-                  value: formatDuration(stats.data.median_assign_seconds),
-                  sub: 'submit → department',
-                },
-              ].map((m) => (
-                <div
-                  key={m.label}
-                  className="border-b border-[#e4e2dc] p-6 text-center last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"
-                >
-                  <div className="text-3xl font-normal tracking-[-0.03em] text-[#1d1d1b] sm:text-4xl">
-                    {m.value}
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-3">
+                {[
+                  {
+                    label: 'Reports processed',
+                    value: stats.data.total_reports.toLocaleString(),
+                    sub: 'all time',
+                  },
+                  {
+                    label: 'AI-classified',
+                    value: `${stats.data.ai_classified_percent}%`,
+                    sub: 'before human review',
+                  },
+                  {
+                    label: 'Median time to assign',
+                    value: formatDuration(stats.data.median_assign_seconds),
+                    sub: 'submit → department',
+                  },
+                ].map((m) => (
+                  <div
+                    key={m.label}
+                    className="border-b border-[#e4e2dc] p-6 text-center last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"
+                  >
+                    <div className="text-3xl font-normal tracking-[-0.03em] text-[#1d1d1b] sm:text-4xl">
+                      {m.value}
+                    </div>
+                    <div className="mt-2 text-sm font-medium text-[#1d1d1b]">{m.label}</div>
+                    <div className="text-xs text-[#777670]">{m.sub}</div>
                   </div>
-                  <div className="mt-2 text-sm font-medium text-[#1d1d1b]">{m.label}</div>
-                  <div className="text-xs text-[#777670]">{m.sub}</div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <p className="border-t border-black/10 px-6 py-3 text-center text-xs text-[#777670]">
+                {stats.data.generated_at
+                  ? `Generated ${new Date(stats.data.generated_at).toLocaleString()}`
+                  : 'Freshness timestamp unavailable'}
+              </p>
             </div>
           )}
         </section>

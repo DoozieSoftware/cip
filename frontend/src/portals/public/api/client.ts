@@ -1,10 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { request } from '../../../shared/api/client';
+import { request, requestEnvelope } from '../../../shared/api/client';
 
 export interface PublicStats {
   total_reports: number;
   ai_classified_percent: number;
   median_assign_seconds: number | null;
+  generated_at?: string;
+  definitions?: Record<string, string>;
+  cache_ttl_seconds?: number;
 }
 
 export interface HeatmapPoint {
@@ -35,7 +38,20 @@ export function usePublicStats() {
   return useQuery({
     queryKey: ['public', 'stats'],
     queryFn: async () => {
-      return request<PublicStats>('/public/stats');
+      const envelope = await requestEnvelope<PublicStats>('/public/stats');
+      return {
+        ...envelope.data,
+        generated_at:
+          typeof envelope.meta?.generated_at === 'string' ? envelope.meta.generated_at : undefined,
+        definitions:
+          envelope.meta?.definitions && typeof envelope.meta.definitions === 'object'
+            ? (envelope.meta.definitions as Record<string, string>)
+            : undefined,
+        cache_ttl_seconds:
+          typeof envelope.meta?.cache_ttl_seconds === 'number'
+            ? envelope.meta.cache_ttl_seconds
+            : undefined,
+      };
     },
     staleTime: FIVE_MINUTES,
   });

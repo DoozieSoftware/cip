@@ -5,6 +5,11 @@ import OverviewPage from '../OverviewPage';
 
 const apiRequestMock = vi.fn();
 
+vi.mock('../../../../shared/api/client', () => ({
+  requestEnvelope: (...args: unknown[]): Promise<unknown> =>
+    apiRequestMock(...args) as Promise<unknown>,
+}));
+
 vi.mock('../../../../auth/api', () => ({
   apiRequest: (...args: unknown[]): Promise<unknown> => apiRequestMock(...args) as Promise<unknown>,
 }));
@@ -26,6 +31,7 @@ describe('Public OverviewPage', () => {
   it('fetches /public/stats and renders the aggregate numbers', async () => {
     apiRequestMock.mockResolvedValue({
       data: { total_reports: 900, ai_classified_percent: 72.5, median_assign_seconds: 45 },
+      meta: { generated_at: '2026-08-12T00:00:00Z', cache_ttl_seconds: 300 },
     });
 
     renderPage();
