@@ -6,21 +6,14 @@ import type { ApiEnvelope } from '../../../shared/api/envelope';
 export { useAdminUsers, useCreateUser, useUpdateUser, useDeleteUser } from './users';
 export type { AdminUser, AdminUserInput } from './users';
 
-export interface AdminRole {
-  id: number | string;
-  name: string;
-  guard_name: string;
-  protected?: boolean;
-  permissions: string[];
-  created_at?: string | null;
-}
-
-export interface AdminPermission {
-  id: number | string;
-  name: string;
-  guard_name: string;
-  created_at?: string | null;
-}
+export {
+  useAdminRoles,
+  useAdminPermissions,
+  useCreateRole,
+  useUpdateRole,
+  useSyncRolePermissions,
+} from './roles';
+export type { AdminRole, AdminPermission, AdminRoleInput } from './roles';
 
 export interface AdminReportType {
   id: string;
@@ -48,17 +41,13 @@ export {
 } from './departments';
 export type { AdminDepartment, AdminDepartmentInput } from './departments';
 
-export interface AdminOrganization {
-  id: string;
-  code: string;
-  name: string;
-  legal_name?: string | null;
-  domain?: string | null;
-  storage_quota_mb: number;
-  active: boolean;
-}
-
-export type AdminOrganizationInput = Omit<AdminOrganization, 'id'>;
+export {
+  useAdminOrganizations,
+  useCreateOrganization,
+  useUpdateOrganization,
+  useDeleteOrganization,
+} from './organizations';
+export type { AdminOrganization, AdminOrganizationInput } from './organizations';
 
 export interface SecurityPolicy {
   id: string;
@@ -90,75 +79,6 @@ export interface AuditLog {
   entity_id?: string | null;
   ip?: string | null;
   created_at: string;
-}
-
-export function useAdminOrganizations() {
-  return useQuery({
-    queryKey: ['admin', 'organizations'],
-    queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<AdminOrganization[]>>('/admin/organizations', {
-        query: { per_page: 100 },
-      });
-      return res.data;
-    },
-  });
-}
-
-export function useCreateOrganization() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (input: AdminOrganizationInput) =>
-      apiRequest<ApiEnvelope<AdminOrganization>>('/admin/organizations', {
-        method: 'POST',
-        body: input,
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'organizations'] }),
-  });
-}
-
-export function useUpdateOrganization() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, ...input }: AdminOrganizationInput & { id: string }) =>
-      apiRequest<ApiEnvelope<AdminOrganization>>(`/admin/organizations/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        body: input,
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'organizations'] }),
-  });
-}
-
-export function useDeleteOrganization() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) =>
-      apiRequest<unknown>(`/admin/organizations/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'organizations'] }),
-  });
-}
-
-export function useAdminRoles() {
-  return useQuery({
-    queryKey: ['admin', 'roles'],
-    queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<AdminRole[]>>('/admin/roles', {
-        query: { per_page: 100 },
-      });
-      return res.data;
-    },
-  });
-}
-
-export function useAdminPermissions() {
-  return useQuery({
-    queryKey: ['admin', 'permissions'],
-    queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<AdminPermission[]>>('/admin/permissions', {
-        query: { per_page: 200 },
-      });
-      return res.data;
-    },
-  });
 }
 
 export function useAdminReportTypes() {
@@ -227,48 +147,6 @@ export function useAdminReports(filters: AdminReportFilters = {}) {
         meta: res.meta as unknown as AdminReportPagination,
       };
     },
-  });
-}
-
-export interface AdminRoleInput {
-  name: string;
-  guard_name?: string;
-  permissions?: string[];
-}
-
-export function useCreateRole() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: AdminRoleInput) =>
-      apiRequest<ApiEnvelope<AdminRole>>('/admin/roles', { method: 'POST', body: input }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'roles'] }),
-  });
-}
-
-export function useUpdateRole() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, ...patch }: AdminRoleInput & { id: string }) =>
-      apiRequest<ApiEnvelope<AdminRole>>(`/admin/roles/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        body: patch,
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'roles'] }),
-  });
-}
-
-export function useSyncRolePermissions() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, permissions }: { id: string; permissions: string[] }) =>
-      apiRequest<ApiEnvelope<AdminRole>>(
-        `/admin/roles/${encodeURIComponent(id)}/permissions/sync`,
-        {
-          method: 'POST',
-          body: { permissions },
-        },
-      ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'roles'] }),
   });
 }
 
