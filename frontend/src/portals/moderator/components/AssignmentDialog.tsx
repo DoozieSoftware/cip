@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, Button, Textarea, Input } from '../../../shared/ui';
+import { Dialog, Button, Textarea, Select } from '../../../shared/ui';
 
 export interface AssignmentResult {
   department_id: string;
@@ -13,15 +13,18 @@ export function AssignmentDialog({
   onSubmit,
   loading,
   defaultDepartmentId,
+  departments,
+  departmentsLoading = false,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (r: AssignmentResult) => void;
   loading: boolean;
   defaultDepartmentId?: string;
+  departments: Array<{ value: string; label: string }>;
+  departmentsLoading?: boolean;
 }) {
   const [departmentId, setDepartmentId] = useState(defaultDepartmentId ?? '');
-  const [officerId, setOfficerId] = useState('');
   const [reason, setReason] = useState('');
 
   return (
@@ -38,11 +41,10 @@ export function AssignmentDialog({
           <Button
             variant="primary"
             loading={loading}
-            disabled={!departmentId.trim() || !reason.trim()}
+            disabled={departmentsLoading || !departmentId.trim() || !reason.trim()}
             onClick={() =>
               onSubmit({
                 department_id: departmentId.trim(),
-                officer_id: officerId.trim() || undefined,
                 reason: reason.trim(),
               })
             }
@@ -53,19 +55,19 @@ export function AssignmentDialog({
       }
     >
       <div className="space-y-3">
-        <Input
-          label="Department id (UUID)"
+        <Select
+          label="Department"
           name="department_id"
           value={departmentId}
           onChange={(e) => setDepartmentId(e.target.value)}
-          placeholder="Required — the department this report is handed to"
-        />
-        <Input
-          label="Officer user id (optional)"
-          name="officer_id"
-          value={officerId}
-          onChange={(e) => setOfficerId(e.target.value)}
-          placeholder="UUID of a specific officer within the department"
+          disabled={departmentsLoading}
+          options={[
+            {
+              value: '',
+              label: departmentsLoading ? 'Loading departments…' : 'Select a department',
+            },
+            ...departments,
+          ]}
         />
         <Textarea
           label="Reason"

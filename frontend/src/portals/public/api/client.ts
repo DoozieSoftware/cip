@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiRequest, type ApiEnvelope } from '../../../auth/api';
+import { request } from '../../../shared/api/client';
 
 export interface PublicStats {
   total_reports: number;
@@ -35,8 +35,7 @@ export function usePublicStats() {
   return useQuery({
     queryKey: ['public', 'stats'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<PublicStats>>('/public/stats');
-      return res.data;
+      return request<PublicStats>('/public/stats');
     },
     staleTime: FIVE_MINUTES,
   });
@@ -46,8 +45,8 @@ export function usePublicHeatmap() {
   return useQuery({
     queryKey: ['public', 'heatmap'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<{ points: HeatmapPoint[] }>>('/public/heatmap');
-      return res.data.points;
+      const data = await request<{ points: HeatmapPoint[] }>('/public/heatmap');
+      return data.points;
     },
     staleTime: FIVE_MINUTES,
   });
@@ -57,10 +56,10 @@ export function usePublicDepartmentPerformance() {
   return useQuery({
     queryKey: ['public', 'departments', 'performance'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<{ departments: DepartmentPerformance[] }>>(
+      const data = await request<{ departments: DepartmentPerformance[] }>(
         '/public/departments/performance',
       );
-      return res.data.departments;
+      return data.departments;
     },
     staleTime: FIVE_MINUTES,
   });

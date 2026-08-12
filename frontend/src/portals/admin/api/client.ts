@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest, type ApiEnvelope, ApiError } from '../../../auth/api';
+import { requestRaw as apiRequest } from '../../../shared/api/client';
+import { ApiError } from '../../../shared/api/errors';
+import type { ApiEnvelope } from '../../../shared/api/envelope';
 
 export interface AdminUser {
   id: string;

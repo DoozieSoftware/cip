@@ -9,7 +9,7 @@ import {
   Spinner,
   EmptyState,
   ErrorState,
-} from '../../moderator/design';
+} from '../../../shared/ui';
 import { IconPlayerPlay, IconPlayerPause, IconPlayerSkipForward } from '@tabler/icons-react';
 
 function StatusPill({ paused }: { paused: boolean }): JSX.Element {
@@ -17,8 +17,8 @@ function StatusPill({ paused }: { paused: boolean }): JSX.Element {
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide ring-1 ring-inset ${
         paused
-          ? 'bg-[#fbeeed] text-[#9f3731] ring-[#ecccc8]'
-          : 'bg-[#edf7f0] text-[#256b45] ring-[#c8e6d2]'
+          ? 'bg-[#fbeeed] text-[var(--color-danger)] ring-[#ecccc8]'
+          : 'bg-[#edf7f0] text-[var(--color-success)] ring-[#c8e6d2]'
       }`}
     >
       <span aria-hidden>{paused ? '⏸' : '▶'}</span>
@@ -39,13 +39,13 @@ function JobRow({
   return (
     <tr>
       <td className="px-5 py-3">
-        <div className="text-sm font-medium text-[#1d1d1b]">{job.id}</div>
-        {job.command ? <div className="font-mono text-xs text-[#85847f]">{job.command}</div> : null}
+        <div className="text-sm font-medium text-[var(--color-ink)]">{job.id}</div>
+        {job.command ? <div className="font-mono text-xs text-[var(--color-text-tertiary)]">{job.command}</div> : null}
       </td>
-      <td className="px-5 py-3 text-sm text-[#6f6e69]">
-        <code className="rounded bg-[#efeee9] px-1.5 py-0.5 text-xs">{job.expression || '—'}</code>
+      <td className="px-5 py-3 text-sm text-[var(--color-text-secondary)]">
+        <code className="rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 text-xs">{job.expression || '—'}</code>
       </td>
-      <td className="px-5 py-3 text-sm tabular-nums text-[#6f6e69]">
+      <td className="px-5 py-3 text-sm tabular-nums text-[var(--color-text-secondary)]">
         {job.next_due_at ? new Date(job.next_due_at).toLocaleString() : '—'}
       </td>
       <td className="px-5 py-3 text-sm">
@@ -103,7 +103,7 @@ export default function AdminScheduler(): JSX.Element {
 
   if (jobs.isError) {
     return (
-      <div className="min-h-screen bg-[#f3f2ed] p-6">
+      <div className="min-h-screen bg-[var(--color-canvas)] p-6">
         <ErrorState
           title="Failed to load scheduler"
           description="The scheduler jobs could not be loaded. Try again in a moment."
@@ -114,12 +114,12 @@ export default function AdminScheduler(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f2ed] p-6">
+    <div className="min-h-screen bg-[var(--color-canvas)] p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">Scheduler</h1>
-            <p className="mt-1 text-sm text-[#6f6e69]">
+            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">Scheduler</h1>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               Every registered queue + scheduled job. Pause, resume, or run them on demand.
             </p>
           </div>
@@ -129,26 +129,26 @@ export default function AdminScheduler(): JSX.Element {
         <div className="grid gap-4 sm:grid-cols-3">
           <Card>
             <CardBody>
-              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                 Total jobs
               </p>
-              <p className="mt-1 text-2xl font-semibold text-[#1d1d1b]">{list.length}</p>
+              <p className="mt-1 text-2xl font-semibold text-[var(--color-ink)]">{list.length}</p>
             </CardBody>
           </Card>
           <Card>
             <CardBody>
-              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#256b45]">
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-success)]">
                 Running
               </p>
-              <p className="mt-1 text-2xl font-semibold text-[#256b45]">{running}</p>
+              <p className="mt-1 text-2xl font-semibold text-[var(--color-success)]">{running}</p>
             </CardBody>
           </Card>
           <Card>
             <CardBody>
-              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#9f3731]">
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-danger)]">
                 Paused
               </p>
-              <p className="mt-1 text-2xl font-semibold text-[#9f3731]">{paused}</p>
+              <p className="mt-1 text-2xl font-semibold text-[var(--color-danger)]">{paused}</p>
             </CardBody>
           </Card>
         </div>
@@ -172,40 +172,40 @@ export default function AdminScheduler(): JSX.Element {
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>
-                  <tr className="border-b border-[#e4e2dc] bg-[#f3f2ed]">
+                  <tr className="border-b border-[var(--color-border-subtle)] bg-[var(--color-canvas)]">
                     <th
                       scope="col"
-                      className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]"
+                      className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]"
                     >
                       Job
                     </th>
                     <th
                       scope="col"
-                      className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]"
+                      className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]"
                     >
                       Schedule
                     </th>
                     <th
                       scope="col"
-                      className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]"
+                      className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]"
                     >
                       Next run
                     </th>
                     <th
                       scope="col"
-                      className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]"
+                      className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]"
                     >
                       Status
                     </th>
                     <th
                       scope="col"
-                      className="px-5 py-3 text-right font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]"
+                      className="px-5 py-3 text-right font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]"
                     >
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#e4e2dc]">
+                <tbody className="divide-y divide-[var(--color-border-subtle)]">
                   {list.map((job) => (
                     <JobRow
                       key={job.id}
@@ -223,7 +223,7 @@ export default function AdminScheduler(): JSX.Element {
         {action.isError ? (
           <div
             role="alert"
-            className="rounded-xl border border-[#ecccc8] bg-[#fbeeed] px-4 py-3 text-sm text-[#9f3731]"
+            className="rounded-xl border border-[#ecccc8] bg-[#fbeeed] px-4 py-3 text-sm text-[var(--color-danger)]"
           >
             Action failed: {action.error?.message ?? 'unknown error'}
           </div>

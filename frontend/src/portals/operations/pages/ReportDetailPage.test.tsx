@@ -72,17 +72,13 @@ function renderWithClient(ui: ReactElement) {
 }
 
 function renderPage(report: DepartmentReportDetail) {
-  vi.mocked(departmentApi.memberships).mockResolvedValue({
-    success: true,
-    data: [{ id: 'dept-1', code: 'BBMP', name: 'BBMP' }],
-  });
-  vi.mocked(departmentApi.showReportInDepartment).mockResolvedValue({
-    success: true,
-    data: report,
-  });
-  vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
-  vi.mocked(departmentApi.action).mockResolvedValue({ success: true, data: report });
-  vi.mocked(departmentApi.completeTask).mockResolvedValue({ success: true, data: report });
+  vi.mocked(departmentApi.memberships).mockResolvedValue([
+    { id: 'dept-1', code: 'BBMP', name: 'BBMP' },
+  ]);
+  vi.mocked(departmentApi.showReportInDepartment).mockResolvedValue(report);
+  vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
+  vi.mocked(departmentApi.action).mockResolvedValue(report);
+  vi.mocked(departmentApi.completeTask).mockResolvedValue(report);
   renderWithClient(<ReportDetailPage />);
 }
 
@@ -92,25 +88,23 @@ beforeEach(() => {
 
 describe('ReportDetailPage', () => {
   it('shows a loading state while the report is being fetched', () => {
-    vi.mocked(departmentApi.memberships).mockResolvedValue({
-      success: true,
-      data: [{ id: 'dept-1', code: 'BBMP', name: 'BBMP' }],
-    });
+    vi.mocked(departmentApi.memberships).mockResolvedValue([
+      { id: 'dept-1', code: 'BBMP', name: 'BBMP' },
+    ]);
     vi.mocked(departmentApi.showReportInDepartment).mockReturnValue(new Promise(() => {}));
-    vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
+    vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
     renderWithClient(<ReportDetailPage />);
     expect(screen.getByLabelText('Loading report')).toBeInTheDocument();
   });
 
   it('shows an error state with retry when the report fails to load', async () => {
-    vi.mocked(departmentApi.memberships).mockResolvedValue({
-      success: true,
-      data: [{ id: 'dept-1', code: 'BBMP', name: 'BBMP' }],
-    });
+    vi.mocked(departmentApi.memberships).mockResolvedValue([
+      { id: 'dept-1', code: 'BBMP', name: 'BBMP' },
+    ]);
     vi.mocked(departmentApi.showReportInDepartment).mockRejectedValue(
       new Error('backend unreachable'),
     );
-    vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
+    vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
     renderWithClient(<ReportDetailPage />);
     expect(await screen.findByText('Report not found')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
@@ -315,7 +309,7 @@ describe('ReportDetailPage', () => {
   it('uploads proof photos and refetches the report', async () => {
     renderPage(baseReport());
     const file = new File(['x'], 'after-fix.jpg', { type: 'image/jpeg' });
-    vi.mocked(departmentApi.uploadProof).mockResolvedValue({ success: true, data: { media: [] } });
+    vi.mocked(departmentApi.uploadProof).mockResolvedValue({ media: [] });
 
     const input = await screen.findByLabelText('Proof photo input');
     fireEvent.change(input, { target: { files: [file] } });

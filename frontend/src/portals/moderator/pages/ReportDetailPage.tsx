@@ -761,6 +761,8 @@ export default function ReportDetailPage() {
           onClose={() => setAssignOpen(false)}
           loading={assign.isPending}
           defaultDepartmentId={data.department?.id ?? undefined}
+          departments={departmentOptions}
+          departmentsLoading={departmentsQuery.isLoading}
           onSubmit={(r) => {
             void assign.mutateAsync(r);
           }}

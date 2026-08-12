@@ -21,7 +21,7 @@ export function DepartmentSelectionProvider({ children }: { children: ReactNode 
     retry: false,
   });
 
-  const memberships = data?.data ?? [];
+  const memberships = useMemo(() => data ?? [], [data]);
   const [selectedId, setSelectedId] = useState<string | null>(() =>
     typeof window === 'undefined' ? null : window.localStorage.getItem(STORAGE_KEY),
   );

@@ -24,7 +24,7 @@ import {
   Button,
   Card,
   CardBody,
-} from '../../moderator/design';
+} from '../../../shared/ui';
 
 interface UserDraft {
   id?: string;
@@ -86,52 +86,52 @@ function UserForm({
   return (
     <form onSubmit={submit} className="space-y-4">
       <label className="block text-sm">
-        <span className="font-medium text-[#1d1d1b]">Name</span>
+        <span className="font-medium text-[var(--color-ink)]">Name</span>
         <input
           value={draft.name}
           onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-          className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+          className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </label>
       <label className="block text-sm">
-        <span className="font-medium text-[#1d1d1b]">
-          Mobile <span className="text-[#a42f29]">*</span>
+        <span className="font-medium text-[var(--color-ink)]">
+          Mobile <span className="text-[var(--color-danger)]">*</span>
         </span>
         <input
           value={draft.mobile}
           onChange={(e) => setDraft({ ...draft, mobile: e.target.value })}
           required
-          className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+          className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </label>
       <label className="block text-sm">
-        <span className="font-medium text-[#1d1d1b]">Email</span>
+        <span className="font-medium text-[var(--color-ink)]">Email</span>
         <input
           type="email"
           value={draft.email}
           onChange={(e) => setDraft({ ...draft, email: e.target.value })}
-          className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+          className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </label>
       <label className="block text-sm">
-        <span className="font-medium text-[#1d1d1b]">
+        <span className="font-medium text-[var(--color-ink)]">
           {initial.id ? 'Password (leave blank to keep)' : 'Password'}{' '}
-          {!initial.id && <span className="text-[#a42f29]">*</span>}
+          {!initial.id && <span className="text-[var(--color-danger)]">*</span>}
         </span>
         <input
           type="password"
           value={draft.password}
           onChange={(e) => setDraft({ ...draft, password: e.target.value })}
           required={!initial.id}
-          className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+          className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </label>
       <label className="block text-sm">
-        <span className="font-medium text-[#1d1d1b]">Status</span>
+        <span className="font-medium text-[var(--color-ink)]">Status</span>
         <select
           value={draft.status}
           onChange={(e) => setDraft({ ...draft, status: e.target.value })}
-          className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+          className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -141,7 +141,7 @@ function UserForm({
         </select>
       </label>
       <fieldset className="text-sm">
-        <legend className="font-medium text-[#1d1d1b]">Roles</legend>
+        <legend className="font-medium text-[var(--color-ink)]">Roles</legend>
         <div className="mt-2 flex flex-wrap gap-2">
           {roles.map((r) => {
             const checked = draft.roles.includes(r.name);
@@ -150,8 +150,8 @@ function UserForm({
                 key={r.name}
                 className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
                   checked
-                    ? 'bg-[#1d1d1b] text-white'
-                    : 'bg-[#efeee9] text-[#6f6e69] hover:bg-[#e4e2dc]'
+                    ? 'bg-[var(--color-ink)] text-white'
+                    : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border-subtle)]'
                 }`}
               >
                 <input
@@ -244,24 +244,24 @@ export default function AdminUsers(): JSX.Element {
   const busy = create.isPending || update.isPending;
 
   return (
-    <div className="min-h-screen bg-[#f3f2ed] p-4 sm:p-6">
+    <div className="min-h-screen bg-[var(--color-canvas)] p-4 sm:p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">Users</h1>
-            <p className="mt-1 text-sm text-[#6f6e69]">Every account in the platform.</p>
+            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">Users</h1>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Every account in the platform.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative w-full sm:w-auto">
               <IconSearch
-                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#85847f]"
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)]"
                 stroke={1.6}
               />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search by name, mobile, or email…"
-                className="w-full sm:w-72 rounded-xl border border-[#d0cec8] bg-white px-4 py-2.5 pl-10 text-sm text-[#1d1d1b] placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+                className="w-full sm:w-72 rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
               />
             </div>
             <Button onClick={openNew} leftIcon={<IconUserPlus className="h-4 w-4" stroke={1.6} />}>
@@ -298,43 +298,43 @@ export default function AdminUsers(): JSX.Element {
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="bg-[#f3f2ed]">
-                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                    <tr className="bg-[var(--color-canvas)]">
+                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                         Name
                       </th>
-                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                         Mobile
                       </th>
-                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                         Email
                       </th>
-                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                         Status
                       </th>
-                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                         Roles
                       </th>
-                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                      <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                         Joined
                       </th>
-                      <th className="px-4 py-2.5 text-right text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                      <th className="px-4 py-2.5 text-right text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#e4e2dc]">
+                  <tbody className="divide-y divide-[var(--color-border-subtle)]">
                     {(users.data ?? []).map((u: AdminUser) => (
-                      <tr key={u.id} className="transition hover:bg-[#f3f2ed]">
-                        <td className="px-4 py-3 font-medium text-[#1d1d1b]">{u.name ?? '—'}</td>
-                        <td className="px-4 py-3 font-mono text-xs text-[#6f6e69]">{u.mobile}</td>
-                        <td className="px-4 py-3 text-[#6f6e69]">{u.email ?? '—'}</td>
+                      <tr key={u.id} className="transition hover:bg-[var(--color-canvas)]">
+                        <td className="px-4 py-3 font-medium text-[var(--color-ink)]">{u.name ?? '—'}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-[var(--color-text-secondary)]">{u.mobile}</td>
+                        <td className="px-4 py-3 text-[var(--color-text-secondary)]">{u.email ?? '—'}</td>
                         <td className="px-4 py-3">
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                               u.status === 'active'
-                                ? 'bg-[#edf7f0] text-[#256b45]'
+                                ? 'bg-[#edf7f0] text-[var(--color-success)]'
                                 : u.status === 'suspended'
-                                  ? 'bg-[#fbeeed] text-[#9f3731]'
+                                  ? 'bg-[#fbeeed] text-[var(--color-danger)]'
                                   : 'bg-[#fff6e4] text-[#805913]'
                             }`}
                           >
@@ -353,7 +353,7 @@ export default function AdminUsers(): JSX.Element {
                             ))}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-xs text-[#6f6e69]">
+                        <td className="px-4 py-3 text-xs text-[var(--color-text-secondary)]">
                           {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
                         </td>
                         <td className="px-4 py-3">
@@ -400,12 +400,12 @@ export default function AdminUsers(): JSX.Element {
             busy={busy}
           />
           {create.isError ? (
-            <p role="alert" className="mt-3 text-sm text-[#9f3731]">
+            <p role="alert" className="mt-3 text-sm text-[var(--color-danger)]">
               {create.error?.message}
             </p>
           ) : null}
           {update.isError ? (
-            <p role="alert" className="mt-3 text-sm text-[#9f3731]">
+            <p role="alert" className="mt-3 text-sm text-[var(--color-danger)]">
               {update.error?.message}
             </p>
           ) : null}

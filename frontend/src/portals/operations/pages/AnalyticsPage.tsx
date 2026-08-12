@@ -30,12 +30,12 @@ function StatCard({
   tone?: 'default' | 'danger' | 'warning';
 }) {
   const tones = {
-    default: 'bg-[#f3f2ed] text-[#1d1d1b]',
+    default: 'bg-[var(--color-canvas)] text-[var(--color-ink)]',
     danger: 'bg-red-50 text-red-700',
     warning: 'bg-amber-50 text-amber-700',
   };
   const valueColors = {
-    default: 'text-[#1d1d1b]',
+    default: 'text-[var(--color-ink)]',
     danger: 'text-red-700',
     warning: 'text-amber-700',
   };
@@ -43,7 +43,9 @@ function StatCard({
   return (
     <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wide text-[#85847f]">{label}</span>
+        <span className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
+          {label}
+        </span>
         <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${tones[tone]}`}>
           <Icon className="h-4 w-4" stroke={1.6} />
         </div>
@@ -67,12 +69,12 @@ function ChartCard({
   return (
     <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5">
       <div className="mb-4 flex items-center gap-2.5">
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#f3f2ed]">
-          <Icon className="h-4 w-4 text-[#6f6e69]" stroke={1.6} />
+        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--color-canvas)]">
+          <Icon className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-[#1d1d1b]">{title}</h3>
-          {subtitle && <p className="text-[11px] text-[#85847f]">{subtitle}</p>}
+          <h3 className="text-sm font-semibold text-[var(--color-ink)]">{title}</h3>
+          {subtitle && <p className="text-[11px] text-[var(--color-text-tertiary)]">{subtitle}</p>}
         </div>
       </div>
       {children}
@@ -84,8 +86,7 @@ export default function AnalyticsPage() {
   const { selectedId, ready, memberships } = useDepartmentSelection();
   const dashboard = useQuery<DepartmentDashboardCounts>({
     queryKey: ['operations', 'dashboard', 'analytics', selectedId],
-    queryFn: async () =>
-      (await departmentApi.dashboard({ department_id: selectedId ?? undefined })).data,
+    queryFn: () => departmentApi.dashboard({ department_id: selectedId ?? undefined }),
     enabled: ready && memberships.length > 0,
   });
 
@@ -112,8 +113,10 @@ export default function AnalyticsPage() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
           <IconAlertTriangle className="h-6 w-6 text-red-500" stroke={1.6} />
         </div>
-        <h3 className="text-base font-semibold text-[#1d1d1b]">Could not load analytics</h3>
-        <p className="mt-1 text-sm text-[#6f6e69]">
+        <h3 className="text-base font-semibold text-[var(--color-ink)]">
+          Could not load analytics
+        </h3>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           The dashboard or reports endpoint did not respond.
         </p>
       </div>
@@ -151,12 +154,12 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-5">
       <header className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1d1d1b]">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-ink)]">
           <IconChartBar className="h-5 w-5 text-white" stroke={1.6} />
         </div>
         <div>
-          <h1 className="text-lg font-semibold text-[#1d1d1b]">Analytics</h1>
-          <p className="text-xs text-[#85847f]">
+          <h1 className="text-lg font-semibold text-[var(--color-ink)]">Analytics</h1>
+          <p className="text-xs text-[var(--color-text-tertiary)]">
             Live operational load for the officer's department
           </p>
         </div>

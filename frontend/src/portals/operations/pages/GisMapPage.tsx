@@ -210,14 +210,14 @@ export default function GisMapPage() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
           <IconAlertCircle className="h-6 w-6 text-red-500" stroke={1.6} />
         </div>
-        <h3 className="text-base font-semibold text-[#1d1d1b]">Could not load reports</h3>
-        <p className="mt-1 text-sm text-[#6f6e69]">The reports endpoint did not respond.</p>
+        <h3 className="text-base font-semibold text-[var(--color-ink)]">Could not load reports</h3>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">The reports endpoint did not respond.</p>
         <button
           type="button"
           onClick={() => {
             void refetch();
           }}
-          className="mt-4 text-sm font-medium text-[#1d1d1b] underline underline-offset-2 hover:text-[#6f6e69]"
+          className="mt-4 text-sm font-medium text-[var(--color-ink)] underline underline-offset-2 hover:text-[var(--color-text-secondary)]"
         >
           Retry
         </button>
@@ -229,15 +229,15 @@ export default function GisMapPage() {
     <div className="space-y-5">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1d1d1b]">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-ink)]">
             <IconMap className="h-5 w-5 text-white" stroke={1.6} />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-[#1d1d1b]">GIS map</h1>
-            <p className="text-xs text-[#85847f]">Geospatial view of department reports</p>
+            <h1 className="text-lg font-semibold text-[var(--color-ink)]">GIS map</h1>
+            <p className="text-xs text-[var(--color-text-tertiary)]">Geospatial view of department reports</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#6f6e69] shadow-sm ring-1 ring-black/5">
+        <div className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm ring-1 ring-black/5">
           <IconMapPin className="h-3.5 w-3.5" stroke={1.6} />
           {points.length} report{points.length === 1 ? '' : 's'} on map
         </div>
@@ -245,8 +245,8 @@ export default function GisMapPage() {
 
       <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
         <div className="flex items-center gap-2 mb-3">
-          <IconFilter className="h-4 w-4 text-[#85847f]" stroke={1.6} />
-          <span className="text-xs font-medium uppercase tracking-wide text-[#85847f]">
+          <IconFilter className="h-4 w-4 text-[var(--color-text-tertiary)]" stroke={1.6} />
+          <span className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
             Filters
           </span>
         </div>
@@ -292,7 +292,7 @@ export default function GisMapPage() {
                 >
                   <Popup>
                     <div className="max-w-64 space-y-2 text-xs">
-                      <p className="font-semibold text-[#1d1d1b]">
+                      <p className="font-semibold text-[var(--color-ink)]">
                         {cluster.reports.length} report
                         {cluster.reports.length === 1 ? '' : 's'} in this area
                       </p>
@@ -300,16 +300,16 @@ export default function GisMapPage() {
                         <Link
                           key={report.id}
                           to={`/operations/reports/${report.id}`}
-                          className="block rounded-md p-1 text-[#6f6e69] hover:bg-[#f3f2ed]"
+                          className="block rounded-md p-1 text-[var(--color-text-secondary)] hover:bg-[var(--color-canvas)]"
                         >
-                          <span className="block font-mono font-semibold text-[#1d1d1b]">
+                          <span className="block font-mono font-semibold text-[var(--color-ink)]">
                             {report.tracking_number}
                           </span>
                           <span className="block truncate">{report.title}</span>
                         </Link>
                       ))}
                       {cluster.reports.length > 5 && (
-                        <p className="text-[#85847f]">
+                        <p className="text-[var(--color-text-tertiary)]">
                           + {cluster.reports.length - 5} more reports
                         </p>
                       )}
@@ -319,8 +319,8 @@ export default function GisMapPage() {
               ))}
             </MapContainer>
           </div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-black/5 px-4 py-2.5 text-[11px] text-[#6f6e69]">
-            <span className="font-medium text-[#1d1d1b]">Reports by area</span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-black/5 px-4 py-2.5 text-[11px] text-[var(--color-text-secondary)]">
+            <span className="font-medium text-[var(--color-ink)]">Reports by area</span>
             <span className="flex items-center gap-1.5">
               <i className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
                 1
@@ -342,17 +342,17 @@ export default function GisMapPage() {
             className="fixed inset-x-0 bottom-0 z-10 max-h-[75vh] overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl ring-1 ring-black/10 lg:static lg:z-auto lg:col-span-1 lg:max-h-none lg:rounded-xl lg:ring-1 lg:ring-black/5"
           >
             <div className="mb-4 flex items-start justify-between gap-2">
-              <p className="font-mono text-xs text-[#85847f]">{selected.tracking_number}</p>
+              <p className="font-mono text-xs text-[var(--color-text-tertiary)]">{selected.tracking_number}</p>
               <button
                 type="button"
                 onClick={() => setSelectedId(null)}
                 aria-label="Close report details"
-                className="rounded-md p-1 text-[#85847f] hover:bg-[#f3f2ed] hover:text-[#1d1d1b]"
+                className="rounded-md p-1 text-[var(--color-text-tertiary)] hover:bg-[var(--color-canvas)] hover:text-[var(--color-ink)]"
               >
                 <IconX className="h-4 w-4" stroke={1.6} />
               </button>
             </div>
-            <h2 className="text-base font-semibold text-[#1d1d1b]">{selected.title}</h2>
+            <h2 className="text-base font-semibold text-[var(--color-ink)]">{selected.title}</h2>
             <div className="mt-4 space-y-4 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={statusTone(selected.current_status_code)}>
@@ -364,32 +364,32 @@ export default function GisMapPage() {
               </div>
               <div className="space-y-3">
                 <div className="flex items-start gap-2.5">
-                  <IconCategory className="mt-0.5 h-4 w-4 shrink-0 text-[#85847f]" stroke={1.6} />
+                  <IconCategory className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]" stroke={1.6} />
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wider text-[#85847f]">
+                    <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                       Category
                     </span>
-                    <span className="text-[#1d1d1b]">
+                    <span className="text-[var(--color-ink)]">
                       {selected.report_type?.name ?? selected.report_type?.code ?? '—'}
                     </span>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5">
-                  <IconMapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#85847f]" stroke={1.6} />
+                  <IconMapPin className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]" stroke={1.6} />
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wider text-[#85847f]">
+                    <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                       Location
                     </span>
-                    <span className="text-[#1d1d1b]">{locationLabel(selected.location)}</span>
+                    <span className="text-[var(--color-ink)]">{locationLabel(selected.location)}</span>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5">
-                  <IconCalendar className="mt-0.5 h-4 w-4 shrink-0 text-[#85847f]" stroke={1.6} />
+                  <IconCalendar className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]" stroke={1.6} />
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wider text-[#85847f]">
+                    <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                       Reference
                     </span>
-                    <span className="font-mono text-xs text-[#1d1d1b]">
+                    <span className="font-mono text-xs text-[var(--color-ink)]">
                       {selected.tracking_number}
                     </span>
                   </div>
@@ -398,7 +398,7 @@ export default function GisMapPage() {
             </div>
             <Link
               to={`/operations/reports/${selected.id}`}
-              className="mt-5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#1d1d1b] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#2d2d28]"
+              className="mt-5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--color-ink)] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#2d2d28]"
             >
               Open report
               <IconArrowRight className="h-4 w-4" stroke={1.6} />
@@ -409,11 +409,11 @@ export default function GisMapPage() {
 
       {points.length === 0 && (
         <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-black/5">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#f3f2ed]">
-            <IconMapPin className="h-6 w-6 text-[#85847f]" stroke={1.6} />
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-canvas)]">
+            <IconMapPin className="h-6 w-6 text-[var(--color-text-tertiary)]" stroke={1.6} />
           </div>
-          <h3 className="text-base font-semibold text-[#1d1d1b]">No reports on the map</h3>
-          <p className="mt-1 text-sm text-[#6f6e69]">
+          <h3 className="text-base font-semibold text-[var(--color-ink)]">No reports on the map</h3>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             Try clearing the status filter or check that your reports have a location.
           </p>
         </div>

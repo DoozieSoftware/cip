@@ -71,17 +71,13 @@ function renderWithClient(ui: ReactElement) {
 }
 
 function renderPage(report: DepartmentReportDetail) {
-  vi.mocked(departmentApi.memberships).mockResolvedValue({
-    success: true,
-    data: [{ id: 'dept-1', code: 'BBMP', name: 'BBMP' }],
-  });
-  vi.mocked(departmentApi.showReportInDepartment).mockResolvedValue({
-    success: true,
-    data: report,
-  });
-  vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
-  vi.mocked(departmentApi.action).mockResolvedValue({ success: true, data: report });
-  vi.mocked(departmentApi.completeTask).mockResolvedValue({ success: true, data: report });
+  vi.mocked(departmentApi.memberships).mockResolvedValue([
+    { id: 'dept-1', code: 'BBMP', name: 'BBMP' },
+  ]);
+  vi.mocked(departmentApi.showReportInDepartment).mockResolvedValue(report);
+  vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
+  vi.mocked(departmentApi.action).mockResolvedValue(report);
+  vi.mocked(departmentApi.completeTask).mockResolvedValue(report);
   renderWithClient(<ReportDetailPage />);
 }
 
@@ -93,29 +89,27 @@ describe('OperationsReportDetailPage', () => {
   it('renders the report title and tracking number', async () => {
     renderPage(baseReport());
     expect(await screen.findByText('Pothole on Main St')).toBeTruthy();
-    expect(screen.getByText('CIP-2026-0001')).toBeTruthy();
+    expect(screen.getAllByText('CIP-2026-0001').length).toBeGreaterThan(0);
   });
 
   it('shows loading state while fetching', () => {
-    vi.mocked(departmentApi.memberships).mockResolvedValue({
-      success: true,
-      data: [{ id: 'dept-1', code: 'BBMP', name: 'BBMP' }],
-    });
+    vi.mocked(departmentApi.memberships).mockResolvedValue([
+      { id: 'dept-1', code: 'BBMP', name: 'BBMP' },
+    ]);
     vi.mocked(departmentApi.showReportInDepartment).mockReturnValue(new Promise(() => {}));
-    vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
+    vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
     renderWithClient(<ReportDetailPage />);
     expect(screen.getByLabelText('Loading report')).toBeTruthy();
   });
 
   it('shows error state when the report fails to load', async () => {
-    vi.mocked(departmentApi.memberships).mockResolvedValue({
-      success: true,
-      data: [{ id: 'dept-1', code: 'BBMP', name: 'BBMP' }],
-    });
+    vi.mocked(departmentApi.memberships).mockResolvedValue([
+      { id: 'dept-1', code: 'BBMP', name: 'BBMP' },
+    ]);
     vi.mocked(departmentApi.showReportInDepartment).mockRejectedValue(
       new Error('backend unreachable'),
     );
-    vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
+    vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
     renderWithClient(<ReportDetailPage />);
     expect(await screen.findByText('Report not found')).toBeTruthy();
   });

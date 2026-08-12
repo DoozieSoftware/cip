@@ -113,7 +113,7 @@ function EventList({ rows }: { rows: SecurityEventRow[] }) {
 }
 
 export default function SecurityPage() {
-  const query = useQuery<{ success: boolean; data: SecurityDashboardSnapshot }>({
+  const query = useQuery<SecurityDashboardSnapshot>({
     queryKey: ['operations', 'security', 'dashboard'],
     queryFn: () => securityApi.dashboard(),
     refetchInterval: 60_000,
@@ -147,7 +147,7 @@ export default function SecurityPage() {
     );
   }
 
-  const snap = query.data?.data;
+  const snap = query.data;
   if (!snap) {
     return <EmptyState title="No data" description="Security dashboard returned no data." />;
   }

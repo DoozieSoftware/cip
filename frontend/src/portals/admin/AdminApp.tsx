@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react';
 import { type JSX } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AdminLayout } from './layout/AdminLayout';
-import { Spinner } from '../moderator/design';
+import { Spinner } from '../../shared/ui';
 
 const AdminDashboard = lazy(() => import('./pages/AdminGovernmentDashboard'));
 const AdminUsers = lazy(() => import('./pages/AdminUsers'));

@@ -3,8 +3,8 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../../../auth/api', () => ({
-  apiRequest: vi.fn(() => Promise.resolve({ success: true, data: [], meta: { total: 2 } })),
+vi.mock('../../../../shared/api/client', () => ({
+  requestRaw: vi.fn(() => Promise.resolve({ success: true, data: [], meta: { total: 2 } })),
 }));
 
 vi.mock('../../api/client', () => ({

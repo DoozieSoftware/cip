@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { type JSX } from 'react';
-import { apiRequest, type ApiEnvelope } from '../../../auth/api';
-import { Spinner } from '../../moderator/design';
+import { requestRaw as apiRequest } from '../../../shared/api/client';
+import type { ApiEnvelope } from '../../../shared/api/envelope';
+import { Spinner } from '../../../shared/ui';
 import { Link } from 'react-router-dom';
 
 interface Counts {

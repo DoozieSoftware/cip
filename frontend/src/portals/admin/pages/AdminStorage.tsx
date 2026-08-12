@@ -14,7 +14,7 @@ import {
   Input,
   Select,
   Spinner,
-} from '../../moderator/design';
+} from '../../../shared/ui';
 
 const DISKS = ['media_local', 'media_minio', 'media_s3'];
 
@@ -74,8 +74,8 @@ export default function AdminStorage(): JSX.Element {
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">Media storage</h1>
-          <p className="mt-1 text-sm text-[#6f6e69]">
+          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">Media storage</h1>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             Disk + bucket + retention for the media pipeline. The selected disk takes effect on the
             next upload.
           </p>
@@ -100,7 +100,7 @@ export default function AdminStorage(): JSX.Element {
                   value={disk}
                   onChange={(e) => setDisk(e.target.value)}
                   options={DISKS.map((d) => ({ value: d, label: d }))}
-                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                  className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
                 />
                 <Input
                   label="Bucket"
@@ -108,7 +108,7 @@ export default function AdminStorage(): JSX.Element {
                   value={bucket}
                   onChange={(e) => setBucket(e.target.value)}
                   placeholder="cip-media"
-                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                  className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
                 />
                 <Input
                   label="Endpoint (MinIO/S3)"
@@ -117,7 +117,7 @@ export default function AdminStorage(): JSX.Element {
                   value={endpoint}
                   onChange={(e) => setEndpoint(e.target.value)}
                   placeholder="https://minio.example.in"
-                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                  className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
                 />
                 <Input
                   label="Region (S3)"
@@ -125,7 +125,7 @@ export default function AdminStorage(): JSX.Element {
                   value={region}
                   onChange={(e) => setRegion(e.target.value)}
                   placeholder="ap-south-1"
-                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                  className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
                 />
                 <Input
                   label="Retention (days)"
@@ -134,7 +134,7 @@ export default function AdminStorage(): JSX.Element {
                   min={1}
                   value={retentionDays}
                   onChange={(e) => setRetentionDays(Number(e.target.value))}
-                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                  className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
                 />
                 <Input
                   label="Max photo size (MB)"
@@ -143,7 +143,7 @@ export default function AdminStorage(): JSX.Element {
                   min={1}
                   value={maxPhotoMb}
                   onChange={(e) => setMaxPhotoMb(Number(e.target.value))}
-                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                  className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
                 />
                 <Input
                   label="Max video size (MB)"
@@ -152,7 +152,7 @@ export default function AdminStorage(): JSX.Element {
                   min={1}
                   value={maxVideoMb}
                   onChange={(e) => setMaxVideoMb(Number(e.target.value))}
-                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                  className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
                 />
                 <Input
                   label="Max document size (MB)"
@@ -161,16 +161,16 @@ export default function AdminStorage(): JSX.Element {
                   min={1}
                   value={maxDocumentMb}
                   onChange={(e) => setMaxDocumentMb(Number(e.target.value))}
-                  className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                  className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
                 />
                 <label className="flex items-center gap-3 sm:col-span-2">
                   <input
                     type="checkbox"
                     checked={encryptionAtRest}
                     onChange={(e) => setEncryptionAtRest(e.target.checked)}
-                    className="h-4 w-4 rounded border-[#d0cec8] text-[#1d1d1b] focus:ring-[#1d1d1b]"
+                    className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-ink)] focus:ring-[var(--color-ink)]"
                   />
-                  <span className="text-sm text-[#1d1d1b]">Encryption at rest</span>
+                  <span className="text-sm text-[var(--color-ink)]">Encryption at rest</span>
                 </label>
               </div>
             </CardBody>
@@ -179,7 +179,7 @@ export default function AdminStorage(): JSX.Element {
           {update.isSuccess ? (
             <div
               role="status"
-              className="rounded-xl border border-[#d0cec8] bg-[#edf7f0] px-4 py-3 text-sm text-[#256b45]"
+              className="rounded-xl border border-[var(--color-border)] bg-[#edf7f0] px-4 py-3 text-sm text-[var(--color-success)]"
             >
               Storage configuration updated.
             </div>
@@ -187,7 +187,7 @@ export default function AdminStorage(): JSX.Element {
           {update.isError ? (
             <div
               role="alert"
-              className="rounded-xl border border-[#d0cec8] bg-[#fbeeed] px-4 py-3 text-sm text-[#9f3731]"
+              className="rounded-xl border border-[var(--color-border)] bg-[#fbeeed] px-4 py-3 text-sm text-[var(--color-danger)]"
             >
               Update failed: {update.error?.message}
             </div>
@@ -198,8 +198,8 @@ export default function AdminStorage(): JSX.Element {
               role="status"
               className={`rounded-xl border px-4 py-3 text-sm ${
                 probe.data.reachable
-                  ? 'border-[#d0cec8] bg-[#edf7f0] text-[#256b45]'
-                  : 'border-[#d0cec8] bg-[#fbeeed] text-[#9f3731]'
+                  ? 'border-[var(--color-border)] bg-[#edf7f0] text-[var(--color-success)]'
+                  : 'border-[var(--color-border)] bg-[#fbeeed] text-[var(--color-danger)]'
               }`}
             >
               {probe.data.reachable ? 'Reachable' : 'Unreachable'}: {probe.data.detail}

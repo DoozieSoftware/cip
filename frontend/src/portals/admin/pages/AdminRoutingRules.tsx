@@ -17,7 +17,7 @@ import {
   Badge,
   EmptyState,
   ErrorState,
-} from '../../moderator/design';
+} from '../../../shared/ui';
 import { IconPlus, IconEdit, IconTrash, IconRoute } from '@tabler/icons-react';
 
 const blank: Partial<RoutingRule> = {
@@ -86,42 +86,42 @@ function RuleForm({
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm">
-          <span className="font-medium text-[#1d1d1b]">Name</span>
+          <span className="font-medium text-[var(--color-ink)]">Name</span>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="mt-1.5 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="text-sm">
-          <span className="font-medium text-[#1d1d1b]">Priority (lower = first)</span>
+          <span className="font-medium text-[var(--color-ink)]">Priority (lower = first)</span>
           <input
             type="number"
             value={priority}
             onChange={(e) => setPriority(Number(e.target.value))}
-            className="mt-1.5 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="text-sm sm:col-span-2">
-          <span className="font-medium text-[#1d1d1b]">Description</span>
+          <span className="font-medium text-[var(--color-ink)]">Description</span>
           <input
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-1.5 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="text-sm sm:col-span-2">
-          <span className="font-medium text-[#1d1d1b]">
-            Destination department <span className="text-[#a42f29]">*</span>
+          <span className="font-medium text-[var(--color-ink)]">
+            Destination department <span className="text-[var(--color-danger)]">*</span>
           </span>
           <select
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
             required
-            className="mt-1.5 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           >
             <option value="">Select a department</option>
             {options.departments.map((item) => (
@@ -132,14 +132,14 @@ function RuleForm({
           </select>
         </label>
         <label className="text-sm">
-          <span className="font-medium text-[#1d1d1b]">
-            Default priority <span className="text-[#a42f29]">*</span>
+          <span className="font-medium text-[var(--color-ink)]">
+            Default priority <span className="text-[var(--color-danger)]">*</span>
           </span>
           <select
             value={defaultPriority}
             onChange={(e) => setDefaultPriority(e.target.value)}
             required
-            className="mt-1.5 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           >
             <option value="">Select a priority</option>
             {options.priorities.map((item) => (
@@ -150,8 +150,8 @@ function RuleForm({
           </select>
         </label>
         <label className="text-sm">
-          <span className="font-medium text-[#1d1d1b]">
-            Default SLA (minutes) <span className="text-[#a42f29]">*</span>
+          <span className="font-medium text-[var(--color-ink)]">
+            Default SLA (minutes) <span className="text-[var(--color-danger)]">*</span>
           </span>
           <input
             type="number"
@@ -160,16 +160,16 @@ function RuleForm({
             onChange={(e) => setDefaultSla(e.target.value)}
             required
             placeholder="e.g. 1440"
-            className="mt-1.5 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="text-sm sm:col-span-2">
-          <span className="font-medium text-[#1d1d1b]">Conditions (JSON)</span>
+          <span className="font-medium text-[var(--color-ink)]">Conditions (JSON)</span>
           <textarea
             value={conditionsJson}
             onChange={(e) => setConditionsJson(e.target.value)}
             rows={4}
-            className="mt-1.5 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 font-mono text-xs focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 font-mono text-xs focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="flex items-center gap-2 text-sm">
@@ -177,9 +177,9 @@ function RuleForm({
             type="checkbox"
             checked={active}
             onChange={(e) => setActive(e.target.checked)}
-            className="h-4 w-4 rounded border-[#d0cec8]"
+            className="h-4 w-4 rounded border-[var(--color-border)]"
           />
-          <span className="font-medium text-[#1d1d1b]">active</span>
+          <span className="font-medium text-[var(--color-ink)]">active</span>
         </label>
       </div>
       <div className="flex flex-wrap justify-end gap-2 pt-2">
@@ -206,14 +206,14 @@ export default function AdminRoutingRules(): JSX.Element {
   const rows = (list.data ?? []).sort((a, b) => a.priority - b.priority);
 
   return (
-    <div className="min-h-screen bg-[#f3f2ed] p-4 sm:p-6">
+    <div className="min-h-screen bg-[var(--color-canvas)] p-4 sm:p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">
+            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
               Routing rules
             </h1>
-            <p className="mt-1 text-sm text-[#6f6e69]">
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               Match conditions to a destination department. Order = priority (lowest first).
             </p>
           </div>
@@ -252,14 +252,14 @@ export default function AdminRoutingRules(): JSX.Element {
         ) : null}
 
         <Card>
-          <CardHeader className="border-b border-[#e4e2dc] px-5 py-4">
+          <CardHeader className="border-b border-[var(--color-border-subtle)] px-5 py-4">
             <div className="flex items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-[#efeee9]">
-                <IconRoute className="h-4 w-4 text-[#6f6e69]" stroke={1.6} />
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+                <IconRoute className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
               </span>
-              <CardTitle className="text-sm font-semibold text-[#1d1d1b]">All rules</CardTitle>
+              <CardTitle className="text-sm font-semibold text-[var(--color-ink)]">All rules</CardTitle>
             </div>
-            <span className="text-xs text-[#85847f]">
+            <span className="text-xs text-[var(--color-text-tertiary)]">
               {rows.length} rule{rows.length !== 1 ? 's' : ''}
             </span>
           </CardHeader>
@@ -294,41 +294,41 @@ export default function AdminRoutingRules(): JSX.Element {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full">
-                <thead className="bg-[#f3f2ed]">
+                <thead className="bg-[var(--color-canvas)]">
                   <tr>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Priority
                     </th>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Name
                     </th>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Department
                     </th>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Status
                     </th>
-                    <th className="px-5 py-3 text-right font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-right font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#e4e2dc]">
+                <tbody className="divide-y divide-[var(--color-border-subtle)]">
                   {rows.map((r) => (
                     <tr key={r.id}>
-                      <td className="px-5 py-3 text-sm tabular-nums text-[#1d1d1b]">
+                      <td className="px-5 py-3 text-sm tabular-nums text-[var(--color-ink)]">
                         {r.priority}
                       </td>
                       <td className="px-5 py-3 text-sm">
-                        <div className="font-medium text-[#1d1d1b]">{r.name}</div>
+                        <div className="font-medium text-[var(--color-ink)]">{r.name}</div>
                         {r.description ? (
-                          <div className="text-xs text-[#6f6e69]">{r.description}</div>
+                          <div className="text-xs text-[var(--color-text-secondary)]">{r.description}</div>
                         ) : null}
                       </td>
-                      <td className="px-5 py-3 text-sm text-[#1d1d1b]">
+                      <td className="px-5 py-3 text-sm text-[var(--color-ink)]">
                         {r.destination_department?.name ?? '—'}
                         {r.destination_department?.code ? (
-                          <div className="text-xs text-[#6f6e69]">
+                          <div className="text-xs text-[var(--color-text-secondary)]">
                             {r.destination_department.code}
                           </div>
                         ) : null}
@@ -337,7 +337,7 @@ export default function AdminRoutingRules(): JSX.Element {
                         <Badge
                           tone={r.active ? 'success' : 'neutral'}
                           className={
-                            r.active ? 'bg-[#edf7f0] text-[#256b45]' : 'bg-[#efeee9] text-[#6f6e69]'
+                            r.active ? 'bg-[#edf7f0] text-[var(--color-success)]' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'
                           }
                         >
                           {r.active ? 'active' : 'disabled'}
@@ -364,7 +364,7 @@ export default function AdminRoutingRules(): JSX.Element {
                             onClick={() => {
                               if (confirm(`Delete ${r.name}?`)) remove.mutate(r.id);
                             }}
-                            className="text-[#a42f29] hover:bg-[#fbeeed] hover:text-[#8a2621]"
+                            className="text-[var(--color-danger)] hover:bg-[#fbeeed] hover:text-[var(--color-danger-hover)]"
                           >
                             Delete
                           </Button>
