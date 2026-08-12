@@ -15,7 +15,11 @@ use App\Modules\Reports\Listeners\WriteStatusHistory;
 use App\Modules\Security\Models\SecurityEvent;
 use App\Modules\Security\Services\SecurityPolicyService;
 use App\Modules\Shared\Services\PlatformHeartbeatService;
+use App\Modules\Shared\Support\TraceContext;
 use App\Modules\Workflow\Listeners\RefreshSlaDueAt;
+use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Events\Looping;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
@@ -62,6 +66,20 @@ class AppServiceProvider extends ServiceProvider
                 (string) $event->connectionName,
                 (string) $event->queue,
             );
+        });
+
+        // Preserve the HTTP trace id in queued payloads and make it available
+        // to every log emitted while a worker processes that job. The cleanup
+        // hooks are required because queue workers are long-lived processes.
+        Queue::createPayloadUsing(static fn (): array => TraceContext::payload());
+        Queue::before(static function (JobProcessing $event): void {
+            TraceContext::applyToJob($event->job);
+        });
+        Queue::after(static function (JobProcessed $event): void {
+            TraceContext::clear();
+        });
+        Queue::exceptionOccurred(static function (JobExceptionOccurred $event): void {
+            TraceContext::clear();
         });
 
         // session.timeout_minutes security policy overrides the

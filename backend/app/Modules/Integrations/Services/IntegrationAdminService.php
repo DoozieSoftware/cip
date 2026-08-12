@@ -6,6 +6,7 @@ namespace App\Modules\Integrations\Services;
 
 use App\Modules\Integrations\Models\Integration;
 use App\Modules\Shared\Exceptions\ApiException;
+use App\Modules\Shared\Support\TraceContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -137,7 +138,10 @@ class IntegrationAdminService
         try {
             $response = Http::timeout(max(1, (int) ceil($timeoutMs / 1000)))
                 ->connectTimeout(2)
-                ->withHeaders(['User-Agent' => 'CIP-Integration-Probe/1.0'])
+                ->withHeaders(array_merge(
+                    ['User-Agent' => 'CIP-Integration-Probe/1.0'],
+                    TraceContext::headers(),
+                ))
                 ->get($integration->base_url);
         } catch (\Throwable $e) {
             return DB::transaction(function () use ($integration, $e): Integration {
