@@ -11,6 +11,7 @@ use App\Modules\Users\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\LengthAwarePaginator as ConcreteLengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -92,9 +93,9 @@ class ReportRepository
      *     dir?: string|null,
      * }  $filters
      * @param  list<string>|null  $departmentScope
-     * @return ConcreteLengthAwarePaginator<int, Report>
+     * @return ConcreteLengthAwarePaginator<int, Report>|CursorPaginator<int, Report>
      */
-    public function searchByRole(array $filters, int $perPage = 25, ?array $departmentScope = null): LengthAwarePaginator
+    public function searchByRole(array $filters, int $perPage = 25, ?array $departmentScope = null, ?string $cursor = null): LengthAwarePaginator|CursorPaginator
     {
         $q = $this->baseSearch($filters)
             ->with(['reportType', 'status', 'priority', 'location', 'department'])
@@ -114,7 +115,18 @@ class ReportRepository
             : 'created_at';
         $dir = strtolower((string) ($filters['dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        return $q->orderBy($sort, $dir)->paginate(max(1, min(self::MAX_PER_PAGE, $perPage)));
+        $perPage = max(1, min(self::MAX_PER_PAGE, $perPage));
+
+        if ($cursor !== null) {
+            // Cursor mode is opt-in for existing clients and always has a
+            // unique tie-breaker so rows are neither skipped nor repeated.
+            return $q
+                ->orderBy($sort, $dir)
+                ->orderBy('id', $dir)
+                ->cursorPaginate($perPage, ['*'], 'cursor', $cursor);
+        }
+
+        return $q->orderBy($sort, $dir)->paginate($perPage);
     }
 
     /**
