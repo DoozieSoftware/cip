@@ -1537,7 +1537,8 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | P2-05 | **Done** | `SettingsPage` reachable and routed; profile logout functional; `ProfilePage.test.tsx`. |
 | P2-07 | **Done** | Reactive `en-IN`/`kn-IN` catalogs, persisted language selection, `<html lang>` updates, locale-aware dates, and localized layout/Home/Dashboard/Submit/Detail/Resolution/Notifications/Profile/Settings/legal/capture/category/merge-dispute surfaces are implemented with focused component/page coverage. |
 | P2-02 | **Done** | Description is now optional in backend validation and citizen progression; short detail remains validated when supplied (`19d64fdb`). |
-| P2-03, P2-06, P2-08..P2-15 | Not started | Search/filter backend groundwork exists, but citizen URL search, profile onboarding, axe/manual accessibility, media usability, issue-pin separation, public metric definitions, landing redesign, analytics, and mobile E2E remain open. |
+| P2-03 | **Partial** | Citizen service-request search now sends URL-persisted query text to the server and retains status/pagination state (`8ef97697`); date/category/area filters and full cursor semantics remain. |
+| P2-06, P2-08..P2-15 | Not started | Profile onboarding, axe/manual accessibility, media usability, issue-pin separation, public metric definitions, landing redesign, analytics, and mobile E2E remain open. |
 
 ### Backend Performance And Correctness
 
