@@ -27,6 +27,7 @@ use App\Modules\Notifications\Http\Controllers\Api\NotificationsController;
 use App\Modules\Notifications\Http\Controllers\Api\PushSubscriptionController;
 use App\Modules\Public\Http\Controllers\PublicDepartmentPerformanceController;
 use App\Modules\Public\Http\Controllers\PublicHeatmapController;
+use App\Modules\Public\Http\Controllers\PublicProductAnalyticsController;
 use App\Modules\Public\Http\Controllers\PublicReverseGeocodeController;
 use App\Modules\Public\Http\Controllers\PublicStatsController;
 use App\Modules\Reports\Http\Controllers\Admin\AdminReportController;
@@ -69,6 +70,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('public/heatmap', [PublicHeatmapController::class, 'index'])->name('api.v1.public.heatmap');
         Route::get('public/geocode', PublicReverseGeocodeController::class)->name('api.v1.public.geocode');
         Route::get('public/departments/performance', [PublicDepartmentPerformanceController::class, 'index'])->name('api.v1.public.departments.performance');
+        Route::post('public/analytics/events', [PublicProductAnalyticsController::class, 'store'])->name('api.v1.public.analytics.events');
     });
 
     // Auth (M2) — rate limited per docs/11 §21.
