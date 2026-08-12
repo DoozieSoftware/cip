@@ -137,6 +137,9 @@ jobs:
 
           vendor/bin/phpstan analyse --no-progress "${changed[@]}"
 
+      - name: Ratchet static-quality baseline
+        run: bash scripts/check-static-quality-baseline.sh
+
       - name: Pest changed backend tests
         working-directory: ${{ env.BACKEND_DIR }}
         env:
