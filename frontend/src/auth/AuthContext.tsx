@@ -38,7 +38,12 @@ export interface AuthContextValue {
   token: string | null;
   isAuthenticated: boolean;
   hasAnyRole: (roles: Role[]) => boolean;
-  login: (token: string, user: SessionUser) => void;
+  login: (
+    token: string,
+    user: SessionUser,
+    refreshToken?: string | null,
+    refreshExpiresAt?: string | null,
+  ) => void;
   logout: () => void;
   loading: boolean;
 }
@@ -66,19 +71,32 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     setLoading(false);
   }, []);
 
-  const login = useCallback((nextToken: string, nextUser: SessionUser): void => {
-    setToken(nextToken);
-    setUser(nextUser);
-    const persistedUser: PersistedSession['user'] = {
-      id: nextUser.id,
-      name: nextUser.name ?? null,
-      mobile: nextUser.mobile ?? null,
-      email: nextUser.email ?? null,
-      roles: nextUser.roles,
-      departments: nextUser.departments,
-    };
-    writeSession({ token: nextToken, user: persistedUser });
-  }, []);
+  const login = useCallback(
+    (
+      nextToken: string,
+      nextUser: SessionUser,
+      refreshToken?: string | null,
+      refreshExpiresAt?: string | null,
+    ): void => {
+      setToken(nextToken);
+      setUser(nextUser);
+      const persistedUser: PersistedSession['user'] = {
+        id: nextUser.id,
+        name: nextUser.name ?? null,
+        mobile: nextUser.mobile ?? null,
+        email: nextUser.email ?? null,
+        roles: nextUser.roles,
+        departments: nextUser.departments,
+      };
+      writeSession({
+        token: nextToken,
+        refresh_token: refreshToken ?? undefined,
+        refresh_expires_at: refreshExpiresAt ?? undefined,
+        user: persistedUser,
+      });
+    },
+    [],
+  );
 
   const logout = useCallback((): void => {
     const persisted = readSession();

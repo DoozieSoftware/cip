@@ -89,9 +89,19 @@ export function LoginPage(): JSX.Element {
         method: 'POST',
         body: { mobile, password },
       });
-      login(res.data.token.access_token, res.data.user);
+      login(
+        res.data.token.access_token,
+        res.data.user,
+        res.data.refresh_token,
+        res.data.refresh_expires_at,
+      );
       const me = await apiRequest<ApiEnvelope<MeResponse>>('/auth/me');
-      login(res.data.token.access_token, { ...res.data.user, departments: me.data.departments });
+      login(
+        res.data.token.access_token,
+        { ...res.data.user, departments: me.data.departments },
+        res.data.refresh_token,
+        res.data.refresh_expires_at,
+      );
       void navigate(routeForRoles(me.data.roles), { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Invalid mobile or password');
@@ -137,9 +147,19 @@ export function LoginPage(): JSX.Element {
         method: 'POST',
         body: { mobile, code: otp },
       });
-      login(res.data.token.access_token, res.data.user);
+      login(
+        res.data.token.access_token,
+        res.data.user,
+        res.data.refresh_token,
+        res.data.refresh_expires_at,
+      );
       const me = await apiRequest<ApiEnvelope<MeResponse>>('/auth/me');
-      login(res.data.token.access_token, { ...res.data.user, departments: me.data.departments });
+      login(
+        res.data.token.access_token,
+        { ...res.data.user, departments: me.data.departments },
+        res.data.refresh_token,
+        res.data.refresh_expires_at,
+      );
       const target = routeForRoles(me.data.roles);
       void navigate(target, { replace: true });
     } catch (err) {
