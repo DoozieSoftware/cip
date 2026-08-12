@@ -12,6 +12,8 @@ export interface PaginationMeta {
   per_page: number;
   total: number;
   last_page: number;
+  next_cursor?: string | null;
+  prev_cursor?: string | null;
 }
 
 export function normalizePaginationMeta(
@@ -23,6 +25,8 @@ export function normalizePaginationMeta(
     per_page: typeof meta?.per_page === 'number' ? meta.per_page : fallbackPerPage,
     total: typeof meta?.total === 'number' ? meta.total : 0,
     last_page: typeof meta?.last_page === 'number' ? meta.last_page : 1,
+    next_cursor: typeof meta?.next_cursor === 'string' ? meta.next_cursor : null,
+    prev_cursor: typeof meta?.prev_cursor === 'string' ? meta.prev_cursor : null,
   };
 }
 

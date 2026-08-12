@@ -134,16 +134,25 @@ class ReportRepository
      * reports are returned. `is_anonymous` rows are excluded.
      *
      * @param  array<string, mixed>  $filters
-     * @return ConcreteLengthAwarePaginator<int, Report>
+     * @return ConcreteLengthAwarePaginator<int, Report>|CursorPaginator<int, Report>
      */
-    public function searchForCitizen(User $citizen, array $filters, int $perPage = 25): LengthAwarePaginator
+    public function searchForCitizen(User $citizen, array $filters, int $perPage = 25, ?string $cursor = null): LengthAwarePaginator|CursorPaginator
     {
         $q = $this->baseSearch($filters)
             ->where('citizen_id', $citizen->id)
             ->with(['reportType', 'status', 'priority', 'location', 'department'])
             ->withCount('media');
 
-        return $q->orderByDesc('created_at')->paginate(max(1, min(self::MAX_PER_PAGE, $perPage)));
+        $perPage = max(1, min(self::MAX_PER_PAGE, $perPage));
+
+        if ($cursor !== null) {
+            return $q
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->cursorPaginate($perPage, ['*'], 'cursor', $cursor);
+        }
+
+        return $q->orderByDesc('created_at')->paginate($perPage);
     }
 
     /**
@@ -204,10 +213,19 @@ class ReportRepository
         $q = Report::query();
 
         if (! empty($filters['status']) && is_string($filters['status'])) {
-            $statusId = ReportStatus::query()->where('code', $filters['status'])->value('id');
+            $status = $filters['status'];
+            $groups = [
+                'open' => ['submitted', 'ai_processing', 'pending_moderator', 'assigned', 'accepted', 'in_progress', 'escalated'],
+                'awaiting_citizen' => ['resolved_pending_verification'],
+                'closed' => ['verified', 'closed'],
+                'rejected' => ['rejected'],
+                'merged' => ['merged'],
+            ];
+            $codes = $groups[$status] ?? [$status];
+            $statusIds = ReportStatus::query()->whereIn('code', $codes)->pluck('id')->all();
 
-            if (is_string($statusId) && $statusId !== '') {
-                $q->where('current_status_id', $statusId);
+            if ($statusIds !== []) {
+                $q->whereIn('current_status_id', $statusIds);
             }
         }
 
@@ -215,9 +233,18 @@ class ReportRepository
             $q->where('department_id', $filters['department']);
         }
 
-        if (! empty($filters['ward']) && is_string($filters['ward'])) {
-            $q->whereHas('location', function (Builder $w) use ($filters): void {
-                $w->where('ward_id', $filters['ward']);
+        $reportTypeId = $filters['report_type_id'] ?? $filters['category'] ?? null;
+
+        if (is_string($reportTypeId) && $reportTypeId !== '') {
+            $q->where('report_type_id', $reportTypeId);
+        }
+
+        $ward = $filters['ward'] ?? $filters['area'] ?? null;
+
+        if (is_string($ward) && $ward !== '') {
+            $q->whereHas('location', function (Builder $w) use ($ward): void {
+                $w->where('ward_id', $ward)
+                    ->orWhere('address', 'like', '%'.$ward.'%');
             });
         }
 
@@ -230,7 +257,7 @@ class ReportRepository
         }
 
         if (! empty($filters['date_to']) && is_string($filters['date_to'])) {
-            $q->where('created_at', '<=', $filters['date_to']);
+            $q->whereDate('created_at', '<=', $filters['date_to']);
         }
 
         if (! empty($filters['search']) && is_string($filters['search'])) {

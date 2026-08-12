@@ -103,6 +103,8 @@ export interface PaginationMeta {
   per_page: number;
   total: number;
   last_page: number;
+  next_cursor?: string | null;
+  prev_cursor?: string | null;
 }
 
 export type LifecycleGroup = 'open' | 'awaiting_citizen' | 'closed' | 'rejected' | 'merged';

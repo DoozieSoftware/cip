@@ -320,13 +320,39 @@ export function useReportDetail(id: string | undefined) {
   });
 }
 
-export function useCitizenReports(page = 1, perPage = 25, search = '') {
+export interface CitizenReportFilters {
+  status?: string;
+  category?: string;
+  area?: string;
+  date_from?: string;
+  date_to?: string;
+  cursor?: string;
+}
+
+export function useCitizenReports(
+  page = 1,
+  perPage = 25,
+  search = '',
+  filters: CitizenReportFilters = {},
+) {
   return useQuery({
-    queryKey: ['citizen', 'reports', page, perPage],
+    queryKey: ['citizen', 'reports', page, perPage, search, filters],
     queryFn: async () => {
       const { data, meta } = await requestPaginated<ApiReportPayload>(
         '/citizen/reports',
-        { query: { page, per_page: perPage, q: search || undefined } },
+        {
+          query: {
+            page: filters.cursor ? undefined : page,
+            per_page: perPage,
+            q: search || undefined,
+            status: filters.status || undefined,
+            category: filters.category || undefined,
+            area: filters.area || undefined,
+            date_from: filters.date_from || undefined,
+            date_to: filters.date_to || undefined,
+            cursor: filters.cursor || undefined,
+          },
+        },
         perPage,
       );
 

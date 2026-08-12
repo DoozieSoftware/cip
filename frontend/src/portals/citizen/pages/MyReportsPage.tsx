@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { type JSX, useMemo, useState } from 'react';
+import { type FormEvent, type JSX, useMemo, useState } from 'react';
 import {
   IconAlertCircle,
   IconCheck,
@@ -16,7 +16,7 @@ import {
 } from '@tabler/icons-react';
 import { Spinner } from '../../../shared/ui';
 import { ApiError } from '../../../shared/api/errors';
-import { useCitizenReports, lifecycleGroup } from '../api/client';
+import { useCitizenReports, lifecycleGroup, useReportTypes } from '../api/client';
 import { StatusBadge } from '../components/StatusBadge';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useMessages } from '../messages';
@@ -36,10 +36,10 @@ interface ReportRow {
   location?: { latitude: number; longitude: number; address?: string | null } | null;
 }
 
-function formatDate(value: string): string {
+function formatDate(value: string, locale: string): string {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 const FILTER_TABS: { key: StatusFilter; label: string; icon?: JSX.Element }[] = [
@@ -103,7 +103,7 @@ function EmptyStateSection({
   statusFilter,
   applyFilter,
 }: {
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
   statusFilter: StatusFilter;
   applyFilter: (next: StatusFilter) => void;
 }): JSX.Element {
@@ -113,12 +113,12 @@ function EmptyStateSection({
         <IconFileDescription className="h-7 w-7 text-[var(--color-ink)]" stroke={1.6} />
       </div>
       <h2 className="text-base font-medium text-[var(--color-ink)]">
-        {statusFilter === 'all' ? t('reports.noReportsYet') : `No ${statusFilter} reports`}
+        {statusFilter === 'all'
+          ? t('reports.noReportsYet')
+          : t('reports.noFilteredReports', { status: statusFilter })}
       </h2>
       <p className="mx-auto mt-1 max-w-xs text-sm text-[var(--color-text-secondary)]">
-        {statusFilter === 'all'
-          ? t('reports.fileFirst')
-          : 'You have reports in other categories. Try a different filter.'}
+        {statusFilter === 'all' ? t('reports.fileFirst') : t('reports.tryAnotherFilter')}
       </p>
       {statusFilter === 'all' ? (
         <Link
@@ -134,14 +134,14 @@ function EmptyStateSection({
           onClick={() => applyFilter('all')}
           className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white transition hover:bg-black"
         >
-          Show all reports
+          {t('reports.showAll')}
         </button>
       )}
     </div>
   );
 }
 
-function ReportRow({ report }: { report: ReportRow }): JSX.Element {
+function ReportRow({ report, locale }: { report: ReportRow; locale: string }): JSX.Element {
   const group = lifecycleGroup(report.status.code);
   return (
     <Link
@@ -169,7 +169,7 @@ function ReportRow({ report }: { report: ReportRow }): JSX.Element {
               {report.tracking_number}
             </span>
             <span className="text-[var(--color-border-subtle)]">·</span>
-            <span>{formatDate(report.created_at)}</span>
+            <span>{formatDate(report.created_at, locale)}</span>
             {report.location?.address && (
               <>
                 <span className="text-[var(--color-border-subtle)]">·</span>
@@ -191,7 +191,7 @@ function ReportRow({ report }: { report: ReportRow }): JSX.Element {
 }
 
 export default function MyReportsPage(): JSX.Element {
-  const { t } = useMessages();
+  const { t, locale } = useMessages();
   const online = useOnlineStatus();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Math.max(1, Number(searchParams.get('page') ?? '1') || 1);
@@ -199,9 +199,24 @@ export default function MyReportsPage(): JSX.Element {
   const sortField = (searchParams.get('sort') as SortField) ?? 'date';
   const sortDir = (searchParams.get('dir') as SortDir) ?? 'desc';
   const search = searchParams.get('q') ?? '';
+  const category = searchParams.get('category') ?? '';
+  const area = searchParams.get('area') ?? '';
+  const dateFrom = searchParams.get('date_from') ?? '';
+  const dateTo = searchParams.get('date_to') ?? '';
   const [searchInput, setSearchInput] = useState(search);
+  const [categoryInput, setCategoryInput] = useState(category);
+  const [areaInput, setAreaInput] = useState(area);
+  const [dateFromInput, setDateFromInput] = useState(dateFrom);
+  const [dateToInput, setDateToInput] = useState(dateTo);
+  const reportTypes = useReportTypes();
 
-  const reports = useCitizenReports(page, 12, search);
+  const reports = useCitizenReports(page, 12, search, {
+    status: statusFilter === 'all' ? undefined : statusFilter,
+    category: category || undefined,
+    area: area || undefined,
+    date_from: dateFrom || undefined,
+    date_to: dateTo || undefined,
+  });
   const meta = reports.data?.meta ?? { page: 1, per_page: 12, total: 0, last_page: 1 };
 
   const filteredReports = useMemo<ReportRow[]>(() => {
@@ -249,6 +264,17 @@ export default function MyReportsPage(): JSX.Element {
 
   function applyFilter(next: StatusFilter): void {
     updateParams({ status: next === 'all' ? null : next, page: null });
+  }
+
+  function applyAdvancedFilters(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+    updateParams({
+      category: categoryInput || null,
+      area: areaInput.trim() || null,
+      date_from: dateFromInput || null,
+      date_to: dateToInput || null,
+      page: null,
+    });
   }
 
   const totalPages = Math.max(meta.last_page, 1);
@@ -383,7 +409,7 @@ export default function MyReportsPage(): JSX.Element {
           </form>
           <div
             role="tablist"
-            aria-label="Filter reports by status"
+            aria-label={t('reports.filterStatusLabel')}
             className="flex gap-2 overflow-x-auto pb-1"
           >
             {FILTER_TABS.map((tab) => (
@@ -404,6 +430,83 @@ export default function MyReportsPage(): JSX.Element {
               </button>
             ))}
           </div>
+          <form
+            className="mt-3 grid gap-2 rounded-2xl border border-[var(--color-border-subtle)] bg-white p-3 sm:grid-cols-2 lg:grid-cols-5"
+            onSubmit={applyAdvancedFilters}
+            aria-label={t('reports.advancedFilters')}
+          >
+            <label className="text-xs text-[var(--color-text-secondary)]">
+              <span className="sr-only">{t('reports.category')}</span>
+              <select
+                value={categoryInput}
+                onChange={(event) => setCategoryInput(event.target.value)}
+                className="h-11 w-full rounded-xl border border-[var(--color-border-subtle)] bg-white px-3 text-sm text-[var(--color-ink)]"
+              >
+                <option value="">{t('reports.allCategories')}</option>
+                {(reportTypes.data ?? []).map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs text-[var(--color-text-secondary)]">
+              <span className="sr-only">{t('reports.area')}</span>
+              <input
+                value={areaInput}
+                onChange={(event) => setAreaInput(event.target.value)}
+                placeholder={t('reports.area')}
+                className="h-11 w-full rounded-xl border border-[var(--color-border-subtle)] bg-white px-3 text-sm text-[var(--color-ink)]"
+              />
+            </label>
+            <label className="text-xs text-[var(--color-text-secondary)]">
+              <span className="sr-only">{t('reports.dateFrom')}</span>
+              <input
+                type="date"
+                value={dateFromInput}
+                onChange={(event) => setDateFromInput(event.target.value)}
+                aria-label={t('reports.dateFrom')}
+                className="h-11 w-full rounded-xl border border-[var(--color-border-subtle)] bg-white px-3 text-sm text-[var(--color-ink)]"
+              />
+            </label>
+            <label className="text-xs text-[var(--color-text-secondary)]">
+              <span className="sr-only">{t('reports.dateTo')}</span>
+              <input
+                type="date"
+                value={dateToInput}
+                onChange={(event) => setDateToInput(event.target.value)}
+                aria-label={t('reports.dateTo')}
+                className="h-11 w-full rounded-xl border border-[var(--color-border-subtle)] bg-white px-3 text-sm text-[var(--color-ink)]"
+              />
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                className="h-11 flex-1 rounded-xl bg-[var(--color-ink)] px-3 text-sm font-medium text-white"
+              >
+                {t('reports.applyFilters')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCategoryInput('');
+                  setAreaInput('');
+                  setDateFromInput('');
+                  setDateToInput('');
+                  updateParams({
+                    category: null,
+                    area: null,
+                    date_from: null,
+                    date_to: null,
+                    page: null,
+                  });
+                }}
+                className="h-11 rounded-xl border border-[var(--color-border-subtle)] px-3 text-sm font-medium text-[var(--color-ink)]"
+              >
+                {t('reports.clearFilters')}
+              </button>
+            </div>
+          </form>
         </div>
 
         {reports.isLoading ? (
@@ -443,7 +546,7 @@ export default function MyReportsPage(): JSX.Element {
                 </p>
                 <div className="divide-y divide-[var(--color-border-subtle)]">
                   {filteredReports.map((report) => (
-                    <ReportRow key={report.id} report={report} />
+                    <ReportRow key={report.id} report={report} locale={locale} />
                   ))}
                 </div>
               </>
@@ -463,7 +566,7 @@ export default function MyReportsPage(): JSX.Element {
 
             <div className="divide-y divide-[var(--color-border-subtle)]">
               {filteredReports.map((report) => (
-                <ReportRow key={report.id} report={report} />
+                <ReportRow key={report.id} report={report} locale={locale} />
               ))}
             </div>
 

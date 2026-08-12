@@ -1537,11 +1537,11 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | P2-05 | **Done** | `SettingsPage` reachable and routed; profile logout functional; `ProfilePage.test.tsx`. |
 | P2-07 | **Done** | Reactive `en-IN`/`kn-IN` catalogs, persisted language selection, `<html lang>` updates, locale-aware dates, and localized layout/Home/Dashboard/Submit/Detail/Resolution/Notifications/Profile/Settings/legal/capture/category/merge-dispute surfaces are implemented with focused component/page coverage. |
 | P2-02 | **Done** | Description is now optional in backend validation and citizen progression; short detail remains validated when supplied (`19d64fdb`). |
-| P2-03 | **Partial** | Citizen service-request search now sends URL-persisted query text to the server and retains status/pagination state (`8ef97697`); date/category/area filters and full cursor semantics remain. |
+| P2-03 | **Partial** | Citizen service-request search now sends URL-persisted query, status, date, category, and area filters to the server and supports cursor metadata alongside the existing page UI (`8ef97697`, current citizen search); a cursor-first citizen navigation surface and production filter-query validation remain. |
 | P2-08 | **Partial** | Reduced-motion CSS, focus/a11y scaffolding, and capture live-preview/timer accessibility are covered (`aef9b0da`); a full axe, screen-reader, and manual keyboard pass remains. |
-| P2-09 | **Partial** | Camera capture now exposes a live-preview label, non-spam timer, max-duration auto-stop, and lifecycle-managed video previews (`aef9b0da`, `154c9c85`); compression progress and broader device coverage remain. |
+| P2-09 | **Partial** | Camera capture now exposes a live-preview label, non-spam timer, max-duration auto-stop, lifecycle-managed video previews, accessible recording progress, live announcements, keyboard retry, and attached-file feedback (`aef9b0da`, `154c9c85`, `fa14c5fe`); compression progress and broader device coverage remain. |
 | P2-06 | **Done** | Citizen profile onboarding now captures preferred name, locale, and notification channel with validated PATCH persistence and an accessible completion/edit form (`401131e4`). |
-| P2-10 | **Done** | Issue location is explicitly separated from reporter location through a manual-pin/map picker, provenance metadata, draft persistence, and submit payload wiring (`401131e4`). |
+| P2-10 | **Done** | Issue location is explicitly separated from reporter location through a manual-pin/map picker, provenance metadata, draft persistence, reporter-coordinate persistence, distance warning, and submit payload wiring (`401131e4`, `3198d702`). |
 | P2-15 | **Partial** | Playwright now defines Chromium, Pixel 7, and iPhone 13 projects (`39e347a9`); real-device/browser permission and installed-PWA runs remain. |
 | P2-14 | **Partial** | Privacy-safe, allowlisted telemetry endpoint and browser fire-and-forget client now cover report start/steps/completion/offline queue, GPS and media failures, notification inbox failures, reopen actions, language selection, and reduced-motion preference (`d5eea66b`, `c1a0b2a6`, current citizen layout/settings); performance call sites remain to be wired. |
 | P2-12 | **Done** | Public landing now leads with resident report/track/transparency actions and moves staff portals into a separate entry point (`71796d7b`). |
@@ -1555,12 +1555,16 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | BE-09 | **Done** | List queries eager-load `department` and `media_count`; lean `ReportListResource`/`AdminReportListResource`/`DepartmentReportListResource`; `ReportListQueryCountTest` guards N+1 regressions. |
 | BE-01..BE-02 | **Done** | Refresh rotation uses selector-indexed lookup and row locks; submission idempotency persists route/method-scoped reservations and stable client keys (`d847f37b`, `2cc5086a`, `5160ee85`). |
 | BE-03 | **Done** | Annual tracking-number allocation uses a locked sequence table (`d847f37b`). |
-| BE-04 | **Done** | Report/search indexes and MySQL full-text search are added with SQLite fallback (`d847f37b`). |
-| BE-05 | **Done** | SLA due-at indexing, bounded breach scans, unique breach rows, and notification dispatch are implemented (`d847f37b`). |
-| BE-06..BE-08, BE-13..BE-19 | Not started | Still open. |
-| BE-10 | **Partial** | Staff, department, and admin report searches now support opt-in cursor pagination with stable tie-breakers, alongside prefix tracking search, MySQL FULLTEXT fallback, and composite indexes (\`6b523f7f\`, \`ffa2a7f8\`, \`d847f37b\`); production-shaped \`EXPLAIN ANALYZE\` validation remains. |
+| BE-04 | **Partial** | Workflow application now locks the report row and rejects stale source states with a conflict (current \`WorkflowEngine\`); assignment/version characterization and optimistic versioning remain. |
+| BE-05 | **Partial** | Department-scoped proof authorization and role-separated media are implemented; assignment-owned proof/task access logs and complete cross-agency policy tests remain. |
+| BE-06 | **Done** | AI orchestration persists the canonical primary label onto the report in the same transaction as AI results/labels, with unique retry constraints and pipeline coverage (\`c69087fd\`). |
+| BE-07 | **Partial** | Evidence upload is validated and scanned before persistence; direct multipart/object-store streaming and presigned upload flow remain. |
+| BE-08 | **Done** | Media URLs are centralized through \`MediaUrl\`; S3/MinIO use native presigned URLs while local disks use signed application routes, with remote delivery support (\`a10e9731\`). |
+| BE-10 | **Partial** | Staff, department, admin, and citizen report searches now support opt-in cursor pagination with stable tie-breakers, date/category/area filters, prefix tracking search, MySQL FULLTEXT fallback, and composite indexes (\`6b523f7f\`, \`ffa2a7f8\`, current citizen search); production-shaped \`EXPLAIN ANALYZE\` validation remains. |
 | BE-11 | **Done** | Indexed SLA due-at selection, bounded bootstrap, idempotent breach rows, and downstream notification listener are implemented (\`d847f37b\`). |
 | BE-12 | **Done** | Notification listeners are registered only by `NotificationsServiceProvider`; duplicate registrations were removed from `AppServiceProvider`. |
+| BE-13 | **Partial** | Integration URL validation rejects unsafe schemes, credentials, ports, and private/link-local/metadata addresses before probing (\`97de1e6f\`); asynchronous restricted-egress execution and full probe audit remain. |
+| BE-14..BE-19 | Not started | Still open. |
 
 ### Maintainability
 

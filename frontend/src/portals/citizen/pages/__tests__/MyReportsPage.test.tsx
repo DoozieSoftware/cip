@@ -21,6 +21,7 @@ const mockUseOnlineStatus = vi.fn(() => true);
 vi.mock('../../api/client', () => ({
   lifecycleGroup: (code?: unknown) => mockLifecycleGroup(code),
   useCitizenReports: (filters?: unknown) => mockUseCitizenReports(filters),
+  useReportTypes: () => ({ data: [], isLoading: false, isError: false }),
 }));
 
 vi.mock('../../hooks/useOnlineStatus', () => ({
