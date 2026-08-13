@@ -1,5 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { Badge, Card, CardBody, CardHeader, CardTitle, EmptyState, Spinner } from '../../../shared/ui';
+import {
+  Badge,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+  Spinner,
+} from '../../../shared/ui';
+import { staffReportStatusLabel } from '../../../shared/statusDisplay';
 import { analyticsApi } from '../api/moderator';
 import type { AnalyticsSummary } from '../types';
 import { useEffect, useRef } from 'react';
@@ -47,9 +56,21 @@ function OutcomesChart({ data }: { data: AnalyticsSummary }) {
           label: { color: '#1d1d1b' },
           data: [
             { name: 'Approved', value: data.approved_today, itemStyle: { color: '#16a34a' } },
-            { name: 'Rejected', value: data.rejected_today, itemStyle: { color: '#dc2626' } },
-            { name: 'Merged', value: data.merged_today, itemStyle: { color: '#7c3aed' } },
-            { name: 'Escalated', value: data.escalated_today, itemStyle: { color: '#d97706' } },
+            {
+              name: staffReportStatusLabel('rejected'),
+              value: data.rejected_today,
+              itemStyle: { color: '#dc2626' },
+            },
+            {
+              name: staffReportStatusLabel('merged'),
+              value: data.merged_today,
+              itemStyle: { color: '#7c3aed' },
+            },
+            {
+              name: staffReportStatusLabel('escalated'),
+              value: data.escalated_today,
+              itemStyle: { color: '#d97706' },
+            },
           ],
         },
       ],
@@ -140,7 +161,7 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={IconClockHour3}
-          label="Pending moderator"
+          label={staffReportStatusLabel('pending_moderator')}
           value={a.pending_moderator}
           trend="12%"
           trendUp={false}
@@ -183,12 +204,14 @@ export default function AnalyticsPage() {
           <CardHeader>
             <CardTitle>Review workload</CardTitle>
             <Badge tone={a.pending_moderator > 50 ? 'warning' : 'success'}>
-              {a.pending_moderator} pending
+              {a.pending_moderator} need review
             </Badge>
           </CardHeader>
           <CardBody className="space-y-3">
             <div className="flex items-center justify-between border-b border-[#f3f2ed] pb-3">
-              <span className="text-sm text-[#6f6e69]">Pending moderator</span>
+              <span className="text-sm text-[#6f6e69]">
+                {staffReportStatusLabel('pending_moderator')}
+              </span>
               <span className="text-sm font-semibold text-[#1d1d1b]">{a.pending_moderator}</span>
             </div>
             <div className="flex items-center justify-between border-b border-[#f3f2ed] pb-3">

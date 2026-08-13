@@ -73,8 +73,8 @@ const ACTION_META: Record<
     variant: 'secondary',
   },
   resolve: {
-    label: 'Mark as resolved',
-    confirmLabel: 'Resolve report',
+    label: 'Mark as fixed',
+    confirmLabel: 'Mark fixed',
     requiresNote: true,
     shortcut: 'R',
     variant: 'success',
@@ -98,8 +98,8 @@ const ACTIONS_BY_STATUS: Partial<Record<ReportStatusCode, WorkflowEvent[]>> = {
 const STATUS_GUIDANCE: Record<string, string> = {
   assigned: 'Review the evidence and location, then accept responsibility for this report.',
   accepted: 'The assignment is yours. Start field work when the team is ready to proceed.',
-  in_progress: 'Record a field update or mark the work as resolved when it is complete.',
-  resolved: 'Review the completion proof and close the report when the outcome is confirmed.',
+  in_progress: 'Record a field update or mark the work as fixed when it is complete.',
+  resolved: 'Review the completion proof and close the report when the fix is confirmed.',
   verified: 'Completion has been verified. No further officer action is required.',
   closed: 'This report is complete and closed.',
   escalated: 'This report has been escalated for supervisor attention.',
@@ -111,7 +111,7 @@ const ACTION_DESCRIPTION: Record<WorkflowEvent, string> = {
   start: 'Start field work on this report.',
   progress:
     'Record a progress update. A note is required so the citizen and supervisor know what is happening.',
-  resolve: 'Resolve this report. A note is required describing what was done.',
+  resolve: 'Mark this report as fixed. A note is required describing what was done.',
   close: 'Close this report. A note is required documenting the outcome.',
 };
 
@@ -353,9 +353,7 @@ export default function ReportDetailPage() {
                       {a.department?.name ?? 'Department'}
                     </p>
                     <p className="text-xs text-[var(--color-text-tertiary)]">
-                      {a.is_primary
-                        ? 'Primary — owns closure'
-                        : 'Cross-agency — assists resolution'}
+                      {a.is_primary ? 'Primary — owns closure' : 'Cross-agency — assists the fix'}
                     </p>
                   </div>
                 </div>

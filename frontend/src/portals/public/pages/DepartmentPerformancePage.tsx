@@ -17,7 +17,7 @@ export default function DepartmentPerformancePage(): JSX.Element {
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Department performance</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Resolution rate and median resolution time per department — aggregate counts only.
+          Fix rate and median fix time per department — aggregate counts only.
         </p>
       </header>
 
@@ -42,9 +42,9 @@ export default function DepartmentPerformancePage(): JSX.Element {
               <TR>
                 <TH>Department</TH>
                 <TH>Reports</TH>
-                <TH>Resolved</TH>
-                <TH>Resolution rate</TH>
-                <TH>Median resolution time</TH>
+                <TH>Fixed</TH>
+                <TH>Fix rate</TH>
+                <TH>Median fix time</TH>
               </TR>
             </THead>
             <TBody>

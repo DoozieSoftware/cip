@@ -10,6 +10,7 @@ import {
 } from '@tabler/icons-react';
 import { Spinner } from '../../../shared/ui';
 import { departmentApi } from '../api/operations';
+import { statusLabel } from '../components/statusMeta';
 import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 import type { DepartmentDashboardCounts, DepartmentReportListItem } from '../types';
 
@@ -132,7 +133,7 @@ export default function AnalyticsPage() {
       acc[code] = (acc[code] ?? 0) + 1;
       return acc;
     }, {}),
-  ).map(([name, value]) => ({ name, value }));
+  ).map(([code, value]) => ({ name: statusLabel(code), value }));
 
   const byType: SeriesDatum[] = Object.entries(
     reports.reduce<Record<string, number>>((acc, r) => {
@@ -179,7 +180,7 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartCard
           title="By status"
-          subtitle="Distribution across workflow states"
+          subtitle="Current progress labels for open reports"
           icon={IconChartPie}
         >
           <ReactECharts
@@ -231,7 +232,7 @@ export default function AnalyticsPage() {
       </div>
 
       <ChartCard
-        title="Submissions per day"
+        title="Reports filed per day"
         subtitle="Trend over the selected period"
         icon={IconChartLine}
       >
@@ -262,7 +263,7 @@ export default function AnalyticsPage() {
             ],
           }}
           style={{ height: 320 }}
-          aria-label="Reports submitted per day"
+          aria-label="Reports filed per day"
         />
       </ChartCard>
     </div>

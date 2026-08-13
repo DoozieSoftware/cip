@@ -208,7 +208,7 @@ describe('CitizenReportDetailPage', () => {
       </QueryClientProvider>,
     );
 
-    expect(await screen.findByRole('button', { name: 'Verify resolution' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Report issue not fixed' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Confirm fixed' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Report that it is not fixed' })).toBeTruthy();
   });
 });

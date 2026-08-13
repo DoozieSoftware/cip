@@ -211,7 +211,7 @@ describe('ReportDetailPage', () => {
 
     expect(await screen.findByText('Cross-agency departments')).toBeInTheDocument();
     expect(screen.getByText('Primary — owns closure')).toBeInTheDocument();
-    expect(screen.getByText('Cross-agency — assists resolution')).toBeInTheDocument();
+    expect(screen.getByText('Cross-agency — assists the fix')).toBeInTheDocument();
     expect(screen.getByText('Deepa')).toBeInTheDocument();
     expect(screen.getByText('Ravi')).toBeInTheDocument();
   });
@@ -266,7 +266,7 @@ describe('ReportDetailPage', () => {
     renderPage(baseReport({ current_status_code: 'in_progress' }));
 
     expect(await screen.findByRole('button', { name: 'Add progress update' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Mark as resolved' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mark as fixed' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Accept assignment' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start field work' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Close report' })).toBeNull();
@@ -290,7 +290,7 @@ describe('ReportDetailPage', () => {
     expect(await screen.findAllByText('Cross-agency report')).not.toHaveLength(0);
     expect(screen.getByText('Open')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Accept assignment' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Mark as resolved' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Mark as fixed' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Mark task complete' }));
     fireEvent.change(await screen.findByLabelText('Note (required)'), {

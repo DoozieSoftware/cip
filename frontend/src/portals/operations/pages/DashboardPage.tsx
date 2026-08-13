@@ -126,7 +126,7 @@ export default function DashboardPage() {
         <MetricCard
           label="Due today"
           value={data.due_today}
-          hint="Submitted today, still open"
+          hint="Filed today, still open"
           tone="warning"
         />
         <MetricCard

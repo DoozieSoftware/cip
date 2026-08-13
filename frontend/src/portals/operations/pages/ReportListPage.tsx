@@ -243,7 +243,7 @@ export default function ReportListPage() {
           |
         </span>
         <span>
-          <strong className="font-semibold text-emerald-700">{resolved}</strong> resolved
+          <strong className="font-semibold text-emerald-700">{resolved}</strong> fixed
         </span>
       </div>
 

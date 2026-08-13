@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Spinner, EmptyState } from '../../../shared/ui';
+import { staffReportStatusLabel } from '../../../shared/statusDisplay';
 import { analyticsApi, queueApi } from '../api/moderator';
 import type { AnalyticsSummary, ReportListItem } from '../types';
 import {
@@ -143,7 +144,11 @@ export default function DashboardPage() {
           Pending review
         </h2>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard label="Pending" value={stats.pending_moderator} icon={IconClock} />
+          <StatCard
+            label={staffReportStatusLabel('pending_moderator')}
+            value={stats.pending_moderator}
+            icon={IconClock}
+          />
           <StatCard label="Duplicates" value={stats.duplicates_pending} icon={IconLink} />
           <StatCard label="Fraud" value={stats.fraud_pending} icon={IconFingerprint} />
           <StatCard
@@ -162,9 +167,21 @@ export default function DashboardPage() {
         </h2>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatCard label="Approved" value={stats.approved_today} icon={IconCheck} />
-          <StatCard label="Rejected" value={stats.rejected_today} icon={IconCheck} />
-          <StatCard label="Merged" value={stats.merged_today} icon={IconCheck} />
-          <StatCard label="Escalated" value={stats.escalated_today} icon={IconCheck} />
+          <StatCard
+            label={staffReportStatusLabel('rejected')}
+            value={stats.rejected_today}
+            icon={IconCheck}
+          />
+          <StatCard
+            label={staffReportStatusLabel('merged')}
+            value={stats.merged_today}
+            icon={IconCheck}
+          />
+          <StatCard
+            label={staffReportStatusLabel('escalated')}
+            value={stats.escalated_today}
+            icon={IconCheck}
+          />
         </div>
       </section>
 
