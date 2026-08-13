@@ -85,17 +85,6 @@ function isInsideKarnataka(lat: number, lng: number): boolean {
   );
 }
 
-function priorityTone(code: string | null | undefined): 'warning' | 'danger' | 'neutral' {
-  switch (code) {
-    case 'high':
-      return 'danger';
-    case 'medium':
-      return 'warning';
-    default:
-      return 'neutral';
-  }
-}
-
 interface MapPoint {
   report: DepartmentReportListItem;
   lat: number;
@@ -211,7 +200,9 @@ export default function GisMapPage() {
           <IconAlertCircle className="h-6 w-6 text-red-500" stroke={1.6} />
         </div>
         <h3 className="text-base font-semibold text-[var(--color-ink)]">Could not load reports</h3>
-        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">The reports endpoint did not respond.</p>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+          The reports endpoint did not respond.
+        </p>
         <button
           type="button"
           onClick={() => {
@@ -234,7 +225,9 @@ export default function GisMapPage() {
           </div>
           <div>
             <h1 className="text-lg font-semibold text-[var(--color-ink)]">GIS map</h1>
-            <p className="text-xs text-[var(--color-text-tertiary)]">Geospatial view of department reports</p>
+            <p className="text-xs text-[var(--color-text-tertiary)]">
+              Geospatial view of department reports
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm ring-1 ring-black/5">
@@ -342,7 +335,9 @@ export default function GisMapPage() {
             className="fixed inset-x-0 bottom-0 z-10 max-h-[75vh] overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl ring-1 ring-black/10 lg:static lg:z-auto lg:col-span-1 lg:max-h-none lg:rounded-xl lg:ring-1 lg:ring-black/5"
           >
             <div className="mb-4 flex items-start justify-between gap-2">
-              <p className="font-mono text-xs text-[var(--color-text-tertiary)]">{selected.tracking_number}</p>
+              <p className="font-mono text-xs text-[var(--color-text-tertiary)]">
+                {selected.tracking_number}
+              </p>
               <button
                 type="button"
                 onClick={() => setSelectedId(null)}
@@ -358,13 +353,13 @@ export default function GisMapPage() {
                 <Badge tone={statusTone(selected.current_status_code)}>
                   {selected.current_status_code ?? '—'}
                 </Badge>
-                <Badge tone={priorityTone(selected.priority?.code ?? null)}>
-                  {selected.priority?.name ?? selected.priority?.code ?? '—'} priority
-                </Badge>
               </div>
               <div className="space-y-3">
                 <div className="flex items-start gap-2.5">
-                  <IconCategory className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]" stroke={1.6} />
+                  <IconCategory
+                    className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]"
+                    stroke={1.6}
+                  />
                   <div>
                     <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                       Category
@@ -375,16 +370,24 @@ export default function GisMapPage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5">
-                  <IconMapPin className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]" stroke={1.6} />
+                  <IconMapPin
+                    className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]"
+                    stroke={1.6}
+                  />
                   <div>
                     <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                       Location
                     </span>
-                    <span className="text-[var(--color-ink)]">{locationLabel(selected.location)}</span>
+                    <span className="text-[var(--color-ink)]">
+                      {locationLabel(selected.location)}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5">
-                  <IconCalendar className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]" stroke={1.6} />
+                  <IconCalendar
+                    className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]"
+                    stroke={1.6}
+                  />
                   <div>
                     <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                       Reference

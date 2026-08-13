@@ -298,7 +298,6 @@ export default function ReportDetailPage() {
               </Badge>
               <Badge tone={statusTone(status)}>{statusLabel(status)}</Badge>
               {report.report_type && <Badge tone="neutral">{report.report_type.name}</Badge>}
-              {report.priority && <Badge tone="neutral">{report.priority.name}</Badge>}
             </div>
             <h1 className="mt-2 text-lg font-semibold text-[var(--color-ink)]">{report.title}</h1>
             <p className="mt-0.5 font-mono text-xs text-[var(--color-text-tertiary)]">
@@ -627,12 +626,6 @@ export default function ReportDetailPage() {
                   <dd className="mt-0.5 text-[var(--color-ink)]">
                     {report.report_type?.name ?? '—'}
                   </dd>
-                </div>
-                <div>
-                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                    Priority
-                  </dt>
-                  <dd className="mt-0.5 text-[var(--color-ink)]">{report.priority?.name ?? '—'}</dd>
                 </div>
                 <div>
                   <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">

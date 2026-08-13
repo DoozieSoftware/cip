@@ -31,19 +31,6 @@ const STATUS_OPTIONS = [
   { value: 'escalated', label: 'Escalated' },
 ];
 
-const PRIORITY_OPTIONS = [
-  { value: '', label: 'Any priority' },
-  { value: 'high', label: 'High' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'low', label: 'Low' },
-];
-
-const PRIORITY_TONE: Record<string, 'danger' | 'warning' | 'neutral'> = {
-  high: 'danger',
-  medium: 'warning',
-  low: 'neutral',
-};
-
 const NEXT_ACTION: Record<string, string> = {
   assigned: 'Accept assignment',
   accepted: 'Start field work',
@@ -105,7 +92,6 @@ export default function ReportListPage() {
   const [params, setParams] = useSearchParams();
   const [filters, setFilters] = useState<ReportListFilters>(() => ({
     status: params.get('status') ?? '',
-    priority: params.get('priority') ?? '',
     category: params.get('category') ?? '',
     search: params.get('search') ?? '',
     date_from: params.get('date_from') ?? '',
@@ -152,7 +138,6 @@ export default function ReportListPage() {
   function clearFilters() {
     setFilters({
       status: '',
-      priority: '',
       category: '',
       search: '',
       date_from: '',
@@ -214,7 +199,6 @@ export default function ReportListPage() {
   }).length;
   const activeFilterCount = [
     filters.status,
-    filters.priority,
     filters.category,
     filters.search,
     filters.date_from,
@@ -317,21 +301,6 @@ export default function ReportListPage() {
                 </select>
               </label>
               <label>
-                <span className="sr-only">Priority</span>
-                <select
-                  name="priority"
-                  value={filters.priority ?? ''}
-                  onChange={(e) => updateFilter('priority', e.target.value)}
-                  className="h-9 w-full rounded-full border-0 bg-[var(--color-canvas)] px-4 text-sm text-[var(--color-ink)] outline-none focus:ring-2 focus:ring-[var(--color-ink)]/10"
-                >
-                  {PRIORITY_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
                 <span className="sr-only">Category</span>
                 <select
                   name="category"
@@ -419,11 +388,6 @@ export default function ReportListPage() {
                         ? statusLabel(r.assignment.status)
                         : statusLabel(r.current_status_code)}
                     </Badge>
-                    {r.priority && (
-                      <Badge tone={PRIORITY_TONE[r.priority.code] ?? 'neutral'}>
-                        {r.priority.name}
-                      </Badge>
-                    )}
                   </div>
                   <h2 className="mt-2 line-clamp-1 text-sm font-semibold text-[var(--color-ink)] group-hover:underline">
                     {r.title}

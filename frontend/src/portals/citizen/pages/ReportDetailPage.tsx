@@ -288,11 +288,6 @@ export default function ReportDetailPage(): JSX.Element {
               value={r.type?.name ?? '—'}
             />
             <DetailBlock
-              icon={<IconAlertTriangle className="h-3.5 w-3.5" stroke={1.6} />}
-              label={t('detail.priority')}
-              value={r.priority?.name ?? '—'}
-            />
-            <DetailBlock
               icon={<IconCalendar className="h-3.5 w-3.5" stroke={1.6} />}
               label={t('detail.submitted')}
               value={`${formatDate(r.created_at, locale)}${formatTime(r.created_at, locale) ? ` · ${formatTime(r.created_at, locale)}` : ''}`}
