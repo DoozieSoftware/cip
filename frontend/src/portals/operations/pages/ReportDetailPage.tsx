@@ -294,7 +294,7 @@ export default function ReportDetailPage() {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone={isSecondaryTask ? 'purple' : 'neutral'}>
-                {isSecondaryTask ? 'Linked report' : 'Primary report'}
+                {isSecondaryTask ? 'Cross-agency report' : 'Primary report'}
               </Badge>
               <Badge tone={statusTone(status)}>{statusLabel(status)}</Badge>
               {report.report_type && <Badge tone="neutral">{report.report_type.name}</Badge>}
@@ -325,7 +325,9 @@ export default function ReportDetailPage() {
         <div className="rounded-xl bg-white p-4">
           <div className="flex items-center gap-2">
             <IconLink size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
-            <h2 className="text-sm font-semibold text-[var(--color-ink)]">Linked departments</h2>
+            <h2 className="text-sm font-semibold text-[var(--color-ink)]">
+              Cross-agency departments
+            </h2>
           </div>
           <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
             This report needs action from multiple departments.
@@ -352,7 +354,9 @@ export default function ReportDetailPage() {
                       {a.department?.name ?? 'Department'}
                     </p>
                     <p className="text-xs text-[var(--color-text-tertiary)]">
-                      {a.is_primary ? 'Primary — owns closure' : 'Linked — assists resolution'}
+                      {a.is_primary
+                        ? 'Primary — owns closure'
+                        : 'Cross-agency — assists resolution'}
                     </p>
                   </div>
                 </div>
@@ -394,7 +398,7 @@ export default function ReportDetailPage() {
             </h2>
             <p className="mt-1 text-sm leading-5 text-[var(--color-text-secondary)]">
               {isSecondaryTask
-                ? 'This linked task has its own completion state. The primary department retains control of the report workflow.'
+                ? 'This cross-agency work has its own completion state. The primary department retains control of the report workflow.'
                 : (STATUS_GUIDANCE[status] ?? 'No workflow action is available for this status.')}
             </p>
           </div>
@@ -455,10 +459,13 @@ export default function ReportDetailPage() {
             <div>
               <div className="flex items-center gap-2">
                 <IconLink size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
-                <h2 className="text-sm font-semibold text-[var(--color-ink)]">Linked report</h2>
+                <h2 className="text-sm font-semibold text-[var(--color-ink)]">
+                  Cross-agency report
+                </h2>
               </div>
               <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-                Complete this department task without resolving or closing the report.
+                Complete this department’s cross-agency work without resolving or closing the
+                report.
               </p>
               <div className="mt-3 flex items-center gap-4 text-xs">
                 <div>

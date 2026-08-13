@@ -32,7 +32,7 @@ const DEPARTMENT_ADMIN_ROLES: Role[] = ['super_admin', 'system', 'department_adm
 const NAV: NavItem[] = [
   { to: '/operations', label: 'Dashboard', end: true, icon: IconHome, mobile: true },
   { to: '/operations/reports', label: 'Assigned', icon: IconClipboardList, mobile: true },
-  { to: '/operations/tasks', label: 'Tasks', icon: IconFileAnalytics, mobile: true },
+  { to: '/operations/tasks', label: 'Cross-agency', icon: IconFileAnalytics, mobile: true },
   { to: '/operations/analytics', label: 'Analytics', icon: IconChartBar },
   { to: '/operations/map', label: 'GIS Map', icon: IconMap },
   { to: '/operations/reports/export', label: 'Export', icon: IconDatabaseExport },
@@ -55,7 +55,7 @@ const NAV: NavItem[] = [
 const MOBILE_NAV: NavItem[] = [
   { to: '/operations', label: 'Home', end: true, icon: IconHome },
   { to: '/operations/reports', label: 'Reports', icon: IconClipboardList },
-  { to: '/operations/tasks', label: 'Tasks', icon: IconFileAnalytics },
+  { to: '/operations/tasks', label: 'Cross-agency', icon: IconFileAnalytics },
   { to: '/operations/analytics', label: 'Analytics', icon: IconChartBar },
   {
     to: '/operations/admin',
