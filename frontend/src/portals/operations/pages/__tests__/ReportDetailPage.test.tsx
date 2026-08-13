@@ -113,7 +113,7 @@ describe('OperationsReportDetailPage', () => {
     );
     vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
     renderWithClient(<ReportDetailPage />);
-    expect(await screen.findByText('Report not found')).toBeTruthy();
+    expect(await screen.findByText('Report could not be loaded')).toBeTruthy();
   });
 
   it('shows empty evidence state when no media is attached', async () => {

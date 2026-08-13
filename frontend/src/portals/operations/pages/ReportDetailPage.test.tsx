@@ -108,7 +108,7 @@ describe('ReportDetailPage', () => {
     );
     vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
     renderWithClient(<ReportDetailPage />);
-    expect(await screen.findByText('Report not found')).toBeInTheDocument();
+    expect(await screen.findByText('Report could not be loaded')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
   });
 

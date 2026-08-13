@@ -380,8 +380,8 @@ export default function ReportDetailPage() {
   if (error || !report) {
     return (
       <EmptyState
-        title="Report not found"
-        description="The report could not be loaded."
+        title="Report could not be loaded"
+        description="Refresh this page, or go back to the reports list if this report is no longer assigned to your department."
         action={
           <button
             type="button"
