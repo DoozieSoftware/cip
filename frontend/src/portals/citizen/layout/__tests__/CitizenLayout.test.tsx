@@ -75,6 +75,8 @@ describe('CitizenLayout navigation', () => {
     const { sidebar } = getNavs();
     const settingsLink = within(sidebar).getByText('Settings').closest('a');
     expect(settingsLink?.getAttribute('aria-current')).toBe('page');
+    expect(settingsLink).toHaveClass('bg-white', 'text-[var(--color-ink)]');
+    expect(settingsLink).not.toHaveClass('text-white');
   });
 
   it('renders all five primary navigation items in the sidebar', () => {

@@ -102,7 +102,7 @@ export function CitizenLayout(): JSX.Element {
                       cx(
                         'flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors duration-150',
                         isActive
-                          ? 'bg-[var(--color-ink)] text-white'
+                          ? 'bg-white text-[var(--color-ink)] shadow-sm ring-1 ring-black/10'
                           : 'text-[#686762] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)]',
                       )
                     }

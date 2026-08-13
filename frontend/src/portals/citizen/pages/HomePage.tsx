@@ -260,16 +260,18 @@ export default function HomePage(): JSX.Element {
         <div className="overflow-hidden rounded-2xl border border-black/10 bg-white">
           <Link
             to="/citizen/submit"
-            className="group flex min-h-36 items-end justify-between gap-5 bg-[var(--color-ink)] p-6 text-white transition hover:bg-black sm:p-7"
+            className="group flex min-h-36 items-end justify-between gap-5 bg-white p-6 text-[var(--color-ink)] transition-colors hover:bg-[var(--color-ink-soft)] hover:text-white sm:p-7"
           >
             <div>
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-white text-[var(--color-ink)]">
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--color-ink)] text-white transition-colors group-hover:bg-white group-hover:text-[var(--color-ink)]">
                 <IconPlus className="h-5 w-5" stroke={1.8} />
               </span>
               <h2 className="mt-5 text-2xl font-normal tracking-[-0.025em]">
                 {t('home.fileNewReport')}
               </h2>
-              <p className="mt-1 text-sm text-white/65">{t('home.fileNewReportSub')}</p>
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)] transition-colors group-hover:text-white/65">
+                {t('home.fileNewReportSub')}
+              </p>
             </div>
             <IconArrowUpRight
               className="h-6 w-6 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"

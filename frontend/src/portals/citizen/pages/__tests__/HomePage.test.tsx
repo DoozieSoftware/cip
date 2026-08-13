@@ -122,6 +122,14 @@ function renderPage(opts: { online?: boolean } = {}): void {
 }
 
 describe('HomePage — status classification', () => {
+  it('keeps the file-report card light until it is hovered', () => {
+    renderPage();
+    expect(screen.getByRole('link', { name: /File a new report/i })).toHaveClass(
+      'bg-white',
+      'hover:bg-[var(--color-ink-soft)]',
+    );
+  });
+
   it('counts active reports using lifecycleGroup (open), not negative lists', () => {
     renderPage();
     const stats = screen.getAllByText(/\d+/);
