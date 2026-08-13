@@ -46,6 +46,7 @@ class CitizenReportResourceTest extends TestCase
         $report = new Report;
         $report->id = 'rep-1';
         $report->tracking_number = 'CIV-2026-000001';
+        $report->workflow_version = 7;
         $report->title = 'Pothole';
         $report->description = 'Deep pothole';
         $report->ai_label = 'pothole';
@@ -91,6 +92,7 @@ class CitizenReportResourceTest extends TestCase
 
         $this->assertSame('rep-1', $data['id']);
         $this->assertSame('CIV-2026-000001', $data['tracking_number']);
+        $this->assertSame(7, $data['workflow_version']);
         $this->assertSame(['code' => 'submitted', 'name' => 'Submitted', 'is_terminal' => false], $data['status']);
 
         // `type` (not `report_type`) with icon.

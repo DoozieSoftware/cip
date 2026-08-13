@@ -61,6 +61,7 @@ class CitizenReportResource extends JsonResource
         return [
             'id' => $report->id,
             'tracking_number' => $report->tracking_number,
+            'workflow_version' => $report->workflow_version,
             'title' => $report->title,
             'description' => $report->description,
             'status' => $status === null ? null : [

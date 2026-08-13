@@ -249,6 +249,11 @@ paths:
       operationId: department.reports.accept
       parameters:
         - $ref: '#/components/parameters/PathReportId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProgressNoteRequest' }
       responses:
         200:
           description: OK
@@ -259,6 +264,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         403:
           $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
         422:
           $ref: '#/components/responses/ValidationError'
   '/api/v1/department/reports/{report}/start':
@@ -269,6 +276,11 @@ paths:
       operationId: department.reports.start
       parameters:
         - $ref: '#/components/parameters/PathReportId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProgressNoteRequest' }
       responses:
         200:
           description: OK
@@ -279,6 +291,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         403:
           $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
         422:
           $ref: '#/components/responses/ValidationError'
   '/api/v1/department/reports/{report}/progress':
@@ -329,6 +343,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         403:
           $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
         422:
           $ref: '#/components/responses/ValidationError'
   '/api/v1/department/reports/{report}/close':
@@ -355,6 +371,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         403:
           $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
         422:
           $ref: '#/components/responses/ValidationError'
   '/api/v1/department/reports/{report}/tasks/{assignment}/complete':
@@ -907,6 +925,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         404:
           $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
         422:
           $ref: '#/components/responses/ValidationError'
   /api/v1/moderator/queue:
@@ -1001,7 +1021,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         403:
           $ref: '#/components/responses/Forbidden'
-  '/api/v1/moderator/reports/{id}':
+  '/api/v1/moderator/reports/{report}':
     get:
       tags:
         - Moderation
@@ -1010,7 +1030,7 @@ paths:
       parameters:
         -
           in: path
-          name: id
+          name: report
           required: true
           schema:
             type: string
@@ -1027,7 +1047,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         404:
           $ref: '#/components/responses/NotFound'
-  '/api/v1/moderator/reports/{id}/review':
+  '/api/v1/moderator/reports/{report}/review':
     post:
       tags:
         - Moderation
@@ -1036,7 +1056,7 @@ paths:
       parameters:
         -
           in: path
-          name: id
+          name: report
           required: true
           schema:
             type: string
@@ -1057,9 +1077,11 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         403:
           $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
         422:
           $ref: '#/components/responses/ValidationError'
-  '/api/v1/moderator/reports/{id}/merge':
+  '/api/v1/moderator/reports/{report}/merge':
     post:
       tags:
         - Moderation
@@ -1068,7 +1090,7 @@ paths:
       parameters:
         -
           in: path
-          name: id
+          name: report
           required: true
           schema:
             type: string
@@ -1081,17 +1103,19 @@ paths:
               $ref: '#/components/schemas/BulkMergeRequest'
       responses:
         200:
-          description: 'Updated canonical report.'
+          description: 'Duplicate reports merged into the canonical report.'
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ReportDetailResponse' }
+              schema: { $ref: '#/components/schemas/BulkMergeResponse' }
         401:
           $ref: '#/components/responses/Unauthorized'
         403:
           $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
         422:
           $ref: '#/components/responses/ValidationError'
-  '/api/v1/moderator/reports/{id}/reject':
+  '/api/v1/moderator/reports/{report}/reject':
     post:
       tags:
         - Moderation
@@ -1100,7 +1124,7 @@ paths:
       parameters:
         -
           in: path
-          name: id
+          name: report
           required: true
           schema:
             type: string
@@ -1121,9 +1145,11 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         403:
           $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
         422:
           $ref: '#/components/responses/ValidationError'
-  '/api/v1/moderator/reports/{id}/escalate':
+  '/api/v1/moderator/reports/{report}/escalate':
     post:
       tags:
         - Moderation
@@ -1132,7 +1158,7 @@ paths:
       parameters:
         -
           in: path
-          name: id
+          name: report
           required: true
           schema:
             type: string
@@ -1153,6 +1179,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         403:
           $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
         422:
           $ref: '#/components/responses/ValidationError'
   /api/v1/moderator/analytics/summary:
@@ -3971,6 +3999,72 @@ paths:
           $ref: '#/components/responses/Forbidden'
         404:
           $ref: '#/components/responses/NotFound'
+  '/api/v1/citizen/reports/{report}/verify':
+    post:
+      tags: [Reports]
+      summary: 'Citizen verifies the resolution of an owned report'
+      operationId: reports.citizen.verify
+      parameters:
+        - $ref: '#/components/parameters/PathReportId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CitizenReportActionRequest' }
+      responses:
+        200:
+          description: 'Resolution verified.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CitizenReportActionResponse' }
+        403: { $ref: '#/components/responses/Forbidden' }
+        404: { $ref: '#/components/responses/NotFound' }
+        409: { $ref: '#/components/responses/Conflict' }
+        422: { $ref: '#/components/responses/ValidationError' }
+  '/api/v1/citizen/reports/{report}/dispute':
+    post:
+      tags: [Reports]
+      summary: 'Citizen disputes the resolution of an owned report'
+      operationId: reports.citizen.dispute
+      parameters:
+        - $ref: '#/components/parameters/PathReportId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CitizenReportActionRequest' }
+      responses:
+        200:
+          description: 'Resolution disputed.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CitizenReportActionResponse' }
+        403: { $ref: '#/components/responses/Forbidden' }
+        404: { $ref: '#/components/responses/NotFound' }
+        409: { $ref: '#/components/responses/Conflict' }
+        422: { $ref: '#/components/responses/ValidationError' }
+  '/api/v1/citizen/reports/{report}/dispute-merge':
+    post:
+      tags: [Reports]
+      summary: 'Citizen disputes an incorrect merge of an owned report'
+      operationId: reports.citizen.dispute_merge
+      parameters:
+        - $ref: '#/components/parameters/PathReportId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CitizenReportActionRequest' }
+      responses:
+        200:
+          description: 'Merge dispute filed.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CitizenReportActionResponse' }
+        403: { $ref: '#/components/responses/Forbidden' }
+        404: { $ref: '#/components/responses/NotFound' }
+        409: { $ref: '#/components/responses/Conflict' }
+        422: { $ref: '#/components/responses/ValidationError' }
   /api/v1/admin/ai/providers:
     get:
       tags:
@@ -5627,6 +5721,9 @@ components:
           format: uuid
         tracking_number:
           type: string
+        workflow_version:
+          type: integer
+          minimum: 1
         title:
           type: string
         description:
@@ -6487,7 +6584,33 @@ components:
       properties:
         note:
           type: string
-          maxLength: 4000
+          maxLength: 2000
+        reason_code:
+          type: string
+          maxLength: 64
+        expected_workflow_version:
+          type: integer
+          minimum: 1
+    CitizenReportActionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 1000
+        expected_workflow_version:
+          type: integer
+          minimum: 1
+    CitizenReportActionResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                report:
+                  $ref: '#/components/schemas/Report'
     InternalNote:
       type: object
       properties:
@@ -7259,6 +7382,9 @@ components:
           format: uuid
         tracking_number:
           type: string
+        workflow_version:
+          type: integer
+          minimum: 1
         title:
           type: string
         category:
@@ -7419,21 +7545,28 @@ components:
         category_id:
           type: string
           format: uuid
+        category_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
         department_id:
+          type: string
+          format: uuid
+        merge_into_report_id:
           type: string
           format: uuid
         override_ai:
           type: boolean
+        expected_workflow_version:
+          type: integer
+          minimum: 1
     BulkMergeRequest:
       type: object
       required:
-        - canonical_id
-        - duplicate_ids
+        - duplicate_report_ids
       properties:
-        canonical_id:
-          type: string
-          format: uuid
-        duplicate_ids:
+        duplicate_report_ids:
           type: array
           minItems: 1
           items:
@@ -7444,6 +7577,22 @@ components:
         remarks:
           type: string
           maxLength: 2000
+        expected_workflow_version:
+          type: integer
+          minimum: 1
+    BulkMergeResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [merged_count, merged_report_ids]
+              properties:
+                merged_count: { type: integer, minimum: 0 }
+                merged_report_ids:
+                  type: array
+                  items: { type: string, format: uuid }
     RejectRequest:
       type: object
       required:
@@ -7454,6 +7603,9 @@ components:
         remarks:
           type: string
           maxLength: 2000
+        expected_workflow_version:
+          type: integer
+          minimum: 1
     EscalateRequest:
       type: object
       required:
@@ -7466,6 +7618,9 @@ components:
           maxLength: 2000
         level:
           type: string
+        expected_workflow_version:
+          type: integer
+          minimum: 1
     AnalyticsSummary:
       type: object
       properties:
@@ -8177,6 +8332,9 @@ components:
           type: string
           minLength: 3
           maxLength: 500
+        expected_workflow_version:
+          type: integer
+          minimum: 1
     Reassignment:
       type: object
       properties:

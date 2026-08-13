@@ -12,6 +12,7 @@ use App\Modules\Moderation\Services\ModerationService;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Controllers\BaseController;
+use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -54,7 +55,7 @@ class ModerationActionsController extends BaseController
         $this->authorize('review', $report);
 
         $dto = $request->toDto();
-        $updated = $this->service->review($report, $dto, $request->user());
+        $updated = $this->service->review($report, $dto, $this->moderator($request));
 
         return $this->respond([
             'report' => (new ModeratorReportDetailResource($updated))->resolve($request),
@@ -69,13 +70,28 @@ class ModerationActionsController extends BaseController
     {
         $report = $this->findOrFail($reportId);
         $this->authorize('merge', $report);
+        $validated = $request->validated();
+        $duplicateIds = [];
+        $rawDuplicateIds = $validated['duplicate_report_ids'] ?? null;
+
+        if (is_array($rawDuplicateIds)) {
+            foreach ($rawDuplicateIds as $id) {
+                if (is_string($id)) {
+                    $duplicateIds[] = $id;
+                }
+            }
+        }
+        $expectedWorkflowVersion = $validated['expected_workflow_version'] ?? null;
 
         $merged = $this->service->merge(
             canonicalId: $report->id,
-            duplicateIds: array_values(array_unique((array) $request->validated('duplicate_report_ids'))),
-            remarks: $request->validated('remarks'),
-            reasonCode: $request->validated('reason_code'),
-            moderator: $request->user(),
+            duplicateIds: array_values(array_unique($duplicateIds)),
+            remarks: is_string($validated['remarks'] ?? null) ? $validated['remarks'] : null,
+            reasonCode: is_string($validated['reason_code'] ?? null) ? $validated['reason_code'] : null,
+            moderator: $this->moderator($request),
+            expectedCanonicalVersion: is_int($expectedWorkflowVersion)
+                ? $expectedWorkflowVersion
+                : null,
         );
 
         return $this->respond([
@@ -99,7 +115,7 @@ class ModerationActionsController extends BaseController
         $validated['decision'] = ReviewReportDto::DECISION_REJECT;
         $dto = ReviewReportDto::fromArray($validated);
 
-        $updated = $this->service->review($report, $dto, $request->user());
+        $updated = $this->service->review($report, $dto, $this->moderator($request));
 
         return $this->respond([
             'report' => (new ModeratorReportDetailResource($updated))->resolve($request),
@@ -118,7 +134,7 @@ class ModerationActionsController extends BaseController
         $validated['decision'] = ReviewReportDto::DECISION_ESCALATE;
         $dto = ReviewReportDto::fromArray($validated);
 
-        $updated = $this->service->review($report, $dto, $request->user());
+        $updated = $this->service->review($report, $dto, $this->moderator($request));
 
         return $this->respond([
             'report' => (new ModeratorReportDetailResource($updated))->resolve($request),
@@ -134,5 +150,16 @@ class ModerationActionsController extends BaseController
         }
 
         return $report;
+    }
+
+    private function moderator(StoreReviewRequest|StoreBulkMergeRequest $request): User
+    {
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            throw ApiException::unauthorized('Authentication required.');
+        }
+
+        return $user;
     }
 }

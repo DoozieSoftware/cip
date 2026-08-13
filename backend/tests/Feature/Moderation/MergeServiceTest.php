@@ -21,8 +21,9 @@ uses(RefreshDatabase::class);
 /**
  * ModerationService::merge bulk duplicate-folding.
  *
- * `merge()` keeps the canonical report unchanged and moves
- * every duplicate to the `merged` terminal state. Both the
+ * `merge()` keeps the canonical report state unchanged and moves
+ * every duplicate to the `merged` terminal state. The optimistic
+ * workflow token advances on every participating row. Both the
  * canonical and the duplicate get an audit row, and the
  * `ReportsMerged` event fires once with the full list of
  * duplicate ids.
@@ -60,6 +61,9 @@ it('merges multiple duplicates into a canonical report', function (): void {
     $mergedStatus = ReportStatus::query()->where('code', 'merged')->firstOrFail();
     expect($dup1->fresh()->current_status_id)->toBe($mergedStatus->id);
     expect($dup2->fresh()->current_status_id)->toBe($mergedStatus->id);
+    expect($canonical->fresh()->workflow_version)->toBe(2)
+        ->and($dup1->fresh()->workflow_version)->toBe(2)
+        ->and($dup2->fresh()->workflow_version)->toBe(2);
 
     // The unrelated report is untouched.
     expect($unrelated->fresh()->current_status_id)->not->toBe($mergedStatus->id);
@@ -112,4 +116,56 @@ it('deduplicates a duplicate-id list', function (): void {
     expect($merged)->toBe([$dup1->id]);
     $auditCount = AuditLog::query()->where('entity_id', $dup1->id)->where('action', 'report.merged')->count();
     expect($auditCount)->toBe(1);
+});
+
+it('rejects a stale canonical version before merging any duplicate', function (): void {
+    $canonical = Report::factory()->create(['workflow_version' => 2]);
+    $duplicate = Report::factory()->create(['workflow_version' => 1]);
+
+    try {
+        app(ModerationService::class)->merge(
+            $canonical->id,
+            [$duplicate->id],
+            null,
+            null,
+            mergeModerator(),
+            expectedCanonicalVersion: 1,
+        );
+        $this->fail('Expected a report version conflict.');
+    } catch (ApiException $exception) {
+        expect($exception->errorCode)->toBe('REPORT_VERSION_CONFLICT')
+            ->and($exception->httpStatus)->toBe(409)
+            ->and($exception->details)->toMatchArray([
+                'expected_workflow_version' => 1,
+                'actual_workflow_version' => 2,
+            ]);
+    }
+
+    expect($duplicate->fresh()->merged_into)->toBeNull()
+        ->and($duplicate->fresh()->workflow_version)->toBe(1);
+});
+
+it('rolls back every duplicate when one expected version is stale', function (): void {
+    $canonical = Report::factory()->create(['workflow_version' => 1]);
+    $freshDuplicate = Report::factory()->create(['workflow_version' => 1]);
+    $staleDuplicate = Report::factory()->create(['workflow_version' => 2]);
+
+    expect(fn (): array => app(ModerationService::class)->merge(
+        $canonical->id,
+        [$freshDuplicate->id, $staleDuplicate->id],
+        null,
+        null,
+        mergeModerator(),
+        expectedCanonicalVersion: 1,
+        expectedDuplicateVersions: [
+            $freshDuplicate->id => 1,
+            $staleDuplicate->id => 1,
+        ],
+    ))->toThrow(ApiException::class);
+
+    expect($canonical->fresh()->workflow_version)->toBe(1)
+        ->and($freshDuplicate->fresh()->workflow_version)->toBe(1)
+        ->and($freshDuplicate->fresh()->merged_into)->toBeNull()
+        ->and($staleDuplicate->fresh()->workflow_version)->toBe(2)
+        ->and($staleDuplicate->fresh()->merged_into)->toBeNull();
 });

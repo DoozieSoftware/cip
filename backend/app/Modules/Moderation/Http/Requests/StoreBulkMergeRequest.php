@@ -33,6 +33,7 @@ class StoreBulkMergeRequest extends FormRequest
             'duplicate_report_ids.*' => ['string', 'uuid', 'different:report'],
             'reason_code' => ['nullable', 'string', 'max:64'],
             'remarks' => ['nullable', 'string', 'max:2000'],
+            'expected_workflow_version' => ['nullable', 'integer', 'min:1'],
         ];
     }
 }
