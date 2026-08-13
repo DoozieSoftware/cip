@@ -35,7 +35,7 @@ import { EvidenceViewer } from '../components/EvidenceViewer';
 import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 import { AiAnalysisPanel } from '../components/AiAnalysisPanel';
 import { AssignmentDialog } from '../components/AssignmentDialog';
-import { auditActionLabel } from '../components/auditActionLabel';
+import { auditActionLabel } from '../../../shared/auditActionLabel';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 function LocationText({ lat, lng }: { lat: number; lng: number }): JSX.Element {

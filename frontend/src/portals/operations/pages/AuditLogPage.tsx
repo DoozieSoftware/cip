@@ -9,6 +9,7 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { Spinner, Input, Select, Button, Badge } from '../../../shared/ui';
+import { auditActionLabel } from '../../../shared/auditActionLabel';
 import { auditApi, type AuditLogFilters, type AuditLogRow } from '../api/operations';
 import type { PaginationMeta } from '../types';
 
@@ -343,8 +344,8 @@ export default function AuditLogPage() {
                         {r.entity_id ?? '—'}
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-[var(--color-text-secondary)]">
-                      {r.action}
+                    <td className="px-4 py-3 text-xs text-[var(--color-text-secondary)]">
+                      {auditActionLabel(r.action)}
                     </td>
                     <td className="px-4 py-3 text-xs text-[var(--color-text-secondary)]">
                       {r.ip ?? '—'}

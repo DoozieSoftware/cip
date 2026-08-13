@@ -24,6 +24,7 @@ import {
   useSchedulerJobs,
 } from '../api/client';
 import { Card, CardBody, CardHeader, Spinner, ErrorState } from '../../../shared/ui';
+import { auditActionLabel } from '../../../shared/auditActionLabel';
 
 interface Counts {
   organizations: number;
@@ -360,8 +361,8 @@ export default function AdminGovernmentDashboard(): JSX.Element {
                           <td className="whitespace-nowrap px-4 py-3 text-xs text-[var(--color-text-secondary)]">
                             {new Date(row.created_at).toLocaleString()}
                           </td>
-                          <td className="px-4 py-3 font-mono text-xs text-[var(--color-ink)]">
-                            {row.action}
+                          <td className="px-4 py-3 text-xs text-[var(--color-ink)]">
+                            {auditActionLabel(row.action)}
                           </td>
                           <td className="px-4 py-3 text-xs text-[var(--color-text-secondary)]">
                             {row.entity ?? 'Request'}

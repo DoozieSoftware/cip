@@ -1,6 +1,7 @@
 import { useState, type JSX } from 'react';
 import { useAuditLogs, type AuditLog } from '../api/client';
 import { Spinner, ErrorState, Card, CardHeader, CardTitle, CardBody } from '../../../shared/ui';
+import { auditActionLabel } from '../../../shared/auditActionLabel';
 import {
   IconSearch,
   IconCalendarUser,
@@ -87,8 +88,12 @@ export default function AdminAuditLog(): JSX.Element {
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">Audit log</h1>
-            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Search who-did-what across the platform.</p>
+            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+              Audit log
+            </h1>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+              Search who-did-what across the platform.
+            </p>
           </div>
           <button
             type="button"
@@ -200,7 +205,10 @@ export default function AdminAuditLog(): JSX.Element {
 
         {(list.data ?? []).length === 0 ? (
           <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-white p-10 text-center">
-            <IconCalendarUser className="mx-auto h-8 w-8 text-[var(--color-text-tertiary)]" stroke={1.4} />
+            <IconCalendarUser
+              className="mx-auto h-8 w-8 text-[var(--color-text-tertiary)]"
+              stroke={1.4}
+            />
             <p className="mt-3 text-sm font-medium text-[var(--color-ink)]">No entries found</p>
             <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               Try widening the filters or pick a different action/entity.
@@ -231,11 +239,13 @@ export default function AdminAuditLog(): JSX.Element {
                             {actionIcon(row.action)}
                           </span>
                           <div>
-                            <p className="font-mono text-xs font-medium text-[var(--color-ink)]">
-                              {row.action}
+                            <p className="text-xs font-medium text-[var(--color-ink)]">
+                              {auditActionLabel(row.action)}
                             </p>
                             {row.roles.length > 0 && (
-                              <p className="text-[10px] text-[var(--color-text-tertiary)]">{row.roles.join(', ')}</p>
+                              <p className="text-[10px] text-[var(--color-text-tertiary)]">
+                                {row.roles.join(', ')}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -243,7 +253,9 @@ export default function AdminAuditLog(): JSX.Element {
                       <td className="px-5 py-3">
                         {row.entity ? (
                           <div>
-                            <p className="text-xs font-medium text-[var(--color-ink)]">{row.entity}</p>
+                            <p className="text-xs font-medium text-[var(--color-ink)]">
+                              {row.entity}
+                            </p>
                             {row.entity_id && (
                               <p className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
                                 {row.entity_id.slice(0, 8)}…
