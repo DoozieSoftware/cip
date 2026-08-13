@@ -34,7 +34,33 @@ class MediaPolicy extends BasePolicy
     {
         $report = Report::query()->find($media->report_id);
 
-        return $report !== null && $this->viewReport($user, $report);
+        if ($report === null) {
+            return false;
+        }
+
+        if ($this->isOwner($user, $report) || DepartmentScope::isUnrestrictedStaff($user)) {
+            return true;
+        }
+
+        if (! DepartmentScope::canViewReport($user, $report)) {
+            return false;
+        }
+
+        if (($media->role ?? 'evidence') !== 'proof') {
+            return true;
+        }
+
+        $departmentIds = DepartmentScope::memberDepartmentIds($user);
+
+        if ($media->department_id !== null) {
+            return in_array($media->department_id, $departmentIds, true);
+        }
+
+        // Legacy proof had no agency columns. Only the primary report agency
+        // may see it; a linked secondary assignment must never inherit it.
+        return $media->assignment_id === null
+            && $report->department_id !== null
+            && in_array($report->department_id, $departmentIds, true);
     }
 
     public function viewReport(User $user, Report $report): bool
