@@ -121,7 +121,7 @@ describe('OperationsReportDetailPage', () => {
     expect(await screen.findByText('No evidence')).toBeTruthy();
     expect(
       screen.getByText(
-        'Upload proof photos from the fixed location after the field crew completes the work.',
+        'Click or drop proof photos from the fixed location after the field crew completes the work.',
       ),
     ).toBeTruthy();
   });

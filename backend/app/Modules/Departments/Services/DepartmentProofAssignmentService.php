@@ -84,6 +84,30 @@ class DepartmentProofAssignmentService
             ->get();
 
         if ($candidates->isEmpty()) {
+            $fallbackDepartmentId = $requestedDepartmentId ?? $report->department_id;
+
+            if (
+                $fallbackDepartmentId !== null
+                && ($privileged || in_array((string) $fallbackDepartmentId, $memberDepartmentIds, true))
+            ) {
+                return ReportAssignment::query()->firstOrCreate([
+                    'report_id' => $report->getKey(),
+                    'department_id' => (string) $fallbackDepartmentId,
+                    'is_primary' => true,
+                    'kind' => ReportAssignment::KIND_PRIMARY,
+                    'reassigned_at' => null,
+                    'task_status' => ReportAssignment::TASK_STATUS_OPEN,
+                ], [
+                    'officer_id' => null,
+                    'assigned_by' => null,
+                    'assigned_at' => $report->submitted_at ?? now(),
+                    'accepted_at' => null,
+                    'completed_at' => null,
+                    'reassignment_reason' => null,
+                    'sla_minutes' => $report->priority?->sla_minutes,
+                ]);
+            }
+
             throw ApiException::validation(
                 'Completion proof must be attached to a current report assignment.',
                 ['assignment_id' => ['No eligible assignment was found.']],

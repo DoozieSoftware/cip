@@ -42,10 +42,26 @@ class DepartmentReportService
 
     public function accept(Report $report, User $actor, ?Request $request, ?int $expectedWorkflowVersion = null): Report
     {
-        return $this->run($report, 'accept', $actor, $request, payload: [
+        $assignment = $this->proofAssignments->resolve(
+            $report,
+            $actor,
+            null,
+            is_string($request?->input('department_id')) ? (string) $request->input('department_id') : null,
+        );
+
+        $updated = $this->run($report, 'accept', $actor, $request, payload: [
             'kind' => 'lifecycle',
             'lifecycle_event' => 'accept',
+            'assignment_id' => $assignment->id,
+            'department_id' => $assignment->department_id,
         ], expectedWorkflowVersion: $expectedWorkflowVersion);
+
+        $assignment->forceFill([
+            'officer_id' => $assignment->officer_id ?? $actor->getKey(),
+            'accepted_at' => $assignment->accepted_at ?? now(),
+        ])->save();
+
+        return $updated;
     }
 
     public function start(Report $report, User $actor, ?Request $request, ?int $expectedWorkflowVersion = null): Report

@@ -145,7 +145,15 @@ class DepartmentPolicy extends BasePolicy
 
         $departmentIds = DepartmentScope::memberDepartmentIds($user);
 
-        return $departmentIds !== [] && $report->assignments()
+        if ($departmentIds === []) {
+            return false;
+        }
+
+        if ($report->department_id !== null && in_array((string) $report->department_id, $departmentIds, true)) {
+            return true;
+        }
+
+        return $report->assignments()
             ->whereNull('reassigned_at')
             ->whereIn('task_status', [
                 ReportAssignment::TASK_STATUS_OPEN,

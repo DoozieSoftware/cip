@@ -338,9 +338,7 @@ export default function ReportDetailPage() {
     [action, pendingAction],
   );
 
-  const handleProofFiles = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = '';
+  const uploadProofFiles = (files: File[]): void => {
     if (files.length === 0) return;
     setProofCaptureError(null);
     void captureCurrentPosition()
@@ -352,6 +350,20 @@ export default function ReportDetailPage() {
             : 'Could not capture your current location for proof upload.',
         );
       });
+  };
+
+  const handleProofFiles = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    uploadProofFiles(files);
+  };
+
+  const handleProofDrop = (e: React.DragEvent<HTMLDivElement>): void => {
+    e.preventDefault();
+    if (uploadProof.isPending || isTerminal) return;
+    uploadProofFiles(
+      Array.from(e.dataTransfer.files).filter((file) => file.type.startsWith('image/')),
+    );
   };
 
   const focusNote = useCallback((): void => {
@@ -704,11 +716,33 @@ export default function ReportDetailPage() {
                   </span>
                 </div>
                 {selectedAssignmentProof.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-emerald-300 bg-white/70 py-8 text-center">
+                  <div
+                    role={!isTerminal ? 'button' : undefined}
+                    tabIndex={!isTerminal ? 0 : undefined}
+                    onClick={() => {
+                      if (!isTerminal && !uploadProof.isPending) proofInputRef.current?.click();
+                    }}
+                    onKeyDown={(event) => {
+                      if (
+                        !isTerminal &&
+                        !uploadProof.isPending &&
+                        (event.key === 'Enter' || event.key === ' ')
+                      ) {
+                        event.preventDefault();
+                        proofInputRef.current?.click();
+                      }
+                    }}
+                    onDragOver={(event) => {
+                      if (!isTerminal) event.preventDefault();
+                    }}
+                    onDrop={handleProofDrop}
+                    className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-emerald-300 bg-white/70 py-8 text-center transition hover:border-emerald-500 hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                    aria-label="Upload proof photos with current location"
+                  >
                     <IconUpload size={20} stroke={1.6} className="text-emerald-600" />
                     <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
-                      Upload proof photos from the fixed location after the field crew completes the
-                      work.
+                      Click or drop proof photos from the fixed location after the field crew
+                      completes the work.
                     </p>
                   </div>
                 ) : (
