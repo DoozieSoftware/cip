@@ -6,12 +6,14 @@ namespace App\Modules\Departments\Services;
 
 use App\Modules\Reports\Models\InternalNote;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportAssignment;
 use App\Modules\Security\Models\AuditLog;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
 use App\Modules\Workflow\Services\WorkflowEngine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * M11 — Service that drives the department-officer workflow
@@ -114,13 +116,15 @@ class DepartmentReportService
         );
         $this->proofVerification->assertAssignmentHasProof($report, $assignment);
 
-        return $this->run($report, 'resolve', $actor, $request, payload: [
+        $updated = $this->run($report, 'resolve', $actor, $request, payload: [
             'kind' => 'lifecycle',
             'lifecycle_event' => 'resolve',
             'note' => $note,
             'assignment_id' => $assignment->id,
             'department_id' => $assignment->department_id,
         ], expectedWorkflowVersion: $expectedWorkflowVersion);
+
+        return $this->autoCompleteWhenProofIsStrong($updated, $assignment);
     }
 
     public function close(
@@ -186,6 +190,61 @@ class DepartmentReportService
 
             return $note->refresh();
         });
+    }
+
+    private function autoCompleteWhenProofIsStrong(Report $report, ReportAssignment $assignment): Report
+    {
+        $verification = $this->proofVerification->latestForAssignment($report, $assignment);
+
+        if ($verification === null || ! $this->proofVerification->eligibleForAutomaticClosure($verification)) {
+            return $report;
+        }
+
+        $decision = $this->engine->evaluate($report, 'auto_close', null);
+
+        if (! $decision->allowed) {
+            Log::warning('department.proof_auto_close_not_allowed', [
+                'report_id' => $report->id,
+                'assignment_id' => $assignment->id,
+                'proof_verification_id' => $verification->id,
+                'reasons' => $decision->reasons,
+            ]);
+
+            return $report;
+        }
+
+        $updated = $this->engine->apply(
+            $report,
+            $decision,
+            null,
+            metadata: [
+                'source' => 'proof_verification',
+                'proof_verification_id' => $verification->id,
+                'overall_confidence' => $verification->overall_confidence,
+                'threshold' => $this->proofVerification->automaticClosureThreshold(),
+            ],
+            expectedWorkflowVersion: (int) $report->workflow_version,
+        );
+
+        AuditLog::query()->create([
+            'user_id' => null,
+            'entity' => 'reports',
+            'entity_id' => $updated->getKey(),
+            'action' => 'report.proof_auto_completed',
+            'before' => ['status' => 'resolved_pending_verification'],
+            'after' => [
+                'status' => $updated->status?->code,
+                'assignment_id' => $assignment->id,
+                'proof_verification_id' => $verification->id,
+                'overall_confidence' => $verification->overall_confidence,
+            ],
+            'ip' => null,
+            'device_fingerprint' => null,
+            'request_id' => null,
+            'created_at' => now(),
+        ]);
+
+        return $updated->refresh()->load(['status', 'reportType', 'department', 'priority']);
     }
 
     /**

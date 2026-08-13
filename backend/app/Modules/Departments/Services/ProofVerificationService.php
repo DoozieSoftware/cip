@@ -108,6 +108,39 @@ class ProofVerificationService
         }
     }
 
+    public function latestForAssignment(Report $report, ReportAssignment $assignment): ?ReportProofVerification
+    {
+        return ReportProofVerification::query()
+            ->where('report_id', $report->getKey())
+            ->where('assignment_id', $assignment->getKey())
+            ->orderByDesc('checked_at')
+            ->orderByDesc('created_at')
+            ->first();
+    }
+
+    public function eligibleForAutomaticClosure(ReportProofVerification $verification): bool
+    {
+        $metadata = is_array($verification->metadata) ? $verification->metadata : [];
+        $engine = $metadata['engine'] ?? null;
+        $threshold = $this->automaticClosureThreshold();
+
+        return $engine === 'proof_verification_ai_v1'
+            && $verification->status === 'match'
+            && $verification->location_match === true
+            && $verification->overall_confidence > $threshold;
+    }
+
+    public function automaticClosureThreshold(): int
+    {
+        $value = config('cip.ai.proof_review.auto_close_min', 80);
+
+        if (! is_numeric($value)) {
+            return 80;
+        }
+
+        return max(0, min(100, (int) $value));
+    }
+
     private function distanceFromReportLocation(Report $report, Media $proof): ?float
     {
         $location = $report->relationLoaded('location') ? $report->location : $report->location()->first();

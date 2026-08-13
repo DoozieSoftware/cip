@@ -41,5 +41,10 @@ return [
             // review (AI recommends, human decides).
             'moderator_review_min' => (int) env('CIP_AI_MODERATOR_REVIEW_MIN', 75),
         ],
+        'proof_review' => [
+            // MoM rule: only AI proof checks above this confidence can
+            // complete a report without an extra manual closure step.
+            'auto_close_min' => (int) env('CIP_AI_PROOF_AUTO_CLOSE_MIN', 80),
+        ],
     ],
 ];
