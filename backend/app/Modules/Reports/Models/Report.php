@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Reports\Models;
 
 use App\Modules\Departments\Models\Department;
+use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Media\Models\Media;
 use App\Modules\Users\Models\User;
 use Database\Factories\Modules\Reports\Models\ReportFactory;
@@ -300,7 +301,10 @@ class Report extends Model
      */
     public function media(): HasMany
     {
-        return $this->hasMany(Media::class, 'report_id');
+        // Quarantine rows remain attached for custody/recovery, but they are
+        // never report evidence until the scanner has released them CLEAN.
+        return $this->hasMany(Media::class, 'report_id')
+            ->where('scan_status', MediaScanStatus::CLEAN->value);
     }
 
     /**

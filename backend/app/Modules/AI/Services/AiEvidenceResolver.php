@@ -6,6 +6,7 @@ namespace App\Modules\AI\Services;
 
 use App\Modules\AI\Exceptions\AiEvidenceNotReadyException;
 use App\Modules\AI\ValueObjects\AiEvidenceBundle;
+use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Media\Models\Media;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Services\EvidenceManifestService;
@@ -39,6 +40,7 @@ final class AiEvidenceResolver
             ->whereIn('id', $this->mediaIds($manifest['assets'] ?? []))
             ->where('role', 'evidence')
             ->where('is_replaced', false)
+            ->where('scan_status', MediaScanStatus::CLEAN->value)
             ->whereIn('type', ['PHOTO', 'VIDEO'])
             ->orderBy('uploaded_at')
             ->get();

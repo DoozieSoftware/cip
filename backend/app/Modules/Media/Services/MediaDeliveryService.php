@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Media\Services;
 
+use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Support\MediaUrl;
+use App\Modules\Shared\Enums\ErrorCode;
 use App\Modules\Shared\Http\Responses\ApiResponse;
 use Illuminate\Filesystem\AwsS3V3Adapter;
 use Illuminate\Http\JsonResponse;
@@ -28,6 +30,22 @@ class MediaDeliveryService
             return ApiResponse::error('Media not found', 404, 'NOT_FOUND');
         }
 
+        if ($row->scan_status !== MediaScanStatus::CLEAN) {
+            return ApiResponse::error(
+                'Media is quarantined and unavailable.',
+                409,
+                ErrorCode::MEDIA_QUARANTINED->value,
+            );
+        }
+
+        if (($row->role ?? 'evidence') === 'proof' && ! $this->hasValidProofScope($row)) {
+            return ApiResponse::error(
+                'The signed proof scope does not match this media.',
+                403,
+                'MEDIA_SCOPE_MISMATCH',
+            );
+        }
+
         $disk = Storage::disk($row->storage_disk);
 
         if (! $disk->exists($row->storage_path)) {
@@ -40,6 +58,11 @@ class MediaDeliveryService
             null,
             request()->ip(),
             request()->userAgent(),
+            [
+                'signed_scope_verified' => ($row->role ?? 'evidence') === 'proof',
+                'assignment_id' => $row->assignment_id,
+                'department_id' => $row->department_id,
+            ],
         );
 
         // Object storage owns delivery for S3/MinIO/R2. The app records the
@@ -55,5 +78,16 @@ class MediaDeliveryService
             'Content-Type' => $row->mime,
             'Cache-Control' => 'private, max-age=300',
         ]);
+    }
+
+    private function hasValidProofScope(Media $media): bool
+    {
+        $assignment = request()->query('assignment');
+        $department = request()->query('department');
+
+        return is_string($assignment)
+            && is_string($department)
+            && hash_equals((string) ($media->assignment_id ?? ''), $assignment)
+            && hash_equals((string) ($media->department_id ?? ''), $department);
     }
 }

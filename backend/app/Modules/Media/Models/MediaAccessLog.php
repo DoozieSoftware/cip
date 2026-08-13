@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Media\Models;
 
+use App\Modules\Departments\Models\Department;
+use App\Modules\Reports\Models\ReportAssignment;
+use App\Modules\Shared\Exceptions\ModelImmutableException;
 use App\Modules\Users\Models\User;
 use Database\Factories\Modules\Media\Models\MediaAccessLogFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -31,6 +34,8 @@ use Illuminate\Support\Carbon;
  *
  * @property string $id
  * @property string $media_id
+ * @property string|null $assignment_id
+ * @property string|null $department_id
  * @property string|null $actor_id
  * @property string $event
  * @property string|null $ip
@@ -55,6 +60,8 @@ class MediaAccessLog extends Model
     /** @var list<string> */
     protected $fillable = [
         'media_id',
+        'assignment_id',
+        'department_id',
         'actor_id',
         'event',
         'ip',
@@ -74,12 +81,39 @@ class MediaAccessLog extends Model
         ];
     }
 
+    /** @param  array<string, mixed>  $options */
+    public function save(array $options = [])
+    {
+        if ($this->exists) {
+            throw ModelImmutableException::updateAttempted(static::class);
+        }
+
+        return parent::save($options);
+    }
+
+    public function delete(): ?bool
+    {
+        throw ModelImmutableException::deleteAttempted(static::class);
+    }
+
     /**
      * @return BelongsTo<Media, $this>
      */
     public function media(): BelongsTo
     {
         return $this->belongsTo(Media::class, 'media_id');
+    }
+
+    /** @return BelongsTo<ReportAssignment, $this> */
+    public function assignment(): BelongsTo
+    {
+        return $this->belongsTo(ReportAssignment::class, 'assignment_id');
+    }
+
+    /** @return BelongsTo<Department, $this> */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
     }
 
     /**

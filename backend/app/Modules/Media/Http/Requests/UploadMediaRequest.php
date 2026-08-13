@@ -80,6 +80,8 @@ class UploadMediaRequest extends FormRequest
         return [
             $this->fieldName => ['required', 'array', 'min:1', 'max:'.$policies->mediaMaxPhotosPerReport()],
             $this->fieldName.'.*' => ['file', 'max:'.$maxUploadKb], // single media upload cap per `media.max_upload_mb`
+            'assignment_id' => ['nullable', 'uuid'],
+            'department_id' => ['nullable', 'uuid'],
         ];
     }
 }

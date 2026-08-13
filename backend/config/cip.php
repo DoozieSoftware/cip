@@ -6,6 +6,13 @@ return [
     'media' => [
         'scanner' => env('CIP_MEDIA_SCANNER', 'clamav'),
         'disk' => env('CIP_MEDIA_DISK', 'local'),
+        'quarantine' => [
+            // A worker that dies mid-scan may leave RESCANNING behind. The
+            // dispatcher can reclaim it after this lease without releasing
+            // unverified bytes.
+            'rescan_stale_seconds' => (int) env('CIP_MEDIA_RESCAN_STALE_SECONDS', 900),
+            'recovery_batch_size' => (int) env('CIP_MEDIA_RECOVERY_BATCH_SIZE', 100),
+        ],
     ],
     'notifications' => [
         'sms_driver' => env('CIP_NOTIFICATIONS_SMS_DRIVER', 'log'),

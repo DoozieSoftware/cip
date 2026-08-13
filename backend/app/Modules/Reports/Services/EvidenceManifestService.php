@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Reports\Services;
 
+use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Media\Models\Media;
 use App\Modules\Reports\Models\Report;
 use Illuminate\Support\Facades\Storage;
@@ -29,15 +30,19 @@ final class EvidenceManifestService
             ->orderBy('uploaded_at')
             ->get();
 
-        $photos = $media->where('type', 'PHOTO')->values();
-        $videos = $media->where('type', 'VIDEO')->values();
-        $documents = $media->where('type', 'DOCUMENT')->values();
+        $cleanMedia = $media->filter(
+            static fn (Media $asset): bool => $asset->scan_status === MediaScanStatus::CLEAN,
+        );
+        $photos = $cleanMedia->where('type', 'PHOTO')->values();
+        $videos = $cleanMedia->where('type', 'VIDEO')->values();
+        $documents = $cleanMedia->where('type', 'DOCUMENT')->values();
         $minPhotos = max(0, $type === null ? 0 : (int) $type->min_photos);
         $requiresPhoto = $type !== null && (bool) $type->requires_photo;
         $requiresVideo = $type !== null && (bool) $type->requires_video;
         $requiredPhotoCount = $requiresPhoto ? max(1, $minPhotos) : $minPhotos;
 
         $assets = $media->map(function (Media $asset): array {
+            $scanStatus = $asset->scan_status;
             $storageReady = false;
 
             try {
@@ -53,6 +58,14 @@ final class EvidenceManifestService
                 && is_string($asset->checksum)
                 && preg_match('/^[a-f0-9]{64}$/i', $asset->checksum) === 1;
 
+            $status = match ($scanStatus) {
+                MediaScanStatus::PENDING, MediaScanStatus::UNKNOWN => 'scan_pending',
+                MediaScanStatus::INFECTED => 'quarantined',
+                MediaScanStatus::CLEAN => $storageReady && $hashReady
+                    ? 'ready'
+                    : ($storageReady ? 'hash_pending' : 'upload_pending'),
+            };
+
             return [
                 'id' => $asset->id,
                 'type' => $asset->type,
@@ -62,7 +75,8 @@ final class EvidenceManifestService
                 'storage_ready' => $storageReady,
                 'hash_ready' => $hashReady,
                 'sha256' => $hash?->sha256,
-                'status' => $storageReady && $hashReady ? 'ready' : ($storageReady ? 'hash_pending' : 'upload_pending'),
+                'scan_status' => strtolower($scanStatus->value),
+                'status' => $status,
             ];
         })->all();
 
@@ -78,9 +92,12 @@ final class EvidenceManifestService
 
         foreach ($assets as $asset) {
             if ($asset['status'] !== 'ready') {
-                $errors['assets.'.$asset['id']] = $asset['status'] === 'hash_pending'
-                    ? 'Evidence hash is still being computed.'
-                    : 'Evidence upload is not durable.';
+                $errors['assets.'.$asset['id']] = match ($asset['status']) {
+                    'hash_pending' => 'Evidence hash is still being computed.',
+                    'scan_pending' => 'Evidence is quarantined until malware scanning recovers.',
+                    'quarantined' => 'Evidence failed malware scanning and cannot be submitted.',
+                    default => 'Evidence upload is not durable.',
+                };
             }
         }
 
@@ -103,7 +120,7 @@ final class EvidenceManifestService
                 'photos' => $photos->count(),
                 'videos' => $videos->count(),
                 'documents' => $documents->count(),
-                'total' => $media->count(),
+                'total' => $cleanMedia->count(),
             ],
             'assets' => $assets,
             'errors' => $errors,

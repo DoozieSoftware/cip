@@ -54,7 +54,8 @@ class MediaUrl
         // gives a real presigned URL that the storage layer
         // verifies. Everything else uses the Laravel-side
         // signed route.
-        if ($adapter instanceof AwsS3V3Adapter
+        if (($media->role ?? 'evidence') !== 'proof'
+            && $adapter instanceof AwsS3V3Adapter
             && method_exists($disk, 'temporaryUrl')) {
             return $disk->temporaryUrl($media->storage_path, $expiresAt);
         }
@@ -63,10 +64,20 @@ class MediaUrl
         // our controller. (Defensive: LocalFilesystemAdapter
         // implements temporaryUrl, but its output points at
         // a non-existent `storage.local` route.)
+        $parameters = ['media' => $media->id];
+
+        if (($media->role ?? 'evidence') === 'proof') {
+            // Proof always traverses the application once, including on S3,
+            // so the signed assignment/agency claims are verified and the
+            // download is appended to the custody ledger before redirecting.
+            $parameters['assignment'] = (string) ($media->assignment_id ?? '');
+            $parameters['department'] = (string) ($media->department_id ?? '');
+        }
+
         return URL::temporarySignedRoute(
             'api.v1.media.serve',
             $expiresAt,
-            ['media' => $media->id],
+            $parameters,
         );
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\AI\Services;
 
+use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Models\MediaHash;
 use App\Modules\Reports\Models\Report;
@@ -43,7 +44,10 @@ class DuplicateDetector
      */
     public function detect(Report $report): array
     {
-        $media = Media::query()->where('report_id', $report->id)->first();
+        $media = Media::query()
+            ->where('report_id', $report->id)
+            ->where('scan_status', MediaScanStatus::CLEAN->value)
+            ->first();
 
         if ($media === null) {
             return ['score' => 0, 'matched_report_id' => null, 'reason' => 'no_media'];
@@ -64,6 +68,7 @@ class DuplicateDetector
             ->where('media_id', '!=', $media->id)
             ->whereIn('media_id', Media::query()
                 ->whereIn('report_id', Report::query()->where('created_at', '>=', $cutoff)->pluck('id'))
+                ->where('scan_status', MediaScanStatus::CLEAN->value)
                 ->pluck('id'),
             )
             ->get();
@@ -93,7 +98,10 @@ class DuplicateDetector
 
             if ($combined > $bestScore) {
                 $bestScore = $combined;
-                $candidateMedia = Media::query()->where('id', $candidate->media_id)->first();
+                $candidateMedia = Media::query()
+                    ->where('id', $candidate->media_id)
+                    ->where('scan_status', MediaScanStatus::CLEAN->value)
+                    ->first();
                 $bestMatch = $candidateMedia?->report_id;
                 $bestReason = "perceptual_hamming={$distance}";
             }

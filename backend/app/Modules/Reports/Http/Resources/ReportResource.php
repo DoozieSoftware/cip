@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Reports\Http\Resources;
 
+use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Media\Models\Media;
 use App\Modules\Reports\Models\Report;
 use Illuminate\Http\Request;
@@ -69,7 +70,11 @@ class ReportResource extends JsonResource
                 'code' => $department->code,
                 'name' => $department->name,
             ],
-            'media_count' => Media::query()->where('report_id', $report->id)->where('is_replaced', false)->count(),
+            'media_count' => Media::query()
+                ->where('report_id', $report->id)
+                ->where('is_replaced', false)
+                ->where('scan_status', MediaScanStatus::CLEAN->value)
+                ->count(),
             'ai_summary' => $report->ai_label === null ? null : [
                 'labels' => [[
                     'name' => $report->ai_label,

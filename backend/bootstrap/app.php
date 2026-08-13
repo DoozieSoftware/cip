@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Media\Console\RecoverQuarantinedMediaCommand;
 use App\Modules\Media\Http\Middleware\MediaUploadLimit;
 use App\Modules\Public\Console\RebuildPublicAnalyticsCommand;
 use App\Modules\Security\Http\Middleware\AuditMiddleware;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         PurgeRetentionCommand::class,
         RebuildPublicAnalyticsCommand::class,
+        RecoverQuarantinedMediaCommand::class,
     ])
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->call(static function (): void {
@@ -59,6 +61,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command(RebuildPublicAnalyticsCommand::class)
             ->dailyAt('02:30')
             ->name('public:rebuild-analytics')
+            ->withoutOverlapping();
+
+        $schedule->command(RecoverQuarantinedMediaCommand::class)
+            ->everyTenMinutes()
+            ->name('media:recover-quarantine')
             ->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {

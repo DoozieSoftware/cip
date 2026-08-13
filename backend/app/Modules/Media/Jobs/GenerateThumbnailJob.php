@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Media\Jobs;
 
+use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Services\ThumbnailService;
 use Illuminate\Bus\Queueable;
@@ -54,6 +55,15 @@ class GenerateThumbnailJob implements ShouldQueue
             // and execution. Nothing to do.
             Log::info('media.thumbnail.skipped_missing_media', [
                 'media_id' => $this->mediaId,
+            ]);
+
+            return;
+        }
+
+        if ($media->scan_status !== MediaScanStatus::CLEAN) {
+            Log::warning('media.thumbnail.skipped_quarantined', [
+                'media_id' => $this->mediaId,
+                'scan_status' => $media->scan_status->value,
             ]);
 
             return;
