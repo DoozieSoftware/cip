@@ -109,3 +109,22 @@ it('latestFor() scope returns the most recent record for the mobile', function (
     $fetched = Otp::query()->latestFor($mobile)->first();
     expect($fetched->id)->toBe($latest->id);
 });
+
+it('latestFor() ignores consumed records so a fresh code can be verified', function (): void {
+    $mobile = '9876543211';
+    Otp::query()->create([
+        'mobile' => $mobile,
+        'code_hash' => 'consumed',
+        'expires_at' => now()->addMinutes(5),
+        'consumed_at' => now(),
+        'created_at' => now()->addMinute(),
+    ]);
+    $fresh = Otp::query()->create([
+        'mobile' => $mobile,
+        'code_hash' => 'fresh',
+        'expires_at' => now()->addMinutes(5),
+        'created_at' => now(),
+    ]);
+
+    expect(Otp::query()->latestFor($mobile)->first()?->id)->toBe($fresh->id);
+});
