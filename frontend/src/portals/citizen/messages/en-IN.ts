@@ -425,7 +425,8 @@ export const en_IN: MessageCatalog = {
   'gps.coarseFix':
     'GPS accuracy is ±{accuracy} m — try moving to an open area for a sharper fix. The reported place is still used.',
   'gps.notSupported': 'Geolocation not supported in this browser.',
-  'gps.httpsRequired': 'Location permission requires HTTPS or localhost.',
+  'gps.httpsRequired':
+    'Location cannot run on the LAN HTTP address. Open http://localhost:5173 on this computer, or restart the app in HTTPS mode for LAN testing.',
   'gps.blocked':
     'Location access is blocked. Enable it in your phone and browser settings, then try again.',
   'gps.timeout': 'Location lookup timed out. Move to an open area and try again.',
