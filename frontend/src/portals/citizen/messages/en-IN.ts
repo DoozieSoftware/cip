@@ -128,13 +128,17 @@ export const en_IN: MessageCatalog = {
   'submit.location.capture': 'Capture Location',
   'submit.location.captureHint': 'Tap the button to detect your position',
   'submit.location.captured': 'Location captured',
+  'submit.location.capturedCoordinates': 'Captured coordinates: {latitude}, {longitude}',
   'submit.location.issueTitle': 'Where is the issue?',
   'submit.location.issueDetail':
-    'Your device location is the starting point. Tap the map to pin the issue if it is somewhere else, such as a pothole you are passing or a blocked drain nearby.',
+    'Your browser location is only a starting point and can be wrong on desktop. Check the map, then tap the map to correct the issue pin or confirm the pin before continuing.',
   'submit.location.issueMapLabel': 'Map for choosing the issue location',
   'submit.location.issueManual': 'Issue pin chosen on the map',
   'submit.location.issueFromGps': 'Issue pin matches your captured location',
+  'submit.location.issueConfirmed': 'Issue pin confirmed',
+  'submit.location.confirmIssueLocation': 'Confirm this pin',
   'submit.location.useReporterLocation': 'Use my location',
+  'submit.location.confirmPin': 'Check the map and confirm the issue pin before continuing.',
   'submit.location.issueDistanceWarning':
     'The issue pin is {distance} m from your captured location. Check the pin carefully before continuing.',
   'submit.location.coarseWarning':

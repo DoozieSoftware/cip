@@ -128,13 +128,18 @@ export const kn_IN: MessageCatalog = {
   'submit.location.capture': 'ಸ್ಥಳ ಕಪ್ಚರ್',
   'submit.location.captureHint': 'ನಿಮ್ಮ ಸ್ಥಾನವನ್ನು ಪತ್ತೆ ಮಾಡಲು ಬಟನ್ ಒತ್ತಿ',
   'submit.location.captured': 'ಸ್ಥಳ ಕಪ್ಚರ್ ಆಗಿದೆ',
+  'submit.location.capturedCoordinates': 'ಕಪ್ಚರ್ ಮಾಡಿದ ನಿರ್ದೇಶಾಂಕಗಳು: {latitude}, {longitude}',
   'submit.location.issueTitle': 'ಸಮಸ್ಯೆ ಎಲ್ಲಿದೆ?',
   'submit.location.issueDetail':
-    'ನಿಮ್ಮ ಸಾಧನದ ಸ್ಥಳ ಆರಂಭಿಕ ಬಿಂದುವಾಗಿದೆ. ಸಮಸ್ಯೆ ಬೇರೆಡೆ ಇದ್ದರೆ, ಉದಾಹರಣೆಗೆ ನೀವು ಹಾದುಹೋಗುತ್ತಿರುವ ಗುಂಡಿ ಅಥವಾ ಹತ್ತಿರದ ಮುಚ್ಚಿದ ಚರಂಡಿ, ನಕ್ಷೆಯಲ್ಲಿ ಟ್ಯಾಪ್ ಮಾಡಿ ಸಮಸ್ಯೆಯ ಸ್ಥಳವನ್ನು ಗುರುತಿಸಿ.',
+    'ನಿಮ್ಮ browser ಸ್ಥಳವು ಆರಂಭಿಕ ಬಿಂದುವಷ್ಟೇ ಮತ್ತು desktop ನಲ್ಲಿ ತಪ್ಪಾಗಿರಬಹುದು. ನಕ್ಷೆಯನ್ನು ಪರಿಶೀಲಿಸಿ, ನಂತರ ಸಮಸ್ಯೆಯ ಪಿನ್ ಸರಿಪಡಿಸಲು ನಕ್ಷೆಯಲ್ಲಿ ಟ್ಯಾಪ್ ಮಾಡಿ ಅಥವಾ ಮುಂದುವರಿಯುವ ಮೊದಲು ಪಿನ್ ದೃಢೀಕರಿಸಿ.',
   'submit.location.issueMapLabel': 'ಸಮಸ್ಯೆಯ ಸ್ಥಳವನ್ನು ಆಯ್ಕೆಮಾಡುವ ನಕ್ಷೆ',
   'submit.location.issueManual': 'ನಕ್ಷೆಯಲ್ಲಿ ಸಮಸ್ಯೆಯ ಪಿನ್ ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ',
   'submit.location.issueFromGps': 'ಸಮಸ್ಯೆಯ ಪಿನ್ ನಿಮ್ಮ ಸ್ಥಳಕ್ಕೆ ಹೊಂದಿದೆ',
+  'submit.location.issueConfirmed': 'ಸಮಸ್ಯೆಯ ಪಿನ್ ದೃಢೀಕರಿಸಲಾಗಿದೆ',
+  'submit.location.confirmIssueLocation': 'ಈ ಪಿನ್ ದೃಢೀಕರಿಸಿ',
   'submit.location.useReporterLocation': 'ನನ್ನ ಸ್ಥಳ ಬಳಸಿ',
+  'submit.location.confirmPin':
+    'ಮುಂದುವರಿಯುವ ಮೊದಲು ನಕ್ಷೆಯನ್ನು ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಸಮಸ್ಯೆಯ ಪಿನ್ ದೃಢೀಕರಿಸಿ.',
   'submit.location.issueDistanceWarning':
     'ಸಮಸ್ಯೆಯ ಪಿನ್ ನಿಮ್ಮ ಕಪ್ಚರ್ ಮಾಡಿದ ಸ್ಥಳದಿಂದ {distance} ಮೀ ದೂರದಲ್ಲಿದೆ. ಮುಂದುವರಿಯುವ ಮೊದಲು ಪಿನ್ ಅನ್ನು ಪರಿಶೀಲಿಸಿ.',
   'submit.location.coarseWarning':

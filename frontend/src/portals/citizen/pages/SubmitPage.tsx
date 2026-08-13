@@ -105,6 +105,7 @@ export default function SubmitPage(): JSX.Element {
   const [description, setDescription] = useState<string>('');
   const [location, setLocation] = useState<CapturedLocation | null>(null);
   const [issueLocation, setIssueLocation] = useState<IssueLocation | null>(null);
+  const [issueLocationConfirmed, setIssueLocationConfirmed] = useState<boolean>(false);
   const [address, setAddress] = useState<string>('');
   const placeName = useReverseGeocode(
     issueLocation?.latitude ?? NaN,
@@ -158,6 +159,7 @@ export default function SubmitPage(): JSX.Element {
                 }
               : null),
         );
+        setIssueLocationConfirmed(draft.issue_location != null || draft.location != null);
         setAddress(draft.address);
         setFiles(draft.files ?? []);
         setIdempotencyKey(draft.idempotency_key || newIdempotencyKey());
@@ -293,8 +295,12 @@ export default function SubmitPage(): JSX.Element {
   }
 
   function handleLocationNext(): void {
-    if (!location || !issueLocation) {
+    if (!location) {
       setFieldError('location', t('submit.location.allowAccess'));
+      return;
+    }
+    if (!issueLocation || !issueLocationConfirmed) {
+      setFieldError('location', t('submit.location.confirmPin'));
       return;
     }
     setFieldError('location', null);
@@ -331,6 +337,11 @@ export default function SubmitPage(): JSX.Element {
       goToStep('Location');
       return;
     }
+    if (!issueLocation || !issueLocationConfirmed) {
+      setFieldError('location', t('submit.location.confirmPin'));
+      goToStep('Location');
+      return;
+    }
     if (activeLocation.accuracy_m !== null && activeLocation.accuracy_m > MAX_GPS_ACCURACY_M) {
       setFieldError(
         'location',
@@ -354,11 +365,7 @@ export default function SubmitPage(): JSX.Element {
     }
 
     const preciseAddress = address.trim() || placeName.trim();
-    const issuePoint = issueLocation ?? {
-      latitude: activeLocation.latitude,
-      longitude: activeLocation.longitude,
-      source: 'reporter_gps' as const,
-    };
+    const issuePoint = issueLocation;
     const manuallyPinned = issuePoint.source === 'manual_pin';
     const payload: CreateReportInput = {
       report_type_id: typeId,
@@ -830,15 +837,12 @@ export default function SubmitPage(): JSX.Element {
                 ref={gpsRef}
                 onCapture={(captured) => {
                   setLocation(captured);
-                  setIssueLocation((current) =>
-                    current?.source === 'manual_pin'
-                      ? current
-                      : {
-                          latitude: captured.latitude,
-                          longitude: captured.longitude,
-                          source: 'reporter_gps',
-                        },
-                  );
+                  setIssueLocation({
+                    latitude: captured.latitude,
+                    longitude: captured.longitude,
+                    source: 'reporter_gps',
+                  });
+                  setIssueLocationConfirmed(false);
                 }}
               />
             </div>
@@ -865,6 +869,12 @@ export default function SubmitPage(): JSX.Element {
                         ? ` · ±${Math.round(location.accuracy_m)} m accuracy`
                         : ''}
                     </p>
+                    <p className="mt-1 font-mono text-xs text-emerald-800">
+                      {t('submit.location.capturedCoordinates', {
+                        latitude: location.latitude.toFixed(6),
+                        longitude: location.longitude.toFixed(6),
+                      })}
+                    </p>
                   </div>
                 </div>
                 {location.accuracy_m !== null && location.accuracy_m > MAX_GPS_ACCURACY_M ? (
@@ -883,7 +893,12 @@ export default function SubmitPage(): JSX.Element {
                   <IssueLocationPicker
                     reporterLocation={location}
                     value={issueLocation}
-                    onChange={setIssueLocation}
+                    confirmed={issueLocationConfirmed}
+                    onConfirm={() => setIssueLocationConfirmed(true)}
+                    onChange={(next) => {
+                      setIssueLocation(next);
+                      setIssueLocationConfirmed(true);
+                    }}
                   />
                 ) : null}
                 {issueLocation?.source === 'manual_pin' ? (

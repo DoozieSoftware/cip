@@ -23,6 +23,8 @@ interface IssueLocationPickerProps {
   reporterLocation: CapturedLocation;
   value: IssueLocation;
   onChange: (value: IssueLocation) => void;
+  onConfirm?: () => void;
+  confirmed?: boolean;
 }
 
 function MapClickHandler({
@@ -48,6 +50,8 @@ export default function IssueLocationPicker({
   reporterLocation,
   value,
   onChange,
+  onConfirm,
+  confirmed = false,
 }: IssueLocationPickerProps): JSX.Element {
   const { t } = useMessages();
   const pin = (latitude: number, longitude: number): void =>
@@ -77,17 +81,30 @@ export default function IssueLocationPicker({
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-amber-950">
         <span>
-          {value.source === 'manual_pin'
-            ? t('submit.location.issueManual')
-            : t('submit.location.issueFromGps')}
+          {confirmed
+            ? t('submit.location.issueConfirmed')
+            : value.source === 'manual_pin'
+              ? t('submit.location.issueManual')
+              : t('submit.location.issueFromGps')}
         </span>
-        <button
-          type="button"
-          onClick={() => onChange(issueLocationFromReporter(reporterLocation))}
-          className="min-h-10 rounded-full border border-amber-700/30 bg-white px-3 font-medium text-amber-950 hover:bg-amber-100"
-        >
-          {t('submit.location.useReporterLocation')}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {onConfirm ? (
+            <button
+              type="button"
+              onClick={onConfirm}
+              className="min-h-10 rounded-full bg-amber-950 px-3 font-medium text-white hover:bg-amber-900"
+            >
+              {t('submit.location.confirmIssueLocation')}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => onChange(issueLocationFromReporter(reporterLocation))}
+            className="min-h-10 rounded-full border border-amber-700/30 bg-white px-3 font-medium text-amber-950 hover:bg-amber-100"
+          >
+            {t('submit.location.useReporterLocation')}
+          </button>
+        </div>
       </div>
     </div>
   );
