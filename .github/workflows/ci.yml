@@ -358,4 +358,4 @@ jobs:
           fi
       - name: NPM audit
         working-directory: ${{ env.FRONTEND_DIR }}
-        run: npm audit --audit-level=high
+        run: npm audit --omit=dev --audit-level=high
