@@ -35,6 +35,7 @@ import { EvidenceViewer } from '../components/EvidenceViewer';
 import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 import { AiAnalysisPanel } from '../components/AiAnalysisPanel';
 import { AssignmentDialog } from '../components/AssignmentDialog';
+import { auditActionLabel } from '../components/auditActionLabel';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 function LocationText({ lat, lng }: { lat: number; lng: number }): JSX.Element {
@@ -94,31 +95,29 @@ function ActionFooter({
 
   return (
     <div className="space-y-3" role="group" aria-label="Moderation actions">
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="success"
-          size="lg"
+          size="md"
           onClick={onApprove}
           disabled={busy || !decisionsEnabled}
           aria-keyshortcuts="A"
           leftIcon={<IconCheck className="h-4 w-4" stroke={1.8} />}
-          className="flex-1 sm:flex-none"
+          className="min-w-28 disabled:opacity-100"
         >
           Approve
         </Button>
         <Button
           variant="danger"
-          size="lg"
+          size="md"
           onClick={onReject}
           disabled={busy || !decisionsEnabled}
           aria-keyshortcuts="R"
           leftIcon={<IconX className="h-4 w-4" stroke={1.8} />}
-          className="flex-1 sm:flex-none"
+          className="min-w-28 disabled:opacity-100"
         >
           Reject
         </Button>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="secondary"
           size="sm"
@@ -150,6 +149,11 @@ function ActionFooter({
           Reassign
         </Button>
       </div>
+      {!decisionsEnabled && (
+        <p className="text-sm text-[#6f6e69]" role="status">
+          Approve and Reject are available only while a report is awaiting moderator review.
+        </p>
+      )}
     </div>
   );
 }
@@ -508,7 +512,9 @@ export default function ReportDetailPage() {
                     <span className="absolute -left-[31px] top-1 grid h-5 w-5 place-items-center rounded-full bg-[#f3f2ed] ring-2 ring-[#e4e2dc]">
                       <span className="h-2 w-2 rounded-full bg-[#85847f]" />
                     </span>
-                    <p className="text-sm font-medium text-[#1d1d1b]">{a.action}</p>
+                    <p className="text-sm font-medium text-[#1d1d1b]">
+                      {auditActionLabel(a.action)}
+                    </p>
                     <p className="mt-0.5 text-xs text-[#6f6e69]">{a.actor_name ?? 'system'}</p>
                     <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[#85847f]">
                       {new Date(a.created_at).toLocaleString()}
