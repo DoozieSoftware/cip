@@ -18,7 +18,7 @@ return new class extends Migration
         Schema::create('report_merge_disputes', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('report_id');
-            $table->uuid('citizen_id');
+            $table->uuid('citizen_id')->nullable();
             $table->text('reason');
             $table->string('status', 32)->default('open');
             $table->text('resolution_note')->nullable();

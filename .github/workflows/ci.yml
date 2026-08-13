@@ -351,7 +351,7 @@ jobs:
             # Any advisory reported by Composer blocks the CI gate. Keep the
             # audit strict so a newly disclosed high/critical package cannot
             # reach the production workflow.
-            composer audit --no-interaction
+            composer audit --locked --no-interaction
           else
             echo "composer audit requires Composer 2.4+" >&2
             exit 1
