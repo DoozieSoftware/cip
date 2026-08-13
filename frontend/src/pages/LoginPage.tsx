@@ -48,7 +48,7 @@ const DEMO_ACCOUNTS: {
   {
     label: 'Department Officer',
     mobile: '9999900003',
-    description: 'Accept, progress, resolve assigned reports in the BBMP zone.',
+    description: 'Accept, progress, and resolve reports assigned to your department.',
     icon: IconClipboardList,
   },
   {
