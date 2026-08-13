@@ -71,6 +71,16 @@ export interface AttachableUser {
   roles?: string[];
 }
 
+export interface ProofCaptureLocation {
+  latitude: number;
+  longitude: number;
+  accuracy: number | null;
+  altitude?: number | null;
+  heading?: number | null;
+  speed?: number | null;
+  timestamp: string;
+}
+
 export const departmentApi = {
   dashboard: (params: Record<string, unknown> = {}) =>
     api.get<DepartmentDashboardCounts>('/department/dashboard', params),
@@ -103,11 +113,27 @@ export const departmentApi = {
    * multipart form-data with the files under `photos[]` and an optional
    * `note` string; uploaded media comes back with role "proof".
    */
-  uploadProof: (id: string, files: File[], note?: string) => {
+  uploadProof: (
+    id: string,
+    files: File[],
+    capture: ProofCaptureLocation,
+    assignmentId?: string,
+    departmentId?: string,
+    note?: string,
+  ) => {
     const form = new FormData();
     for (const file of files) {
       form.append('photos[]', file);
     }
+    form.append('capture_latitude', String(capture.latitude));
+    form.append('capture_longitude', String(capture.longitude));
+    if (capture.accuracy != null) form.append('capture_accuracy', String(capture.accuracy));
+    if (capture.altitude != null) form.append('capture_altitude', String(capture.altitude));
+    if (capture.heading != null) form.append('capture_heading', String(capture.heading));
+    if (capture.speed != null) form.append('capture_speed', String(capture.speed));
+    form.append('capture_timestamp', capture.timestamp);
+    if (assignmentId) form.append('assignment_id', assignmentId);
+    if (departmentId) form.append('department_id', departmentId);
     if (note) {
       form.append('note', note);
     }
@@ -147,16 +173,18 @@ export const departmentApi = {
     event: WorkflowEvent,
     note: string | undefined,
     expectedWorkflowVersion: number,
+    departmentId?: string,
   ) =>
     api.post<DepartmentReportListItem>(`/department/reports/${id}/${event}`, {
       ...(note ? { note } : {}),
       expected_workflow_version: expectedWorkflowVersion,
+      ...(departmentId ? { department_id: departmentId } : {}),
     }),
 
   completeTask: (reportId: string, assignmentId: string, note?: string, departmentId?: string) =>
     api.post<DepartmentReportDetail>(
       `/department/reports/${reportId}/tasks/${assignmentId}/complete`,
-      note ? { note } : {},
+      { ...(note ? { note } : {}), ...(departmentId ? { department_id: departmentId } : {}) },
       { department_id: departmentId },
     ),
 

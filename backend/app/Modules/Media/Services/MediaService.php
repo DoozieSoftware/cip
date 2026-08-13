@@ -83,6 +83,9 @@ class MediaService
         );
     }
 
+    /**
+     * @param  array<string, mixed>|null  $hints
+     */
     public function uploadPhoto(
         string $reportId,
         UploadedFile $file,
@@ -90,8 +93,9 @@ class MediaService
         string $role = 'evidence',
         ?string $assignmentId = null,
         ?string $departmentId = null,
+        ?array $hints = null,
     ): Media {
-        return $this->upload($reportId, $file, $uploaderId, 'PHOTO', null, $role, $assignmentId, $departmentId);
+        return $this->upload($reportId, $file, $uploaderId, 'PHOTO', $hints, $role, $assignmentId, $departmentId);
     }
 
     /**
@@ -121,7 +125,7 @@ class MediaService
      * The core upload pipeline. Validates, scans, writes, and
      * dispatches the post-processing jobs.
      *
-     * @param  array<string, int>|null  $hints
+     * @param  array<string, mixed>|null  $hints
      */
     private function upload(
         string $reportId,

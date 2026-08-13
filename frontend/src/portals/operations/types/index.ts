@@ -139,6 +139,8 @@ export interface InternalNote {
 
 export interface DepartmentReportMedia {
   id: string;
+  assignment_id: string | null;
+  department_id: string | null;
   type: string;
   role: 'evidence' | 'proof';
   mime: string;
@@ -146,6 +148,23 @@ export interface DepartmentReportMedia {
   width: number | null;
   height: number | null;
   created_at: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ProofVerification {
+  id: string;
+  proof_media_id: string;
+  assignment_id: string | null;
+  department_id: string | null;
+  status: 'match' | 'needs_review' | 'mismatch';
+  location_confidence: number;
+  visual_confidence: number;
+  overall_confidence: number;
+  distance_meters: number | null;
+  location_match: boolean | null;
+  summary: string;
+  perspective_note: string | null;
+  checked_at: string | null;
 }
 
 export interface StatusHistoryEntry {
@@ -166,6 +185,7 @@ export interface DepartmentReportDetail extends DepartmentReportListItem {
   department_sla_minutes: number | null;
   location: GeoPoint | null;
   media: DepartmentReportMedia[];
+  proof_verifications: ProofVerification[];
   status_history: StatusHistoryEntry[];
   assigned_to: AssignedOfficer | null;
   assignments: ReportAssignment[];

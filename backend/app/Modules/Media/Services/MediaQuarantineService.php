@@ -42,7 +42,7 @@ final class MediaQuarantineService
     ) {}
 
     /**
-     * @param  array<string, int>|null  $hints
+     * @param  array<string, mixed>|null  $hints
      */
     public function ingest(
         string $reportId,
@@ -214,7 +214,8 @@ final class MediaQuarantineService
      */
     public function recover(string $quarantineId): ?MediaScanStatus
     {
-        $staleSeconds = (int) config('cip.media.quarantine.rescan_stale_seconds', 900);
+        $configuredStaleSeconds = config('cip.media.quarantine.rescan_stale_seconds', 900);
+        $staleSeconds = is_numeric($configuredStaleSeconds) ? (int) $configuredStaleSeconds : 900;
         $quarantine = $this->quarantines->claimForRescan($quarantineId, $staleSeconds);
 
         if ($quarantine === null) {

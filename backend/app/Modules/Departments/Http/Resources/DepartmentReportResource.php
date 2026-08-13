@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Departments\Http\Resources;
 
+use App\Modules\Departments\Models\ReportProofVerification;
 use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Support\MediaUrl;
@@ -73,6 +74,14 @@ class DepartmentReportResource extends JsonResource
             ->orderBy('created_at')
             ->get();
         $mediaUrl = new MediaUrl;
+        $proofVerifications = ReportProofVerification::query()
+            ->where('report_id', $report->id)
+            ->when(
+                is_string($assignmentDepartment) && $assignmentDepartment !== '',
+                fn ($query) => $query->where('department_id', $assignmentDepartment),
+            )
+            ->latest('checked_at')
+            ->get();
 
         $statusHistory = $report->relationLoaded('statusHistory')
             ? $report->statusHistory
@@ -128,6 +137,8 @@ class DepartmentReportResource extends JsonResource
             ],
             'media' => $media->map(fn (Media $m): array => [
                 'id' => $m->id,
+                'assignment_id' => $m->assignment_id,
+                'department_id' => $m->department_id,
                 'type' => $m->type,
                 'role' => $m->role ?? 'evidence',
                 'mime' => $m->mime,
@@ -135,7 +146,24 @@ class DepartmentReportResource extends JsonResource
                 'width' => $m->width,
                 'height' => $m->height,
                 'created_at' => $m->created_at?->toIso8601String(),
+                'metadata' => $m->metadata ?? [],
             ])->all(),
+            'proof_verifications' => $proofVerifications
+                ->map(fn (ReportProofVerification $verification): array => [
+                    'id' => $verification->id,
+                    'proof_media_id' => $verification->proof_media_id,
+                    'assignment_id' => $verification->assignment_id,
+                    'department_id' => $verification->department_id,
+                    'status' => $verification->status,
+                    'location_confidence' => $verification->location_confidence,
+                    'visual_confidence' => $verification->visual_confidence,
+                    'overall_confidence' => $verification->overall_confidence,
+                    'distance_meters' => $verification->distance_meters,
+                    'location_match' => $verification->location_match,
+                    'summary' => $verification->summary,
+                    'perspective_note' => $verification->perspective_note,
+                    'checked_at' => $verification->checked_at->toIso8601String(),
+                ])->all(),
             'status_history' => $statusHistory->map(fn (ReportStatusHistory $h): array => [
                 'from_code' => $h->fromStatus?->code,
                 'to_code' => $h->toStatus?->code,

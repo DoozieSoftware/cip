@@ -22,6 +22,7 @@ class StoreDepartmentActionRequest extends FormRequest
             'note' => ['nullable', 'string', 'max:2000'],
             'reason_code' => ['nullable', 'string', 'max:64'],
             'expected_workflow_version' => ['nullable', 'integer', 'min:1'],
+            'department_id' => ['nullable', 'uuid'],
         ];
     }
 }

@@ -48,6 +48,7 @@ function baseReport(overrides: Partial<DepartmentReportDetail> = {}): Department
     department_sla_minutes: 120,
     internal_notes: [],
     media: [],
+    proof_verifications: [],
     status_history: [],
     assigned_to: null,
     assignment: null,
@@ -119,7 +120,9 @@ describe('OperationsReportDetailPage', () => {
     renderPage(baseReport());
     expect(await screen.findByText('No evidence')).toBeTruthy();
     expect(
-      screen.getByText('Upload proof photos after the field crew completes the work.'),
+      screen.getByText(
+        'Upload proof photos from the fixed location after the field crew completes the work.',
+      ),
     ).toBeTruthy();
   });
 
@@ -129,6 +132,8 @@ describe('OperationsReportDetailPage', () => {
         media: [
           {
             id: 'm1',
+            assignment_id: null,
+            department_id: null,
             type: 'image',
             role: 'evidence',
             mime: 'image/jpeg',
@@ -139,6 +144,8 @@ describe('OperationsReportDetailPage', () => {
           },
           {
             id: 'm3',
+            assignment_id: null,
+            department_id: null,
             type: 'image',
             role: 'proof',
             mime: 'image/png',

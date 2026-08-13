@@ -18,6 +18,7 @@ class CompleteDepartmentTaskRequest extends FormRequest
     {
         return [
             'note' => ['nullable', 'string', 'max:4000'],
+            'department_id' => ['nullable', 'uuid'],
         ];
     }
 }

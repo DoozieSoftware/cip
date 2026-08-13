@@ -34,7 +34,11 @@ use Illuminate\Support\Facades\DB;
  */
 class DepartmentReportService
 {
-    public function __construct(private readonly WorkflowEngine $engine) {}
+    public function __construct(
+        private readonly WorkflowEngine $engine,
+        private readonly DepartmentProofAssignmentService $proofAssignments,
+        private readonly ProofVerificationService $proofVerification,
+    ) {}
 
     public function accept(Report $report, User $actor, ?Request $request, ?int $expectedWorkflowVersion = null): Report
     {
@@ -86,10 +90,20 @@ class DepartmentReportService
         ?string $note = null,
         ?int $expectedWorkflowVersion = null,
     ): Report {
+        $assignment = $this->proofAssignments->resolve(
+            $report,
+            $actor,
+            null,
+            is_string($request?->input('department_id')) ? (string) $request->input('department_id') : null,
+        );
+        $this->proofVerification->assertAssignmentHasProof($report, $assignment);
+
         return $this->run($report, 'resolve', $actor, $request, payload: [
             'kind' => 'lifecycle',
             'lifecycle_event' => 'resolve',
             'note' => $note,
+            'assignment_id' => $assignment->id,
+            'department_id' => $assignment->department_id,
         ], expectedWorkflowVersion: $expectedWorkflowVersion);
     }
 

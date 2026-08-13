@@ -82,6 +82,13 @@ class UploadMediaRequest extends FormRequest
             $this->fieldName.'.*' => ['file', 'max:'.$maxUploadKb], // single media upload cap per `media.max_upload_mb`
             'assignment_id' => ['nullable', 'uuid'],
             'department_id' => ['nullable', 'uuid'],
+            'capture_latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'capture_longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'capture_accuracy' => ['nullable', 'numeric', 'min:0', 'max:10000'],
+            'capture_altitude' => ['nullable', 'numeric'],
+            'capture_heading' => ['nullable', 'numeric', 'min:0', 'max:360'],
+            'capture_speed' => ['nullable', 'numeric', 'min:0'],
+            'capture_timestamp' => ['nullable', 'date'],
         ];
     }
 }

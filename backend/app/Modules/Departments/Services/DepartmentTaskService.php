@@ -15,6 +15,10 @@ use Illuminate\Support\Facades\DB;
 /** Applies task-level changes without changing the report's global workflow. */
 class DepartmentTaskService
 {
+    public function __construct(
+        private readonly ProofVerificationService $proofVerification,
+    ) {}
+
     public function complete(
         Report $report,
         ReportAssignment $assignment,
@@ -38,6 +42,8 @@ class DepartmentTaskService
                     422,
                 );
             }
+
+            $this->proofVerification->assertAssignmentHasProof($report, $task);
 
             $task->update([
                 'task_status' => ReportAssignment::TASK_STATUS_COMPLETED,

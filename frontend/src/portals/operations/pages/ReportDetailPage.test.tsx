@@ -49,6 +49,7 @@ function baseReport(overrides: Partial<DepartmentReportDetail> = {}): Department
     department_sla_minutes: 120,
     internal_notes: [],
     media: [],
+    proof_verifications: [],
     status_history: [],
     assigned_to: null,
     assignment: null,
@@ -115,7 +116,9 @@ describe('ReportDetailPage', () => {
     renderPage(baseReport());
     expect(await screen.findByText('No evidence')).toBeInTheDocument();
     expect(
-      screen.getByText('Upload proof photos after the field crew completes the work.'),
+      screen.getByText(
+        'Upload proof photos from the fixed location after the field crew completes the work.',
+      ),
     ).toBeInTheDocument();
   });
 
@@ -125,6 +128,8 @@ describe('ReportDetailPage', () => {
         media: [
           {
             id: 'm1',
+            assignment_id: null,
+            department_id: null,
             type: 'image',
             role: 'evidence',
             mime: 'image/jpeg',
@@ -135,6 +140,8 @@ describe('ReportDetailPage', () => {
           },
           {
             id: 'm2',
+            assignment_id: null,
+            department_id: null,
             type: 'video',
             role: 'evidence',
             mime: 'video/mp4',
@@ -145,6 +152,8 @@ describe('ReportDetailPage', () => {
           },
           {
             id: 'm3',
+            assignment_id: null,
+            department_id: null,
             type: 'image',
             role: 'proof',
             mime: 'image/png',
@@ -244,6 +253,7 @@ describe('ReportDetailPage', () => {
         'progress',
         'On site, crew dispatched to fill the pothole',
         1,
+        'dept-1',
       ),
     );
   });
@@ -258,7 +268,13 @@ describe('ReportDetailPage', () => {
 
     fireEvent.click(confirm);
     await waitFor(() =>
-      expect(departmentApi.action).toHaveBeenCalledWith(REPORT_ID, 'accept', undefined, 1),
+      expect(departmentApi.action).toHaveBeenCalledWith(
+        REPORT_ID,
+        'accept',
+        undefined,
+        1,
+        'dept-1',
+      ),
     );
   });
 
@@ -285,7 +301,25 @@ describe('ReportDetailPage', () => {
       completed_at: null,
       officer: null,
     };
-    renderPage(baseReport({ assignment }));
+    renderPage(
+      baseReport({
+        assignment,
+        media: [
+          {
+            id: 'proof-1',
+            assignment_id: 'assignment-1',
+            department_id: 'dept-1',
+            type: 'image',
+            role: 'proof',
+            mime: 'image/jpeg',
+            url: 'https://example.test/proof.jpg',
+            width: 800,
+            height: 600,
+            created_at: '2026-08-02T10:00:00+05:30',
+          },
+        ],
+      }),
+    );
 
     expect(await screen.findAllByText('Cross-agency report')).not.toHaveLength(0);
     expect(screen.getByText('Open')).toBeInTheDocument();
@@ -309,6 +343,26 @@ describe('ReportDetailPage', () => {
   });
 
   it('uploads proof photos and refetches the report', async () => {
+    Object.defineProperty(window, 'isSecureContext', { configurable: true, value: true });
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: vi.fn((success: PositionCallback) =>
+          success({
+            coords: {
+              latitude: 12.9716,
+              longitude: 77.5946,
+              accuracy: 9,
+              altitude: null,
+              altitudeAccuracy: null,
+              heading: null,
+              speed: null,
+            },
+            timestamp: new Date('2026-08-02T10:00:00+05:30').getTime(),
+          } as GeolocationPosition),
+        ),
+      },
+    });
     renderPage(baseReport());
     const file = new File(['x'], 'after-fix.jpg', { type: 'image/jpeg' });
     vi.mocked(departmentApi.uploadProof).mockResolvedValue({ media: [] });
@@ -316,7 +370,23 @@ describe('ReportDetailPage', () => {
     const input = await screen.findByLabelText('Proof photo input');
     fireEvent.change(input, { target: { files: [file] } });
 
-    await waitFor(() => expect(departmentApi.uploadProof).toHaveBeenCalledWith(REPORT_ID, [file]));
+    await waitFor(() =>
+      expect(departmentApi.uploadProof).toHaveBeenCalledWith(
+        REPORT_ID,
+        [file],
+        {
+          latitude: 12.9716,
+          longitude: 77.5946,
+          accuracy: 9,
+          altitude: null,
+          heading: null,
+          speed: null,
+          timestamp: '2026-08-02T04:30:00.000Z',
+        },
+        undefined,
+        'dept-1',
+      ),
+    );
     await waitFor(() => expect(departmentApi.showReportInDepartment).toHaveBeenCalledTimes(2));
   });
 });

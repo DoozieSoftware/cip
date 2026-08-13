@@ -22,9 +22,11 @@ import { departmentApi } from '../api/operations';
 import type {
   DepartmentReportDetail,
   InternalNote,
+  ProofVerification,
   ReportStatusCode,
   WorkflowEvent,
 } from '../types';
+import type { ProofCaptureLocation } from '../api/operations';
 import { useKeyboardShortcuts } from '../../moderator/hooks/useKeyboardShortcuts';
 import { ConfirmActionDialog } from '../components/ConfirmActionDialog';
 import { LocationCard } from '../components/LocationCard';
@@ -115,6 +117,102 @@ const ACTION_DESCRIPTION: Record<WorkflowEvent, string> = {
   close: 'Close this report. A note is required documenting the outcome.',
 };
 
+function captureCurrentPosition(): Promise<ProofCaptureLocation> {
+  if (!window.isSecureContext) {
+    return Promise.reject(
+      new Error('Proof upload needs location access. Open this page on localhost or HTTPS.'),
+    );
+  }
+
+  if (!navigator.geolocation) {
+    return Promise.reject(new Error('This browser does not support location capture.'));
+  }
+
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          altitude: position.coords.altitude,
+          heading: position.coords.heading,
+          speed: position.coords.speed,
+          timestamp: new Date(position.timestamp).toISOString(),
+        });
+      },
+      () => {
+        reject(
+          new Error(
+            'Allow location access before uploading proof, so we can verify the work was captured at the report location.',
+          ),
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      },
+    );
+  });
+}
+
+function ProofVerificationCard({ verification }: { verification: ProofVerification }) {
+  const tone =
+    verification.status === 'match'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+      : verification.status === 'mismatch'
+        ? 'border-red-200 bg-red-50 text-red-900'
+        : 'border-amber-200 bg-amber-50 text-amber-900';
+  const title =
+    verification.status === 'match'
+      ? 'AI proof check: likely same location'
+      : verification.status === 'mismatch'
+        ? 'AI proof check: needs correction'
+        : 'AI proof check: human review needed';
+
+  return (
+    <div className={`mt-4 rounded-xl border p-4 ${tone}`}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold">{title}</p>
+          <p className="mt-1 text-sm leading-5">{verification.summary}</p>
+        </div>
+        <span className="rounded-full bg-white/75 px-3 py-1 text-xs font-semibold">
+          {verification.overall_confidence}% confidence
+        </span>
+      </div>
+      <div className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
+        <div className="rounded-lg bg-white/70 p-2">
+          <span className="block font-mono uppercase tracking-wider opacity-70">Location</span>
+          <strong>{verification.location_confidence}%</strong>
+          <span className="ml-1">
+            {verification.distance_meters == null
+              ? 'GPS unavailable'
+              : `${Math.round(verification.distance_meters)} m away`}
+          </span>
+        </div>
+        <div className="rounded-lg bg-white/70 p-2">
+          <span className="block font-mono uppercase tracking-wider opacity-70">Visual</span>
+          <strong>{verification.visual_confidence}%</strong>
+          <span className="ml-1">before/after match</span>
+        </div>
+        <div className="rounded-lg bg-white/70 p-2">
+          <span className="block font-mono uppercase tracking-wider opacity-70">Checked</span>
+          <span>
+            {verification.checked_at
+              ? new Date(verification.checked_at).toLocaleString()
+              : 'Just now'}
+          </span>
+        </div>
+      </div>
+      {verification.perspective_note && (
+        <p className="mt-3 text-xs leading-5 opacity-80">{verification.perspective_note}</p>
+      )}
+    </div>
+  );
+}
+
 export default function ReportDetailPage() {
   const params = useParams<{ id: string }>();
   const reportId = params.id ?? '';
@@ -144,10 +242,25 @@ export default function ReportDetailPage() {
   const [noteBody, setNoteBody] = useState('');
   const [pendingAction, setPendingAction] = useState<WorkflowEvent | null>(null);
   const [taskCompletionPending, setTaskCompletionPending] = useState(false);
+  const [proofCaptureError, setProofCaptureError] = useState<string | null>(null);
+  const evidence = report?.media.filter((m) => m.role === 'evidence') ?? [];
+  const proof = report?.media.filter((m) => m.role === 'proof') ?? [];
+  const selectedAssignmentId = report?.assignment?.id ?? null;
+  const selectedAssignmentProof = selectedAssignmentId
+    ? proof.filter((m) => m.assignment_id === selectedAssignmentId)
+    : proof;
+  const hasProofForSelectedWork = selectedAssignmentProof.length > 0;
+  const latestProofVerification = report?.proof_verifications?.[0] ?? null;
 
   const action = useMutation({
     mutationFn: (input: { event: WorkflowEvent; note?: string }) =>
-      departmentApi.action(reportId, input.event, input.note, report?.workflow_version ?? 1),
+      departmentApi.action(
+        reportId,
+        input.event,
+        input.note,
+        report?.workflow_version ?? 1,
+        selectedId ?? undefined,
+      ),
     onSuccess: (response) => {
       queryClient.setQueryData<DepartmentReportDetail>(
         ['operations', 'report', reportId, selectedId],
@@ -189,8 +302,16 @@ export default function ReportDetailPage() {
   });
 
   const uploadProof = useMutation({
-    mutationFn: (files: File[]) => departmentApi.uploadProof(reportId, files),
+    mutationFn: (input: { files: File[]; capture: ProofCaptureLocation }) =>
+      departmentApi.uploadProof(
+        reportId,
+        input.files,
+        input.capture,
+        report?.assignment?.id,
+        selectedId ?? report?.assignment?.department_id ?? undefined,
+      ),
     onSuccess: () => {
+      setProofCaptureError(null);
       void queryClient.invalidateQueries({ queryKey: ['operations', 'report', reportId] });
     },
   });
@@ -200,9 +321,12 @@ export default function ReportDetailPage() {
       if (reportId === '' || actionPending || report?.current_status_code !== actionStatus[event]) {
         return;
       }
+      if (event === 'resolve' && !hasProofForSelectedWork) {
+        return;
+      }
       setPendingAction(event);
     },
-    [actionPending, report?.current_status_code, reportId],
+    [actionPending, hasProofForSelectedWork, report?.current_status_code, reportId],
   );
 
   const confirmAction = useCallback(
@@ -217,7 +341,17 @@ export default function ReportDetailPage() {
   const handleProofFiles = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = '';
-    if (files.length > 0) uploadProof.mutate(files);
+    if (files.length === 0) return;
+    setProofCaptureError(null);
+    void captureCurrentPosition()
+      .then((capture) => uploadProof.mutate({ files, capture }))
+      .catch((error: unknown) => {
+        setProofCaptureError(
+          error instanceof Error
+            ? error.message
+            : 'Could not capture your current location for proof upload.',
+        );
+      });
   };
 
   const focusNote = useCallback((): void => {
@@ -272,8 +406,6 @@ export default function ReportDetailPage() {
     status === 'rejected' ||
     status === 'merged' ||
     (isSecondaryTask && taskStatus !== 'open');
-  const evidence = report.media.filter((m) => m.role === 'evidence');
-  const proof = report.media.filter((m) => m.role === 'proof');
   const pendingMeta = pendingAction ? ACTION_META[pendingAction] : null;
   const availableActions = isSecondaryTask
     ? []
@@ -408,7 +540,7 @@ export default function ReportDetailPage() {
                     key={event}
                     type="button"
                     onClick={() => requestAction(event)}
-                    disabled={actionPending}
+                    disabled={actionPending || (event === 'resolve' && !hasProofForSelectedWork)}
                     aria-keyshortcuts={meta.shortcut}
                     className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
                       event === 'accept' || event === 'start'
@@ -441,6 +573,11 @@ export default function ReportDetailPage() {
                 );
               })}
             </div>
+          )}
+          {availableActions.includes('resolve') && !hasProofForSelectedWork && (
+            <p className="w-full text-xs text-amber-700 sm:basis-full">
+              Upload at least one proof photo with current location before marking this work fixed.
+            </p>
           )}
           {action.isError && (
             <p role="alert" className="w-full text-sm text-red-600 sm:basis-full">
@@ -491,7 +628,7 @@ export default function ReportDetailPage() {
                 <button
                   type="button"
                   onClick={() => setTaskCompletionPending(true)}
-                  disabled={completeTask.isPending}
+                  disabled={completeTask.isPending || !hasProofForSelectedWork}
                   className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-5 py-2 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:opacity-50"
                 >
                   {completeTask.isPending ? (
@@ -507,6 +644,11 @@ export default function ReportDetailPage() {
               )}
             </div>
           </div>
+          {taskStatus === 'open' && !hasProofForSelectedWork && (
+            <p className="mt-3 text-xs text-amber-700">
+              Upload proof from the work location before completing this cross-agency work.
+            </p>
+          )}
           {completeTask.isError && (
             <p role="alert" className="mt-3 text-sm text-red-600">
               {completeTask.error instanceof Error
@@ -556,25 +698,32 @@ export default function ReportDetailPage() {
                     After
                   </p>
                   <span className="text-xs text-emerald-700">
-                    {proof.length === 0 ? 'Awaiting proof' : `${proof.length} uploaded`}
+                    {selectedAssignmentProof.length === 0
+                      ? 'Awaiting proof'
+                      : `${selectedAssignmentProof.length} uploaded`}
                   </span>
                 </div>
-                {proof.length === 0 ? (
+                {selectedAssignmentProof.length === 0 ? (
                   <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-emerald-300 bg-white/70 py-8 text-center">
                     <IconUpload size={20} stroke={1.6} className="text-emerald-600" />
                     <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
-                      Upload proof photos after the field crew completes the work.
+                      Upload proof photos from the fixed location after the field crew completes the
+                      work.
                     </p>
                   </div>
                 ) : (
-                  <MediaGallery items={proof} label="Proof of completion" />
+                  <MediaGallery items={selectedAssignmentProof} label="Proof of completion" />
                 )}
               </div>
             </div>
+            {latestProofVerification && (
+              <ProofVerificationCard verification={latestProofVerification} />
+            )}
             {!isTerminal && (
               <div className="mt-4 flex flex-col gap-2 border-t border-[var(--color-canvas)] pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-[var(--color-text-tertiary)]">
-                  Proof photos stay department-private until the report is closed.
+                  Proof photos require current location access and stay department-private until the
+                  report is closed.
                 </p>
                 <input
                   ref={proofInputRef}
@@ -592,8 +741,13 @@ export default function ReportDetailPage() {
                   className="inline-flex items-center gap-2 rounded-full bg-[var(--color-canvas)] px-4 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)]/80 disabled:opacity-50"
                 >
                   <IconUpload size={14} stroke={1.6} />
-                  {uploadProof.isPending ? 'Uploading...' : 'Upload proof photos'}
+                  {uploadProof.isPending ? 'Uploading...' : 'Upload proof with location'}
                 </button>
+                {proofCaptureError && (
+                  <p role="alert" className="text-sm text-red-600">
+                    {proofCaptureError}
+                  </p>
+                )}
                 {uploadProof.isError && (
                   <p role="alert" className="text-sm text-red-600">
                     {uploadProof.error instanceof Error
