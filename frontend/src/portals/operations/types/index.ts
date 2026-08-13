@@ -164,6 +164,7 @@ export interface ProofVerification {
   location_match: boolean | null;
   summary: string;
   perspective_note: string | null;
+  metadata?: Record<string, unknown>;
   checked_at: string | null;
 }
 

@@ -158,6 +158,10 @@ function captureCurrentPosition(): Promise<ProofCaptureLocation> {
 }
 
 function ProofVerificationCard({ verification }: { verification: ProofVerification }) {
+  const review = verification.metadata?.ai_review;
+  const provider =
+    review && typeof review === 'object' && 'provider' in review ? String(review.provider) : null;
+  const isProviderBacked = verification.metadata?.engine === 'proof_verification_ai_v1';
   const tone =
     verification.status === 'match'
       ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
@@ -166,10 +170,10 @@ function ProofVerificationCard({ verification }: { verification: ProofVerificati
         : 'border-amber-200 bg-amber-50 text-amber-900';
   const title =
     verification.status === 'match'
-      ? 'AI proof check: likely same location'
+      ? `${isProviderBacked ? 'Gemini proof review' : 'Automatic proof check'}: likely valid`
       : verification.status === 'mismatch'
-        ? 'AI proof check: needs correction'
-        : 'AI proof check: human review needed';
+        ? `${isProviderBacked ? 'Gemini proof review' : 'Automatic proof check'}: needs correction`
+        : `${isProviderBacked ? 'Gemini proof review' : 'Automatic proof check'}: human review needed`;
 
   return (
     <div className={`mt-4 rounded-xl border p-4 ${tone}`}>
@@ -182,6 +186,9 @@ function ProofVerificationCard({ verification }: { verification: ProofVerificati
           {verification.overall_confidence}% confidence
         </span>
       </div>
+      {provider && (
+        <p className="mt-2 text-xs opacity-75">Reviewed by {provider.replaceAll('-', ' ')}</p>
+      )}
       <div className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
         <div className="rounded-lg bg-white/70 p-2">
           <span className="block font-mono uppercase tracking-wider opacity-70">Location</span>

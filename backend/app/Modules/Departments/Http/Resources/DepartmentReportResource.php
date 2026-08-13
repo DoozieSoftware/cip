@@ -162,6 +162,7 @@ class DepartmentReportResource extends JsonResource
                     'location_match' => $verification->location_match,
                     'summary' => $verification->summary,
                     'perspective_note' => $verification->perspective_note,
+                    'metadata' => $verification->metadata ?? [],
                     'checked_at' => $verification->checked_at->toIso8601String(),
                 ])->all(),
             'status_history' => $statusHistory->map(fn (ReportStatusHistory $h): array => [

@@ -324,7 +324,10 @@ class OpenAICompatibleProvider implements AIProviderInterface
             duplicateScore: $this->intField($decoded, 'duplicate_score'),
             fraudScore: $this->intField($decoded, 'fraud_score'),
             summary: $this->stringField($decoded, 'summary'),
-            raw: $raw,
+            raw: [
+                'provider_payload' => $raw,
+                'decoded_json' => $decoded,
+            ],
             licensePlate: isset($decoded['license_plate']) && is_string($decoded['license_plate']) && $decoded['license_plate'] !== ''
                 ? strtoupper(trim($decoded['license_plate']))
                 : null,
