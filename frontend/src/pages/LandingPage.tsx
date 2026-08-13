@@ -74,7 +74,7 @@ const PORTALS: Portal[] = [
     path: '/operations',
     audience: 'Departments',
     description: 'Officers accept, progress, and resolve assigned reports. GIS map and exports.',
-    highlight: 'BBMP / BTP / BWSSB · SLA · CSV / Excel / PDF',
+    highlight: 'BBMP / BTP / BWSSB · Overdue tracking · CSV / Excel / PDF',
     roles: ['department_officer', 'department_admin', 'super_admin', 'system'],
     icon: IconClipboardList,
   },

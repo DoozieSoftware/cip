@@ -158,8 +158,8 @@ describe('OperationsReportDetailPage', () => {
     expect(proofImg).toHaveAttribute('src', 'https://example.test/p1.png');
   });
 
-  it('renders the SLA chip when SLA is configured', async () => {
+  it('renders the Due target chip when Due target is configured', async () => {
     renderPage(baseReport());
-    expect(await screen.findAllByText(/Overdue by|Due in| SLA met/)).not.toHaveLength(0);
+    expect(await screen.findAllByText(/Overdue by|Due in|On time/)).not.toHaveLength(0);
   });
 });

@@ -151,7 +151,7 @@ function RuleForm({
         </label>
         <label className="text-sm">
           <span className="font-medium text-[var(--color-ink)]">
-            Default SLA (minutes) <span className="text-[var(--color-danger)]">*</span>
+            Response target (minutes) <span className="text-[var(--color-danger)]">*</span>
           </span>
           <input
             type="number"
@@ -257,7 +257,9 @@ export default function AdminRoutingRules(): JSX.Element {
               <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-surface-alt)]">
                 <IconRoute className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
               </span>
-              <CardTitle className="text-sm font-semibold text-[var(--color-ink)]">All rules</CardTitle>
+              <CardTitle className="text-sm font-semibold text-[var(--color-ink)]">
+                All rules
+              </CardTitle>
             </div>
             <span className="text-xs text-[var(--color-text-tertiary)]">
               {rows.length} rule{rows.length !== 1 ? 's' : ''}
@@ -322,7 +324,9 @@ export default function AdminRoutingRules(): JSX.Element {
                       <td className="px-5 py-3 text-sm">
                         <div className="font-medium text-[var(--color-ink)]">{r.name}</div>
                         {r.description ? (
-                          <div className="text-xs text-[var(--color-text-secondary)]">{r.description}</div>
+                          <div className="text-xs text-[var(--color-text-secondary)]">
+                            {r.description}
+                          </div>
                         ) : null}
                       </td>
                       <td className="px-5 py-3 text-sm text-[var(--color-ink)]">
@@ -337,7 +341,9 @@ export default function AdminRoutingRules(): JSX.Element {
                         <Badge
                           tone={r.active ? 'success' : 'neutral'}
                           className={
-                            r.active ? 'bg-[#edf7f0] text-[var(--color-success)]' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'
+                            r.active
+                              ? 'bg-[#edf7f0] text-[var(--color-success)]'
+                              : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'
                           }
                         >
                           {r.active ? 'active' : 'disabled'}

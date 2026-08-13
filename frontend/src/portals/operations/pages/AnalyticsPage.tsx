@@ -169,7 +169,7 @@ export default function AnalyticsPage() {
         <StatCard label="Open reports" value={counts.open} icon={IconChecklist} />
         <StatCard label="Due today" value={counts.due_today} icon={IconClock} tone="warning" />
         <StatCard
-          label="SLA breached"
+          label="Overdue reports"
           value={counts.sla_breached}
           icon={IconAlertTriangle}
           tone="danger"

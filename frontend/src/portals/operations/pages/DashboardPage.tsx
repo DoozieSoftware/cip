@@ -130,7 +130,7 @@ export default function DashboardPage() {
           tone="warning"
         />
         <MetricCard
-          label="SLA breached"
+          label="Overdue reports"
           value={data.sla_breached}
           hint="Open more than a day"
           tone="danger"

@@ -271,7 +271,7 @@ export default function AdminPage() {
         </CardHeader>
         <CardBody className="space-y-3">
           <Input
-            label="Default SLA (minutes)"
+            label="Response target (minutes)"
             type="number"
             value={sla}
             onChange={(e) => setSla(e.target.value)}

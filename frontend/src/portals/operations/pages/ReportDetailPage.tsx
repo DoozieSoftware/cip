@@ -688,7 +688,7 @@ export default function ReportDetailPage() {
               </div>
               <div className="flex items-center justify-between">
                 <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                  SLA
+                  Due target
                 </dt>
                 <dd>
                   <SlaChip

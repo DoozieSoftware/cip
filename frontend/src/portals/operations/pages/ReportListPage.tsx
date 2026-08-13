@@ -434,7 +434,7 @@ export default function ReportListPage() {
                 <div className="flex shrink-0 items-center gap-6 text-xs lg:gap-8">
                   <div>
                     <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                      SLA
+                      Due target
                     </p>
                     <div className="mt-1">
                       <SlaBadge report={r} assignment={r.assignment} />

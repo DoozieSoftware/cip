@@ -170,7 +170,7 @@ describe('ReportDetailPage', () => {
     expect(screen.queryByRole('img', { name: 'Citizen evidence 2' })).toBeNull();
   });
 
-  it('shows the SLA chip when the department SLA is configured', async () => {
+  it('shows the Due target chip when the department Due target is configured', async () => {
     renderPage(baseReport());
     expect(await screen.findAllByText(/Overdue by/)).not.toHaveLength(0);
   });
@@ -324,7 +324,7 @@ describe('ReportDetailPage', () => {
 describe('computeSlaLabel', () => {
   const now = new Date('2026-08-01T12:00:00+05:30').getTime();
 
-  it('returns null when no SLA is configured', () => {
+  it('returns null when no Due target is configured', () => {
     expect(computeSlaLabel('2026-08-01T09:00:00+05:30', null, 'assigned', now)).toBeNull();
     expect(computeSlaLabel(null, 120, 'assigned', now)).toBeNull();
     expect(computeSlaLabel('2026-08-01T09:00:00+05:30', 0, 'assigned', now)).toBeNull();
@@ -350,8 +350,8 @@ describe('computeSlaLabel', () => {
     );
   });
 
-  it('treats resolved and closed reports as meeting the SLA', () => {
-    expect(computeSlaLabel('2026-08-01T07:00:00+05:30', 120, 'resolved', now)).toBe('SLA met');
-    expect(computeSlaLabel('2026-08-01T07:00:00+05:30', 120, 'closed', now)).toBe('SLA met');
+  it('treats resolved and closed reports as meeting the Due target', () => {
+    expect(computeSlaLabel('2026-08-01T07:00:00+05:30', 120, 'resolved', now)).toBe('On time');
+    expect(computeSlaLabel('2026-08-01T07:00:00+05:30', 120, 'closed', now)).toBe('On time');
   });
 });
