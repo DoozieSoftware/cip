@@ -13,6 +13,7 @@ import {
   IconArrowUpRight,
 } from '@tabler/icons-react';
 import { Badge, Card, CardBody, EmptyState, Spinner } from '../../../shared/ui';
+import { reportStatusTone, staffReportStatusLabel } from '../../../shared/statusDisplay';
 import { queueApi, type QueueFilters } from '../api/moderator';
 import type { ReportListItem, ReportStatusCode } from '../types';
 import { useState } from 'react';
@@ -24,6 +25,7 @@ function statusIcon(s: ReportStatusCode) {
     case 'ai_processing':
       return IconRefresh;
     case 'escalated':
+    case 'reopened':
       return IconAlertTriangle;
     case 'rejected':
     case 'merged':
@@ -31,6 +33,7 @@ function statusIcon(s: ReportStatusCode) {
     case 'closed':
     case 'verified':
     case 'resolved':
+    case 'resolved_pending_verification':
       return IconCircleCheck;
     default:
       return IconClock;
@@ -38,10 +41,11 @@ function statusIcon(s: ReportStatusCode) {
 }
 
 const STATUS_FILTERS = [
-  { value: 'pending_moderator', label: 'Pending' },
-  { value: 'ai_processing', label: 'AI Processing' },
-  { value: 'assigned', label: 'Assigned' },
-  { value: 'escalated', label: 'Escalated' },
+  { value: 'pending_moderator', label: staffReportStatusLabel('pending_moderator') },
+  { value: 'ai_processing', label: staffReportStatusLabel('ai_processing') },
+  { value: 'assigned', label: staffReportStatusLabel('assigned') },
+  { value: 'reopened', label: staffReportStatusLabel('reopened') },
+  { value: 'escalated', label: staffReportStatusLabel('escalated') },
 ];
 
 export default function ReviewQueuePage() {
@@ -60,6 +64,12 @@ export default function ReviewQueuePage() {
     queryKey: ['moderator', 'queue', filters],
     queryFn: () => queueApi.list(filters),
     refetchInterval: 15_000,
+  });
+
+  const reportTypesQuery = useQuery({
+    queryKey: ['moderator', 'report-types'],
+    queryFn: () => queueApi.reportTypes(),
+    staleTime: 5 * 60_000,
   });
 
   function update<K extends keyof QueueFilters>(key: K, value: QueueFilters[K]) {
@@ -140,13 +150,19 @@ export default function ReviewQueuePage() {
                 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#85847f]"
                 stroke={1.6}
               />
-              <input
-                type="text"
+              <select
                 value={filters.category ?? ''}
                 onChange={(e) => update('category', e.target.value)}
-                placeholder="Category code (e.g. roads)"
+                aria-label="Category"
                 className="min-h-[44px] w-full rounded-lg border-0 bg-[#f3f2ed] pl-10 pr-4 text-sm text-[#1d1d1b] placeholder:text-[#85847f] focus:outline-none focus:ring-2 focus:ring-[#1d1d1b]/20"
-              />
+              >
+                <option value="">All categories</option>
+                {(reportTypesQuery.data ?? []).map((type) => (
+                  <option key={type.id} value={type.code}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="relative">
               <IconFilter
@@ -237,22 +253,19 @@ export default function ReviewQueuePage() {
                         )}
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-                            r.status_code === 'pending_moderator' ||
-                            r.status_code === 'ai_processing'
+                            reportStatusTone(r.status_code) === 'warning'
                               ? 'bg-amber-50 text-amber-700'
-                              : r.status_code === 'escalated'
+                              : reportStatusTone(r.status_code) === 'danger'
                                 ? 'bg-violet-50 text-violet-700'
-                                : r.status_code === 'rejected' || r.status_code === 'merged'
-                                  ? 'bg-red-50 text-red-700'
-                                  : r.status_code === 'closed' ||
-                                      r.status_code === 'verified' ||
-                                      r.status_code === 'resolved'
-                                    ? 'bg-emerald-50 text-emerald-700'
-                                    : 'bg-sky-50 text-sky-700'
+                                : reportStatusTone(r.status_code) === 'success'
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : reportStatusTone(r.status_code) === 'info'
+                                    ? 'bg-sky-50 text-sky-700'
+                                    : 'bg-slate-50 text-slate-700'
                           }`}
                         >
                           <StatusIcon className="h-3 w-3" stroke={1.8} />
-                          {r.status_code.replace(/_/g, ' ')}
+                          {staffReportStatusLabel(r.status_code)}
                         </span>
                       </div>
                     </div>

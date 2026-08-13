@@ -5,6 +5,7 @@ import { GpsCapture } from './GpsCapture';
 describe('GpsCapture', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
   });
 
   it('explains how to enable location and lets the citizen retry after permission denial', async () => {
@@ -30,6 +31,21 @@ describe('GpsCapture', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => expect(getCurrentPosition).toHaveBeenCalledTimes(2));
+  });
+
+  it('explains the localhost or HTTPS requirement on insecure LAN addresses', async () => {
+    const getCurrentPosition = vi.fn();
+    vi.stubGlobal('navigator', {
+      ...globalThis.navigator,
+      geolocation: { getCurrentPosition },
+    });
+    Object.defineProperty(window, 'isSecureContext', { value: false, configurable: true });
+
+    render(<GpsCapture onCapture={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Use my location/ }));
+
+    expect(await screen.findByText(/Open http:\/\/localhost:5173/i)).toBeVisible();
+    expect(getCurrentPosition).not.toHaveBeenCalled();
   });
 
   it('captures a coarse fix instead of rejecting it, and reports the accuracy warning', async () => {

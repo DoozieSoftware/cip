@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "captured_at": "2026-08-12",
+  "scope": {
+    "phpstan": "backend/app, backend/database/factories, backend/database/seeders",
+    "eslint": "frontend (all tracked TypeScript/TSX files)",
+    "prettier": "frontend/src (tracked source and test files)",
+    "pint": "backend (all PHP files)"
+  },
+  "phpstan_errors": 235,
+  "eslint_errors": 1,
+  "eslint_warnings": 6,
+  "prettier_files": 40,
+  "pint_failures": 0
+}

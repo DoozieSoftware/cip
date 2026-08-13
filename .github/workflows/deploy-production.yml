@@ -1,14 +1,13 @@
 name: Deploy to Production
 
 on:
-  push:
+  # Production is released only after the canonical CI workflow has
+  # completed successfully on the main branch. A direct push to main can no
+  # longer bypass the CI gate.
+  workflow_run:
+    workflows: ["CI"]
     branches: [main]
-    paths:
-      - "backend/**"
-      - "frontend/**"
-      - "deploy/**"
-      - ".github/workflows/deploy-production.yml"
-  workflow_dispatch:
+    types: [completed]
 
 concurrency:
   group: deploy-production
@@ -23,10 +22,15 @@ env:
 jobs:
   deploy:
     name: Build & Deploy
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    environment:
+      name: production
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Guard against destructive production DB commands
         run: |
@@ -63,6 +67,16 @@ jobs:
       - name: Install backend dependencies (no-dev)
         working-directory: ${{ env.BACKEND_DIR }}
         run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Verify production scanner and cache requirements
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: |
+          # The cPanel template is intentionally executable configuration:
+          # fail the release if it regresses to the file cache or disables
+          # malware scanning.
+          grep -Eq '^CACHE_STORE=redis$' .env.cpanel
+          grep -Eq '^REDIS_CLIENT=phpredis$' .env.cpanel
+          grep -Eq '^CIP_MEDIA_SCANNER=clamav$' .env.cpanel
 
       - name: Stage cPanel layout
         run: |
@@ -110,6 +124,26 @@ jobs:
           fi
 
           printf '%s' "${{ secrets.VERTEX_SERVICE_ACCOUNT_JSON_B64 }}" | base64 -d > "$VERTEX_SA_LOCAL"
+
+          # Take and checksum a pre-deploy backup before mutating the live
+          # release. Failure aborts deployment; the backup contains database,
+          # evidence storage, code, and the existing APP_KEY separately.
+          scp -P $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            deploy/production/backup-production.sh $REMOTE:/tmp/cip-backup-production.sh
+          ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            $REMOTE "chmod 700 /tmp/cip-backup-production.sh && APP_DIR=\$HOME/cip BACKUP_ROOT=\$HOME/cip-backups /tmp/cip-backup-production.sh && rm -f /tmp/cip-backup-production.sh"
+
+          # Verify host capabilities before replacing application files. The
+          # runtime readiness endpoint repeats these checks after deploy.
+          ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            $REMOTE "set -e; $PHP_BIN -m | grep -qx redis; command -v clamscan >/dev/null; clamscan --no-summary --stdout /dev/null >/dev/null"
+
+          # Keep the rollback helper on the server so an operator can run a
+          # code-only rollback even if the next release cannot be built.
+          scp -P $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            deploy/production/rollback-production.sh $REMOTE:/tmp/cip-rollback-production.sh
+          ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            $REMOTE "chmod 700 /tmp/cip-rollback-production.sh && mv /tmp/cip-rollback-production.sh \$HOME/cip/rollback-production.sh"
 
           # Deploy backend (cip/)
           rsync -az --delete \

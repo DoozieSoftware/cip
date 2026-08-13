@@ -32,7 +32,7 @@ const DEPARTMENT_ADMIN_ROLES: Role[] = ['super_admin', 'system', 'department_adm
 const NAV: NavItem[] = [
   { to: '/operations', label: 'Dashboard', end: true, icon: IconHome, mobile: true },
   { to: '/operations/reports', label: 'Assigned', icon: IconClipboardList, mobile: true },
-  { to: '/operations/tasks', label: 'Tasks', icon: IconFileAnalytics, mobile: true },
+  { to: '/operations/tasks', label: 'Cross-agency', icon: IconFileAnalytics, mobile: true },
   { to: '/operations/analytics', label: 'Analytics', icon: IconChartBar },
   { to: '/operations/map', label: 'GIS Map', icon: IconMap },
   { to: '/operations/reports/export', label: 'Export', icon: IconDatabaseExport },
@@ -55,9 +55,14 @@ const NAV: NavItem[] = [
 const MOBILE_NAV: NavItem[] = [
   { to: '/operations', label: 'Home', end: true, icon: IconHome },
   { to: '/operations/reports', label: 'Reports', icon: IconClipboardList },
-  { to: '/operations/tasks', label: 'Tasks', icon: IconFileAnalytics },
+  { to: '/operations/tasks', label: 'Cross-agency', icon: IconFileAnalytics },
   { to: '/operations/analytics', label: 'Analytics', icon: IconChartBar },
-  { to: '/operations/admin', label: 'Admin', icon: IconUsers },
+  {
+    to: '/operations/admin',
+    label: 'Admin',
+    icon: IconUsers,
+    allowedRoles: DEPARTMENT_ADMIN_ROLES,
+  },
 ];
 
 export function OperationsLayout(): JSX.Element {
@@ -82,12 +87,12 @@ export function OperationsLayout(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f2ed] text-[#1d1d1b] lg:flex">
+    <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-ink)] lg:flex">
       {/* Desktop sidebar (lg+) */}
-      <aside className="hidden w-64 shrink-0 flex-col bg-[#1d1d1b] lg:flex">
+      <aside className="hidden w-64 shrink-0 flex-col bg-[var(--color-ink)] lg:flex">
         <div className="border-b border-white/10 px-6 py-7">
           <div className="flex items-center gap-3.5">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-white text-[#1d1d1b]">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-white text-[var(--color-ink)]">
               <IconBuildingCommunity className="h-5 w-5" stroke={1.7} />
             </span>
             <div className="min-w-0">
@@ -112,7 +117,7 @@ export function OperationsLayout(): JSX.Element {
                       [
                         'flex min-h-11 items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors duration-150',
                         isActive
-                          ? 'bg-white text-[#1d1d1b]'
+                          ? 'bg-white text-[var(--color-ink)]'
                           : 'text-white/60 hover:bg-white/8 hover:text-white',
                       ].join(' ')
                     }
@@ -141,7 +146,7 @@ export function OperationsLayout(): JSX.Element {
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium text-white/60 transition-colors hover:bg-white/8 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1d1d1b]"
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium text-white/60 transition-colors hover:bg-white/8 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-ink)]"
           >
             <IconLogout className="h-4 w-4" stroke={1.6} />
             Sign out
@@ -152,21 +157,23 @@ export function OperationsLayout(): JSX.Element {
       {/* Main content wrapper */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile header */}
-        <header className="sticky top-0 z-30 border-b border-[#d9d7d0] bg-[#f3f2ed]/95 backdrop-blur-xl lg:hidden">
+        <header className="sticky top-0 z-30 border-b border-[var(--color-border-faint)] bg-[var(--color-canvas)]/95 backdrop-blur-xl lg:hidden">
           <div className="flex min-h-16 items-center gap-3 px-4">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#1d1d1b] text-white">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[var(--color-ink)] text-white">
               <IconBuildingCommunity className="h-5 w-5" stroke={1.7} />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold tracking-[-0.01em] text-[#1d1d1b]">
+              <div className="truncate text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
                 CIP Karnataka
               </div>
-              <div className="truncate text-[11px] text-[#85847f]">Operations</div>
+              <div className="truncate text-[11px] text-[var(--color-text-tertiary)]">
+                Operations
+              </div>
             </div>
             <button
               type="button"
               onClick={handleSignOut}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[#6f6e69] transition-colors hover:bg-[#e9e7e2] hover:text-[#1d1d1b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d1d1b]"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--color-text-secondary)] transition-colors hover:bg-[#e9e7e2] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
               aria-label="Sign out"
             >
               <IconLogout className="h-5 w-5" stroke={1.6} />
@@ -175,7 +182,7 @@ export function OperationsLayout(): JSX.Element {
         </header>
 
         {/* Department switcher bar */}
-        <div className="border-b border-[#d9d7d0] bg-[#faf9f6] px-4 py-2 lg:px-10">
+        <div className="border-b border-[var(--color-border-faint)] bg-[#faf9f6] px-4 py-2 lg:px-10">
           <DepartmentSwitcher />
         </div>
 
@@ -202,7 +209,7 @@ export function OperationsLayout(): JSX.Element {
                     className={({ isActive }) =>
                       [
                         'relative flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium transition-colors',
-                        isActive ? 'text-[#1d1d1b]' : 'text-[#85847f]',
+                        isActive ? 'text-[var(--color-ink)]' : 'text-[var(--color-text-tertiary)]',
                       ].join(' ')
                     }
                   >
@@ -211,7 +218,7 @@ export function OperationsLayout(): JSX.Element {
                         <Icon className="h-5 w-5" stroke={isActive ? 2.1 : 1.6} />
                         <span className="max-w-full truncate leading-tight">{item.label}</span>
                         {isActive && (
-                          <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[#1d1d1b]" />
+                          <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[var(--color-ink)]" />
                         )}
                       </>
                     )}

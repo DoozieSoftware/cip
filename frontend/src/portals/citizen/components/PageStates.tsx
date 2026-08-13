@@ -50,20 +50,22 @@ export function PageStates<T>({
   if (query.isError) {
     const err = query.error instanceof Error ? query.error : null;
     return (
-      <ErrorState
-        title={errorTitle}
-        description={errorDescription ?? 'Please retry, or pull to refresh.'}
-        error={err}
-        action={
-          <button
-            type="button"
-            onClick={() => (onRetry ? onRetry() : query.refetch())}
-            className="mt-2 rounded-md bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-rose-700"
-          >
-            Retry
-          </button>
-        }
-      />
+      <div aria-live="assertive">
+        <ErrorState
+          title={errorTitle}
+          description={errorDescription ?? 'Please retry, or pull to refresh.'}
+          error={err}
+          action={
+            <button
+              type="button"
+              onClick={() => (onRetry ? onRetry() : query.refetch())}
+              className="mt-2 rounded-md bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-rose-700"
+            >
+              Retry
+            </button>
+          }
+        />
+      </div>
     );
   }
   if (query.data == null) {

@@ -27,9 +27,12 @@ use App\Modules\Notifications\Http\Controllers\Api\NotificationsController;
 use App\Modules\Notifications\Http\Controllers\Api\PushSubscriptionController;
 use App\Modules\Public\Http\Controllers\PublicDepartmentPerformanceController;
 use App\Modules\Public\Http\Controllers\PublicHeatmapController;
+use App\Modules\Public\Http\Controllers\PublicProductAnalyticsController;
+use App\Modules\Public\Http\Controllers\PublicReverseGeocodeController;
 use App\Modules\Public\Http\Controllers\PublicStatsController;
 use App\Modules\Reports\Http\Controllers\Admin\AdminReportController;
 use App\Modules\Reports\Http\Controllers\Admin\AdminReportTypeController;
+use App\Modules\Reports\Http\Controllers\Api\CitizenReportActionsController;
 use App\Modules\Reports\Http\Controllers\Api\ReportsController;
 use App\Modules\Routing\Http\Controllers\Admin\ReassignController;
 use App\Modules\Routing\Http\Controllers\Admin\RoutingAdminController;
@@ -37,12 +40,14 @@ use App\Modules\Security\Http\Controllers\Admin\AdminSecurityPolicyController;
 use App\Modules\Security\Http\Controllers\Api\AuditLogController;
 use App\Modules\Security\Http\Controllers\Api\SecurityDashboardController;
 use App\Modules\Settings\Http\Controllers\Admin\AppConfigController;
+use App\Modules\Settings\Http\Controllers\Admin\RetentionHoldController;
 use App\Modules\Settings\Http\Controllers\Admin\SettingController;
 use App\Modules\Shared\Http\Controllers\Admin\PlatformHealthController;
 use App\Modules\Shared\Http\Controllers\Admin\SchedulerController;
 use App\Modules\Users\Http\Controllers\Admin\AdminPermissionController;
 use App\Modules\Users\Http\Controllers\Admin\AdminRoleController;
 use App\Modules\Users\Http\Controllers\Admin\AdminUserController;
+use App\Modules\Users\Http\Controllers\Api\ProfileController;
 use App\Modules\Workflow\Http\Controllers\Admin\WorkflowAdminController;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Route;
@@ -65,7 +70,9 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware('throttle:'.RouteServiceProvider::LIMITER_PUBLIC)->group(function (): void {
         Route::get('public/stats', [PublicStatsController::class, 'index'])->name('api.v1.public.stats');
         Route::get('public/heatmap', [PublicHeatmapController::class, 'index'])->name('api.v1.public.heatmap');
+        Route::get('public/geocode', PublicReverseGeocodeController::class)->name('api.v1.public.geocode');
         Route::get('public/departments/performance', [PublicDepartmentPerformanceController::class, 'index'])->name('api.v1.public.departments.performance');
+        Route::post('public/analytics/events', [PublicProductAnalyticsController::class, 'store'])->name('api.v1.public.analytics.events');
     });
 
     // Auth (M2) — rate limited per docs/11 §21.
@@ -85,6 +92,7 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:sanctum', 'throttle:'.RouteServiceProvider::LIMITER_CITIZEN])->group(function (): void {
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
         Route::get('auth/me', [AuthController::class, 'me'])->name('api.v1.auth.me');
+        Route::patch('auth/profile', [ProfileController::class, 'update'])->name('api.v1.auth.profile.update');
 
         // Notifications inbox (T-M9-015/016)
         Route::get('notifications', [NotificationsController::class, 'index'])->name('notifications.index');
@@ -199,6 +207,14 @@ Route::prefix('v1')->group(function (): void {
         Route::get('settings/{setting}', [SettingController::class, 'show'])->name('settings.show');
         Route::put('settings/{setting}', [SettingController::class, 'update'])->name('settings.update');
         Route::delete('settings/{setting}', [SettingController::class, 'destroy'])->name('settings.destroy');
+
+        // Legal retention holds (BE-14). Holds are never deleted; release
+        // records the actor and legal basis in custody fields and audit logs.
+        Route::get('retention-holds', [RetentionHoldController::class, 'index'])->name('retention-holds.index');
+        Route::get('retention-holds/export', [RetentionHoldController::class, 'export'])->name('retention-holds.export');
+        Route::post('retention-holds', [RetentionHoldController::class, 'store'])->name('retention-holds.store');
+        Route::post('retention-holds/{retention_hold}/release', [RetentionHoldController::class, 'release'])
+            ->name('retention-holds.release');
 
         // Feature flag CRUD (T-M3-018)
         Route::get('app-configs', [AppConfigController::class, 'index'])->name('app-configs.index');
@@ -361,15 +377,23 @@ Route::prefix('v1')->group(function (): void {
         Route::post('reports/{id}/video', [MediaController::class, 'uploadVideo'])->name('api.v1.reports.video.store');
         // T-M5-014 — GET /api/v1/reports/{id}/media
         Route::get('reports/{id}/media', [MediaController::class, 'index'])->name('api.v1.reports.media.index');
+        Route::get('reports/{id}/evidence-manifest', [ReportsController::class, 'evidenceManifest'])->name('api.v1.reports.evidence-manifest');
         // T-M5-016 — GET /api/v1/reports/{id}/media/{media}/audit (staff)
         Route::get('reports/{id}/media/{media}/audit', [MediaController::class, 'audit'])->name('api.v1.reports.media.audit');
         // T-M4-023 — POST /api/v1/reports/{id}/submit
         Route::post('reports/{id}/submit', [ReportsController::class, 'submit'])->name('api.v1.reports.submit');
+        Route::post('reports/{id}/finalize', [ReportsController::class, 'finalize'])->name('api.v1.reports.finalize');
         // T-M4-027 — GET /api/v1/citizen/dashboard
         Route::get('citizen/dashboard', [ReportsController::class, 'citizenDashboard'])->name('api.v1.citizen.dashboard');
         // T-M4-028 — GET /api/v1/citizen/reports and /{id}
         Route::get('citizen/reports', [ReportsController::class, 'citizenIndex'])->name('api.v1.citizen.reports.index');
         Route::get('citizen/reports/{id}', [ReportsController::class, 'citizenShow'])->name('api.v1.citizen.reports.show');
+        Route::post('citizen/reports/{report}/verify', [CitizenReportActionsController::class, 'verify'])
+            ->name('api.v1.citizen.reports.verify');
+        Route::post('citizen/reports/{report}/dispute', [CitizenReportActionsController::class, 'dispute'])
+            ->name('api.v1.citizen.reports.dispute');
+        Route::post('citizen/reports/{report}/dispute-merge', [CitizenReportActionsController::class, 'disputeMerge'])
+            ->name('api.v1.citizen.reports.dispute-merge');
     });
 
     // Staff (moderator / super_admin) — report search and timeline (M4)

@@ -21,7 +21,7 @@ import {
   EmptyState,
   ErrorState,
   Badge,
-} from '../../moderator/design';
+} from '../../../shared/ui';
 import { cx } from '../../../shared/ui/cx';
 import {
   IconPlus,
@@ -58,36 +58,36 @@ function ProviderRow({
   return (
     <tr>
       <td className="px-5 py-3 text-sm">
-        <div className="font-mono text-xs text-[#6f6e69]">{p.code}</div>
-        <div className="font-medium text-[#1d1d1b]">{p.name}</div>
-        <div className="text-xs text-[#6f6e69]">
+        <div className="font-mono text-xs text-[var(--color-text-secondary)]">{p.code}</div>
+        <div className="font-medium text-[var(--color-ink)]">{p.name}</div>
+        <div className="text-xs text-[var(--color-text-secondary)]">
           driver: {p.driver} · model: {p.model}
         </div>
       </td>
-      <td className="px-5 py-3 text-sm tabular-nums text-[#1d1d1b]">{p.priority}</td>
+      <td className="px-5 py-3 text-sm tabular-nums text-[var(--color-ink)]">{p.priority}</td>
       <td className="px-5 py-3 text-sm">
         <Badge tone={p.active ? 'success' : 'neutral'}>{p.active ? 'active' : 'inactive'}</Badge>
       </td>
-      <td className="px-5 py-3 text-sm text-[#1d1d1b]">
+      <td className="px-5 py-3 text-sm text-[var(--color-ink)]">
         {p.has_secret ? (
-          <span className="inline-flex items-center gap-1 text-[#226b46]">
+          <span className="inline-flex items-center gap-1 text-[var(--color-success)]">
             <IconCheck className="h-3.5 w-3.5" stroke={1.8} />
             set
           </span>
         ) : (
-          <span className="text-[#85847f]">not set</span>
+          <span className="text-[var(--color-text-tertiary)]">not set</span>
         )}
       </td>
       <td className="px-5 py-3 text-sm">
         {testResult === null ? (
-          <span className="text-[#85847f]">not tested yet</span>
+          <span className="text-[var(--color-text-tertiary)]">not tested yet</span>
         ) : testResult.healthy ? (
-          <span className="inline-flex items-center gap-1 text-[#226b46]">
+          <span className="inline-flex items-center gap-1 text-[var(--color-success)]">
             <IconCheck className="h-3.5 w-3.5" stroke={1.8} />
             reachable
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-[#9f3731]" title={testResult.error}>
+          <span className="inline-flex items-center gap-1 text-[var(--color-danger)]" title={testResult.error}>
             <IconX className="h-3.5 w-3.5" stroke={1.8} />
             unreachable
           </span>
@@ -142,8 +142,8 @@ function PromptRow({
   return (
     <tr>
       <td className="px-5 py-3 text-sm">
-        <div className="font-mono text-xs text-[#6f6e69]">{p.name}</div>
-        <div className="font-medium text-[#1d1d1b]">v{p.version}</div>
+        <div className="font-mono text-xs text-[var(--color-text-secondary)]">{p.name}</div>
+        <div className="font-medium text-[var(--color-ink)]">v{p.version}</div>
       </td>
       <td className="px-5 py-3 text-sm">
         <Badge
@@ -152,18 +152,18 @@ function PromptRow({
           {p.status}
         </Badge>
       </td>
-      <td className="px-5 py-3 text-sm text-[#6f6e69]">
-        <code className="block max-w-md truncate rounded bg-[#efeee9] px-1.5 py-0.5 text-xs text-[#1d1d1b]">
+      <td className="px-5 py-3 text-sm text-[var(--color-text-secondary)]">
+        <code className="block max-w-md truncate rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 text-xs text-[var(--color-ink)]">
           {p.purpose ?? '—'}
         </code>
       </td>
-      <td className="px-5 py-3 text-sm text-[#6f6e69]">
-        <code className="block max-w-md truncate rounded bg-[#efeee9] px-1.5 py-0.5 text-xs text-[#1d1d1b]">
+      <td className="px-5 py-3 text-sm text-[var(--color-text-secondary)]">
+        <code className="block max-w-md truncate rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 text-xs text-[var(--color-ink)]">
           {p.prompt_text.slice(0, 80)}
           {p.prompt_text.length > 80 ? '…' : ''}
         </code>
       </td>
-      <td className="px-5 py-3 text-sm tabular-nums text-[#1d1d1b]">
+      <td className="px-5 py-3 text-sm tabular-nums text-[var(--color-ink)]">
         {p.approved_at ? new Date(p.approved_at).toLocaleDateString() : '—'}
       </td>
       <td className="px-5 py-3 text-right">
@@ -235,24 +235,24 @@ function ProviderForm({
     <form
       onSubmit={handleSubmit}
       aria-label="Provider form"
-      className="space-y-5 rounded-xl border border-[#e4e2dc] bg-[#f3f2ed] p-5"
+      className="space-y-5 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-canvas)] p-5"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Code</span>
+          <span className="font-medium text-[var(--color-ink)]">Code</span>
           <input
             required
             value={form.code}
             onChange={(e) => setForm({ ...form, code: e.target.value })}
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Driver</span>
+          <span className="font-medium text-[var(--color-ink)]">Driver</span>
           <select
             value={form.driver}
             onChange={(e) => setForm({ ...form, driver: e.target.value as AiProviderDriver })}
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           >
             {DRIVERS.map((d) => (
               <option key={d.value} value={d.value}>
@@ -262,42 +262,42 @@ function ProviderForm({
           </select>
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Name</span>
+          <span className="font-medium text-[var(--color-ink)]">Name</span>
           <input
             required
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Model</span>
+          <span className="font-medium text-[var(--color-ink)]">Model</span>
           <input
             required
             value={form.model}
             onChange={(e) => setForm({ ...form, model: e.target.value })}
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="col-span-2 block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Base URL</span>
+          <span className="font-medium text-[var(--color-ink)]">Base URL</span>
           <input
             required
             type="url"
             placeholder="https://openrouter.ai/api or your Modal.com endpoint"
             value={form.base_url}
             onChange={(e) => setForm({ ...form, base_url: e.target.value })}
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Auth type</span>
+          <span className="font-medium text-[var(--color-ink)]">Auth type</span>
           <select
             value={form.auth_type}
             onChange={(e) =>
               setForm({ ...form, auth_type: e.target.value as AiProviderInput['auth_type'] })
             }
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           >
             <option value="bearer">Bearer token</option>
             <option value="api_key">API key</option>
@@ -305,17 +305,17 @@ function ProviderForm({
           </select>
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">API key</span>
+          <span className="font-medium text-[var(--color-ink)]">API key</span>
           <input
             type="password"
             placeholder="Leave blank to keep the existing key"
             value={form.credentials?.api_key ?? ''}
             onChange={(e) => setForm({ ...form, credentials: { api_key: e.target.value } })}
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Temperature</span>
+          <span className="font-medium text-[var(--color-ink)]">Temperature</span>
           <input
             type="number"
             step="0.1"
@@ -323,39 +323,39 @@ function ProviderForm({
             max={2}
             value={form.temperature}
             onChange={(e) => setForm({ ...form, temperature: Number(e.target.value) })}
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Timeout (ms)</span>
+          <span className="font-medium text-[var(--color-ink)]">Timeout (ms)</span>
           <input
             type="number"
             min={1000}
             max={120000}
             value={form.timeout_ms}
             onChange={(e) => setForm({ ...form, timeout_ms: Number(e.target.value) })}
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Retry count</span>
+          <span className="font-medium text-[var(--color-ink)]">Retry count</span>
           <input
             type="number"
             min={0}
             max={5}
             value={form.retry_count}
             onChange={(e) => setForm({ ...form, retry_count: Number(e.target.value) })}
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Priority</span>
+          <span className="font-medium text-[var(--color-ink)]">Priority</span>
           <input
             type="number"
             min={0}
             value={form.priority}
             onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })}
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="flex items-center gap-2 text-sm">
@@ -363,24 +363,24 @@ function ProviderForm({
             type="checkbox"
             checked={form.is_fallback}
             onChange={(e) => setForm({ ...form, is_fallback: e.target.checked })}
-            className="h-4 w-4 rounded border-[#d0cec8] text-[#1d1d1b] focus:ring-[#1d1d1b]"
+            className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-ink)] focus:ring-[var(--color-ink)]"
           />
-          <span className="font-medium text-[#1d1d1b]">Fallback provider</span>
+          <span className="font-medium text-[var(--color-ink)]">Fallback provider</span>
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
             checked={form.active}
             onChange={(e) => setForm({ ...form, active: e.target.checked })}
-            className="h-4 w-4 rounded border-[#d0cec8] text-[#1d1d1b] focus:ring-[#1d1d1b]"
+            className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-ink)] focus:ring-[var(--color-ink)]"
           />
-          <span className="font-medium text-[#1d1d1b]">Active</span>
+          <span className="font-medium text-[var(--color-ink)]">Active</span>
         </label>
       </div>
 
       <div>
         <div className="mb-1 flex items-center justify-between">
-          <span className="text-sm font-medium text-[#1d1d1b]">Extra headers</span>
+          <span className="text-sm font-medium text-[var(--color-ink)]">Extra headers</span>
           <Button
             type="button"
             variant="secondary"
@@ -390,7 +390,7 @@ function ProviderForm({
             + Add header
           </Button>
         </div>
-        <p className="mb-2 text-xs text-[#85847f]">
+        <p className="mb-2 text-xs text-[var(--color-text-tertiary)]">
           Static headers for the request (e.g. OpenRouter&apos;s <code>HTTP-Referer</code> /{' '}
           <code>X-Title</code>).
         </p>
@@ -404,7 +404,7 @@ function ProviderForm({
                 next[i] = [e.target.value, value];
                 setHeaderRows(next);
               }}
-              className="block w-1/2 rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+              className="block w-1/2 rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
             />
             <input
               placeholder="Header value"
@@ -414,12 +414,12 @@ function ProviderForm({
                 next[i] = [key, e.target.value];
                 setHeaderRows(next);
               }}
-              className="block w-1/2 rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+              className="block w-1/2 rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
             />
             <button
               type="button"
               onClick={() => setHeaderRows(headerRows.filter((_, idx) => idx !== i))}
-              className="rounded-xl border border-[#d0cec8] bg-white px-2 text-sm hover:bg-[#f3f2ed]"
+              className="rounded-xl border border-[var(--color-border)] bg-white px-2 text-sm hover:bg-[var(--color-canvas)]"
               aria-label={`Remove header row ${i + 1}`}
             >
               ✕
@@ -474,14 +474,14 @@ export default function AdminAi(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f2ed] p-4 sm:p-6">
+    <div className="min-h-screen bg-[var(--color-canvas)] p-4 sm:p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">
+            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
               AI providers & prompts
             </h1>
-            <p className="mt-1 text-sm text-[#6f6e69]">
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               Manage AI vision pipeline providers and prompt versions. Secrets are write-only;
               rollback is non-destructive.
             </p>
@@ -502,7 +502,7 @@ export default function AdminAi(): JSX.Element {
             onClick={() => setTab('providers')}
             className={cx(
               'rounded-full px-4 py-2 text-sm font-medium transition',
-              tab === 'providers' ? 'bg-[#1d1d1b] text-white' : 'text-[#6f6e69] hover:bg-[#efeee9]',
+              tab === 'providers' ? 'bg-[var(--color-ink)] text-white' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]',
             )}
           >
             Providers ({providerList.length})
@@ -512,7 +512,7 @@ export default function AdminAi(): JSX.Element {
             onClick={() => setTab('prompts')}
             className={cx(
               'rounded-full px-4 py-2 text-sm font-medium transition',
-              tab === 'prompts' ? 'bg-[#1d1d1b] text-white' : 'text-[#6f6e69] hover:bg-[#efeee9]',
+              tab === 'prompts' ? 'bg-[var(--color-ink)] text-white' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]',
             )}
           >
             Prompts ({promptList.length})
@@ -588,29 +588,29 @@ export default function AdminAi(): JSX.Element {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="min-w-full">
-                      <thead className="bg-[#f3f2ed]">
+                      <thead className="bg-[var(--color-canvas)]">
                         <tr>
-                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                             Code / driver / model
                           </th>
-                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                             Priority
                           </th>
-                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                             Active
                           </th>
-                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                             Secret
                           </th>
-                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                             Last test
                           </th>
-                          <th className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                          <th className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                             Actions
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#e4e2dc]">
+                      <tbody className="divide-y divide-[var(--color-border-subtle)]">
                         {providerList.map((p) => (
                           <ProviderRow
                             key={p.id}
@@ -664,29 +664,29 @@ export default function AdminAi(): JSX.Element {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
-                    <thead className="bg-[#f3f2ed]">
+                    <thead className="bg-[var(--color-canvas)]">
                       <tr>
-                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                           Name / version
                         </th>
-                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                           Status
                         </th>
-                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                           Variables
                         </th>
-                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                           Template
                         </th>
-                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                        <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                           Approved
                         </th>
-                        <th className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                        <th className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                           Actions
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#e4e2dc]">
+                    <tbody className="divide-y divide-[var(--color-border-subtle)]">
                       {promptList.map((p) => (
                         <PromptRow
                           key={p.id}

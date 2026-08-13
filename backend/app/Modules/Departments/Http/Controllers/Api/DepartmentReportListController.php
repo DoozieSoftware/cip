@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Departments\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Departments\Http\Resources\DepartmentReportListResource;
 use App\Modules\Departments\Http\Resources\DepartmentReportResource;
 use App\Modules\Departments\Repositories\DepartmentReportRepository;
 use App\Modules\Departments\Services\OperationDepartmentResolver;
@@ -13,6 +14,7 @@ use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\CursorPaginator;
 
 class DepartmentReportListController extends Controller
 {
@@ -26,10 +28,24 @@ class DepartmentReportListController extends Controller
         $departmentId = $this->resolveDepartmentId($request);
         $query = $request->query();
         $page = $this->repo->assignedTo($departmentId, is_array($query) ? $query : []);
+        $request->merge(['department_id' => $departmentId]);
+
+        if ($page instanceof CursorPaginator) {
+            return response()->json([
+                'success' => true,
+                'data' => DepartmentReportListResource::collection($page->items())->resolve($request),
+                'meta' => [
+                    'per_page' => $page->perPage(),
+                    'next_cursor' => $page->nextCursor()?->encode(),
+                    'prev_cursor' => $page->previousCursor()?->encode(),
+                ],
+                'trace_id' => $request->attributes->get('trace_id'),
+            ]);
+        }
 
         return response()->json([
             'success' => true,
-            'data' => DepartmentReportResource::collection($page->items())->resolve($request),
+            'data' => DepartmentReportListResource::collection($page->items())->resolve($request),
             'meta' => [
                 'current_page' => $page->currentPage(),
                 'per_page' => $page->perPage(),

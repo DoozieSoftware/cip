@@ -11,8 +11,10 @@ use App\Modules\Routing\Services\AssignmentService;
 use App\Modules\Routing\Services\RoutingEngine;
 use App\Modules\Routing\Services\RoutingFallbackService;
 use App\Modules\Routing\Services\SecondaryRoutingService;
+use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Services\SystemUserService;
 use App\Modules\Workflow\Services\WorkflowEngine;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -172,16 +174,25 @@ class AiCompletedListener
             $reason .= ' [secondary: '.implode(',', $secondaryTriggers).']';
         }
 
-        $this->assignments->assign($report, $decision, $systemActor, reason: $reason);
+        DB::transaction(function () use ($report, $decision, $systemActor, $reason, $secondaryTriggers, $signalMetadata): void {
+            $this->assignments->assign($report, $decision, $systemActor, reason: $reason);
 
-        // The primary assignment remains the report owner. Secondary rows
-        // are linked co-tasks and never update reports.department_id.
-        $this->secondary->route($report, $secondaryTriggers, $systemActor, reason: $reason);
+            // The primary assignment remains the report owner. Secondary rows
+            // are linked co-tasks and never update reports.department_id.
+            $this->secondary->route($report, $secondaryTriggers, $systemActor, reason: $reason);
 
-        $wfDecision = $this->workflow->evaluate($report, 'ai_auto_assign', $systemActor);
+            $wfDecision = $this->workflow->evaluate($report, 'ai_auto_assign', $systemActor);
 
-        if ($wfDecision->allowed) {
+            if (! $wfDecision->allowed) {
+                throw new ApiException(
+                    'ASSIGNMENT_TRANSITION_CONFLICT',
+                    'The assignment could not be committed because its workflow transition is no longer allowed.',
+                    409,
+                    ['reasons' => $wfDecision->reasons],
+                );
+            }
+
             $this->workflow->apply($report, $wfDecision, $systemActor, $signalMetadata);
-        }
+        });
     }
 }

@@ -131,12 +131,11 @@ export default function ReportDetailPage() {
     refetch,
   } = useQuery<DepartmentReportDetail>({
     queryKey: ['operations', 'report', reportId, selectedId],
-    queryFn: async () =>
-      (await departmentApi.showReportInDepartment(reportId, selectedId ?? '')).data,
+    queryFn: () => departmentApi.showReportInDepartment(reportId, selectedId ?? ''),
     enabled: Boolean(reportId) && ready && memberships.length > 0 && Boolean(selectedId),
   });
 
-  const { data: notesData, refetch: refetchNotes } = useQuery<{ data: InternalNote[] }>({
+  const { data: notesData, refetch: refetchNotes } = useQuery<InternalNote[]>({
     queryKey: ['operations', 'report', reportId, 'notes', selectedId],
     queryFn: () => departmentApi.listNotes(reportId, selectedId ?? undefined),
     enabled: Boolean(reportId) && ready && memberships.length > 0 && Boolean(selectedId),
@@ -148,14 +147,14 @@ export default function ReportDetailPage() {
 
   const action = useMutation({
     mutationFn: (input: { event: WorkflowEvent; note?: string }) =>
-      departmentApi.action(reportId, input.event, input.note),
+      departmentApi.action(reportId, input.event, input.note, report?.workflow_version ?? 1),
     onSuccess: (response) => {
       queryClient.setQueryData<DepartmentReportDetail>(
         ['operations', 'report', reportId, selectedId],
         (current) =>
           ({
-            ...response.data,
-            internal_notes: current?.internal_notes ?? response.data.internal_notes,
+            ...response,
+            internal_notes: current?.internal_notes ?? response.internal_notes,
           }) as DepartmentReportDetail,
       );
       void queryClient.invalidateQueries({ queryKey: ['operations', 'reports'] });
@@ -255,7 +254,7 @@ export default function ReportDetailPage() {
             onClick={() => {
               void refetch();
             }}
-            className="text-sm font-medium text-[#1d1d1b] underline underline-offset-2"
+            className="text-sm font-medium text-[var(--color-ink)] underline underline-offset-2"
           >
             Retry
           </button>
@@ -284,7 +283,7 @@ export default function ReportDetailPage() {
     <div className="space-y-5">
       <Link
         to="/operations/reports"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6f6e69] transition hover:text-[#1d1d1b]"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
       >
         <IconArrowLeft size={16} stroke={1.6} />
         Back to reports
@@ -295,14 +294,15 @@ export default function ReportDetailPage() {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone={isSecondaryTask ? 'purple' : 'neutral'}>
-                {isSecondaryTask ? 'Linked report' : 'Primary report'}
+                {isSecondaryTask ? 'Cross-agency report' : 'Primary report'}
               </Badge>
               <Badge tone={statusTone(status)}>{statusLabel(status)}</Badge>
               {report.report_type && <Badge tone="neutral">{report.report_type.name}</Badge>}
-              {report.priority && <Badge tone="neutral">{report.priority.name}</Badge>}
             </div>
-            <h1 className="mt-2 text-lg font-semibold text-[#1d1d1b]">{report.title}</h1>
-            <p className="mt-0.5 font-mono text-xs text-[#85847f]">{report.tracking_number}</p>
+            <h1 className="mt-2 text-lg font-semibold text-[var(--color-ink)]">{report.title}</h1>
+            <p className="mt-0.5 font-mono text-xs text-[var(--color-text-tertiary)]">
+              {report.tracking_number}
+            </p>
           </div>
           <div className="shrink-0">
             {(isSecondaryTask
@@ -323,13 +323,15 @@ export default function ReportDetailPage() {
       {report.assignments.length > 1 && (
         <div className="rounded-xl bg-white p-4">
           <div className="flex items-center gap-2">
-            <IconLink size={14} stroke={1.6} className="text-[#85847f]" />
-            <h2 className="text-sm font-semibold text-[#1d1d1b]">Linked departments</h2>
+            <IconLink size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
+            <h2 className="text-sm font-semibold text-[var(--color-ink)]">
+              Cross-agency departments
+            </h2>
           </div>
-          <p className="mt-1 text-xs text-[#85847f]">
+          <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
             This report needs action from multiple departments.
           </p>
-          <div className="mt-3 space-y-0 divide-y divide-[#f3f2ed]">
+          <div className="mt-3 space-y-0 divide-y divide-[var(--color-canvas)]">
             {report.assignments.map((a) => (
               <div
                 key={a.id}
@@ -339,17 +341,21 @@ export default function ReportDetailPage() {
                   <span
                     className={
                       'flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ' +
-                      (a.is_primary ? 'bg-[#1d1d1b] text-white ' : 'bg-[#f3f2ed] text-[#6f6e69] ')
+                      (a.is_primary
+                        ? 'bg-[var(--color-ink)] text-white '
+                        : 'bg-[var(--color-canvas)] text-[var(--color-text-secondary)] ')
                     }
                   >
                     {a.is_primary ? 'P' : 'S'}
                   </span>
                   <div>
-                    <p className="text-sm font-medium text-[#1d1d1b]">
+                    <p className="text-sm font-medium text-[var(--color-ink)]">
                       {a.department?.name ?? 'Department'}
                     </p>
-                    <p className="text-xs text-[#85847f]">
-                      {a.is_primary ? 'Primary — owns closure' : 'Linked — assists resolution'}
+                    <p className="text-xs text-[var(--color-text-tertiary)]">
+                      {a.is_primary
+                        ? 'Primary — owns closure'
+                        : 'Cross-agency — assists resolution'}
                     </p>
                   </div>
                 </div>
@@ -365,7 +371,11 @@ export default function ReportDetailPage() {
                   >
                     {statusLabel(a.status)}
                   </Badge>
-                  {a.officer && <p className="mt-0.5 text-xs text-[#85847f]">{a.officer.name}</p>}
+                  {a.officer && (
+                    <p className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">
+                      {a.officer.name}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
@@ -377,15 +387,17 @@ export default function ReportDetailPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-2xl">
             <div className="flex items-center gap-2">
-              <IconShield size={14} stroke={1.6} className="text-[#85847f]" />
-              <p className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+              <IconShield size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
+              <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                 Current workflow
               </p>
             </div>
-            <h2 className="mt-1 text-base font-semibold text-[#1d1d1b]">{statusLabel(status)}</h2>
-            <p className="mt-1 text-sm leading-5 text-[#6f6e69]">
+            <h2 className="mt-1 text-base font-semibold text-[var(--color-ink)]">
+              {statusLabel(status)}
+            </h2>
+            <p className="mt-1 text-sm leading-5 text-[var(--color-text-secondary)]">
               {isSecondaryTask
-                ? 'This linked task has its own completion state. The primary department retains control of the report workflow.'
+                ? 'This cross-agency work has its own completion state. The primary department retains control of the report workflow.'
                 : (STATUS_GUIDANCE[status] ?? 'No workflow action is available for this status.')}
             </p>
           </div>
@@ -402,12 +414,12 @@ export default function ReportDetailPage() {
                     aria-keyshortcuts={meta.shortcut}
                     className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
                       event === 'accept' || event === 'start'
-                        ? 'bg-[#1d1d1b] text-white hover:bg-[#1d1d1b]/90'
+                        ? 'bg-[var(--color-ink)] text-white hover:bg-[var(--color-ink)]/90'
                         : event === 'resolve'
                           ? 'bg-emerald-700 text-white hover:bg-emerald-800'
                           : event === 'close'
                             ? 'bg-red-600 text-white hover:bg-red-700'
-                            : 'bg-[#f3f2ed] text-[#1d1d1b] hover:bg-[#f3f2ed]/80'
+                            : 'bg-[var(--color-canvas)] text-[var(--color-ink)] hover:bg-[var(--color-canvas)]/80'
                     }`}
                   >
                     {actionPending && activeAction === event ? (
@@ -445,26 +457,29 @@ export default function ReportDetailPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <IconLink size={14} stroke={1.6} className="text-[#85847f]" />
-                <h2 className="text-sm font-semibold text-[#1d1d1b]">Linked report</h2>
+                <IconLink size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
+                <h2 className="text-sm font-semibold text-[var(--color-ink)]">
+                  Cross-agency report
+                </h2>
               </div>
-              <p className="mt-1 text-xs text-[#85847f]">
-                Complete this department task without resolving or closing the report.
+              <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+                Complete this department’s cross-agency work without resolving or closing the
+                report.
               </p>
               <div className="mt-3 flex items-center gap-4 text-xs">
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                     Department
                   </p>
-                  <p className="mt-0.5 font-medium text-[#1d1d1b]">
+                  <p className="mt-0.5 font-medium text-[var(--color-ink)]">
                     {selectedDepartment?.name ?? 'Selected department'}
                   </p>
                 </div>
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                     Assigned
                   </p>
-                  <p className="mt-0.5 font-medium text-[#1d1d1b]">
+                  <p className="mt-0.5 font-medium text-[var(--color-ink)]">
                     {new Date(assignment.assigned_at).toLocaleString()}
                   </p>
                 </div>
@@ -508,26 +523,30 @@ export default function ReportDetailPage() {
         <div className="space-y-5">
           <div className="rounded-xl bg-white p-4">
             <div className="flex items-center gap-2">
-              <IconPaperclip size={14} stroke={1.6} className="text-[#85847f]" />
-              <h2 className="text-sm font-semibold text-[#1d1d1b]">Evidence and proof</h2>
+              <IconPaperclip size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
+              <h2 className="text-sm font-semibold text-[var(--color-ink)]">Evidence and proof</h2>
             </div>
-            <p className="mt-1 text-xs text-[#85847f]">
+            <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
               Citizen report on the left; department completion proof on the right.
             </p>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div className="rounded-lg bg-[#f3f2ed] p-3">
+              <div className="rounded-lg bg-[var(--color-canvas)] p-3">
                 <div className="mb-3 flex items-center justify-between">
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                     Before
                   </p>
-                  <span className="text-xs text-[#85847f]">
+                  <span className="text-xs text-[var(--color-text-tertiary)]">
                     {evidence.length} {evidence.length === 1 ? 'item' : 'items'}
                   </span>
                 </div>
                 {evidence.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-[#85847f]/30 py-8 text-center">
-                    <IconFileText size={20} stroke={1.6} className="text-[#85847f]" />
-                    <p className="mt-2 text-xs text-[#85847f]">No evidence</p>
+                  <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-text-tertiary)]/30 py-8 text-center">
+                    <IconFileText
+                      size={20}
+                      stroke={1.6}
+                      className="text-[var(--color-text-tertiary)]"
+                    />
+                    <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">No evidence</p>
                   </div>
                 ) : (
                   <MediaGallery items={evidence} label="Citizen evidence" />
@@ -545,7 +564,7 @@ export default function ReportDetailPage() {
                 {proof.length === 0 ? (
                   <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-emerald-300 bg-white/70 py-8 text-center">
                     <IconUpload size={20} stroke={1.6} className="text-emerald-600" />
-                    <p className="mt-2 text-xs text-[#6f6e69]">
+                    <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
                       Upload proof photos after the field crew completes the work.
                     </p>
                   </div>
@@ -555,8 +574,8 @@ export default function ReportDetailPage() {
               </div>
             </div>
             {!isTerminal && (
-              <div className="mt-4 flex flex-col gap-2 border-t border-[#f3f2ed] pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-[#85847f]">
+              <div className="mt-4 flex flex-col gap-2 border-t border-[var(--color-canvas)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-[var(--color-text-tertiary)]">
                   Proof photos stay department-private until the report is closed.
                 </p>
                 <input
@@ -572,7 +591,7 @@ export default function ReportDetailPage() {
                   type="button"
                   onClick={() => proofInputRef.current?.click()}
                   disabled={uploadProof.isPending}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#f3f2ed] px-4 py-2 text-sm font-medium text-[#1d1d1b] transition hover:bg-[#f3f2ed]/80 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--color-canvas)] px-4 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)]/80 disabled:opacity-50"
                 >
                   <IconUpload size={14} stroke={1.6} />
                   {uploadProof.isPending ? 'Uploading...' : 'Upload proof photos'}
@@ -590,41 +609,39 @@ export default function ReportDetailPage() {
 
           <div className="rounded-xl bg-white p-4">
             <div className="flex items-center gap-2">
-              <IconFileText size={14} stroke={1.6} className="text-[#85847f]" />
-              <h2 className="text-sm font-semibold text-[#1d1d1b]">Report details</h2>
+              <IconFileText size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
+              <h2 className="text-sm font-semibold text-[var(--color-ink)]">Report details</h2>
             </div>
             <div className="mt-3 space-y-3">
               {report.description && (
-                <p className="whitespace-pre-line text-sm leading-5 text-[#6f6e69]">
+                <p className="whitespace-pre-line text-sm leading-5 text-[var(--color-text-secondary)]">
                   {report.description}
                 </p>
               )}
               <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-xs sm:grid-cols-2">
                 <div>
-                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                     Type
                   </dt>
-                  <dd className="mt-0.5 text-[#1d1d1b]">{report.report_type?.name ?? '—'}</dd>
+                  <dd className="mt-0.5 text-[var(--color-ink)]">
+                    {report.report_type?.name ?? '—'}
+                  </dd>
                 </div>
                 <div>
-                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
-                    Priority
-                  </dt>
-                  <dd className="mt-0.5 text-[#1d1d1b]">{report.priority?.name ?? '—'}</dd>
-                </div>
-                <div>
-                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                     Submitted
                   </dt>
-                  <dd className="mt-0.5 text-[#1d1d1b]">
+                  <dd className="mt-0.5 text-[var(--color-ink)]">
                     {report.submitted_at ? new Date(report.submitted_at).toLocaleString() : '—'}
                   </dd>
                 </div>
                 <div>
-                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                     Reference
                   </dt>
-                  <dd className="mt-0.5 font-mono text-[#1d1d1b]">{report.tracking_number}</dd>
+                  <dd className="mt-0.5 font-mono text-[var(--color-ink)]">
+                    {report.tracking_number}
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -632,8 +649,12 @@ export default function ReportDetailPage() {
 
           <div className="rounded-xl bg-white p-4">
             <div className="flex items-center gap-2">
-              <IconCircleDotted size={14} stroke={1.6} className="text-[#85847f]" />
-              <h2 className="text-sm font-semibold text-[#1d1d1b]">Status timeline</h2>
+              <IconCircleDotted
+                size={14}
+                stroke={1.6}
+                className="text-[var(--color-text-tertiary)]"
+              />
+              <h2 className="text-sm font-semibold text-[var(--color-ink)]">Status timeline</h2>
             </div>
             <div className="mt-3">
               <StatusTimeline entries={report.status_history ?? []} />
@@ -645,27 +666,29 @@ export default function ReportDetailPage() {
           <LocationCard location={report.location} />
           <div className="rounded-xl bg-white p-4">
             <div className="flex items-center gap-2">
-              <IconUser size={14} stroke={1.6} className="text-[#85847f]" />
-              <h2 className="text-sm font-semibold text-[#1d1d1b]">Accountability</h2>
+              <IconUser size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
+              <h2 className="text-sm font-semibold text-[var(--color-ink)]">Accountability</h2>
             </div>
             <dl className="mt-3 space-y-3 text-xs">
               <div className="flex items-center justify-between">
-                <dt className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                   Department
                 </dt>
-                <dd className="font-medium text-[#1d1d1b]">{report.department?.name ?? '—'}</dd>
+                <dd className="font-medium text-[var(--color-ink)]">
+                  {report.department?.name ?? '—'}
+                </dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                   Assigned officer
                 </dt>
-                <dd className="font-medium text-[#1d1d1b]">
+                <dd className="font-medium text-[var(--color-ink)]">
                   {report.assigned_to?.name ?? 'Unassigned'}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
-                  SLA
+                <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  Due target
                 </dt>
                 <dd>
                   <SlaChip
@@ -684,8 +707,8 @@ export default function ReportDetailPage() {
 
       <div className="rounded-xl bg-white p-4">
         <div className="flex items-center gap-2">
-          <IconMessageCircle size={14} stroke={1.6} className="text-[#85847f]" />
-          <h2 className="text-sm font-semibold text-[#1d1d1b]">Internal notes</h2>
+          <IconMessageCircle size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
+          <h2 className="text-sm font-semibold text-[var(--color-ink)]">Internal notes</h2>
         </div>
         <div className="mt-3 space-y-3">
           <div>
@@ -697,7 +720,7 @@ export default function ReportDetailPage() {
               placeholder="Site visit notes, contact log, etc."
               rows={3}
               aria-keyshortcuts="N"
-              className="rounded-lg border-0 bg-[#f3f2ed] text-sm text-[#1d1d1b] placeholder:text-[#85847f] focus:ring-2 focus:ring-[#1d1d1b]/10"
+              className="rounded-lg border-0 bg-[var(--color-canvas)] text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-ink)]/10"
             />
             <div className="mt-2 flex justify-end">
               <button
@@ -706,7 +729,7 @@ export default function ReportDetailPage() {
                   addNote.mutate();
                 }}
                 disabled={addNote.isPending || noteBody.trim() === ''}
-                className="inline-flex items-center gap-2 rounded-full bg-[#1d1d1b] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#1d1d1b]/90 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 py-2 text-sm font-medium text-white transition hover:bg-[var(--color-ink)]/90 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {addNote.isPending ? (
                   <span
@@ -722,10 +745,10 @@ export default function ReportDetailPage() {
           </div>
 
           <div className="space-y-2">
-            {(notesData?.data ?? []).map((n) => (
-              <div key={n.id} className="rounded-lg bg-[#f3f2ed] p-3">
-                <p className="text-sm leading-5 text-[#1d1d1b]">{n.body}</p>
-                <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[#85847f]">
+            {(notesData ?? []).map((n) => (
+              <div key={n.id} className="rounded-lg bg-[var(--color-canvas)] p-3">
+                <p className="text-sm leading-5 text-[var(--color-ink)]">{n.body}</p>
+                <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[var(--color-text-tertiary)]">
                   <IconUser size={10} stroke={1.6} />
                   <span>{n.author_name ?? 'system'}</span>
                   <span aria-hidden>·</span>
@@ -734,8 +757,10 @@ export default function ReportDetailPage() {
                 </p>
               </div>
             ))}
-            {(notesData?.data ?? []).length === 0 && (
-              <p className="py-4 text-center text-xs text-[#85847f]">No notes yet.</p>
+            {(notesData ?? []).length === 0 && (
+              <p className="py-4 text-center text-xs text-[var(--color-text-tertiary)]">
+                No notes yet.
+              </p>
             )}
           </div>
         </div>

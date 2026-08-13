@@ -11,10 +11,14 @@ use App\Modules\Users\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\LengthAwarePaginator as ConcreteLengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class ReportRepository
 {
+    public const MAX_PER_PAGE = 100;
+
     /**
      * @return Builder<Report>
      */
@@ -31,7 +35,18 @@ class ReportRepository
     public function findByIdWithRelations(string $id): ?Report
     {
         return Report::query()
-            ->with(['status', 'reportType', 'priority', 'location', 'location.ward', 'location.district', 'department', 'statusHistory.fromStatus', 'statusHistory.toStatus'])
+            ->with([
+                'status',
+                'reportType',
+                'priority',
+                'location',
+                'location.ward',
+                'location.district',
+                'department',
+                'media',
+                'statusHistory.fromStatus',
+                'statusHistory.toStatus',
+            ])
             ->find($id);
     }
 
@@ -78,11 +93,13 @@ class ReportRepository
      *     dir?: string|null,
      * }  $filters
      * @param  list<string>|null  $departmentScope
-     * @return ConcreteLengthAwarePaginator<int, Report>
+     * @return ConcreteLengthAwarePaginator<int, Report>|CursorPaginator<int, Report>
      */
-    public function searchByRole(array $filters, int $perPage = 25, ?array $departmentScope = null): LengthAwarePaginator
+    public function searchByRole(array $filters, int $perPage = 25, ?array $departmentScope = null, ?string $cursor = null): LengthAwarePaginator|CursorPaginator
     {
-        $q = $this->baseSearch($filters);
+        $q = $this->baseSearch($filters)
+            ->with(['reportType', 'status', 'priority', 'location', 'department'])
+            ->withCount('media');
 
         if ($departmentScope !== null) {
             $q->where(function (Builder $w) use ($departmentScope): void {
@@ -98,6 +115,17 @@ class ReportRepository
             : 'created_at';
         $dir = strtolower((string) ($filters['dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
 
+        $perPage = max(1, min(self::MAX_PER_PAGE, $perPage));
+
+        if ($cursor !== null) {
+            // Cursor mode is opt-in for existing clients and always has a
+            // unique tie-breaker so rows are neither skipped nor repeated.
+            return $q
+                ->orderBy($sort, $dir)
+                ->orderBy('id', $dir)
+                ->cursorPaginate($perPage, ['*'], 'cursor', $cursor);
+        }
+
         return $q->orderBy($sort, $dir)->paginate($perPage);
     }
 
@@ -106,11 +134,23 @@ class ReportRepository
      * reports are returned. `is_anonymous` rows are excluded.
      *
      * @param  array<string, mixed>  $filters
-     * @return ConcreteLengthAwarePaginator<int, Report>
+     * @return ConcreteLengthAwarePaginator<int, Report>|CursorPaginator<int, Report>
      */
-    public function searchForCitizen(User $citizen, array $filters, int $perPage = 25): LengthAwarePaginator
+    public function searchForCitizen(User $citizen, array $filters, int $perPage = 25, ?string $cursor = null, bool $cursorMode = false): LengthAwarePaginator|CursorPaginator
     {
-        $q = $this->baseSearch($filters)->where('citizen_id', $citizen->id);
+        $q = $this->baseSearch($filters)
+            ->where('citizen_id', $citizen->id)
+            ->with(['reportType', 'status', 'priority', 'location', 'department'])
+            ->withCount('media');
+
+        $perPage = max(1, min(self::MAX_PER_PAGE, $perPage));
+
+        if ($cursorMode || $cursor !== null) {
+            return $q
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->cursorPaginate($perPage, ['*'], 'cursor', $cursor);
+        }
 
         return $q->orderByDesc('created_at')->paginate($perPage);
     }
@@ -173,10 +213,19 @@ class ReportRepository
         $q = Report::query();
 
         if (! empty($filters['status']) && is_string($filters['status'])) {
-            $statusId = ReportStatus::query()->where('code', $filters['status'])->value('id');
+            $status = $filters['status'];
+            $groups = [
+                'open' => ['submitted', 'ai_processing', 'pending_moderator', 'assigned', 'accepted', 'in_progress', 'escalated'],
+                'awaiting_citizen' => ['resolved_pending_verification'],
+                'closed' => ['verified', 'closed'],
+                'rejected' => ['rejected'],
+                'merged' => ['merged'],
+            ];
+            $codes = $groups[$status] ?? [$status];
+            $statusIds = ReportStatus::query()->whereIn('code', $codes)->pluck('id')->all();
 
-            if (is_string($statusId) && $statusId !== '') {
-                $q->where('current_status_id', $statusId);
+            if ($statusIds !== []) {
+                $q->whereIn('current_status_id', $statusIds);
             }
         }
 
@@ -184,9 +233,18 @@ class ReportRepository
             $q->where('department_id', $filters['department']);
         }
 
-        if (! empty($filters['ward']) && is_string($filters['ward'])) {
-            $q->whereHas('location', function (Builder $w) use ($filters): void {
-                $w->where('ward_id', $filters['ward']);
+        $reportTypeId = $filters['report_type_id'] ?? $filters['category'] ?? null;
+
+        if (is_string($reportTypeId) && $reportTypeId !== '') {
+            $q->where('report_type_id', $reportTypeId);
+        }
+
+        $ward = $filters['ward'] ?? $filters['area'] ?? null;
+
+        if (is_string($ward) && $ward !== '') {
+            $q->whereHas('location', function (Builder $w) use ($ward): void {
+                $w->where('ward_id', $ward)
+                    ->orWhere('address', 'like', '%'.$ward.'%');
             });
         }
 
@@ -199,15 +257,23 @@ class ReportRepository
         }
 
         if (! empty($filters['date_to']) && is_string($filters['date_to'])) {
-            $q->where('created_at', '<=', $filters['date_to']);
+            $q->whereDate('created_at', '<=', $filters['date_to']);
         }
 
         if (! empty($filters['search']) && is_string($filters['search'])) {
-            $needle = '%'.$filters['search'].'%';
-            $q->where(function (Builder $w) use ($needle): void {
-                $w->where('tracking_number', 'like', $needle)
-                    ->orWhere('title', 'like', $needle)
-                    ->orWhere('description', 'like', $needle);
+            $search = trim($filters['search']);
+            $q->where(function (Builder $w) use ($search): void {
+                // Tracking references are exact/prefix lookups, preserving
+                // the unique index instead of forcing a leading wildcard.
+                $w->where('tracking_number', 'like', $search.'%');
+
+                if (DB::getDriverName() === 'mysql') {
+                    $w->orWhereFullText(['title', 'description'], $search);
+                } else {
+                    $needle = '%'.$search.'%';
+                    $w->orWhere('title', 'like', $needle)
+                        ->orWhere('description', 'like', $needle);
+                }
             });
         }
 

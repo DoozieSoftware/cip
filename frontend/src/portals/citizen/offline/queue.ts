@@ -30,6 +30,8 @@ export type QueueItemStatus = 'pending' | 'in_flight' | 'failed' | 'dead' | 'don
 
 export interface QueueItem<TPayload = unknown> {
   id: string;
+  /** Stable authenticated account id. Never drain an item for another owner. */
+  owner_id: string;
   kind: QueueItemKind;
   payload: TPayload;
   attempts: number;
@@ -55,22 +57,27 @@ export interface QueueAdapter {
 export class MemoryAdapter implements QueueAdapter {
   private readonly store = new Map<string, QueueItem>();
 
-  async list(): Promise<QueueItem[]> {
-    return Array.from(this.store.values()).sort((a, b) => a.enqueued_at - b.enqueued_at);
+  list(): Promise<QueueItem[]> {
+    return Promise.resolve(
+      Array.from(this.store.values()).sort((a, b) => a.enqueued_at - b.enqueued_at),
+    );
   }
 
-  async put(item: QueueItem): Promise<void> {
+  put(item: QueueItem): Promise<void> {
     this.store.set(item.id, { ...item });
+    return Promise.resolve();
   }
 
-  async delete(id: string): Promise<void> {
+  delete(id: string): Promise<void> {
     this.store.delete(id);
+    return Promise.resolve();
   }
 
-  async patch(id: string, patch: Partial<QueueItem>): Promise<void> {
+  patch(id: string, patch: Partial<QueueItem>): Promise<void> {
     const cur = this.store.get(id);
-    if (!cur) return;
+    if (!cur) return Promise.resolve();
     this.store.set(id, { ...cur, ...patch, updated_at: Date.now() });
+    return Promise.resolve();
   }
 }
 
@@ -108,13 +115,21 @@ async function loadIdb(): Promise<unknown> {
         "The 'idb' package is not installed. Run `npm i idb` to enable the IndexedDB adapter.",
       );
     });
-    return mod.openDB('cip-citizen-queue', 1, {
-      upgrade(database: unknown): void {
+    return mod.openDB('cip-citizen-queue', 2, {
+      upgrade(database: unknown, oldVersion = 0): void {
         type IDBObj = { createObjectStore: (name: string, opts: { keyPath: string }) => unknown };
-        const obj = (database as IDBObj).createObjectStore('items', { keyPath: 'id' });
+        const obj =
+          oldVersion < 1
+            ? (database as IDBObj).createObjectStore('items', { keyPath: 'id' })
+            : undefined;
         type WithIndex = { createIndex: (name: string, key: string) => unknown };
-        (obj as WithIndex).createIndex('status', 'status');
-        (obj as WithIndex).createIndex('next_attempt_at', 'next_attempt_at');
+        if (obj) {
+          (obj as WithIndex).createIndex('status', 'status');
+          (obj as WithIndex).createIndex('next_attempt_at', 'next_attempt_at');
+        }
+        if (oldVersion < 2) {
+          (database as IDBObj).createObjectStore('drafts', { keyPath: 'id' });
+        }
       },
     });
   })();
@@ -171,6 +186,8 @@ export class IndexedDBAdapter implements QueueAdapter {
 
 export interface QueueOptions {
   adapter?: QueueAdapter;
+  /** Stable account identifier used to partition the local queue. */
+  owner_id?: string | null;
   max_attempts?: number;
   backoff?: (attempt: number) => number;
   now?: () => number;
@@ -189,6 +206,11 @@ const DEFAULT_BACKOFF = (attempt: number): number => {
   return base + jitter;
 };
 
+/** Used only by unit tests and unauthenticated SSR callers. Browser portal code
+ * always passes the authenticated user's id. */
+export const ANONYMOUS_QUEUE_OWNER = '__anonymous__';
+const DONE_RETENTION_MS = 24 * 60 * 60 * 1000;
+
 function uuid(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -201,8 +223,11 @@ export class OfflineQueue {
   private readonly maxAttempts: number;
   private readonly backoff: (attempt: number) => number;
   private readonly now: () => number;
+  private readonly ownerId: string;
   private retry?: (item: QueueItem) => Promise<void>;
   private running = false;
+  private stopped = false;
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private listeners: Array<() => void> = [];
 
   constructor(opts: QueueOptions = {}) {
@@ -210,6 +235,7 @@ export class OfflineQueue {
     this.maxAttempts = opts.max_attempts ?? 5;
     this.backoff = opts.backoff ?? DEFAULT_BACKOFF;
     this.now = opts.now ?? (() => Date.now());
+    this.ownerId = opts.owner_id || ANONYMOUS_QUEUE_OWNER;
     this.retry = opts.retry;
   }
 
@@ -223,27 +249,60 @@ export class OfflineQueue {
     this.retry = retry;
   }
 
-  /** Total items, regardless of status. */
+  get owner_id(): string {
+    return this.ownerId;
+  }
+
+  /** Stop all future processing. Used synchronously during logout. */
+  stop(): void {
+    this.stopped = true;
+    if (this.retryTimer !== null) clearTimeout(this.retryTimer);
+    this.retryTimer = null;
+  }
+
+  resume(): void {
+    this.stopped = false;
+  }
+
+  private owned(items: QueueItem[]): QueueItem[] {
+    return items.filter((item) => item.owner_id === this.ownerId);
+  }
+
+  /** Actionable items only. Completed entries are retained briefly for audit
+   * and idempotency, but never inflate the pending badge. */
   async size(): Promise<number> {
-    const items = await this.adapter.list();
-    return items.length;
+    const items = this.owned(await this.adapter.list());
+    return items.filter((item) => item.status !== 'done').length;
   }
 
   /** Items still in flight (pending, in_flight, failed-with-retries-left). */
   async pending(): Promise<QueueItem[]> {
-    const items = await this.adapter.list();
+    const items = this.owned(await this.adapter.list());
     return items.filter(
       (i) => i.status === 'pending' || i.status === 'in_flight' || i.status === 'failed',
     );
+  }
+
+  async failed(): Promise<QueueItem[]> {
+    return (await this.pending()).filter((item) => item.status === 'failed');
+  }
+
+  async dead(): Promise<QueueItem[]> {
+    const items = this.owned(await this.adapter.list());
+    return items.filter((item) => item.status === 'dead');
   }
 
   /** Add a payload. Idempotent on `id`. */
   async enqueue<TPayload>(input: EnqueueInput<TPayload>): Promise<QueueItem<TPayload>> {
     const id = input.id ?? uuid();
     const existing = (await this.adapter.list()).find((i) => i.id === id);
+    if (existing && existing.owner_id !== this.ownerId) {
+      throw new Error('Queue item belongs to another account.');
+    }
     if (existing) return existing as QueueItem<TPayload>;
     const item: QueueItem<TPayload> = {
       id,
+      owner_id: this.ownerId,
       kind: input.kind,
       payload: input.payload,
       attempts: 0,
@@ -259,14 +318,28 @@ export class OfflineQueue {
   }
 
   async remove(id: string): Promise<void> {
+    const item = (await this.adapter.list()).find((candidate) => candidate.id === id);
+    if (item?.owner_id !== this.ownerId) return;
     await this.adapter.delete(id);
     this.emit();
   }
 
   async clear(): Promise<void> {
-    const items = await this.adapter.list();
+    if (this.retryTimer !== null) clearTimeout(this.retryTimer);
+    this.retryTimer = null;
+    const items = this.owned(await this.adapter.list());
     await Promise.all(items.map((i) => this.adapter.delete(i.id)));
     this.emit();
+  }
+
+  /** Remove acknowledged entries after a short retention period. */
+  async cleanupDone(retentionMs = DONE_RETENTION_MS): Promise<number> {
+    const cutoff = this.now() - retentionMs;
+    const items = this.owned(await this.adapter.list());
+    const done = items.filter((item) => item.status === 'done' && item.updated_at <= cutoff);
+    await Promise.all(done.map((item) => this.adapter.delete(item.id)));
+    if (done.length > 0) this.emit();
+    return done.length;
   }
 
   /**
@@ -275,6 +348,9 @@ export class OfflineQueue {
    * re-schedule — or flip to `dead` once `max_attempts` is reached.
    */
   async processOne(item: QueueItem): Promise<QueueItem> {
+    if (item.owner_id !== this.ownerId) {
+      throw new Error('Queue item belongs to another account.');
+    }
     await this.adapter.patch(item.id, { status: 'in_flight', updated_at: this.now() });
     if (!this.retry) {
       await this.adapter.patch(item.id, { status: 'pending', updated_at: this.now() });
@@ -320,14 +396,14 @@ export class OfflineQueue {
    * repeatedly; concurrent calls are no-ops.
    */
   async drain(): Promise<{ processed: number; succeeded: number; failed: number; dead: number }> {
-    if (this.running) return { processed: 0, succeeded: 0, failed: 0, dead: 0 };
+    if (this.running || this.stopped) return { processed: 0, succeeded: 0, failed: 0, dead: 0 };
     this.running = true;
     let processed = 0,
       succeeded = 0,
       failed = 0,
       dead = 0;
     try {
-      const items = await this.adapter.list();
+      const items = this.owned(await this.adapter.list());
       const now = this.now();
       const due = items.filter(
         (i) => (i.status === 'pending' || i.status === 'failed') && i.next_attempt_at <= now,
@@ -339,6 +415,8 @@ export class OfflineQueue {
         else if (result.status === 'dead') dead++;
         else failed++;
       }
+      await this.cleanupDone();
+      this.scheduleNextDrain();
     } finally {
       this.running = false;
     }
@@ -357,6 +435,26 @@ export class OfflineQueue {
   private emit(): void {
     for (const l of this.listeners) l();
   }
+
+  private scheduleNextDrain(): void {
+    if (this.stopped || this.retryTimer !== null) return;
+    void this.adapter.list().then((all) => {
+      if (this.stopped || this.retryTimer !== null) return;
+      const now = this.now();
+      const next = this.owned(all)
+        .filter(
+          (item) =>
+            (item.status === 'pending' || item.status === 'failed') && item.next_attempt_at > now,
+        )
+        .sort((a, b) => a.next_attempt_at - b.next_attempt_at)[0];
+      if (!next) return;
+      const delay = Math.max(250, Math.min(next.next_attempt_at - now, 5 * 60 * 1000));
+      this.retryTimer = setTimeout(() => {
+        this.retryTimer = null;
+        void this.drain();
+      }, delay);
+    });
+  }
 }
 
 /* ------------------------------------------------------------------ *
@@ -365,9 +463,22 @@ export class OfflineQueue {
  * ------------------------------------------------------------------ */
 
 let _singleton: OfflineQueue | null = null;
+let _singletonOwner: string | null = null;
 
-export function getQueue(adapter?: QueueAdapter): OfflineQueue {
-  if (!_singleton) {
+export function getQueue(
+  ownerIdOrAdapter?: string | null | QueueAdapter,
+  adapterArg?: QueueAdapter,
+): OfflineQueue {
+  // Keep the original getQueue(adapter) test/SSR signature while allowing
+  // authenticated callers to use getQueue(ownerId, adapter).
+  const adapter =
+    ownerIdOrAdapter !== null && typeof ownerIdOrAdapter === 'object'
+      ? ownerIdOrAdapter
+      : adapterArg;
+  const owner =
+    (typeof ownerIdOrAdapter === 'string' ? ownerIdOrAdapter : null) || ANONYMOUS_QUEUE_OWNER;
+  if (!_singleton || _singletonOwner !== owner) {
+    _singleton?.stop();
     let a: QueueAdapter;
     if (adapter) {
       a = adapter;
@@ -376,11 +487,21 @@ export function getQueue(adapter?: QueueAdapter): OfflineQueue {
     } else {
       a = new MemoryAdapter();
     }
-    _singleton = new OfflineQueue({ adapter: a });
+    _singleton = new OfflineQueue({ adapter: a, owner_id: owner });
+    _singletonOwner = owner;
   }
   return _singleton;
 }
 
 export function resetQueue(): void {
+  _singleton?.stop();
   _singleton = null;
+  _singletonOwner = null;
+}
+
+/** Logout hook: stop and clear only the account that is leaving. */
+export async function stopAndClearQueue(ownerId: string): Promise<void> {
+  const queue = getQueue(ownerId);
+  queue.stop();
+  await queue.clear();
 }

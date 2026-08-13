@@ -9,7 +9,7 @@ import {
   type AdminPermission,
   type AdminRoleInput,
 } from '../api/client';
-import { Spinner, EmptyState, Dialog, Button } from '../../moderator/design';
+import { Spinner, EmptyState, Dialog, Button } from '../../../shared/ui';
 
 interface RoleDraft {
   id?: string | number;

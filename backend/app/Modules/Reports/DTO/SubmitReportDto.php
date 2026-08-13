@@ -17,6 +17,11 @@ final readonly class SubmitReportDto
         public string $reportTypeId,
         public float $latitude,
         public float $longitude,
+        public ?float $reporterLatitude = null,
+        public ?float $reporterLongitude = null,
+        public ?float $reporterAccuracy = null,
+        public ?string $reporterGpsProvider = null,
+        public ?\DateTimeInterface $reporterCapturedAt = null,
         public ?float $accuracy = null,
         public ?float $altitude = null,
         public ?float $heading = null,
@@ -37,6 +42,7 @@ final readonly class SubmitReportDto
     public static function fromArray(array $validated): self
     {
         $capturedAt = null;
+        $reporterCapturedAt = null;
 
         if (isset($validated['captured_at']) && is_string($validated['captured_at'])) {
             try {
@@ -46,11 +52,26 @@ final readonly class SubmitReportDto
             }
         }
 
+        if (isset($validated['reporter_captured_at']) && is_string($validated['reporter_captured_at'])) {
+            try {
+                $reporterCapturedAt = new \DateTimeImmutable($validated['reporter_captured_at']);
+            } catch (\Exception) {
+                $reporterCapturedAt = null;
+            }
+        }
+
         return new self(
             citizenId: is_scalar($validated['citizen_id'] ?? null) ? (string) $validated['citizen_id'] : '',
             reportTypeId: is_scalar($validated['report_type_id'] ?? null) ? (string) $validated['report_type_id'] : '',
             latitude: is_numeric($validated['latitude'] ?? null) ? (float) $validated['latitude'] : 0.0,
             longitude: is_numeric($validated['longitude'] ?? null) ? (float) $validated['longitude'] : 0.0,
+            reporterLatitude: is_numeric($validated['reporter_latitude'] ?? null) ? (float) $validated['reporter_latitude'] : null,
+            reporterLongitude: is_numeric($validated['reporter_longitude'] ?? null) ? (float) $validated['reporter_longitude'] : null,
+            reporterAccuracy: isset($validated['reporter_accuracy']) && is_numeric($validated['reporter_accuracy']) ? (float) $validated['reporter_accuracy'] : null,
+            reporterGpsProvider: isset($validated['reporter_gps_provider']) && is_string($validated['reporter_gps_provider'])
+                ? $validated['reporter_gps_provider']
+                : null,
+            reporterCapturedAt: $reporterCapturedAt,
             accuracy: isset($validated['accuracy']) && is_numeric($validated['accuracy']) ? (float) $validated['accuracy'] : null,
             altitude: isset($validated['altitude']) && is_numeric($validated['altitude']) ? (float) $validated['altitude'] : null,
             heading: isset($validated['heading']) && is_numeric($validated['heading']) ? (float) $validated['heading'] : null,

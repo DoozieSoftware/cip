@@ -32,7 +32,7 @@ export default function AdminPage() {
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
   const departmentsQuery = useQuery({
     queryKey: ['admin', 'departments'],
-    queryFn: async () => (await adminApi.listDepartments()).data,
+    queryFn: () => adminApi.listDepartments(),
     enabled: canChooseDepartment,
   });
   const selectableDepartments = departmentsQuery.data ?? [];
@@ -42,6 +42,12 @@ export default function AdminPage() {
       null)
     : (user?.departments?.[0] ?? null);
   const departmentId = department?.id ?? '';
+
+  const attachableUsersQuery = useQuery({
+    queryKey: ['admin', 'attachable-users'],
+    queryFn: () => adminApi.listAttachableUsers(),
+    enabled: canChooseDepartment,
+  });
 
   const {
     data: officers,
@@ -165,12 +171,34 @@ export default function AdminPage() {
         </CardHeader>
         <CardBody className="space-y-3">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <Input
-              label="User id (UUID)"
-              value={newOfficerId}
-              onChange={(e) => setNewOfficerId(e.target.value)}
-              placeholder="00000000-0000-0000-0000-000000000000"
-            />
+            {canChooseDepartment ? (
+              <Select
+                label="Officer"
+                name="officer_id"
+                value={newOfficerId}
+                onChange={(e) => setNewOfficerId(e.target.value)}
+                disabled={attachableUsersQuery.isLoading}
+                options={[
+                  {
+                    value: '',
+                    label: attachableUsersQuery.isLoading
+                      ? 'Loading officers…'
+                      : 'Select an officer',
+                  },
+                  ...(attachableUsersQuery.data ?? []).map((candidate) => ({
+                    value: candidate.id,
+                    label: `${candidate.name ?? 'Unnamed user'} (${candidate.mobile})`,
+                  })),
+                ]}
+              />
+            ) : (
+              <Input
+                label="Officer user id"
+                value={newOfficerId}
+                onChange={(e) => setNewOfficerId(e.target.value)}
+                placeholder="Enter an officer account id"
+              />
+            )}
             <label className="flex items-center gap-2 pt-6 text-sm text-slate-700">
               <input
                 type="checkbox"
@@ -243,7 +271,7 @@ export default function AdminPage() {
         </CardHeader>
         <CardBody className="space-y-3">
           <Input
-            label="Default SLA (minutes)"
+            label="Response target (minutes)"
             type="number"
             value={sla}
             onChange={(e) => setSla(e.target.value)}

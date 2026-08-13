@@ -8,6 +8,7 @@ use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Security\Models\AuditLog;
+use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
 use App\Modules\Workflow\Exceptions\InvalidTransitionException;
 use App\Modules\Workflow\Models\WorkflowDefinition;
@@ -127,8 +128,13 @@ class WorkflowEngine
      * @throws \InvalidArgumentException when the decision
      *                                   is not a positive one
      */
-    public function apply(Report $report, WorkflowDecision $decision, ?User $actor, array $metadata = []): Report
-    {
+    public function apply(
+        Report $report,
+        WorkflowDecision $decision,
+        ?User $actor,
+        array $metadata = [],
+        ?int $expectedWorkflowVersion = null,
+    ): Report {
         if (! $decision->allowed) {
             throw new \InvalidArgumentException('Cannot apply a denied decision.');
         }
@@ -144,20 +150,52 @@ class WorkflowEngine
         }
 
         $fromStateId = $report->current_status_id;
+        $expectedWorkflowVersion ??= (int) $report->workflow_version;
 
-        DB::transaction(function () use ($report, $toState, $decision, $actor, $fromStateId, $metadata): void {
+        DB::transaction(function () use ($report, $toState, $decision, $actor, $fromStateId, $metadata, $expectedWorkflowVersion): void {
+            $lockedReport = Report::query()->lockForUpdate()->find($report->id);
+
+            if ($lockedReport === null) {
+                throw ApiException::notFound('Report');
+            }
+
+            if ((string) $lockedReport->current_status_id !== (string) $fromStateId) {
+                throw new ApiException(
+                    'WORKFLOW_STATE_CHANGED',
+                    'Report state changed before this transition could be applied.',
+                    409,
+                    [
+                        'expected_status_id' => $fromStateId,
+                        'actual_status_id' => $lockedReport->current_status_id,
+                    ],
+                );
+            }
+
+            if ((int) $lockedReport->workflow_version !== $expectedWorkflowVersion) {
+                throw new ApiException(
+                    'REPORT_VERSION_CONFLICT',
+                    'Report workflow or assignment changed before this transition could be applied.',
+                    409,
+                    [
+                        'expected_workflow_version' => $expectedWorkflowVersion,
+                        'actual_workflow_version' => (int) $lockedReport->workflow_version,
+                    ],
+                );
+            }
+
             // Bridge the M4/M6 gap: the destination workflow
             // state's code matches a `report_statuses` row.
             $toStatus = ReportStatus::query()->where('code', $toState->code)->first();
 
             if ($toStatus !== null) {
-                $report->current_status_id = $toStatus->id;
+                $lockedReport->current_status_id = $toStatus->id;
 
-                if ($toStatus->code === 'closed' && $report->closed_at === null) {
-                    $report->closed_at = now();
+                if ($toStatus->code === 'closed' && $lockedReport->closed_at === null) {
+                    $lockedReport->closed_at = now();
                 }
 
-                $report->save();
+                $lockedReport->workflow_version = $expectedWorkflowVersion + 1;
+                $lockedReport->save();
             }
 
             // The WriteStatusHistory listener (M4) is auto-wired
@@ -166,7 +204,7 @@ class WorkflowEngine
             $toStatusId = $toStatus === null ? $toState->id : $toStatus->id;
 
             ReportStatusChanged::dispatch(
-                reportId: $report->id,
+                reportId: $lockedReport->id,
                 fromStatusId: $fromStateId,
                 toStatusId: $toStatusId,
                 actorId: $actor?->id,
@@ -190,15 +228,17 @@ class WorkflowEngine
             AuditLog::query()->create([
                 'user_id' => $actor?->id,
                 'entity' => 'reports',
-                'entity_id' => $report->id,
+                'entity_id' => $lockedReport->id,
                 'action' => 'workflow.transition',
                 'before' => [
                     'current_status_id' => $fromStateId,
-                    'workflow_id' => $report->workflow_id,
+                    'workflow_id' => $lockedReport->workflow_id,
+                    'workflow_version' => $expectedWorkflowVersion,
                 ],
                 'after' => [
                     'current_status_id' => $toStatusId,
-                    'workflow_id' => $report->workflow_id,
+                    'workflow_id' => $lockedReport->workflow_id,
+                    'workflow_version' => (int) $lockedReport->workflow_version,
                 ],
                 'ip' => $request->ip(),
                 'device_fingerprint' => null,

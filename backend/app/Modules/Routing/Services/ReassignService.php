@@ -40,11 +40,32 @@ class ReassignService
         string $reason,
         ?User $actor,
         ?Request $request,
+        ?int $expectedWorkflowVersion = null,
     ): ReportAssignment {
-        return DB::transaction(function () use ($report, $department, $officer, $priority, $reason, $actor, $request): ReportAssignment {
+        $expectedWorkflowVersion ??= (int) $report->workflow_version;
+
+        $assignment = DB::transaction(function () use ($report, $department, $officer, $priority, $reason, $actor, $request, $expectedWorkflowVersion): ReportAssignment {
+            $lockedReport = Report::query()->lockForUpdate()->find($report->id);
+
+            if ($lockedReport === null) {
+                throw ApiException::notFound('Report');
+            }
+
+            if ((int) $lockedReport->workflow_version !== $expectedWorkflowVersion) {
+                throw new ApiException(
+                    'REPORT_VERSION_CONFLICT',
+                    'Report workflow or assignment changed before this reassignment could be applied.',
+                    409,
+                    [
+                        'expected_workflow_version' => $expectedWorkflowVersion,
+                        'actual_workflow_version' => (int) $lockedReport->workflow_version,
+                    ],
+                );
+            }
+
             // Reassignment replaces the PRIMARY ownership only — secondary
             // (linked) tasks created for other departments are untouched.
-            $previous = $report->assignments()
+            $previous = $lockedReport->assignments()
                 ->openPrimary()
                 ->whereNull('reassigned_at')
                 ->orderByDesc('assigned_at')
@@ -71,25 +92,28 @@ class ReassignService
                 'sla_minutes' => null,
             ]);
 
-            $report->department_id = $department->id;
-            $report->priority_id = $priority->id;
-            $report->save();
+            $lockedReport->department_id = $department->id;
+            $lockedReport->priority_id = $priority->id;
+            $lockedReport->workflow_version = $expectedWorkflowVersion + 1;
+            $lockedReport->save();
 
             $requestId = $request?->attributes->get('trace_id');
 
             AuditLog::query()->create([
                 'user_id' => $actor?->id,
                 'entity' => 'reports',
-                'entity_id' => $report->id,
+                'entity_id' => $lockedReport->id,
                 'action' => 'report.reassign',
                 'before' => $previous === null ? null : [
                     'department_id' => $previous->department_id,
                     'officer_id' => $previous->officer_id,
+                    'workflow_version' => $expectedWorkflowVersion,
                 ],
                 'after' => [
                     'department_id' => $department->id,
                     'officer_id' => $officer?->id,
                     'priority_id' => $priority->id,
+                    'workflow_version' => (int) $lockedReport->workflow_version,
                 ],
                 'ip' => $request?->ip(),
                 'device_fingerprint' => null,
@@ -98,7 +122,7 @@ class ReassignService
             ]);
 
             ReportAssigned::dispatch(
-                reportId: $report->id,
+                reportId: $lockedReport->id,
                 departmentId: $department->id,
                 officerId: $officer?->id,
                 slaMinutes: 0,
@@ -108,6 +132,10 @@ class ReassignService
 
             return $assignment;
         });
+
+        $report->refresh();
+
+        return $assignment;
     }
 
     public function resolvePriority(Report $report, ?string $priorityId): ReportPriority

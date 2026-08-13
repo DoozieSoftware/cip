@@ -129,6 +129,7 @@ class Otp extends Model
     public function scopeLatestFor(Builder $query, string $mobile): Builder
     {
         return $query->where('mobile', $mobile)
+            ->whereNull('consumed_at')
             ->orderByDesc('created_at');
     }
 }

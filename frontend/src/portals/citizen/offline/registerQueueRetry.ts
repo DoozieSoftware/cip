@@ -1,8 +1,6 @@
 import { getQueue, type QueueItem } from './queue';
 import { submitReportPayload, type CreateReportInput } from '../api/client';
 
-let registered = false;
-
 /**
  * Wires the offline queue's delivery function to the real
  * create-report flow. Before this existed, `getQueue()` had no
@@ -12,11 +10,11 @@ let registered = false;
  * an offline submission could sit in IndexedDB forever. Idempotent —
  * safe to call from every mount of the citizen app shell.
  */
-export function registerOfflineQueueRetry(): void {
-  if (registered) return;
-  registered = true;
+export function registerOfflineQueueRetry(ownerId?: string | null): void {
+  const owner = ownerId ?? undefined;
+  const queue = getQueue(owner);
 
-  getQueue().setRetryHandler(async (item: QueueItem) => {
+  queue.setRetryHandler(async (item: QueueItem) => {
     if (item.kind === 'report.create') {
       await submitReportPayload(item.payload as CreateReportInput);
       return;

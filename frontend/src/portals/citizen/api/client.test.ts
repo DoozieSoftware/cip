@@ -6,6 +6,7 @@ describe('citizen api client - report normalization', () => {
     const report = normalizeReport({
       id: 'rep-1',
       tracking_number: 'CIV-2026-000001',
+      workflow_version: 1,
       title: 'Pothole on MG Road',
       description: 'Large pothole near the signal',
       status: { code: 'submitted', name: 'Submitted' },
@@ -25,6 +26,7 @@ describe('citizen api client - report normalization', () => {
     const submitted = normalizeReport({
       id: 'rep-1',
       tracking_number: 'CIV-2026-000001',
+      workflow_version: 1,
       title: 'Pothole on MG Road',
       status: { code: 'submitted', name: 'Submitted' },
       media_count: 1,

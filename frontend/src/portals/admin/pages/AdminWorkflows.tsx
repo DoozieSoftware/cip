@@ -15,7 +15,7 @@ import {
   Badge,
   EmptyState,
   ErrorState,
-} from '../../moderator/design';
+} from '../../../shared/ui';
 import { IconPlus, IconEdit, IconTrash, IconGitBranch, IconArrowRight } from '@tabler/icons-react';
 
 interface StateRow {
@@ -145,32 +145,32 @@ function WorkflowForm({
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm">
-          <span className="font-medium text-[#1d1d1b]">Code</span>
+          <span className="font-medium text-[var(--color-ink)]">Code</span>
           <input
             type="text"
             value={code}
             onChange={(e) => setCode(e.target.value)}
             required
-            className="mt-1.5 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm font-mono focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm font-mono focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="text-sm">
-          <span className="font-medium text-[#1d1d1b]">Name</span>
+          <span className="font-medium text-[var(--color-ink)]">Name</span>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="mt-1.5 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="text-sm sm:col-span-2">
-          <span className="font-medium text-[#1d1d1b]">Description</span>
+          <span className="font-medium text-[var(--color-ink)]">Description</span>
           <input
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-1.5 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="flex items-center gap-2 text-sm">
@@ -178,31 +178,31 @@ function WorkflowForm({
             type="checkbox"
             checked={active}
             onChange={(e) => setActive(e.target.checked)}
-            className="h-4 w-4 rounded border-[#d0cec8]"
+            className="h-4 w-4 rounded border-[var(--color-border)]"
           />
-          <span className="font-medium text-[#1d1d1b]">active</span>
+          <span className="font-medium text-[var(--color-ink)]">active</span>
         </label>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm">
-          <span className="font-medium text-[#1d1d1b]">States (JSON: key, name, terminal)</span>
+          <span className="font-medium text-[var(--color-ink)]">States (JSON: key, name, terminal)</span>
           <textarea
             value={statesJson}
             onChange={(e) => setStatesFromJson(e.target.value)}
             rows={5}
-            className="mt-1.5 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 font-mono text-xs focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 font-mono text-xs focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="text-sm">
-          <span className="font-medium text-[#1d1d1b]">
+          <span className="font-medium text-[var(--color-ink)]">
             Transitions (JSON: from, to, action, required_role)
           </span>
           <textarea
             value={transitionsJson}
             onChange={(e) => setTransitionsFromJson(e.target.value)}
             rows={5}
-            className="mt-1.5 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 font-mono text-xs focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 font-mono text-xs focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
       </div>
@@ -232,14 +232,14 @@ export default function AdminWorkflows(): JSX.Element {
   const open = rows.find((w) => w.id === openId);
 
   return (
-    <div className="min-h-screen bg-[#f3f2ed] p-4 sm:p-6">
+    <div className="min-h-screen bg-[var(--color-canvas)] p-4 sm:p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">
+            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
               Workflow builder
             </h1>
-            <p className="mt-1 text-sm text-[#6f6e69]">
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               Definitions, states, and transitions. The transition matrix shows which role can move
               a report between which states.
             </p>
@@ -258,24 +258,24 @@ export default function AdminWorkflows(): JSX.Element {
 
         <section className="grid gap-4 sm:grid-cols-3">
           <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
               Definitions
             </p>
-            <p className="mt-1 text-2xl font-semibold text-[#1d1d1b]">{rows.length}</p>
+            <p className="mt-1 text-2xl font-semibold text-[var(--color-ink)]">{rows.length}</p>
           </div>
           <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
               Active
             </p>
-            <p className="mt-1 text-2xl font-semibold text-[#226b46]">
+            <p className="mt-1 text-2xl font-semibold text-[var(--color-success)]">
               {rows.filter((w) => w.active).length}
             </p>
           </div>
           <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
               Total transitions
             </p>
-            <p className="mt-1 text-2xl font-semibold text-[#1d1d1b]">
+            <p className="mt-1 text-2xl font-semibold text-[var(--color-ink)]">
               {rows.reduce((s, w) => s + (w.transitions?.length ?? 0), 0)}
             </p>
           </div>
@@ -305,14 +305,14 @@ export default function AdminWorkflows(): JSX.Element {
         ) : null}
 
         <Card>
-          <CardHeader className="border-b border-[#e4e2dc] px-5 py-4">
+          <CardHeader className="border-b border-[var(--color-border-subtle)] px-5 py-4">
             <div className="flex items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-[#efeee9]">
-                <IconGitBranch className="h-4 w-4 text-[#6f6e69]" stroke={1.6} />
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+                <IconGitBranch className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
               </span>
-              <CardTitle className="text-sm font-semibold text-[#1d1d1b]">Workflows</CardTitle>
+              <CardTitle className="text-sm font-semibold text-[var(--color-ink)]">Workflows</CardTitle>
             </div>
-            <span className="text-xs text-[#85847f]">
+            <span className="text-xs text-[var(--color-text-tertiary)]">
               {rows.length} definition{rows.length !== 1 ? 's' : ''}
             </span>
           </CardHeader>
@@ -347,41 +347,41 @@ export default function AdminWorkflows(): JSX.Element {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full">
-                <thead className="bg-[#f3f2ed]">
+                <thead className="bg-[var(--color-canvas)]">
                   <tr>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Code / name
                     </th>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       States
                     </th>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Transitions
                     </th>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Status
                     </th>
-                    <th className="px-5 py-3 text-right font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-right font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#e4e2dc]">
+                <tbody className="divide-y divide-[var(--color-border-subtle)]">
                   {rows.map((w) => (
                     <tr key={w.id}>
                       <td className="px-5 py-3 text-sm">
-                        <div className="font-mono text-xs text-[#6f6e69]">{w.code}</div>
-                        <div className="font-medium text-[#1d1d1b]">{w.name}</div>
+                        <div className="font-mono text-xs text-[var(--color-text-secondary)]">{w.code}</div>
+                        <div className="font-medium text-[var(--color-ink)]">{w.name}</div>
                       </td>
-                      <td className="px-5 py-3 text-sm text-[#1d1d1b]">{w.states?.length ?? 0}</td>
-                      <td className="px-5 py-3 text-sm text-[#1d1d1b]">
+                      <td className="px-5 py-3 text-sm text-[var(--color-ink)]">{w.states?.length ?? 0}</td>
+                      <td className="px-5 py-3 text-sm text-[var(--color-ink)]">
                         {w.transitions?.length ?? 0}
                       </td>
                       <td className="px-5 py-3 text-sm">
                         <Badge
                           tone={w.active ? 'success' : 'neutral'}
                           className={
-                            w.active ? 'bg-[#edf7f0] text-[#256b45]' : 'bg-[#efeee9] text-[#6f6e69]'
+                            w.active ? 'bg-[#edf7f0] text-[var(--color-success)]' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'
                           }
                         >
                           {w.active ? 'active' : 'disabled'}
@@ -416,7 +416,7 @@ export default function AdminWorkflows(): JSX.Element {
                             onClick={() => {
                               if (confirm(`Delete ${w.code}?`)) remove.mutate(w.id);
                             }}
-                            className="text-[#a42f29] hover:bg-[#fbeeed] hover:text-[#8a2621]"
+                            className="text-[var(--color-danger)] hover:bg-[#fbeeed] hover:text-[var(--color-danger-hover)]"
                           >
                             Delete
                           </Button>
@@ -448,16 +448,16 @@ function TransitionMatrix({ wf }: { wf: WorkflowDefinition }): JSX.Element {
   );
   return (
     <Card>
-      <CardHeader className="border-b border-[#e4e2dc] px-5 py-4">
+      <CardHeader className="border-b border-[var(--color-border-subtle)] px-5 py-4">
         <div className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-[#efeee9]">
-            <IconArrowRight className="h-4 w-4 text-[#6f6e69]" stroke={1.6} />
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+            <IconArrowRight className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
           </span>
-          <CardTitle className="text-sm font-semibold text-[#1d1d1b]">
+          <CardTitle className="text-sm font-semibold text-[var(--color-ink)]">
             Transition matrix — {wf.name}
           </CardTitle>
         </div>
-        <span className="text-xs text-[#6f6e69]">
+        <span className="text-xs text-[var(--color-text-secondary)]">
           Rows = source, columns = destination. Filled cells = legal transition.
         </span>
       </CardHeader>
@@ -465,13 +465,13 @@ function TransitionMatrix({ wf }: { wf: WorkflowDefinition }): JSX.Element {
         <table className="min-w-full">
           <thead>
             <tr>
-              <th className="bg-[#f3f2ed] px-3 py-2 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+              <th className="bg-[var(--color-canvas)] px-3 py-2 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                 from \ to
               </th>
               {states.map((s) => (
                 <th
                   key={s.id}
-                  className="bg-[#f3f2ed] px-3 py-2 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]"
+                  className="bg-[var(--color-canvas)] px-3 py-2 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]"
                 >
                   {s.code}
                   {s.is_terminal ? ' (terminal)' : ''}
@@ -481,14 +481,14 @@ function TransitionMatrix({ wf }: { wf: WorkflowDefinition }): JSX.Element {
           </thead>
           <tbody>
             {states.map((row) => (
-              <tr key={row.id} className="border-t border-[#e4e2dc]">
-                <td className="px-3 py-2 text-xs font-medium text-[#1d1d1b]">{row.code}</td>
+              <tr key={row.id} className="border-t border-[var(--color-border-subtle)]">
+                <td className="px-3 py-2 text-xs font-medium text-[var(--color-ink)]">{row.code}</td>
                 {states.map((col) => {
                   const has = set.has(`${row.code}->${col.code}`);
                   return (
                     <td
                       key={col.id}
-                      className={`px-3 py-2 text-xs ${has ? 'bg-[#edf7f0] text-[#256b45]' : 'text-[#d0cec8]'}`}
+                      className={`px-3 py-2 text-xs ${has ? 'bg-[#edf7f0] text-[var(--color-success)]' : 'text-[var(--color-border)]'}`}
                     >
                       {has ? '✓' : '·'}
                     </td>

@@ -9,12 +9,18 @@ import {
 } from 'react';
 import { cx } from '../../../shared/ui/cx';
 import { mockGpsLikely, type MockGpsResult } from '../security/mockGps';
+import { useMessages } from '../messages';
+import { trackProductEvent } from '../../../shared/analytics';
 
 export interface CapturedLocation {
   latitude: number;
   longitude: number;
   accuracy_m: number | null;
   captured_at: number;
+  altitude?: number | null;
+  heading?: number | null;
+  speed?: number | null;
+  gps_provider?: string;
   mock_heuristic: MockGpsResult;
 }
 
@@ -40,18 +46,28 @@ export interface GpsCaptureProps {
   autoRequest?: boolean;
 }
 
+/** Server-side LocationAccuracy rule; keep the client gate in sync. */
+export const MAX_GPS_ACCURACY_M = 100;
+
 export interface GpsCaptureHandle {
   requestLocation: () => Promise<CapturedLocation | null>;
 }
 
 export const GpsCapture = forwardRef<GpsCaptureHandle, GpsCaptureProps>(
   function GpsCapture(props, ref): JSX.Element {
-    const { onCapture, maxAccuracyM = 100, className, watch = false, autoRequest = false } = props;
+    const {
+      onCapture,
+      maxAccuracyM = MAX_GPS_ACCURACY_M,
+      className,
+      watch = false,
+      autoRequest = false,
+    } = props;
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [permissionDenied, setPermissionDenied] = useState(false);
     const historyRef = useRef<Array<{ altitude: number | null }>>([]);
     const [lastResult, setLastResult] = useState<MockGpsResult | null>(null);
+    const { t } = useMessages();
     const siteHostname =
       typeof window !== 'undefined' && window.location.hostname
         ? window.location.hostname
@@ -65,9 +81,7 @@ export const GpsCapture = forwardRef<GpsCaptureHandle, GpsCaptureProps>(
         setLastResult(mock);
         const coarse = pos.coords.accuracy > maxAccuracyM;
         if (coarse) {
-          setError(
-            `GPS accuracy is ±${Math.round(pos.coords.accuracy)} m — try moving to an open area for a sharper fix. The reported place is still used.`,
-          );
+          setError(t('gps.coarseFix', { accuracy: Math.round(pos.coords.accuracy) }));
         } else {
           setError(null);
         }
@@ -76,23 +90,31 @@ export const GpsCapture = forwardRef<GpsCaptureHandle, GpsCaptureProps>(
           longitude: pos.coords.longitude,
           accuracy_m: pos.coords.accuracy,
           captured_at: pos.timestamp,
+          altitude: pos.coords.altitude,
+          heading: pos.coords.heading,
+          speed: pos.coords.speed,
+          // The browser API does not expose the underlying chipset/provider;
+          // record the capture mechanism so server-side provenance is explicit.
+          gps_provider: 'browser_geolocation',
           mock_heuristic: mock,
         };
         onCapture(captured);
         return captured;
       },
-      [maxAccuracyM, onCapture],
+      [maxAccuracyM, onCapture, t],
     );
 
     const requestLocation = useCallback(async (): Promise<CapturedLocation | null> => {
       if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
         setPermissionDenied(false);
-        setError('Geolocation not supported in this browser.');
+        setError(t('gps.notSupported'));
+        trackProductEvent('gps_error', { reason: 'not_supported' });
         return null;
       }
       if (typeof window !== 'undefined' && window.isSecureContext === false) {
         setPermissionDenied(false);
-        setError('Location permission requires HTTPS or localhost.');
+        setError(t('gps.httpsRequired'));
+        trackProductEvent('gps_error', { reason: 'insecure_context' });
         return null;
       }
 
@@ -108,15 +130,14 @@ export const GpsCapture = forwardRef<GpsCaptureHandle, GpsCaptureProps>(
           (err) => {
             if (err.code === 1) {
               setPermissionDenied(true);
-              setError(
-                'Location access is blocked. Enable it in your phone and browser settings, then try again.',
-              );
+              setError(t('gps.blocked'));
+              trackProductEvent('gps_error', { reason: 'permission_denied' });
             } else if (err.code === 3) {
-              setError('Location lookup timed out. Move to an open area and try again.');
+              setError(t('gps.timeout'));
+              trackProductEvent('gps_error', { reason: 'timeout' });
             } else {
-              setError(
-                'Your location is unavailable. Check that Location Services are on, then try again.',
-              );
+              setError(t('gps.unavailable'));
+              trackProductEvent('gps_error', { reason: 'unavailable' });
             }
             setBusy(false);
             resolve(null);
@@ -124,7 +145,7 @@ export const GpsCapture = forwardRef<GpsCaptureHandle, GpsCaptureProps>(
           { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
         );
       });
-    }, [handlePosition]);
+    }, [handlePosition, t]);
 
     useImperativeHandle(ref, () => ({ requestLocation }), [requestLocation]);
 
@@ -141,15 +162,17 @@ export const GpsCapture = forwardRef<GpsCaptureHandle, GpsCaptureProps>(
             disabled={busy}
             className="inline-flex min-h-11 items-center gap-2 rounded-md bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:bg-blue-300"
           >
-            ⌖ {busy ? 'Locating…' : 'Use my location'}
+            ⌖ {busy ? t('gps.locating') : t('gps.useMyLocation')}
           </button>
           {lastResult && lastResult.accuracy_m !== null ? (
             <span className="text-xs text-slate-600">
-              last fix ±{Math.round(lastResult.accuracy_m)} m
+              {t('gps.lastFix', { accuracy: Math.round(lastResult.accuracy_m) })}
             </span>
           ) : null}
           {watch ? (
-            <span className="rounded-md bg-sky-100 px-2 py-0.5 text-xs text-sky-800">watching</span>
+            <span className="rounded-md bg-sky-100 px-2 py-0.5 text-xs text-sky-800">
+              {t('gps.watching')}
+            </span>
           ) : null}
         </div>
 
@@ -161,11 +184,11 @@ export const GpsCapture = forwardRef<GpsCaptureHandle, GpsCaptureProps>(
             <p className="font-medium">{error}</p>
             {permissionDenied ? (
               <div className="mt-3 border-t border-rose-200 pt-3">
-                <p className="font-semibold">How to enable location</p>
+                <p className="font-semibold">{t('gps.howToEnable')}</p>
                 <ol className="mt-1 list-decimal space-y-1 pl-5 text-xs leading-5">
-                  <li>Open your phone Settings and allow Location for this browser.</li>
-                  <li>In the browser site settings, allow Location for {siteHostname}.</li>
-                  <li>Return here and tap Try again.</li>
+                  <li>{t('gps.howToStep1')}</li>
+                  <li>{t('gps.howToStep2', { hostname: siteHostname })}</li>
+                  <li>{t('gps.howToStep3')}</li>
                 </ol>
                 <button
                   type="button"
@@ -173,7 +196,7 @@ export const GpsCapture = forwardRef<GpsCaptureHandle, GpsCaptureProps>(
                   disabled={busy}
                   className="mt-3 inline-flex min-h-11 items-center rounded-md border border-rose-300 bg-white px-3.5 py-2 text-sm font-semibold text-rose-800 shadow-sm hover:bg-rose-100 disabled:opacity-60"
                 >
-                  {busy ? 'Locating…' : 'Try again'}
+                  {busy ? t('gps.locating') : t('gps.tryAgain')}
                 </button>
               </div>
             ) : null}
@@ -185,8 +208,7 @@ export const GpsCapture = forwardRef<GpsCaptureHandle, GpsCaptureProps>(
             role="alert"
             className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800"
           >
-            This location looks suspicious ({lastResult.reasons.join('; ')}). The platform may
-            reject it.
+            {t('gps.suspicious', { reasons: lastResult.reasons.join('; ') })}
           </p>
         ) : null}
       </div>

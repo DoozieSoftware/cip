@@ -33,6 +33,16 @@ class ReportsController extends BaseController
         return $this->reportSubmissionController->submit($request, $id);
     }
 
+    public function evidenceManifest(Request $request, string $id): JsonResponse
+    {
+        return $this->reportSubmissionController->manifest($request, $id);
+    }
+
+    public function finalize(Request $request, string $id): JsonResponse
+    {
+        return $this->reportSubmissionController->finalize($request, $id);
+    }
+
     public function citizenDashboard(Request $request): JsonResponse
     {
         return $this->citizenReportController->citizenDashboard($request);

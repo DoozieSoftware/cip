@@ -7,7 +7,9 @@ namespace App\Modules\Departments\Repositories;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportAssignment;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 /**
  * M11 — Repository for the operations-portal report views.
@@ -25,11 +27,12 @@ use Illuminate\Pagination\LengthAwarePaginator;
  *   - date_from / date_to (on `submitted_at`)
  *   - search (tracking_number LIKE, title LIKE)
  *
- * Pagination is capped at 500 per `docs/08` §24.
+ * Pagination is capped at MAX_PER_PAGE so a single list page can
+ * never fan out into an unbounded response.
  */
 class DepartmentReportRepository
 {
-    public const MAX_PER_PAGE = 500;
+    public const MAX_PER_PAGE = 100;
 
     /**
      * Statuses that are actually in the department's hands and
@@ -54,9 +57,9 @@ class DepartmentReportRepository
 
     /**
      * @param  array<array-key, mixed>  $filters
-     * @return LengthAwarePaginator<int, Report>
+     * @return LengthAwarePaginator<int, Report>|CursorPaginator<int, Report>
      */
-    public function assignedTo(string $departmentId, array $filters = []): LengthAwarePaginator
+    public function assignedTo(string $departmentId, array $filters = []): LengthAwarePaginator|CursorPaginator
     {
         $query = Report::query()
             ->where(function (Builder $query) use ($departmentId): void {
@@ -68,7 +71,15 @@ class DepartmentReportRepository
                             ->where('department_id', $departmentId);
                     });
             })
-            ->with(['reportType', 'department', 'status', 'priority', 'location']);
+            ->with([
+                'reportType',
+                'department',
+                'status',
+                'priority',
+                'location',
+                'activeAssignments.officer',
+            ])
+            ->withCount('media');
 
         $this->applyInHandScope($query);
         $this->applyAssignmentKindScope($query, $departmentId, $filters);
@@ -77,6 +88,17 @@ class DepartmentReportRepository
         $rawPerPage = $filters['per_page'] ?? 20;
         $perPage = is_numeric($rawPerPage) ? (int) $rawPerPage : 20;
         $perPage = max(1, min(self::MAX_PER_PAGE, $perPage));
+
+        $cursor = is_string($filters['cursor'] ?? null) && $filters['cursor'] !== ''
+            ? $filters['cursor']
+            : null;
+
+        if ($cursor !== null) {
+            return $query
+                ->orderByDesc('submitted_at')
+                ->orderByDesc('id')
+                ->cursorPaginate($perPage, ['*'], 'cursor', $cursor);
+        }
 
         return $query->orderByDesc('submitted_at')->paginate($perPage);
     }
@@ -90,6 +112,11 @@ class DepartmentReportRepository
             'priority',
             'location',
             'internalNotes.author',
+            'media',
+            'statusHistory.fromStatus',
+            'statusHistory.toStatus',
+            'assignments.department',
+            'assignments.officer',
         ]);
     }
 
@@ -165,10 +192,17 @@ class DepartmentReportRepository
         }
 
         if (! empty($filters['search']) && is_string($filters['search'])) {
-            $term = '%'.$filters['search'].'%';
-            $query->where(function (Builder $q) use ($term): void {
-                $q->where('tracking_number', 'like', $term)
-                    ->orWhere('title', 'like', $term);
+            $search = trim($filters['search']);
+            $query->where(function (Builder $q) use ($search): void {
+                $q->where('tracking_number', 'like', $search.'%');
+
+                if (DB::getDriverName() === 'mysql') {
+                    $q->orWhereFullText(['title', 'description'], $search);
+                } else {
+                    $term = '%'.$search.'%';
+                    $q->orWhere('title', 'like', $term)
+                        ->orWhere('description', 'like', $term);
+                }
             });
         }
     }

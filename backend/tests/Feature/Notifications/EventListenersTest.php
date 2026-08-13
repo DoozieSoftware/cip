@@ -83,6 +83,29 @@ it('creates a report.status_changed notification on ReportStatusChanged', functi
         ->and($n->payload['variables']['report_id'])->toBe($report->id);
 });
 
+it('notifies citizens whose reports were merged into the canonical report', function (): void {
+    $canonicalOwner = $this->user;
+    $supporter = User::factory()->create(['email' => 'supporter@example.test']);
+    $canonical = makeReportWith($canonicalOwner);
+    Report::factory()->create([
+        'citizen_id' => $supporter->id,
+        'is_anonymous' => false,
+        'merged_into' => $canonical->id,
+    ]);
+    $toStatus = ReportStatus::factory()->create();
+
+    ReportStatusChanged::dispatch(
+        reportId: $canonical->id,
+        fromStatusId: null,
+        toStatusId: $toStatus->id,
+    );
+
+    expect(Notification::query()
+        ->where('type', 'report.status_changed')
+        ->whereIn('user_id', [$canonicalOwner->id, $supporter->id])
+        ->count())->toBe(2);
+});
+
 it('creates an ai.classified notification on AiCompleted', function (): void {
     $report = makeReportWith($this->user);
 

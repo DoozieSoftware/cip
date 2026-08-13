@@ -99,17 +99,18 @@ The scheduler is registered in `backend/bootstrap/app.php` via `->withSchedule()
 
 ---
 
-# 6. Cache Driver Warning
+# 6. Production cache requirement
 
-Production uses `CACHE_STORE=file`. Laravel's `Cache::tags()` is **not supported** by the file driver.
+Production uses `CACHE_STORE=redis`. Laravel's `Cache::tags()` is not
+supported by the file driver, while routing and distributed locks require
+tagged cache semantics. The cPanel PHP build must provide `ext-redis` and the
+Redis service must be reachable at the configured host/port.
 
-The routing layer uses `Cache::tags()` for route caching. If you see `BadMethodCallException: This cache store does not support tagging` in production logs:
-
-1. **Option A:** Switch to `CACHE_STORE=redis` (requires Redis on the server)
-2. **Option B:** Switch to `CACHE_STORE=database` (requires a `cache` table — run `php artisan cache:table && php artisan migrate`)
-3. **Option C:** Accept the limitation if `route:cache` is used (which does not rely on tags)
-
-For the pilot, `file` is acceptable if `config:cache` and `route:cache` are used in the deploy workflow.
+The deploy workflow rejects a production template that regresses to the file
+cache and probes both `PONG` and a cache round-trip. The `/api/v1/health/ready`
+endpoint repeats that check at runtime and returns `503` when Redis is down.
+Do not switch production to the file or array driver to silence an outage;
+repair Redis or roll back to a known-good release.
 
 ---
 
@@ -187,5 +188,5 @@ DEFAULT_CRON="* * * * * cd \$HOME/cip && $PHP_BIN artisan queue:work --queue=def
 | Notifications never sent | No worker consuming `notifications` queue | Add notifications cron |
 | SLA breaches never detected | Scheduler cron not installed | Add `schedule:run` cron |
 | Jobs running twice | `retry_after` < `--timeout` | Increase `DB_QUEUE_RETRY_AFTER` |
-| `Cache::tags()` exception | `CACHE_STORE=file` | Switch to `redis` or `database` |
+| `Cache::tags()` exception | Redis unavailable or wrong PHP client | Restore Redis/ext-redis; verify `/api/v1/health/ready` |
 | `failed_jobs` table growing | Job failures not being cleaned | Run `queue:flush` or prune manually |

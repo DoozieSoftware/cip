@@ -7,7 +7,7 @@
  *  - on fetch:
  *      - /api/v1/* requests are network-first; falls back to cached response
  *        (offline reads of the notification preferences, dashboard, etc.)
- *      - GET navigation requests fall back to the cached /cip/ shell when
+ *      - GET navigation requests fall back to the cached /citizen/ shell when
  *        offline so the SPA still boots
  *      - static assets (Vite bundles, images) are cache-first
  *  - on `sync` (background sync API): ping every open client so its
@@ -28,9 +28,8 @@ const RUNTIME_CACHE = `${VERSION}-runtime`;
 const SYNC_TAG = 'cip-queue-drain';
 
 const APP_SHELL = [
-  '/',
-  '/cip/',
-  '/cip/login',
+  '/citizen/',
+  '/citizen/login',
   '/manifest.webmanifest',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
@@ -58,7 +57,16 @@ self.addEventListener('activate', (event) => {
 });
 
 function isApiRequest(url) {
-  return url.pathname.startsWith('/api/');
+  return (url.origin === self.location.origin || url.origin === 'https://cip-api.dgisipl.com') && url.pathname.startsWith('/api/v1/');
+}
+
+function isSafeApiRead(request, url) {
+  if (request.method !== 'GET' || !isApiRequest(url) || request.headers.has('Authorization')) return false;
+  return (
+    url.pathname === '/api/v1/report-types' ||
+    url.pathname === '/api/v1/departments' ||
+    url.pathname.startsWith('/api/v1/public/')
+  );
 }
 
 function isStaticAsset(url) {
@@ -72,11 +80,14 @@ self.addEventListener('fetch', (event) => {
   }
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) {
+  if (url.origin !== self.location.origin && url.origin !== 'https://cip-api.dgisipl.com') {
+    return;
+  }
+  if (isApiRequest(url) && !isSafeApiRead(request, url)) {
     return;
   }
 
-  if (isApiRequest(url)) {
+  if (isSafeApiRead(request, url)) {
     // Network-first for API reads; falls back to cache on offline.
     event.respondWith(
       (async () => {
@@ -132,7 +143,7 @@ self.addEventListener('fetch', (event) => {
       try {
         return await fetch(request);
       } catch (err) {
-        const cached = await caches.match('/cip/');
+          const cached = await caches.match('/citizen/');
         if (cached) {
           return cached;
         }

@@ -33,7 +33,7 @@ class DepartmentReportActionsController
             abort(401);
         }
 
-        $updated = $this->service->accept($report, $user, $request);
+        $updated = $this->service->accept($report, $user, $request, $this->expectedWorkflowVersion($request));
 
         return $this->respond($updated, $request);
     }
@@ -46,7 +46,7 @@ class DepartmentReportActionsController
             abort(401);
         }
 
-        $updated = $this->service->start($report, $user, $request);
+        $updated = $this->service->start($report, $user, $request, $this->expectedWorkflowVersion($request));
 
         return $this->respond($updated, $request);
     }
@@ -74,7 +74,13 @@ class DepartmentReportActionsController
         }
 
         $note = $request->input('note');
-        $updated = $this->service->resolve($report, $user, $request, is_string($note) ? $note : null);
+        $updated = $this->service->resolve(
+            $report,
+            $user,
+            $request,
+            is_string($note) ? $note : null,
+            $this->expectedWorkflowVersion($request),
+        );
 
         return $this->respond($updated, $request);
     }
@@ -88,7 +94,13 @@ class DepartmentReportActionsController
         }
 
         $note = $request->input('note');
-        $updated = $this->service->close($report, $user, $request, is_string($note) ? $note : null);
+        $updated = $this->service->close(
+            $report,
+            $user,
+            $request,
+            is_string($note) ? $note : null,
+            $this->expectedWorkflowVersion($request),
+        );
 
         return $this->respond($updated, $request);
     }
@@ -123,5 +135,12 @@ class DepartmentReportActionsController
             'data' => (new DepartmentReportResource($report))->resolve($request),
             'trace_id' => $request->attributes->get('trace_id'),
         ]);
+    }
+
+    private function expectedWorkflowVersion(StoreDepartmentActionRequest $request): ?int
+    {
+        $version = $request->validated('expected_workflow_version');
+
+        return is_int($version) ? $version : null;
     }
 }

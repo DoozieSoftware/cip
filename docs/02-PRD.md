@@ -598,9 +598,9 @@ Maintainability
 # 19. Constraints
 
 * Laravel backend
-* Flutter mobile application
+* React 19 citizen PWA (TypeScript/Vite)
 * React web portals
-* PostgreSQL + PostGIS
+* MySQL 8.4 with MySQL Spatial
 * Configurable AI provider
 * Configurable storage provider
 * Configurable notification provider
@@ -631,7 +631,7 @@ A feature is considered complete only when all the following are satisfied:
 
 The implementation shall produce:
 
-* Flutter Citizen App
+* React Citizen PWA
 * Laravel Backend APIs
 * Moderator Portal
 * Department Portal

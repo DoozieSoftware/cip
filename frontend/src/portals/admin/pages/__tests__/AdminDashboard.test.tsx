@@ -3,16 +3,15 @@ import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 
-vi.mock('../../../../auth/api', () => ({
-  apiRequest: vi.fn(),
-  ApiEnvelope: {},
+vi.mock('../../../../shared/api/client', () => ({
+  requestRaw: vi.fn(),
 }));
 
-const { apiRequest } = await import('../../../../auth/api');
+const { requestRaw } = await import('../../../../shared/api/client');
 const AdminDashboard = (await import('../AdminDashboard')).default;
 
 function mockCounts() {
-  (apiRequest as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+  (requestRaw as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
     data: [],
     meta: { total: 5 },
   });
@@ -55,7 +54,7 @@ describe('AdminDashboard', () => {
   });
 
   it('shows loading state', () => {
-    (apiRequest as unknown as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
+    (requestRaw as unknown as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
     render(
       <QueryClientProvider client={client}>
         <MemoryRouter>
@@ -63,7 +62,7 @@ describe('AdminDashboard', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     );
-    expect(screen.getByText('Loading')).toBeTruthy();
+    expect(screen.getByRole('status', { name: 'Loading' })).toBeTruthy();
   });
 
   it('renders quick actions section', async () => {

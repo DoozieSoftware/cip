@@ -11,7 +11,13 @@ Provides pluggable AI inference for report analysis. Supports image classificati
 | `AIProviderInterface` | Contract all AI providers must implement |
 | `AiProviderFactory` | Resolves the active provider from configuration |
 | `ProviderFailoverService` | Handles provider fallback on failure |
-| `AiPipelineOrchestrator` | Job that coordinates the full AI analysis pipeline |
+| `AiPipelineOrchestrator` | Thin queue boundary for uniqueness, retries, and failure callbacks |
+| `AiPipelineRunner` | Coordinates the evidence, analysis, persistence, and completion phases |
+| `AiEvidenceResolver` | Validates the evidence revision and resolves eligible media |
+| `AiProviderAnalysisService` | Applies quality gates, PII masking, and provider execution |
+| `AiRiskAnalyzer` | Computes duplicate and fraud signals independently of provider execution |
+| `AiResultWriter` | Atomically persists AI results, labels, and the report mirror |
+| `AiResponsePolicy` | Applies deterministic review responses and confidence safeguards |
 | `FraudScorer` | Computes fraud probability from signals |
 | `DuplicateDetector` | Identifies visually similar prior reports |
 | `ImageQualityAnalyzer` | Assesses evidence clarity and usability |

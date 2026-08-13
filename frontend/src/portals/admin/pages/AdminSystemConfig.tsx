@@ -25,7 +25,7 @@ import {
   Spinner,
   EmptyState,
   ErrorState,
-} from '../../moderator/design';
+} from '../../../shared/ui';
 
 const TYPES: Setting['type'][] = ['string', 'int', 'bool', 'json', 'datetime'];
 
@@ -75,13 +75,13 @@ function SettingRow({
     typeof s.value === 'string' ? s.value : JSON.stringify(s.value),
   );
   return (
-    <tr className="divide-y divide-[#e4e2dc]">
-      <td className="px-5 py-3 text-sm font-mono font-medium text-[#1d1d1b]">{s.key}</td>
+    <tr className="divide-y divide-[var(--color-border-subtle)]">
+      <td className="px-5 py-3 text-sm font-mono font-medium text-[var(--color-ink)]">{s.key}</td>
       <td className="px-5 py-3 text-sm">
-        <Badge tone="neutral" className="bg-[#efeee9] text-[#6f6e69]">
+        <Badge tone="neutral" className="bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]">
           {s.type}
         </Badge>
-        <span className="ml-2 text-xs text-[#6f6e69]">{s.is_public ? 'public' : 'private'}</span>
+        <span className="ml-2 text-xs text-[var(--color-text-secondary)]">{s.is_public ? 'public' : 'private'}</span>
       </td>
       <td className="px-5 py-3 text-sm">
         <input
@@ -89,10 +89,10 @@ function SettingRow({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           disabled={busy}
-          className="block w-full rounded-xl border border-[#d0cec8] bg-white px-3 py-1.5 font-mono text-xs text-[#1d1d1b] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+          className="block w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-1.5 font-mono text-xs text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </td>
-      <td className="px-5 py-3 text-sm text-[#6f6e69]">{s.description ?? '—'}</td>
+      <td className="px-5 py-3 text-sm text-[var(--color-text-secondary)]">{s.description ?? '—'}</td>
       <td className="px-5 py-3 text-right">
         <div className="flex flex-wrap justify-end gap-2">
           <Button
@@ -173,7 +173,7 @@ export default function AdminSystemConfig(): JSX.Element {
   if (list.isLoading) {
     return (
       <div
-        className="flex min-h-screen items-center justify-center bg-[#f3f2ed]"
+        className="flex min-h-screen items-center justify-center bg-[var(--color-canvas)]"
         aria-live="polite"
       >
         <Spinner label="Loading settings" />
@@ -183,7 +183,7 @@ export default function AdminSystemConfig(): JSX.Element {
 
   if (list.isError) {
     return (
-      <div className="min-h-screen bg-[#f3f2ed] p-4 sm:p-6">
+      <div className="min-h-screen bg-[var(--color-canvas)] p-4 sm:p-6">
         <ErrorState
           title="Failed to load settings"
           description="System settings could not be loaded. Please try again."
@@ -193,18 +193,18 @@ export default function AdminSystemConfig(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f2ed] p-6">
+    <div className="min-h-screen bg-[var(--color-canvas)] p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-[#efeee9]">
-              <IconSettings className="h-4 w-4 text-[#6f6e69]" stroke={1.6} />
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+              <IconSettings className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
             </span>
             <div>
-              <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">
+              <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
                 System configuration
               </h1>
-              <p className="mt-0.5 text-sm text-[#6f6e69]">
+              <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">
                 Generic key/value settings. Dedicated pages own retention, media storage, security
                 policies, and feature flags.
               </p>
@@ -223,7 +223,7 @@ export default function AdminSystemConfig(): JSX.Element {
         {creating ? (
           <Card className="rounded-xl bg-white shadow-sm ring-1 ring-black/5">
             <CardHeader>
-              <CardTitle className="text-sm font-semibold text-[#1d1d1b]">
+              <CardTitle className="text-sm font-semibold text-[var(--color-ink)]">
                 Create new setting
               </CardTitle>
             </CardHeader>
@@ -280,7 +280,7 @@ export default function AdminSystemConfig(): JSX.Element {
 
         <div className="flex flex-wrap items-end gap-2">
           <label className="relative block w-full">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#85847f]">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]">
               <IconSearch className="h-4 w-4" stroke={1.6} />
             </span>
             <input
@@ -288,7 +288,7 @@ export default function AdminSystemConfig(): JSX.Element {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search keys…"
-              className="rounded-xl border border-[#d0cec8] bg-white px-4 py-2.5 pl-10 text-sm text-[#1d1d1b] placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+              className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
             />
           </label>
         </div>
@@ -301,26 +301,26 @@ export default function AdminSystemConfig(): JSX.Element {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full">
-                <thead className="bg-[#f3f2ed]">
+                <thead className="bg-[var(--color-canvas)]">
                   <tr>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Key
                     </th>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Type / visibility
                     </th>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Value
                     </th>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Description
                     </th>
-                    <th className="px-5 py-3 text-right font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-right font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#e4e2dc]">
+                <tbody className="divide-y divide-[var(--color-border-subtle)]">
                   {rows.map((s) => (
                     <SettingRow
                       key={s.id}

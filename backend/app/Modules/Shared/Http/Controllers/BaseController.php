@@ -36,7 +36,10 @@ abstract class BaseController extends Controller
     }
 
     /**
-     * @param  LengthAwarePaginator<array-key, mixed>  $paginator
+     * @template TKey of array-key
+     * @template TValue
+     *
+     * @param  LengthAwarePaginator<TKey, TValue>  $paginator
      */
     public function respondPaginated(LengthAwarePaginator $paginator, string $message = 'OK'): JsonResponse
     {

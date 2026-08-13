@@ -16,7 +16,7 @@ import {
   Input,
   Select,
   Spinner,
-} from '../../moderator/design';
+} from '../../../shared/ui';
 
 const STATUS_TONE: Record<string, 'success' | 'warning' | 'neutral' | 'info'> = {
   active: 'success',
@@ -31,12 +31,12 @@ function StatusPill({ status }: { status: Integration['status'] }): JSX.Element 
       tone={STATUS_TONE[status] ?? 'neutral'}
       className={
         status === 'active'
-          ? 'bg-[#edf7f0] text-[#256b45]'
+          ? 'bg-[#edf7f0] text-[var(--color-success)]'
           : status === 'degraded'
             ? 'bg-[#fff6e4] text-[#805913]'
             : status === 'pending'
               ? 'bg-[#f3eef6] text-[#6b4593]'
-              : 'bg-[#efeee9] text-[#6f6e69]'
+              : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'
       }
     >
       {status}
@@ -84,7 +84,7 @@ function IntegrationForm({
           required
           disabled={!!initial?.id}
           placeholder="bbmp_311"
-          className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+          className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
         <Input
           label="Display name"
@@ -93,7 +93,7 @@ function IntegrationForm({
           onChange={(e) => setDisplayName(e.target.value)}
           required
           placeholder="BBMP 311"
-          className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+          className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
         <Input
           label="Provider"
@@ -102,7 +102,7 @@ function IntegrationForm({
           onChange={(e) => setProvider(e.target.value)}
           required
           placeholder="bbmp / btp / karnataka_uats"
-          className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+          className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
         <Input
           label="Base URL"
@@ -111,7 +111,7 @@ function IntegrationForm({
           value={baseUrl}
           onChange={(e) => setBaseUrl(e.target.value)}
           placeholder="https://api.bbmp.gov.in"
-          className="rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+          className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </div>
       <div className="mt-4 flex justify-end gap-2">
@@ -144,8 +144,8 @@ export default function AdminIntegrations(): JSX.Element {
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">Integrations</h1>
-          <p className="mt-1 text-sm text-[#6f6e69]">
+          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">Integrations</h1>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             External connectors (BBMP, BTP, UATS, state helpdesks). Credentials are masked on every
             read.
           </p>
@@ -171,7 +171,7 @@ export default function AdminIntegrations(): JSX.Element {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="code, name, provider"
-                className="rounded-xl border border-[#d0cec8] bg-white px-4 py-2.5 pl-10 text-sm text-[#1d1d1b] placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
               />
             </div>
             <div>
@@ -187,7 +187,7 @@ export default function AdminIntegrations(): JSX.Element {
                   { value: 'disabled', label: 'disabled' },
                   { value: 'pending', label: 'pending' },
                 ]}
-                className="rounded-xl border border-[#d0cec8] bg-white px-4 py-2.5 text-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
               />
             </div>
           </div>
@@ -230,39 +230,39 @@ export default function AdminIntegrations(): JSX.Element {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-[#f3f2ed]">
+              <thead className="bg-[var(--color-canvas)]">
                 <tr>
-                  <th className="px-5 py-3 text-left text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                  <th className="px-5 py-3 text-left text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Code
                   </th>
-                  <th className="px-5 py-3 text-left text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                  <th className="px-5 py-3 text-left text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Name / provider
                   </th>
-                  <th className="px-5 py-3 text-left text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                  <th className="px-5 py-3 text-left text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Status
                   </th>
-                  <th className="px-5 py-3 text-left text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                  <th className="px-5 py-3 text-left text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Last health
                   </th>
-                  <th className="px-5 py-3 text-right text-[10px] font-medium uppercase tracking-[0.12em] text-[#85847f]">
+                  <th className="px-5 py-3 text-right text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#e4e2dc]">
+              <tbody className="divide-y divide-[var(--color-border-subtle)]">
                 {rows.map((i) => (
                   <tr key={i.id}>
-                    <td className="px-5 py-3 text-sm font-mono font-medium text-[#1d1d1b]">
+                    <td className="px-5 py-3 text-sm font-mono font-medium text-[var(--color-ink)]">
                       {i.code}
                     </td>
                     <td className="px-5 py-3 text-sm">
-                      <div className="font-medium text-[#1d1d1b]">{i.display_name}</div>
-                      <div className="text-xs text-[#6f6e69]">{i.provider}</div>
+                      <div className="font-medium text-[var(--color-ink)]">{i.display_name}</div>
+                      <div className="text-xs text-[var(--color-text-secondary)]">{i.provider}</div>
                     </td>
                     <td className="px-5 py-3 text-sm">
                       <StatusPill status={i.status} />
                     </td>
-                    <td className="px-5 py-3 text-sm tabular-nums text-[#6f6e69]">
+                    <td className="px-5 py-3 text-sm tabular-nums text-[var(--color-text-secondary)]">
                       {i.last_check_at ? new Date(i.last_check_at).toLocaleString() : '—'}
                     </td>
                     <td className="px-5 py-3 text-right">

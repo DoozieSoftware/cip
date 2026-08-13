@@ -36,4 +36,10 @@ interface VirusScanServiceInterface
      * `metadata.scanner` field for audit traceability.
      */
     public function name(): string;
+
+    /**
+     * Verify that the scanner is installed and has a usable signature
+     * database. Readiness probes call this without touching user uploads.
+     */
+    public function healthCheck(): bool;
 }

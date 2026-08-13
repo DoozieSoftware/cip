@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Input, Button, Badge } from '../../../shared/ui';
 import { departmentApi, type ReportListFilters } from '../api/operations';
 import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
+import { statusLabel } from '../components/statusMeta';
 
 type ExportFormat = 'csv' | 'xlsx' | 'pdf';
 
@@ -62,12 +63,26 @@ export default function ExportPage() {
           <CardTitle>Filters</CardTitle>
         </CardHeader>
         <CardBody className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <Input
-            label="Status code"
-            placeholder="assigned, accepted, in_progress…"
-            value={filters.status ?? ''}
-            onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-          />
+          <label className="space-y-1">
+            <span className="block text-sm font-medium text-slate-700">Status</span>
+            <select
+              aria-label="Status"
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              value={filters.status ?? ''}
+              onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
+            >
+              <option value="">All statuses</option>
+              <option value="assigned">{statusLabel('assigned')}</option>
+              <option value="accepted">{statusLabel('accepted')}</option>
+              <option value="in_progress">{statusLabel('in_progress')}</option>
+              <option value="resolved">{statusLabel('resolved')}</option>
+              <option value="resolved_pending_verification">
+                {statusLabel('resolved_pending_verification')}
+              </option>
+              <option value="reopened">{statusLabel('reopened')}</option>
+              <option value="closed">{statusLabel('closed')}</option>
+            </select>
+          </label>
           <Input
             label="Search"
             placeholder="Tracking number or title"

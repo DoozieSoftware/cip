@@ -11,6 +11,7 @@ use Closure;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -45,7 +46,10 @@ class IdempotencyKey
     public function handle(Request $request, Closure $next): Response
     {
         if (! in_array($request->getMethod(), self::MUTATING_VERBS, true)) {
-            return $next($request);
+            /** @var Response $response */
+            $response = $next($request);
+
+            return $response;
         }
 
         $key = $request->header(self::HEADER);
@@ -53,20 +57,82 @@ class IdempotencyKey
         if (! is_string($key) || $key === '') {
             // No key supplied — pass through. The route contract decides
             // whether keys are required.
-            return $next($request);
+            /** @var Response $response */
+            $response = $next($request);
+
+            return $response;
         }
 
         $user = $request->user();
         $userId = $user instanceof User ? (string) $user->id : null;
         $route = (string) $request->route()?->getName();
+        $method = $request->getMethod();
         $requestHash = hash('sha256', (string) $request->getContent());
 
-        $existing = IdempotencyKeyModel::query()
-            ->where('key', $key)
-            ->where('user_id', $userId)
-            ->first();
+        // Reserve the key before invoking the handler. A unique constraint
+        // arbitrates the race; a zero response status means another request
+        // owns the reservation and prevents duplicate side effects.
+        $claimed = false;
 
-        if ($existing !== null) {
+        try {
+            $existing = DB::transaction(function () use ($key, $userId, $route, $method, $requestHash, &$claimed): IdempotencyKeyModel {
+                $query = IdempotencyKeyModel::query()
+                    ->where('key', $key)
+                    ->where('user_id', $userId)
+                    ->where('route', $route)
+                    ->where('method', $method)
+                    ->lockForUpdate();
+                $existing = $query->first();
+
+                if ($existing !== null) {
+                    if ($existing->response_status === 0
+                        && $existing->pending_expires_at !== null
+                        && $existing->pending_expires_at->isPast()) {
+                        // Recover a reservation left behind by a crashed
+                        // worker without allowing two live handlers.
+                        $existing->pending_expires_at = now()->addMinutes(5);
+                        $existing->save();
+                        $claimed = true;
+                    }
+
+                    return $existing;
+                }
+
+                $claimed = true;
+
+                return IdempotencyKeyModel::query()->create([
+                    'key' => $key,
+                    'user_id' => $userId,
+                    'route' => $route,
+                    'method' => $method,
+                    'request_hash' => $requestHash,
+                    'response_status' => 0,
+                    'response_body' => null,
+                    'pending_expires_at' => now()->addMinutes(5),
+                    'created_at' => now(),
+                ]);
+
+            });
+        } catch (QueryException) {
+            // A concurrent request won the unique insert. Read its row after
+            // the failed transaction has released the lock.
+            $existing = IdempotencyKeyModel::query()
+                ->where('key', $key)
+                ->where('user_id', $userId)
+                ->where('route', $route)
+                ->where('method', $method)
+                ->first();
+        }
+
+        if ($existing === null) {
+            return ApiResponse::error(
+                'The request could not reserve its Idempotency-Key. Please retry.',
+                409,
+                'IDEMPOTENCY_KEY_UNAVAILABLE',
+            );
+        }
+
+        if (! $claimed) {
             if ($existing->request_hash !== $requestHash) {
                 return ApiResponse::error(
                     'Idempotency-Key was already used with a different request payload.',
@@ -75,8 +141,16 @@ class IdempotencyKey
                 );
             }
 
+            if ($existing->response_status === 0) {
+                return ApiResponse::error(
+                    'A request with this Idempotency-Key is already in progress.',
+                    409,
+                    'IDEMPOTENCY_KEY_IN_PROGRESS',
+                );
+            }
+
             $body = is_array($existing->response_body) ? $existing->response_body : [];
-            $status = $existing->response_status > 0 ? $existing->response_status : 200;
+            $status = $existing->response_status;
 
             return new JsonResponse($body, $status);
         }
@@ -92,21 +166,21 @@ class IdempotencyKey
         if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 300) {
             $body = $this->decodeJsonBody($response);
 
-            try {
-                IdempotencyKeyModel::query()->create([
-                    'key' => $key,
-                    'user_id' => $userId,
-                    'route' => $route,
-                    'request_hash' => $requestHash,
+            IdempotencyKeyModel::query()
+                ->whereKey($existing->id)
+                ->where('response_status', 0)
+                ->update([
                     'response_status' => $response->getStatusCode(),
                     'response_body' => $body,
-                    'created_at' => now(),
+                    'pending_expires_at' => null,
                 ]);
-            } catch (QueryException) {
-                // Concurrent insert with the same key — let the racing
-                // request win; the client can retry the idempotent
-                // request and will get the stored response.
-            }
+        } elseif ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
+            // Validation/server failures must release the reservation so a
+            // retry can execute the handler with the same key.
+            IdempotencyKeyModel::query()
+                ->whereKey($existing->id)
+                ->where('response_status', 0)
+                ->delete();
         }
 
         return $response;

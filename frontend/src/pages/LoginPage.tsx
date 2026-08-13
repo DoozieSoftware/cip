@@ -89,9 +89,19 @@ export function LoginPage(): JSX.Element {
         method: 'POST',
         body: { mobile, password },
       });
-      login(res.data.token.access_token, res.data.user);
+      login(
+        res.data.token.access_token,
+        res.data.user,
+        res.data.refresh_token,
+        res.data.refresh_expires_at,
+      );
       const me = await apiRequest<ApiEnvelope<MeResponse>>('/auth/me');
-      login(res.data.token.access_token, { ...res.data.user, departments: me.data.departments });
+      login(
+        res.data.token.access_token,
+        { ...res.data.user, departments: me.data.departments },
+        res.data.refresh_token,
+        res.data.refresh_expires_at,
+      );
       void navigate(routeForRoles(me.data.roles), { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Invalid mobile or password');
@@ -137,9 +147,19 @@ export function LoginPage(): JSX.Element {
         method: 'POST',
         body: { mobile, code: otp },
       });
-      login(res.data.token.access_token, res.data.user);
+      login(
+        res.data.token.access_token,
+        res.data.user,
+        res.data.refresh_token,
+        res.data.refresh_expires_at,
+      );
       const me = await apiRequest<ApiEnvelope<MeResponse>>('/auth/me');
-      login(res.data.token.access_token, { ...res.data.user, departments: me.data.departments });
+      login(
+        res.data.token.access_token,
+        { ...res.data.user, departments: me.data.departments },
+        res.data.refresh_token,
+        res.data.refresh_expires_at,
+      );
       const target = routeForRoles(me.data.roles);
       void navigate(target, { replace: true });
     } catch (err) {
@@ -163,13 +183,13 @@ export function LoginPage(): JSX.Element {
 
         <div className="mt-10 grid flex-1 grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
           <section>
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#777670]">
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#686762]">
               Citizen services
             </p>
             <h1 className="mt-3 text-3xl font-normal leading-[1.1] tracking-[-0.035em] text-[#1d1d1b] sm:text-4xl">
               Sign in to your account.
             </h1>
-            <p className="mt-4 text-[15px] leading-6 text-[#6f6e69]">
+            <p className="mt-4 text-[15px] leading-6 text-[#4f4e4a]">
               {authMode === 'otp'
                 ? 'Choose a demo role or enter your mobile number. The demo uses a one-time code printed in the response so you can sign in without a phone.'
                 : 'Staff accounts can use their registered mobile number and password.'}
@@ -182,7 +202,7 @@ export function LoginPage(): JSX.Element {
                   setAuthMode('otp');
                   setError(null);
                 }}
-                className={`min-h-11 rounded-lg px-3 text-sm font-medium transition ${authMode === 'otp' ? 'bg-white text-[#1d1d1b] shadow-sm' : 'text-[#6f6e69] hover:text-[#1d1d1b]'}`}
+                className={`min-h-11 rounded-lg px-3 text-sm font-medium transition ${authMode === 'otp' ? 'bg-white text-[#1d1d1b] shadow-sm' : 'text-[#4f4e4a] hover:text-[#1d1d1b]'}`}
               >
                 Sign in with OTP
               </button>
@@ -192,7 +212,7 @@ export function LoginPage(): JSX.Element {
                   setAuthMode('password');
                   setError(null);
                 }}
-                className={`min-h-11 rounded-lg px-3 text-sm font-medium transition ${authMode === 'password' ? 'bg-white text-[#1d1d1b] shadow-sm' : 'text-[#6f6e69] hover:text-[#1d1d1b]'}`}
+                className={`min-h-11 rounded-lg px-3 text-sm font-medium transition ${authMode === 'password' ? 'bg-white text-[#1d1d1b] shadow-sm' : 'text-[#4f4e4a] hover:text-[#1d1d1b]'}`}
               >
                 Staff password login
               </button>
@@ -352,7 +372,7 @@ export function LoginPage(): JSX.Element {
           </section>
 
           <section>
-            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#85847f]">
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#6f6e69]">
               Demo accounts
             </p>
             <h2 className="mt-3 text-lg font-medium tracking-[-0.015em] text-[#1d1d1b]">
@@ -391,9 +411,9 @@ export function LoginPage(): JSX.Element {
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-[#1d1d1b]">{acc.label}</span>
-                          <span className="font-mono text-[10px] text-[#85847f]">{acc.mobile}</span>
+                          <span className="font-mono text-[10px] text-[#6f6e69]">{acc.mobile}</span>
                         </div>
-                        <p className="mt-1 text-xs text-[#777670]">{acc.description}</p>
+                        <p className="mt-1 text-xs text-[#686762]">{acc.description}</p>
                       </div>
                       <IconArrowRight className="h-4 w-4 shrink-0 text-[#aaa9a4]" stroke={1.6} />
                     </button>

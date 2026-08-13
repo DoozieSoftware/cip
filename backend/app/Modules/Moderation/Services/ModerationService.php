@@ -97,7 +97,12 @@ class ModerationService
                     ?? $this->routingFallback->decisionFor($report);
             }
 
-            $this->engine->apply($report, $decision, $moderator);
+            $this->engine->apply(
+                $report,
+                $decision,
+                $moderator,
+                expectedWorkflowVersion: $dto->expectedWorkflowVersion,
+            );
 
             if ($routingDecision !== null) {
                 $this->assignments->assign($report, $routingDecision, $moderator, reason: 'moderator_approve_routing');
@@ -157,35 +162,99 @@ class ModerationService
      * page surfaces the merge on the duplicate row.
      *
      * @param  list<string>  $duplicateIds
+     * @param  array<string, int>  $expectedDuplicateVersions
      * @return list<string> ids of the duplicates actually merged
      */
-    public function merge(string $canonicalId, array $duplicateIds, ?string $remarks, ?string $reasonCode, User $moderator): array
-    {
+    public function merge(
+        string $canonicalId,
+        array $duplicateIds,
+        ?string $remarks,
+        ?string $reasonCode,
+        User $moderator,
+        ?int $expectedCanonicalVersion = null,
+        array $expectedDuplicateVersions = [],
+    ): array {
         $this->assertCanModerate($moderator);
 
-        $canonical = Report::query()->find($canonicalId);
+        $merged = DB::transaction(function () use ($canonicalId, $duplicateIds, $remarks, $reasonCode, $moderator, $expectedCanonicalVersion, $expectedDuplicateVersions): array {
+            $orderedDuplicateIds = array_values(array_unique(array_filter(
+                $duplicateIds,
+                static fn (mixed $id): bool => is_string($id) && $id !== '' && $id !== $canonicalId,
+            )));
+            // Lock every participating report in stable UUID order. Without
+            // this, two inverse merge requests can each lock their canonical
+            // first and deadlock while waiting for the other's duplicate.
+            $lockIds = array_values(array_unique([$canonicalId, ...$orderedDuplicateIds]));
+            sort($lockIds);
+            $lockedReports = Report::query()
+                ->whereIn('id', $lockIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+            $canonical = $lockedReports->get($canonicalId);
 
-        if ($canonical === null) {
-            throw ApiException::validation("Canonical report '{$canonicalId}' not found.", ['canonical_id' => [$canonicalId]]);
-        }
+            if (! $canonical instanceof Report) {
+                throw ApiException::validation("Canonical report '{$canonicalId}' not found.", ['canonical_id' => [$canonicalId]]);
+            }
 
-        $merged = DB::transaction(function () use ($canonical, $duplicateIds, $remarks, $reasonCode, $moderator): array {
+            if ($expectedCanonicalVersion !== null && $canonical->workflow_version !== $expectedCanonicalVersion) {
+                throw new ApiException(
+                    'REPORT_VERSION_CONFLICT',
+                    'The report changed after it was loaded. Refresh and try again.',
+                    409,
+                    [
+                        'expected_workflow_version' => $expectedCanonicalVersion,
+                        'actual_workflow_version' => $canonical->workflow_version,
+                    ],
+                );
+            }
+
             $merged = [];
             $mergedStatus = ReportStatus::query()->where('code', 'merged')->first();
 
-            foreach (array_unique($duplicateIds) as $dupId) {
-                if (! is_string($dupId) || $dupId === '' || $dupId === $canonical->id) {
-                    continue;
-                }
-                $dup = Report::query()->find($dupId);
+            foreach ($orderedDuplicateIds as $dupId) {
+                $dup = $lockedReports->get($dupId);
 
-                if ($dup === null) {
+                if (! $dup instanceof Report) {
                     continue;
                 }
+
+                $expectedDuplicateVersion = $expectedDuplicateVersions[$dupId] ?? null;
+
+                if (is_int($expectedDuplicateVersion) && $dup->workflow_version !== $expectedDuplicateVersion) {
+                    throw new ApiException(
+                        'REPORT_VERSION_CONFLICT',
+                        'A duplicate report changed after it was loaded. Refresh and try again.',
+                        409,
+                        [
+                            'report_id' => $dupId,
+                            'expected_workflow_version' => $expectedDuplicateVersion,
+                            'actual_workflow_version' => $dup->workflow_version,
+                        ],
+                    );
+                }
+
+                if ($dup->merged_into !== null) {
+                    throw new ApiException(
+                        'REPORT_VERSION_CONFLICT',
+                        'A duplicate report has already been merged. Refresh and try again.',
+                        409,
+                        [
+                            'report_id' => $dupId,
+                            'actual_workflow_version' => $dup->workflow_version,
+                        ],
+                    );
+                }
+
                 $fromStatus = $dup->current_status_id;
+                $beforeVersion = $dup->workflow_version;
 
                 if ($mergedStatus !== null) {
                     $dup->current_status_id = $mergedStatus->id;
+                    $dup->merged_into = $canonical->id;
+                    $dup->merged_at = now();
+                    $dup->workflow_version = $beforeVersion + 1;
                     $dup->save();
 
                     // This bypasses WorkflowEngine::apply() (a duplicate can be
@@ -208,8 +277,8 @@ class ModerationService
                     $dup,
                     $moderator,
                     action: 'report.merged',
-                    before: ['current_status_id' => $fromStatus],
-                    after: ['current_status_id' => $dup->current_status_id, 'merged_into' => $canonical->id],
+                    before: ['current_status_id' => $fromStatus, 'workflow_version' => $beforeVersion],
+                    after: ['current_status_id' => $dup->current_status_id, 'merged_into' => $canonical->id, 'workflow_version' => $dup->workflow_version],
                     extra: [
                         'canonical_report_id' => $canonical->id,
                         'reason_code' => $reasonCode,
@@ -218,14 +287,20 @@ class ModerationService
                 $merged[] = $dup->id;
             }
 
-            $this->writeAudit(
-                $canonical,
-                $moderator,
-                action: 'report.canonical_for_merge',
-                before: null,
-                after: ['merged_duplicates' => $merged],
-                extra: ['reason_code' => $reasonCode],
-            );
+            if ($merged !== []) {
+                $canonicalBeforeVersion = $canonical->workflow_version;
+                $canonical->workflow_version = $canonicalBeforeVersion + 1;
+                $canonical->save();
+
+                $this->writeAudit(
+                    $canonical,
+                    $moderator,
+                    action: 'report.canonical_for_merge',
+                    before: ['workflow_version' => $canonicalBeforeVersion],
+                    after: ['merged_duplicates' => $merged, 'workflow_version' => $canonical->workflow_version],
+                    extra: ['reason_code' => $reasonCode],
+                );
+            }
 
             ReportsMerged::dispatch(
                 canonicalReportId: $canonical->id,
@@ -257,7 +332,16 @@ class ModerationService
             throw ApiException::validation('a report cannot be merged into itself.', ['merge_into_report_id' => [$report->id]]);
         }
 
-        $this->merge($dto->mergeIntoReportId, [$report->id], $dto->remarks, $dto->reasonCode, $moderator);
+        $this->merge(
+            $dto->mergeIntoReportId,
+            [$report->id],
+            $dto->remarks,
+            $dto->reasonCode,
+            $moderator,
+            expectedDuplicateVersions: $dto->expectedWorkflowVersion === null
+                ? []
+                : [$report->id => $dto->expectedWorkflowVersion],
+        );
 
         return $report->refresh();
     }

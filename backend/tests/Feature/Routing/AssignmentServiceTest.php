@@ -9,6 +9,7 @@ use App\Modules\Reports\Models\ReportPriority;
 use App\Modules\Routing\Models\RoutingRule;
 use App\Modules\Routing\Services\AssignmentService;
 use App\Modules\Routing\ValueObjects\RoutingDecision;
+use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -84,7 +85,30 @@ it('mirrors the routing decision onto the report', function (): void {
 
     $fresh = $this->report->fresh();
     expect($fresh->department_id)->toBe($this->dept->id)
-        ->and($fresh->priority_id)->toBe($this->pri->id);
+        ->and($fresh->priority_id)->toBe($this->pri->id)
+        ->and($fresh->workflow_version)->toBe(2);
+});
+
+it('rejects assignment when another workflow mutation won first', function (): void {
+    DB::table('reports')
+        ->where('id', $this->report->id)
+        ->update(['workflow_version' => 2]);
+
+    try {
+        $this->service->assign(
+            $this->report,
+            $this->decision,
+            null,
+            expectedWorkflowVersion: 1,
+        );
+        $this->fail('Expected a report version conflict.');
+    } catch (ApiException $exception) {
+        expect($exception->errorCode)->toBe('REPORT_VERSION_CONFLICT')
+            ->and($exception->httpStatus)->toBe(409);
+    }
+
+    expect(ReportAssignment::query()->where('report_id', $this->report->id)->count())->toBe(0)
+        ->and($this->report->fresh()->department_id)->toBeNull();
 });
 
 it('records the actor in the assigned_by column', function (): void {

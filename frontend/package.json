@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "check:production-sourcemaps": "node scripts/assert-no-public-sourcemaps.mjs",
     "preview": "vite preview",
     "test": "vitest",
     "lint": "eslint .",
@@ -28,7 +29,7 @@
     "react-dom": "^19.2.7",
     "react-hook-form": "^7.80.0",
     "react-leaflet": "^5.0.0",
-    "react-router-dom": "^7.18.0",
+    "react-router-dom": "^7.18.2",
     "zod": "^3.25.76"
   },
   "devDependencies": {

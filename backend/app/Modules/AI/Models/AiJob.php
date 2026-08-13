@@ -31,6 +31,7 @@ use Illuminate\Support\Carbon;
  *
  * @property string $id
  * @property string $report_id
+ * @property string|null $evidence_revision
  * @property string $prompt_version_id
  * @property string $provider_code
  * @property string $model
@@ -59,7 +60,7 @@ class AiJob extends Model
     protected $table = 'ai_jobs';
 
     protected $fillable = [
-        'report_id', 'prompt_version_id', 'provider_code', 'model',
+        'report_id', 'evidence_revision', 'prompt_version_id', 'provider_code', 'model',
         'status', 'requested_at', 'started_at', 'completed_at',
         'processing_time_ms', 'error_code', 'retry_count',
         'tokens_in', 'tokens_out', 'cost_cents',

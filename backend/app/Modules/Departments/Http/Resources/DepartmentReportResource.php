@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Departments\Http\Resources;
 
+use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Support\MediaUrl;
 use App\Modules\Reports\Http\Resources\ReportResource;
@@ -68,6 +69,7 @@ class DepartmentReportResource extends JsonResource
 
         $media = Media::query()
             ->where('report_id', $report->id)
+            ->where('scan_status', MediaScanStatus::CLEAN->value)
             ->orderBy('created_at')
             ->get();
         $mediaUrl = new MediaUrl;

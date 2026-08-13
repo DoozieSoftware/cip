@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Media\Jobs;
 
+use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Models\MediaHash;
 use App\Modules\Media\Services\HashService;
@@ -55,6 +56,15 @@ class ComputeHashesJob implements ShouldQueue
         if ($media === null) {
             Log::info('media.hashes.skipped_missing_media', [
                 'media_id' => $this->mediaId,
+            ]);
+
+            return;
+        }
+
+        if ($media->scan_status !== MediaScanStatus::CLEAN) {
+            Log::warning('media.hashes.skipped_quarantined', [
+                'media_id' => $this->mediaId,
+                'scan_status' => $media->scan_status->value,
             ]);
 
             return;

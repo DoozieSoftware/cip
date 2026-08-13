@@ -30,6 +30,8 @@ class MediaResource extends JsonResource
         return [
             'id' => $media->id,
             'report_id' => $media->report_id,
+            'assignment_id' => $media->assignment_id,
+            'department_id' => $media->department_id,
             'type' => $media->type,
             'role' => $media->role ?? 'evidence',
             'mime' => $media->mime,
@@ -38,6 +40,8 @@ class MediaResource extends JsonResource
             'height' => $media->height,
             'duration' => $media->duration,
             'checksum' => $media->checksum,
+            'scan_status' => strtolower($media->scan_status->value),
+            'scan_attempted_at' => $media->scan_attempted_at?->toIso8601String(),
             'storage_disk' => $media->storage_disk,
             'storage_path' => $media->storage_path,
             'captured_at' => $media->captured_at?->toIso8601String(),

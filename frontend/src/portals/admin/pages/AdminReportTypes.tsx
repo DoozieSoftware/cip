@@ -16,7 +16,7 @@ import {
   Card,
   CardBody,
   Badge,
-} from '../../moderator/design';
+} from '../../../shared/ui';
 import { IconPlus, IconPencil, IconTrash, IconPhoto, IconVideo } from '@tabler/icons-react';
 
 interface TypeDraft {
@@ -86,75 +86,75 @@ function ReportTypeForm({
     <form onSubmit={submit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">
-            Name <span className="text-[#9f3731]">*</span>
+          <span className="font-medium text-[var(--color-ink)]">
+            Name <span className="text-[var(--color-danger)]">*</span>
           </span>
           <input
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             required
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">
-            Code <span className="text-[#9f3731]">*</span>
+          <span className="font-medium text-[var(--color-ink)]">
+            Code <span className="text-[var(--color-danger)]">*</span>
           </span>
           <input
             value={draft.code}
             onChange={(e) => setDraft({ ...draft, code: e.target.value })}
             required
             placeholder="roads"
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 font-mono text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 font-mono text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
       </div>
       <label className="block text-sm">
-        <span className="font-medium text-[#1d1d1b]">Description</span>
+        <span className="font-medium text-[var(--color-ink)]">Description</span>
         <textarea
           value={draft.description}
           onChange={(e) => setDraft({ ...draft, description: e.target.value })}
           rows={2}
-          className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+          className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </label>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Icon</span>
+          <span className="font-medium text-[var(--color-ink)]">Icon</span>
           <input
             value={draft.icon}
             onChange={(e) => setDraft({ ...draft, icon: e.target.value })}
             placeholder="🕳️"
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Color</span>
+          <span className="font-medium text-[var(--color-ink)]">Color</span>
           <input
             value={draft.color}
             onChange={(e) => setDraft({ ...draft, color: e.target.value })}
             placeholder="#f59e0b"
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Min photos</span>
+          <span className="font-medium text-[var(--color-ink)]">Min photos</span>
           <input
             type="number"
             min={0}
             value={draft.min_photos}
             onChange={(e) => setDraft({ ...draft, min_photos: num(e.target.value) })}
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Max photos</span>
+          <span className="font-medium text-[var(--color-ink)]">Max photos</span>
           <input
             type="number"
             min={0}
             value={draft.max_photos}
             onChange={(e) => setDraft({ ...draft, max_photos: num(e.target.value) })}
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
       </div>
@@ -164,27 +164,27 @@ function ReportTypeForm({
             type="checkbox"
             checked={draft.requires_photo}
             onChange={(e) => setDraft({ ...draft, requires_photo: e.target.checked })}
-            className="h-4 w-4 rounded border-[#d0cec8] text-[#1d1d1b] focus:ring-[#1d1d1b]"
+            className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-ink)] focus:ring-[var(--color-ink)]"
           />
-          <span className="font-medium text-[#1d1d1b]">Requires photo</span>
+          <span className="font-medium text-[var(--color-ink)]">Requires photo</span>
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
             checked={draft.requires_video}
             onChange={(e) => setDraft({ ...draft, requires_video: e.target.checked })}
-            className="h-4 w-4 rounded border-[#d0cec8] text-[#1d1d1b] focus:ring-[#1d1d1b]"
+            className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-ink)] focus:ring-[var(--color-ink)]"
           />
-          <span className="font-medium text-[#1d1d1b]">Requires video</span>
+          <span className="font-medium text-[var(--color-ink)]">Requires video</span>
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
             checked={draft.active}
             onChange={(e) => setDraft({ ...draft, active: e.target.checked })}
-            className="h-4 w-4 rounded border-[#d0cec8] text-[#1d1d1b] focus:ring-[#1d1d1b]"
+            className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-ink)] focus:ring-[var(--color-ink)]"
           />
-          <span className="font-medium text-[#1d1d1b]">Active</span>
+          <span className="font-medium text-[var(--color-ink)]">Active</span>
         </label>
       </div>
       <div className="flex justify-end gap-2 pt-2">
@@ -253,14 +253,14 @@ export default function AdminReportTypes(): JSX.Element {
   const busy = create.isPending || update.isPending;
 
   return (
-    <div className="min-h-screen bg-[#f3f2ed] p-6">
+    <div className="min-h-screen bg-[var(--color-canvas)] p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">
+            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
               Report types
             </h1>
-            <p className="mt-1 text-sm text-[#6f6e69]">
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               Categories citizens can pick. Code is the stable identifier.
             </p>
           </div>
@@ -286,14 +286,14 @@ export default function AdminReportTypes(): JSX.Element {
               <Card key={t.id}>
                 <CardBody>
                   <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-[#1d1d1b]">{t.name}</h2>
-                    <span className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#6f6e69]">
+                    <h2 className="text-sm font-semibold text-[var(--color-ink)]">{t.name}</h2>
+                    <span className="rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-secondary)]">
                       {t.code}
                     </span>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {t.requires_photo && (
-                      <Badge tone="danger" className="bg-[#fbeeed] text-[#9f3731] ring-transparent">
+                      <Badge tone="danger" className="bg-[#fbeeed] text-[var(--color-danger)] ring-transparent">
                         <IconPhoto className="h-3 w-3" stroke={1.6} />
                         photo required
                       </Badge>
@@ -314,13 +314,13 @@ export default function AdminReportTypes(): JSX.Element {
                     ) : (
                       <Badge
                         tone="success"
-                        className="bg-[#edf7f0] text-[#256b45] ring-transparent"
+                        className="bg-[#edf7f0] text-[var(--color-success)] ring-transparent"
                       >
                         active
                       </Badge>
                     )}
                   </div>
-                  <p className="mt-3 text-xs text-[#6f6e69]">
+                  <p className="mt-3 text-xs text-[var(--color-text-secondary)]">
                     {t.min_photos}–{t.max_photos} photos · {t.description ?? 'no description'}
                   </p>
                   <div className="mt-4 flex justify-end gap-2">
@@ -359,12 +359,12 @@ export default function AdminReportTypes(): JSX.Element {
             busy={busy}
           />
           {create.isError ? (
-            <p role="alert" className="mt-2 text-sm text-[#9f3731]">
+            <p role="alert" className="mt-2 text-sm text-[var(--color-danger)]">
               {create.error?.message}
             </p>
           ) : null}
           {update.isError ? (
-            <p role="alert" className="mt-2 text-sm text-[#9f3731]">
+            <p role="alert" className="mt-2 text-sm text-[var(--color-danger)]">
               {update.error?.message}
             </p>
           ) : null}

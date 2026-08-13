@@ -12,6 +12,7 @@ import {
   IconShield,
   IconPencil,
   IconUpload,
+  IconRefresh,
 } from '@tabler/icons-react';
 import {
   useCreateReport,
@@ -19,14 +20,25 @@ import {
   type ReportType,
   type CreateReportInput,
 } from '../api/client';
-import { Spinner, cx } from '../../../shared/ui';
+import { Spinner, EmptyState, ErrorState, cx } from '../../../shared/ui';
 import { CameraCapture, type CameraError } from '../components/CameraCapture';
-import { GpsCapture, type CapturedLocation, type GpsCaptureHandle } from '../components/GpsCapture';
+import {
+  GpsCapture,
+  MAX_GPS_ACCURACY_M,
+  type CapturedLocation,
+  type GpsCaptureHandle,
+} from '../components/GpsCapture';
+import { type IssueLocation } from '../components/issueLocation';
 import { getQueue } from '../offline/queue';
 import { useToast } from '../components/Toast';
 import { evidencePreviewHandlers } from '../security/evidenceGuards';
 import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 import { ApiError } from '../../../auth/api';
+import { useMessages } from '../messages';
+import { readSession } from '../../../auth/storage';
+import { clearDraft, loadDraft, saveDraft } from '../offline/drafts';
+import { requestBackgroundSync } from '../offline/swBridge';
+import { trackProductEvent } from '../../../shared/analytics';
 
 const FORM_STEPS = ['Category', 'Details', 'Location', 'Evidence', 'Review'] as const;
 type Step = (typeof FORM_STEPS)[number];
@@ -70,28 +82,123 @@ function sortByPracticalOrder(types: ReportType[]): ReportType[] {
   });
 }
 
+function newIdempotencyKey(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `report-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export default function SubmitPage(): JSX.Element {
   const navigate = useNavigate();
+  const { t } = useMessages();
   const toast = useToast();
+  const ownerId = readSession()?.user.id ?? null;
   const types = useReportTypes();
   const create = useCreateReport();
   const gpsRef = useRef<GpsCaptureHandle | null>(null);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
   const [typeId, setTypeId] = useState<string>('');
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [location, setLocation] = useState<CapturedLocation | null>(null);
+  const [issueLocation, setIssueLocation] = useState<IssueLocation | null>(null);
   const [address, setAddress] = useState<string>('');
-  const placeName = useReverseGeocode(location?.latitude ?? NaN, location?.longitude ?? NaN);
+  const placeName = useReverseGeocode(
+    issueLocation?.latitude ?? NaN,
+    issueLocation?.longitude ?? NaN,
+  );
   const [files, setFiles] = useState<File[]>([]);
   const [showVideo, setShowVideo] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<'type' | 'title' | 'description' | 'location' | 'evidence', string>>
   >({});
   const [currentViewStep, setCurrentViewStep] = useState<Step>('Category');
+  const [idempotencyKey, setIdempotencyKey] = useState<string>(newIdempotencyKey);
+  const draftReadyRef = useRef(false);
+  const draftCompleteRef = useRef(false);
+
+  // Keep media previews scoped to the current draft and release each object
+  // URL when files change/unmount. Creating URLs inline during render leaks a
+  // blob reference on every state update, which is especially costly on
+  // mobile devices capturing several photos.
+  useEffect(() => {
+    const urls = files.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [files]);
+
+  useEffect(() => {
+    if (!ownerId) {
+      draftReadyRef.current = true;
+      return;
+    }
+    let cancelled = false;
+    void loadDraft(ownerId).then((draft) => {
+      if (cancelled) return;
+      if (draft) {
+        setTypeId(draft.type_id);
+        setTitle(draft.title);
+        setDescription(draft.description);
+        setLocation(draft.location);
+        setIssueLocation(
+          draft.issue_location ??
+            (draft.location
+              ? {
+                  latitude: draft.location.latitude,
+                  longitude: draft.location.longitude,
+                  source: 'reporter_gps',
+                }
+              : null),
+        );
+        setAddress(draft.address);
+        setFiles(draft.files ?? []);
+        setIdempotencyKey(draft.idempotency_key || newIdempotencyKey());
+        if (FORM_STEPS.includes(draft.current_step as Step)) {
+          setCurrentViewStep(draft.current_step as Step);
+        }
+      }
+      draftReadyRef.current = true;
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [ownerId]);
+
+  useEffect(() => {
+    if (!ownerId || !draftReadyRef.current || draftCompleteRef.current) return;
+    void saveDraft(ownerId, {
+      updated_at: Date.now(),
+      type_id: typeId,
+      title,
+      description,
+      location,
+      issue_location: issueLocation,
+      address,
+      current_step: currentViewStep,
+      files,
+      idempotency_key: idempotencyKey,
+    });
+  }, [
+    ownerId,
+    typeId,
+    title,
+    description,
+    location,
+    issueLocation,
+    address,
+    currentViewStep,
+    files,
+    idempotencyKey,
+  ]);
 
   function onCameraError(err: CameraError): void {
+    trackProductEvent('media_upload_failed', { reason: err.kind });
     setError(err.message);
   }
 
@@ -114,7 +221,7 @@ export default function SubmitPage(): JSX.Element {
   function addPhoto(f: File): void {
     const photoCount = files.filter((x) => x.type.startsWith('image/')).length;
     if (photoCount >= 5) {
-      setError('You can attach up to 5 photos.');
+      setError(t('submit.evidence.tooManyPhotos'));
       return;
     }
     setFiles((prev) => [...prev, f].slice(0, 6));
@@ -131,13 +238,13 @@ export default function SubmitPage(): JSX.Element {
   function validateForm(): boolean {
     const errors: typeof fieldErrors = {};
     if (!typeId) {
-      errors.type = 'Pick a category.';
+      errors.type = t('submit.category.pickCategory');
     }
     if (title.trim().length < 5) {
-      errors.title = 'Title should be at least 5 characters.';
+      errors.title = t('submit.details.titleTooShort');
     }
-    if (description.trim().length < 10) {
-      errors.description = 'Description should be at least 10 characters.';
+    if (description.trim().length > 0 && description.trim().length < 10) {
+      errors.description = t('submit.details.descriptionTooShort');
     }
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -148,9 +255,14 @@ export default function SubmitPage(): JSX.Element {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  useEffect(() => {
+    headingRef.current?.focus();
+    trackProductEvent('report_step_viewed', { step: currentViewStep });
+  }, [currentViewStep]);
+
   function handleCategoryNext(): void {
     if (!typeId) {
-      setFieldError('type', 'Pick a category.');
+      setFieldError('type', t('submit.category.pickCategory'));
       return;
     }
     setFieldError('type', null);
@@ -160,10 +272,10 @@ export default function SubmitPage(): JSX.Element {
   function handleDetailsNext(): void {
     const errors: Partial<typeof fieldErrors> = {};
     if (title.trim().length < 5) {
-      errors.title = 'Title should be at least 5 characters.';
+      errors.title = t('submit.details.titleTooShort');
     }
-    if (description.trim().length < 10) {
-      errors.description = 'Description should be at least 10 characters.';
+    if (description.trim().length > 0 && description.trim().length < 10) {
+      errors.description = t('submit.details.descriptionTooShort');
     }
     if (Object.keys(errors).length > 0) {
       setFieldErrors((prev) => ({ ...prev, ...errors }));
@@ -180,7 +292,7 @@ export default function SubmitPage(): JSX.Element {
 
   function handleLocationNext(): void {
     if (!location) {
-      setFieldError('location', 'Allow location access to tag the report.');
+      setFieldError('location', t('submit.location.allowAccess'));
       return;
     }
     setFieldError('location', null);
@@ -191,11 +303,11 @@ export default function SubmitPage(): JSX.Element {
     const hasPhoto = files.some((f) => f.type.startsWith('image/'));
     const hasVideo = files.some((f) => f.type.startsWith('video/'));
     if (selectedType?.requires_photo && !hasPhoto) {
-      setFieldError('evidence', 'This category requires at least one photo.');
+      setFieldError('evidence', t('submit.evidence.requiresPhoto'));
       return;
     }
     if (selectedType?.requires_video && !hasVideo) {
-      setFieldError('evidence', 'This category requires a video.');
+      setFieldError('evidence', t('submit.evidence.requiresVideo'));
       return;
     }
     setFieldError('evidence', null);
@@ -213,7 +325,15 @@ export default function SubmitPage(): JSX.Element {
 
     const activeLocation = location ?? (await gpsRef.current?.requestLocation()) ?? null;
     if (activeLocation === null) {
-      setFieldError('location', 'Allow location access to tag the report.');
+      setFieldError('location', t('submit.location.allowAccess'));
+      goToStep('Location');
+      return;
+    }
+    if (activeLocation.accuracy_m !== null && activeLocation.accuracy_m > MAX_GPS_ACCURACY_M) {
+      setFieldError(
+        'location',
+        t('gps.coarseFix', { accuracy: Math.round(activeLocation.accuracy_m) }),
+      );
       goToStep('Location');
       return;
     }
@@ -221,41 +341,67 @@ export default function SubmitPage(): JSX.Element {
     const hasPhoto = files.some((f) => f.type.startsWith('image/'));
     const hasVideo = files.some((f) => f.type.startsWith('video/'));
     if (selectedType?.requires_photo && !hasPhoto) {
-      setFieldError('evidence', 'This category requires at least one photo.');
+      setFieldError('evidence', t('submit.evidence.requiresPhoto'));
       goToStep('Evidence');
       return;
     }
     if (selectedType?.requires_video && !hasVideo) {
-      setFieldError('evidence', 'This category requires a video.');
+      setFieldError('evidence', t('submit.evidence.requiresVideo'));
       goToStep('Evidence');
       return;
     }
 
     const preciseAddress = address.trim() || placeName.trim();
+    const issuePoint = issueLocation ?? {
+      latitude: activeLocation.latitude,
+      longitude: activeLocation.longitude,
+      source: 'reporter_gps' as const,
+    };
+    const manuallyPinned = issuePoint.source === 'manual_pin';
     const payload: CreateReportInput = {
       report_type_id: typeId,
       title,
       description,
-      latitude: activeLocation.latitude,
-      longitude: activeLocation.longitude,
-      accuracy_m: activeLocation.accuracy_m ?? undefined,
+      latitude: issuePoint.latitude,
+      longitude: issuePoint.longitude,
+      reporter_latitude: activeLocation.latitude,
+      reporter_longitude: activeLocation.longitude,
+      reporter_accuracy_m: activeLocation.accuracy_m ?? undefined,
+      reporter_gps_provider: activeLocation.gps_provider,
+      reporter_captured_at: new Date(activeLocation.captured_at).toISOString(),
+      // A manual issue pin is not a claim about the reporter's device
+      // accuracy. Preserve reporter provenance only for GPS-derived pins.
+      accuracy_m: manuallyPinned ? undefined : (activeLocation.accuracy_m ?? undefined),
+      altitude: manuallyPinned ? null : activeLocation.altitude,
+      heading: manuallyPinned ? null : activeLocation.heading,
+      speed: manuallyPinned ? null : activeLocation.speed,
+      gps_provider: manuallyPinned ? 'manual_pin' : activeLocation.gps_provider,
+      captured_at: manuallyPinned ? undefined : new Date(activeLocation.captured_at).toISOString(),
       address: preciseAddress || undefined,
       media_files: files,
       mock_gps_score: activeLocation.mock_heuristic.score,
+      idempotency_key: idempotencyKey,
     };
 
     setSubmitting(true);
     try {
       const res = await create.mutateAsync(payload);
+      trackProductEvent('report_completed');
+      draftCompleteRef.current = true;
+      if (ownerId) void clearDraft(ownerId);
       void navigate(`/citizen/reports/${res.id}`);
     } catch (err) {
       if (isNetworkFailure(err)) {
-        await getQueue().enqueue({ kind: 'report.create', payload });
-        toast.show("Saved offline - we'll submit it when you're back online.", 'info', 6000);
+        await getQueue(ownerId).enqueue({ kind: 'report.create', payload });
+        trackProductEvent('report_queued_offline');
+        void requestBackgroundSync();
+        draftCompleteRef.current = true;
+        if (ownerId) void clearDraft(ownerId);
+        toast.show(t('submit.offlineSaved'), 'info', 6000);
         void navigate('/citizen');
         return;
       }
-      setError(err instanceof Error ? err.message : 'Submit failed');
+      setError(err instanceof Error ? err.message : t('submit.submitFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -266,10 +412,22 @@ export default function SubmitPage(): JSX.Element {
   const reportTypes = sortByPracticalOrder(types.data ?? []);
   const activeStep = currentStep(typeId, location);
   const stepIndex = FORM_STEPS.indexOf(currentViewStep);
+  const stepLabel = (step: Step): string =>
+    ({
+      Category: t('submit.step.category'),
+      Details: t('submit.step.details'),
+      Location: t('submit.step.location'),
+      Evidence: t('submit.step.evidence'),
+      Review: t('submit.step.review'),
+    })[step];
 
   const completedSteps: Step[] = [];
   if (typeId) completedSteps.push('Category');
-  if (typeId && title.trim().length >= 5 && description.trim().length >= 10)
+  if (
+    typeId &&
+    title.trim().length >= 5 &&
+    (description.trim().length === 0 || description.trim().length >= 10)
+  )
     completedSteps.push('Details');
   if (location) completedSteps.push('Location');
   if (location && (!evidenceRequired || files.length > 0)) completedSteps.push('Evidence');
@@ -281,23 +439,28 @@ export default function SubmitPage(): JSX.Element {
   }, [selectedType?.requires_video]);
 
   return (
-    <form onSubmit={(e) => void onSubmit(e)} className="min-h-screen bg-[#f3f2ed] pb-32">
+    <form
+      onSubmit={(e) => void onSubmit(e)}
+      className="min-h-screen bg-[var(--color-canvas)] pb-32"
+    >
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-[#d9d7d0] bg-[#f3f2ed]">
+      <header className="sticky top-0 z-40 border-b border-[var(--color-border-faint)] bg-[var(--color-canvas)]">
         <div className="mx-auto max-w-3xl px-4">
           <div className="flex items-center gap-3 py-3">
             <button
               type="button"
               onClick={() => void navigate('/citizen')}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d6cf] bg-[#faf9f6] text-[#6f6e69] transition hover:bg-white"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d6cf] bg-[#faf9f6] text-[var(--color-text-secondary)] transition hover:bg-white"
               aria-label="Back to citizen home"
             >
               <IconArrowLeft className="h-5 w-5" stroke={1.6} />
             </button>
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-medium tracking-[-0.015em] text-[#1d1d1b]">New Report</h1>
-              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
-                Step {stepIndex + 1} of {FORM_STEPS.length}
+              <h1 className="text-lg font-medium tracking-[-0.015em] text-[var(--color-ink)]">
+                {t('submit.newReport')}
+              </h1>
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                {t('submit.stepCount', { current: stepIndex + 1, total: FORM_STEPS.length })}
               </p>
             </div>
           </div>
@@ -321,17 +484,17 @@ export default function SubmitPage(): JSX.Element {
                     'group flex flex-1 items-center gap-1.5 rounded-full py-1 transition',
                     isActive || isComplete ? 'cursor-pointer' : 'cursor-not-allowed opacity-40',
                   )}
-                  aria-label={`Step ${i + 1}: ${step}${isComplete ? ' (completed)' : ''}${isActive ? ' (current)' : ''}`}
+                  aria-label={`${t('submit.stepCount', { current: i + 1, total: FORM_STEPS.length })}: ${stepLabel(step)}${isComplete ? ` (${t('detail.current')})` : ''}`}
                   aria-current={isActive ? 'step' : undefined}
                 >
                   <span
                     className={cx(
                       'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium transition',
                       isComplete
-                        ? 'bg-[#1d1d1b] text-white'
+                        ? 'bg-[var(--color-ink)] text-white'
                         : isActive
-                          ? 'bg-[#1d1d1b] text-white'
-                          : 'bg-[#efeee9] text-[#85847f]',
+                          ? 'bg-[var(--color-ink)] text-white'
+                          : 'bg-[var(--color-surface-alt)] text-[var(--color-text-tertiary)]',
                     )}
                   >
                     {isComplete ? <IconCheck className="h-3.5 w-3.5" stroke={1.8} /> : i + 1}
@@ -340,13 +503,13 @@ export default function SubmitPage(): JSX.Element {
                     className={cx(
                       'hidden text-xs font-medium sm:block',
                       isActive
-                        ? 'text-[#1d1d1b]'
+                        ? 'text-[var(--color-ink)]'
                         : isComplete
-                          ? 'text-[#1d1d1b]'
-                          : 'text-[#85847f]',
+                          ? 'text-[var(--color-ink)]'
+                          : 'text-[var(--color-text-tertiary)]',
                     )}
                   >
-                    {step}
+                    {stepLabel(step)}
                   </span>
                 </button>
               );
@@ -357,72 +520,134 @@ export default function SubmitPage(): JSX.Element {
 
       {/* Content */}
       <div className="mx-auto max-w-3xl px-4 pt-6 space-y-4">
+        <div
+          aria-live="polite"
+          role="status"
+          className="sr-only"
+          aria-label={`${t('submit.stepCount', { current: stepIndex + 1, total: FORM_STEPS.length })}: ${stepLabel(currentViewStep)}`}
+        />
+
         {/* Step 1: Category Selection */}
         {currentViewStep === 'Category' && (
-          <section className="space-y-4">
+          <section aria-labelledby="step-heading" className="space-y-4">
             <div className="rounded-xl bg-white p-4">
-              <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">
-                Report Category
+              <h2
+                id="step-heading"
+                ref={headingRef}
+                tabIndex={-1}
+                className="text-xl font-medium tracking-[-0.015em] text-[var(--color-ink)] focus:outline-none"
+              >
+                {t('submit.category.title')}
               </h2>
-              <p className="mt-1 text-sm text-[#6f6e69]">
-                Select the category that best describes the civic issue you wish to report.
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                {t('submit.category.subtitle')}
               </p>
             </div>
 
+            <aside className="rounded-xl border border-amber-200 bg-amber-50 p-4" role="note">
+              <p className="text-sm font-semibold text-amber-950">
+                {t('submit.category.emergencyTitle')}
+              </p>
+              <p className="mt-1 text-sm text-amber-900">{t('submit.category.emergencyBody')}</p>
+            </aside>
+
+            <aside className="rounded-xl border border-sky-200 bg-sky-50 p-4" role="note">
+              <p className="text-sm font-semibold text-sky-950">
+                {t('submit.category.agencyTitle')}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-sky-900">
+                {t('submit.category.agencyBody')}
+              </p>
+            </aside>
+
             {types.isLoading ? (
-              <div className="rounded-xl bg-white p-12 flex items-center justify-center">
-                <Spinner label="Loading categories" />
+              <div className="rounded-xl bg-white p-12 flex flex-col items-center justify-center gap-3">
+                <Spinner label={t('submit.category.loading')} />
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  {t('submit.category.loading')}…
+                </p>
               </div>
             ) : types.isError ? (
-              <div role="alert" className="rounded-xl bg-white p-4">
-                <p className="text-sm font-medium text-red-800">
-                  Could not load categories. Your session may have expired. Please log in again.
-                </p>
-              </div>
+              <ErrorState
+                title={t('submit.category.errorTitle')}
+                description={t('submit.category.error')}
+                error={types.error instanceof Error ? types.error : null}
+                action={
+                  <button
+                    type="button"
+                    onClick={() => void types.refetch()}
+                    className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white transition hover:bg-black active:scale-[0.98]"
+                  >
+                    <IconRefresh className="h-4 w-4" stroke={1.6} />
+                    {t('common.retry')}
+                  </button>
+                }
+              />
             ) : reportTypes.length === 0 ? (
-              <div role="alert" className="rounded-xl bg-white p-4">
-                <p className="text-sm font-medium text-amber-800">
-                  No active report categories are available. Please contact an administrator.
-                </p>
-              </div>
+              <EmptyState
+                title={t('submit.category.emptyTitle')}
+                description={t('submit.category.empty')}
+                action={
+                  <button
+                    type="button"
+                    onClick={() => void types.refetch()}
+                    className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-5 text-sm font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
+                  >
+                    <IconRefresh className="h-4 w-4" stroke={1.6} />
+                    {t('common.retry')}
+                  </button>
+                }
+              />
             ) : (
-              <div className="rounded-xl bg-white divide-y divide-[#e4e2dc]">
-                {reportTypes.map((t) => (
+              <div className="rounded-xl bg-white divide-y divide-[var(--color-border-subtle)]">
+                {reportTypes.map((reportType) => (
                   <label
-                    key={t.id}
+                    key={reportType.id}
                     className={cx(
                       'flex cursor-pointer items-center gap-4 p-4 transition',
-                      typeId === t.id ? 'bg-[#efeee9]' : 'hover:bg-[#faf9f6]',
+                      typeId === reportType.id
+                        ? 'bg-[var(--color-surface-alt)]'
+                        : 'hover:bg-[#faf9f6]',
                       fieldErrors.type && !typeId ? 'bg-red-50' : '',
                     )}
                   >
                     <input
                       type="radio"
                       name="report-category"
-                      value={t.id}
-                      checked={typeId === t.id}
-                      onChange={() => setTypeId(t.id)}
+                      value={reportType.id}
+                      checked={typeId === reportType.id}
+                      onChange={() => setTypeId(reportType.id)}
                       className="sr-only"
                     />
                     <span
                       aria-hidden
                       className={cx(
                         'flex h-12 w-12 shrink-0 items-center justify-center rounded-lg transition',
-                        typeId === t.id ? 'bg-[#1d1d1b] text-white' : 'bg-[#efeee9] text-[#6f6e69]',
+                        typeId === reportType.id
+                          ? 'bg-[var(--color-ink)] text-white'
+                          : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]',
                       )}
-                      style={{ color: typeId === t.id ? 'white' : (t.color ?? '#334155') }}
+                      style={{
+                        color: typeId === reportType.id ? 'white' : (reportType.color ?? '#334155'),
+                      }}
                     >
-                      <IssueIcon code={t.code} />
+                      <IssueIcon code={reportType.code} />
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className="block text-sm font-medium text-[#1d1d1b]">{t.name}</span>
-                      <span className="block text-xs text-[#6f6e69]">
-                        {t.requires_photo ? 'Evidence required' : 'Evidence optional'}
-                        {t.requires_video ? ' · Video required' : ''}
+                      <span className="block text-sm font-medium text-[var(--color-ink)]">
+                        {reportType.name}
+                      </span>
+                      <span className="block text-xs text-[var(--color-text-secondary)]">
+                        {reportType.requires_photo
+                          ? t('submit.category.evidenceRequired')
+                          : t('submit.category.evidenceOptional')}
+                        {reportType.requires_video
+                          ? ` · ${t('submit.category.videoRequired')}`
+                          : ''}
                       </span>
                     </span>
-                    {typeId === t.id && (
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1d1d1b]">
+                    {typeId === reportType.id && (
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--color-ink)]">
                         <IconCheck className="h-3.5 w-3.5 text-white" stroke={1.8} />
                       </span>
                     )}
@@ -439,9 +664,9 @@ export default function SubmitPage(): JSX.Element {
             <button
               type="button"
               onClick={handleCategoryNext}
-              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
+              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
             >
-              Continue
+              {t('common.continue')}
               <IconArrowRight className="h-4 w-4" stroke={1.6} />
             </button>
           </section>
@@ -449,33 +674,41 @@ export default function SubmitPage(): JSX.Element {
 
         {/* Step 2: Issue Details */}
         {currentViewStep === 'Details' && (
-          <section className="space-y-4">
+          <section aria-labelledby="step-heading" className="space-y-4">
             <div className="rounded-xl bg-white p-4">
-              <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">
-                Issue Details
+              <h2
+                id="step-heading"
+                ref={headingRef}
+                tabIndex={-1}
+                className="text-xl font-medium tracking-[-0.015em] text-[var(--color-ink)] focus:outline-none"
+              >
+                {t('submit.details.title')}
               </h2>
-              <p className="mt-1 text-sm text-[#6f6e69]">
-                Provide a clear description of the issue to help officials address it promptly.
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                {t('submit.details.subtitle')}
               </p>
             </div>
 
             <div className="rounded-xl bg-white p-4 space-y-4">
               <div>
-                <label htmlFor="report-title" className="text-sm font-medium text-[#1d1d1b]">
-                  Report Title <span className="text-red-500">*</span>
+                <label
+                  htmlFor="report-title"
+                  className="text-sm font-medium text-[var(--color-ink)]"
+                >
+                  {t('submit.details.titleLabel')} <span className="text-red-500">*</span>
                 </label>
-                <p className="mt-1 text-xs text-[#6f6e69]">
-                  A brief, descriptive headline (minimum 5 characters).
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                  {t('submit.details.titleHint')}
                 </p>
                 <input
                   id="report-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Large pothole near metro gate 3"
+                  placeholder={t('submit.details.titlePlaceholder')}
                   aria-invalid={fieldErrors.title ? true : undefined}
                   aria-describedby={fieldErrors.title ? 'title-error' : undefined}
                   className={cx(
-                    'mt-2 block w-full rounded-lg border border-[#d8d6cf] bg-[#faf9f6] px-4 py-3.5 min-h-12 text-base placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]',
+                    'mt-2 block w-full rounded-lg border border-[#d8d6cf] bg-[#faf9f6] px-4 py-3.5 min-h-12 text-base placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]',
                     fieldErrors.title ? 'border-red-400 bg-red-50' : '',
                   )}
                   required
@@ -492,22 +725,26 @@ export default function SubmitPage(): JSX.Element {
               </div>
 
               <div>
-                <label htmlFor="report-description" className="text-sm font-medium text-[#1d1d1b]">
-                  Detailed Description <span className="text-red-500">*</span>
+                <label
+                  htmlFor="report-description"
+                  className="text-sm font-medium text-[var(--color-ink)]"
+                >
+                  {t('submit.details.descriptionLabel')}{' '}
+                  <span className="text-slate-500">({t('common.optional')})</span>
                 </label>
-                <p className="mt-1 text-xs text-[#6f6e69]">
-                  Include size, duration, safety concerns (minimum 10 characters).
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                  {t('submit.details.descriptionHint')}
                 </p>
                 <textarea
                   id="report-description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={4}
-                  placeholder="Describe the issue: how long it exists, who it affects, any safety hazards…"
+                  placeholder={t('submit.details.descriptionPlaceholder')}
                   aria-invalid={fieldErrors.description ? true : undefined}
                   aria-describedby={fieldErrors.description ? 'desc-error' : undefined}
                   className={cx(
-                    'mt-2 block w-full resize-y rounded-lg border border-[#d8d6cf] bg-[#faf9f6] px-4 py-3.5 min-h-24 text-base placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]',
+                    'mt-2 block w-full resize-y rounded-lg border border-[#d8d6cf] bg-[#faf9f6] px-4 py-3.5 min-h-24 text-base placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]',
                     fieldErrors.description ? 'border-red-400 bg-red-50' : '',
                   )}
                   required
@@ -524,17 +761,17 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => goToStep('Category')}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[#1d1d1b] transition hover:bg-white active:scale-[0.98]"
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconArrowLeft className="h-4 w-4" stroke={1.6} />
-                Back
+                {t('common.back')}
               </button>
               <button
                 type="button"
                 onClick={handleDetailsNext}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
               >
-                Continue
+                {t('common.continue')}
                 <IconArrowRight className="h-4 w-4" stroke={1.6} />
               </button>
             </div>
@@ -543,37 +780,61 @@ export default function SubmitPage(): JSX.Element {
 
         {/* Step 3: Location Verification */}
         {currentViewStep === 'Location' && (
-          <section className="space-y-4">
+          <section aria-labelledby="step-heading" className="space-y-4">
             <div className="rounded-xl bg-white p-4">
-              <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">
-                Location Verification
+              <h2
+                id="step-heading"
+                ref={headingRef}
+                tabIndex={-1}
+                className="text-xl font-medium tracking-[-0.015em] text-[var(--color-ink)] focus:outline-none"
+              >
+                {t('submit.location.title')}
               </h2>
-              <p className="mt-1 text-sm text-[#6f6e69]">
-                Your precise location is required to route this report to the correct department.
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                {t('submit.location.subtitle')}
               </p>
             </div>
 
             {/* Privacy notice */}
             <div className="rounded-xl bg-white p-4 flex items-start gap-3">
-              <IconShield className="mt-0.5 h-5 w-5 shrink-0 text-[#6f6e69]" stroke={1.6} />
-              <p className="text-sm leading-relaxed text-[#6f6e69]">
-                <strong className="font-medium text-[#1d1d1b]">Privacy notice:</strong> Your GPS
-                coordinates are used solely for report routing and are not shared publicly.
+              <IconShield
+                className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-text-secondary)]"
+                stroke={1.6}
+              />
+              <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                <strong className="font-medium text-[var(--color-ink)]">
+                  {t('submit.location.privacyTitle')}
+                </strong>{' '}
+                {t('submit.location.privacyBody')}
               </p>
             </div>
 
             {/* GPS capture */}
             <div className="rounded-xl bg-white p-4">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#efeee9]">
-                  <IconMapPin className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-surface-alt)]">
+                  <IconMapPin className="h-5 w-5 text-[var(--color-text-secondary)]" stroke={1.6} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-[#1d1d1b]">Capture Location</p>
-                  <p className="text-xs text-[#6f6e69]">Tap the button to detect your position</p>
+                  <p className="text-sm font-medium text-[var(--color-ink)]">
+                    {t('submit.location.capture')}
+                  </p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">
+                    {t('submit.location.captureHint')}
+                  </p>
                 </div>
               </div>
-              <GpsCapture ref={gpsRef} onCapture={setLocation} />
+              <GpsCapture
+                ref={gpsRef}
+                onCapture={(captured) => {
+                  setLocation(captured);
+                  setIssueLocation({
+                    latitude: captured.latitude,
+                    longitude: captured.longitude,
+                    source: 'reporter_gps',
+                  });
+                }}
+              />
             </div>
 
             {fieldErrors.location ? (
@@ -589,43 +850,58 @@ export default function SubmitPage(): JSX.Element {
                     <IconCheck className="h-5 w-5 text-white" stroke={1.8} />
                   </div>
                   <div className="text-sm">
-                    <p className="font-semibold text-emerald-900">Location captured</p>
+                    <p className="font-semibold text-emerald-900">
+                      {t('submit.location.captured')}
+                    </p>
                     <p className="mt-1 text-sm text-emerald-700">
-                      {placeName || 'Location captured'}
+                      {placeName
+                        ? t('submit.location.detectedPlace', { place: placeName })
+                        : t('submit.location.detectingPlace')}
+                    </p>
+                    <p className="mt-1 text-xs text-emerald-800">
                       {location.accuracy_m !== null
-                        ? ` · ±${Math.round(location.accuracy_m)} m accuracy`
-                        : ''}
+                        ? t('submit.location.detectedAccuracy', {
+                            accuracy: Math.round(location.accuracy_m),
+                          })
+                        : t('submit.location.detectedAccuracyUnknown')}
                     </p>
                   </div>
                 </div>
-                {location.accuracy_m !== null && location.accuracy_m > 100 ? (
+                {location.accuracy_m !== null && location.accuracy_m > MAX_GPS_ACCURACY_M ? (
                   <p className="mt-3 rounded-lg bg-amber-100 px-4 py-2.5 text-sm font-medium text-amber-800">
-                    Coarse fix detected. For best results, try again in an open area.
+                    {t('submit.location.coarseWarning')}
                   </p>
                 ) : null}
                 {location.mock_heuristic.likely ? (
                   <p className="mt-3 rounded-lg bg-amber-100 px-4 py-2.5 text-sm font-medium text-amber-800">
-                    This location appears suspicious ({location.mock_heuristic.reasons.join('; ')}).
-                    It may be rejected during review.
+                    {t('submit.location.suspiciousWarning', {
+                      reasons: location.mock_heuristic.reasons.join('; '),
+                    })}
                   </p>
                 ) : null}
               </div>
             ) : null}
 
             <div className="rounded-xl bg-white p-4">
-              <label htmlFor="report-address" className="text-sm font-medium text-[#1d1d1b]">
-                Nearest Landmark or Address
-                <span className="text-[#85847f] font-normal"> (optional)</span>
+              <label
+                htmlFor="report-address"
+                className="text-sm font-medium text-[var(--color-ink)]"
+              >
+                {t('submit.location.addressLabel')}
+                <span className="text-[var(--color-text-tertiary)] font-normal">
+                  {' '}
+                  {t('submit.location.addressOptional')}
+                </span>
               </label>
-              <p className="mt-1 text-xs text-[#6f6e69]">
-                A street name or nearby landmark helps officers locate the exact spot.
+              <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                {t('submit.location.addressHint')}
               </p>
               <input
                 id="report-address"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="e.g. Near BESCOM office, 8th Main Road"
-                className="mt-2 block w-full rounded-lg border border-[#d8d6cf] bg-[#faf9f6] px-4 py-3.5 min-h-12 text-base placeholder:text-[#85847f] focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+                placeholder={t('submit.location.addressPlaceholder')}
+                className="mt-2 block w-full rounded-lg border border-[#d8d6cf] bg-[#faf9f6] px-4 py-3.5 min-h-12 text-base placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
               />
             </div>
 
@@ -633,17 +909,17 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => goToStep('Details')}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[#1d1d1b] transition hover:bg-white active:scale-[0.98]"
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconArrowLeft className="h-4 w-4" stroke={1.6} />
-                Back
+                {t('common.back')}
               </button>
               <button
                 type="button"
                 onClick={handleLocationNext}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
               >
-                Continue
+                {t('common.continue')}
                 <IconArrowRight className="h-4 w-4" stroke={1.6} />
               </button>
             </div>
@@ -652,24 +928,31 @@ export default function SubmitPage(): JSX.Element {
 
         {/* Step 4: Evidence Upload */}
         {currentViewStep === 'Evidence' && (
-          <section className="space-y-4">
+          <section aria-labelledby="step-heading" className="space-y-4">
             <div className="rounded-xl bg-white p-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">
-                    Attach Evidence
+                  <h2
+                    id="step-heading"
+                    ref={headingRef}
+                    tabIndex={-1}
+                    className="text-xl font-medium tracking-[-0.015em] text-[var(--color-ink)] focus:outline-none"
+                  >
+                    {t('submit.evidence.title')}
                   </h2>
-                  <p className="mt-1 text-sm text-[#6f6e69]">
-                    Up to 5 photos and 1 short video (3–5 seconds). Max 25 MB per file.
+                  <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                    {t('submit.evidence.subtitle')}
                   </p>
                 </div>
                 <span
                   className={cx(
                     'shrink-0 rounded-full px-3 py-1 text-xs font-semibold',
-                    evidenceRequired ? 'bg-red-100 text-red-700' : 'bg-[#efeee9] text-[#6f6e69]',
+                    evidenceRequired
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]',
                   )}
                 >
-                  {evidenceRequired ? 'Required' : 'Optional'}
+                  {evidenceRequired ? t('common.required') : t('common.optional')}
                 </span>
               </div>
             </div>
@@ -682,11 +965,8 @@ export default function SubmitPage(): JSX.Element {
                   stroke={1.6}
                 />
                 <div className="text-sm leading-relaxed text-amber-800">
-                  <p className="font-semibold text-amber-900">Safety First</p>
-                  <p className="mt-0.5">
-                    Never capture evidence while operating a vehicle. Pull over to a safe location
-                    first.
-                  </p>
+                  <p className="font-semibold text-amber-900">{t('submit.evidence.safetyFirst')}</p>
+                  <p className="mt-0.5">{t('submit.evidence.safetyBody')}</p>
                 </div>
               </div>
             </div>
@@ -700,24 +980,28 @@ export default function SubmitPage(): JSX.Element {
             {/* Camera controls */}
             <div className="rounded-xl bg-white p-4 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#efeee9]">
-                  <IconCamera className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-surface-alt)]">
+                  <IconCamera className="h-5 w-5 text-[var(--color-text-secondary)]" stroke={1.6} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-[#1d1d1b]">Camera</p>
-                  <p className="text-xs text-[#6f6e69]">Capture photos or record video</p>
+                  <p className="text-sm font-medium text-[var(--color-ink)]">
+                    {t('submit.evidence.camera')}
+                  </p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">
+                    {t('submit.evidence.cameraHint')}
+                  </p>
                 </div>
               </div>
               <CameraCapture mode="photo" onCapture={addPhoto} onError={onCameraError} />
               <button
                 type="button"
                 onClick={() => setShowVideo((v) => !v)}
-                className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-4 text-sm font-medium text-[#1d1d1b] transition hover:bg-white active:scale-[0.98]"
+                className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-4 text-sm font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconCamera className="h-4 w-4" stroke={1.6} />
                 {showVideo
-                  ? 'Hide video recorder'
-                  : `Record video${selectedType?.requires_video ? ' (required)' : ' (optional)'}`}
+                  ? t('submit.evidence.hideVideo')
+                  : `${t('submit.evidence.recordVideo')}${selectedType?.requires_video ? t('submit.evidence.videoRequiredSuffix') : t('submit.evidence.videoOptionalSuffix')}`}
               </button>
               {showVideo ? (
                 <CameraCapture mode="video" onCapture={addVideo} onError={onCameraError} />
@@ -728,33 +1012,45 @@ export default function SubmitPage(): JSX.Element {
             {files.length > 0 ? (
               <div className="rounded-xl bg-white p-4">
                 <div className="flex items-center gap-2 mb-4">
-                  <IconUpload className="h-4 w-4 text-[#6f6e69]" stroke={1.6} />
-                  <p className="text-sm font-medium text-[#1d1d1b]">
-                    {files.length} file{files.length !== 1 ? 's' : ''} attached
+                  <IconUpload className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
+                  <p
+                    className="text-sm font-medium text-[var(--color-ink)]"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {t('submit.evidence.filesAttached', {
+                      count: files.length,
+                      plural: files.length === 1 ? '' : 's',
+                    })}
                   </p>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {files.map((f, i) => (
                     <div key={i} className="relative">
-                      <div className="aspect-square overflow-hidden rounded-lg border border-[#e4e2dc] bg-[#efeee9]">
+                      <div className="aspect-square overflow-hidden rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)]">
                         {f.type.startsWith('image/') ? (
                           <img
-                            src={URL.createObjectURL(f)}
-                            alt=""
+                            src={previewUrls[i]}
+                            alt={f.name}
                             className="h-full w-full object-cover"
                             {...evidencePreviewHandlers()}
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-[#efeee9]">
-                            <IconCamera className="h-8 w-8 text-[#85847f]" stroke={1.6} />
-                          </div>
+                          <video
+                            src={previewUrls[i]}
+                            controls
+                            muted
+                            preload="metadata"
+                            className="h-full w-full object-contain bg-black"
+                            aria-label={t('detail.video')}
+                          />
                         )}
                       </div>
                       <button
                         type="button"
                         onClick={() => removeFile(i)}
-                        className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[#1d1d1b] text-xs font-medium text-white transition hover:bg-red-600"
-                        aria-label={`Remove ${f.name}`}
+                        className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-ink)] text-xs font-medium text-white transition hover:bg-red-600"
+                        aria-label={t('submit.evidence.removeFile', { name: f.name })}
                       >
                         ×
                       </button>
@@ -768,17 +1064,17 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => goToStep('Location')}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[#1d1d1b] transition hover:bg-white active:scale-[0.98]"
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconArrowLeft className="h-4 w-4" stroke={1.6} />
-                Back
+                {t('common.back')}
               </button>
               <button
                 type="button"
                 onClick={handleEvidenceNext}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
               >
-                Review
+                {t('submit.review.title')}
                 <IconArrowRight className="h-4 w-4" stroke={1.6} />
               </button>
             </div>
@@ -787,106 +1083,120 @@ export default function SubmitPage(): JSX.Element {
 
         {/* Step 5: Review & Submit */}
         {currentViewStep === 'Review' && (
-          <section className="space-y-4">
+          <section aria-labelledby="step-heading" className="space-y-4">
             <div className="rounded-xl bg-white p-4">
-              <h2 className="text-xl font-medium tracking-[-0.015em] text-[#1d1d1b]">
-                Review Your Report
+              <h2
+                id="step-heading"
+                ref={headingRef}
+                tabIndex={-1}
+                className="text-xl font-medium tracking-[-0.015em] text-[var(--color-ink)] focus:outline-none"
+              >
+                {t('submit.review.title')}
               </h2>
-              <p className="mt-1 text-sm text-[#6f6e69]">
-                Please review all details before submitting your official report.
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                {t('submit.review.subtitle')}
               </p>
             </div>
 
             {/* Review cards */}
-            <div className="rounded-xl bg-white divide-y divide-[#e4e2dc]">
+            <div className="rounded-xl bg-white divide-y divide-[var(--color-border-subtle)]">
               <div className="flex items-center justify-between p-4">
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
-                    Category
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                    {t('submit.review.category')}
                   </p>
-                  <p className="mt-1 text-sm font-medium text-[#1d1d1b]">
-                    {selectedType?.name ?? 'Unknown'}
+                  <p className="mt-1 text-sm font-medium text-[var(--color-ink)]">
+                    {selectedType?.name ?? t('submit.review.unknown')}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => goToStep('Category')}
-                  className="inline-flex items-center gap-1 text-sm font-medium text-[#6f6e69] transition hover:text-[#1d1d1b]"
+                  className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
-                  Edit
+                  {t('common.edit')}
                 </button>
               </div>
 
               <div className="flex items-center justify-between p-4">
                 <div className="flex-1 min-w-0">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
-                    Title
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                    {t('submit.review.titleLabel')}
                   </p>
-                  <p className="mt-1 text-sm font-medium text-[#1d1d1b] truncate">{title}</p>
+                  <p className="mt-1 text-sm font-medium text-[var(--color-ink)] truncate">
+                    {title}
+                  </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => goToStep('Details')}
-                  className="ml-2 inline-flex items-center gap-1 text-sm font-medium text-[#6f6e69] transition hover:text-[#1d1d1b]"
+                  className="ml-2 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
-                  Edit
+                  {t('common.edit')}
                 </button>
               </div>
 
               <div className="p-4">
                 <div className="flex items-start justify-between">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
-                    Description
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                    {t('submit.review.description')}
                   </p>
                   <button
                     type="button"
                     onClick={() => goToStep('Details')}
-                    className="ml-2 inline-flex shrink-0 items-center gap-1 text-sm font-medium text-[#6f6e69] transition hover:text-[#1d1d1b]"
+                    className="ml-2 inline-flex shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                   >
                     <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
-                    Edit
+                    {t('common.edit')}
                   </button>
                 </div>
-                <p className="mt-1 text-sm text-[#6f6e69] whitespace-pre-wrap">{description}</p>
+                <p className="mt-1 text-sm text-[var(--color-text-secondary)] whitespace-pre-wrap">
+                  {description}
+                </p>
               </div>
 
               <div className="flex items-center justify-between p-4">
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
-                    Location
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                    {t('submit.review.location')}
                   </p>
-                  <p className="mt-1 text-sm font-medium text-[#1d1d1b]">
-                    {location ? placeName || address || 'Location captured' : 'Not captured'}
+                  <p className="mt-1 text-sm font-medium text-[var(--color-ink)]">
+                    {issueLocation
+                      ? placeName || address || t('submit.location.captured')
+                      : t('submit.review.locationNotCaptured')}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => goToStep('Location')}
-                  className="inline-flex items-center gap-1 text-sm font-medium text-[#6f6e69] transition hover:text-[#1d1d1b]"
+                  className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
-                  Edit
+                  {t('common.edit')}
                 </button>
               </div>
 
               <div className="flex items-center justify-between p-4">
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
-                    Evidence
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                    {t('submit.review.evidence')}
                   </p>
-                  <p className="mt-1 text-sm font-medium text-[#1d1d1b]">
-                    {files.length} file{files.length !== 1 ? 's' : ''} attached
+                  <p className="mt-1 text-sm font-medium text-[var(--color-ink)]">
+                    {t('submit.evidence.filesAttached', {
+                      count: files.length,
+                      plural: files.length === 1 ? '' : 's',
+                    })}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => goToStep('Evidence')}
-                  className="inline-flex items-center gap-1 text-sm font-medium text-[#6f6e69] transition hover:text-[#1d1d1b]"
+                  className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
-                  Edit
+                  {t('common.edit')}
                 </button>
               </div>
             </div>
@@ -906,27 +1216,26 @@ export default function SubmitPage(): JSX.Element {
 
             {/* Submit section */}
             <div className="rounded-xl bg-white p-4 space-y-4">
-              <p className="text-center text-sm text-[#6f6e69]">
-                By submitting, you confirm the information is accurate to the best of your
-                knowledge.
+              <p className="text-center text-sm text-[var(--color-text-secondary)]">
+                {t('submit.review.confirmation')}
               </p>
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#85847f]"
+                className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[var(--color-text-tertiary)]"
               >
                 <IconFileText className="h-5 w-5" stroke={1.6} />
-                {submitting ? 'Submitting…' : 'File Report'}
+                {submitting ? t('submit.review.submitting') : t('submit.review.submitButton')}
               </button>
             </div>
 
             <button
               type="button"
               onClick={() => goToStep('Evidence')}
-              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[#1d1d1b] transition hover:bg-white active:scale-[0.98]"
+              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
             >
               <IconArrowLeft className="h-4 w-4" stroke={1.6} />
-              Back to Evidence
+              {t('submit.review.backToEvidence')}
             </button>
           </section>
         )}

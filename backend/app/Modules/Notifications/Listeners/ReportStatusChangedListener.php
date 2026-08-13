@@ -21,13 +21,7 @@ class ReportStatusChangedListener
     {
         $report = Report::query()->find($event->reportId);
 
-        if ($report === null || $report->citizen_id === null || $report->citizen_id === '') {
-            return;
-        }
-
-        $user = User::query()->find($report->citizen_id);
-
-        if ($user === null) {
+        if ($report === null) {
             return;
         }
 
@@ -41,19 +35,31 @@ class ReportStatusChangedListener
         $to = ReportStatus::query()->whereKey($event->toStatusId)->value('name');
         $toStatusName = is_string($to) ? $to : '';
 
-        try {
-            $this->dispatcher->dispatch($user, 'report.status_changed', [
-                'report_id' => $report->id,
-                'name' => (string) ($user->name ?? ''),
-                'tracking_number' => $report->tracking_number,
-                'title' => $report->title,
-                'from_status' => $fromStatusName,
-                'to_status' => $toStatusName,
-            ], null, [
-                'channel' => 'email',
-            ]);
-        } catch (Throwable $e) {
-            $this->recordFailure($user, 'report.status_changed', $e);
+        $citizenIds = collect([$report->citizen_id])
+            ->merge(Report::query()
+                ->where('merged_into', $report->id)
+                ->where('is_anonymous', false)
+                ->whereNotNull('citizen_id')
+                ->pluck('citizen_id'))
+            ->filter(static fn (mixed $id): bool => is_string($id) && $id !== '')
+            ->unique()
+            ->values();
+
+        foreach (User::query()->whereKey($citizenIds)->get() as $user) {
+            try {
+                $this->dispatcher->dispatch($user, 'report.status_changed', [
+                    'report_id' => $report->id,
+                    'name' => (string) ($user->name ?? ''),
+                    'tracking_number' => $report->tracking_number,
+                    'title' => $report->title,
+                    'from_status' => $fromStatusName,
+                    'to_status' => $toStatusName,
+                ], null, [
+                    'channel' => 'email',
+                ]);
+            } catch (Throwable $e) {
+                $this->recordFailure($user, 'report.status_changed', $e);
+            }
         }
     }
 

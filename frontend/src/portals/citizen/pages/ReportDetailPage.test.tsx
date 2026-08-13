@@ -6,6 +6,9 @@ import type { ReportDetail } from '../api/client';
 vi.mock('../api/client', () => ({
   useReportDetail: vi.fn(),
   useReportTimeline: vi.fn(() => ({ isLoading: false, error: null, data: [] })),
+  useVerifyResolution: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useDisputeResolution: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useMergeDispute: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   lifecycleGroup: vi.fn((code: string) => {
     if (code === 'closed' || code === 'verified') return 'closed';
     if (code === 'rejected') return 'rejected';
@@ -27,6 +30,7 @@ function baseReport(overrides: Partial<ReportDetail>): ReportDetail {
   return {
     id: '11111111-1111-1111-1111-111111111111',
     tracking_number: 'CIV-2026-000001',
+    workflow_version: 1,
     title: 'Pothole on Main St',
     description: 'Deep pothole',
     status: { code: 'open', name: 'Open' },
@@ -56,11 +60,11 @@ describe('ReportDetailPage', () => {
         <ReportDetailPage />
       </MemoryRouter>,
     );
-    expect(screen.queryByText('CIV-2026-00042')).not.toBeNull();
+    expect(screen.getAllByText('CIV-2026-00042').length).toBeGreaterThan(0);
     expect(screen.queryByText(/REF-/)).toBeNull();
   });
 
-  it('shows "In Progress" badge for open status', () => {
+  it('shows "Received" badge for newly submitted status', () => {
     (useReportDetail as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       isLoading: false,
       error: null,
@@ -71,10 +75,10 @@ describe('ReportDetailPage', () => {
         <ReportDetailPage />
       </MemoryRouter>,
     );
-    expect(screen.queryByText('In Progress')).not.toBeNull();
+    expect(screen.getAllByText('Received').length).toBeGreaterThan(0);
   });
 
-  it('shows "Closed" badge for closed status', () => {
+  it('shows "Completed" badge for closed status', () => {
     (useReportDetail as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       isLoading: false,
       error: null,
@@ -85,7 +89,7 @@ describe('ReportDetailPage', () => {
         <ReportDetailPage />
       </MemoryRouter>,
     );
-    expect(screen.queryByText('Closed')).not.toBeNull();
+    expect(screen.getAllByText('Completed').length).toBeGreaterThan(0);
   });
 
   it('shows "Rejected" badge for rejected status', () => {
@@ -99,7 +103,7 @@ describe('ReportDetailPage', () => {
         <ReportDetailPage />
       </MemoryRouter>,
     );
-    expect(screen.queryByText('Rejected')).not.toBeNull();
+    expect(screen.getAllByText('Could not accept').length).toBeGreaterThan(0);
   });
 
   it('renders video evidence with a video element instead of an image placeholder', () => {

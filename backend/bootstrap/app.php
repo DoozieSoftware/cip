@@ -2,13 +2,16 @@
 
 declare(strict_types=1);
 
+use App\Modules\Media\Console\RecoverQuarantinedMediaCommand;
 use App\Modules\Media\Http\Middleware\MediaUploadLimit;
+use App\Modules\Public\Console\RebuildPublicAnalyticsCommand;
 use App\Modules\Security\Http\Middleware\AuditMiddleware;
 use App\Modules\Settings\Console\PurgeRetentionCommand;
 use App\Modules\Settings\Models\Setting;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Middleware\IdempotencyKey;
 use App\Modules\Shared\Http\Middleware\RequestId;
+use App\Modules\Shared\Services\PlatformHeartbeatService;
 use App\Modules\Workflow\Jobs\CheckSlaBreaches;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -33,8 +36,17 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withCommands([
         PurgeRetentionCommand::class,
+        RebuildPublicAnalyticsCommand::class,
+        RecoverQuarantinedMediaCommand::class,
     ])
     ->withSchedule(function (Schedule $schedule): void {
+        $schedule->call(static function (): void {
+            app(PlatformHeartbeatService::class)->touchScheduler();
+        })
+            ->everyMinute()
+            ->name('platform:heartbeat:scheduler')
+            ->withoutOverlapping();
+
         $schedule->job(new CheckSlaBreaches)
             ->everyFiveMinutes()
             ->name('workflow:check-sla-breaches')
@@ -45,6 +57,16 @@ return Application::configure(basePath: dirname(__DIR__))
             ->name('settings:purge-retention')
             ->withoutOverlapping()
             ->when(fn (): bool => (bool) Setting::get('retention.purge_enabled', false));
+
+        $schedule->command(RebuildPublicAnalyticsCommand::class)
+            ->dailyAt('02:30')
+            ->name('public:rebuild-analytics')
+            ->withoutOverlapping();
+
+        $schedule->command(RecoverQuarantinedMediaCommand::class)
+            ->everyTenMinutes()
+            ->name('media:recover-quarantine')
+            ->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         // Laravel 12's ApplicationBuilder defaults redirectGuestsTo() to

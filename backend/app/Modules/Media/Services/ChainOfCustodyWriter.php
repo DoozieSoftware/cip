@@ -36,6 +36,8 @@ use Illuminate\Support\Carbon;
  */
 class ChainOfCustodyWriter
 {
+    public const EVENT_UPLOAD = 'UPLOAD';
+
     public const EVENT_VIEW = 'VIEW';
 
     public const EVENT_DOWNLOAD = 'DOWNLOAD';
@@ -58,6 +60,9 @@ class ChainOfCustodyWriter
         array $metadata = [],
     ): MediaAccessLog {
         $defaultMeta = [
+            'role' => $media->role,
+            'assignment_id' => $media->assignment_id,
+            'department_id' => $media->department_id,
             'capture_time' => optional($media->captured_at)->toIso8601String(),
             'upload_time' => optional($media->uploaded_at)->toIso8601String(),
             'uploader' => $media->uploaded_by,
@@ -69,6 +74,8 @@ class ChainOfCustodyWriter
 
         $row = MediaAccessLog::query()->create([
             'media_id' => $media->id,
+            'assignment_id' => $media->assignment_id,
+            'department_id' => $media->department_id,
             'actor_id' => $actor?->id,
             'event' => $event,
             'ip' => $ip,

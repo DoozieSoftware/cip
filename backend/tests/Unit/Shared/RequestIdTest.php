@@ -9,7 +9,7 @@ use Illuminate\Http\Response;
 it('generates a UUID when no header is provided', function (): void {
     $middleware = new RequestId;
     $request = Request::create('/api/v1/health', 'GET');
-    $response = $middleware->handle($request, fn (): Response => response('ok'));
+    $response = $middleware->handle($request, fn (): Response => new Response('ok'));
     $header = $response->headers->get(RequestId::HEADER);
     expect($header)->not->toBeNull();
     expect($header)->toMatch('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i');
@@ -18,7 +18,7 @@ it('generates a UUID when no header is provided', function (): void {
 it('echoes the inbound trace id when provided', function (): void {
     $middleware = new RequestId;
     $request = Request::create('/api/v1/health', 'GET', server: ['HTTP_X_REQUEST_ID' => 'client-trace-42']);
-    $response = $middleware->handle($request, fn () => response('ok'));
+    $response = $middleware->handle($request, fn (): Response => new Response('ok'));
     expect($response->headers->get(RequestId::HEADER))->toBe('client-trace-42');
     expect($request->attributes->get(RequestId::ATTRIBUTE))->toBe('client-trace-42');
 });

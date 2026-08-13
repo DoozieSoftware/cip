@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'leaflet/dist/leaflet.css';
+@import '../shared/ui/tokens.css';
 
 @theme {
   --color-brand-50: #eef6ff;
@@ -19,6 +20,22 @@
 
 body {
   margin: 0;
+}
+
+/* Respect users who ask the operating system for less motion. Tailwind's
+ * utility classes remain expressive for users who prefer motion, while this
+ * guard makes transitions and animations effectively instantaneous for
+ * reduced-motion users (including third-party widgets).
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 input,

@@ -29,12 +29,14 @@ import {
   Spinner,
   Textarea,
 } from '../../../shared/ui';
+import { reportStatusTone, staffReportStatusLabel } from '../../../shared/statusDisplay';
 import { actionsApi, queueApi } from '../api/moderator';
 import type { MergePayload, ReportDetail, ReportStatusCode, ReviewPayload } from '../types';
 import { EvidenceViewer } from '../components/EvidenceViewer';
 import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 import { AiAnalysisPanel } from '../components/AiAnalysisPanel';
 import { AssignmentDialog } from '../components/AssignmentDialog';
+import { auditActionLabel } from '../../../shared/auditActionLabel';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 function LocationText({ lat, lng }: { lat: number; lng: number }): JSX.Element {
@@ -94,31 +96,29 @@ function ActionFooter({
 
   return (
     <div className="space-y-3" role="group" aria-label="Moderation actions">
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="success"
-          size="lg"
+          size="md"
           onClick={onApprove}
           disabled={busy || !decisionsEnabled}
           aria-keyshortcuts="A"
           leftIcon={<IconCheck className="h-4 w-4" stroke={1.8} />}
-          className="flex-1 sm:flex-none"
+          className="min-w-28 disabled:opacity-100"
         >
           Approve
         </Button>
         <Button
           variant="danger"
-          size="lg"
+          size="md"
           onClick={onReject}
           disabled={busy || !decisionsEnabled}
           aria-keyshortcuts="R"
           leftIcon={<IconX className="h-4 w-4" stroke={1.8} />}
-          className="flex-1 sm:flex-none"
+          className="min-w-28 disabled:opacity-100"
         >
           Reject
         </Button>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="secondary"
           size="sm"
@@ -150,6 +150,11 @@ function ActionFooter({
           Reassign
         </Button>
       </div>
+      {!decisionsEnabled && (
+        <p className="text-sm text-[#6f6e69]" role="status">
+          Approve and Reject are available only while a report is awaiting moderator review.
+        </p>
+      )}
     </div>
   );
 }
@@ -241,7 +246,8 @@ export default function ReportDetailPage() {
   }, [id, navigate, qc]);
 
   const review = useMutation({
-    mutationFn: (p: ReviewPayload) => actionsApi.review(id, p),
+    mutationFn: (p: ReviewPayload) =>
+      actionsApi.review(id, { ...p, expected_workflow_version: data?.workflow_version }),
     onSuccess: (updated) => {
       qc.setQueryData(['moderator', 'reports', id], updated);
       void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });
@@ -251,7 +257,8 @@ export default function ReportDetailPage() {
     },
   });
   const reject = useMutation({
-    mutationFn: (p: { reason_code: string; remarks?: string }) => actionsApi.reject(id, p),
+    mutationFn: (p: { reason_code: string; remarks?: string }) =>
+      actionsApi.reject(id, { ...p, expected_workflow_version: data?.workflow_version }),
     onSuccess: (updated) => {
       qc.setQueryData(['moderator', 'reports', id], updated);
       void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });
@@ -260,14 +267,16 @@ export default function ReportDetailPage() {
     },
   });
   const merge = useMutation({
-    mutationFn: (p: MergePayload) => actionsApi.merge(id, p),
+    mutationFn: (p: MergePayload) =>
+      actionsApi.merge(id, { ...p, expected_workflow_version: data?.workflow_version }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });
       setMergeOpen(false);
     },
   });
   const escalate = useMutation({
-    mutationFn: (p: { reason_code: string; remarks?: string }) => actionsApi.escalate(id, p),
+    mutationFn: (p: { reason_code: string; remarks?: string }) =>
+      actionsApi.escalate(id, { ...p, expected_workflow_version: data?.workflow_version }),
     onSuccess: (updated) => {
       qc.setQueryData(['moderator', 'reports', id], updated);
       void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });
@@ -276,7 +285,7 @@ export default function ReportDetailPage() {
   });
   const assign = useMutation({
     mutationFn: (p: { department_id: string; officer_id?: string; reason: string }) =>
-      actionsApi.reassign(id, p),
+      actionsApi.reassign(id, { ...p, expected_workflow_version: data?.workflow_version }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['moderator', 'reports', id] });
       void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });
@@ -352,20 +361,18 @@ export default function ReportDetailPage() {
             <div className="flex items-center gap-2">
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
-                  data.status_code === 'pending_moderator' || data.status_code === 'ai_processing'
+                  reportStatusTone(data.status_code) === 'warning'
                     ? 'bg-amber-50 text-amber-700'
-                    : data.status_code === 'escalated'
+                    : reportStatusTone(data.status_code) === 'danger'
                       ? 'bg-violet-50 text-violet-700'
-                      : data.status_code === 'rejected' || data.status_code === 'merged'
-                        ? 'bg-red-50 text-red-700'
-                        : data.status_code === 'closed' ||
-                            data.status_code === 'verified' ||
-                            data.status_code === 'resolved'
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'bg-sky-50 text-sky-700'
+                      : reportStatusTone(data.status_code) === 'success'
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : reportStatusTone(data.status_code) === 'info'
+                          ? 'bg-sky-50 text-sky-700'
+                          : 'bg-slate-50 text-slate-700'
                 }`}
               >
-                {data.status_code.replace(/_/g, ' ')}
+                {staffReportStatusLabel(data.status_code)}
               </span>
               {data.evidence_count > 0 && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs text-[#6f6e69] ring-1 ring-[#d8d6cf]">
@@ -504,7 +511,9 @@ export default function ReportDetailPage() {
                     <span className="absolute -left-[31px] top-1 grid h-5 w-5 place-items-center rounded-full bg-[#f3f2ed] ring-2 ring-[#e4e2dc]">
                       <span className="h-2 w-2 rounded-full bg-[#85847f]" />
                     </span>
-                    <p className="text-sm font-medium text-[#1d1d1b]">{a.action}</p>
+                    <p className="text-sm font-medium text-[#1d1d1b]">
+                      {auditActionLabel(a.action)}
+                    </p>
                     <p className="mt-0.5 text-xs text-[#6f6e69]">{a.actor_name ?? 'system'}</p>
                     <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[#85847f]">
                       {new Date(a.created_at).toLocaleString()}
@@ -761,6 +770,8 @@ export default function ReportDetailPage() {
           onClose={() => setAssignOpen(false)}
           loading={assign.isPending}
           defaultDepartmentId={data.department?.id ?? undefined}
+          departments={departmentOptions}
+          departmentsLoading={departmentsQuery.isLoading}
           onSubmit={(r) => {
             void assign.mutateAsync(r);
           }}

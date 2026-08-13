@@ -16,7 +16,9 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 /**
  * Scheduled job (every 5 minutes, see routes/console.php)
@@ -48,9 +50,15 @@ class CheckSlaBreaches implements ShouldQueue
 
     public int $timeout = 120;
 
+    private const BATCH_SIZE = 200;
+
+    /** Keep legacy rows without a computed deadline from creating an
+     * unbounded migration scan; each run bootstraps at most this many. */
+    private const BOOTSTRAP_LIMIT = 1000;
+
     /**
-     * @param  int  $dryRun  When true, log would-be breaches
-     *                       instead of dispatching events.
+     * @param  bool  $dryRun  When true, log would-be breaches
+     *                        instead of dispatching events.
      */
     public function __construct(
         public readonly bool $dryRun = false,
@@ -61,12 +69,18 @@ class CheckSlaBreaches implements ShouldQueue
         $now = Carbon::now();
         $breaches = 0;
 
-        // Stream reports that have a workflow + a current status.
-        // The query is bounded by the index on workflow_id.
+        // Only open, due rows are selected through the SLA composite index.
+        // A bounded null-deadline bootstrap keeps pre-migration rows moving
+        // without reintroducing a full table scan.
         Report::query()
             ->whereNotNull('workflow_id')
             ->whereNotNull('current_status_id')
-            ->chunkById(200, function ($reports) use ($now, &$breaches): void {
+            ->whereHas('status', static fn ($q) => $q->where('is_terminal', false))
+            ->where(function ($q) use ($now): void {
+                $q->where('sla_due_at', '<=', $now)->orWhereNull('sla_due_at');
+            })
+            ->limit(self::BOOTSTRAP_LIMIT)
+            ->chunkById(self::BATCH_SIZE, function ($reports) use ($now, &$breaches): void {
                 foreach ($reports as $report) {
                     $breaches += $this->checkReport($report, $now);
                 }
@@ -105,12 +119,33 @@ class CheckSlaBreaches implements ShouldQueue
             ->get();
 
         if ($transitions->isEmpty()) {
+            if ($report->sla_due_at !== null) {
+                $report->sla_due_at = null;
+                $report->saveQuietly();
+            }
+
             return 0;
         }
 
         $enteredAt = $this->enteredCurrentStateAt($report);
 
         if ($enteredAt === null) {
+            return 0;
+        }
+
+        $minSla = $transitions->min('sla_minutes');
+        $expectedDueAt = is_numeric($minSla) ? $enteredAt->copy()->addMinutes((int) $minSla) : null;
+
+        $sameDueAt = ($report->sla_due_at === null && $expectedDueAt === null)
+            || ($report->sla_due_at !== null && $expectedDueAt !== null
+                && Carbon::parse($report->sla_due_at)->equalTo($expectedDueAt));
+
+        if (! $sameDueAt) {
+            $report->sla_due_at = $expectedDueAt;
+            $report->saveQuietly();
+        }
+
+        if ($expectedDueAt !== null && $expectedDueAt->isFuture()) {
             return 0;
         }
 
@@ -143,14 +178,32 @@ class CheckSlaBreaches implements ShouldQueue
             return count($overdue);
         }
 
-        SlaBreached::dispatch(
-            reportId: $report->id,
-            currentStateCode: $currentState->code,
-            overdueTransitions: $overdue,
-            elapsedMinutes: $elapsedMinutes,
-        );
+        $newOverdue = [];
 
-        return count($overdue);
+        foreach ($overdue as $transition) {
+            $inserted = DB::table('workflow_sla_breaches')->insertOrIgnore([
+                'id' => (string) Str::uuid(),
+                'report_id' => $report->id,
+                'transition_id' => $transition['transition_id'],
+                'breached_at' => $now,
+                'payload' => json_encode($transition),
+            ]);
+
+            if ($inserted === 1) {
+                $newOverdue[] = $transition;
+            }
+        }
+
+        if ($newOverdue !== []) {
+            SlaBreached::dispatch(
+                reportId: $report->id,
+                currentStateCode: $currentState->code,
+                overdueTransitions: $newOverdue,
+                elapsedMinutes: $elapsedMinutes,
+            );
+        }
+
+        return count($newOverdue);
     }
 
     private function enteredCurrentStateAt(Report $report): ?Carbon
@@ -162,12 +215,12 @@ class CheckSlaBreaches implements ShouldQueue
             ->first();
 
         if ($row !== null && $row->created_at !== null) {
-            return $row->created_at;
+            return Carbon::parse($row->created_at);
         }
 
         // No history yet (e.g. the row was created in
         // `draft` and never transitioned). Use the report's
         // own created_at as the fallback anchor.
-        return $report->created_at;
+        return $report->created_at === null ? null : Carbon::parse($report->created_at);
     }
 }

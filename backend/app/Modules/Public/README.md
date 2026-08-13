@@ -11,6 +11,7 @@ Serves unauthenticated, privacy-safe platform statistics, heat-map data, and dep
 | `PublicStatsService` | Platform-wide totals (report count, AI classification %, median assignment time) |
 | `PublicHeatmapService` | Grid-bucketed report density for heat-map rendering |
 | `PublicDepartmentPerformanceService` | Per-department resolution rate and median resolution time |
+| `ProductAnalyticsService` | Bounded, PII-free resident journey event collection |
 | `PublicStatsController` | `GET /api/v1/public/stats` |
 | `PublicHeatmapController` | `GET /api/v1/public/heatmap` |
 | `PublicDepartmentPerformanceController` | `GET /api/v1/public/departments/performance` |
@@ -42,5 +43,6 @@ All three endpoints are cached server-side for 5 minutes (`CACHE_TTL_SECONDS = 3
 | GET | `/api/v1/public/stats` | `api.v1.public.stats` |
 | GET | `/api/v1/public/heatmap` | `api.v1.public.heatmap` |
 | GET | `/api/v1/public/departments/performance` | `api.v1.public.departments.performance` |
+| POST | `/api/v1/public/analytics/events` | `api.v1.public.analytics.events` |
 
 All three routes are throttled by the `public` rate limiter and require no authentication.

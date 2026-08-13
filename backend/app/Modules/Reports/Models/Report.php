@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Modules\Reports\Models;
 
 use App\Modules\Departments\Models\Department;
+use App\Modules\Media\Enums\MediaScanStatus;
+use App\Modules\Media\Models\Media;
 use App\Modules\Users\Models\User;
 use Database\Factories\Modules\Reports\Models\ReportFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * `reports` row per docs/04 §7.
@@ -33,6 +37,7 @@ use Illuminate\Support\Carbon;
  * @property string $current_status_id
  * @property string $priority_id
  * @property string|null $workflow_id
+ * @property int $workflow_version
  * @property string $location_id
  * @property string|null $assigned_to
  * @property string $title
@@ -45,7 +50,12 @@ use Illuminate\Support\Carbon;
  * @property bool $is_anonymous
  * @property bool $is_verified
  * @property Carbon|null $submitted_at
+ * @property Carbon|null $sla_due_at
  * @property Carbon|null $closed_at
+ * @property Carbon|null $resolved_at
+ * @property Carbon|null $verification_deadline_at
+ * @property string|null $merged_into
+ * @property Carbon|null $merged_at
  */
 class Report extends Model
 {
@@ -70,6 +80,16 @@ class Report extends Model
     protected $table = 'reports';
 
     /**
+     * Keep the in-memory value aligned with the database default so a report
+     * can be transitioned in the same request that creates it.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'workflow_version' => 1,
+    ];
+
+    /**
      * @var list<string>
      */
     protected $fillable = [
@@ -92,7 +112,10 @@ class Report extends Model
         'is_anonymous',
         'is_verified',
         'submitted_at',
+        'sla_due_at',
         'closed_at',
+        'merged_into',
+        'merged_at',
     ];
 
     /**
@@ -105,10 +128,15 @@ class Report extends Model
             'fraud_score' => 'float',
             'duplicate_score' => 'float',
             'mock_gps_score' => 'float',
+            'workflow_version' => 'integer',
             'is_anonymous' => 'boolean',
             'is_verified' => 'boolean',
             'submitted_at' => 'datetime',
+            'sla_due_at' => 'datetime',
             'closed_at' => 'datetime',
+            'resolved_at' => 'datetime',
+            'verification_deadline_at' => 'datetime',
+            'merged_at' => 'datetime',
         ];
     }
 
@@ -122,33 +150,38 @@ class Report extends Model
     }
 
     /**
-     * Generate the next tracking number for the current calendar
-     * year. Format: `CIV-YYYY-NNNNNN` (6-digit zero-padded
-     * per-year sequence). The DB-side `unique` constraint is
-     * the safety net; a race that returns the same number is
-     * recovered by the unique-violation retry in the service
-     * layer.
+     * Reserve the next tracking number for the current calendar year.
+     * The counter row is locked inside a transaction, so concurrent
+     * submissions cannot observe the same latest report and collide.
      */
     public static function nextTrackingNumber(): string
     {
         $year = (int) date('Y');
-        $prefix = "CIV-{$year}-";
-        $latest = static::query()
-            ->where('tracking_number', 'like', $prefix.'%')
-            ->orderByDesc('tracking_number')
-            ->value('tracking_number');
+        $next = DB::transaction(function () use ($year): int {
+            // `insertOrIgnore` safely bootstraps the year row when two
+            // first-ever submissions arrive at the same time.
+            DB::table('report_number_sequences')->insertOrIgnore([
+                'year' => $year,
+                'next_value' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
-        $next = 1;
+            $sequence = DB::table('report_number_sequences')
+                ->where('year', $year)
+                ->lockForUpdate()
+                ->first();
 
-        if (is_string($latest) && $latest !== '') {
-            $tail = substr($latest, strlen($prefix));
+            $rawNextValue = $sequence !== null ? $sequence->next_value : null;
+            $nextValue = is_numeric($rawNextValue) ? max(1, (int) $rawNextValue) : 1;
+            DB::table('report_number_sequences')
+                ->where('year', $year)
+                ->update(['next_value' => $nextValue + 1, 'updated_at' => now()]);
 
-            if (ctype_digit($tail)) {
-                $next = (int) $tail + 1;
-            }
-        }
+            return $nextValue;
+        });
 
-        return $prefix.str_pad((string) $next, 6, '0', STR_PAD_LEFT);
+        return "CIV-{$year}-".str_pad((string) $next, 6, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -157,6 +190,41 @@ class Report extends Model
     public function citizen(): BelongsTo
     {
         return $this->belongsTo(User::class, 'citizen_id');
+    }
+
+    /**
+     * Self-referencing FK to the canonical report this duplicate was
+     * merged into. Null when this report is not a merge duplicate.
+     *
+     * @return BelongsTo<Report, $this>
+     */
+    public function canonicalReport(): BelongsTo
+    {
+        return $this->belongsTo(Report::class, 'merged_into');
+    }
+
+    /**
+     * Citizen disputes of an incorrect merge. The active (open) dispute
+     * drives the citizen-facing merge-dispute UI.
+     *
+     * @return HasMany<ReportMergeDispute, $this>
+     */
+    public function mergeDisputes(): HasMany
+    {
+        return $this->hasMany(ReportMergeDispute::class, 'report_id');
+    }
+
+    /**
+     * The active merge dispute (open status), if any.
+     */
+    public function activeMergeDispute(): ?ReportMergeDispute
+    {
+        /** @var Collection<int, ReportMergeDispute> $disputes */
+        $disputes = $this->relationLoaded('mergeDisputes')
+            ? $this->mergeDisputes
+            : $this->mergeDisputes()->get();
+
+        return $disputes->firstWhere('status', 'open');
     }
 
     /**
@@ -205,6 +273,38 @@ class Report extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(ReportAssignment::class, 'report_id');
+    }
+
+    /**
+     * Assignments that are still live for the report: never reassigned
+     * away, never completed, never cancelled. List endpoints eager-load
+     * this narrow relation instead of the full `assignments` history so a
+     * page of rows cannot fan out into a long assignment trail per row.
+     *
+     * @return HasMany<ReportAssignment, $this>
+     */
+    public function activeAssignments(): HasMany
+    {
+        return $this->assignments()
+            ->whereNull('reassigned_at')
+            ->whereNull('completed_at')
+            ->where('task_status', '!=', ReportAssignment::TASK_STATUS_CANCELLED);
+    }
+
+    /**
+     * Evidence and proof media rows for this report. Only metadata lives
+     * here; the bytes are served from the configured disk through signed
+     * URLs. List endpoints use `withCount('media')` rather than loading
+     * the rows.
+     *
+     * @return HasMany<Media, $this>
+     */
+    public function media(): HasMany
+    {
+        // Quarantine rows remain attached for custody/recovery, but they are
+        // never report evidence until the scanner has released them CLEAN.
+        return $this->hasMany(Media::class, 'report_id')
+            ->where('scan_status', MediaScanStatus::CLEAN->value);
     }
 
     /**

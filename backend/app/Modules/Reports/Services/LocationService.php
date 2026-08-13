@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Reports\Services;
 
+use App\Modules\Departments\Models\Ward;
 use App\Modules\Reports\DTO\SubmitReportDto;
 use App\Modules\Reports\Models\Location;
 use App\Modules\Shared\Exceptions\ApiException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * LocationService per docs/11 §12.
@@ -35,9 +37,21 @@ class LocationService
         $this->assertAccuracy($dto->accuracy);
         $this->assertSpeed($dto->speed);
 
+        if ($dto->reporterLatitude !== null && $dto->reporterLongitude !== null) {
+            $this->assertLatLng($dto->reporterLatitude, $dto->reporterLongitude);
+        }
+        $this->assertAccuracy($dto->reporterAccuracy);
+
         $location = new Location;
         $location->latitude = $dto->latitude;
         $location->longitude = $dto->longitude;
+        $location->reporter_latitude = $dto->reporterLatitude;
+        $location->reporter_longitude = $dto->reporterLongitude;
+        $location->reporter_accuracy = $dto->reporterAccuracy;
+        $location->reporter_gps_provider = $dto->reporterGpsProvider;
+        $location->reporter_captured_at = $dto->reporterCapturedAt === null
+            ? null
+            : Carbon::parse($dto->reporterCapturedAt->format(DATE_ATOM));
         $location->altitude = $dto->altitude;
         $location->accuracy = $dto->accuracy;
         $location->heading = $dto->heading;
@@ -49,7 +63,37 @@ class LocationService
         $location->address = $this->cleanAddress($dto->address);
         $location->save();
 
+        $this->enrichJurisdiction($location);
+
         return $location;
+    }
+
+    /**
+     * Resolve ward and district from authoritative GIS boundaries when the
+     * MySQL spatial backend is available. Unresolved points remain explicit
+     * nulls and can be routed to jurisdiction review.
+     */
+    private function enrichJurisdiction(Location $location): void
+    {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return;
+        }
+
+        $ward = Ward::query()
+            ->with('city')
+            ->where('active', true)
+            ->whereNotNull('boundary_polygon')
+            ->whereRaw('ST_Contains(boundary_polygon, ST_SRID(POINT(?, ?), 4326))', [$location->longitude, $location->latitude])
+            ->first();
+
+        if ($ward === null) {
+            return;
+        }
+
+        $location->ward_id = (string) $ward->id;
+        $districtId = $ward->city?->district_id;
+        $location->district_id = is_string($districtId) ? $districtId : null;
+        $location->saveQuietly();
     }
 
     private function assertLatLng(float $lat, float $lng): void

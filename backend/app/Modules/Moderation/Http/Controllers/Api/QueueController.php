@@ -6,7 +6,7 @@ namespace App\Modules\Moderation\Http\Controllers\Api;
 
 use App\Modules\Moderation\Http\Resources\ModeratorReportDetailResource;
 use App\Modules\Moderation\Services\ModerationQueueService;
-use App\Modules\Reports\Http\Resources\ReportResource;
+use App\Modules\Reports\Http\Resources\ReportListResource;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Repositories\ReportRepository;
 use App\Modules\Shared\Http\Controllers\BaseController;
@@ -39,7 +39,7 @@ class QueueController extends BaseController
         );
 
         return $this->respond([
-            'items' => ReportResource::collection($paginator->items())->resolve(),
+            'items' => ReportListResource::collection($paginator->items())->resolve(),
             'next_cursor' => $paginator->nextCursor()?->encode(),
             'prev_cursor' => $paginator->previousCursor()?->encode(),
         ]);
@@ -63,7 +63,7 @@ class QueueController extends BaseController
         );
 
         return $this->respond([
-            'items' => ReportResource::collection($paginator->items())->resolve(),
+            'items' => ReportListResource::collection($paginator->items())->resolve(),
             'next_cursor' => $paginator->nextCursor()?->encode(),
             'prev_cursor' => $paginator->previousCursor()?->encode(),
         ]);
@@ -87,7 +87,7 @@ class QueueController extends BaseController
         );
 
         return $this->respond([
-            'items' => ReportResource::collection($paginator->items())->resolve(),
+            'items' => ReportListResource::collection($paginator->items())->resolve(),
             'next_cursor' => $paginator->nextCursor()?->encode(),
             'prev_cursor' => $paginator->previousCursor()?->encode(),
         ]);

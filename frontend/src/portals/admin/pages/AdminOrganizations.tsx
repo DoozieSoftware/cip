@@ -7,7 +7,7 @@ import {
   useDeleteOrganization,
   useUpdateOrganization,
 } from '../api/client';
-import { Button, Dialog, EmptyState, Spinner, Card, CardBody } from '../../moderator/design';
+import { Button, Dialog, EmptyState, Spinner, Card, CardBody } from '../../../shared/ui';
 import { IconBuilding, IconPlus, IconPencil, IconTrash } from '@tabler/icons-react';
 
 const blank: AdminOrganizationInput = {
@@ -74,12 +74,12 @@ function OrganizationForm({
           onChange={(value) => setDraft({ ...draft, storage_quota_mb: Number(value) })}
         />
       </div>
-      <label className="flex items-center gap-2 text-sm text-[#1d1d1b]">
+      <label className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
         <input
           type="checkbox"
           checked={draft.active}
           onChange={(event) => setDraft({ ...draft, active: event.target.checked })}
-          className="h-4 w-4 rounded border-[#d0cec8] text-[#1d1d1b] focus:ring-[#1d1d1b]"
+          className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-ink)] focus:ring-[var(--color-ink)]"
         />
         Active
       </label>
@@ -110,16 +110,16 @@ function Field({
 }): JSX.Element {
   return (
     <label className="block text-sm">
-      <span className="font-medium text-[#1d1d1b]">
+      <span className="font-medium text-[var(--color-ink)]">
         {label}
-        {required ? <span className="text-[#a42f29]"> *</span> : ''}
+        {required ? <span className="text-[var(--color-danger)]"> *</span> : ''}
       </span>
       <input
         type={type}
         value={value}
         required={required}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+        className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
       />
     </label>
   );
@@ -147,8 +147,8 @@ export default function AdminOrganizations(): JSX.Element {
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">Organizations</h1>
-          <p className="mt-0.5 text-sm text-[#6f6e69]">
+          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">Organizations</h1>
+          <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">
             Manage tenant identity, domains, quotas, and activation.
           </p>
         </div>
@@ -178,24 +178,24 @@ export default function AdminOrganizations(): JSX.Element {
               <CardBody>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#efeee9]">
-                      <IconBuilding className="h-4 w-4 text-[#6f6e69]" stroke={1.7} />
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+                      <IconBuilding className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.7} />
                     </span>
                     <div>
-                      <h2 className="text-sm font-semibold text-[#1d1d1b]">{item.name}</h2>
-                      <p className="text-xs text-[#85847f]">
+                      <h2 className="text-sm font-semibold text-[var(--color-ink)]">{item.name}</h2>
+                      <p className="text-xs text-[var(--color-text-tertiary)]">
                         {item.code}
                         {item.domain ? ` - ${item.domain}` : ''}
                       </p>
                     </div>
                   </div>
                   <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${item.active ? 'bg-[#edf7f0] text-[#256b45]' : 'bg-[#efeee9] text-[#6f6e69]'}`}
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${item.active ? 'bg-[#edf7f0] text-[var(--color-success)]' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'}`}
                   >
                     {item.active ? 'Active' : 'Inactive'}
                   </span>
                 </div>
-                <p className="mt-3 text-sm text-[#6f6e69]">
+                <p className="mt-3 text-sm text-[var(--color-text-secondary)]">
                   Storage quota: {item.storage_quota_mb.toLocaleString()} MB
                 </p>
                 <div className="mt-3 flex justify-end gap-2">

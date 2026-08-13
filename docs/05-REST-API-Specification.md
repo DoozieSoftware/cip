@@ -21,7 +21,7 @@ This document defines every REST API exposed by the Civic Intelligence Platform.
 
 The API shall serve as the single integration interface for:
 
-* Flutter Mobile App
+* React Citizen PWA
 * Moderator Portal
 * Department Portal
 * Super Admin Portal

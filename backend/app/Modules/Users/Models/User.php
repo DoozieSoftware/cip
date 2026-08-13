@@ -44,8 +44,11 @@ use Spatie\Permission\Traits\HasRoles;
  *
  * @property string $id
  * @property string|null $name
+ * @property string|null $preferred_name
  * @property string $mobile
  * @property string|null $email
+ * @property string|null $preferred_locale
+ * @property string $notification_channel
  * @property string|null $password
  * @property CarbonInterface|null $otp_verified_at
  * @property CarbonInterface|null $last_login_at
@@ -80,8 +83,11 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'preferred_name',
         'mobile',
         'email',
+        'preferred_locale',
+        'notification_channel',
         'password',
         'anonymous_enabled',
         'status',

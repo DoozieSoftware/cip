@@ -9,12 +9,12 @@ afterEach(() => {
 });
 
 describe('slaInfo', () => {
-  it('returns null when the SLA is not set', () => {
+  it('returns null when the Due target is not set', () => {
     expect(slaInfo(null, null)).toBeNull();
     expect(slaInfo('2026-08-01T10:00:00Z', null)).toBeNull();
   });
 
-  it('returns null when the SLA is set but created_at is missing', () => {
+  it('returns null when the Due target is set but created_at is missing', () => {
     expect(slaInfo(null, 120)).toBeNull();
   });
 
@@ -22,7 +22,7 @@ describe('slaInfo', () => {
     expect(slaInfo('not-a-date', 120)).toBeNull();
   });
 
-  it('marks a report as overdue after the SLA window has passed', () => {
+  it('marks a report as overdue after the Due target window has passed', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-01T12:00:00Z'));
     const info = slaInfo('2026-08-01T10:00:00Z', 60);
@@ -32,7 +32,7 @@ describe('slaInfo', () => {
     vi.useRealTimers();
   });
 
-  it('marks a report as on time inside the SLA window', () => {
+  it('marks a report as on time inside the Due target window', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-01T10:30:00Z'));
     const info = slaInfo('2026-08-01T10:00:00Z', 60);
@@ -42,7 +42,7 @@ describe('slaInfo', () => {
 });
 
 describe('SlaBadge', () => {
-  it('renders nothing when the report carries no SLA data', () => {
+  it('renders nothing when the report carries no Due target data', () => {
     const { container } = render(
       <SlaBadge
         report={{ created_at: null, department_sla_minutes: null, current_status_code: null }}
@@ -67,7 +67,7 @@ describe('SlaBadge', () => {
     vi.useRealTimers();
   });
 
-  it('renders a due badge for a report inside its SLA window', () => {
+  it('renders a due badge for a report inside its Due target window', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-01T10:30:00Z'));
     render(

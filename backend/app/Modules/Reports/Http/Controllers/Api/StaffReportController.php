@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Reports\Http\Controllers\Api;
 
+use App\Modules\Reports\Http\Resources\ReportListResource;
 use App\Modules\Reports\Http\Resources\ReportResource;
 use App\Modules\Reports\Http\Resources\ReportStatusHistoryResource;
 use App\Modules\Reports\Models\Report;
@@ -14,6 +15,7 @@ use App\Modules\Shared\Support\DepartmentScope;
 use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\CursorPaginator;
 
 class StaffReportController extends BaseController
 {
@@ -52,12 +54,21 @@ class StaffReportController extends BaseController
             $filters,
             perPage: (int) $request->query('per_page', 25),
             departmentScope: $scope,
+            cursor: is_string($request->query('cursor')) ? $request->query('cursor') : null,
         );
 
-        $items = $page->getCollection()
-            ->map(static fn (Report $r): array => (new ReportResource($r))->toArray($request))
+        $items = ($page instanceof CursorPaginator ? collect($page->items()) : $page->getCollection())
+            ->map(static fn (Report $r): array => (new ReportListResource($r))->toArray($request))
             ->values()
             ->all();
+
+        if ($page instanceof CursorPaginator) {
+            return $this->respond($items, 'OK', 200, [
+                'per_page' => $page->perPage(),
+                'next_cursor' => $page->nextCursor()?->encode(),
+                'prev_cursor' => $page->previousCursor()?->encode(),
+            ]);
+        }
 
         return $this->respond($items, 'OK', 200, [
             'page' => $page->currentPage(),

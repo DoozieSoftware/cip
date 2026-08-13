@@ -14,6 +14,8 @@ export type ReportStatusCode =
   | 'accepted'
   | 'in_progress'
   | 'resolved'
+  | 'resolved_pending_verification'
+  | 'reopened'
   | 'verified'
   | 'closed'
   | 'rejected'
@@ -107,6 +109,7 @@ export interface GeoPoint {
 export interface ReportListItem {
   id: string;
   tracking_number: string;
+  workflow_version?: number;
   title: string;
   category: Category | null;
   department: Department | null;
@@ -123,6 +126,7 @@ export interface ReportListItem {
 }
 
 export interface ReportDetail extends ReportListItem {
+  workflow_version: number;
   description: string;
   citizen_id: string;
   location: GeoPoint | null;
@@ -159,6 +163,7 @@ export interface ReviewPayload {
   category_id?: string;
   department_id?: string;
   override_ai?: boolean;
+  expected_workflow_version?: number;
 }
 
 export interface MergePayload {
@@ -168,6 +173,7 @@ export interface MergePayload {
   duplicate_report_ids: string[];
   reason_code?: string;
   remarks?: string;
+  expected_workflow_version?: number;
 }
 
 export interface AnalyticsSummary {

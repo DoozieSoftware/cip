@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Modules\AI\Jobs\AiPipelineOrchestrator;
+use App\Modules\AI\Listeners\ReportEvidenceReadyListener;
 use App\Modules\AI\Listeners\ReportSubmittedListener;
+use App\Modules\Reports\Events\ReportEvidenceReady;
 use App\Modules\Reports\Events\ReportStatusChanged;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
@@ -32,7 +34,7 @@ beforeEach(function (): void {
     (new PromptsSeeder)->run();
 });
 
-it('dispatches AiPipelineOrchestrator when a report transitions to ai_processing', function (): void {
+it('does not dispatch AI merely because a report transitions to ai_processing', function (): void {
     $report = Report::factory()->create();
     $aiProcessing = ReportStatus::query()->where('code', 'ai_processing')->firstOrFail();
     $report->update(['current_status_id' => $aiProcessing->id]);
@@ -45,8 +47,22 @@ it('dispatches AiPipelineOrchestrator when a report transitions to ai_processing
         reason: 'submit',
     );
 
+    Bus::assertNotDispatched(AiPipelineOrchestrator::class);
+});
+
+it('dispatches AI only from the evidence-ready revision boundary', function (): void {
+    $report = Report::factory()->create();
+    $aiProcessing = ReportStatus::query()->where('code', 'ai_processing')->firstOrFail();
+    $report->update(['current_status_id' => $aiProcessing->id]);
+
+    app(ReportEvidenceReadyListener::class)->handle(new ReportEvidenceReady(
+        $report->id,
+        hash('sha256', 'evidence'),
+        [],
+    ));
+
     Bus::assertDispatched(AiPipelineOrchestrator::class, function (AiPipelineOrchestrator $job) use ($report): bool {
-        return $job->reportId === $report->id;
+        return $job->reportId === $report->id && $job->evidenceRevision === hash('sha256', 'evidence');
     });
 });
 

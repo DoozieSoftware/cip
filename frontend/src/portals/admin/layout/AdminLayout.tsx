@@ -1,6 +1,6 @@
 import { type JSX } from 'react';
 import { useAuth } from '../../../auth/AuthContext';
-import { SidebarLayout, type SidebarNavItem } from '../../moderator/design';
+import { SidebarLayout, type SidebarNavItem } from '../../../shared/ui';
 
 const NAV: SidebarNavItem[] = [
   {
@@ -108,13 +108,13 @@ export function AdminLayout() {
       }}
       headerContent={
         <div className="flex items-center gap-3 text-xs">
-          <span className="font-semibold text-[#1d1d1b]">Super Administration</span>
-          <span className="h-4 w-px bg-[#d9d7d0]" />
-          <span className="inline-flex items-center gap-1.5 text-[#6f6e69]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#226b46]" />
+          <span className="font-semibold text-[var(--color-ink)]">Super Administration</span>
+          <span className="h-4 w-px bg-[var(--color-border-faint)]" />
+          <span className="inline-flex items-center gap-1.5 text-[var(--color-text-secondary)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />
             System operational
           </span>
-          <span className="rounded border border-[#d0cec8] bg-[#efeee9] px-2 py-0.5 font-medium text-[#6f6e69]">
+          <span className="rounded border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-0.5 font-medium text-[var(--color-text-secondary)]">
             LOCAL
           </span>
         </div>

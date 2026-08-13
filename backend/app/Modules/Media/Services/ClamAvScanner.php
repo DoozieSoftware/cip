@@ -7,6 +7,8 @@ namespace App\Modules\Media\Services;
 use App\Modules\Media\Contracts\VirusScanServiceInterface;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
+use Symfony\Component\Process\Process;
+use Throwable;
 
 /**
  * ClamAV-backed virus scanner.
@@ -73,5 +75,29 @@ class ClamAvScanner implements VirusScanServiceInterface
     public function name(): string
     {
         return 'clamav';
+    }
+
+    public function healthCheck(): bool
+    {
+        try {
+            // `--version` proves the binary is executable. A no-op scan of
+            // /dev/null additionally proves that the signature database can
+            // be opened; a missing/invalid database exits non-zero.
+            $version = new Process([$this->binary, '--version']);
+            $version->setTimeout(5);
+            $version->run();
+
+            if (! $version->isSuccessful()) {
+                return false;
+            }
+
+            $probe = new Process([$this->binary, '--no-summary', '--stdout', '/dev/null']);
+            $probe->setTimeout(10);
+            $probe->run();
+
+            return $probe->getExitCode() === 0;
+        } catch (Throwable) {
+            return false;
+        }
     }
 }

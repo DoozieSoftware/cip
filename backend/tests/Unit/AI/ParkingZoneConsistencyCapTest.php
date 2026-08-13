@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Modules\AI\Jobs\AiPipelineOrchestrator;
+use App\Modules\AI\Services\AiResponsePolicy;
 use App\Modules\AI\ValueObjects\AiResponse;
 use App\Modules\Reports\Models\Report;
 use Tests\TestCase;
@@ -32,13 +32,7 @@ function capParking(AiResponse $response, string $title, string $description = '
     $report->title = $title;
     $report->description = $description;
 
-    $orchestrator = new AiPipelineOrchestrator('00000000-0000-0000-0000-000000000000');
-    $method = new ReflectionMethod($orchestrator, 'capUnverifiedParkingZoneClaim');
-
-    /** @var AiResponse $result */
-    $result = $method->invoke($orchestrator, $response, $report);
-
-    return $result;
+    return (new AiResponsePolicy)->capUnverifiedParkingZoneClaim($response, $report);
 }
 
 it('caps non-parking-zone claims when the legal restriction is not visible', function (): void {

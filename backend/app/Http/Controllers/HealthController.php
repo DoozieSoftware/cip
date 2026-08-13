@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Modules\Media\Contracts\VirusScanServiceInterface;
 use App\Modules\Shared\Http\Controllers\BaseController;
+use App\Modules\Shared\Services\PlatformHeartbeatService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
@@ -15,6 +17,8 @@ use Throwable;
 
 class HealthController extends BaseController
 {
+    public function __construct(private readonly PlatformHeartbeatService $heartbeats) {}
+
     #[OA\Get(
         path: '/api/v1/health',
         operationId: 'health.live',
@@ -109,6 +113,9 @@ class HealthController extends BaseController
             'redis' => $this->checkRedis(),
             'storage' => $this->checkStorage(),
             'queue' => $this->checkQueue(),
+            'worker' => $this->heartbeats->workerStatus(),
+            'scheduler' => $this->heartbeats->schedulerStatus(),
+            'scanner' => $this->checkScanner(),
         ];
 
         $ok = ! in_array(false, array_column($checks, 'ok'), true);
@@ -141,12 +148,63 @@ class HealthController extends BaseController
      */
     private function checkRedis(): array
     {
+        $cache = self::asString(config('cache.default'), 'database');
+        $queue = self::asString(config('queue.default'), 'sync');
+
+        // Redis is a required production dependency for tagged routing
+        // caches and distributed locks. Local/CI database and array stores
+        // intentionally skip this probe so their readiness is meaningful.
+        if ($cache !== 'redis' && $queue !== 'redis') {
+            return ['ok' => true, 'message' => "not required (cache:{$cache};queue:{$queue})"];
+        }
+
         try {
             Redis::ping();
 
-            return ['ok' => true, 'message' => 'connected'];
+            $store = cache()->store();
+            $key = 'cip:readiness:'.bin2hex(random_bytes(8));
+            $store->put($key, 'ok', 10);
+            $value = $store->get($key);
+            $store->forget($key);
+
+            if ($value !== 'ok') {
+                return ['ok' => false, 'message' => 'connected but cache round-trip failed'];
+            }
+
+            return ['ok' => true, 'message' => 'connected;cache round-trip ok'];
         } catch (Throwable $e) {
             return ['ok' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * @return array{ok: bool, message: string}
+     */
+    private function checkScanner(): array
+    {
+        $driver = self::asString(config('cip.media.scanner'), 'clamav');
+
+        if ($driver === 'none') {
+            $environment = self::asString(config('app.env'), 'production');
+
+            return [
+                'ok' => $environment !== 'production',
+                'message' => $environment === 'production'
+                    ? 'scanner disabled in production'
+                    : 'scanner disabled (development only)',
+            ];
+        }
+
+        try {
+            $scanner = app(VirusScanServiceInterface::class);
+            $ok = $scanner->healthCheck();
+
+            return [
+                'ok' => $ok,
+                'message' => $ok ? 'clamav executable and signatures available' : 'clamav executable/signature probe failed',
+            ];
+        } catch (Throwable $e) {
+            return ['ok' => false, 'message' => 'scanner probe failed: '.$e->getMessage()];
         }
     }
 

@@ -7,7 +7,9 @@ namespace App\Modules\Reports\Repositories;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportAssignment;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Read-side repository for the Super Admin cross-department report view.
@@ -17,30 +19,42 @@ use Illuminate\Pagination\LengthAwarePaginator;
  */
 class AdminReportRepository
 {
-    public const MAX_PER_PAGE = 500;
+    public const MAX_PER_PAGE = 100;
 
     /**
      * @param  array<string, mixed>  $filters
-     * @return LengthAwarePaginator<int, Report>
+     * @return LengthAwarePaginator<int, Report>|CursorPaginator<int, Report>
      */
-    public function search(array $filters, int $perPage = 25): LengthAwarePaginator
+    public function search(array $filters, int $perPage = 25, ?string $cursor = null): LengthAwarePaginator|CursorPaginator
     {
-        $query = Report::query()->with([
-            'reportType',
-            'status',
-            'priority',
-            'department',
-            'location',
-            'assignments.department',
-            'assignments.officer',
-        ]);
+        $query = Report::query()
+            ->with([
+                'reportType',
+                'status',
+                'priority',
+                'department',
+                'location',
+                'activeAssignments.department',
+                'activeAssignments.officer',
+            ])
+            ->withCount('media');
 
         $this->applyFilters($query, $filters);
+
+        $perPage = max(1, min(self::MAX_PER_PAGE, $perPage));
+
+        if ($cursor !== null) {
+            return $query
+                ->orderByDesc('submitted_at')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->cursorPaginate($perPage, ['*'], 'cursor', $cursor);
+        }
 
         return $query
             ->orderByDesc('submitted_at')
             ->orderByDesc('created_at')
-            ->paginate(max(1, min(self::MAX_PER_PAGE, $perPage)));
+            ->paginate($perPage);
     }
 
     /**
@@ -118,11 +132,16 @@ class AdminReportRepository
         $search = $this->stringFilter($filters, 'q', 'search');
 
         if ($search !== null) {
-            $term = '%'.$search.'%';
-            $query->where(function (Builder $searchQuery) use ($term): void {
-                $searchQuery->where('tracking_number', 'like', $term)
-                    ->orWhere('title', 'like', $term)
-                    ->orWhere('description', 'like', $term);
+            $query->where(function (Builder $searchQuery) use ($search): void {
+                $searchQuery->where('tracking_number', 'like', $search.'%');
+
+                if (DB::getDriverName() === 'mysql') {
+                    $searchQuery->orWhereFullText(['title', 'description'], $search);
+                } else {
+                    $term = '%'.$search.'%';
+                    $searchQuery->orWhere('title', 'like', $term)
+                        ->orWhere('description', 'like', $term);
+                }
             });
         }
     }

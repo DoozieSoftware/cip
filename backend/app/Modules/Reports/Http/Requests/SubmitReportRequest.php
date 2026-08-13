@@ -39,11 +39,18 @@ class SubmitReportRequest extends FormRequest
         return [
             'report_type_id' => ['required', 'uuid', 'exists:report_types,id'],
             'title' => ['required', 'string', 'min:5', 'max:255'],
-            'description' => ['required', 'string', 'min:10', 'max:5000'],
+            // A photo plus a short issue title is sufficient for low-literacy
+            // and time-sensitive reports; text detail remains optional.
+            'description' => ['nullable', 'string', 'min:10', 'max:5000'],
             'is_anonymous' => ['nullable', 'boolean'],
 
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'reporter_latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'reporter_longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'reporter_accuracy' => ['nullable', 'numeric', new LocationAccuracy],
+            'reporter_gps_provider' => ['nullable', 'string', 'max:64'],
+            'reporter_captured_at' => ['nullable', 'date'],
             'accuracy' => ['nullable', 'numeric', new LocationAccuracy],
             'altitude' => ['nullable', 'numeric'],
             'heading' => ['nullable', 'numeric', 'between:0,360'],

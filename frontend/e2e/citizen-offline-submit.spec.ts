@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { installCitizenSession, TEST_CITIZEN_ID } from './helpers/citizen-session';
 
 /**
  * T-M13-024 — Citizen PWA full offline submission E2E.
@@ -27,6 +28,10 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('citizen — offline submission (T-M13-024)', () => {
+  test.beforeEach(async ({ page }) => {
+    await installCitizenSession(page);
+  });
+
   test('a report enqueued through the real singleton is delivered when queue:drain fires', async ({
     page,
   }) => {
@@ -53,7 +58,7 @@ test.describe('citizen — offline submission (T-M13-024)', () => {
       }
       await route.continue();
     });
-    await page.route('**/api/v1/reports/*/submit', async (route) => {
+    await page.route('**/api/v1/reports/*/finalize', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -71,14 +76,14 @@ test.describe('citizen — offline submission (T-M13-024)', () => {
     // Enqueue through the REAL singleton the running app created on
     // mount (CitizenApp's OfflineBridge already called getQueue() and
     // registerOfflineQueueRetry() by the time the page is interactive).
-    const initialSize = await page.evaluate(async () => {
+    const initialSize = await page.evaluate(async (citizenId) => {
       const mod = (await import('/src/portals/citizen/offline/queue.ts')) as {
-        getQueue: () => {
+        getQueue: (ownerId: string) => {
           enqueue: (item: unknown) => Promise<void>;
           size: () => Promise<number>;
         };
       };
-      const q = mod.getQueue();
+      const q = mod.getQueue(citizenId);
       await q.enqueue({
         kind: 'report.create',
         payload: {
@@ -90,7 +95,7 @@ test.describe('citizen — offline submission (T-M13-024)', () => {
         },
       });
       return q.size();
-    });
+    }, TEST_CITIZEN_ID);
     expect(initialSize).toBe(1);
 
     // Simulate the service worker telling every open client to drain —
@@ -105,14 +110,14 @@ test.describe('citizen — offline submission (T-M13-024)', () => {
     // submitReportPayload, which makes the intercepted network calls.
     await expect
       .poll(async () =>
-        page.evaluate(async () => {
+        page.evaluate(async (citizenId) => {
           const mod = (await import('/src/portals/citizen/offline/queue.ts')) as {
-            getQueue: () => { size: () => Promise<number> };
+            getQueue: (ownerId: string) => { size: () => Promise<number> };
           };
-          const q = mod.getQueue();
+          const q = mod.getQueue(citizenId);
 
           return q.size();
-        }),
+        }, TEST_CITIZEN_ID),
       )
       .toBe(0);
 

@@ -1,0 +1,13 @@
+{
+  "exceptions": [
+    {
+      "id": "GHSA-fgmj-fm8m-jvvx",
+      "package": "echarts",
+      "ecosystem": "npm",
+      "severity": "moderate",
+      "expires_on": "2026-09-30",
+      "owner": "frontend-platform",
+      "reason": "The fixed ECharts release is a major upgrade. Keep the current version temporarily while the chart option and renderer compatibility pass is completed; npm audit still blocks high and critical findings."
+    }
+  ]
+}

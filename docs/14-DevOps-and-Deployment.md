@@ -702,6 +702,13 @@ Deploy (cPanel via rsync)
 
 Deployment blocked on failure.
 
+The CI workflow also runs nightly at midnight IST. Nightly runs keep MySQL 8.4
+and Redis isolated as GitHub Actions services, execute the complete Pest and
+Vitest suites, build the production frontend, and run the critical citizen
+Playwright journey in Chromium. Pull requests and branch pushes retain the
+changed-test fast path, with a full-suite fallback when application source is
+changed without a corresponding test file.
+
 ---
 
 # 30. Static Analysis
@@ -993,6 +1000,20 @@ If ambiguity exists, implementation shall stop and request clarification rather 
 ---
 
 # 42. Architecture Compliance Checklist
+
+## 43. Frontend source-map policy
+
+Production Vite builds do not publish JavaScript or CSS source maps by default.
+The CI build runs `npm run check:production-sourcemaps` and fails if a `.map`
+artifact or `sourceMappingURL` reference is present in `frontend/dist`.
+
+Source maps may be enabled only for an explicitly approved local/debug build:
+
+```bash
+CIP_PUBLIC_SOURCEMAP=1 npm run build
+```
+
+Never deploy that debug output to the public web root.
 
 Every pull request shall verify
 

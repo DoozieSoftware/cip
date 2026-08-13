@@ -1,10 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiRequest, type ApiEnvelope } from '../../../auth/api';
+import { requestEnvelope } from '../../../shared/api/client';
+import { apiRequest } from '../../../auth/api';
 
 export interface PublicStats {
   total_reports: number;
   ai_classified_percent: number;
   median_assign_seconds: number | null;
+  generated_at?: string;
+  definitions?: Record<string, string>;
+  cache_ttl_seconds?: number;
 }
 
 export interface HeatmapPoint {
@@ -35,8 +39,20 @@ export function usePublicStats() {
   return useQuery({
     queryKey: ['public', 'stats'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<PublicStats>>('/public/stats');
-      return res.data;
+      const envelope = await requestEnvelope<PublicStats>('/public/stats');
+      return {
+        ...envelope.data,
+        generated_at:
+          typeof envelope.meta?.generated_at === 'string' ? envelope.meta.generated_at : undefined,
+        definitions:
+          envelope.meta?.definitions && typeof envelope.meta.definitions === 'object'
+            ? (envelope.meta.definitions as Record<string, string>)
+            : undefined,
+        cache_ttl_seconds:
+          typeof envelope.meta?.cache_ttl_seconds === 'number'
+            ? envelope.meta.cache_ttl_seconds
+            : undefined,
+      };
     },
     staleTime: FIVE_MINUTES,
   });
@@ -46,8 +62,9 @@ export function usePublicHeatmap() {
   return useQuery({
     queryKey: ['public', 'heatmap'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<{ points: HeatmapPoint[] }>>('/public/heatmap');
-      return res.data.points;
+      const response = await apiRequest<{ data: { points: HeatmapPoint[] } }>('/public/heatmap');
+      const data = response.data;
+      return data.points;
     },
     staleTime: FIVE_MINUTES,
   });
@@ -57,10 +74,11 @@ export function usePublicDepartmentPerformance() {
   return useQuery({
     queryKey: ['public', 'departments', 'performance'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<{ departments: DepartmentPerformance[] }>>(
+      const response = await apiRequest<{ data: { departments: DepartmentPerformance[] } }>(
         '/public/departments/performance',
       );
-      return res.data.departments;
+      const data = response.data;
+      return data.departments;
     },
     staleTime: FIVE_MINUTES,
   });

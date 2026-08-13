@@ -5,19 +5,17 @@ declare(strict_types=1);
 namespace App\Modules\Media\Services;
 
 use App\Modules\Media\Contracts\VirusScanServiceInterface;
-use App\Modules\Media\Events\ReportMediaUploaded;
+use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Media\Jobs\ComputeHashesJob;
 use App\Modules\Media\Jobs\ExtractVideoMetadataJob;
 use App\Modules\Media\Jobs\GenerateThumbnailJob;
 use App\Modules\Media\Models\Media;
+use App\Modules\Media\Repositories\MediaQuarantineRepository;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportAssignment;
 use App\Modules\Shared\Enums\ErrorCode;
 use App\Modules\Shared\Exceptions\ApiException;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
-use Throwable;
 
 /**
  * Owns the write side of the M5 media pipeline.
@@ -68,14 +66,32 @@ class MediaService
 
     public const VIDEO_MAX_DURATION = 300;
 
+    private readonly MediaQuarantineService $quarantine;
+
     public function __construct(
         private readonly MimeValidator $mimeValidator,
-        private readonly VirusScanServiceInterface $scanner,
-    ) {}
+        VirusScanServiceInterface $scanner,
+        ?MediaQuarantineService $quarantine = null,
+    ) {
+        // Keep the scanner argument as the stable construction seam used by
+        // module tests while production DI resolves the full quarantine
+        // service and its repository/custody dependencies.
+        $this->quarantine = $quarantine ?? new MediaQuarantineService(
+            $scanner,
+            app(ChainOfCustodyWriter::class),
+            app(MediaQuarantineRepository::class),
+        );
+    }
 
-    public function uploadPhoto(string $reportId, UploadedFile $file, string $uploaderId, string $role = 'evidence'): Media
-    {
-        return $this->upload($reportId, $file, $uploaderId, 'PHOTO', null, $role);
+    public function uploadPhoto(
+        string $reportId,
+        UploadedFile $file,
+        string $uploaderId,
+        string $role = 'evidence',
+        ?string $assignmentId = null,
+        ?string $departmentId = null,
+    ): Media {
+        return $this->upload($reportId, $file, $uploaderId, 'PHOTO', null, $role, $assignmentId, $departmentId);
     }
 
     /**
@@ -90,9 +106,15 @@ class MediaService
         return $this->upload($reportId, $file, $uploaderId, 'VIDEO', $hints);
     }
 
-    public function uploadDocument(string $reportId, UploadedFile $file, string $uploaderId, string $role = 'evidence'): Media
-    {
-        return $this->upload($reportId, $file, $uploaderId, 'DOCUMENT', null, $role);
+    public function uploadDocument(
+        string $reportId,
+        UploadedFile $file,
+        string $uploaderId,
+        string $role = 'evidence',
+        ?string $assignmentId = null,
+        ?string $departmentId = null,
+    ): Media {
+        return $this->upload($reportId, $file, $uploaderId, 'DOCUMENT', null, $role, $assignmentId, $departmentId);
     }
 
     /**
@@ -101,26 +123,33 @@ class MediaService
      *
      * @param  array<string, int>|null  $hints
      */
-    private function upload(string $reportId, UploadedFile $file, string $uploaderId, string $type, ?array $hints = null, string $role = 'evidence'): Media
-    {
+    private function upload(
+        string $reportId,
+        UploadedFile $file,
+        string $uploaderId,
+        string $type,
+        ?array $hints = null,
+        string $role = 'evidence',
+        ?string $assignmentId = null,
+        ?string $departmentId = null,
+    ): Media {
         $this->mimeValidator->validate($file, $type);
 
         $this->assertReportExists($reportId);
-        $this->assertCountUnderLimit($reportId, $type, $role);
+        $this->assertOwnershipScope($reportId, $role, $assignmentId, $departmentId);
+        $this->assertCountUnderLimit($reportId, $type, $role, $assignmentId);
         $this->assertSizeUnderLimit($file, $type);
 
-        $clean = $this->scanner->scan($file->getRealPath() ?: '');
-
-        if (! $clean) {
-            throw new ApiException(
-                ErrorCode::VALIDATION_FAILED->value,
-                'Uploaded file failed the virus scan and was rejected.',
-                422,
-                ['scanner' => $this->scanner->name()],
-            );
-        }
-
-        $media = $this->persist($reportId, $file, $uploaderId, $type, $hints, $role);
+        $media = $this->quarantine->ingest(
+            $reportId,
+            $file,
+            $uploaderId,
+            $type,
+            $hints,
+            $role,
+            $assignmentId,
+            $departmentId,
+        );
 
         // Dispatch the post-processing jobs.
         ComputeHashesJob::dispatch($media->id);
@@ -133,93 +162,7 @@ class MediaService
             ExtractVideoMetadataJob::dispatch($media->id);
         }
 
-        // Vision-classifiable evidence just landed. The AI pipeline
-        // may already be waiting on this exact asset (report enters
-        // `ai_processing` before the upload in the standard submit
-        // flow), so signal it to (re)run. Documents are not used by
-        // the vision classifier, so they don't trigger a re-arm.
-        // Officer proof-of-completion uploads never re-arm the AI
-        // pipeline — the report is past moderation by then.
-        if ($role === 'evidence' && ($type === 'PHOTO' || $type === 'VIDEO')) {
-            ReportMediaUploaded::dispatch($reportId, $media->id, $type);
-        }
-
         return $media;
-    }
-
-    /**
-     * @param  array<string, int>|null  $hints
-     */
-    private function persist(string $reportId, UploadedFile $file, string $uploaderId, string $type, ?array $hints = null, string $role = 'evidence'): Media
-    {
-        $id = (string) Str::uuid();
-        $ext = strtolower((string) $file->getClientOriginalExtension());
-
-        if ($ext === '') {
-            $ext = $this->extFromMime($file->getMimeType() ?? '');
-        }
-
-        $configuredDisk = config('cip.media.disk', 'local');
-        $disk = is_string($configuredDisk) ? $configuredDisk : 'local';
-        $path = sprintf('%s/%s/%s/%s.%s', $role === 'proof' ? 'proof' : 'evidence', $reportId, strtolower($type), $id, $ext);
-
-        try {
-            $bytes = file_get_contents($file->getRealPath() ?: '');
-
-            if ($bytes === false) {
-                throw new \RuntimeException('cannot read upload temp file');
-            }
-            Storage::disk($disk)->put($path, $bytes);
-        } catch (Throwable $e) {
-            Log::error('media.upload.write_failed', [
-                'report_id' => $reportId,
-                'type' => $type,
-                'disk' => $disk,
-                'path' => $path,
-                'error' => $e->getMessage(),
-            ]);
-
-            throw new ApiException(
-                ErrorCode::INTERNAL_ERROR->value,
-                'Failed to persist uploaded media.',
-                500,
-                ['disk' => $disk, 'path' => $path],
-                $e,
-            );
-        }
-
-        $width = null;
-        $height = null;
-
-        if ($type === 'PHOTO') {
-            $dimensions = @getimagesizefromstring($bytes);
-
-            if (is_array($dimensions)) {
-                $width = $dimensions[0] > 0 ? $dimensions[0] : null;
-                $height = $dimensions[1] > 0 ? $dimensions[1] : null;
-            }
-        }
-
-        return Media::query()->create([
-            'id' => $id,
-            'report_id' => $reportId,
-            'type' => $type,
-            'role' => $role,
-            'storage_disk' => $disk,
-            'storage_path' => $path,
-            'mime' => (string) $file->getMimeType(),
-            'size' => (int) $file->getSize(),
-            'duration' => null,
-            'width' => $width,
-            'height' => $height,
-            'checksum' => '', // filled by ComputeHashesJob
-            'captured_at' => null,
-            'uploaded_at' => now(),
-            'uploaded_by' => $uploaderId,
-            'metadata' => $hints !== null && $hints !== [] ? ['upload' => $hints] : null,
-            'version' => 1,
-            'is_replaced' => false,
-        ]);
     }
 
     private function assertReportExists(string $reportId): void
@@ -231,14 +174,24 @@ class MediaService
         }
     }
 
-    private function assertCountUnderLimit(string $reportId, string $type, string $role = 'evidence'): void
-    {
+    private function assertCountUnderLimit(
+        string $reportId,
+        string $type,
+        string $role = 'evidence',
+        ?string $assignmentId = null,
+    ): void {
         // Limit is scoped per role so officer proof photos never
         // collide with the citizen evidence quota (and vice versa).
         $existing = Media::query()
             ->where('report_id', $reportId)
             ->where('type', $type)
             ->where('role', $role)
+            ->when($role === 'proof', fn ($query) => $query->where('assignment_id', $assignmentId))
+            ->whereIn('scan_status', [
+                MediaScanStatus::PENDING->value,
+                MediaScanStatus::CLEAN->value,
+                MediaScanStatus::UNKNOWN->value,
+            ])
             ->count();
         $limit = self::MAX_COUNT[$type] ?? 0;
 
@@ -264,6 +217,52 @@ class MediaService
         }
     }
 
+    private function assertOwnershipScope(
+        string $reportId,
+        string $role,
+        ?string $assignmentId,
+        ?string $departmentId,
+    ): void {
+        if (! in_array($role, ['evidence', 'proof'], true)) {
+            throw ApiException::validation('Unsupported media role.', [
+                'role' => ['Role must be evidence or proof.'],
+            ]);
+        }
+
+        if ($role === 'evidence') {
+            if ($assignmentId !== null || $departmentId !== null) {
+                throw ApiException::validation('Citizen evidence cannot carry assignment ownership.');
+            }
+
+            return;
+        }
+
+        if ($assignmentId === null || $departmentId === null) {
+            throw ApiException::validation(
+                'Completion proof requires assignment and department ownership.',
+                ['assignment_id' => ['Required for proof media.']],
+            );
+        }
+
+        $matches = ReportAssignment::query()
+            ->whereKey($assignmentId)
+            ->where('report_id', $reportId)
+            ->where('department_id', $departmentId)
+            ->whereNull('reassigned_at')
+            ->whereIn('task_status', [
+                ReportAssignment::TASK_STATUS_OPEN,
+                ReportAssignment::TASK_STATUS_COMPLETED,
+            ])
+            ->exists();
+
+        if (! $matches) {
+            throw ApiException::validation(
+                'Completion proof ownership does not match a current report assignment.',
+                ['assignment_id' => ['Assignment, report, and department must match.']],
+            );
+        }
+    }
+
     private function assertSizeUnderLimit(UploadedFile $file, string $type): void
     {
         $limit = self::MAX_BYTES[$type] ?? 0;
@@ -277,20 +276,6 @@ class MediaService
                 ['type' => $type, 'limit' => $limit, 'size' => $size],
             );
         }
-    }
-
-    private function extFromMime(string $mime): string
-    {
-        return match (strtolower($mime)) {
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-            'image/gif' => 'gif',
-            'video/mp4' => 'mp4',
-            'video/quicktime' => 'mov',
-            'application/pdf' => 'pdf',
-            default => 'bin',
-        };
     }
 
     /**

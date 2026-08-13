@@ -11,7 +11,7 @@ import {
   TR,
   TH,
   TD,
-} from '../../moderator/design';
+} from '../../../shared/ui';
 import { IconPencil } from '@tabler/icons-react';
 
 export default function AdminSecurityPolicies(): JSX.Element {
@@ -49,14 +49,14 @@ export default function AdminSecurityPolicies(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f2ed] p-6">
+    <div className="min-h-screen bg-[var(--color-canvas)] p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">
+            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
               Security policies
             </h1>
-            <p className="mt-1 text-sm text-[#6f6e69]">
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               Database-driven knobs the platform reads at runtime.
             </p>
           </div>
@@ -76,8 +76,8 @@ export default function AdminSecurityPolicies(): JSX.Element {
             />
           ) : (
             <div className="overflow-x-auto">
-              <Table className="ring-[#e4e2dc]">
-                <thead className="bg-[#f3f2ed] text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+              <Table className="ring-[var(--color-border-subtle)]">
+                <thead className="bg-[var(--color-canvas)] text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                   <tr>
                     <TH>Key</TH>
                     <TH>Value</TH>
@@ -85,14 +85,14 @@ export default function AdminSecurityPolicies(): JSX.Element {
                     <TH className="text-right">Action</TH>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#e4e2dc]">
+                <tbody className="divide-y divide-[var(--color-border-subtle)]">
                   {(list.data ?? []).map((p: SecurityPolicy) => (
                     <TR key={p.id}>
-                      <TD className="font-mono text-xs text-[#1d1d1b]">{p.key}</TD>
-                      <TD className="font-mono text-xs text-[#6f6e69]">
+                      <TD className="font-mono text-xs text-[var(--color-ink)]">{p.key}</TD>
+                      <TD className="font-mono text-xs text-[var(--color-text-secondary)]">
                         {JSON.stringify(p.value)}
                       </TD>
-                      <TD className="text-xs text-[#6f6e69]">{p.type}</TD>
+                      <TD className="text-xs text-[var(--color-text-secondary)]">{p.type}</TD>
                       <TD className="text-right">
                         <Button
                           variant="ghost"
@@ -132,12 +132,12 @@ export default function AdminSecurityPolicies(): JSX.Element {
             </>
           }
         >
-          <p className="text-xs text-[#6f6e69]">JSON value, e.g. {`{"min": 8}`}</p>
+          <p className="text-xs text-[var(--color-text-secondary)]">JSON value, e.g. {`{"min": 8}`}</p>
           <textarea
             value={draftValue}
             onChange={(e) => setDraftValue(e.target.value)}
             rows={8}
-            className="mt-3 w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 font-mono text-xs focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-3 w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 font-mono text-xs focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </Dialog>
       </div>

@@ -22,7 +22,7 @@ export function slaInfo(
 }
 
 /**
- * Humanized duration for SLA chips/badges.
+ * Humanized duration for Due target chips/badges.
  * Use full words because these labels are read by field staff, not only
  * scanned as compact dashboard metrics.
  */
@@ -38,8 +38,8 @@ export function humanizeSlaDuration(ms: number): string {
 }
 
 /**
- * Compute the SLA chip label for a report, humanized for readability:
- *   "Due in 2 hours" / "Due in 3 days" / "Overdue by 3 weeks" / "SLA met".
+ * Compute the due target chip label for a report, humanized for readability:
+ *   "Due in 2 hours" / "Due in 3 days" / "Overdue by 3 weeks" / "On time".
  *
  * The `now` argument exists so unit tests stay deterministic;
  * production callers use the default.
@@ -68,7 +68,7 @@ export function formatSla(
     status === 'verified' ||
     status === 'closed'
   ) {
-    return { label: 'SLA met', tone: 'success' };
+    return { label: 'On time', tone: 'success' };
   }
   const created = new Date(createdAt).getTime();
   if (Number.isNaN(created)) return null;

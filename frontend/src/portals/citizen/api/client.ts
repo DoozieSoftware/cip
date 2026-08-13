@@ -1,5 +1,13 @@
-import { apiRequest, buildApiUrl, getToken, type ApiEnvelope } from '../../../auth/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  request,
+  requestPaginated,
+  upload,
+  buildApiUrl,
+  getToken,
+  normalizePaginationMeta,
+} from '../../../shared/api/client';
+import { ApiError } from '../../../shared/api/errors';
 import {
   type ReportType,
   type Department,
@@ -46,6 +54,12 @@ interface ApiMediaPayload {
   id: string;
   type: string;
   signed_url?: string;
+}
+
+interface EvidenceManifest {
+  ready: boolean;
+  errors: Record<string, string>;
+  revision: string;
 }
 
 export function normalizeReport(payload: ApiReportPayload): ReportDetail {
@@ -96,24 +110,12 @@ export function normalizeNotification(item: ApiNotificationItem): NotificationIt
   };
 }
 
-function normalizePaginationMeta(
-  meta: Record<string, unknown> | undefined,
-  fallbackPerPage: number,
-): PaginationMeta {
-  return {
-    page: typeof meta?.page === 'number' ? meta.page : 1,
-    per_page: typeof meta?.per_page === 'number' ? meta.per_page : fallbackPerPage,
-    total: typeof meta?.total === 'number' ? meta.total : 0,
-    last_page: typeof meta?.last_page === 'number' ? meta.last_page : 1,
-  };
-}
-
 export function useReportTypes() {
   return useQuery({
     queryKey: ['report-types'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<ReportType[]>>('/report-types');
-      return res.data.filter((t) => t);
+      const data = await request<ReportType[]>('/report-types');
+      return data.filter((t) => t);
     },
   });
 }
@@ -122,10 +124,9 @@ export function useDepartments() {
   return useQuery({
     queryKey: ['departments'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<Department[]>>('/departments', {
+      return request<Department[]>('/departments', {
         query: { per_page: 100 },
       });
-      return res.data;
     },
   });
 }
@@ -134,10 +135,10 @@ export function useNotifications() {
   return useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<NotificationsInboxResponse>>('/notifications', {
+      const data = await request<NotificationsInboxResponse>('/notifications', {
         query: { per_page: 50 },
       });
-      return (res.data.items ?? []).map((item) => normalizeNotification(item));
+      return (data.items ?? []).map((item) => normalizeNotification(item));
     },
   });
 }
@@ -146,7 +147,7 @@ export function useMarkNotificationRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest<unknown>(`/notifications/${id}/read`, { method: 'POST' });
+      await request<unknown>(`/notifications/${id}/read`, { method: 'POST' });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
   });
@@ -158,49 +159,108 @@ export interface CreateReportInput {
   description: string;
   latitude: number;
   longitude: number;
+  reporter_latitude?: number;
+  reporter_longitude?: number;
+  reporter_accuracy_m?: number;
+  reporter_gps_provider?: string;
+  reporter_captured_at?: string;
   address?: string;
   accuracy_m?: number;
+  altitude?: number | null;
+  heading?: number | null;
+  speed?: number | null;
+  gps_provider?: string;
+  captured_at?: string;
   media_files?: File[];
   mock_gps_score?: number;
+  idempotency_key?: string;
 }
 
 export async function submitReportPayload(
   input: CreateReportInput,
 ): Promise<{ id: string; status: string }> {
-  const create = await apiRequest<ApiEnvelope<ApiReportPayload>>('/reports', {
+  const idempotencyKey =
+    input.idempotency_key ??
+    (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `report-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const created = await request<ApiReportPayload>('/reports', {
     method: 'POST',
+    headers: { 'Idempotency-Key': idempotencyKey },
     body: {
       report_type_id: input.report_type_id,
       title: input.title,
       description: input.description,
       latitude: input.latitude,
       longitude: input.longitude,
+      reporter_latitude: input.reporter_latitude ?? input.latitude,
+      reporter_longitude: input.reporter_longitude ?? input.longitude,
+      reporter_accuracy: input.reporter_accuracy_m ?? null,
+      reporter_gps_provider: input.reporter_gps_provider ?? null,
+      reporter_captured_at: input.reporter_captured_at ?? null,
       address: input.address ?? null,
       accuracy: input.accuracy_m ?? null,
+      altitude: input.altitude ?? null,
+      heading: input.heading ?? null,
+      speed: input.speed ?? null,
+      gps_provider: input.gps_provider ?? null,
+      captured_at: input.captured_at ?? null,
       mock_gps_score: input.mock_gps_score ?? null,
     },
   });
-  const reportId = create.data.id;
+  const reportId = created.id;
 
-  if (input.media_files && input.media_files.length > 0) {
-    const token = getToken();
-    void Promise.all(input.media_files.map((file) => uploadMedia(reportId, file, token))).catch(
-      () => undefined,
-    );
+  const files = input.media_files ?? [];
+  if (files.length > 0) {
+    await Promise.all(files.map((file) => uploadMedia(reportId, file)));
   }
 
-  const createdReport = normalizeReport(create.data);
-  return {
-    id: createdReport.id,
-    status: createdReport.status?.code ?? 'submitted',
-  };
+  const finalize = async () =>
+    request<ApiReportPayload>(`/reports/${reportId}/finalize`, {
+      method: 'POST',
+      headers: { 'Idempotency-Key': idempotencyKey },
+    });
+
+  if (files.length > 0) {
+    // Hashing is asynchronous. Poll the server manifest so a successful
+    // response always means the durable evidence set was actually finalized.
+    const deadline = Date.now() + 30_000;
+    while (true) {
+      try {
+        const manifest = await request<EvidenceManifest>(`/reports/${reportId}/evidence-manifest`);
+        if (manifest.ready) break;
+      } catch {
+        // A transient manifest read is safe to retry while the upload queue
+        // settles; finalization below remains the authoritative gate.
+      }
+      if (Date.now() >= deadline) break;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
+
+  try {
+    const finalized = await finalize();
+    const normalized = normalizeReport(finalized);
+    return { id: normalized.id, status: normalized.status?.code ?? 'submitted' };
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 'EVIDENCE_NOT_READY') {
+      throw new ApiError(
+        error.status,
+        error.code,
+        'Evidence is still processing. Please retry when all uploads are ready.',
+        error.details,
+        error.traceId,
+      );
+    }
+    throw error;
+  }
 }
 
 const MEDIA_UPLOAD_TIMEOUT_MS = 60_000;
 
-async function uploadMedia(reportId: string, file: File, token: string | null): Promise<void> {
+async function uploadMedia(reportId: string, file: File): Promise<void> {
   const isVideo = file.type.startsWith('video/');
-  const url = buildApiUrl(isVideo ? `/reports/${reportId}/video` : `/reports/${reportId}/photos`);
+  const path = isVideo ? `/reports/${reportId}/video` : `/reports/${reportId}/photos`;
   const fd = new FormData();
   if (isVideo) {
     fd.append('video', file);
@@ -211,18 +271,10 @@ async function uploadMedia(reportId: string, file: File, token: string | null): 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), MEDIA_UPLOAD_TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: fd,
-      credentials: 'same-origin',
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      console.warn('media upload failed', file.name, res.status);
-    }
+    await upload<unknown>(path, fd, { signal: controller.signal });
   } catch (err) {
     console.warn('media upload error', file.name, err);
+    throw err;
   } finally {
     clearTimeout(timer);
   }
@@ -246,18 +298,18 @@ export function useReportDetail(id: string | undefined) {
     queryKey: ['report', id],
     refetchInterval: (query) => (shouldRefreshSubmittedReport(query.state.data) ? 3_000 : false),
     queryFn: async () => {
-      const report = await apiRequest<ApiEnvelope<ApiReportPayload>>(`/citizen/reports/${id}`);
+      const report = await request<ApiReportPayload>(`/citizen/reports/${id}`);
       let media: ApiMediaPayload[] = [];
 
-      const mediaResponse = await apiRequest<ApiEnvelope<{ media: ApiMediaPayload[] }>>(
+      const mediaResponse = await request<{ media: ApiMediaPayload[] }>(
         `/reports/${id}/media`,
       ).catch(() => null);
       if (mediaResponse !== null) {
-        media = mediaResponse.data.media;
+        media = mediaResponse.media;
       }
 
       return normalizeReport({
-        ...report.data,
+        ...report,
         media: media.map((item) => ({
           id: item.id,
           kind: item.type.toUpperCase() === 'VIDEO' ? 'video' : 'photo',
@@ -268,17 +320,47 @@ export function useReportDetail(id: string | undefined) {
   });
 }
 
-export function useCitizenReports(page = 1, perPage = 25) {
+export interface CitizenReportFilters {
+  status?: string;
+  category?: string;
+  area?: string;
+  date_from?: string;
+  date_to?: string;
+  cursor?: string;
+  cursor_mode?: boolean;
+}
+
+export function useCitizenReports(
+  page = 1,
+  perPage = 25,
+  search = '',
+  filters: CitizenReportFilters = {},
+) {
   return useQuery({
-    queryKey: ['citizen', 'reports', page, perPage],
+    queryKey: ['citizen', 'reports', page, perPage, search, filters],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<ApiReportPayload[]>>('/citizen/reports', {
-        query: { page, per_page: perPage },
-      });
+      const { data, meta } = await requestPaginated<ApiReportPayload>(
+        '/citizen/reports',
+        {
+          query: {
+            page: filters.cursor ? undefined : page,
+            per_page: perPage,
+            q: search || undefined,
+            status: filters.status || undefined,
+            category: filters.category || undefined,
+            area: filters.area || undefined,
+            date_from: filters.date_from || undefined,
+            date_to: filters.date_to || undefined,
+            cursor: filters.cursor || undefined,
+            cursor_mode: filters.cursor_mode || undefined,
+          },
+        },
+        perPage,
+      );
 
       return {
-        data: res.data.map((report) => normalizeReport(report)),
-        meta: normalizePaginationMeta(res.meta, perPage),
+        data: data.map((report) => normalizeReport(report)),
+        meta,
       };
     },
   });
@@ -289,10 +371,73 @@ export function useReportTimeline(id: string | undefined) {
     enabled: id !== undefined,
     queryKey: ['report', id, 'timeline'],
     queryFn: async () => {
-      const res = await apiRequest<ApiEnvelope<ReportDetail['timeline']>>(
-        `/reports/${id}/timeline`,
-      );
-      return res.data;
+      return request<ReportDetail['timeline']>(`/reports/${id}/timeline`);
     },
   });
 }
+
+export function useMergeDispute(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      reason,
+      expectedWorkflowVersion,
+    }: {
+      reason: string;
+      expectedWorkflowVersion: number;
+    }) => {
+      await request<unknown>(`/citizen/reports/${id}/dispute-merge`, {
+        method: 'POST',
+        body: { reason, expected_workflow_version: expectedWorkflowVersion },
+      });
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['report', id] });
+    },
+  });
+}
+
+export function useVerifyResolution(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (expectedWorkflowVersion: number) => {
+      const data = await request<{ report: ApiReportPayload }>(`/citizen/reports/${id}/verify`, {
+        method: 'POST',
+        body: { expected_workflow_version: expectedWorkflowVersion },
+      });
+      return normalizeReport(data.report);
+    },
+    onSuccess: (report) => {
+      qc.setQueryData(['report', id], report);
+      void qc.invalidateQueries({ queryKey: ['citizen', 'reports'] });
+      void qc.invalidateQueries({ queryKey: ['report', id, 'timeline'] });
+    },
+  });
+}
+
+export function useDisputeResolution(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      reason,
+      expectedWorkflowVersion,
+    }: {
+      reason: string;
+      expectedWorkflowVersion: number;
+    }) => {
+      const data = await request<{ report: ApiReportPayload }>(`/citizen/reports/${id}/dispute`, {
+        method: 'POST',
+        body: { reason, expected_workflow_version: expectedWorkflowVersion },
+      });
+      return normalizeReport(data.report);
+    },
+    onSuccess: (report) => {
+      qc.setQueryData(['report', id], report);
+      void qc.invalidateQueries({ queryKey: ['citizen', 'reports'] });
+      void qc.invalidateQueries({ queryKey: ['report', id, 'timeline'] });
+    },
+  });
+}
+
+// Re-export buildApiUrl for any callers that need to construct URLs.
+export { buildApiUrl, getToken, normalizePaginationMeta };

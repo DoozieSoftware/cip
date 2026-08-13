@@ -25,4 +25,11 @@ class NullScanner implements VirusScanServiceInterface
     {
         return 'none';
     }
+
+    public function healthCheck(): bool
+    {
+        // Explicitly opted-in development bypass. Production readiness
+        // rejects this driver in HealthController.
+        return true;
+    }
 }

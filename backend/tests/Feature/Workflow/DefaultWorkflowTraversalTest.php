@@ -23,33 +23,25 @@ beforeEach(function (): void {
     $this->repo = new WorkflowRepository;
 });
 
-it('seeds the default civic workflow with 13 states and 16 transitions', function (): void {
+it('seeds the default civic workflow with 15 states and 23 transitions', function (): void {
     $graph = $this->repo->loadGraph('civic_default');
     expect($graph)->not->toBeNull();
-    expect($graph['states'])->toHaveCount(13);
-    expect($graph['transitions'])->toHaveCount(16);
-    expect(array_keys($graph['states']))->toContain('draft', 'submitted', 'closed', 'rejected');
+    expect($graph['states'])->toHaveCount(15);
+    expect($graph['transitions'])->toHaveCount(23);
+    expect(array_keys($graph['states']))->toContain('draft', 'submitted', 'closed', 'rejected', 'resolved_pending_verification', 'verified', 'reopened', 'escalated');
 });
 
-it('a report can traverse draft -> submitted -> ai_processing -> pending_moderator -> assigned -> accepted -> in_progress -> resolved -> closed', function (): void {
-    // Build a report at draft, then walk the happy path.
+it('a report can traverse the canonical lifecycle: draft → submitted → ai_processing → pending_moderator → assigned → accepted → in_progress → resolved_pending_verification → verified → closed', function (): void {
     $draftStatus = ReportStatus::query()->where('code', 'draft')->first();
     $report = Report::factory()->create([
         'workflow_id' => $this->repo->findActiveByCode('civic_default')->id,
         'current_status_id' => $draftStatus->id,
     ]);
 
-    $citizen = User::factory()->create();
-    Role::firstOrCreate(['name' => 'citizen', 'guard_name' => 'web']);
-    $citizen->assignRole('citizen');
-
+    $citizen = makeUserWithRole('citizen');
     $system = makeUserWithRole('system');
     $moderator = makeUserWithRole('moderator');
     $department = makeUserWithRole('department_officer');
-
-    // The transitions require permissions that don't exist
-    // yet in the permission matrix; grant the necessary
-    // permissions to the actor inline.
 
     $path = [
         ['event' => 'submit',           'actor' => $citizen,   'expectCode' => 'submitted'],
@@ -58,8 +50,9 @@ it('a report can traverse draft -> submitted -> ai_processing -> pending_moderat
         ['event' => 'assign',           'actor' => $moderator, 'expectCode' => 'assigned'],
         ['event' => 'accept',           'actor' => $department, 'expectCode' => 'accepted'],
         ['event' => 'start',            'actor' => $department, 'expectCode' => 'in_progress'],
-        ['event' => 'resolve',          'actor' => $department, 'expectCode' => 'resolved'],
-        ['event' => 'close',            'actor' => $department, 'expectCode' => 'closed'],
+        ['event' => 'resolve',          'actor' => $department, 'expectCode' => 'resolved_pending_verification'],
+        ['event' => 'verify',           'actor' => $citizen,   'expectCode' => 'verified'],
+        ['event' => 'close',            'actor' => $moderator, 'expectCode' => 'closed'],
     ];
 
     foreach ($path as $step) {
@@ -105,8 +98,8 @@ it('rejects an unknown event with a denied decision and a reason', function (): 
 it('the seeder is idempotent (re-running does not duplicate states or transitions)', function (): void {
     $this->seed(DefaultWorkflowSeeder::class);
     $graph = $this->repo->loadGraph('civic_default');
-    expect($graph['states'])->toHaveCount(13);
-    expect($graph['transitions'])->toHaveCount(17);
+    expect($graph['states'])->toHaveCount(15);
+    expect($graph['transitions'])->toHaveCount(23);
 });
 
 /**

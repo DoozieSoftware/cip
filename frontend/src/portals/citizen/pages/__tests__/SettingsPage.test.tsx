@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -91,5 +91,21 @@ describe('SettingsPage', () => {
       </QueryClientProvider>,
     );
     expect(screen.getAllByText('Sign out').length).toBeGreaterThan(0);
+  });
+
+  it('switches the citizen UI to Kannada and persists the choice', () => {
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <SettingsPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.change(screen.getByLabelText('Language'), { target: { value: 'kn-IN' } });
+
+    expect(screen.getByRole('heading', { name: 'ಸೆಟ್ಟಿಂಗ್‌ಗಳು' })).toBeTruthy();
+    expect(localStorage.getItem('cip.citizen.locale')).toBe('kn-IN');
+    expect(document.documentElement.lang).toBe('kn-IN');
   });
 });

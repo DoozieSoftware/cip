@@ -1,4 +1,6 @@
 import { api } from './client';
+import { buildApiUrl, requestRaw } from '../../../shared/api/client';
+import type { ApiEnvelope } from '../../../shared/api/envelope';
 import type {
   PaginationMeta,
   DepartmentDashboardCounts,
@@ -7,7 +9,6 @@ import type {
   DepartmentReportMedia,
   DepartmentOfficer,
   InternalNote,
-  Paginated,
   ReportListItem,
   WorkflowEvent,
 } from '../types';
@@ -62,23 +63,38 @@ export interface ManagedDepartment {
   name: string;
 }
 
+export interface AttachableUser {
+  id: string;
+  name: string | null;
+  mobile: string;
+  email: string | null;
+  roles?: string[];
+}
+
 export const departmentApi = {
   dashboard: (params: Record<string, unknown> = {}) =>
-    api.get<{ success: boolean; data: DepartmentDashboardCounts }>('/department/dashboard', params),
+    api.get<DepartmentDashboardCounts>('/department/dashboard', params),
 
-  memberships: () => api.get<{ success: boolean; data: Membership[] }>('/department/memberships'),
+  memberships: () => api.get<Membership[]>('/department/memberships'),
 
   listReports: (filters: ReportListFilters = {}) =>
-    api.get<Paginated<DepartmentReportListItem>>(
-      '/department/reports',
-      filters as Record<string, unknown>,
-    ),
+    requestRaw<ApiEnvelope<DepartmentReportListItem[]>>('/department/reports', {
+      method: 'GET',
+      query: filters as Record<string, string | number | boolean | undefined | null>,
+    }).then((response) => ({
+      data: response.data,
+      meta: {
+        current_page: Number(response.meta?.current_page ?? response.meta?.page ?? 1),
+        per_page: Number(response.meta?.per_page ?? filters.per_page ?? 20),
+        total: Number(response.meta?.total ?? response.data.length),
+        last_page: Number(response.meta?.last_page ?? 1),
+      },
+    })),
 
-  showReport: (id: string) =>
-    api.get<{ success: boolean; data: DepartmentReportDetail }>(`/department/reports/${id}`),
+  showReport: (id: string) => api.get<DepartmentReportDetail>(`/department/reports/${id}`),
 
   showReportInDepartment: (id: string, departmentId: string) =>
-    api.get<{ success: boolean; data: DepartmentReportDetail }>(`/department/reports/${id}`, {
+    api.get<DepartmentReportDetail>(`/department/reports/${id}`, {
       department_id: departmentId,
     }),
 
@@ -95,10 +111,7 @@ export const departmentApi = {
     if (note) {
       form.append('note', note);
     }
-    return api.upload<{ success: boolean; data: { media: DepartmentReportMedia[] } }>(
-      `/department/reports/${id}/photos`,
-      form,
-    );
+    return api.upload<{ media: DepartmentReportMedia[] }>(`/department/reports/${id}/photos`, form);
   },
 
   /**
@@ -117,8 +130,7 @@ export const departmentApi = {
         params.set(k, String(v));
       }
     }
-    const base = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1';
-    return `${base.replace(/\/$/, '')}/department/reports/export?${params.toString()}`;
+    return buildApiUrl('/department/reports/export', Object.fromEntries(params));
   },
 
   exportDownload: (format: 'csv' | 'xlsx' | 'pdf', filters: ReportListFilters = {}) => {
@@ -130,26 +142,31 @@ export const departmentApi = {
     );
   },
 
-  action: (id: string, event: WorkflowEvent, note?: string) =>
-    api.post<{ success: boolean; data: DepartmentReportListItem }>(
-      `/department/reports/${id}/${event}`,
-      note ? { note } : {},
-    ),
+  action: (
+    id: string,
+    event: WorkflowEvent,
+    note: string | undefined,
+    expectedWorkflowVersion: number,
+  ) =>
+    api.post<DepartmentReportListItem>(`/department/reports/${id}/${event}`, {
+      ...(note ? { note } : {}),
+      expected_workflow_version: expectedWorkflowVersion,
+    }),
 
   completeTask: (reportId: string, assignmentId: string, note?: string, departmentId?: string) =>
-    api.post<{ success: boolean; data: DepartmentReportDetail }>(
+    api.post<DepartmentReportDetail>(
       `/department/reports/${reportId}/tasks/${assignmentId}/complete`,
       note ? { note } : {},
       { department_id: departmentId },
     ),
 
   listNotes: (id: string, departmentId?: string) =>
-    api.get<{ success: boolean; data: InternalNote[] }>(`/department/reports/${id}/notes`, {
+    api.get<InternalNote[]>(`/department/reports/${id}/notes`, {
       department_id: departmentId,
     }),
 
   addNote: (id: string, body: string, departmentId?: string) =>
-    api.post<{ success: boolean; data: InternalNote }>(
+    api.post<InternalNote>(
       `/department/reports/${id}/note`,
       { body },
       { department_id: departmentId },
@@ -158,32 +175,40 @@ export const departmentApi = {
 
 export const adminApi = {
   listDepartments: () =>
-    api.get<{ success: boolean; data: ManagedDepartment[] }>('/admin/departments', {
+    api.get<ManagedDepartment[]>('/admin/departments', {
       active: true,
       per_page: 100,
     }),
 
   listOfficers: (departmentId: string) =>
-    api.get<{ success: boolean; data: DepartmentOfficer[]; meta: { total: number } }>(
+    api.get<{ data: DepartmentOfficer[]; meta: { total: number } }>(
       `/admin/departments/${departmentId}/officers`,
     ),
 
+  listAttachableUsers: () =>
+    api
+      .get<AttachableUser[]>('/admin/users', { status: 'active', per_page: 100 })
+      .then((users) =>
+        users.filter(
+          (user) =>
+            user.roles === undefined ||
+            user.roles.some((role) =>
+              ['department_officer', 'department_admin', 'moderator', 'super_admin'].includes(role),
+            ),
+        ),
+      ),
+
   attachOfficer: (departmentId: string, payload: AttachOfficerPayload) =>
-    api.post<{ success: boolean; data: { pivot_id: string; department_id: string } }>(
+    api.post<{ pivot_id: string; department_id: string }>(
       `/admin/departments/${departmentId}/officers`,
       payload,
     ),
 
   detachOfficer: (departmentId: string, userId: string) =>
-    api.delete<{ success: boolean; data: { removed: boolean } }>(
-      `/admin/departments/${departmentId}/officers/${userId}`,
-    ),
+    api.delete<{ removed: boolean }>(`/admin/departments/${departmentId}/officers/${userId}`),
 
   updateAdmin: (departmentId: string, payload: AdminUpdatePayload) =>
-    api.patch<{ success: boolean; data: AdminUpdatePayload }>(
-      `/admin/departments/${departmentId}/admin`,
-      payload,
-    ),
+    api.patch<AdminUpdatePayload>(`/admin/departments/${departmentId}/admin`, payload),
 };
 
 // --- Security dashboard (T-M11-020) ---------------------------------
@@ -237,8 +262,7 @@ export interface SecurityDashboardSnapshot {
 }
 
 export const securityApi = {
-  dashboard: () =>
-    api.get<{ success: boolean; data: SecurityDashboardSnapshot }>('/admin/security/dashboard'),
+  dashboard: () => api.get<SecurityDashboardSnapshot>('/admin/security/dashboard'),
 };
 
 // Re-export the shared ReportListItem for callers that
@@ -281,7 +305,7 @@ export interface AuditLogRow {
 
 export const auditApi = {
   list: (filters: AuditLogFilters = {}) =>
-    api.get<{ success: boolean; data: AuditLogRow[]; meta: PaginationMeta }>(
+    api.get<{ data: AuditLogRow[]; meta: PaginationMeta }>(
       '/admin/audit-logs',
       filters as Record<string, unknown>,
     ),
@@ -298,7 +322,6 @@ export const auditApi = {
         params.set(k, String(v));
       }
     }
-    const base = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1';
-    return `${base.replace(/\/$/, '')}/admin/audit-logs?${params.toString()}`;
+    return buildApiUrl('/admin/audit-logs', Object.fromEntries(params));
   },
 };

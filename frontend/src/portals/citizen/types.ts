@@ -5,6 +5,9 @@ export interface ReportType {
   icon?: string | null;
   color?: string | null;
   description?: string | null;
+  localizations?: Record<string, string> | null;
+  aliases?: string[] | null;
+  sort_order?: number;
   requires_video: boolean;
   requires_photo: boolean;
   min_photos: number;
@@ -28,6 +31,7 @@ export interface AiSummary {
 export interface ReportSummary {
   id: string;
   tracking_number: string;
+  workflow_version: number;
   title: string;
   description?: string | null;
   status: { code: string; name: string; is_terminal?: boolean };
@@ -58,10 +62,31 @@ export interface MediaItem {
   audit?: unknown;
 }
 
+export type ProofMediaItem = MediaItem;
+
+export interface CanonicalReport {
+  id: string;
+  tracking_number: string;
+  title: string;
+  link: string;
+}
+
+export interface MergeDispute {
+  id: string;
+  status: 'open' | 'resolved' | 'rejected';
+  reason: string;
+}
+
 export interface ReportDetail extends ReportSummary {
   timeline: TimelineEntry[];
   media: MediaItem[];
   ai_summary?: AiSummary | null;
+  merged_into?: string | null;
+  merged_at?: string | null;
+  canonical_report?: CanonicalReport | null;
+  merge_dispute?: MergeDispute | null;
+  verification_deadline_at?: string | null;
+  proof_photos?: ProofMediaItem[];
 }
 
 export interface NotificationItem {
@@ -79,6 +104,8 @@ export interface PaginationMeta {
   per_page: number;
   total: number;
   last_page: number;
+  next_cursor?: string | null;
+  prev_cursor?: string | null;
 }
 
 export type LifecycleGroup = 'open' | 'awaiting_citizen' | 'closed' | 'rejected' | 'merged';
@@ -91,10 +118,11 @@ export const OPEN_STATUSES = [
   'assigned',
   'accepted',
   'in_progress',
+  'reopened',
   'escalated',
 ] as const;
 
-export const AWAITING_CITIZEN_STATUSES = ['resolved'] as const;
+export const AWAITING_CITIZEN_STATUSES = ['resolved', 'resolved_pending_verification'] as const;
 
 export const CLOSED_STATUSES = ['verified', 'closed'] as const;
 

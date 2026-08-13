@@ -126,6 +126,32 @@ class ReportService
     }
 
     /**
+     * Create a draft without making it official. Evidence upload and the
+     * explicit finalization endpoint are the only path to `submitted`.
+     */
+    public function createDraftFromSubmission(SubmitReportDto $dto): Report
+    {
+        $this->assertReportTypeExists($dto->reportTypeId);
+        $location = $this->locationService->createFromSubmission($dto);
+        $draftStatusId = $this->resolveStatusId('draft');
+        $priorityId = $dto->priorityId ?? $this->defaultPriorityId();
+        $workflow = $this->workflowRepository->findActiveByCode('civic_default');
+
+        return $this->repository->create([
+            'citizen_id' => $dto->isAnonymous ? null : $dto->citizenId,
+            'report_type_id' => $dto->reportTypeId,
+            'current_status_id' => $draftStatusId,
+            'priority_id' => $priorityId,
+            'location_id' => $location->id,
+            'workflow_id' => $workflow?->id,
+            'title' => $dto->title,
+            'description' => $dto->description,
+            'is_anonymous' => $dto->isAnonymous,
+            'mock_gps_score' => $dto->mockGpsScore,
+        ]);
+    }
+
+    /**
      * @param  array<string, mixed>  $metadata
      */
     public function transitionTo(

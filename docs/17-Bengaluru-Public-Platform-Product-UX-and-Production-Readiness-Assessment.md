@@ -1468,3 +1468,125 @@ Create implementation issues only for Phase 0 and Phase 1 first. The first engin
 6. Add characterization tests for report submission, evidence readiness, idempotency, notifications, lifecycle, and authorization.
 
 Do not start advanced AI, public leaderboards, predictive maintenance, or a native app until these exit criteria are met.
+
+---
+
+## 22. Implementation Status Tracker
+
+Status legend: **Done** = implemented and covered by tests in the current worktree; **Partial** = some layers shipped but not fully wired or rolled out; **Not started** = no code changes yet. Evidence paths point at the current worktree on branch `fix/moderator-view-all-affordance`.
+
+### P0 — Production Safety
+
+| ID | Status | Notes / Evidence |
+|----|--------|------------------|
+| P0-02 | **Done** | System role enforced on internal AI endpoints; admin role on prompt approve/rollback (`7234dbdd`). |
+| P0-06 | **Done** | Notification template/listener wiring repaired (`efb5c131`). |
+| P0-08 | **Done** | Worker queue + scheduler topology corrected and documented (`161148d1`). |
+| BE-12 | **Done** | Notification listeners are registered only by `NotificationsServiceProvider`; duplicate registrations were removed from `AppServiceProvider`. |
+| P0-05 | **Done** | Offline queue items and durable drafts carry a stable account owner; queue draining filters by owner, logout stops/clears the leaving account, and shared-device regressions cover isolation (`frontend/src/portals/citizen/offline/queue.ts`, `drafts.test.ts`). |
+| P0-01 | **Not started (explicitly deferred)** | Real production OTP delivery remains intentionally excluded from this implementation pass per user instruction; current demo/mock OTP flow is unchanged. |
+| P0-03 | **Done** | Citizen POST creates a draft; evidence manifest/hash readiness is enforced by `/reports/{id}/finalize`; legacy submit delegates to the same gate (`43d3f302`, `EvidenceFinalizationTest.php`). Local Pest is blocked by missing `pdo_sqlite`; CI MySQL is required. |
+| P0-04 | **Done** | `ReportEvidenceReady` dispatches one revision-keyed, unique AI orchestration job after finalization; media-upload listener no longer starts AI early (`43d3f302`). |
+| P0-05 | **Done** | Offline queue items and durable drafts carry a stable account owner; queue draining filters by owner, logout stops/clears the leaving account, and shared-device regressions cover isolation (`frontend/src/portals/citizen/offline/queue.ts`, `drafts.test.ts`). |
+| P0-07 | **Done** | Browser Web Push subscription/VAPID registration and server delivery through stored subscriptions are wired; FCM device-token delivery remains supported, expired Web Push endpoints are pruned (`4c5ce9e2`, `082bac06`). Targeted Pest is blocked locally by missing `pdo_sqlite`; CI MySQL is required. |
+| P0-09 | **Partial** | Production template requires Redis cache/phpredis; deploy and readiness probes verify Redis round-trip (`c82aed3e`, `39753c56`). cPanel must still provision ext-redis and pass a production routing smoke test. |
+| P0-10 | **Done (code)** | Uploads are durably quarantined before scanning; clean verdicts are digest-verified before release, while infected/unknown/integrity-failed bytes remain blocked with bounded recovery and custody records (`9edc9482`, `17eb3034`). Production ClamAV provisioning/readiness and CI MySQL execution remain deployment verification. |
+| P0-11 | **Partial** | Executable three-domain backup and guarded rollback scripts include database/evidence/code/App-Key integrity checks (`deploy/production/*`, `docs/production-rollback-runbook.md`, `c82aed3e`); immutable off-host retention, restore drills, and atomic release switching remain ops work. |
+| P0-12 | **Partial** | Production workflow runs only after successful CI, references a protected production environment, and performs pre-rsync backup/capability checks (`.github/workflows/deploy-production.yml`, `c82aed3e`); GitHub environment approval rules must still be enabled in repository settings. |
+| P0-13 | **Partial** | Privacy and Terms now contain substantive product copy and localization, but final legal/privacy-owner review remains required before publication. |
+| P0-14 | **Done** | Integration and notification credential updates preserve omitted/masked secrets while encrypted casts remain authoritative (`d2df4696`). |
+| P0-15 | **Done** | Login/refresh deny suspended, disabled, pending, and deleted users; refresh rotation and logout revocation have feature coverage. |
+
+### P1 — Citizen And Public Experience
+
+| ID | Status | Notes / Evidence |
+|----|--------|------------------|
+| P1-04 | **Done** | Detail timeline sorted newest-first; `is_current` supported in types and rendered with a latest fallback (`frontend/src/portals/citizen/types.ts:50`, `ReportDetailPage.tsx`). |
+| P1-05 | **Done** | Central `lifecycleGroup` mapping (`open | awaiting_citizen | closed | rejected | merged`) backed by status constants, not component negative lists (`frontend/src/portals/citizen/types.ts`); regression tests reference P1-05. |
+| P1-06 | **Done** | Authenticated `verify`/`dispute` routes are registered; workflow/service ownership and deadline checks are implemented; `CitizenReportResource` exposes deadline/proof media; citizen mutations and `CitizenResolutionCard` are wired into report detail with regression coverage. |
+| P1-07 | **Done** | Canonical link and merge-dispute flow are wired end to end; `ReportsMergedListener` is registered; canonical status changes notify both the canonical owner and citizens whose reports remain linked through `merged_into`. |
+| P1-08 | **Done** | Versioned `CitizenReportResource` emits exactly the citizen detail contract consumed by `frontend/src/portals/citizen/types.ts`. |
+| P1-09 | **Done** | Misleading verification badge removed from citizen surfaces; resolution state derives from `lifecycleGroup`. |
+| P1-17 | **Done** | Service worker accepts only an explicit public GET allowlist on `cip-api.dgisipl.com`; authenticated responses are never cached (`frontend/public/sw.js`). |
+| P1-18 | **Partial** | Enqueue requests Background Sync, app-level retry timers schedule future attempts, and startup/online drains resume work; fully closed-app authenticated delivery still requires a secure SW session architecture. |
+| P1-19 | **Done** | Queue size counts actionable statuses only; acknowledged `done` items are removed after retention and dead items remain separately actionable (`queue.ts`, queue regression tests). |
+| P1-22 | **Done** | Report step progress, location, and media handles persist in an account-scoped IndexedDB draft and auto-resume; logout clears the leaving account draft (`drafts.ts`, `drafts.test.ts`). |
+| P1-01 | **Done** | Citizen drafts now persist a stable submission key across browser crashes/restarts; the client sends it for draft creation and finalization, while middleware scopes replays by principal, route, and method (`2cc5086a`, `5160ee85`). Backend integration execution remains subject to CI MySQL verification. |
+| P1-02 | **Done** | Citizen list/detail, canonical merge links, notifications, and exports use the server-issued `tracking_number` contract; no invented `CIP-*`/`REF-*` values remain in production surfaces. |
+| P1-03 | Not started | Anonymous recovery/secret flow remains intentionally unimplemented because the product must first choose hidden-identity versus no-account semantics, allowed/sensitive categories, notification limits, expiry, and rate limits. Existing routes remain authenticated; no plaintext recovery secret is issued. |
+| P1-10 | **Done** | Report-type requirements are exposed and server evidence manifest enforces required media, hashes, storage, and video readiness (`43d3f302`). |
+| P1-11 | **Done** | Citizen media modification is restricted to draft/request-for-information lifecycle; lifecycle authorization regression test added (`dfabe1a8`). |
+| P1-12 | **Done** | Browser capture forwards accuracy, altitude, heading, speed, provider, and captured timestamp into the location record; EXIF is not trusted blindly (`dfabe1a8`). |
+| P1-13 | **Done** | Shared client GPS threshold (`100m`) blocks progression and matches backend `LocationAccuracy` (`89922433`). |
+| P1-14 | **Partial** | MySQL point-in-polygon enrichment is implemented, but authoritative Bengaluru boundary data and unresolved-jurisdiction operations still need rollout. |
+| P1-15 | **Done** | Reverse geocoding is proxied through `/public/geocode`, cached, timeout-limited, and browser-side direct Overpass access removed (`d2df4696`). |
+| P1-16 | **Done** | Manifest, service-worker shell, scope, and shortcuts use `/citizen/*` (`f24ddc8e`). |
+| P1-17 | **Done** | Service worker accepts only an explicit public GET allowlist on `cip-api.dgisipl.com`; authenticated responses are never cached (`c82aed3e`). |
+| P1-18 | **Partial** | Enqueue requests Background Sync, app-level retry timers schedule future attempts, and startup/online drains resume work; fully closed-app authenticated delivery still requires a secure SW session architecture. |
+| P1-19 | **Done** | Queue size counts actionable statuses only; acknowledged `done` items are removed after retention and dead items remain separately actionable (`queue.ts`, queue regression tests). |
+| P1-20 | **Done** | Refresh tokens persist and rotate in the shared client; AuthContext performs best-effort server logout before clearing local state (`7993bf54`). |
+| P1-21 | **Partial** | HSTS and CSP report-only are deployed at the web edge; enforcement/trusted-proxy rollout and API-host header verification remain operational tasks (`c82aed3e`). |
+| P1-22 | **Done** | Report step progress, location, and media handles persist in an account-scoped IndexedDB draft and auto-resume; logout clears the leaving account draft (`drafts.ts`, `drafts.test.ts`). |
+| P1-23 | **Done** | Public heatmap applies 24-hour delay and k>=5 suppression and exposes privacy/freshness metadata (`d2df4696`). |
+
+### P2 — Usability
+
+| ID | Status | Notes / Evidence |
+|----|--------|------------------|
+| P2-01 | **Done** | `CategoryPicker` is searchable and locale-aware; `ReportType` casts and validates `localizations`, `aliases`, and `sort_order`; `ReportTypeResource` and admin CRUD responses expose the complete contract with backend resource tests. |
+| P2-04 | **Done** | Distinct loading/empty/error states across citizen pages; `DashboardPage`, `SubmitPage.states`, `PageStates.a11y` tests. |
+| P2-05 | **Done** | `SettingsPage` reachable and routed; profile logout functional; `ProfilePage.test.tsx`. |
+| P2-07 | **Done** | Reactive `en-IN`/`kn-IN` catalogs, persisted language selection, `<html lang>` updates, locale-aware dates, and localized layout/Home/Dashboard/Submit/Detail/Resolution/Notifications/Profile/Settings/legal/capture/category/merge-dispute surfaces are implemented with focused component/page coverage. |
+| P2-02 | **Done** | Description is now optional in backend validation and citizen progression; short detail remains validated when supplied (`19d64fdb`). |
+| P2-03 | **Partial** | Citizen service-request search now sends URL-persisted query, status, date, category, and area filters to the server, uses cursor-first navigation with stable URL cursors, and retains accessible previous/next controls (`59a1bb51`); production filter-query validation remains. |
+| P2-08 | **Partial** | Reduced-motion CSS, focus/a11y scaffolding, styled touch targets, live-preview/timer accessibility, and public/citizen navigation affordances are covered (`aef9b0da`, `fe6abf08`, `c35fe43f`); a full axe, screen-reader, and manual keyboard pass remains. |
+| P2-09 | **Partial** | Camera capture now exposes a live-preview label, non-spam timer, max-duration auto-stop, lifecycle-managed video previews, accessible recording/compression progress, live announcements, keyboard retry, and attached-file feedback (`aef9b0da`, `154c9c85`, `fa14c5fe`, `df6aa4db`); true device-specific compression and broader device coverage remain. |
+| P2-06 | **Done** | Citizen profile onboarding now captures preferred name, locale, and notification channel with validated PATCH persistence and an accessible completion/edit form (`401131e4`). |
+| P2-10 | **Done** | Issue location is explicitly separated from reporter location through a manual-pin/map picker, provenance metadata, draft persistence, reporter-coordinate persistence, distance warning, and submit payload wiring (`401131e4`, `3198d702`). |
+| P2-15 | **Partial** | Playwright now defines Chromium, Pixel 7, and iPhone 13 projects (`39e347a9`); real-device/browser permission and installed-PWA runs remain. |
+| P2-14 | **Partial** | Privacy-safe, allowlisted telemetry endpoint and browser fire-and-forget client now cover report start/steps/completion/offline queue, GPS and media failures, notification inbox failures, reopen actions, language selection, reduced-motion preference, and coarse citizen-shell load buckets (`d5eea66b`, `c1a0b2a6`, current citizen layout/settings); deeper journey-performance coverage remains. |
+| P2-12 | **Done** | Public landing now leads with resident report/track/transparency actions and moves staff portals into a separate entry point (`71796d7b`). |
+| P2-13 | **Done** | Emergency 112 guidance appears before category selection and on the public landing; unsupported/non-emergency scope is explicit (`71796d7b`). |
+| P2-11 | **Done** | Public stats exclude drafts/rejected/merged duplicates, expose generated-at/cache metadata and definitions, and both landing/public overview surfaces render freshness and denominator guidance (`48b1bd82`, current public clients). |
+
+### Backend Performance And Correctness
+
+| ID | Status | Notes / Evidence |
+|----|--------|------------------|
+| BE-09 | **Done** | List queries eager-load `department` and `media_count`; lean `ReportListResource`/`AdminReportListResource`/`DepartmentReportListResource`; `ReportListQueryCountTest` guards N+1 regressions. |
+| BE-01..BE-02 | **Done** | Refresh rotation uses selector-indexed lookup and row locks; submission idempotency persists route/method-scoped reservations and stable client keys (`d847f37b`, `2cc5086a`, `5160ee85`). |
+| BE-03 | **Done** | Annual tracking-number allocation uses a locked sequence table (`d847f37b`). |
+| BE-04 | **Done (code)** | Workflow transitions and assignment/reassignment use row locks plus optimistic `workflow_version` checks; merge locks participating reports in stable order, rejects stale tokens with 409, and all staff/citizen clients send the token (`c4131145`, `f9562d0b`, `a1314bca`). Feature execution remains subject to CI MySQL. |
+| BE-05 | **Done (code)** | Proof uploads require a live department assignment; media/access logs persist assignment and agency scope, legacy proof is backfilled, and policy/resources/delivery enforce cross-agency isolation (`9edc9482`, `17eb3034`). Feature execution remains subject to CI MySQL. |
+| BE-06 | **Done** | AI orchestration persists the canonical primary label onto the report in the same transaction as AI results/labels, with unique retry constraints and pipeline coverage (\`c69087fd\`). |
+| BE-07 | **Partial** | Evidence upload is validated and scanned before persistence; direct multipart/object-store streaming and presigned upload flow remain. |
+| BE-08 | **Done** | Media URLs are centralized through \`MediaUrl\`; S3/MinIO use native presigned URLs while local disks use signed application routes, with remote delivery support (\`a10e9731\`). |
+| BE-10 | **Partial** | Staff, department, admin, and citizen report searches now support opt-in cursor pagination with stable tie-breakers, date/category/area filters, prefix tracking search, MySQL FULLTEXT fallback, and composite indexes (\`6b523f7f\`, \`ffa2a7f8\`, current citizen search); production-shaped \`EXPLAIN ANALYZE\` validation remains. |
+| BE-11 | **Done** | Indexed SLA due-at selection, bounded bootstrap, idempotent breach rows, and downstream notification listener are implemented (\`d847f37b\`). |
+| BE-12 | **Done** | Notification listeners are registered only by `NotificationsServiceProvider`; duplicate registrations were removed from `AppServiceProvider`. |
+| BE-13 | **Partial** | Integration URL validation rejects unsafe schemes, credentials, ports, and private/link-local/metadata addresses before probing (\`97de1e6f\`); asynchronous restricted-egress execution and full probe audit remain. |
+| BE-14 | **Partial** | Retention purge now requires explicit `--approve`, supports dry-run/chunked deletion, skips append-only audit rows, removes orphaned media bytes, honors active legal holds, and exposes super-admin create/list/release custody APIs with admin controls (`0d8e49c0`, `e3fd62d4`, `74962ad6`, `cc78b850`). Custody export and production restore/retention drills remain. |
+| BE-15 | **Partial** | Daily privacy-safe report/AI/assignment aggregates and ward facts are materialized by `public:rebuild-analytics`, scheduled nightly, versioned, and consumed as a fast path by public stats (`eeb15076`); production backfill/monitoring and full public ward-fact presentation remain. |
+| BE-16 | **Done** | Worker and scheduler heartbeats now gate readiness, with queue-specific freshness and dependency checks; focused heartbeat/health tests pass (`6e7f13f3`). |
+| BE-17 | **Partial** | Request IDs now propagate into queue payloads, worker log context, and outbound AI/integration calls with regression coverage (`c20cbfa9`, `1cb35649`); the correlation/health response procedure is documented (`84472e15`), while full metrics/tracing dashboards and alert routing remain. |
+| BE-18 | **Done** | Composer/npm audit gates, dependency exception expiry validation, and patched vulnerable Composer/npm packages are enforced in CI (`027983f0`). |
+| BE-19 | **Partial** | Production source maps are disabled by default with explicit debug opt-in and a CI artifact gate (`0c3f8e90`); deployed trusted-proxy/header smoke verification remains operational. |
+
+### Maintainability
+
+| ID | Status | Notes / Evidence |
+|----|--------|------------------|
+| MAINT-01 | **Done** | Shared UI primitives extracted to `frontend/src/shared/ui/` with ownership test (`worktree/ui-extraction`, `cf50db96`). |
+| MAINT-02 | **Done** | Centralized design tokens in `shared/ui/tokens.css`; `TokenMigration` / `DesignTokenUsage` tests. |
+| MAINT-05 | **Done** | Citizen, operations, moderator, public, and admin clients use `frontend/src/shared/api/client.ts`; `auth/api.ts` is now a compatibility facade over that transport. Shared refresh/retry behavior has regression coverage. |
+| MAINT-03 | **Not started** | The page decomposition draft remains unintegrated; the production SubmitPage still owns the full journey. |
+| MAINT-06..MAINT-07 | **Done (code)** | Report submission controllers are orchestration-only and AI pipeline domain logic is extracted into services/value objects (`da716fe4`, `1129c49e`). |
+| MAINT-11..MAINT-12 | Not started | Release hardening and critical journey-target work remain. |
+| MAINT-04 | **Done (code)** | Admin users/departments/roles/organizations plus reports/integrations/notifications/AI/settings/retention hooks are decomposed behind compatibility re-exports (`a398219c`, `298c3000`, `02973ea2`). |
+| MAINT-08 | **Partial** | Nightly isolated-MySQL backend, full frontend, and authenticated citizen Playwright journeys are scheduled and validated locally (`d33a778e`); the first hosted scheduled run and ongoing monitoring remain. |
+| MAINT-09 | **Partial** | PHPStan/ESLint/Prettier/Pint ratchet baselines now fail on newly introduced debt (`47c59e69`); baseline reduction and broader CI quality reporting remain. |
+| MAINT-10 | **Done** | Product, REST, architecture, and deployment references now identify the authoritative React PWA/MySQL 8.4 stack (`1c60bde1`). |
+
+### Recommended Next Step
+
+The code-completable non-OTP work is tracked in reviewable commits. P0-01 remains explicitly deferred (mock OTP unchanged). Before any production release, run the full backend suite in isolated CI MySQL, complete legal review for P0-13, provision cPanel Redis/ClamAV prerequisites, and resolve the remaining Partial/Not-started P1/P2/BE/maintainability items.

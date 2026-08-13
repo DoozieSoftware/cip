@@ -23,9 +23,11 @@ use Illuminate\Support\Carbon;
  * @property string $key
  * @property string|null $user_id
  * @property string $route
+ * @property string $method
  * @property string $request_hash
  * @property int $response_status
  * @property array<string, mixed>|null $response_body
+ * @property Carbon|null $pending_expires_at
  * @property Carbon $created_at
  */
 class IdempotencyKey extends Model
@@ -48,9 +50,11 @@ class IdempotencyKey extends Model
         'key',
         'user_id',
         'route',
+        'method',
         'request_hash',
         'response_status',
         'response_body',
+        'pending_expires_at',
         'created_at',
     ];
 
@@ -62,6 +66,7 @@ class IdempotencyKey extends Model
         return [
             'response_status' => 'integer',
             'response_body' => 'array',
+            'pending_expires_at' => 'datetime',
             'created_at' => 'datetime',
         ];
     }

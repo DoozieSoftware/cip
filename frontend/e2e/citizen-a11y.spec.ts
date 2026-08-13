@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { installCitizenSession } from './helpers/citizen-session';
 
 /**
  * T-M13-021 — Citizen PWA full a11y audit.
@@ -21,6 +22,10 @@ const ROUTES: { path: string; heading: RegExp }[] = [
 ];
 
 test.describe('citizen — a11y (T-M13-021)', () => {
+  test.beforeEach(async ({ page }) => {
+    await installCitizenSession(page);
+  });
+
   for (const route of ROUTES) {
     test(`axe-core passes on ${route.path}`, async ({ page }) => {
       await page.goto(route.path);

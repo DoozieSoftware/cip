@@ -5,14 +5,18 @@ declare(strict_types=1);
 namespace App\Modules\Notifications\Providers;
 
 use App\Modules\AI\Events\AiCompleted;
+use App\Modules\Moderation\Events\ReportsMerged;
 use App\Modules\Notifications\Console\GenerateVapidKeys;
 use App\Modules\Notifications\Contracts\SmsGatewayInterface;
 use App\Modules\Notifications\Drivers\LogSmsGateway;
 use App\Modules\Notifications\Listeners\AiCompletedListener;
 use App\Modules\Notifications\Listeners\ReportAssignedListener;
+use App\Modules\Notifications\Listeners\ReportsMergedListener;
 use App\Modules\Notifications\Listeners\ReportStatusChangedListener;
+use App\Modules\Notifications\Listeners\SlaBreachedListener;
 use App\Modules\Reports\Events\ReportAssigned;
 use App\Modules\Reports\Events\ReportStatusChanged;
+use App\Modules\Workflow\Events\SlaBreached;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -30,6 +34,8 @@ class NotificationsServiceProvider extends ServiceProvider
         Event::listen(ReportStatusChanged::class, ReportStatusChangedListener::class);
         Event::listen(ReportAssigned::class, ReportAssignedListener::class);
         Event::listen(AiCompleted::class, AiCompletedListener::class);
+        Event::listen(ReportsMerged::class, ReportsMergedListener::class);
+        Event::listen(SlaBreached::class, SlaBreachedListener::class);
     }
 
     public function register(): void

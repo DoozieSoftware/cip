@@ -11,11 +11,9 @@ use Illuminate\Support\Facades\DB;
  * Grid-bucketed report density for the Public Portal's heat map
  * (Vision §7 / PRD M7). Never returns an individual report's exact
  * coordinates — every point is a `(round(lat, 2), round(lng, 2))`
- * cell (~1.1 km grid), the same rounding precision
- * `PiiMaskingService` already uses before shipping a report's
- * location to a third-party AI provider. A cell with very few
- * reports is still an aggregate of that many reports, never a
- * single citizen's submission.
+ * cell (~1.1 km grid). Cells are published only when they contain
+ * at least five reports, preventing a single submission from being
+ * discoverable through the public map.
  */
 class PublicHeatmapService
 {
@@ -34,12 +32,14 @@ class PublicHeatmapService
             $rows = DB::table('reports')
                 ->join('locations', 'locations.id', '=', 'reports.location_id')
                 ->whereNull('reports.deleted_at')
+                ->where('reports.created_at', '<=', now()->subHours(24))
                 ->select([
                     DB::raw('ROUND(locations.latitude, 2) as lat'),
                     DB::raw('ROUND(locations.longitude, 2) as lng'),
                     DB::raw('COUNT(*) as count'),
                 ])
                 ->groupBy('lat', 'lng')
+                ->havingRaw('COUNT(*) >= 5')
                 ->get();
 
             return $rows->map(function (\stdClass $row): array {

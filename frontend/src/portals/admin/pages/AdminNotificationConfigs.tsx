@@ -16,7 +16,7 @@ import {
   EmptyState,
   ErrorState,
   Badge,
-} from '../../moderator/design';
+} from '../../../shared/ui';
 import {
   IconBell,
   IconPlus,
@@ -76,11 +76,11 @@ function ConfigForm({
     <form onSubmit={submit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Channel</span>
+          <span className="font-medium text-[var(--color-ink)]">Channel</span>
           <select
             value={channel}
             onChange={(event) => setChannel(event.target.value as NotificationConfig['channel'])}
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           >
             {CHANNELS.map((item) => (
               <option key={item} value={item}>
@@ -90,47 +90,47 @@ function ConfigForm({
           </select>
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Code</span>
+          <span className="font-medium text-[var(--color-ink)]">Code</span>
           <input
             value={code}
             onChange={(event) => setCode(event.target.value)}
             required
             pattern="[a-z0-9_-]+"
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Display name</span>
+          <span className="font-medium text-[var(--color-ink)]">Display name</span>
           <input
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
             required
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-[#1d1d1b]">Retry attempts</span>
+          <span className="font-medium text-[var(--color-ink)]">Retry attempts</span>
           <input
             type="number"
             min={1}
             max={10}
             value={tries}
             onChange={(event) => setTries(Number(event.target.value))}
-            className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
       </div>
       <label className="block text-sm">
-        <span className="font-medium text-[#1d1d1b]">Credentials (JSON)</span>
+        <span className="font-medium text-[var(--color-ink)]">Credentials (JSON)</span>
         <textarea
           value={credentials}
           onChange={(event) => setCredentials(event.target.value)}
           rows={6}
-          className="mt-1 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 font-mono text-xs focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+          className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 font-mono text-xs focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </label>
       {error ? (
-        <p role="alert" className="text-sm text-[#9f3731]">
+        <p role="alert" className="text-sm text-[var(--color-danger)]">
           {error}
         </p>
       ) : null}
@@ -173,7 +173,7 @@ export default function AdminNotificationConfigs(): JSX.Element {
 
   if (list.isError) {
     return (
-      <div className="min-h-screen bg-[#f3f2ed] p-6">
+      <div className="min-h-screen bg-[var(--color-canvas)] p-6">
         <ErrorState
           title="Failed to load notification configs"
           description="There was a problem fetching the notification configurations."
@@ -194,14 +194,14 @@ export default function AdminNotificationConfigs(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f2ed] p-6">
+    <div className="min-h-screen bg-[var(--color-canvas)] p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">
+            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
               Notification configs
             </h1>
-            <p className="mt-1 text-sm text-[#6f6e69]">
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               Channel credentials, retry policy, and per-locale template defaults. Credentials are
               masked on every read.
             </p>
@@ -217,18 +217,18 @@ export default function AdminNotificationConfigs(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <IconBell className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+              <IconBell className="h-5 w-5 text-[var(--color-text-secondary)]" stroke={1.6} />
               <CardTitle>Filters</CardTitle>
             </div>
           </CardHeader>
           <CardBody>
             <div className="flex flex-wrap items-end gap-4">
               <label className="text-sm">
-                <span className="block font-medium text-[#1d1d1b]">Channel</span>
+                <span className="block font-medium text-[var(--color-ink)]">Channel</span>
                 <select
                   value={channel}
                   onChange={(e) => setChannel(e.target.value)}
-                  className="mt-1 block rounded-xl border border-[#d0cec8] bg-white px-4 py-2.5 text-sm focus:border-[#1d1d1b] focus:outline-none focus:ring-1 focus:ring-[#1d1d1b]"
+                  className="mt-1 block rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
                 >
                   <option value="">all</option>
                   {CHANNELS.map((c) => (
@@ -243,9 +243,9 @@ export default function AdminNotificationConfigs(): JSX.Element {
                   type="checkbox"
                   checked={activeOnly}
                   onChange={(e) => setActiveOnly(e.target.checked)}
-                  className="h-4 w-4 rounded border-[#d0cec8] text-[#1d1d1b] focus:ring-[#1d1d1b]"
+                  className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-ink)] focus:ring-[var(--color-ink)]"
                 />
-                <span className="font-medium text-[#1d1d1b]">active only</span>
+                <span className="font-medium text-[var(--color-ink)]">active only</span>
               </label>
             </div>
           </CardBody>
@@ -271,53 +271,53 @@ export default function AdminNotificationConfigs(): JSX.Element {
               </div>
             ) : (
               <table className="min-w-full">
-                <thead className="bg-[#f3f2ed]">
+                <thead className="bg-[var(--color-canvas)]">
                   <tr>
-                    <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Channel
                     </th>
-                    <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Code / name
                     </th>
-                    <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Active
                     </th>
-                    <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Retry
                     </th>
-                    <th className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-[#85847f]">
+                    <th className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#e4e2dc]">
+                <tbody className="divide-y divide-[var(--color-border-subtle)]">
                   {rows.map((c) => (
                     <tr key={c.id}>
                       <td className="px-5 py-3 text-sm">
                         <Badge tone={c.active ? 'success' : 'neutral'}>{c.channel}</Badge>
                       </td>
                       <td className="px-5 py-3 text-sm">
-                        <div className="font-mono text-xs text-[#6f6e69]">{c.code}</div>
-                        <div className="font-medium text-[#1d1d1b]">{c.display_name}</div>
+                        <div className="font-mono text-xs text-[var(--color-text-secondary)]">{c.code}</div>
+                        <div className="font-medium text-[var(--color-ink)]">{c.display_name}</div>
                       </td>
                       <td className="px-5 py-3 text-sm">
                         <button
                           type="button"
                           onClick={() => handleToggle(c)}
                           disabled={upsert.isPending}
-                          className="inline-flex items-center gap-2 text-sm text-[#1d1d1b]"
+                          className="inline-flex items-center gap-2 text-sm text-[var(--color-ink)]"
                           aria-pressed={c.active}
                           aria-label={`Toggle ${c.display_name}`}
                         >
                           {c.active ? (
-                            <IconToggleRight className="h-6 w-6 text-[#226b46]" stroke={1.6} />
+                            <IconToggleRight className="h-6 w-6 text-[var(--color-success)]" stroke={1.6} />
                           ) : (
-                            <IconToggleLeft className="h-6 w-6 text-[#85847f]" stroke={1.6} />
+                            <IconToggleLeft className="h-6 w-6 text-[var(--color-text-tertiary)]" stroke={1.6} />
                           )}
                         </button>
                       </td>
-                      <td className="px-5 py-3 text-sm text-[#6f6e69]">
-                        <code className="rounded bg-[#efeee9] px-1.5 py-0.5 text-xs text-[#1d1d1b]">
+                      <td className="px-5 py-3 text-sm text-[var(--color-text-secondary)]">
+                        <code className="rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 text-xs text-[var(--color-ink)]">
                           {c.retry_policy?.tries ?? '—'} attempts ·{' '}
                           {JSON.stringify(c.retry_policy?.backoff ?? [])}
                         </code>
@@ -350,7 +350,7 @@ export default function AdminNotificationConfigs(): JSX.Element {
             onSubmit={(input) => upsert.mutate(input, { onSuccess: () => setCreating(false) })}
           />
           {upsert.isError ? (
-            <p role="alert" className="mt-2 text-sm text-[#9f3731]">
+            <p role="alert" className="mt-2 text-sm text-[var(--color-danger)]">
               {upsert.error.message}
             </p>
           ) : null}

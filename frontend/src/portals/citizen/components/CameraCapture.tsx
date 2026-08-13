@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
 import { cx } from '../../../shared/ui/cx';
 import { guardVideoDuration, scrubFile } from '../security/evidenceGuards';
+import { useMessages } from '../messages';
 
 /**
  * T-M13-008 / T-M13-019 — Camera capture component.
@@ -52,6 +53,7 @@ function pickVideoMimeType(): string {
 }
 
 export function CameraCapture(props: CameraCaptureProps): JSX.Element {
+  const { t } = useMessages();
   const {
     mode,
     onCapture,
@@ -67,8 +69,11 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
   const chunksRef = useRef<Blob[]>([]);
 
   const [active, setActive] = useState(false);
+  const [recording, setRecording] = useState(false);
   const [error, setError] = useState<CameraError | null>(null);
+  const [statusMessage, setStatusMessage] = useState('');
   const [recordingMs, setRecordingMs] = useState(0);
+  const [processingProgress, setProcessingProgress] = useState<number | null>(null);
   const stoppedAtRef = useRef<number>(0);
 
   useEffect(() => {
@@ -88,19 +93,27 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     if (!active) return;
     const t = window.setInterval(() => {
       if (mode === 'video' && startedAtRef.current > 0) {
-        setRecordingMs(Date.now() - startedAtRef.current);
+        const elapsed = Date.now() - startedAtRef.current;
+        setRecordingMs(elapsed);
+
+        // Stop at the configured upper bound even if the user misses the
+        // button. This keeps clips within the server's evidence policy and
+        // avoids asking citizens to hold a phone perfectly for five seconds.
+        if (elapsed >= videoMaxMs && recorderRef.current?.state === 'recording') {
+          stoppedAtRef.current = Date.now();
+          recorderRef.current.stop();
+        }
       }
     }, 100);
     return () => window.clearInterval(t);
-  }, [active, mode]);
+  }, [active, mode, videoMaxMs]);
 
   async function startCamera(): Promise<void> {
     setError(null);
     if (typeof window !== 'undefined' && !window.isSecureContext) {
       const e: CameraError = {
         kind: 'permission_denied',
-        message:
-          'Camera access requires HTTPS or localhost. Open the app with https:// and try again.',
+        message: t('camera.httpsRequired'),
       };
       setError(e);
       onError?.(e);
@@ -109,7 +122,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       const e: CameraError = {
         kind: 'not_found',
-        message: 'Camera not available in this browser.',
+        message: t('camera.notAvailable'),
       };
       setError(e);
       onError?.(e);
@@ -132,10 +145,10 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
       const e: CameraError = {
         kind: 'permission_denied',
         message: permissionBlocked
-          ? 'Camera permission is blocked. Open browser site settings for this site, allow Camera, then tap Open camera again.'
+          ? t('camera.permissionBlocked')
           : err instanceof Error
             ? err.message
-            : 'Camera access denied.',
+            : t('camera.accessDenied'),
       };
       setError(e);
       onError?.(e);
@@ -148,10 +161,13 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
       streamRef.current = null;
     }
     setActive(false);
+    setRecording(false);
   }
 
   async function takePhoto(): Promise<void> {
     if (!videoRef.current) return;
+    setProcessingProgress(10);
+    setStatusMessage(t('camera.compressing'));
     const v = videoRef.current;
     const canvas = document.createElement('canvas');
     canvas.width = v.videoWidth;
@@ -163,10 +179,14 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
       canvas.toBlob(resolve, 'image/jpeg', 0.85),
     );
     if (!blob) return;
+    setProcessingProgress(70);
     const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
     const cleaned = await scrubFile(file);
+    setProcessingProgress(100);
     onCapture(cleaned);
+    setStatusMessage(t('camera.photoReady'));
     stopStream();
+    setProcessingProgress(null);
   }
 
   function startRecording(): void {
@@ -174,8 +194,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     if (typeof MediaRecorder === 'undefined') {
       const err: CameraError = {
         kind: 'not_found',
-        message:
-          'Video recording is not supported by this browser. Try Chrome or Safari 17+ on HTTPS.',
+        message: t('camera.videoNotSupported'),
       };
       setError(err);
       onError?.(err);
@@ -195,10 +214,10 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
       } catch {
         const err: CameraError = {
           kind: 'not_found',
-          message:
-            'Video recording is not supported by this browser. Try Chrome or Safari 17+ on HTTPS.',
+          message: t('camera.videoNotSupported'),
         };
         setError(err);
+        setRecording(false);
         onError?.(err);
         return;
       }
@@ -210,6 +229,8 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     // start() is *called* (MediaRecorder has a short warm-up delay).
     rec.onstart = () => {
       startedAtRef.current = Date.now();
+      setRecording(true);
+      setStatusMessage(t('camera.recordingStarted'));
     };
     rec.onstop = () => {
       // Measure to the instant stop() was clicked, not to onstop firing
@@ -225,16 +246,22 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
           message: result.message,
         };
         setError(err);
+        setRecording(false);
         onError?.(err);
         stopStream();
         return;
       }
       const blobType = rec.mimeType || mimeType;
+      setProcessingProgress(25);
+      setStatusMessage(t('camera.compressing'));
       const blob = new Blob(chunksRef.current, { type: blobType });
       const ext = blobType.includes('mp4') ? 'mp4' : 'webm';
       const file = new File([blob], `video-${Date.now()}.${ext}`, { type: blobType });
+      setProcessingProgress(100);
       onCapture(file);
+      setStatusMessage(t('camera.videoReady'));
       stopStream();
+      setProcessingProgress(null);
     };
     recorderRef.current = rec;
     startedAtRef.current = Date.now();
@@ -251,38 +278,104 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
   return (
     <div className={cx('space-y-3', className)}>
       <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900">
-        <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          aria-label={t('camera.preview')}
+          className="h-full w-full object-cover"
+        />
         {!active ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-300">
             <span aria-hidden className="text-4xl">
               ◎
             </span>
-            <p className="text-sm">Camera off</p>
+            <p className="text-sm">{t('camera.off')}</p>
           </div>
         ) : null}
         {active && mode === 'video' && recordingMs > 0 ? (
           <div
-            aria-live="polite"
+            aria-live="off"
+            aria-label={t('camera.recordingTime', {
+              elapsed: (recordingMs / 1000).toFixed(1),
+              remaining: (Math.max(0, videoMaxMs - recordingMs) / 1000).toFixed(1),
+            })}
             className={cx(
               'absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs text-white',
               recordingMs > videoMaxMs - 1000 ? 'text-rose-300' : 'text-blue-300',
             )}
           >
-            ● {(recordingMs / 1000).toFixed(1)}s
+            ●{' '}
+            {t('camera.recordingTime', {
+              elapsed: (recordingMs / 1000).toFixed(1),
+              remaining: (Math.max(0, videoMaxMs - recordingMs) / 1000).toFixed(1),
+            })}
           </div>
         ) : null}
       </div>
 
+      <div className="sr-only" aria-live="polite">
+        {statusMessage}
+      </div>
+
+      {processingProgress !== null ? (
+        <div className="space-y-1" role="status" aria-live="polite">
+          <div
+            role="progressbar"
+            aria-label={t('camera.compressionProgress')}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={processingProgress}
+            className="h-2 overflow-hidden rounded-full bg-slate-200"
+          >
+            <span
+              className="block h-full rounded-full bg-blue-600 transition-[width]"
+              style={{ width: `${processingProgress}%` }}
+            />
+          </div>
+          <p className="text-xs text-slate-600">{t('camera.compressing')}</p>
+        </div>
+      ) : null}
+
+      {active && mode === 'video' && recording ? (
+        <div className="space-y-1" role="group" aria-label={t('camera.recordingProgressLabel')}>
+          <div
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={videoMaxMs}
+            aria-valuenow={Math.min(recordingMs, videoMaxMs)}
+            aria-valuetext={t('camera.recordingTime', {
+              elapsed: (recordingMs / 1000).toFixed(1),
+              remaining: (Math.max(0, videoMaxMs - recordingMs) / 1000).toFixed(1),
+            })}
+            className="h-2 overflow-hidden rounded-full bg-slate-200"
+          >
+            <span
+              className="block h-full rounded-full bg-rose-600 transition-[width]"
+              style={{ width: `${Math.min(100, (recordingMs / videoMaxMs) * 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-slate-600">{t('camera.recordProgressHint')}</p>
+        </div>
+      ) : null}
+
       {error ? (
-        <p
+        <div
           role="alert"
           className="rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800"
         >
-          {error.message}
-        </p>
+          <p>{error.message}</p>
+          <button
+            type="button"
+            onClick={() => void startCamera()}
+            className="mt-2 min-h-10 rounded-full border border-rose-400 bg-white px-3 font-medium text-rose-900 hover:bg-rose-100"
+          >
+            {t('camera.tryAgain')}
+          </button>
+        </div>
       ) : mode === 'video' && !active ? (
         <p className="text-xs text-slate-500">
-          Record a short clip between {videoMinMs / 1000} and {videoMaxMs / 1000} seconds.
+          {t('camera.recordHint', { min: videoMinMs / 1000, max: videoMaxMs / 1000 })}
         </p>
       ) : null}
 
@@ -293,24 +386,24 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
             onClick={() => void startCamera()}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
           >
-            Open camera
+            {t('camera.openCamera')}
           </button>
         ) : mode === 'photo' ? (
           <button
             type="button"
             onClick={() => void takePhoto()}
             className="rounded-full bg-white p-4 shadow ring-2 ring-blue-500 transition hover:bg-blue-50"
-            aria-label="Take photo"
+            aria-label={t('camera.takePhoto')}
           >
             <span aria-hidden className="block h-12 w-12 rounded-full bg-blue-600" />
           </button>
-        ) : recorderRef.current?.state === 'recording' ? (
+        ) : recording ? (
           <button
             type="button"
             onClick={stopRecording}
             className="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700"
           >
-            Stop recording
+            {t('camera.stopRecording')}
           </button>
         ) : (
           <button
@@ -318,7 +411,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
             onClick={startRecording}
             className="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700"
           >
-            Start recording
+            {t('camera.startRecording')}
           </button>
         )}
       </div>

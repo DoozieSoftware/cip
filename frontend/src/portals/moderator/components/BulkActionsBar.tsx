@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Dialog, Input, Textarea } from '../../../shared/ui';
+import { Button, Dialog, Select, Textarea } from '../../../shared/ui';
 
 /**
  * Sticky bulk-action toolbar (T-M10-022). Lets a moderator select N
@@ -15,15 +15,30 @@ export interface BulkAction {
   canonical_id?: string;
 }
 
+interface BulkReportOption {
+  id: string;
+  tracking_number: string;
+  title: string;
+}
+
+const REJECT_REASONS = [
+  { value: 'invalid_evidence', label: 'Invalid evidence' },
+  { value: 'duplicate', label: 'Duplicate of another report' },
+  { value: 'fraudulent', label: 'Fraudulent' },
+  { value: 'out_of_scope', label: 'Out of platform scope' },
+  { value: 'incomplete', label: 'Incomplete information' },
+];
+
 export function BulkActionsBar({
-  count,
+  reports,
   onApply,
   loading,
 }: {
-  count: number;
+  reports: BulkReportOption[];
   onApply: (a: BulkAction) => void;
   loading: boolean;
 }) {
+  const count = reports.length;
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<BulkAction['type']>('reject');
   const [reason, setReason] = useState('');
@@ -84,6 +99,8 @@ export function BulkActionsBar({
             <Button
               variant={type === 'reject' ? 'danger' : 'primary'}
               loading={loading}
+              disabled={(type === 'merge' && !canonical) || (type === 'reject' && !reason)}
+              className="disabled:text-white"
               onClick={() => {
                 onApply({
                   type,
@@ -101,20 +118,27 @@ export function BulkActionsBar({
       >
         <div className="space-y-3">
           {type === 'merge' && (
-            <Input
-              label="Canonical report id (UUID)"
+            <Select
+              label="Canonical report"
               name="canonical_id"
               value={canonical}
               onChange={(e) => setCanonical(e.target.value)}
+              options={[
+                { value: '', label: 'Select the canonical report' },
+                ...reports.map((report) => ({
+                  value: report.id,
+                  label: `${report.tracking_number} — ${report.title}`,
+                })),
+              ]}
             />
           )}
           {type === 'reject' && (
-            <Input
-              label="Reason code"
+            <Select
+              label="Reason"
               name="reason_code"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. duplicate"
+              options={[{ value: '', label: 'Select a reason' }, ...REJECT_REASONS]}
             />
           )}
           <Textarea

@@ -38,7 +38,12 @@ export interface AuthContextValue {
   token: string | null;
   isAuthenticated: boolean;
   hasAnyRole: (roles: Role[]) => boolean;
-  login: (token: string, user: SessionUser) => void;
+  login: (
+    token: string,
+    user: SessionUser,
+    refreshToken?: string | null,
+    refreshExpiresAt?: string | null,
+  ) => void;
   logout: () => void;
   loading: boolean;
 }
@@ -66,25 +71,67 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     setLoading(false);
   }, []);
 
-  const login = useCallback((nextToken: string, nextUser: SessionUser): void => {
-    setToken(nextToken);
-    setUser(nextUser);
-    const persistedUser: PersistedSession['user'] = {
-      id: nextUser.id,
-      name: nextUser.name ?? null,
-      mobile: nextUser.mobile ?? null,
-      email: nextUser.email ?? null,
-      roles: nextUser.roles,
-      departments: nextUser.departments,
-    };
-    writeSession({ token: nextToken, user: persistedUser });
-  }, []);
+  const login = useCallback(
+    (
+      nextToken: string,
+      nextUser: SessionUser,
+      refreshToken?: string | null,
+      refreshExpiresAt?: string | null,
+    ): void => {
+      setToken(nextToken);
+      setUser(nextUser);
+      const persistedUser: PersistedSession['user'] = {
+        id: nextUser.id,
+        name: nextUser.name ?? null,
+        mobile: nextUser.mobile ?? null,
+        email: nextUser.email ?? null,
+        roles: nextUser.roles,
+        departments: nextUser.departments,
+      };
+      writeSession({
+        token: nextToken,
+        refresh_token: refreshToken ?? undefined,
+        refresh_expires_at: refreshExpiresAt ?? undefined,
+        user: persistedUser,
+      });
+    },
+    [],
+  );
 
   const logout = useCallback((): void => {
+    const persisted = readSession();
+    const ownerId = user?.id;
+
+    // Revoke the server-side Sanctum access token and all active refresh
+    // tokens before clearing local state. This is intentionally best effort:
+    // logout must still complete when the device is offline or the API is
+    // unavailable, while the backend endpoint remains the source of truth
+    // for token revocation.
+    if (persisted?.token && typeof window !== 'undefined') {
+      const apiBase = (import.meta.env['VITE_API_BASE'] as string | undefined) ?? '/api/v1';
+      try {
+        const url = new URL(`${apiBase}/auth/logout`, window.location.origin).toString();
+        void fetch(url, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${persisted.token}`,
+          },
+          credentials: 'same-origin',
+          keepalive: true,
+        }).catch(() => undefined);
+      } catch {
+        // Invalid runtime configuration must not prevent local logout.
+      }
+    }
+
+    if (typeof window !== 'undefined' && ownerId) {
+      window.dispatchEvent(new CustomEvent('cip:auth-logout', { detail: { ownerId } }));
+    }
     setToken(null);
     setUser(null);
     writeSession(null);
-  }, []);
+  }, [user]);
 
   const hasAnyRole = useCallback(
     (roles: Role[]): boolean => {

@@ -131,7 +131,51 @@ class DepartmentPolicy extends BasePolicy
      */
     public function attachProof(User $user, mixed $report): bool
     {
-        return $this->view($user, $report);
+        if (! $report instanceof Report) {
+            return false;
+        }
+
+        if ($user->hasAnyRole(['super_admin', 'system'])) {
+            return true;
+        }
+
+        if (! DepartmentScope::isDepartmentScopedStaff($user)) {
+            return false;
+        }
+
+        $departmentIds = DepartmentScope::memberDepartmentIds($user);
+
+        return $departmentIds !== [] && $report->assignments()
+            ->whereNull('reassigned_at')
+            ->whereIn('task_status', [
+                ReportAssignment::TASK_STATUS_OPEN,
+                ReportAssignment::TASK_STATUS_COMPLETED,
+            ])
+            ->whereIn('department_id', $departmentIds)
+            ->exists();
+    }
+
+    public function attachProofToAssignment(User $user, mixed $assignment): bool
+    {
+        if (! $assignment instanceof ReportAssignment) {
+            return false;
+        }
+
+        if ($user->hasAnyRole(['super_admin', 'system'])) {
+            return true;
+        }
+
+        return DepartmentScope::isDepartmentScopedStaff($user)
+            && $assignment->reassigned_at === null
+            && in_array($assignment->task_status, [
+                ReportAssignment::TASK_STATUS_OPEN,
+                ReportAssignment::TASK_STATUS_COMPLETED,
+            ], true)
+            && in_array(
+                $assignment->department_id,
+                DepartmentScope::memberDepartmentIds($user),
+                true,
+            );
     }
 
     public function completeTask(User $user, mixed $assignment): bool

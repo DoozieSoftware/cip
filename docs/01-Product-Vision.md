@@ -307,14 +307,14 @@ All applications consume a shared REST API.
 Backend
 
 * Laravel 12
-* PostgreSQL + PostGIS
+* MySQL 8.4 with MySQL Spatial
 * Redis
 * Horizon
 * MinIO / S3
 
 Mobile
 
-* Flutter
+* React 19 citizen PWA (TypeScript/Vite)
 
 Frontend
 

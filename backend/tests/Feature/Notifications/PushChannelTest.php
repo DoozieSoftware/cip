@@ -107,6 +107,23 @@ it('returns a permanent failure when the payload has no device token', function 
     Http::assertNothingSent();
 });
 
+it('uses the Web Push path when VAPID is configured but the user has no subscriptions', function (): void {
+    config([
+        'notifications.vapid.public_key' => 'public-key',
+        'notifications.vapid.private_key' => 'private-key',
+        'notifications.vapid.subject' => 'mailto:test@example.test',
+    ]);
+
+    $channel = app(PushChannel::class);
+    [$notification, $template] = makePushFixtures(deviceToken: null);
+
+    $result = $channel->send($notification, $template);
+
+    expect($result->success)->toBeFalse()
+        ->and($result->isTransient)->toBeFalse()
+        ->and($result->error)->toBe('no active web push subscriptions');
+});
+
 /**
  * @return array{0: Notification, 1: NotificationTemplate}
  */

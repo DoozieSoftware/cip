@@ -22,37 +22,28 @@ import type { DepartmentReportListItem, Paginated, ReportType } from '../types';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All' },
-  { value: 'assigned', label: 'Assigned' },
-  { value: 'accepted', label: 'Accepted' },
-  { value: 'in_progress', label: 'In progress' },
-  { value: 'resolved', label: 'Resolved' },
-  { value: 'verified', label: 'Verified' },
-  { value: 'closed', label: 'Closed' },
-  { value: 'escalated', label: 'Escalated' },
+  { value: 'assigned', label: statusLabel('assigned') },
+  { value: 'accepted', label: statusLabel('accepted') },
+  { value: 'in_progress', label: statusLabel('in_progress') },
+  { value: 'resolved', label: statusLabel('resolved') },
+  { value: 'resolved_pending_verification', label: statusLabel('resolved_pending_verification') },
+  { value: 'reopened', label: statusLabel('reopened') },
+  { value: 'verified', label: statusLabel('verified') },
+  { value: 'closed', label: statusLabel('closed') },
+  { value: 'escalated', label: statusLabel('escalated') },
 ];
-
-const PRIORITY_OPTIONS = [
-  { value: '', label: 'Any priority' },
-  { value: 'high', label: 'High' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'low', label: 'Low' },
-];
-
-const PRIORITY_TONE: Record<string, 'danger' | 'warning' | 'neutral'> = {
-  high: 'danger',
-  medium: 'warning',
-  low: 'neutral',
-};
 
 const NEXT_ACTION: Record<string, string> = {
   assigned: 'Accept assignment',
   accepted: 'Start field work',
   in_progress: 'Update or resolve',
-  resolved: 'Close after proof check',
-  verified: 'Verified',
+  resolved: 'Review fix proof',
+  resolved_pending_verification: 'Waiting for citizen',
+  reopened: 'Resume work',
+  verified: 'Citizen confirmed',
   closed: 'Closed',
   escalated: 'Supervisor attention',
-  merged: 'Merged',
+  merged: 'Merged duplicate',
 };
 
 function relativeDate(value: string | null): string {
@@ -80,8 +71,8 @@ function ReportLocationText({ location }: { location: DepartmentReportListItem['
 
   return (
     <div className="mt-1.5 flex items-center gap-1.5">
-      <IconMapPin size={12} stroke={1.6} className="shrink-0 text-[#85847f]" />
-      <span className="truncate text-xs text-[#85847f]">
+      <IconMapPin size={12} stroke={1.6} className="shrink-0 text-[var(--color-text-tertiary)]" />
+      <span className="truncate text-xs text-[var(--color-text-tertiary)]">
         {providedAddress ??
           (geocodedAddress || (location ? 'Location captured' : 'Location unavailable'))}
       </span>
@@ -93,8 +84,7 @@ function useReportTypeOptions() {
   return useQuery({
     queryKey: ['operations', 'report-types'],
     queryFn: async (): Promise<ReportType[]> => {
-      const res = await api.get<{ success: boolean; data: ReportType[] }>('/report-types');
-      return res.data;
+      return api.get<ReportType[]>('/report-types');
     },
   });
 }
@@ -106,7 +96,6 @@ export default function ReportListPage() {
   const [params, setParams] = useSearchParams();
   const [filters, setFilters] = useState<ReportListFilters>(() => ({
     status: params.get('status') ?? '',
-    priority: params.get('priority') ?? '',
     category: params.get('category') ?? '',
     search: params.get('search') ?? '',
     date_from: params.get('date_from') ?? '',
@@ -153,7 +142,6 @@ export default function ReportListPage() {
   function clearFilters() {
     setFilters({
       status: '',
-      priority: '',
       category: '',
       search: '',
       date_from: '',
@@ -184,7 +172,7 @@ export default function ReportListPage() {
             onClick={() => {
               void refetch();
             }}
-            className="text-sm font-medium text-[#1d1d1b] underline underline-offset-2"
+            className="text-sm font-medium text-[var(--color-ink)] underline underline-offset-2"
           >
             Retry
           </button>
@@ -215,7 +203,6 @@ export default function ReportListPage() {
   }).length;
   const activeFilterCount = [
     filters.status,
-    filters.priority,
     filters.category,
     filters.search,
     filters.date_from,
@@ -226,11 +213,11 @@ export default function ReportListPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-wider text-[#85847f]">
-            {secondaryOnly ? 'Linked reports' : 'Officer queue'}
+          <p className="font-mono text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+            {secondaryOnly ? 'Cross-agency' : 'Officer queue'}
           </p>
-          <h1 className="mt-1 text-xl font-semibold text-[#1d1d1b]">
-            {secondaryOnly ? 'Linked reports' : 'Assigned reports'}
+          <h1 className="mt-1 text-xl font-semibold text-[var(--color-ink)]">
+            {secondaryOnly ? 'Cross-agency' : 'Assigned reports'}
           </h1>
         </div>
         <div className="flex items-center gap-2">
@@ -238,21 +225,21 @@ export default function ReportListPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-3 text-xs text-[#6f6e69]">
-        <span className="font-semibold text-[#1d1d1b]">{data.meta.total} reports</span>
-        <span aria-hidden className="text-[#85847f]">
+      <div className="flex flex-wrap items-center gap-x-3 text-xs text-[var(--color-text-secondary)]">
+        <span className="font-semibold text-[var(--color-ink)]">{data.meta.total} reports</span>
+        <span aria-hidden className="text-[var(--color-text-tertiary)]">
           |
         </span>
         <span>
-          <strong className="font-semibold text-[#1d1d1b]">{needsAction}</strong> action
+          <strong className="font-semibold text-[var(--color-ink)]">{needsAction}</strong> action
         </span>
-        <span aria-hidden className="text-[#85847f]">
+        <span aria-hidden className="text-[var(--color-text-tertiary)]">
           |
         </span>
         <span>
           <strong className="font-semibold text-red-600">{overdue}</strong> overdue
         </span>
-        <span aria-hidden className="text-[#85847f]">
+        <span aria-hidden className="text-[var(--color-text-tertiary)]">
           |
         </span>
         <span>
@@ -268,7 +255,7 @@ export default function ReportListPage() {
               size={16}
               stroke={1.6}
               aria-hidden
-              className="pointer-events-none absolute inset-y-0 left-3 my-auto text-[#85847f]"
+              className="pointer-events-none absolute inset-y-0 left-3 my-auto text-[var(--color-text-tertiary)]"
             />
             <input
               name="search"
@@ -276,7 +263,7 @@ export default function ReportListPage() {
               placeholder="Search title or report number"
               value={filters.search ?? ''}
               onChange={(e) => updateFilter('search', e.target.value)}
-              className="h-10 w-full rounded-full border-0 bg-[#f3f2ed] pl-9 pr-3 text-sm text-[#1d1d1b] outline-none transition placeholder:text-[#85847f] focus:ring-2 focus:ring-[#1d1d1b]/10"
+              className="h-10 w-full rounded-full border-0 bg-[var(--color-canvas)] pl-9 pr-3 text-sm text-[var(--color-ink)] outline-none transition placeholder:text-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-ink)]/10"
             />
           </label>
           <button
@@ -285,8 +272,8 @@ export default function ReportListPage() {
             aria-expanded={filtersOpen}
             className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-medium transition ${
               filtersOpen || activeFilterCount > 0
-                ? 'bg-[#1d1d1b] text-white'
-                : 'bg-[#f3f2ed] text-[#1d1d1b]'
+                ? 'bg-[var(--color-ink)] text-white'
+                : 'bg-[var(--color-canvas)] text-[var(--color-ink)]'
             }`}
           >
             <IconFilter size={14} stroke={1.6} />
@@ -300,7 +287,7 @@ export default function ReportListPage() {
         </div>
 
         {filtersOpen && (
-          <div className="mt-3 border-t border-[#f3f2ed] pt-3">
+          <div className="mt-3 border-t border-[var(--color-canvas)] pt-3">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <label>
                 <span className="sr-only">Status</span>
@@ -308,26 +295,11 @@ export default function ReportListPage() {
                   name="status"
                   value={filters.status ?? ''}
                   onChange={(e) => updateFilter('status', e.target.value)}
-                  className="h-9 w-full rounded-full border-0 bg-[#f3f2ed] px-4 text-sm text-[#1d1d1b] outline-none focus:ring-2 focus:ring-[#1d1d1b]/10"
+                  className="h-9 w-full rounded-full border-0 bg-[var(--color-canvas)] px-4 text-sm text-[var(--color-ink)] outline-none focus:ring-2 focus:ring-[var(--color-ink)]/10"
                 >
                   {STATUS_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.value ? `Status: ${option.label}` : 'All statuses'}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span className="sr-only">Priority</span>
-                <select
-                  name="priority"
-                  value={filters.priority ?? ''}
-                  onChange={(e) => updateFilter('priority', e.target.value)}
-                  className="h-9 w-full rounded-full border-0 bg-[#f3f2ed] px-4 text-sm text-[#1d1d1b] outline-none focus:ring-2 focus:ring-[#1d1d1b]/10"
-                >
-                  {PRIORITY_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
                     </option>
                   ))}
                 </select>
@@ -338,7 +310,7 @@ export default function ReportListPage() {
                   name="category"
                   value={filters.category ?? ''}
                   onChange={(e) => updateFilter('category', e.target.value)}
-                  className="h-9 w-full rounded-full border-0 bg-[#f3f2ed] px-4 text-sm text-[#1d1d1b] outline-none focus:ring-2 focus:ring-[#1d1d1b]/10"
+                  className="h-9 w-full rounded-full border-0 bg-[var(--color-canvas)] px-4 text-sm text-[var(--color-ink)] outline-none focus:ring-2 focus:ring-[var(--color-ink)]/10"
                 >
                   <option value="">All categories</option>
                   {(reportTypes.data ?? []).map((type) => (
@@ -351,7 +323,7 @@ export default function ReportListPage() {
             </div>
             <div className="mt-2 flex flex-wrap items-end gap-2">
               <label className="min-w-[140px] flex-1">
-                <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                   From date
                 </span>
                 <input
@@ -359,11 +331,11 @@ export default function ReportListPage() {
                   type="date"
                   value={filters.date_from ?? ''}
                   onChange={(e) => updateFilter('date_from', e.target.value)}
-                  className="h-9 w-full rounded-full border-0 bg-[#f3f2ed] px-4 text-sm text-[#1d1d1b] outline-none focus:ring-2 focus:ring-[#1d1d1b]/10"
+                  className="h-9 w-full rounded-full border-0 bg-[var(--color-canvas)] px-4 text-sm text-[var(--color-ink)] outline-none focus:ring-2 focus:ring-[var(--color-ink)]/10"
                 />
               </label>
               <label className="min-w-[140px] flex-1">
-                <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                   To date
                 </span>
                 <input
@@ -371,7 +343,7 @@ export default function ReportListPage() {
                   type="date"
                   value={filters.date_to ?? ''}
                   onChange={(e) => updateFilter('date_to', e.target.value)}
-                  className="h-9 w-full rounded-full border-0 bg-[#f3f2ed] px-4 text-sm text-[#1d1d1b] outline-none focus:ring-2 focus:ring-[#1d1d1b]/10"
+                  className="h-9 w-full rounded-full border-0 bg-[var(--color-canvas)] px-4 text-sm text-[var(--color-ink)] outline-none focus:ring-2 focus:ring-[var(--color-ink)]/10"
                 />
               </label>
               {activeFilterCount > 0 && (
@@ -397,13 +369,15 @@ export default function ReportListPage() {
             <Link
               key={r.id}
               to={`/operations/reports/${r.id}${selectedId ? `?department_id=${encodeURIComponent(selectedId)}` : ''}`}
-              className="group block rounded-xl bg-white p-4 transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1d1d1b]"
+              className="group block rounded-xl bg-white p-4 transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
             >
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={r.assignment?.kind === 'secondary' ? 'purple' : 'neutral'}>
-                      {r.assignment?.kind === 'secondary' ? 'Linked report' : 'Primary report'}
+                      {r.assignment?.kind === 'secondary'
+                        ? 'Cross-agency report'
+                        : 'Primary report'}
                     </Badge>
                     <Badge
                       tone={
@@ -418,38 +392,37 @@ export default function ReportListPage() {
                         ? statusLabel(r.assignment.status)
                         : statusLabel(r.current_status_code)}
                     </Badge>
-                    {r.priority && (
-                      <Badge tone={PRIORITY_TONE[r.priority.code] ?? 'neutral'}>
-                        {r.priority.name}
-                      </Badge>
-                    )}
                   </div>
-                  <h2 className="mt-2 line-clamp-1 text-sm font-semibold text-[#1d1d1b] group-hover:underline">
+                  <h2 className="mt-2 line-clamp-1 text-sm font-semibold text-[var(--color-ink)] group-hover:underline">
                     {r.title}
                   </h2>
-                  <p className="mt-0.5 font-mono text-[11px] text-[#85847f]">{r.tracking_number}</p>
+                  <p className="mt-0.5 font-mono text-[11px] text-[var(--color-text-tertiary)]">
+                    {r.tracking_number}
+                  </p>
                   <ReportLocationText location={r.location} />
                 </div>
                 <div className="flex shrink-0 items-center gap-6 text-xs lg:gap-8">
                   <div>
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
-                      SLA
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                      Due target
                     </p>
                     <div className="mt-1">
                       <SlaBadge report={r} assignment={r.assignment} />
                     </div>
                   </div>
                   <div>
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                       Reported
                     </p>
-                    <p className="mt-1 text-[#6f6e69]">{relativeDate(r.submitted_at)}</p>
+                    <p className="mt-1 text-[var(--color-text-secondary)]">
+                      {relativeDate(r.submitted_at)}
+                    </p>
                   </div>
                   <div>
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-[#85847f]">
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                       Next step
                     </p>
-                    <p className="mt-1 text-[#6f6e69]">
+                    <p className="mt-1 text-[var(--color-text-secondary)]">
                       {r.assignment?.kind === 'secondary'
                         ? 'Complete task'
                         : (NEXT_ACTION[r.current_status_code ?? ''] ?? 'Review')}
@@ -458,7 +431,7 @@ export default function ReportListPage() {
                   <IconArrowRight
                     size={16}
                     stroke={1.6}
-                    className="hidden text-[#85847f] transition group-hover:translate-x-0.5 group-hover:text-[#1d1d1b] lg:block"
+                    className="hidden text-[var(--color-text-tertiary)] transition group-hover:translate-x-0.5 group-hover:text-[var(--color-ink)] lg:block"
                   />
                 </div>
               </div>
@@ -468,7 +441,7 @@ export default function ReportListPage() {
       )}
 
       {data.meta.last_page > 1 && (
-        <div className="flex items-center justify-between text-xs text-[#85847f]">
+        <div className="flex items-center justify-between text-xs text-[var(--color-text-tertiary)]">
           <span className="font-mono text-[11px]">
             {data.meta.current_page} / {data.meta.last_page}
           </span>
@@ -477,7 +450,7 @@ export default function ReportListPage() {
               type="button"
               disabled={data.meta.current_page <= 1}
               onClick={() => goToPage((filters.page ?? 1) - 1)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#1d1d1b] transition hover:bg-[#f3f2ed] disabled:opacity-30"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)] disabled:opacity-30"
             >
               <IconChevronLeft size={16} stroke={1.6} />
             </button>
@@ -485,7 +458,7 @@ export default function ReportListPage() {
               type="button"
               disabled={data.meta.current_page >= data.meta.last_page}
               onClick={() => goToPage((filters.page ?? 1) + 1)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#1d1d1b] transition hover:bg-[#f3f2ed] disabled:opacity-30"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)] disabled:opacity-30"
             >
               <IconChevronRight size={16} stroke={1.6} />
             </button>

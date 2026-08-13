@@ -28,6 +28,7 @@ function baseReport(overrides: Partial<DepartmentReportDetail> = {}): Department
   return {
     id: REPORT_ID,
     tracking_number: 'CIP-2026-0001',
+    workflow_version: 1,
     title: 'Pothole on Main St',
     description: 'Deep pothole near the junction',
     is_anonymous: false,
@@ -72,17 +73,13 @@ function renderWithClient(ui: ReactElement) {
 }
 
 function renderPage(report: DepartmentReportDetail) {
-  vi.mocked(departmentApi.memberships).mockResolvedValue({
-    success: true,
-    data: [{ id: 'dept-1', code: 'BBMP', name: 'BBMP' }],
-  });
-  vi.mocked(departmentApi.showReportInDepartment).mockResolvedValue({
-    success: true,
-    data: report,
-  });
-  vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
-  vi.mocked(departmentApi.action).mockResolvedValue({ success: true, data: report });
-  vi.mocked(departmentApi.completeTask).mockResolvedValue({ success: true, data: report });
+  vi.mocked(departmentApi.memberships).mockResolvedValue([
+    { id: 'dept-1', code: 'BBMP', name: 'BBMP' },
+  ]);
+  vi.mocked(departmentApi.showReportInDepartment).mockResolvedValue(report);
+  vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
+  vi.mocked(departmentApi.action).mockResolvedValue(report);
+  vi.mocked(departmentApi.completeTask).mockResolvedValue(report);
   renderWithClient(<ReportDetailPage />);
 }
 
@@ -92,25 +89,23 @@ beforeEach(() => {
 
 describe('ReportDetailPage', () => {
   it('shows a loading state while the report is being fetched', () => {
-    vi.mocked(departmentApi.memberships).mockResolvedValue({
-      success: true,
-      data: [{ id: 'dept-1', code: 'BBMP', name: 'BBMP' }],
-    });
+    vi.mocked(departmentApi.memberships).mockResolvedValue([
+      { id: 'dept-1', code: 'BBMP', name: 'BBMP' },
+    ]);
     vi.mocked(departmentApi.showReportInDepartment).mockReturnValue(new Promise(() => {}));
-    vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
+    vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
     renderWithClient(<ReportDetailPage />);
     expect(screen.getByLabelText('Loading report')).toBeInTheDocument();
   });
 
   it('shows an error state with retry when the report fails to load', async () => {
-    vi.mocked(departmentApi.memberships).mockResolvedValue({
-      success: true,
-      data: [{ id: 'dept-1', code: 'BBMP', name: 'BBMP' }],
-    });
+    vi.mocked(departmentApi.memberships).mockResolvedValue([
+      { id: 'dept-1', code: 'BBMP', name: 'BBMP' },
+    ]);
     vi.mocked(departmentApi.showReportInDepartment).mockRejectedValue(
       new Error('backend unreachable'),
     );
-    vi.mocked(departmentApi.listNotes).mockResolvedValue({ success: true, data: [] });
+    vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
     renderWithClient(<ReportDetailPage />);
     expect(await screen.findByText('Report not found')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
@@ -175,7 +170,7 @@ describe('ReportDetailPage', () => {
     expect(screen.queryByRole('img', { name: 'Citizen evidence 2' })).toBeNull();
   });
 
-  it('shows the SLA chip when the department SLA is configured', async () => {
+  it('shows the Due target chip when the department Due target is configured', async () => {
     renderPage(baseReport());
     expect(await screen.findAllByText(/Overdue by/)).not.toHaveLength(0);
   });
@@ -214,9 +209,9 @@ describe('ReportDetailPage', () => {
       }),
     );
 
-    expect(await screen.findByText('Linked departments')).toBeInTheDocument();
+    expect(await screen.findByText('Cross-agency departments')).toBeInTheDocument();
     expect(screen.getByText('Primary — owns closure')).toBeInTheDocument();
-    expect(screen.getByText('Linked — assists resolution')).toBeInTheDocument();
+    expect(screen.getByText('Cross-agency — assists resolution')).toBeInTheDocument();
     expect(screen.getByText('Deepa')).toBeInTheDocument();
     expect(screen.getByText('Ravi')).toBeInTheDocument();
   });
@@ -248,6 +243,7 @@ describe('ReportDetailPage', () => {
         REPORT_ID,
         'progress',
         'On site, crew dispatched to fill the pothole',
+        1,
       ),
     );
   });
@@ -262,7 +258,7 @@ describe('ReportDetailPage', () => {
 
     fireEvent.click(confirm);
     await waitFor(() =>
-      expect(departmentApi.action).toHaveBeenCalledWith(REPORT_ID, 'accept', undefined),
+      expect(departmentApi.action).toHaveBeenCalledWith(REPORT_ID, 'accept', undefined, 1),
     );
   });
 
@@ -291,7 +287,7 @@ describe('ReportDetailPage', () => {
     };
     renderPage(baseReport({ assignment }));
 
-    expect(await screen.findAllByText('Linked report')).not.toHaveLength(0);
+    expect(await screen.findAllByText('Cross-agency report')).not.toHaveLength(0);
     expect(screen.getByText('Open')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Accept assignment' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mark as resolved' })).toBeNull();
@@ -315,7 +311,7 @@ describe('ReportDetailPage', () => {
   it('uploads proof photos and refetches the report', async () => {
     renderPage(baseReport());
     const file = new File(['x'], 'after-fix.jpg', { type: 'image/jpeg' });
-    vi.mocked(departmentApi.uploadProof).mockResolvedValue({ success: true, data: { media: [] } });
+    vi.mocked(departmentApi.uploadProof).mockResolvedValue({ media: [] });
 
     const input = await screen.findByLabelText('Proof photo input');
     fireEvent.change(input, { target: { files: [file] } });
@@ -328,7 +324,7 @@ describe('ReportDetailPage', () => {
 describe('computeSlaLabel', () => {
   const now = new Date('2026-08-01T12:00:00+05:30').getTime();
 
-  it('returns null when no SLA is configured', () => {
+  it('returns null when no Due target is configured', () => {
     expect(computeSlaLabel('2026-08-01T09:00:00+05:30', null, 'assigned', now)).toBeNull();
     expect(computeSlaLabel(null, 120, 'assigned', now)).toBeNull();
     expect(computeSlaLabel('2026-08-01T09:00:00+05:30', 0, 'assigned', now)).toBeNull();
@@ -354,8 +350,8 @@ describe('computeSlaLabel', () => {
     );
   });
 
-  it('treats resolved and closed reports as meeting the SLA', () => {
-    expect(computeSlaLabel('2026-08-01T07:00:00+05:30', 120, 'resolved', now)).toBe('SLA met');
-    expect(computeSlaLabel('2026-08-01T07:00:00+05:30', 120, 'closed', now)).toBe('SLA met');
+  it('treats resolved and closed reports as meeting the Due target', () => {
+    expect(computeSlaLabel('2026-08-01T07:00:00+05:30', 120, 'resolved', now)).toBe('On time');
+    expect(computeSlaLabel('2026-08-01T07:00:00+05:30', 120, 'closed', now)).toBe('On time');
   });
 });

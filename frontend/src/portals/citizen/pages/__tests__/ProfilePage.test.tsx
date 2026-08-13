@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -96,6 +96,60 @@ describe('ProfilePage', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     );
-    expect(screen.getByText('Loading profile')).toBeTruthy();
+    expect(screen.getByRole('status', { name: 'Loading profile' })).toBeTruthy();
+  });
+
+  it('shows error state when API fails', async () => {
+    (apiRequest as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('Network error'),
+    );
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <ProfilePage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText("Couldn't load profile")).toBeTruthy();
+    expect(screen.getByText('Please check your connection and try again.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
+  });
+
+  it('retry button in error state calls refetch', async () => {
+    (apiRequest as unknown as ReturnType<typeof vi.fn>)
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce({
+        data: {
+          id: 'u-1',
+          name: 'John Doe',
+          mobile: '+919999999999',
+          email: 'john@example.com',
+          roles: ['citizen'],
+        },
+      });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <ProfilePage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    const retryButton = await screen.findByRole('button', { name: 'Retry' });
+    fireEvent.click(retryButton);
+    expect(await screen.findByText('Personal Information')).toBeTruthy();
+  });
+
+  it('shows empty state when no profile data returned', async () => {
+    (apiRequest as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ data: null });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <ProfilePage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText('No profile data')).toBeTruthy();
+    expect(screen.getByText('Your account information could not be found.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
   });
 });

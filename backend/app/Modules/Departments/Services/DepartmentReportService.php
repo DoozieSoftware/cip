@@ -36,20 +36,20 @@ class DepartmentReportService
 {
     public function __construct(private readonly WorkflowEngine $engine) {}
 
-    public function accept(Report $report, User $actor, ?Request $request): Report
+    public function accept(Report $report, User $actor, ?Request $request, ?int $expectedWorkflowVersion = null): Report
     {
         return $this->run($report, 'accept', $actor, $request, payload: [
             'kind' => 'lifecycle',
             'lifecycle_event' => 'accept',
-        ]);
+        ], expectedWorkflowVersion: $expectedWorkflowVersion);
     }
 
-    public function start(Report $report, User $actor, ?Request $request): Report
+    public function start(Report $report, User $actor, ?Request $request, ?int $expectedWorkflowVersion = null): Report
     {
         return $this->run($report, 'start', $actor, $request, payload: [
             'kind' => 'lifecycle',
             'lifecycle_event' => 'start',
-        ]);
+        ], expectedWorkflowVersion: $expectedWorkflowVersion);
     }
 
     public function progress(Report $report, User $actor, ?Request $request, ?string $note = null): Report
@@ -79,22 +79,32 @@ class DepartmentReportService
         });
     }
 
-    public function resolve(Report $report, User $actor, ?Request $request, ?string $note = null): Report
-    {
+    public function resolve(
+        Report $report,
+        User $actor,
+        ?Request $request,
+        ?string $note = null,
+        ?int $expectedWorkflowVersion = null,
+    ): Report {
         return $this->run($report, 'resolve', $actor, $request, payload: [
             'kind' => 'lifecycle',
             'lifecycle_event' => 'resolve',
             'note' => $note,
-        ]);
+        ], expectedWorkflowVersion: $expectedWorkflowVersion);
     }
 
-    public function close(Report $report, User $actor, ?Request $request, ?string $note = null): Report
-    {
+    public function close(
+        Report $report,
+        User $actor,
+        ?Request $request,
+        ?string $note = null,
+        ?int $expectedWorkflowVersion = null,
+    ): Report {
         return $this->run($report, 'close', $actor, $request, payload: [
             'kind' => 'lifecycle',
             'lifecycle_event' => 'close',
             'note' => $note,
-        ]);
+        ], expectedWorkflowVersion: $expectedWorkflowVersion);
     }
 
     public function addNote(
@@ -151,8 +161,14 @@ class DepartmentReportService
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function run(Report $report, string $event, User $actor, ?Request $request, array $payload): Report
-    {
+    private function run(
+        Report $report,
+        string $event,
+        User $actor,
+        ?Request $request,
+        array $payload,
+        ?int $expectedWorkflowVersion = null,
+    ): Report {
         $decision = $this->engine->evaluate($report, $event, $actor);
 
         if (! $decision->allowed) {
@@ -164,9 +180,14 @@ class DepartmentReportService
             );
         }
 
-        return DB::transaction(function () use ($report, $event, $actor, $request, $decision, $payload): Report {
+        return DB::transaction(function () use ($report, $event, $actor, $request, $decision, $payload, $expectedWorkflowVersion): Report {
             $before = $report->status?->code;
-            $updated = $this->engine->apply($report, $decision, $actor);
+            $updated = $this->engine->apply(
+                $report,
+                $decision,
+                $actor,
+                expectedWorkflowVersion: $expectedWorkflowVersion,
+            );
             $after = $updated->status?->code;
 
             $requestId = $request?->attributes->get('trace_id');

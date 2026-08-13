@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Media\Models;
 
+use App\Modules\Departments\Models\Department;
+use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Reports\Models\Report;
+use App\Modules\Reports\Models\ReportAssignment;
 use App\Modules\Users\Models\User;
 use Database\Factories\Modules\Media\Models\MediaFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -12,6 +15,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -33,7 +37,10 @@ use Illuminate\Support\Carbon;
  *
  * @property string $id
  * @property string $report_id
+ * @property string|null $assignment_id
+ * @property string|null $department_id
  * @property string $type
+ * @property string $role
  * @property string $storage_disk
  * @property string $storage_path
  * @property string $mime
@@ -42,6 +49,8 @@ use Illuminate\Support\Carbon;
  * @property int|null $width
  * @property int|null $height
  * @property string $checksum
+ * @property MediaScanStatus $scan_status
+ * @property Carbon|null $scan_attempted_at
  * @property Carbon|null $captured_at
  * @property Carbon $uploaded_at
  * @property string|null $uploaded_by
@@ -67,6 +76,8 @@ class Media extends Model
      */
     protected $fillable = [
         'report_id',
+        'assignment_id',
+        'department_id',
         'type',
         'role',
         'storage_disk',
@@ -77,6 +88,8 @@ class Media extends Model
         'width',
         'height',
         'checksum',
+        'scan_status',
+        'scan_attempted_at',
         'captured_at',
         'uploaded_at',
         'uploaded_by',
@@ -97,6 +110,8 @@ class Media extends Model
             'height' => 'integer',
             'version' => 'integer',
             'is_replaced' => 'boolean',
+            'scan_status' => MediaScanStatus::class,
+            'scan_attempted_at' => 'datetime',
             'captured_at' => 'datetime',
             'uploaded_at' => 'datetime',
             'metadata' => 'array',
@@ -109,6 +124,18 @@ class Media extends Model
     public function report(): BelongsTo
     {
         return $this->belongsTo(Report::class, 'report_id');
+    }
+
+    /** @return BelongsTo<ReportAssignment, $this> */
+    public function assignment(): BelongsTo
+    {
+        return $this->belongsTo(ReportAssignment::class, 'assignment_id');
+    }
+
+    /** @return BelongsTo<Department, $this> */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
     }
 
     /**
@@ -125,5 +152,11 @@ class Media extends Model
     public function hashes(): HasMany
     {
         return $this->hasMany(MediaHash::class, 'media_id');
+    }
+
+    /** @return HasOne<MediaQuarantine, $this> */
+    public function quarantine(): HasOne
+    {
+        return $this->hasOne(MediaQuarantine::class, 'media_id');
     }
 }

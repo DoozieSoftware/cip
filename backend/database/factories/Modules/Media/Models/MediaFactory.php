@@ -33,6 +33,8 @@ class MediaFactory extends Factory
             'width' => 1280,
             'height' => 720,
             'checksum' => hash('sha256', Str::random(32)),
+            'scan_status' => 'CLEAN',
+            'scan_attempted_at' => now(),
             'captured_at' => now()->subMinutes($this->faker->numberBetween(0, 120)),
             'uploaded_at' => now(),
             'uploaded_by' => User::factory(),

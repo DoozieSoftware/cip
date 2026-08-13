@@ -10,11 +10,7 @@ use App\Modules\AI\Models\AiProviderConfig;
 use App\Modules\AI\Models\AiResult;
 use App\Modules\AI\Models\PromptVersion;
 use App\Modules\AI\Providers\MockProvider;
-use App\Modules\AI\Services\AiResponseValidator;
-use App\Modules\AI\Services\DuplicateDetector;
-use App\Modules\AI\Services\FraudScorer;
-use App\Modules\AI\Services\ImageQualityAnalyzer;
-use App\Modules\AI\Services\PiiMaskingService;
+use App\Modules\AI\Services\AiPipelineRunner;
 use App\Modules\AI\Services\ProviderFailoverService;
 use App\Modules\Reports\Models\Report;
 use Database\Seeders\ReportPrioritiesSeeder;
@@ -89,14 +85,7 @@ it('end-to-end happy path produces a persisted AiResult matching the schema', fu
     $report = Report::factory()->create();
 
     $job = new AiPipelineOrchestrator($report->id);
-    $job->handle(
-        app(ProviderFailoverService::class),
-        app(AiResponseValidator::class),
-        app(ImageQualityAnalyzer::class),
-        app(DuplicateDetector::class),
-        app(FraudScorer::class),
-        app(PiiMaskingService::class),
-    );
+    $job->handle(app(AiPipelineRunner::class));
 
     $result = AiResult::query()->whereHas('job', function ($q) use ($report): void {
         $q->where('report_id', $report->id);
@@ -106,20 +95,14 @@ it('end-to-end happy path produces a persisted AiResult matching the schema', fu
         ->and($result->predicted_type)->toBe('pothole')
         ->and($result->severity)->toBe('high')
         ->and($result->quality_score)->toBeGreaterThanOrEqual(0)
-        ->and($result->summary)->toContain('pothole');
+        ->and($result->summary)->toContain('pothole')
+        ->and($report->fresh()->ai_label)->toBe($result->primaryLabel()?->label ?? $result->predicted_type);
 });
 
 it('writes a single AiJob row in succeeded state with timing and token counts', function (): void {
     $report = Report::factory()->create();
 
-    (new AiPipelineOrchestrator($report->id))->handle(
-        app(ProviderFailoverService::class),
-        app(AiResponseValidator::class),
-        app(ImageQualityAnalyzer::class),
-        app(DuplicateDetector::class),
-        app(FraudScorer::class),
-        app(PiiMaskingService::class),
-    );
+    (new AiPipelineOrchestrator($report->id))->handle(app(AiPipelineRunner::class));
 
     $job = AiJob::query()->where('report_id', $report->id)->first();
     expect($job)->not->toBeNull()
@@ -132,14 +115,7 @@ it('writes a single AiJob row in succeeded state with timing and token counts', 
 it('persists every label from the provider response with the right is_primary flag', function (): void {
     $report = Report::factory()->create();
 
-    (new AiPipelineOrchestrator($report->id))->handle(
-        app(ProviderFailoverService::class),
-        app(AiResponseValidator::class),
-        app(ImageQualityAnalyzer::class),
-        app(DuplicateDetector::class),
-        app(FraudScorer::class),
-        app(PiiMaskingService::class),
-    );
+    (new AiPipelineOrchestrator($report->id))->handle(app(AiPipelineRunner::class));
 
     $result = AiResult::query()->whereHas('job', fn ($q) => $q->where('report_id', $report->id))->first();
     $labels = AiLabel::query()->where('result_id', $result->id)->get();
@@ -152,14 +128,7 @@ it('persists every label from the provider response with the right is_primary fl
 it('dispatches the AiCompleted event after a successful run', function (): void {
     $report = Report::factory()->create();
 
-    (new AiPipelineOrchestrator($report->id))->handle(
-        app(ProviderFailoverService::class),
-        app(AiResponseValidator::class),
-        app(ImageQualityAnalyzer::class),
-        app(DuplicateDetector::class),
-        app(FraudScorer::class),
-        app(PiiMaskingService::class),
-    );
+    (new AiPipelineOrchestrator($report->id))->handle(app(AiPipelineRunner::class));
 
     Event::assertDispatched(AiCompleted::class, function (AiCompleted $e) use ($report): bool {
         return $e->reportId === $report->id
@@ -174,14 +143,7 @@ it('marks the job as failed and rethrows when the report does not exist', functi
     $threw = false;
 
     try {
-        (new AiPipelineOrchestrator($missingId))->handle(
-            app(ProviderFailoverService::class),
-            app(AiResponseValidator::class),
-            app(ImageQualityAnalyzer::class),
-            app(DuplicateDetector::class),
-            app(FraudScorer::class),
-            app(PiiMaskingService::class),
-        );
+        (new AiPipelineOrchestrator($missingId))->handle(app(AiPipelineRunner::class));
     } catch (Throwable) {
         $threw = true;
     }

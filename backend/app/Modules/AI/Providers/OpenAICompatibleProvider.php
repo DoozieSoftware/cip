@@ -8,6 +8,7 @@ use App\Modules\AI\Contracts\AIProviderInterface;
 use App\Modules\AI\Models\PromptVersion;
 use App\Modules\AI\ValueObjects\AiRequest;
 use App\Modules\AI\ValueObjects\AiResponse;
+use App\Modules\Shared\Support\TraceContext;
 use Closure;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\PendingRequest;
@@ -162,8 +163,8 @@ class OpenAICompatibleProvider implements AIProviderInterface
     private function authenticatedClient(): PendingRequest
     {
         $client = $this->http instanceof HttpFactory
-            ? $this->http->withHeaders($this->extraHeaders)
-            : Http::withHeaders($this->extraHeaders);
+            ? $this->http->withHeaders(array_merge($this->extraHeaders, TraceContext::headers()))
+            : Http::withHeaders(array_merge($this->extraHeaders, TraceContext::headers()));
 
         // Only send a Bearer token when an API key is configured.
         // Modal.com endpoints authenticate via `Modal-Key`/`Modal-Secret`

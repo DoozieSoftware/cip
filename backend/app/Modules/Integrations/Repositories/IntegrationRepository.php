@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Integrations\Repositories;
 
 use App\Modules\Integrations\Models\Integration;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Read-side repository for `integrations` per `docs/12` §34.
