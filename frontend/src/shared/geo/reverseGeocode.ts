@@ -43,14 +43,21 @@ export async function reverseGeocode(
   if (cached) return cached;
 
   try {
-    const url = buildApiUrl(`/public/geocode?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`);
+    const url = buildApiUrl(
+      `/public/geocode?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`,
+    );
     const res = await fetch(url, {
       signal,
       headers: { Accept: 'application/json' },
     });
     if (!res.ok) return fallback;
 
-    const data = (await res.json()) as { label?: unknown; geocoded?: unknown };
+    const payload = (await res.json()) as {
+      label?: unknown;
+      geocoded?: unknown;
+      data?: { label?: unknown; geocoded?: unknown };
+    };
+    const data = payload.data ?? payload;
     const result: ReverseGeocodeResult = {
       label: typeof data.label === 'string' ? data.label : '',
       geocoded: data.geocoded === true,

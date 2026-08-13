@@ -128,7 +128,10 @@ export const en_IN: MessageCatalog = {
   'submit.location.capture': 'Capture Location',
   'submit.location.captureHint': 'Tap the button to detect your position',
   'submit.location.captured': 'Location captured',
-  'submit.location.capturedCoordinates': 'Captured coordinates: {latitude}, {longitude}',
+  'submit.location.detectedPlace': 'Detected area: {place}',
+  'submit.location.detectingPlace': 'Finding the nearest readable address…',
+  'submit.location.detectedAccuracy': 'Accuracy: within about {accuracy} m',
+  'submit.location.detectedAccuracyUnknown': 'Accuracy unavailable',
   'submit.location.issueTitle': 'Where is the issue?',
   'submit.location.issueDetail':
     'Your browser location is only a starting point and can be wrong on desktop. Check the map, then tap the map to correct the issue pin or confirm the pin before continuing.',

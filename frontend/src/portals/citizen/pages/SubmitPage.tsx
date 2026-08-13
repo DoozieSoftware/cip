@@ -28,7 +28,6 @@ import {
   type CapturedLocation,
   type GpsCaptureHandle,
 } from '../components/GpsCapture';
-import IssueLocationPicker from '../components/IssueLocationPicker';
 import { type IssueLocation } from '../components/issueLocation';
 import { getQueue } from '../offline/queue';
 import { useToast } from '../components/Toast';
@@ -40,7 +39,6 @@ import { readSession } from '../../../auth/storage';
 import { clearDraft, loadDraft, saveDraft } from '../offline/drafts';
 import { requestBackgroundSync } from '../offline/swBridge';
 import { trackProductEvent } from '../../../shared/analytics';
-import { issueReporterDistanceMeters } from './issueReporterDistance';
 
 const FORM_STEPS = ['Category', 'Details', 'Location', 'Evidence', 'Review'] as const;
 type Step = (typeof FORM_STEPS)[number];
@@ -105,7 +103,6 @@ export default function SubmitPage(): JSX.Element {
   const [description, setDescription] = useState<string>('');
   const [location, setLocation] = useState<CapturedLocation | null>(null);
   const [issueLocation, setIssueLocation] = useState<IssueLocation | null>(null);
-  const [issueLocationConfirmed, setIssueLocationConfirmed] = useState<boolean>(false);
   const [address, setAddress] = useState<string>('');
   const placeName = useReverseGeocode(
     issueLocation?.latitude ?? NaN,
@@ -159,7 +156,6 @@ export default function SubmitPage(): JSX.Element {
                 }
               : null),
         );
-        setIssueLocationConfirmed(draft.issue_location != null || draft.location != null);
         setAddress(draft.address);
         setFiles(draft.files ?? []);
         setIdempotencyKey(draft.idempotency_key || newIdempotencyKey());
@@ -299,10 +295,6 @@ export default function SubmitPage(): JSX.Element {
       setFieldError('location', t('submit.location.allowAccess'));
       return;
     }
-    if (!issueLocation || !issueLocationConfirmed) {
-      setFieldError('location', t('submit.location.confirmPin'));
-      return;
-    }
     setFieldError('location', null);
     goToStep('Evidence');
   }
@@ -337,11 +329,6 @@ export default function SubmitPage(): JSX.Element {
       goToStep('Location');
       return;
     }
-    if (!issueLocation || !issueLocationConfirmed) {
-      setFieldError('location', t('submit.location.confirmPin'));
-      goToStep('Location');
-      return;
-    }
     if (activeLocation.accuracy_m !== null && activeLocation.accuracy_m > MAX_GPS_ACCURACY_M) {
       setFieldError(
         'location',
@@ -365,7 +352,11 @@ export default function SubmitPage(): JSX.Element {
     }
 
     const preciseAddress = address.trim() || placeName.trim();
-    const issuePoint = issueLocation;
+    const issuePoint = issueLocation ?? {
+      latitude: activeLocation.latitude,
+      longitude: activeLocation.longitude,
+      source: 'reporter_gps' as const,
+    };
     const manuallyPinned = issuePoint.source === 'manual_pin';
     const payload: CreateReportInput = {
       report_type_id: typeId,
@@ -842,7 +833,6 @@ export default function SubmitPage(): JSX.Element {
                     longitude: captured.longitude,
                     source: 'reporter_gps',
                   });
-                  setIssueLocationConfirmed(false);
                 }}
               />
             </div>
@@ -864,16 +854,16 @@ export default function SubmitPage(): JSX.Element {
                       {t('submit.location.captured')}
                     </p>
                     <p className="mt-1 text-sm text-emerald-700">
-                      {placeName || t('submit.location.captured')}
-                      {location.accuracy_m !== null
-                        ? ` · ±${Math.round(location.accuracy_m)} m accuracy`
-                        : ''}
+                      {placeName
+                        ? t('submit.location.detectedPlace', { place: placeName })
+                        : t('submit.location.detectingPlace')}
                     </p>
-                    <p className="mt-1 font-mono text-xs text-emerald-800">
-                      {t('submit.location.capturedCoordinates', {
-                        latitude: location.latitude.toFixed(6),
-                        longitude: location.longitude.toFixed(6),
-                      })}
+                    <p className="mt-1 text-xs text-emerald-800">
+                      {location.accuracy_m !== null
+                        ? t('submit.location.detectedAccuracy', {
+                            accuracy: Math.round(location.accuracy_m),
+                          })
+                        : t('submit.location.detectedAccuracyUnknown')}
                     </p>
                   </div>
                 </div>
@@ -886,35 +876,6 @@ export default function SubmitPage(): JSX.Element {
                   <p className="mt-3 rounded-lg bg-amber-100 px-4 py-2.5 text-sm font-medium text-amber-800">
                     {t('submit.location.suspiciousWarning', {
                       reasons: location.mock_heuristic.reasons.join('; '),
-                    })}
-                  </p>
-                ) : null}
-                {issueLocation ? (
-                  <IssueLocationPicker
-                    reporterLocation={location}
-                    value={issueLocation}
-                    confirmed={issueLocationConfirmed}
-                    onConfirm={() => setIssueLocationConfirmed(true)}
-                    onChange={(next) => {
-                      setIssueLocation(next);
-                      setIssueLocationConfirmed(true);
-                    }}
-                  />
-                ) : null}
-                {issueLocation?.source === 'manual_pin' ? (
-                  <p
-                    role="note"
-                    className="mt-3 rounded-lg bg-white/80 px-3 py-2 text-xs leading-5 text-amber-900"
-                  >
-                    {t('submit.location.issueDistanceWarning', {
-                      distance: Math.round(
-                        issueReporterDistanceMeters(
-                          issueLocation.latitude,
-                          issueLocation.longitude,
-                          location.latitude,
-                          location.longitude,
-                        ),
-                      ),
                     })}
                   </p>
                 ) : null}

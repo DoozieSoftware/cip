@@ -113,8 +113,9 @@ describe('SubmitPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /use my location/i }));
     await waitFor(() => expect(getCurrentPosition).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(screen.getByText('Location captured')).toBeInTheDocument());
-    expect(screen.getByText(/Captured coordinates: 12.971600, 77.594600/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /confirm this pin/i }));
+    expect(screen.getByText(/Accuracy: within about 25 m/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Captured coordinates/i)).toBeNull();
+    expect(screen.queryByRole('button', { name: /confirm this pin/i })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
 
     // Step 4: Evidence

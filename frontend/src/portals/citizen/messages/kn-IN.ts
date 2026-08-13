@@ -128,7 +128,10 @@ export const kn_IN: MessageCatalog = {
   'submit.location.capture': 'ಸ್ಥಳ ಕಪ್ಚರ್',
   'submit.location.captureHint': 'ನಿಮ್ಮ ಸ್ಥಾನವನ್ನು ಪತ್ತೆ ಮಾಡಲು ಬಟನ್ ಒತ್ತಿ',
   'submit.location.captured': 'ಸ್ಥಳ ಕಪ್ಚರ್ ಆಗಿದೆ',
-  'submit.location.capturedCoordinates': 'ಕಪ್ಚರ್ ಮಾಡಿದ ನಿರ್ದೇಶಾಂಕಗಳು: {latitude}, {longitude}',
+  'submit.location.detectedPlace': 'ಪತ್ತೆಯಾದ ಪ್ರದೇಶ: {place}',
+  'submit.location.detectingPlace': 'ಹತ್ತಿರದ ಓದಲು ಸುಲಭವಾದ ವಿಳಾಸವನ್ನು ಹುಡುಕಲಾಗುತ್ತಿದೆ…',
+  'submit.location.detectedAccuracy': 'ನಿಖರತೆ: ಸುಮಾರು {accuracy} m ಒಳಗೆ',
+  'submit.location.detectedAccuracyUnknown': 'ನಿಖರತೆ ಲಭ್ಯವಿಲ್ಲ',
   'submit.location.issueTitle': 'ಸಮಸ್ಯೆ ಎಲ್ಲಿದೆ?',
   'submit.location.issueDetail':
     'ನಿಮ್ಮ browser ಸ್ಥಳವು ಆರಂಭಿಕ ಬಿಂದುವಷ್ಟೇ ಮತ್ತು desktop ನಲ್ಲಿ ತಪ್ಪಾಗಿರಬಹುದು. ನಕ್ಷೆಯನ್ನು ಪರಿಶೀಲಿಸಿ, ನಂತರ ಸಮಸ್ಯೆಯ ಪಿನ್ ಸರಿಪಡಿಸಲು ನಕ್ಷೆಯಲ್ಲಿ ಟ್ಯಾಪ್ ಮಾಡಿ ಅಥವಾ ಮುಂದುವರಿಯುವ ಮೊದಲು ಪಿನ್ ದೃಢೀಕರಿಸಿ.',
