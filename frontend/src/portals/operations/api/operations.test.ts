@@ -1,7 +1,19 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const { requestRawMock } = vi.hoisted(() => ({ requestRawMock: vi.fn() }));
+
+vi.mock('../../../shared/api/client', async () => {
+  const actual = await vi.importActual('../../../shared/api/client');
+  return { ...actual, requestRaw: requestRawMock };
+});
+
 import { departmentApi, adminApi } from './operations';
 
 describe('operations API surface', () => {
+  beforeEach(() => {
+    requestRawMock.mockReset();
+  });
+
   it('departmentApi exposes the expected methods', () => {
     expect(typeof departmentApi.dashboard).toBe('function');
     expect(typeof departmentApi.listReports).toBe('function');
@@ -40,6 +52,18 @@ describe('operations API surface', () => {
     expect(url).not.toContain('status=');
     expect(url).not.toContain('search=');
     expect(url).toContain('page=1');
+  });
+
+  it('preserves department report pagination metadata from the API envelope', async () => {
+    requestRawMock.mockResolvedValue({
+      data: [{ id: 'report-1' }],
+      meta: { current_page: 2, per_page: 20, total: 21, last_page: 2 },
+    });
+
+    await expect(departmentApi.listReports({ page: 2 })).resolves.toEqual({
+      data: [{ id: 'report-1' }],
+      meta: { current_page: 2, per_page: 20, total: 21, last_page: 2 },
+    });
   });
 });
 

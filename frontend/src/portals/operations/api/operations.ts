@@ -1,5 +1,6 @@
 import { api } from './client';
-import { buildApiUrl } from '../../../shared/api/client';
+import { buildApiUrl, requestRaw } from '../../../shared/api/client';
+import type { ApiEnvelope } from '../../../shared/api/envelope';
 import type {
   PaginationMeta,
   DepartmentDashboardCounts,
@@ -8,7 +9,6 @@ import type {
   DepartmentReportMedia,
   DepartmentOfficer,
   InternalNote,
-  Paginated,
   ReportListItem,
   WorkflowEvent,
 } from '../types';
@@ -78,10 +78,18 @@ export const departmentApi = {
   memberships: () => api.get<Membership[]>('/department/memberships'),
 
   listReports: (filters: ReportListFilters = {}) =>
-    api.get<Paginated<DepartmentReportListItem>>(
-      '/department/reports',
-      filters as Record<string, unknown>,
-    ),
+    requestRaw<ApiEnvelope<DepartmentReportListItem[]>>('/department/reports', {
+      method: 'GET',
+      query: filters as Record<string, string | number | boolean | undefined | null>,
+    }).then((response) => ({
+      data: response.data,
+      meta: {
+        current_page: Number(response.meta?.current_page ?? response.meta?.page ?? 1),
+        per_page: Number(response.meta?.per_page ?? filters.per_page ?? 20),
+        total: Number(response.meta?.total ?? response.data.length),
+        last_page: Number(response.meta?.last_page ?? 1),
+      },
+    })),
 
   showReport: (id: string) => api.get<DepartmentReportDetail>(`/department/reports/${id}`),
 
