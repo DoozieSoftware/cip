@@ -57,7 +57,12 @@ const MOBILE_NAV: NavItem[] = [
   { to: '/operations/reports', label: 'Reports', icon: IconClipboardList },
   { to: '/operations/tasks', label: 'Tasks', icon: IconFileAnalytics },
   { to: '/operations/analytics', label: 'Analytics', icon: IconChartBar },
-  { to: '/operations/admin', label: 'Admin', icon: IconUsers },
+  {
+    to: '/operations/admin',
+    label: 'Admin',
+    icon: IconUsers,
+    allowedRoles: DEPARTMENT_ADMIN_ROLES,
+  },
 ];
 
 export function OperationsLayout(): JSX.Element {
@@ -161,7 +166,9 @@ export function OperationsLayout(): JSX.Element {
               <div className="truncate text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
                 CIP Karnataka
               </div>
-              <div className="truncate text-[11px] text-[var(--color-text-tertiary)]">Operations</div>
+              <div className="truncate text-[11px] text-[var(--color-text-tertiary)]">
+                Operations
+              </div>
             </div>
             <button
               type="button"
