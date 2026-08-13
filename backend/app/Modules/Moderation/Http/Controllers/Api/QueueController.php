@@ -69,7 +69,7 @@ class QueueController extends BaseController
         ]);
     }
 
-    public function fraud(Request $request): JsonResponse
+    public function misrepresentation(Request $request): JsonResponse
     {
         $this->authorize('viewQueue', Report::class);
 

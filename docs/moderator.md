@@ -2,7 +2,7 @@
 
 The Moderator Portal is the human-in-the-loop layer that sits between the
 M8 AI vision pipeline and the M7 routing engine. Per `docs/07` §2 it
-exists to ensure that only valid, properly classified, non-fraudulent
+exists to ensure that only valid, properly classified, non-misrepresentative
 reports reach government departments; the AI recommends, the moderator
 decides.
 
@@ -57,7 +57,7 @@ bearer token of an authenticated moderator.
 | ------ | ---- | ------- |
 | GET    | `/queue` | Paginated, filterable review queue. |
 | GET    | `/duplicates` | Reports with `duplicate_score > 60`. |
-| GET    | `/fraud` | Reports with `fraud_score > 60`. |
+| GET    | `/misrepresentation` | Reports whose misrepresentation review score is above the review threshold. |
 | GET    | `/reports/{id}` | Full report + AI overlay + media + audit. |
 | POST   | `/reports/{id}/review` | Apply a decision: `approve | reject | merge | escalate`. |
 | POST   | `/reports/{id}/merge` | Bulk-fold duplicates into a canonical report. |
@@ -120,7 +120,7 @@ portals/moderator/
 ├── design/        # Button, Card, Input, Select, Dialog, Badge, Spinner, Table, EmptyState
 ├── hooks/         # useKeyboardShortcuts
 ├── layout/        # ModeratorLayout (header + nav + Outlet)
-├── pages/         # DashboardPage, ReviewQueuePage, ReportDetailPage, DuplicatesQueuePage, FraudQueuePage, AnalyticsPage, AiPerformancePage
+├── pages/         # DashboardPage, ReviewQueuePage, ReportDetailPage, DuplicatesQueuePage, MisrepresentationQueuePage, AnalyticsPage, AiPerformancePage
 └── types/         # domain types
 ```
 

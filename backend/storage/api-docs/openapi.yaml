@@ -1005,12 +1005,29 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         403:
           $ref: '#/components/responses/Forbidden'
+  /api/v1/moderator/misrepresentation:
+    get:
+      tags:
+        - Moderation
+      summary: 'List reports flagged for misrepresentation review'
+      operationId: moderator.misrepresentation.index
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportQueueListResponse' }
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
   /api/v1/moderator/fraud:
     get:
       tags:
         - Moderation
-      summary: 'List fraud-suspect reports (fraud_score > 60)'
+      summary: 'Compatibility alias for misrepresentation review'
       operationId: moderator.fraud.index
+      deprecated: true
       responses:
         200:
           description: OK
@@ -8461,7 +8478,7 @@ tags:
   - name: AI
     description: 'AI vision pipeline: provider configs, prompt versions, internal pipeline endpoints (M8).'
   - name: Moderation
-    description: 'Moderator portal: queue, duplicate + fraud review, manual override, reassign, analytics, AI performance (M10).'
+    description: 'Moderator portal: queue, duplicate + misrepresentation review, manual override, reassign, analytics, AI performance (M10).'
   - name: Operations
     description: 'Department-officer portal: dashboard, list, lifecycle actions (accept/start/progress/resolve/close), internal notes, exports (M11).'
   - name: 'Department Admin'

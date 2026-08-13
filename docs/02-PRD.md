@@ -71,7 +71,7 @@ Configuration controlled.
 
 Can submit reports without revealing identity.
 
-Subject to additional fraud checks.
+Subject to additional misrepresentation checks.
 
 ---
 
@@ -84,7 +84,7 @@ Responsibilities
 * Verify evidence
 * Correct classifications
 * Merge duplicates
-* Reject fraudulent submissions
+* Reject misrepresentative submissions
 * Assign departments
 
 ---
@@ -195,7 +195,7 @@ Responsible for
 * Confidence scoring
 * Duplicate detection
 * Image quality validation
-* Fraud indicators
+* Misrepresentation indicators
 * Department recommendation
 
 ---
@@ -207,7 +207,7 @@ Responsible for
 * Reviewing uncertain reports
 * Manual classification
 * Duplicate merging
-* Fraud handling
+* Misrepresentation handling
 
 ---
 
@@ -426,7 +426,7 @@ The AI engine shall
 * Suggest department
 * Detect duplicates
 * Detect poor-quality images
-* Flag possible fraud
+* Flag possible misrepresentation
 
 The AI engine shall never permanently reject reports.
 
@@ -514,7 +514,7 @@ Citizen
 Moderator
 
 * AI Queue
-* Fraud Queue
+* Misrepresentation Review
 * Duplicate Queue
 
 Department

@@ -13,7 +13,7 @@ use App\Modules\Users\Models\User;
  *
  * Citizens are blocked from every moderation surface. Moderators
  * (and the bypass roles inherited from BasePolicy) can view the
- * queue, the per-report detail, the duplicate / fraud queues, and
+ * queue, the per-report detail, the duplicate / misrepresentation queues, and
  * apply the four decisions (review, merge, reject, escalate).
  *
  * Reassignment reuses the M7 `ReassignService` and is gated by
@@ -41,7 +41,7 @@ class ModerationPolicy extends BasePolicy
 
     /**
      * `viewQueue`: can list the moderator queue, duplicate queue,
-     * fraud queue, and per-report detail.
+     * misrepresentation queue, and per-report detail.
      */
     public function viewQueue(User $user): bool
     {

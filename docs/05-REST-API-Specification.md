@@ -397,7 +397,7 @@ GET /reports/{id}/ai
 Moderator+
 
 The AI result includes the visual category, calibrated confidence, quality,
-duplicate and fraud scores, plus evidence consistency fields:
+duplicate and misrepresentation scores, plus evidence consistency fields:
 
 ```json
 {
@@ -440,10 +440,10 @@ GET /moderator/duplicates
 
 ---
 
-## Fraud Queue
+## Misrepresentation Review
 
 ```
-GET /moderator/fraud
+GET /moderator/misrepresentation
 ```
 
 ---
@@ -1009,7 +1009,7 @@ GET    /reports/{id}/ai
 ```
 GET    /moderator/queue
 GET    /moderator/duplicates
-GET    /moderator/fraud
+GET    /moderator/misrepresentation
 POST   /moderator/review
 POST   /moderator/merge
 POST   /moderator/reject

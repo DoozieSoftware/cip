@@ -10,7 +10,7 @@ Provides the moderation queue and actions for reviewing AI-processed reports. Mo
 |-------|------|
 | `ModerationService` | Business logic for review actions |
 | `ModerationAnalyticsService` | Aggregated moderation metrics |
-| `QueueController` | Review, duplicate, and fraud queues |
+| `QueueController` | Review, duplicate, and misrepresentation queues |
 | `ModerationActionsController` | Review, merge, reject, escalate actions |
 | `AnalyticsController` | Moderation analytics endpoints |
 | `ModerationPolicy` | Authorization rules |
@@ -34,7 +34,8 @@ Provides the moderation queue and actions for reviewing AI-processed reports. Mo
 |--------|------|------|
 | GET | `/api/v1/moderator/queue` | `api.v1.moderator.queue` |
 | GET | `/api/v1/moderator/duplicates` | `api.v1.moderator.duplicates` |
-| GET | `/api/v1/moderator/fraud` | `api.v1.moderator.fraud` |
+| GET | `/api/v1/moderator/misrepresentation` | `api.v1.moderator.misrepresentation` |
+| GET | `/api/v1/moderator/fraud` | `api.v1.moderator.fraud` compatibility alias |
 | GET | `/api/v1/moderator/departments` | `api.v1.moderator.departments.index` |
 | GET | `/api/v1/moderator/reports/{report}` | `api.v1.moderator.reports.show` |
 | GET | `/api/v1/moderator/analytics/summary` | `api.v1.moderator.analytics.summary` |

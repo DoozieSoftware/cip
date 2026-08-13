@@ -3,7 +3,7 @@
 The AI vision engine is the **recommendation layer** that runs on every
 incoming civic report after the citizen has submitted it. It is not a
 decision-maker — it produces a structured recommendation
-(category, severity, department hint, quality / duplicate / fraud
+(category, severity, department hint, quality / duplicate / misrepresentation
 scores) that the M6 workflow engine + M7 routing engine + a human
 moderator consume. Per `docs/10` §1, **AI never makes legal decisions**;
 it only recommends; the moderator always overrides.
@@ -36,7 +36,7 @@ failover, and the benchmark suite. It is the operational companion to
  │  4. provider.classify(AiRequest) via                │
  │     ProviderFailoverService (skipped if 3 is off)   │
  │  5. AiResponseValidator.validate(resp)              │
- │  6. DuplicateDetector.detect / FraudScorer.score    │
+ │  6. DuplicateDetector.detect / MisrepresentationScorer.score    │
  │  7. persist ai_jobs / ai_results / labels           │
  │  8. emit AiCompleted                                │
  └────────────────────────────────────────────────────┘
@@ -120,11 +120,11 @@ convention (InnoDB, utf8mb4, `created_at` / `updated_at` / `softDeletes`).
     `predicted_type`, `confidence` 0..1, `recommended_department`,
     `severity` enum `{low, medium, high, critical}`,
     `quality_score` 0..100, `duplicate_score` 0..100,
-    `fraud_score` 0..100, `summary`
+    `misrepresentation_score` 0..100, `summary`
 - `ai_labels`
   - `id`, `result_id` (FK cascade), `label`, `confidence` 0..1,
     `is_primary` bool
-- `security_events` (read-only dependency for `FraudScorer`)
+- `security_events` (read-only dependency for `MisrepresentationScorer`)
 
 ## Provider abstraction
 
@@ -407,7 +407,7 @@ fastest way to catch wire-format drift between providers.
 | `tests/Unit/AI/PiiMaskingServiceTest.php`       | Drops PII keys, rounds geo, masks text, no mutation     |
 | `tests/Unit/AI/ImageQualityAnalyzerTest.php`    | Heuristic scoring for images / video / document         |
 | `tests/Unit/AI/DuplicateDetectorTest.php`        | Perceptual-hash detection, 7-day window                 |
-| `tests/Unit/AI/FraudScorerTest.php`             | Weighted-signal scoring, threshold of 75               |
+| `tests/Unit/AI/MisrepresentationScorerTest.php`             | Weighted-signal scoring, threshold of 75               |
 | `tests/Feature/AI/MockProviderTest.php`         | Deterministic mock behaviour                            |
 | `tests/Feature/AI/OpenAICompatibleProviderTest.php` | HTTP request shape + retry + backoff                |
 | `tests/Feature/AI/QwenVLProviderTest.php`       | Per-URL media-type handling                             |

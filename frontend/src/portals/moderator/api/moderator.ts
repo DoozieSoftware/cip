@@ -105,7 +105,7 @@ export const queueApi = {
     api
       .get<
         ApiCursorPage<ApiModeratorReport>
-      >('/moderator/fraud', filters as Record<string, unknown>)
+      >('/moderator/misrepresentation', filters as Record<string, unknown>)
       .then((page) => normalizeCursorPage(page)),
 
   // QueueController::show() nests the resource under a `report` key

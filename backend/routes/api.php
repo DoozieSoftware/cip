@@ -291,8 +291,10 @@ Route::prefix('v1')->group(function (): void {
         Route::get('queue', [QueueController::class, 'queue'])->name('queue');
         // T-M10-009 — duplicate queue
         Route::get('duplicates', [QueueController::class, 'duplicates'])->name('duplicates');
-        // T-M10-010 — fraud queue
-        Route::get('fraud', [QueueController::class, 'fraud'])->name('fraud');
+        // T-M10-010 — misrepresentation review queue. The legacy
+        // /fraud path remains as a compatibility alias during migration.
+        Route::get('misrepresentation', [QueueController::class, 'misrepresentation'])->name('misrepresentation');
+        Route::get('fraud', [QueueController::class, 'misrepresentation'])->name('fraud');
         // Active departments for the moderator approve-override dropdown
         // (per docs/05 §6 the moderator may override the AI department).
         Route::get('departments', [DepartmentController::class, 'moderatorIndex'])->name('departments.index');

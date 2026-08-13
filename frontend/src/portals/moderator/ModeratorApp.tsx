@@ -7,7 +7,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ReviewQueuePage = lazy(() => import('./pages/ReviewQueuePage'));
 const ReportDetailPage = lazy(() => import('./pages/ReportDetailPage'));
 const DuplicatesQueuePage = lazy(() => import('./pages/DuplicatesQueuePage'));
-const FraudQueuePage = lazy(() => import('./pages/FraudQueuePage'));
+const MisrepresentationQueuePage = lazy(() => import('./pages/FraudQueuePage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const AiPerformancePage = lazy(() => import('./pages/AiPerformancePage'));
 
@@ -27,7 +27,8 @@ export function ModeratorApp() {
           <Route index element={<DashboardPage />} />
           <Route path="queue" element={<ReviewQueuePage />} />
           <Route path="duplicates" element={<DuplicatesQueuePage />} />
-          <Route path="fraud" element={<FraudQueuePage />} />
+          <Route path="misrepresentation" element={<MisrepresentationQueuePage />} />
+          <Route path="fraud" element={<Navigate to="/moderator/misrepresentation" replace />} />
           <Route path="reports/:id" element={<ReportDetailPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="ai-performance" element={<AiPerformancePage />} />

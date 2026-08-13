@@ -18,6 +18,7 @@ it('exposes every M10 moderation endpoint in the OpenAPI document', function ():
     foreach ([
         '/api/v1/moderator/queue:',
         '/api/v1/moderator/duplicates:',
+        '/api/v1/moderator/misrepresentation:',
         '/api/v1/moderator/fraud:',
         '/api/v1/moderator/reports/{id}:',
         '/api/v1/moderator/reports/{id}/review:',
@@ -61,6 +62,7 @@ it('tags every moderation endpoint with the Moderation tag', function (): void {
     expect($yaml)->toContain('tags: [Moderation]')
         ->and($yaml)->toContain('operationId: moderator.queue.index')
         ->and($yaml)->toContain('operationId: moderator.duplicates.index')
+        ->and($yaml)->toContain('operationId: moderator.misrepresentation.index')
         ->and($yaml)->toContain('operationId: moderator.fraud.index')
         ->and($yaml)->toContain('operationId: moderator.reports.show')
         ->and($yaml)->toContain('operationId: moderator.reports.review')
@@ -75,7 +77,7 @@ it('lists Moderation in the tags index', function (): void {
     $yaml = file_get_contents(storage_path('api-docs/openapi.yaml'));
 
     expect($yaml)->toContain('name: Moderation')
-        ->and($yaml)->toContain('Moderator portal: queue, duplicate + fraud review, manual override, reassign, analytics, AI performance (M10).');
+        ->and($yaml)->toContain('Moderator portal: queue, duplicate + misrepresentation review, manual override, reassign, analytics, AI performance (M10).');
 });
 
 it('exposes the four-value decision enum on ReviewReportRequest', function (): void {

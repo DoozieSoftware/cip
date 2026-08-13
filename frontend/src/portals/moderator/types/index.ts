@@ -35,7 +35,7 @@ export interface Paginated<T> {
 }
 
 /**
- * Queue/duplicates/fraud use cursor pagination on the backend
+ * Queue/duplicates/misrepresentation review use cursor pagination on the backend
  * (`cursorPaginate()`), which does not compute a total/last_page —
  * that would require a full count scan on every request. Callers get
  * `next_cursor`/`prev_cursor` to step through pages instead.

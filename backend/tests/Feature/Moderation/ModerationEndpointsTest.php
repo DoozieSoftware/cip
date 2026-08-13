@@ -176,7 +176,7 @@ it('returns the duplicate queue when duplicate_score is set', function (): void 
     expect($ids)->toContain($report->id);
 });
 
-it('returns the fraud queue when fraud_score is set', function (): void {
+it('returns the misrepresentation queue when review score is set', function (): void {
     $moderator = User::factory()->create();
     $moderator->assignRole('moderator');
     Sanctum::actingAs($moderator);
@@ -185,7 +185,7 @@ it('returns the fraud queue when fraud_score is set', function (): void {
     $report->fraud_score = 80.0;
     $report->save();
 
-    $response = $this->getJson('/api/v1/moderator/fraud');
+    $response = $this->getJson('/api/v1/moderator/misrepresentation');
     $response->assertStatus(200);
     $ids = collect($response->json('data.items'))->pluck('id')->all();
     expect($ids)->toContain($report->id);
@@ -402,7 +402,7 @@ it('a citizen is denied every moderation endpoint', function (): void {
 
     $this->getJson('/api/v1/moderator/queue')->assertStatus(403);
     $this->getJson('/api/v1/moderator/duplicates')->assertStatus(403);
-    $this->getJson('/api/v1/moderator/fraud')->assertStatus(403);
+    $this->getJson('/api/v1/moderator/misrepresentation')->assertStatus(403);
     $this->getJson('/api/v1/moderator/analytics/summary')->assertStatus(403);
     $this->getJson('/api/v1/moderator/analytics/ai-performance')->assertStatus(403);
     $this->getJson("/api/v1/moderator/reports/{$report->id}")->assertStatus(403);

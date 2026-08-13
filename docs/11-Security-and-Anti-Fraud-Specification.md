@@ -1,4 +1,4 @@
-# 11 - Security & Anti-Fraud Specification
+# 11 - Security & Anti-Misrepresentation Specification
 
 **Project:** Civic Intelligence Platform
 
@@ -23,11 +23,11 @@
 
 # 1. Purpose
 
-This document defines the complete security architecture and anti-fraud framework of the Civic Intelligence Platform.
+This document defines the complete security architecture and anti-misrepresentation framework of the Civic Intelligence Platform.
 
 Unlike conventional complaint applications, the platform treats every submitted report as potential evidence. Therefore, protecting the integrity, authenticity, and chain of custody of evidence is a primary system requirement.
 
-The system shall prevent, detect, record, and respond to fraudulent behaviour while minimizing inconvenience for legitimate users.
+The system shall prevent, detect, record, and respond to misrepresentative behaviour while minimizing inconvenience for legitimate users.
 
 ---
 
@@ -44,7 +44,7 @@ The platform shall
 * Protect government APIs
 * Maintain complete audit trails
 * Preserve evidentiary chain of custody
-* Support investigation of fraudulent activity
+* Support investigation of misrepresentative activity
 
 ---
 
@@ -107,7 +107,7 @@ Evidence Validation
 
 ↓
 
-AI Fraud Detection
+AI Misrepresentation Detection
 
 ↓
 
@@ -271,7 +271,7 @@ Risk Analysis
 
 Account Protection
 
-Fraud Detection
+Misrepresentation Detection
 
 ---
 
@@ -415,7 +415,7 @@ No evidence may be overwritten.
 
 ---
 
-# 16. AI Fraud Detection
+# 16. AI Misrepresentation Detection
 
 AI shall evaluate
 
@@ -487,11 +487,11 @@ Device Changes
 
 Location Changes
 
-Behaviour anomalies increase fraud score.
+Behaviour anomalies increase misrepresentation score.
 
 ---
 
-# 19. Fraud Scoring
+# 19. Misrepresentation Scoring
 
 Score Range
 
@@ -909,7 +909,7 @@ Locked Users
 
 Security Alerts
 
-Fraud Trends
+Misrepresentation Trends
 
 Rate Limited Users
 
@@ -1039,7 +1039,7 @@ Behavioural Biometrics
 
 Continuous Risk Scoring
 
-ML-based Fraud Detection
+ML-based Misrepresentation Detection
 
 ---
 
@@ -1059,7 +1059,7 @@ Upload Limits
 
 Risk Thresholds
 
-Fraud Thresholds
+Misrepresentation Thresholds
 
 Ban Policy
 
@@ -1087,7 +1087,7 @@ The security subsystem shall be considered complete only when
 * Camera-only evidence capture is enforced.
 * Evidence hashing is operational.
 * Chain of custody is maintained.
-* Fraud scoring is configurable.
+* Misrepresentation scoring is configurable.
 * Rate limiting is enforced.
 * Abuse detection is operational.
 * Audit logs are immutable.

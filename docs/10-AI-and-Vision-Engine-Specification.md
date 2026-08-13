@@ -21,7 +21,7 @@
 
 # 1. Purpose
 
-This document defines the Artificial Intelligence architecture, vision pipeline, model abstraction, prompt engineering, confidence scoring, fraud detection, and learning mechanisms for the Civic Intelligence Platform.
+This document defines the Artificial Intelligence architecture, vision pipeline, model abstraction, prompt engineering, confidence scoring, misrepresentation detection, and learning mechanisms for the Civic Intelligence Platform.
 
 The AI subsystem assists human operators by automatically analyzing submitted evidence.
 
@@ -37,7 +37,7 @@ The AI Engine shall
 * Detect multiple issues
 * Detect duplicate reports
 * Assess evidence quality
-* Detect fraudulent submissions
+* Detect misrepresentative submissions
 * Recommend departments
 * Recommend priorities
 * Estimate severity
@@ -197,7 +197,7 @@ Time Window
 
 ---
 
-## Fraud Engine
+## Misrepresentation Engine
 
 Purpose
 
@@ -324,7 +324,7 @@ Duplicate Detection
 
 ↓
 
-Fraud Detection
+Misrepresentation Detection
 
 ↓
 
@@ -525,7 +525,7 @@ Every provider shall return standardized JSON.
   ],
   "quality_score":95,
   "duplicate_score":3,
-  "fraud_score":5
+  "misrepresentation_score":5
 }
 ```
 
@@ -686,7 +686,7 @@ No automatic merge.
 
 ---
 
-# 21. Fraud Detection
+# 21. Misrepresentation Detection
 
 Signals
 
@@ -914,7 +914,7 @@ Prompt Version
 
 Confidence Thresholds
 
-Fraud Thresholds
+Misrepresentation Thresholds
 
 Duplicate Thresholds
 
@@ -1008,7 +1008,7 @@ The AI subsystem shall be considered complete only when
 * OCR pipeline is functional.
 * Vision classification is operational.
 * Duplicate detection is implemented.
-* Fraud scoring is implemented.
+* Misrepresentation scoring is implemented.
 * Confidence scoring is configurable.
 * Structured JSON responses are validated.
 * AI decisions are fully auditable.

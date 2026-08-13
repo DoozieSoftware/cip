@@ -467,7 +467,7 @@ Moderator Performance
 
 AI Accuracy
 
-Fraud Detection
+Misrepresentation Detection
 
 Citizen Activity
 

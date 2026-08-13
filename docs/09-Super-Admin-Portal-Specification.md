@@ -621,7 +621,7 @@ Offline Mode
 
 Push Notifications
 
-Fraud Detection
+Misrepresentation Detection
 
 Duplicate Detection
 
@@ -709,7 +709,7 @@ Notifications
 
 Queue Performance
 
-Fraud Statistics
+Misrepresentation Statistics
 
 Moderator Statistics
 

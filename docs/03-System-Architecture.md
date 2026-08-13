@@ -130,7 +130,7 @@ React (TypeScript, Vite)
 Responsibilities
 
 * AI Review
-* Fraud Review
+* Misrepresentation Review
 * Duplicate Management
 
 ---
@@ -656,7 +656,7 @@ Input Validation
 
 Device Validation
 
-Fraud Detection
+Misrepresentation Detection
 
 Rate Limiting
 

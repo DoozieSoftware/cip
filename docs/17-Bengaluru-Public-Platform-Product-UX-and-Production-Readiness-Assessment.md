@@ -1587,6 +1587,19 @@ Status legend: **Done** = implemented and covered by tests in the current worktr
 | MAINT-09 | **Partial** | PHPStan/ESLint/Prettier/Pint ratchet baselines now fail on newly introduced debt (`47c59e69`); baseline reduction and broader CI quality reporting remain. |
 | MAINT-10 | **Done** | Product, REST, architecture, and deployment references now identify the authoritative React PWA/MySQL 8.4 stack (`1c60bde1`). |
 
+### MoM Product Decisions
+
+| MoM item | Status | Notes / Evidence |
+|----|--------|------------------|
+| Priority definition | **Done** | Product criteria and response targets are documented in `docs/mom-product-decisions.md`; priority remains an internal routing signal and is not exposed as a confusing citizen-facing label. |
+| Status definitions and transitions | **Done** | Plain status meanings, citizen labels, staff labels, and Resolved-vs-Completed semantics are documented in `docs/mom-product-decisions.md`; UI labels are centralized in `frontend/src/shared/statusDisplay.ts`. |
+| Resolved vs Closed | **Done** | UI now says “Fixed — proof submitted” for resolved staff state and “Completed” for closed/citizen state; department action label changed from “Close report” to “Complete report” (`b18e6f52`). |
+| AI-assisted resolution review | **Done (code)** | Separate `proof_verification` Gemini prompt compares before/after images; officer proof requires device location; proof results store location/visual/overall confidence; AI-backed proof review above 80% now triggers internal `auto_close` completion (`97ac5f23`, `7fd3292c`). |
+| Rename Fraud | **Done (UI/docs policy)** | User-facing labels now use “Misrepresentation”; `docs/mom-product-decisions.md` records the terminology rule. Legacy API/database names remain internal until a safe migration is scheduled. |
+| Response due time | **Done (configurable baseline)** | Existing department/routing/priority response targets drive “Due in” and “Overdue” UI; MoM default/criteria are recorded in `docs/mom-product-decisions.md`. |
+| Linked report terminology | **Done** | Operations navigation and list context use “Cross-agency”; MoM terminology rule is documented. |
+| Controlled pilot | **External confirmation required** | Engineering can support the pilot, but the pilot audience/date/support channel/rollback owner must be confirmed outside the codebase before launch. |
+
 ### Recommended Next Step
 
 The code-completable non-OTP work is tracked in reviewable commits. P0-01 remains explicitly deferred (mock OTP unchanged). Before any production release, run the full backend suite in isolated CI MySQL, complete legal review for P0-13, provision cPanel Redis/ClamAV prerequisites, and resolve the remaining Partial/Not-started P1/P2/BE/maintainability items.
