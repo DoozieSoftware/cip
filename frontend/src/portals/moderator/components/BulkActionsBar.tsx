@@ -24,7 +24,7 @@ interface BulkReportOption {
 const REJECT_REASONS = [
   { value: 'invalid_evidence', label: 'Invalid evidence' },
   { value: 'duplicate', label: 'Duplicate of another report' },
-  { value: 'fraudulent', label: 'Fraudulent' },
+  { value: 'fraudulent', label: 'Misrepresentation' },
   { value: 'out_of_scope', label: 'Out of platform scope' },
   { value: 'incomplete', label: 'Incomplete information' },
 ];

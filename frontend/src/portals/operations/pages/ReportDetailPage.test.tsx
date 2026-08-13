@@ -285,7 +285,7 @@ describe('ReportDetailPage', () => {
     expect(screen.getByRole('button', { name: 'Mark as fixed' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Accept assignment' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start field work' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Close report' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Complete report' })).toBeNull();
   });
 
   it('keeps secondary tasks out of the report workflow and completes the task safely', async () => {

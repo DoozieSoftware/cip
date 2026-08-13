@@ -42,7 +42,7 @@ const DEMO_ACCOUNTS: {
   {
     label: 'Moderator',
     mobile: '9999900002',
-    description: 'Triage the AI-classified queue, merge duplicates, reject fraud.',
+    description: 'Review AI-suggested reports, merge duplicates, and flag misrepresentation.',
     icon: IconShieldCheck,
   },
   {

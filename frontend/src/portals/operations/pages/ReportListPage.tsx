@@ -41,7 +41,7 @@ const NEXT_ACTION: Record<string, string> = {
   resolved_pending_verification: 'Waiting for citizen',
   reopened: 'Resume work',
   verified: 'Citizen confirmed',
-  closed: 'Closed',
+  closed: 'Completed',
   escalated: 'Supervisor attention',
   merged: 'Merged duplicate',
 };

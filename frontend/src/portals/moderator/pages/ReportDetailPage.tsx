@@ -47,7 +47,7 @@ function LocationText({ lat, lng }: { lat: number; lng: number }): JSX.Element {
 const REJECT_REASONS = [
   { value: 'invalid_evidence', label: 'Invalid evidence' },
   { value: 'duplicate', label: 'Duplicate of another report' },
-  { value: 'fraudulent', label: 'Fraudulent' },
+  { value: 'fraudulent', label: 'Misrepresentation' },
   { value: 'out_of_scope', label: 'Out of platform scope' },
   { value: 'incomplete', label: 'Incomplete information' },
 ];
@@ -560,8 +560,8 @@ export default function ReportDetailPage() {
         >
           <div className="space-y-3">
             <p className="text-sm text-[#6f6e69]">
-              Approving moves the report to the next state in the workflow. Tick the override box if
-              you are correcting the AI recommendation.
+              Approving moves the report to the next review step. Tick the override box if you are
+              correcting the AI recommendation.
             </p>
             <Textarea
               label="Remarks (optional)"

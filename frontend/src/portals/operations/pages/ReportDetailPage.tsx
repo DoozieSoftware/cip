@@ -82,8 +82,8 @@ const ACTION_META: Record<
     variant: 'success',
   },
   close: {
-    label: 'Close report',
-    confirmLabel: 'Close report',
+    label: 'Complete report',
+    confirmLabel: 'Complete report',
     requiresNote: true,
     shortcut: 'C',
     variant: 'danger',
@@ -101,9 +101,9 @@ const STATUS_GUIDANCE: Record<string, string> = {
   assigned: 'Review the evidence and location, then accept responsibility for this report.',
   accepted: 'The assignment is yours. Start field work when the team is ready to proceed.',
   in_progress: 'Record a field update or mark the work as fixed when it is complete.',
-  resolved: 'Review the completion proof and close the report when the fix is confirmed.',
+  resolved: 'Review the completion proof and mark the report complete when the fix is confirmed.',
   verified: 'Completion has been verified. No further officer action is required.',
-  closed: 'This report is complete and closed.',
+  closed: 'This report is complete.',
   escalated: 'This report has been escalated for supervisor attention.',
   merged: 'This report was merged into another case.',
 };
@@ -114,7 +114,7 @@ const ACTION_DESCRIPTION: Record<WorkflowEvent, string> = {
   progress:
     'Record a progress update. A note is required so the citizen and supervisor know what is happening.',
   resolve: 'Mark this report as fixed. A note is required describing what was done.',
-  close: 'Close this report. A note is required documenting the outcome.',
+  close: 'Mark this report complete. A note is required documenting the outcome.',
 };
 
 function captureCurrentPosition(): Promise<ProofCaptureLocation> {
@@ -170,10 +170,10 @@ function ProofVerificationCard({ verification }: { verification: ProofVerificati
         : 'border-amber-200 bg-amber-50 text-amber-900';
   const title =
     verification.status === 'match'
-      ? `${isProviderBacked ? 'Gemini proof review' : 'Automatic proof check'}: likely valid`
+      ? `${isProviderBacked ? 'Proof review' : 'Proof check'}: likely valid`
       : verification.status === 'mismatch'
-        ? `${isProviderBacked ? 'Gemini proof review' : 'Automatic proof check'}: needs correction`
-        : `${isProviderBacked ? 'Gemini proof review' : 'Automatic proof check'}: human review needed`;
+        ? `${isProviderBacked ? 'Proof review' : 'Proof check'}: needs correction`
+        : `${isProviderBacked ? 'Proof review' : 'Proof check'}: human review needed`;
 
   return (
     <div className={`mt-4 rounded-xl border p-4 ${tone}`}>
@@ -538,7 +538,7 @@ export default function ReportDetailPage() {
             <div className="flex items-center gap-2">
               <IconShield size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
               <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                Current workflow
+                Current status
               </p>
             </div>
             <h2 className="mt-1 text-base font-semibold text-[var(--color-ink)]">
@@ -546,8 +546,8 @@ export default function ReportDetailPage() {
             </h2>
             <p className="mt-1 text-sm leading-5 text-[var(--color-text-secondary)]">
               {isSecondaryTask
-                ? 'This cross-agency work has its own completion state. The primary department retains control of the report workflow.'
-                : (STATUS_GUIDANCE[status] ?? 'No workflow action is available for this status.')}
+                ? 'This cross-agency work has its own completion state. The primary department keeps control of the main report.'
+                : (STATUS_GUIDANCE[status] ?? 'No action is available for this status.')}
             </p>
           </div>
           {availableActions.length > 0 && (

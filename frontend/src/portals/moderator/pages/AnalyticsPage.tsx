@@ -175,7 +175,7 @@ export default function AnalyticsPage() {
         />
         <StatCard
           icon={IconEyeCheck}
-          label="Fraud suspects"
+          label="Misrepresentation alerts"
           value={a.fraud_pending}
           trend="3%"
           trendUp
@@ -219,7 +219,7 @@ export default function AnalyticsPage() {
               <span className="text-sm font-semibold text-[#1d1d1b]">{a.duplicates_pending}</span>
             </div>
             <div className="flex items-center justify-between border-b border-[#f3f2ed] pb-3">
-              <span className="text-sm text-[#6f6e69]">Fraud suspects</span>
+              <span className="text-sm text-[#6f6e69]">Misrepresentation alerts</span>
               <span className="text-sm font-semibold text-[#1d1d1b]">{a.fraud_pending}</span>
             </div>
             <div className="flex items-center justify-between border-b border-[#f3f2ed] pb-3">

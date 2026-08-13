@@ -150,7 +150,7 @@ export default function DashboardPage() {
             icon={IconClock}
           />
           <StatCard label="Duplicates" value={stats.duplicates_pending} icon={IconLink} />
-          <StatCard label="Fraud" value={stats.fraud_pending} icon={IconFingerprint} />
+          <StatCard label="Misrepresentation" value={stats.fraud_pending} icon={IconFingerprint} />
           <StatCard
             label="Avg review"
             value={`${stats.avg_review_minutes} min`}

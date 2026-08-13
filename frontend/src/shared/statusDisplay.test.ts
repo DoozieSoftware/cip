@@ -19,12 +19,13 @@ describe('status display labels', () => {
 
   it('keeps staff labels specific without leaking raw status codes', () => {
     expect(staffReportStatusLabel('pending_moderator')).toBe('Needs review');
-    expect(staffReportStatusLabel('resolved')).toBe('Marked fixed');
+    expect(staffReportStatusLabel('resolved')).toBe('Fixed — proof submitted');
     expect(staffReportStatusLabel('resolved_pending_verification')).toBe(
       'Waiting for citizen confirmation',
     );
     expect(staffReportStatusLabel('reopened')).toBe('Reopened by citizen');
     expect(staffReportStatusLabel('verified')).toBe('Citizen confirmed');
+    expect(staffReportStatusLabel('closed')).toBe('Completed');
   });
 
   it('groups tones consistently across staff surfaces', () => {

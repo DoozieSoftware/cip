@@ -64,7 +64,7 @@ const PORTALS: Portal[] = [
     title: 'Moderator',
     path: '/moderator',
     audience: 'Moderators',
-    description: 'Triage the AI-classified queue, merge duplicates, reject fraud.',
+    description: 'Review AI-suggested reports, merge duplicates, and flag misrepresentation.',
     highlight: 'Keyboard shortcuts · AI overlay · Bulk actions',
     roles: ['moderator', 'super_admin', 'system'],
     icon: IconShieldCheck,

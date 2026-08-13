@@ -159,7 +159,7 @@ export function AiAnalysisPanel({ ai, statusCode, mockGpsScore }: AiAnalysisPane
         />
         <Metric
           icon={<IconShieldCheck className="h-4 w-4" stroke={1.7} />}
-          label="Fraud risk"
+          label="Misrepresentation risk"
           value={pct(ai.fraud_score)}
           tone={riskTone(ai.fraud_score)}
         />

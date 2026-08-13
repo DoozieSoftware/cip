@@ -20,29 +20,32 @@ export default function FraudQueuePage() {
   if (q.isLoading) {
     return (
       <div className="flex items-center justify-center py-20" aria-live="polite">
-        <Spinner label="Loading fraud review" />
+        <Spinner label="Loading misrepresentation review" />
       </div>
     );
   }
   if (q.isError || !q.data) {
     return (
       <EmptyState
-        title="Could not load fraud review"
-        description="The /moderator/fraud endpoint did not respond."
+        title="Could not load misrepresentation review"
+        description="The review queue did not respond."
       />
     );
   }
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-xl font-semibold text-[#1d1d1b]">Fraud review</h1>
+        <h1 className="text-xl font-semibold text-[#1d1d1b]">Misrepresentation review</h1>
         <p className="text-sm text-[#6f6e69]">
           Reports flagged as likely spam, repeat offenders, or synthetic media. Reject the clear
           cases; escalate the ambiguous ones.
         </p>
       </header>
       {q.data.data.length === 0 ? (
-        <EmptyState title="No fraud suspects" description="Nothing to review right now." />
+        <EmptyState
+          title="No misrepresentation alerts"
+          description="Nothing to review right now."
+        />
       ) : (
         <div className="space-y-3">
           {q.data.data.map((r) => (
