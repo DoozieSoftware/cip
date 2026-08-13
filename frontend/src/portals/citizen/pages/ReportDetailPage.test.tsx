@@ -64,7 +64,7 @@ describe('ReportDetailPage', () => {
     expect(screen.queryByText(/REF-/)).toBeNull();
   });
 
-  it('shows "In Progress" badge for open status', () => {
+  it('shows "Received" badge for newly submitted status', () => {
     (useReportDetail as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       isLoading: false,
       error: null,
@@ -75,10 +75,10 @@ describe('ReportDetailPage', () => {
         <ReportDetailPage />
       </MemoryRouter>,
     );
-    expect(screen.queryByText('In Progress')).not.toBeNull();
+    expect(screen.getAllByText('Received').length).toBeGreaterThan(0);
   });
 
-  it('shows "Closed" badge for closed status', () => {
+  it('shows "Completed" badge for closed status', () => {
     (useReportDetail as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       isLoading: false,
       error: null,
@@ -89,7 +89,7 @@ describe('ReportDetailPage', () => {
         <ReportDetailPage />
       </MemoryRouter>,
     );
-    expect(screen.getAllByText('Closed').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Completed').length).toBeGreaterThan(0);
   });
 
   it('shows "Rejected" badge for rejected status', () => {
@@ -103,7 +103,7 @@ describe('ReportDetailPage', () => {
         <ReportDetailPage />
       </MemoryRouter>,
     );
-    expect(screen.getAllByText('Rejected').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Could not accept').length).toBeGreaterThan(0);
   });
 
   it('renders video evidence with a video element instead of an image placeholder', () => {

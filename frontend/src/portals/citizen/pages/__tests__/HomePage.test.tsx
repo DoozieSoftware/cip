@@ -142,9 +142,9 @@ describe('HomePage — status classification', () => {
     expect(screen.getByText('6')).toBeInTheDocument();
   });
 
-  it('counts Resolved as awaiting_citizen + closed (2 of 6)', () => {
+  it('counts Fixed as awaiting_citizen + completed (2 of 6)', () => {
     renderPage();
-    const resolvedLabels = screen.getAllByText('Resolved');
+    const resolvedLabels = screen.getAllByText('Fixed');
     expect(resolvedLabels.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -183,9 +183,9 @@ describe('HomePage — status classification', () => {
     });
 
     renderPage();
-    // Resolved = awaiting_citizen + closed. verified maps to closed via
-    // lifecycleGroup, so all three count as Resolved (3), not 2.
-    const resolvedLabels = screen.getAllByText('Resolved');
+    // Fixed = awaiting_citizen + closed. verified maps to closed via
+    // lifecycleGroup, so all three count as Fixed (3), not 2.
+    const resolvedLabels = screen.getAllByText('Fixed');
     const statLabel = resolvedLabels.find(
       (el) => el.classList.contains('uppercase') && el.classList.contains('tracking-[0.12em]'),
     );

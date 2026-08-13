@@ -1,4 +1,5 @@
 import { type JSX } from 'react';
+import { citizenReportStatusLabel } from '../../../shared/statusDisplay';
 import { cx } from '../../../shared/ui/cx';
 
 /**
@@ -8,14 +9,19 @@ import { cx } from '../../../shared/ui/cx';
  * citizen sees the same status the operator does.
  */
 const STATUS_COLOR: Record<string, string> = {
+  draft: 'bg-slate-100 text-slate-800 border-slate-200',
   submitted: 'bg-slate-100 text-slate-800 border-slate-200',
   pending_moderator: 'bg-amber-100 text-amber-800 border-amber-200',
   pending_review: 'bg-amber-100 text-amber-800 border-amber-200',
   ai_processing: 'bg-sky-100 text-sky-800 border-sky-200',
   approved: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   assigned: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  accepted: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   in_progress: 'bg-sky-100 text-sky-800 border-sky-200',
+  reopened: 'bg-sky-100 text-sky-800 border-sky-200',
   resolved: 'bg-emerald-200 text-emerald-900 border-emerald-300',
+  resolved_pending_verification: 'bg-emerald-200 text-emerald-900 border-emerald-300',
+  verified: 'bg-slate-200 text-slate-800 border-slate-300',
   closed: 'bg-slate-200 text-slate-800 border-slate-300',
   rejected: 'bg-rose-100 text-rose-800 border-rose-200',
   merged: 'bg-violet-100 text-violet-800 border-violet-200',
@@ -24,14 +30,19 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 const STATUS_DOT: Record<string, string> = {
+  draft: 'bg-slate-500',
   submitted: 'bg-slate-500',
   pending_moderator: 'bg-amber-500',
   pending_review: 'bg-amber-500',
   ai_processing: 'bg-sky-500',
   approved: 'bg-emerald-600',
   assigned: 'bg-emerald-600',
+  accepted: 'bg-emerald-600',
   in_progress: 'bg-sky-600',
+  reopened: 'bg-sky-600',
   resolved: 'bg-emerald-700',
+  resolved_pending_verification: 'bg-emerald-700',
+  verified: 'bg-slate-600',
   closed: 'bg-slate-600',
   rejected: 'bg-rose-600',
   merged: 'bg-violet-600',
@@ -47,7 +58,7 @@ export interface StatusBadgeProps {
 export function StatusBadge({ status, className }: StatusBadgeProps): JSX.Element {
   const color = STATUS_COLOR[status.code] ?? 'bg-slate-100 text-slate-800 border-slate-200';
   const dot = STATUS_DOT[status.code] ?? 'bg-slate-500';
-  const label = status.name ?? status.code;
+  const label = citizenReportStatusLabel(status.code);
   return (
     <span
       className={cx(

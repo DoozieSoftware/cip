@@ -187,7 +187,7 @@ describe('CitizenReportDetailPage', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     );
-    expect((await screen.findAllByText('Closed')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('Completed')).length).toBeGreaterThan(0);
   });
 
   it('renders citizen verification actions while resolution is awaiting confirmation', async () => {

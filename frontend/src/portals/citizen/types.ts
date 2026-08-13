@@ -118,6 +118,7 @@ export const OPEN_STATUSES = [
   'assigned',
   'accepted',
   'in_progress',
+  'reopened',
   'escalated',
 ] as const;
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Input, Button, Badge } from '../../../shared/ui';
 import { departmentApi, type ReportListFilters } from '../api/operations';
 import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
+import { statusLabel } from '../components/statusMeta';
 
 type ExportFormat = 'csv' | 'xlsx' | 'pdf';
 
@@ -71,11 +72,15 @@ export default function ExportPage() {
               onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
             >
               <option value="">All statuses</option>
-              <option value="assigned">Assigned</option>
-              <option value="accepted">Accepted</option>
-              <option value="in_progress">In progress</option>
-              <option value="resolved">Resolved</option>
-              <option value="closed">Closed</option>
+              <option value="assigned">{statusLabel('assigned')}</option>
+              <option value="accepted">{statusLabel('accepted')}</option>
+              <option value="in_progress">{statusLabel('in_progress')}</option>
+              <option value="resolved">{statusLabel('resolved')}</option>
+              <option value="resolved_pending_verification">
+                {statusLabel('resolved_pending_verification')}
+              </option>
+              <option value="reopened">{statusLabel('reopened')}</option>
+              <option value="closed">{statusLabel('closed')}</option>
             </select>
           </label>
           <Input

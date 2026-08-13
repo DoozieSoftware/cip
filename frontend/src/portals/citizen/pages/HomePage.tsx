@@ -18,6 +18,7 @@ import { useAuth } from '../../../auth/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest, type ApiEnvelope } from '../../../auth/api';
 import { Spinner, EmptyState, ErrorState } from '../../../shared/ui';
+import { citizenReportStatusLabel } from '../../../shared/statusDisplay';
 import { ApiError } from '../../../shared/api/errors';
 import { getQueue } from '../offline/queue';
 import { useCitizenReports } from '../api/client';
@@ -379,7 +380,7 @@ export default function HomePage(): JSX.Element {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{report.title}</p>
                     <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-                      {report.status.name}
+                      {citizenReportStatusLabel(report.status.code)}
                     </p>
                   </div>
                   <IconChevronRight

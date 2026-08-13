@@ -22,6 +22,7 @@ import {
   useVerifyResolution,
   lifecycleGroup,
 } from '../api/client';
+import { citizenReportStatusLabel } from '../../../shared/statusDisplay';
 import { EmptyState, Spinner } from '../../../shared/ui';
 import { StatusBadge } from '../components/StatusBadge';
 import LocationMap from '../components/LocationMap';
@@ -225,22 +226,22 @@ export default function ReportDetailPage(): JSX.Element {
             {lifecycleGroup(r.status.code) === 'closed' ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                 <IconCircleCheck className="h-3.5 w-3.5" stroke={1.6} />
-                {t('detail.closed')}
+                {citizenReportStatusLabel(r.status.code)}
               </span>
             ) : lifecycleGroup(r.status.code) === 'rejected' ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">
                 <IconAlertTriangle className="h-3.5 w-3.5" stroke={1.6} />
-                {t('detail.rejected')}
+                {citizenReportStatusLabel(r.status.code)}
               </span>
             ) : lifecycleGroup(r.status.code) === 'merged' ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">
                 <IconAlertTriangle className="h-3.5 w-3.5" stroke={1.6} />
-                {t('detail.merged')}
+                {citizenReportStatusLabel(r.status.code)}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
                 <IconAlertTriangle className="h-3.5 w-3.5" stroke={1.6} />
-                {t('detail.inProgress')}
+                {citizenReportStatusLabel(r.status.code)}
               </span>
             )}
           </div>

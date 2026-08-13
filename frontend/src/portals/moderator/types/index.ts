@@ -14,6 +14,8 @@ export type ReportStatusCode =
   | 'accepted'
   | 'in_progress'
   | 'resolved'
+  | 'resolved_pending_verification'
+  | 'reopened'
   | 'verified'
   | 'closed'
   | 'rejected'

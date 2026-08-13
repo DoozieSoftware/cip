@@ -22,24 +22,28 @@ import type { DepartmentReportListItem, Paginated, ReportType } from '../types';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All' },
-  { value: 'assigned', label: 'Assigned' },
-  { value: 'accepted', label: 'Accepted' },
-  { value: 'in_progress', label: 'In progress' },
-  { value: 'resolved', label: 'Resolved' },
-  { value: 'verified', label: 'Verified' },
-  { value: 'closed', label: 'Closed' },
-  { value: 'escalated', label: 'Escalated' },
+  { value: 'assigned', label: statusLabel('assigned') },
+  { value: 'accepted', label: statusLabel('accepted') },
+  { value: 'in_progress', label: statusLabel('in_progress') },
+  { value: 'resolved', label: statusLabel('resolved') },
+  { value: 'resolved_pending_verification', label: statusLabel('resolved_pending_verification') },
+  { value: 'reopened', label: statusLabel('reopened') },
+  { value: 'verified', label: statusLabel('verified') },
+  { value: 'closed', label: statusLabel('closed') },
+  { value: 'escalated', label: statusLabel('escalated') },
 ];
 
 const NEXT_ACTION: Record<string, string> = {
   assigned: 'Accept assignment',
   accepted: 'Start field work',
   in_progress: 'Update or resolve',
-  resolved: 'Close after proof check',
-  verified: 'Verified',
+  resolved: 'Review fix proof',
+  resolved_pending_verification: 'Waiting for citizen',
+  reopened: 'Resume work',
+  verified: 'Citizen confirmed',
   closed: 'Closed',
   escalated: 'Supervisor attention',
-  merged: 'Merged',
+  merged: 'Merged duplicate',
 };
 
 function relativeDate(value: string | null): string {

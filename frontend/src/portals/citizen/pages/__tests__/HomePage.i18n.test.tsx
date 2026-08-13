@@ -68,7 +68,7 @@ describe('HomePage i18n', () => {
 
   it('renders stats labels from the catalog', () => {
     renderPage();
-    for (const label of ['Filed', 'Active', 'Resolved', 'Offline']) {
+    for (const label of ['Filed', 'Active', 'Fixed', 'Offline']) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
   });

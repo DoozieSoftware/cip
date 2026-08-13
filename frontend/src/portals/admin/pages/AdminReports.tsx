@@ -28,36 +28,11 @@ import {
   IconFilter,
   IconX,
 } from '@tabler/icons-react';
-
-const STATUS_OPTIONS = [
-  ['submitted', 'Submitted'],
-  ['ai_processing', 'AI processing'],
-  ['pending_moderator', 'Pending moderator'],
-  ['assigned', 'Assigned'],
-  ['accepted', 'Accepted'],
-  ['in_progress', 'In progress'],
-  ['resolved', 'Resolved'],
-  ['verified', 'Verified'],
-  ['closed', 'Closed'],
-  ['escalated', 'Escalated'],
-  ['rejected', 'Rejected'],
-  ['merged', 'Merged'],
-] as const;
-
-const STATUS_TONE: Record<string, 'neutral' | 'info' | 'success' | 'warning' | 'danger'> = {
-  submitted: 'neutral',
-  ai_processing: 'info',
-  pending_moderator: 'warning',
-  assigned: 'info',
-  accepted: 'info',
-  in_progress: 'info',
-  resolved: 'success',
-  verified: 'success',
-  closed: 'success',
-  escalated: 'danger',
-  rejected: 'danger',
-  merged: 'danger',
-};
+import {
+  reportStatusTone,
+  STAFF_STATUS_FILTER_OPTIONS,
+  staffReportStatusLabel,
+} from '../../../shared/statusDisplay';
 
 function displayDate(value: string | null): string {
   return value ? new Date(value).toLocaleDateString() : '—';
@@ -157,7 +132,7 @@ export default function AdminReports(): JSX.Element {
               <Select
                 options={[
                   { value: '', label: 'All statuses' },
-                  ...[...STATUS_OPTIONS].map(([value, label]) => ({ value, label })),
+                  ...STAFF_STATUS_FILTER_OPTIONS.map(({ value, label }) => ({ value, label })),
                 ]}
                 value={filters.status ?? ''}
                 onChange={(event) => updateFilter('status', event.target.value)}
@@ -241,7 +216,10 @@ export default function AdminReports(): JSX.Element {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-surface-alt)]">
-                    <IconClipboardList className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
+                    <IconClipboardList
+                      className="h-4 w-4 text-[var(--color-text-secondary)]"
+                      stroke={1.6}
+                    />
                   </span>
                   <CardTitle>Reports</CardTitle>
                 </div>
@@ -273,32 +251,37 @@ export default function AdminReports(): JSX.Element {
                     {reports.data.reports.map((report) => (
                       <tr key={report.id} className="align-top">
                         <td className="px-5 py-3">
-                          <div className="text-sm font-medium text-[var(--color-ink)]">{report.title}</div>
+                          <div className="text-sm font-medium text-[var(--color-ink)]">
+                            {report.title}
+                          </div>
                           <div className="font-mono text-xs text-[var(--color-text-tertiary)]">
                             {report.tracking_number}
                           </div>
                         </td>
                         <td className="px-5 py-3">
                           <Badge
-                            tone={STATUS_TONE[report.current_status_code ?? ''] ?? 'neutral'}
+                            tone={reportStatusTone(report.current_status_code)}
                             className={`bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] ring-0 ${
-                              STATUS_TONE[report.current_status_code ?? ''] === 'success'
+                              reportStatusTone(report.current_status_code) === 'success'
                                 ? '!bg-[#edf7f0] !text-[var(--color-success)]'
-                                : STATUS_TONE[report.current_status_code ?? ''] === 'warning'
+                                : reportStatusTone(report.current_status_code) === 'warning'
                                   ? '!bg-[#fff6e4] !text-[#805913]'
-                                  : STATUS_TONE[report.current_status_code ?? ''] === 'danger'
+                                  : reportStatusTone(report.current_status_code) === 'danger'
                                     ? '!bg-[#fbeeed] !text-[var(--color-danger)]'
-                                    : STATUS_TONE[report.current_status_code ?? ''] === 'info'
+                                    : reportStatusTone(report.current_status_code) === 'info'
                                       ? '!bg-[#eef2fb] !text-[#3b5b9f]'
                                       : ''
                             }`}
                           >
-                            {report.current_status_code ?? '—'}
+                            {staffReportStatusLabel(report.current_status_code)}
                           </Badge>
                         </td>
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-2">
-                            <IconCategory className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" stroke={1.6} />
+                            <IconCategory
+                              className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
+                              stroke={1.6}
+                            />
                             <span className="text-sm text-[var(--color-ink)]">
                               {report.report_type?.name ?? '—'}
                             </span>
@@ -306,7 +289,10 @@ export default function AdminReports(): JSX.Element {
                         </td>
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-2">
-                            <IconBuilding className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" stroke={1.6} />
+                            <IconBuilding
+                              className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
+                              stroke={1.6}
+                            />
                             <div>
                               <div className="text-sm text-[var(--color-ink)]">
                                 {report.department?.name ?? 'Unassigned'}
@@ -346,7 +332,10 @@ export default function AdminReports(): JSX.Element {
                         </td>
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-2">
-                            <IconCalendar className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" stroke={1.6} />
+                            <IconCalendar
+                              className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
+                              stroke={1.6}
+                            />
                             <span className="whitespace-nowrap text-sm text-[var(--color-text-secondary)]">
                               {displayDate(report.submitted_at)}
                             </span>

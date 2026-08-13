@@ -13,6 +13,7 @@ import {
   IconArrowUpRight,
 } from '@tabler/icons-react';
 import { Badge, Card, CardBody, EmptyState, Spinner } from '../../../shared/ui';
+import { reportStatusTone, staffReportStatusLabel } from '../../../shared/statusDisplay';
 import { queueApi, type QueueFilters } from '../api/moderator';
 import type { ReportListItem, ReportStatusCode } from '../types';
 import { useState } from 'react';
@@ -24,6 +25,7 @@ function statusIcon(s: ReportStatusCode) {
     case 'ai_processing':
       return IconRefresh;
     case 'escalated':
+    case 'reopened':
       return IconAlertTriangle;
     case 'rejected':
     case 'merged':
@@ -31,6 +33,7 @@ function statusIcon(s: ReportStatusCode) {
     case 'closed':
     case 'verified':
     case 'resolved':
+    case 'resolved_pending_verification':
       return IconCircleCheck;
     default:
       return IconClock;
@@ -38,10 +41,11 @@ function statusIcon(s: ReportStatusCode) {
 }
 
 const STATUS_FILTERS = [
-  { value: 'pending_moderator', label: 'Pending' },
-  { value: 'ai_processing', label: 'AI Processing' },
-  { value: 'assigned', label: 'Assigned' },
-  { value: 'escalated', label: 'Escalated' },
+  { value: 'pending_moderator', label: staffReportStatusLabel('pending_moderator') },
+  { value: 'ai_processing', label: staffReportStatusLabel('ai_processing') },
+  { value: 'assigned', label: staffReportStatusLabel('assigned') },
+  { value: 'reopened', label: staffReportStatusLabel('reopened') },
+  { value: 'escalated', label: staffReportStatusLabel('escalated') },
 ];
 
 export default function ReviewQueuePage() {
@@ -249,22 +253,19 @@ export default function ReviewQueuePage() {
                         )}
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-                            r.status_code === 'pending_moderator' ||
-                            r.status_code === 'ai_processing'
+                            reportStatusTone(r.status_code) === 'warning'
                               ? 'bg-amber-50 text-amber-700'
-                              : r.status_code === 'escalated'
+                              : reportStatusTone(r.status_code) === 'danger'
                                 ? 'bg-violet-50 text-violet-700'
-                                : r.status_code === 'rejected' || r.status_code === 'merged'
-                                  ? 'bg-red-50 text-red-700'
-                                  : r.status_code === 'closed' ||
-                                      r.status_code === 'verified' ||
-                                      r.status_code === 'resolved'
-                                    ? 'bg-emerald-50 text-emerald-700'
-                                    : 'bg-sky-50 text-sky-700'
+                                : reportStatusTone(r.status_code) === 'success'
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : reportStatusTone(r.status_code) === 'info'
+                                    ? 'bg-sky-50 text-sky-700'
+                                    : 'bg-slate-50 text-slate-700'
                           }`}
                         >
                           <StatusIcon className="h-3 w-3" stroke={1.8} />
-                          {r.status_code.replace(/_/g, ' ')}
+                          {staffReportStatusLabel(r.status_code)}
                         </span>
                       </div>
                     </div>

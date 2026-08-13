@@ -29,6 +29,7 @@ import {
   Spinner,
   Textarea,
 } from '../../../shared/ui';
+import { reportStatusTone, staffReportStatusLabel } from '../../../shared/statusDisplay';
 import { actionsApi, queueApi } from '../api/moderator';
 import type { MergePayload, ReportDetail, ReportStatusCode, ReviewPayload } from '../types';
 import { EvidenceViewer } from '../components/EvidenceViewer';
@@ -360,20 +361,18 @@ export default function ReportDetailPage() {
             <div className="flex items-center gap-2">
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
-                  data.status_code === 'pending_moderator' || data.status_code === 'ai_processing'
+                  reportStatusTone(data.status_code) === 'warning'
                     ? 'bg-amber-50 text-amber-700'
-                    : data.status_code === 'escalated'
+                    : reportStatusTone(data.status_code) === 'danger'
                       ? 'bg-violet-50 text-violet-700'
-                      : data.status_code === 'rejected' || data.status_code === 'merged'
-                        ? 'bg-red-50 text-red-700'
-                        : data.status_code === 'closed' ||
-                            data.status_code === 'verified' ||
-                            data.status_code === 'resolved'
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'bg-sky-50 text-sky-700'
+                      : reportStatusTone(data.status_code) === 'success'
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : reportStatusTone(data.status_code) === 'info'
+                          ? 'bg-sky-50 text-sky-700'
+                          : 'bg-slate-50 text-slate-700'
                 }`}
               >
-                {data.status_code.replace(/_/g, ' ')}
+                {staffReportStatusLabel(data.status_code)}
               </span>
               {data.evidence_count > 0 && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs text-[#6f6e69] ring-1 ring-[#d8d6cf]">

@@ -17,6 +17,7 @@ import {
 import { Spinner, Select, Badge } from '../../../shared/ui';
 import { departmentApi, type ReportListFilters } from '../api/operations';
 import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
+import { statusLabel, statusTone } from '../components/statusMeta';
 import type { DepartmentReportListItem } from '../types';
 
 L.Icon.Default.mergeOptions({
@@ -27,15 +28,17 @@ L.Icon.Default.mergeOptions({
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Any status' },
-  { value: 'assigned', label: 'Assigned' },
-  { value: 'accepted', label: 'Accepted' },
-  { value: 'in_progress', label: 'In progress' },
-  { value: 'resolved', label: 'Resolved' },
-  { value: 'verified', label: 'Verified' },
-  { value: 'closed', label: 'Closed' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'merged', label: 'Merged' },
-  { value: 'escalated', label: 'Escalated' },
+  { value: 'assigned', label: statusLabel('assigned') },
+  { value: 'accepted', label: statusLabel('accepted') },
+  { value: 'in_progress', label: statusLabel('in_progress') },
+  { value: 'resolved', label: statusLabel('resolved') },
+  { value: 'resolved_pending_verification', label: statusLabel('resolved_pending_verification') },
+  { value: 'reopened', label: statusLabel('reopened') },
+  { value: 'verified', label: statusLabel('verified') },
+  { value: 'closed', label: statusLabel('closed') },
+  { value: 'rejected', label: statusLabel('rejected') },
+  { value: 'merged', label: statusLabel('merged') },
+  { value: 'escalated', label: statusLabel('escalated') },
 ];
 
 const BENGALURU_CENTER: [number, number] = [12.9716, 77.5946];
@@ -43,29 +46,6 @@ const KARNATAKA_BOUNDS: [[number, number], [number, number]] = [
   [11.5, 74.0],
   [18.7, 78.9],
 ];
-
-function statusTone(
-  code: string | null | undefined,
-): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
-  switch (code) {
-    case 'assigned':
-    case 'accepted':
-    case 'in_progress':
-      return 'info';
-    case 'resolved':
-    case 'verified':
-      return 'success';
-    case 'closed':
-      return 'neutral';
-    case 'rejected':
-    case 'merged':
-      return 'warning';
-    case 'escalated':
-      return 'danger';
-    default:
-      return 'neutral';
-  }
-}
 
 function looksLikeCoords(address: string): boolean {
   return /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(address.trim());
@@ -351,7 +331,7 @@ export default function GisMapPage() {
             <div className="mt-4 space-y-4 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={statusTone(selected.current_status_code)}>
-                  {selected.current_status_code ?? '—'}
+                  {statusLabel(selected.current_status_code)}
                 </Badge>
               </div>
               <div className="space-y-3">
