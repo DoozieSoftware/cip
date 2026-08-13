@@ -417,7 +417,7 @@ export default function MyReportsPage(): JSX.Element {
           <div
             role="tablist"
             aria-label={t('reports.filterStatusLabel')}
-            className="flex gap-2 overflow-x-auto pb-1"
+            className="flex flex-wrap gap-2"
           >
             {FILTER_TABS.map((tab) => (
               <button

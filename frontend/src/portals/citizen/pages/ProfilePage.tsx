@@ -3,14 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../auth/AuthContext';
 import { apiRequest, type ApiEnvelope } from '../../../auth/api';
 import { Spinner } from '../../../shared/ui';
-import {
-  IconUser,
-  IconMail,
-  IconPhone,
-  IconShield,
-  IconLogout,
-  IconAlertCircle,
-} from '@tabler/icons-react';
+import { IconUser, IconMail, IconPhone, IconShield, IconAlertCircle } from '@tabler/icons-react';
 import { useMessages } from '../messages';
 
 interface ProfileData {
@@ -62,7 +55,7 @@ function Section({ title, icon, children }: SectionProps): JSX.Element {
 }
 
 export default function ProfilePage(): JSX.Element {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { t, locale, setLocale } = useMessages();
   const queryClient = useQueryClient();
   const [preferredName, setPreferredName] = useState('');
@@ -315,15 +308,6 @@ export default function ProfilePage(): JSX.Element {
                 </div>
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={logout}
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium text-[var(--color-ink)] transition hover:border-black/30 active:bg-[#faf9f6] sm:w-auto"
-            >
-              <IconLogout className="h-4 w-4" stroke={1.6} aria-hidden />
-              {t('common.signOut')}
-            </button>
           </>
         )}
       </main>
