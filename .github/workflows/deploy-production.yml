@@ -131,7 +131,7 @@ jobs:
           scp -P $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             deploy/production/backup-production.sh $REMOTE:/tmp/cip-backup-production.sh
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
-            $REMOTE "chmod 700 /tmp/cip-backup-production.sh && APP_DIR=\$HOME/cip BACKUP_ROOT=\$HOME/cip-backups /tmp/cip-backup-production.sh && rm -f /tmp/cip-backup-production.sh"
+            $REMOTE "chmod 700 /tmp/cip-backup-production.sh && APP_DIR=\$HOME/cip BACKUP_ROOT=\$HOME/cip-backups bash /tmp/cip-backup-production.sh && rm -f /tmp/cip-backup-production.sh"
 
           # Verify host capabilities before replacing application files. The
           # runtime readiness endpoint repeats these checks after deploy.
