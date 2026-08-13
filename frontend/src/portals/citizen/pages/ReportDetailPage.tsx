@@ -195,8 +195,13 @@ export default function ReportDetailPage(): JSX.Element {
       <div className="space-y-4 px-4 pt-4">
         <CitizenResolutionCard
           report={r}
-          onVerify={() => verifyResolution.mutate()}
-          onDispute={(reason) => disputeResolution.mutate(reason)}
+          onVerify={() => verifyResolution.mutate(r.workflow_version)}
+          onDispute={(reason) =>
+            disputeResolution.mutate({
+              reason,
+              expectedWorkflowVersion: r.workflow_version,
+            })
+          }
           isVerifying={verifyResolution.isPending}
           isDisputing={disputeResolution.isPending}
           error={
@@ -254,7 +259,11 @@ export default function ReportDetailPage(): JSX.Element {
             </div>
           ) : null}
           {lifecycleGroup(r.status.code) === 'merged' ? (
-            <MergeDisputeCard reportId={r.id} mergeDispute={r.merge_dispute ?? null} />
+            <MergeDisputeCard
+              reportId={r.id}
+              workflowVersion={r.workflow_version}
+              mergeDispute={r.merge_dispute ?? null}
+            />
           ) : null}
           <div className="mt-4 border-t border-[var(--color-border-subtle)] pt-4">
             <h1 className="text-xl font-bold leading-tight text-[var(--color-ink)]">{r.title}</h1>

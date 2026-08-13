@@ -27,6 +27,7 @@ export interface QueueFilters {
 interface ApiModeratorReport {
   id: string;
   tracking_number: string;
+  workflow_version?: number;
   title: string;
   description?: string | null;
   ai_confidence: number | null;
@@ -49,6 +50,7 @@ function normalizeQueueItem(report: ApiModeratorReport): ReportListItem {
   return {
     id: report.id,
     tracking_number: report.tracking_number,
+    workflow_version: report.workflow_version,
     title: report.title,
     category: report.report_type ?? null,
     department: null,
@@ -125,12 +127,23 @@ export const actionsApi = {
       payload,
     ),
 
-  reject: (id: string, payload: { reason_code: string; remarks?: string }) =>
+  reject: (
+    id: string,
+    payload: { reason_code: string; remarks?: string; expected_workflow_version?: number },
+  ) =>
     api
       .post<{ report: ReportDetail }>(`/moderator/reports/${id}/reject`, payload)
       .then((r) => r.report),
 
-  escalate: (id: string, payload: { reason_code: string; remarks?: string; level?: string }) =>
+  escalate: (
+    id: string,
+    payload: {
+      reason_code: string;
+      remarks?: string;
+      level?: string;
+      expected_workflow_version?: number;
+    },
+  ) =>
     api
       .post<{ report: ReportDetail }>(`/moderator/reports/${id}/escalate`, payload)
       .then((r) => r.report),
@@ -138,7 +151,15 @@ export const actionsApi = {
   // T-M7-010's endpoint lives under /admin, not /moderator, but
   // ReassignReportRequest::authorize() already permits the moderator
   // role — only super_admin's route middleware guards the path prefix.
-  reassign: (id: string, payload: { department_id: string; officer_id?: string; reason: string }) =>
+  reassign: (
+    id: string,
+    payload: {
+      department_id: string;
+      officer_id?: string;
+      reason: string;
+      expected_workflow_version?: number;
+    },
+  ) =>
     api.post<{ id: string; report_id: string; department_id: string; officer_id: string | null }>(
       `/admin/reports/${id}/reassign`,
       payload,

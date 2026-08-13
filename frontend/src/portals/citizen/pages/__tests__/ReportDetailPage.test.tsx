@@ -66,6 +66,7 @@ function baseReport(overrides: Partial<ReportDetail>): ReportDetail {
   return {
     id: '11111111-1111-1111-1111-111111111111',
     tracking_number: 'CIV-2026-000001',
+    workflow_version: 1,
     title: 'Pothole on Main St',
     description: 'Deep pothole',
     status: { code: 'open', name: 'Open' },

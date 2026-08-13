@@ -12,9 +12,11 @@ import { useMessages } from '../messages';
  */
 export default function MergeDisputeCard({
   reportId,
+  workflowVersion,
   mergeDispute,
 }: {
   reportId: string;
+  workflowVersion: number;
   mergeDispute: MergeDispute | null;
 }): JSX.Element {
   const [expanded, setExpanded] = useState(false);
@@ -89,12 +91,15 @@ export default function MergeDisputeCard({
     }
 
     setError(null);
-    mutation.mutate(reason, {
-      onError: (e) => {
-        const msg = e instanceof Error ? e.message : t('merge.failure');
-        setError(msg);
+    mutation.mutate(
+      { reason, expectedWorkflowVersion: workflowVersion },
+      {
+        onError: (e) => {
+          const msg = e instanceof Error ? e.message : t('merge.failure');
+          setError(msg);
+        },
       },
-    });
+    );
   };
 
   return (

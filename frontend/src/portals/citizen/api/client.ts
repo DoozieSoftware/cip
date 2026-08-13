@@ -379,10 +379,16 @@ export function useReportTimeline(id: string | undefined) {
 export function useMergeDispute(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (reason: string) => {
+    mutationFn: async ({
+      reason,
+      expectedWorkflowVersion,
+    }: {
+      reason: string;
+      expectedWorkflowVersion: number;
+    }) => {
       await request<unknown>(`/citizen/reports/${id}/dispute-merge`, {
         method: 'POST',
-        body: { reason },
+        body: { reason, expected_workflow_version: expectedWorkflowVersion },
       });
     },
     onSuccess: () => {
@@ -394,9 +400,10 @@ export function useMergeDispute(id: string) {
 export function useVerifyResolution(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (expectedWorkflowVersion: number) => {
       const data = await request<{ report: ApiReportPayload }>(`/citizen/reports/${id}/verify`, {
         method: 'POST',
+        body: { expected_workflow_version: expectedWorkflowVersion },
       });
       return normalizeReport(data.report);
     },
@@ -411,10 +418,16 @@ export function useVerifyResolution(id: string) {
 export function useDisputeResolution(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (reason: string) => {
+    mutationFn: async ({
+      reason,
+      expectedWorkflowVersion,
+    }: {
+      reason: string;
+      expectedWorkflowVersion: number;
+    }) => {
       const data = await request<{ report: ApiReportPayload }>(`/citizen/reports/${id}/dispute`, {
         method: 'POST',
-        body: { reason },
+        body: { reason, expected_workflow_version: expectedWorkflowVersion },
       });
       return normalizeReport(data.report);
     },

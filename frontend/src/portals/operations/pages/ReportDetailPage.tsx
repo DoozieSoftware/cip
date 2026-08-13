@@ -147,7 +147,7 @@ export default function ReportDetailPage() {
 
   const action = useMutation({
     mutationFn: (input: { event: WorkflowEvent; note?: string }) =>
-      departmentApi.action(reportId, input.event, input.note),
+      departmentApi.action(reportId, input.event, input.note, report?.workflow_version ?? 1),
     onSuccess: (response) => {
       queryClient.setQueryData<DepartmentReportDetail>(
         ['operations', 'report', reportId, selectedId],

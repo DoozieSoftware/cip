@@ -27,6 +27,7 @@ function baseReport(overrides: Partial<DepartmentReportDetail> = {}): Department
   return {
     id: REPORT_ID,
     tracking_number: 'CIP-2026-0001',
+    workflow_version: 1,
     title: 'Pothole on Main St',
     description: 'Deep pothole near the junction',
     is_anonymous: false,

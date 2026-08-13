@@ -241,7 +241,8 @@ export default function ReportDetailPage() {
   }, [id, navigate, qc]);
 
   const review = useMutation({
-    mutationFn: (p: ReviewPayload) => actionsApi.review(id, p),
+    mutationFn: (p: ReviewPayload) =>
+      actionsApi.review(id, { ...p, expected_workflow_version: data?.workflow_version }),
     onSuccess: (updated) => {
       qc.setQueryData(['moderator', 'reports', id], updated);
       void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });
@@ -251,7 +252,8 @@ export default function ReportDetailPage() {
     },
   });
   const reject = useMutation({
-    mutationFn: (p: { reason_code: string; remarks?: string }) => actionsApi.reject(id, p),
+    mutationFn: (p: { reason_code: string; remarks?: string }) =>
+      actionsApi.reject(id, { ...p, expected_workflow_version: data?.workflow_version }),
     onSuccess: (updated) => {
       qc.setQueryData(['moderator', 'reports', id], updated);
       void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });
@@ -260,14 +262,16 @@ export default function ReportDetailPage() {
     },
   });
   const merge = useMutation({
-    mutationFn: (p: MergePayload) => actionsApi.merge(id, p),
+    mutationFn: (p: MergePayload) =>
+      actionsApi.merge(id, { ...p, expected_workflow_version: data?.workflow_version }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });
       setMergeOpen(false);
     },
   });
   const escalate = useMutation({
-    mutationFn: (p: { reason_code: string; remarks?: string }) => actionsApi.escalate(id, p),
+    mutationFn: (p: { reason_code: string; remarks?: string }) =>
+      actionsApi.escalate(id, { ...p, expected_workflow_version: data?.workflow_version }),
     onSuccess: (updated) => {
       qc.setQueryData(['moderator', 'reports', id], updated);
       void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });
@@ -276,7 +280,7 @@ export default function ReportDetailPage() {
   });
   const assign = useMutation({
     mutationFn: (p: { department_id: string; officer_id?: string; reason: string }) =>
-      actionsApi.reassign(id, p),
+      actionsApi.reassign(id, { ...p, expected_workflow_version: data?.workflow_version }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['moderator', 'reports', id] });
       void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });

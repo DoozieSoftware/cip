@@ -89,6 +89,7 @@ export interface GeoPoint {
 export interface ReportListItem {
   id: string;
   tracking_number: string;
+  workflow_version: number;
   title: string;
   description: string | null;
   is_anonymous: boolean;

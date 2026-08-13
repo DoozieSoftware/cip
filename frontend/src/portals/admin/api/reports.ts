@@ -15,6 +15,7 @@ export interface AdminReportAssignment {
 export interface AdminReport {
   id: string;
   tracking_number: string;
+  workflow_version: number;
   title: string;
   description: string | null;
   current_status_code: string | null;

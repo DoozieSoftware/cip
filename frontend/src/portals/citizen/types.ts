@@ -31,6 +31,7 @@ export interface AiSummary {
 export interface ReportSummary {
   id: string;
   tracking_number: string;
+  workflow_version: number;
   title: string;
   description?: string | null;
   status: { code: string; name: string; is_terminal?: boolean };

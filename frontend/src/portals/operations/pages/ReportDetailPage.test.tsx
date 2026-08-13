@@ -28,6 +28,7 @@ function baseReport(overrides: Partial<DepartmentReportDetail> = {}): Department
   return {
     id: REPORT_ID,
     tracking_number: 'CIP-2026-0001',
+    workflow_version: 1,
     title: 'Pothole on Main St',
     description: 'Deep pothole near the junction',
     is_anonymous: false,
@@ -242,6 +243,7 @@ describe('ReportDetailPage', () => {
         REPORT_ID,
         'progress',
         'On site, crew dispatched to fill the pothole',
+        1,
       ),
     );
   });
@@ -256,7 +258,7 @@ describe('ReportDetailPage', () => {
 
     fireEvent.click(confirm);
     await waitFor(() =>
-      expect(departmentApi.action).toHaveBeenCalledWith(REPORT_ID, 'accept', undefined),
+      expect(departmentApi.action).toHaveBeenCalledWith(REPORT_ID, 'accept', undefined, 1),
     );
   });
 

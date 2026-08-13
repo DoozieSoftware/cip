@@ -59,7 +59,14 @@ describe('citizen types - lifecycle groups', () => {
 
 describe('citizen types - type constraints', () => {
   it('accepts valid StatusFilter values', () => {
-    const filters: StatusFilter[] = ['all', 'open', 'awaiting_citizen', 'closed', 'rejected', 'merged'];
+    const filters: StatusFilter[] = [
+      'all',
+      'open',
+      'awaiting_citizen',
+      'closed',
+      'rejected',
+      'merged',
+    ];
     expect(filters).toHaveLength(6);
   });
 
@@ -72,6 +79,7 @@ describe('citizen types - type constraints', () => {
     const summary: ReportSummary = {
       id: 'test-id',
       tracking_number: 'CIV-2026-000001',
+      workflow_version: 1,
       title: 'Test Report',
       status: { code: 'submitted', name: 'Submitted' },
     };
@@ -82,6 +90,7 @@ describe('citizen types - type constraints', () => {
     const summary: ReportSummary = {
       id: 'test-id',
       tracking_number: 'CIV-2026-000001',
+      workflow_version: 1,
       title: 'Test Report',
       status: { code: 'submitted', name: 'Submitted' },
     };
@@ -92,6 +101,7 @@ describe('citizen types - type constraints', () => {
     const detail: ReportDetail = {
       id: 'test-id',
       tracking_number: 'CIV-2026-000001',
+      workflow_version: 1,
       title: 'Test Report',
       status: { code: 'submitted', name: 'Submitted' },
       timeline: [],

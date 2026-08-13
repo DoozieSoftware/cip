@@ -134,8 +134,16 @@ export const departmentApi = {
     );
   },
 
-  action: (id: string, event: WorkflowEvent, note?: string) =>
-    api.post<DepartmentReportListItem>(`/department/reports/${id}/${event}`, note ? { note } : {}),
+  action: (
+    id: string,
+    event: WorkflowEvent,
+    note: string | undefined,
+    expectedWorkflowVersion: number,
+  ) =>
+    api.post<DepartmentReportListItem>(`/department/reports/${id}/${event}`, {
+      ...(note ? { note } : {}),
+      expected_workflow_version: expectedWorkflowVersion,
+    }),
 
   completeTask: (reportId: string, assignmentId: string, note?: string, departmentId?: string) =>
     api.post<DepartmentReportDetail>(
