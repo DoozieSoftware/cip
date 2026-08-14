@@ -317,7 +317,7 @@ export default function ReportDetailPage() {
   }
   if (isError || !data) {
     return (
-      <div className="min-h-screen bg-[#f3f2ed] p-6">
+      <div className="min-h-screen bg-[#f3f2ed] p-4 sm:p-6">
         <EmptyState
           title="Report not found"
           description="The report may have been merged or rejected, or you may not have access to it."
@@ -336,7 +336,7 @@ export default function ReportDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f2ed] p-6">
+    <div className="min-h-screen bg-[#f3f2ed] p-4 sm:p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <header>
           <Link

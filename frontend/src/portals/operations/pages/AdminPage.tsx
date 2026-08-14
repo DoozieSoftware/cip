@@ -278,63 +278,67 @@ export default function AdminPage() {
           />
           <div>
             <p className="mb-1 text-sm font-medium text-slate-700">Working hours</p>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs uppercase text-slate-500">
-                  <th className="text-left">Day</th>
-                  <th className="text-left">Open</th>
-                  <th className="text-left">Close</th>
-                </tr>
-              </thead>
-              <tbody>
-                {workingHours.map((row, idx) => (
-                  <tr key={idx}>
-                    <td>
-                      <select
-                        value={row.day}
-                        onChange={(e) => {
-                          const v = e.target.value as Day;
-                          setWorkingHours((cur) =>
-                            cur.map((r, i) => (i === idx ? { ...r, day: v } : r)),
-                          );
-                        }}
-                        className="rounded border border-slate-300 px-2 py-1"
-                      >
-                        {DAYS.map((d) => (
-                          <option key={d} value={d}>
-                            {d}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        type="time"
-                        value={row.open}
-                        onChange={(e) =>
-                          setWorkingHours((cur) =>
-                            cur.map((r, i) => (i === idx ? { ...r, open: e.target.value } : r)),
-                          )
-                        }
-                        className="rounded border border-slate-300 px-2 py-1"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="time"
-                        value={row.close}
-                        onChange={(e) =>
-                          setWorkingHours((cur) =>
-                            cur.map((r, i) => (i === idx ? { ...r, close: e.target.value } : r)),
-                          )
-                        }
-                        className="rounded border border-slate-300 px-2 py-1"
-                      />
-                    </td>
+            {/* A day select plus two time inputs per row cannot fit a phone
+                width; scroll the table rather than letting it push the page. */}
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[20rem] text-sm">
+                <thead>
+                  <tr className="text-xs uppercase text-slate-500">
+                    <th className="text-left">Day</th>
+                    <th className="text-left">Open</th>
+                    <th className="text-left">Close</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {workingHours.map((row, idx) => (
+                    <tr key={idx}>
+                      <td>
+                        <select
+                          value={row.day}
+                          onChange={(e) => {
+                            const v = e.target.value as Day;
+                            setWorkingHours((cur) =>
+                              cur.map((r, i) => (i === idx ? { ...r, day: v } : r)),
+                            );
+                          }}
+                          className="rounded border border-slate-300 px-2 py-1"
+                        >
+                          {DAYS.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          type="time"
+                          value={row.open}
+                          onChange={(e) =>
+                            setWorkingHours((cur) =>
+                              cur.map((r, i) => (i === idx ? { ...r, open: e.target.value } : r)),
+                            )
+                          }
+                          className="rounded border border-slate-300 px-2 py-1"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="time"
+                          value={row.close}
+                          onChange={(e) =>
+                            setWorkingHours((cur) =>
+                              cur.map((r, i) => (i === idx ? { ...r, close: e.target.value } : r)),
+                            )
+                          }
+                          className="rounded border border-slate-300 px-2 py-1"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
           <Input
             label="Holiday calendar (YYYY-MM-DD, comma-separated)"
