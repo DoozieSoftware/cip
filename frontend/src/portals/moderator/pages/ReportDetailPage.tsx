@@ -449,7 +449,13 @@ export default function ReportDetailPage() {
         </Card>
 
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
-          <EvidenceViewer media={data.media} />
+          {/* AI Analysis routinely runs several screens longer than a
+              couple of evidence photos. Pinning Evidence in view while
+              AI Analysis scrolls keeps the photo comparable against the
+              AI's notes instead of leaving it stranded above the fold. */}
+          <div className="lg:sticky lg:top-6 lg:self-start">
+            <EvidenceViewer media={data.media} />
+          </div>
           <AiAnalysisPanel
             ai={data.ai_result}
             statusCode={data.status_code}
