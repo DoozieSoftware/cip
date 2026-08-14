@@ -8,6 +8,7 @@ uses(RefreshDatabase::class);
 use App\Modules\AI\Providers\OpenAICompatibleProvider;
 use App\Modules\AI\ValueObjects\AiRequest;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 
 it('returns name and model exactly as constructed', function (): void {
@@ -113,13 +114,15 @@ it('classify() posts to /v1/chat/completions with bearer auth and parses the JSO
         ->and($resp->primaryLabel())->toBe('pothole')
         ->and($resp->raw['usage'])->toBe(['prompt_tokens' => 100, 'completion_tokens' => 50]);
 
-    Http::assertSent(function ($request): bool {
-        $content = $request['messages'][1]['content'];
+    Http::assertSent(function (Request $request): bool {
+        /** @var array{model: string, response_format: array{type: string}, messages: array<int, array{content: array<int, array{type: string, text: string, image_url?: array{url: string}}>}>} $payload */
+        $payload = $request->data();
+        $content = $payload['messages'][1]['content'];
 
         return $request->url() === 'https://api.openai.com/v1/chat/completions'
             && $request->hasHeader('Authorization', 'Bearer sk-test')
-            && $request['model'] === 'gpt-4o'
-            && $request['response_format'] === ['type' => 'json_object']
+            && $payload['model'] === 'gpt-4o'
+            && $payload['response_format'] === ['type' => 'json_object']
             && $content[0]['type'] === 'image_url'
             && $content[1]['type'] === 'text'
             && str_contains($content[1]['text'], 'UNTRUSTED CITIZEN CLAIM');
@@ -248,7 +251,7 @@ it('sends extra_headers on both healthCheck and classify (OpenRouter-style custo
     $p->healthCheck();
     $p->classify(new AiRequest(promptName: 'category_classifier'));
 
-    Http::assertSent(function ($request): bool {
+    Http::assertSent(function (Request $request): bool {
         return $request->hasHeader('HTTP-Referer', 'https://civic-intelligence.example')
             && $request->hasHeader('X-Title', 'Civic Intelligence Platform')
             && $request->hasHeader('Authorization', 'Bearer sk-or-test');
@@ -285,4 +288,37 @@ it('healthCheck returns false when both /v1/models and the bare base URL fail', 
     );
 
     expect($p->healthCheck())->toBeFalse();
+});
+
+it('disables the Expect: 100-continue handshake for large media payloads', function (): void {
+    // Google's AI Platform front end answers `Expect: 100-continue` — which
+    // cURL adds once a base64 media payload crosses ~1 MB — with HTTP 417,
+    // so the client must request no expect handshake at all.
+    $sentOptions = null;
+
+    Http::fake(function (Request $request, array $options) use (&$sentOptions) {
+        $sentOptions = $options;
+
+        return Http::response([
+            'choices' => [['message' => ['content' => json_encode(['predicted_type' => 'road'])]]],
+        ], 200);
+    });
+
+    $p = new OpenAICompatibleProvider(
+        name: 'vertex-gemini-flash',
+        model: 'google/gemini-3.7-flash',
+        baseUrl: 'https://aiplatform.googleapis.com/v1/projects/demo/locations/global/endpoints/openapi',
+        apiKey: '',
+    );
+
+    $p->classify(new AiRequest(
+        promptName: 'proof_verification',
+        mediaUrls: [
+            'data:image/jpeg;base64,'.str_repeat('A', 1_200_000),
+            'data:image/jpeg;base64,'.str_repeat('B', 1_200_000),
+        ],
+    ));
+
+    expect($sentOptions)->toBeArray()
+        ->and($sentOptions['expect'] ?? null)->toBeFalse();
 });

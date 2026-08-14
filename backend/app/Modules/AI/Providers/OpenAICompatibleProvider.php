@@ -166,6 +166,11 @@ class OpenAICompatibleProvider implements AIProviderInterface
             ? $this->http->withHeaders(array_merge($this->extraHeaders, TraceContext::headers()))
             : Http::withHeaders(array_merge($this->extraHeaders, TraceContext::headers()));
 
+        // Base64 media can push the body past 1 MB, which makes cURL attach
+        // `Expect: 100-continue`. Google's AI Platform front end rejects that
+        // header with HTTP 417, so disable the expect handshake entirely.
+        $client = $client->withOptions(['expect' => false]);
+
         // Only send a Bearer token when an API key is configured.
         // Modal.com endpoints authenticate via `Modal-Key`/`Modal-Secret`
         // headers (passed in extraHeaders) and an empty `Authorization:
