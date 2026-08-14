@@ -112,10 +112,10 @@ class AppConfigsSeeder extends Seeder
             'key' => 'secondary_routing_trigger_map',
             'value' => [
                 'traffic_obstruction' => 'BTP',
-                'road_damage_by_utility_work' => 'BBMP_ENG',
-                'sewage_in_drain' => 'BBMP_SWD',
+                'road_damage_by_utility_work' => 'BBMP',
+                'sewage_in_drain' => 'BWSSB',
                 'cable_hazard' => 'BESCOM',
-                'footpath_damage_by_parking' => 'BBMP_ENG',
+                'footpath_damage_by_parking' => 'BBMP',
             ],
             'enabled' => true,
             'rollout_percentage' => 100,

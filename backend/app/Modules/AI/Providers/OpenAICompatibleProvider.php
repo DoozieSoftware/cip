@@ -351,6 +351,12 @@ class OpenAICompatibleProvider implements AIProviderInterface
             syntheticScore: isset($decoded['synthetic_score']) && is_numeric($decoded['synthetic_score'])
                 ? (float) $decoded['synthetic_score']
                 : null,
+            secondaryTriggers: is_array($decoded['secondary_triggers'] ?? null)
+                ? array_values(array_filter($decoded['secondary_triggers'], 'is_string'))
+                : [],
+            emergencyFlag: ($decoded['emergency_flag'] ?? false) === true
+                || ($decoded['emergency_flag'] ?? false) === 1
+                || ($decoded['emergency_flag'] ?? false) === 'true',
         );
     }
 

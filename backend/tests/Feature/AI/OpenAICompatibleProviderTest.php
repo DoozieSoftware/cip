@@ -129,6 +129,51 @@ it('classify() posts to /v1/chat/completions with bearer auth and parses the JSO
     });
 });
 
+it('carries Phase 1 secondary_triggers and emergency_flag through to the parsed response', function (): void {
+    Http::fake([
+        'api.openai.com/v1/chat/completions' => Http::response([
+            'choices' => [[
+                'message' => [
+                    'content' => json_encode([
+                        'labels' => [['label' => 'utility_pole', 'confidence' => 0.95, 'is_primary' => true]],
+                        'predicted_type' => 'power_outage',
+                        'confidence' => 0.95,
+                        'recommended_department' => 'BESCOM',
+                        'severity' => 'high',
+                        'quality_score' => 90,
+                        'duplicate_score' => 0,
+                        'fraud_score' => 0,
+                        'summary' => 'Broken utility pole across the road.',
+                        'secondary_triggers' => ['traffic_obstruction', 'cable_hazard'],
+                        'emergency_flag' => true,
+                    ]),
+                ],
+            ]],
+            'usage' => ['prompt_tokens' => 100, 'completion_tokens' => 50],
+        ], 200),
+    ]);
+
+    $p = new OpenAICompatibleProvider(
+        name: 'openai',
+        model: 'gpt-4o',
+        baseUrl: 'https://api.openai.com',
+        apiKey: 'sk-test',
+    );
+
+    $resp = $p->classify(new AiRequest(
+        promptName: 'category_classifier',
+        text: 'Broken pole across the road',
+        mediaUrls: ['https://minio.example.com/photo.jpg'],
+    ));
+
+    expect($resp->secondaryTriggers)->toBe(['traffic_obstruction', 'cable_hazard'])
+        ->and($resp->emergencyFlag)->toBeTrue()
+        ->and($resp->toArray())->toMatchArray([
+            'secondary_triggers' => ['traffic_obstruction', 'cable_hazard'],
+            'emergency_flag' => true,
+        ]);
+});
+
 it('classify() throws on a 5xx so the failover service can retry', function (): void {
     Http::fake([
         'api.openai.com/v1/chat/completions' => Http::response(['error' => 'overloaded'], 503),

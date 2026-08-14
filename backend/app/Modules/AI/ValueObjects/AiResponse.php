@@ -38,6 +38,7 @@ final class AiResponse
     /**
      * @param  array<int, array{label: string, confidence: float, is_primary: bool}>  $labels
      * @param  array<string, mixed>  $raw
+     * @param  list<string>  $secondaryTriggers
      */
     public function __construct(
         public readonly array $labels,
@@ -56,6 +57,8 @@ final class AiResponse
         public readonly ?int $consistencyScore = null,
         public readonly ?string $mismatchReason = null,
         public readonly ?float $syntheticScore = null,
+        public readonly array $secondaryTriggers = [],
+        public readonly bool $emergencyFlag = false,
     ) {}
 
     /**
@@ -111,6 +114,8 @@ final class AiResponse
             consistencyScore: $this->consistencyScore,
             mismatchReason: $this->mismatchReason,
             syntheticScore: $this->syntheticScore,
+            secondaryTriggers: $this->secondaryTriggers,
+            emergencyFlag: $this->emergencyFlag,
         );
     }
 
@@ -133,6 +138,8 @@ final class AiResponse
             consistencyScore: max(0, min(100, $score)),
             mismatchReason: $this->mismatchReason,
             syntheticScore: $this->syntheticScore,
+            secondaryTriggers: $this->secondaryTriggers,
+            emergencyFlag: $this->emergencyFlag,
         );
     }
 
@@ -157,6 +164,8 @@ final class AiResponse
             'consistency_score' => $this->consistencyScore,
             'mismatch_reason' => $this->mismatchReason,
             'synthetic_score' => $this->syntheticScore,
+            'secondary_triggers' => $this->secondaryTriggers,
+            'emergency_flag' => $this->emergencyFlag,
             'raw' => $this->raw,
         ];
     }
