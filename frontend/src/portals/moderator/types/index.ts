@@ -150,6 +150,7 @@ export interface StatusHistoryEntry {
   from_code: ReportStatusCode | null;
   to_code: ReportStatusCode;
   actor_id: string | null;
+  actor_name: string | null;
   reason: string | null;
   created_at: string;
 }

@@ -13,6 +13,7 @@ use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportAssignment;
 use App\Modules\Reports\Models\ReportType;
 use App\Modules\Security\Models\AuditLog;
+use App\Modules\Users\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -68,7 +69,7 @@ class ModeratorReportDetailResource extends JsonResource
 
         $statusHistory = $report->relationLoaded('statusHistory')
             ? $report->statusHistory
-            : $report->statusHistory()->with(['fromStatus', 'toStatus'])->orderBy('created_at')->get();
+            : $report->statusHistory()->with(['fromStatus', 'toStatus', 'actor'])->orderBy('created_at')->get();
 
         // array_merge, not `+` — the override array's `location` must win
         // over the base resource's fuller (and differently-shaped) one.
@@ -116,10 +117,44 @@ class ModeratorReportDetailResource extends JsonResource
                 'from_code' => $h->fromStatus?->code,
                 'to_code' => $h->toStatus?->code,
                 'actor_id' => $h->actor_id,
+                'actor_name' => $h->actor?->name ?? self::actorRoleTitle($h->actor) ?? ($h->actor_id ? 'Official' : 'System'),
                 'reason' => $h->reason,
                 'created_at' => $h->created_at?->toIso8601String(),
             ])->all(),
         ]);
+    }
+
+    /**
+     * Human title for an actor whose account has no display name (e.g. an
+     * OTP-only citizen). Every account also carries the baseline `citizen`
+     * role, so a staff-privileged role is ranked above it rather than
+     * picked arbitrarily.
+     */
+    private static function actorRoleTitle(?User $actor): ?string
+    {
+        if ($actor === null) {
+            return null;
+        }
+
+        $roles = $actor->getRoleNames()->all();
+        $priority = ['system', 'super_admin', 'moderator', 'department_officer', 'department', 'citizen'];
+        $role = null;
+
+        foreach ($priority as $candidate) {
+            if (in_array($candidate, $roles, true)) {
+                $role = $candidate;
+                break;
+            }
+        }
+
+        return match ($role) {
+            'citizen' => 'Citizen',
+            'moderator' => 'Moderator',
+            'department_officer', 'department' => 'Department Officer',
+            'super_admin' => 'Admin',
+            'system' => 'System',
+            default => null,
+        };
     }
 
     /**

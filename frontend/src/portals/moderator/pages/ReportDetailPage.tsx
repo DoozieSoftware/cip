@@ -15,6 +15,7 @@ import {
   IconPhoto,
   IconClock,
   IconClipboardCheck,
+  IconChevronDown,
 } from '@tabler/icons-react';
 import {
   Button,
@@ -36,7 +37,6 @@ import { EvidenceViewer } from '../components/EvidenceViewer';
 import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 import { AiAnalysisPanel } from '../components/AiAnalysisPanel';
 import { AssignmentDialog } from '../components/AssignmentDialog';
-import { auditActionLabel } from '../../../shared/auditActionLabel';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 function LocationText({ lat, lng }: { lat: number; lng: number }): JSX.Element {
@@ -183,6 +183,7 @@ export default function ReportDetailPage() {
   const [reasonCode, setReasonCode] = useState('');
   const [overrideAi, setOverrideAi] = useState(false);
   const [duplicateIds, setDuplicateIds] = useState('');
+  const [auditExpanded, setAuditExpanded] = useState(false);
 
   const departmentsQuery = useQuery({
     queryKey: ['moderator', 'departments'],
@@ -447,7 +448,7 @@ export default function ReportDetailPage() {
           </CardBody>
         </Card>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
           <EvidenceViewer media={data.media} />
           <AiAnalysisPanel
             ai={data.ai_result}
@@ -495,34 +496,50 @@ export default function ReportDetailPage() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <button
+            type="button"
+            onClick={() => setAuditExpanded((v) => !v)}
+            className="flex w-full items-center justify-between gap-2 px-5 py-4 text-left"
+            aria-expanded={auditExpanded}
+          >
             <div className="flex items-center gap-2">
               <IconClock className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
               <CardTitle>Audit history</CardTitle>
+              <span className="rounded-full bg-[#efeee9] px-2 py-0.5 text-xs text-[#6f6e69]">
+                {data.status_history.length}
+              </span>
             </div>
-          </CardHeader>
-          <CardBody>
-            {data.audit_log.length === 0 ? (
-              <p className="text-sm text-[#85847f]">No audit entries yet.</p>
-            ) : (
-              <ol className="relative ml-3 border-l-2 border-[#e4e2dc] pl-6">
-                {data.audit_log.map((a) => (
-                  <li key={a.id} className="relative pb-6 last:pb-0">
-                    <span className="absolute -left-[31px] top-1 grid h-5 w-5 place-items-center rounded-full bg-[#f3f2ed] ring-2 ring-[#e4e2dc]">
-                      <span className="h-2 w-2 rounded-full bg-[#85847f]" />
-                    </span>
-                    <p className="text-sm font-medium text-[#1d1d1b]">
-                      {auditActionLabel(a.action)}
-                    </p>
-                    <p className="mt-0.5 text-xs text-[#6f6e69]">{a.actor_name ?? 'system'}</p>
-                    <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[#85847f]">
-                      {new Date(a.created_at).toLocaleString()}
-                    </p>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </CardBody>
+            <IconChevronDown
+              className={`h-5 w-5 shrink-0 text-[#85847f] transition-transform duration-200 ${auditExpanded ? 'rotate-180' : ''}`}
+              stroke={1.6}
+            />
+          </button>
+          {auditExpanded ? (
+            <CardBody className="border-t border-[#e4e2dc] pt-4">
+              {data.status_history.length === 0 ? (
+                <p className="text-sm text-[#85847f]">No status changes yet.</p>
+              ) : (
+                <ol className="relative ml-3 border-l-2 border-[#e4e2dc] pl-6">
+                  {[...data.status_history].reverse().map((h, i) => (
+                    <li key={`${h.to_code}-${h.created_at}-${i}`} className="relative pb-6 last:pb-0">
+                      <span className="absolute -left-[31px] top-1 grid h-5 w-5 place-items-center rounded-full bg-[#f3f2ed] ring-2 ring-[#e4e2dc]">
+                        <span className="h-2 w-2 rounded-full bg-[#85847f]" />
+                      </span>
+                      <p className="text-sm font-medium text-[#1d1d1b]">
+                        {h.from_code
+                          ? `${staffReportStatusLabel(h.from_code)} → ${staffReportStatusLabel(h.to_code)}`
+                          : staffReportStatusLabel(h.to_code)}
+                      </p>
+                      <p className="mt-0.5 text-xs text-[#6f6e69]">{h.actor_name ?? 'System'}</p>
+                      <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[#85847f]">
+                        {new Date(h.created_at).toLocaleString()}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </CardBody>
+          ) : null}
         </Card>
 
         {/* Approve dialog */}
