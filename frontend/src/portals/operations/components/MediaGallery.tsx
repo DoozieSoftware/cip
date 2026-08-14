@@ -1,4 +1,5 @@
-import type { JSX } from 'react';
+import { useState, type JSX } from 'react';
+import { Dialog } from '../../../shared/ui';
 import type { DepartmentReportMedia } from '../types';
 
 /**
@@ -69,33 +70,41 @@ function FileIcon({ type }: { type: string }): JSX.Element {
 
 /**
  * Grid of media rows for one role (citizen evidence or officer proof).
- * Images render as thumbnails (click opens the signed URL in a new
- * tab); video/audio/document rows render an icon, mime label and an
- * "open" link. `label` names the role for captions and aria purposes.
+ * Images open an in-app full-size preview (matching the moderator
+ * portal's evidence viewer) rather than a bare new browser tab, which
+ * loses the officer's place in the report and shows no caption or
+ * context; video/audio/document rows still open via link since there
+ * is no in-app preview for those. `label` names the role for captions
+ * and aria purposes.
  */
 export function MediaGallery({ items, label }: { items: DepartmentReportMedia[]; label: string }) {
+  const [selected, setSelected] = useState<DepartmentReportMedia | null>(null);
+
   return (
-    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label={label}>
-      {items.map((item, index) => {
-        const caption = dateCaption(item.created_at);
-        return (
-          <li key={item.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-            {isImageMedia(item) ? (
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`Open ${label} image in a new tab`}
-                className="block"
-              >
-                <img
-                  src={item.url}
-                  alt={`${label} ${index + 1}`}
-                  loading="lazy"
-                  className="aspect-square w-full object-cover"
-                />
-              </a>
-            ) : (
+    <>
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label={label}>
+        {items.map((item, index) => {
+          const caption = dateCaption(item.created_at);
+          return (
+            <li key={item.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+              {isImageMedia(item) ? (
+                <button
+                  type="button"
+                  onClick={() => setSelected(item)}
+                  aria-label={`View ${label} image ${index + 1} full size`}
+                  className="group relative block w-full cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1d1d1b] focus-visible:ring-inset"
+                >
+                  <img
+                    src={item.url}
+                    alt={`${label} ${index + 1}`}
+                    loading="lazy"
+                    className="aspect-square w-full object-cover transition duration-200 group-hover:scale-[1.02]"
+                  />
+                  <span className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 rounded-full bg-[#1d1d1b]/90 px-2 py-1 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
+                    View
+                  </span>
+                </button>
+              ) : (
               <a
                 href={item.url}
                 target="_blank"
@@ -127,6 +136,31 @@ export function MediaGallery({ items, label }: { items: DepartmentReportMedia[];
           </li>
         );
       })}
-    </ul>
+      </ul>
+      <Dialog
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        title={`${label} preview`}
+        size="xl"
+      >
+        {selected && (
+          <figure>
+            <img
+              src={selected.url}
+              alt={`${label} full-size preview`}
+              className="max-h-[80vh] w-full bg-[#1d1d1b] object-contain"
+            />
+            <figcaption className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[#6f6e69]">
+              <span>{selected.mime}</span>
+              {selected.width && selected.height && (
+                <span>
+                  {selected.width}×{selected.height}
+                </span>
+              )}
+            </figcaption>
+          </figure>
+        )}
+      </Dialog>
+    </>
   );
 }
