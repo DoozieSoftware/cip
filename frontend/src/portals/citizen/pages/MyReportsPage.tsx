@@ -294,7 +294,7 @@ export default function MyReportsPage(): JSX.Element {
       return (
         <div className="min-h-screen bg-[var(--color-canvas)]">
           <PageHeader t={t} />
-          <main className="mx-auto max-w-3xl px-4 pb-24 pt-5">
+          <div className="mx-auto max-w-3xl">
             <div className="py-16 text-center" role="alert" aria-live="assertive">
               <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[var(--color-surface-alt)]">
                 <IconAlertCircle className="h-6 w-6 text-[var(--color-ink)]" stroke={1.6} />
@@ -312,7 +312,7 @@ export default function MyReportsPage(): JSX.Element {
                 {t('banner.signInAgain')}
               </Link>
             </div>
-          </main>
+          </div>
         </div>
       );
     }
@@ -321,7 +321,7 @@ export default function MyReportsPage(): JSX.Element {
       return (
         <div className="min-h-screen bg-[var(--color-canvas)]">
           <PageHeader t={t} />
-          <main className="mx-auto max-w-3xl px-4 pb-24 pt-5">
+          <div className="mx-auto max-w-3xl">
             <div className="py-16 text-center" role="alert" aria-live="assertive">
               <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[var(--color-surface-alt)]">
                 <IconWifiOff className="h-6 w-6 text-[var(--color-ink)]" stroke={1.6} />
@@ -341,7 +341,7 @@ export default function MyReportsPage(): JSX.Element {
                 {t('common.retry')}
               </button>
             </div>
-          </main>
+          </div>
         </div>
       );
     }
@@ -349,7 +349,7 @@ export default function MyReportsPage(): JSX.Element {
     return (
       <div className="min-h-screen bg-[var(--color-canvas)]">
         <PageHeader t={t} />
-        <main className="mx-auto max-w-3xl px-4 pb-24 pt-5">
+        <div className="mx-auto max-w-3xl">
           <div className="py-16 text-center" role="alert" aria-live="assertive">
             <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[var(--color-surface-alt)]">
               <IconExclamationCircle className="h-6 w-6 text-[var(--color-ink)]" stroke={1.6} />
@@ -371,7 +371,7 @@ export default function MyReportsPage(): JSX.Element {
               {t('common.retry')}
             </button>
           </div>
-        </main>
+        </div>
       </div>
     );
   }
@@ -380,7 +380,7 @@ export default function MyReportsPage(): JSX.Element {
     <div className="min-h-screen bg-[var(--color-canvas)]">
       <PageHeader t={t} />
 
-      <main className="mx-auto max-w-3xl px-4 pb-24 pt-5">
+      <div className="mx-auto max-w-3xl">
         <div className="mb-5">
           <form
             className="mb-4 flex gap-2"
@@ -646,7 +646,7 @@ export default function MyReportsPage(): JSX.Element {
             </p>
           </>
         )}
-      </main>
+      </div>
     </div>
   );
 }

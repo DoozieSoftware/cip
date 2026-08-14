@@ -64,7 +64,7 @@ export default function HomePage(): JSX.Element {
             </h1>
           </div>
         </header>
-        <main className="mx-auto flex max-w-3xl justify-center py-20">
+        <div className="mx-auto flex max-w-3xl justify-center py-20">
           <div className="flex flex-col items-center px-6 text-center">
             <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-surface-alt)]">
               <IconWifiOff
@@ -90,7 +90,7 @@ export default function HomePage(): JSX.Element {
               {t('home.offline.action')}
             </button>
           </div>
-        </main>
+        </div>
       </div>
     );
   }
@@ -112,7 +112,7 @@ export default function HomePage(): JSX.Element {
               </h1>
             </div>
           </header>
-          <main className="mx-auto flex max-w-3xl justify-center py-20">
+          <div className="mx-auto flex max-w-3xl justify-center py-20">
             <div className="flex flex-col items-center px-6 text-center">
               <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-surface-alt)]">
                 <IconAlertCircle
@@ -137,7 +137,7 @@ export default function HomePage(): JSX.Element {
                 {t('home.session.action')}
               </button>
             </div>
-          </main>
+          </div>
         </div>
       );
     }
@@ -154,7 +154,7 @@ export default function HomePage(): JSX.Element {
             </h1>
           </div>
         </header>
-        <main className="mx-auto flex max-w-3xl justify-center py-20">
+        <div className="mx-auto flex max-w-3xl justify-center py-20">
           <ErrorState
             title={t('home.error.title')}
             description={t('home.error.detail')}
@@ -172,7 +172,7 @@ export default function HomePage(): JSX.Element {
               </button>
             }
           />
-        </main>
+        </div>
       </div>
     );
   }
@@ -190,14 +190,14 @@ export default function HomePage(): JSX.Element {
             </h1>
           </div>
         </header>
-        <main className="flex min-h-[40vh] items-center justify-center py-20">
+        <div className="flex min-h-[40vh] items-center justify-center py-20">
           <div className="flex flex-col items-center gap-4 text-center">
             <Spinner label={t('spinner.loadingYourDashboard')} />
             <p className="text-sm text-[var(--color-text-subtle)]">
               {t('spinner.loadingYourDashboard')}
             </p>
           </div>
-        </main>
+        </div>
       </div>
     );
   }

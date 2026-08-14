@@ -76,7 +76,7 @@ export default function NotificationsPage(): JSX.Element {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-4 pb-12">
+      <div className="mx-auto max-w-3xl space-y-4">
         {list.isLoading ? (
           <div className="flex justify-center py-20">
             <Spinner label={t('notifications.loading')} />
@@ -281,7 +281,7 @@ export default function NotificationsPage(): JSX.Element {
             ))}
           </>
         )}
-      </main>
+      </div>
     </div>
   );
 }

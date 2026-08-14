@@ -126,7 +126,7 @@ export default function ProfilePage(): JSX.Element {
         </span>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-4 pb-12">
+      <div className="mx-auto max-w-3xl space-y-4">
         {me.isLoading ? (
           <div className="flex justify-center py-20">
             <Spinner label={t('profile.loading')} />
@@ -310,7 +310,7 @@ export default function ProfilePage(): JSX.Element {
             </div>
           </>
         )}
-      </main>
+      </div>
     </div>
   );
 }
