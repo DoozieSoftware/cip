@@ -69,7 +69,7 @@ class ReportStatusHistoryResource extends JsonResource
     }
 
     /**
-     * @param array<int, string> $roles
+     * @param  array<int, string>  $roles
      */
     private static function highestPriorityRole(array $roles): ?string
     {
