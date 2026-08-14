@@ -452,7 +452,7 @@ export default function ReportDetailPage() {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone={isSecondaryTask ? 'purple' : 'neutral'}>
-                {isSecondaryTask ? 'Cross-agency report' : 'Primary report'}
+                {isSecondaryTask ? 'Cross Agency report' : 'Primary report'}
               </Badge>
               <Badge tone={statusTone(status)}>{statusLabel(status)}</Badge>
               {report.report_type && <Badge tone="neutral">{report.report_type.name}</Badge>}
@@ -483,7 +483,7 @@ export default function ReportDetailPage() {
           <div className="flex items-center gap-2">
             <IconLink size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
             <h2 className="text-sm font-semibold text-[var(--color-ink)]">
-              Cross-agency departments
+              Cross Agency departments
             </h2>
           </div>
           <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
@@ -511,7 +511,7 @@ export default function ReportDetailPage() {
                       {a.department?.name ?? 'Department'}
                     </p>
                     <p className="text-xs text-[var(--color-text-tertiary)]">
-                      {a.is_primary ? 'Primary — owns closure' : 'Cross-agency — assists the fix'}
+                      {a.is_primary ? 'Primary — owns closure' : 'Cross Agency — assists the fix'}
                     </p>
                   </div>
                 </div>
@@ -553,7 +553,7 @@ export default function ReportDetailPage() {
             </h2>
             <p className="mt-1 text-sm leading-5 text-[var(--color-text-secondary)]">
               {isSecondaryTask
-                ? 'This cross-agency work has its own completion state. The primary department keeps control of the main report.'
+                ? 'This cross agency work has its own completion state. The primary department keeps control of the main report.'
                 : (STATUS_GUIDANCE[status] ?? 'No action is available for this status.')}
             </p>
           </div>
@@ -620,11 +620,11 @@ export default function ReportDetailPage() {
               <div className="flex items-center gap-2">
                 <IconLink size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
                 <h2 className="text-sm font-semibold text-[var(--color-ink)]">
-                  Cross-agency report
+                  Cross Agency report
                 </h2>
               </div>
               <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-                Complete this department’s cross-agency work without resolving or closing the
+                Complete this department’s cross agency work without resolving or closing the
                 report.
               </p>
               <div className="mt-3 flex items-center gap-4 text-xs">
@@ -672,7 +672,7 @@ export default function ReportDetailPage() {
           </div>
           {taskStatus === 'open' && !hasProofForSelectedWork && (
             <p className="mt-3 text-xs text-amber-700">
-              Upload proof from the work location before completing this cross-agency work.
+              Upload proof from the work location before completing this cross agency work.
             </p>
           )}
           {completeTask.isError && (

@@ -214,10 +214,10 @@ export default function ReportListPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
-            {secondaryOnly ? 'Cross-agency' : 'Officer queue'}
+            {secondaryOnly ? 'Cross Agency' : 'Officer queue'}
           </p>
           <h1 className="mt-1 text-xl font-semibold text-[var(--color-ink)]">
-            {secondaryOnly ? 'Cross-agency' : 'Assigned reports'}
+            {secondaryOnly ? 'Cross Agency' : 'Assigned reports'}
           </h1>
         </div>
         <div className="flex items-center gap-2">
@@ -376,7 +376,7 @@ export default function ReportListPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={r.assignment?.kind === 'secondary' ? 'purple' : 'neutral'}>
                       {r.assignment?.kind === 'secondary'
-                        ? 'Cross-agency report'
+                        ? 'Cross Agency report'
                         : 'Primary report'}
                     </Badge>
                     <Badge

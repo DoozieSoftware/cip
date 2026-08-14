@@ -218,9 +218,9 @@ describe('ReportDetailPage', () => {
       }),
     );
 
-    expect(await screen.findByText('Cross-agency departments')).toBeInTheDocument();
+    expect(await screen.findByText('Cross Agency departments')).toBeInTheDocument();
     expect(screen.getByText('Primary — owns closure')).toBeInTheDocument();
-    expect(screen.getByText('Cross-agency — assists the fix')).toBeInTheDocument();
+    expect(screen.getByText('Cross Agency — assists the fix')).toBeInTheDocument();
     expect(screen.getByText('Deepa')).toBeInTheDocument();
     expect(screen.getByText('Ravi')).toBeInTheDocument();
   });
@@ -321,7 +321,7 @@ describe('ReportDetailPage', () => {
       }),
     );
 
-    expect(await screen.findAllByText('Cross-agency report')).not.toHaveLength(0);
+    expect(await screen.findAllByText('Cross Agency report')).not.toHaveLength(0);
     expect(screen.getByText('Open')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Accept assignment' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mark as fixed' })).toBeNull();
