@@ -27,11 +27,17 @@ function StatCard({
 }) {
   return (
     <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+      <div className="flex items-center justify-between gap-2">
+        {/* Long single-word labels ("Misrepresentation") are wider than a
+            two-up card at 360px and cannot wrap — truncate instead of
+            letting them push the grid past the viewport. */}
+        <span
+          title={label}
+          className="min-w-0 flex-1 truncate font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]"
+        >
           {label}
         </span>
-        <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#f3f2ed]">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#f3f2ed]">
           <Icon className="h-4 w-4" stroke={1.6} />
         </span>
       </div>

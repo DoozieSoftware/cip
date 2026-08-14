@@ -368,7 +368,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
           <button
             type="button"
             onClick={() => void startCamera()}
-            className="mt-2 min-h-10 rounded-full border border-rose-400 bg-white px-3 font-medium text-rose-900 hover:bg-rose-100"
+            className="mt-2 min-h-[44px] rounded-full border border-rose-400 bg-white px-3 font-medium text-rose-900 hover:bg-rose-100"
           >
             {t('camera.tryAgain')}
           </button>
@@ -384,7 +384,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
           <button
             type="button"
             onClick={() => void startCamera()}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            className="inline-flex min-h-[44px] items-center rounded-md bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
           >
             {t('camera.openCamera')}
           </button>
@@ -401,7 +401,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
           <button
             type="button"
             onClick={stopRecording}
-            className="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700"
+            className="inline-flex min-h-[44px] items-center rounded-md bg-rose-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700"
           >
             {t('camera.stopRecording')}
           </button>
@@ -409,7 +409,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
           <button
             type="button"
             onClick={startRecording}
-            className="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700"
+            className="inline-flex min-h-[44px] items-center rounded-md bg-rose-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700"
           >
             {t('camera.startRecording')}
           </button>

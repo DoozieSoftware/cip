@@ -210,7 +210,7 @@ export default function ReportDetailPage(): JSX.Element {
 
   if (detail.isLoading) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
         <Spinner label={t('spinner.loadingOfficialRecord')} />
         <p className="text-sm text-[var(--color-text-secondary)]">
           {t('spinner.retrievingRecord')}
@@ -223,7 +223,7 @@ export default function ReportDetailPage(): JSX.Element {
     const msg =
       detail.error instanceof Error ? detail.error.message : t('detail.recordNotFoundDetail');
     return (
-      <div className="px-4 py-8">
+      <div className="py-8">
         <EmptyState
           title={t('detail.recordNotFound')}
           description={msg}
@@ -246,7 +246,7 @@ export default function ReportDetailPage(): JSX.Element {
   return (
     <div className="mx-auto max-w-3xl bg-[var(--color-canvas)] pb-12">
       {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-[var(--color-border-faint)] bg-[var(--color-canvas)] px-4 pb-4 pt-3">
+      <header className="sticky top-0 z-10 border-b border-[var(--color-border-faint)] bg-[var(--color-canvas)] pb-4 pt-3">
         <div className="flex items-center gap-3">
           <Link
             to="/citizen/reports"
@@ -257,7 +257,7 @@ export default function ReportDetailPage(): JSX.Element {
           </Link>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-[var(--color-ink)]">{r.title}</p>
-            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            <p className="truncate font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
               {r.tracking_number}
             </p>
           </div>
@@ -265,7 +265,7 @@ export default function ReportDetailPage(): JSX.Element {
         </div>
       </header>
 
-      <div className="space-y-4 px-4 pt-4">
+      <div className="space-y-4 pt-4">
         <CitizenResolutionCard
           report={r}
           onVerify={() => verifyResolution.mutate(r.workflow_version)}
@@ -291,7 +291,7 @@ export default function ReportDetailPage(): JSX.Element {
             <IconFileText className="h-3.5 w-3.5" stroke={1.6} />
             {t('detail.officialReference')}
           </div>
-          <p className="mt-1 font-mono text-lg font-bold tracking-wide text-[var(--color-ink)]">
+          <p className="mt-1 break-all font-mono text-lg font-bold tracking-wide text-[var(--color-ink)]">
             {r.tracking_number}
           </p>
           <div className="mt-3 flex items-center gap-2">
@@ -328,7 +328,7 @@ export default function ReportDetailPage(): JSX.Element {
                 {t('detail.mergedInto')}{' '}
                 <Link
                   to={r.canonical_report.link}
-                  className="font-mono font-semibold text-violet-900 underline hover:text-violet-700"
+                  className="break-all font-mono font-semibold text-violet-900 underline hover:text-violet-700"
                 >
                   {r.canonical_report.tracking_number}
                 </Link>
@@ -532,7 +532,9 @@ export default function ReportDetailPage(): JSX.Element {
                   className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]"
                   stroke={1.6}
                 />
-                {formatLocation(r.location.address, t('detail.addressNotAvailable'))}
+                <span className="min-w-0 break-words">
+                  {formatLocation(r.location.address, t('detail.addressNotAvailable'))}
+                </span>
               </p>
             </div>
             <div className="mt-2 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">

@@ -26,7 +26,7 @@ describe('ExportPage', () => {
     render(<ExportPage />);
 
     const statusSelect = screen.getByRole('combobox', { name: 'Status' });
-    expect(screen.getByRole('option', { name: 'In progress' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Work in progress' })).toBeInTheDocument();
     expect(screen.queryByText(DEPARTMENT_ID, { exact: false })).not.toBeInTheDocument();
     expect(screen.queryByText(/Status code/i)).not.toBeInTheDocument();
 

@@ -23,11 +23,13 @@ export function DepartmentSwitcher() {
           {current?.name ?? 'Select department'}
         </span>
       </div>
+      {/* min-w-0 lets the select shrink below its widest option — long department
+          names otherwise force the switcher bar wider than a 360px screen. */}
       <select
         value={selectedId ?? ''}
         onChange={(e) => select(e.target.value)}
         aria-label="Working department"
-        className="h-9 rounded-lg border border-[var(--color-border-faint)] bg-white px-3 pr-8 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+        className="h-9 min-w-0 max-w-[45%] rounded-lg border border-[var(--color-border-faint)] bg-white px-3 pr-8 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)] sm:max-w-none"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2385847f' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
           backgroundRepeat: 'no-repeat',

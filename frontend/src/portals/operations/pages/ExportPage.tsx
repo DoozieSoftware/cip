@@ -93,12 +93,14 @@ export default function ExportPage() {
       </Card>
 
       <Card>
-        <CardBody className="flex items-center justify-between gap-3">
-          <div className="space-y-1 text-sm text-slate-700">
+        <CardBody className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0 flex-1 space-y-1 text-sm text-slate-700">
             <p>
               <Badge tone="info">{format.toUpperCase()}</Badge> with current filters.
             </p>
-            <p className="font-mono text-xs text-slate-500">{url}</p>
+            {/* The export URL is one unbroken string with query params — it must
+                wrap, otherwise it drags the whole page sideways on a phone. */}
+            <p className="break-all font-mono text-xs text-slate-500">{url}</p>
             {downloadError && <p className="text-xs text-rose-600">{downloadError}</p>}
           </div>
           <Button variant="primary" onClick={() => void handleDownload()} loading={downloading}>

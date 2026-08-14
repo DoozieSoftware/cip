@@ -189,7 +189,7 @@ export default function DashboardPage(): JSX.Element {
               onClick={() => {
                 void reports.refetch();
               }}
-              className="inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline"
+              className="inline-flex min-h-[44px] shrink-0 items-center gap-1 font-medium underline-offset-2 hover:underline"
             >
               <IconRefresh className="h-4 w-4" stroke={1.6} aria-hidden />
               {t('home.stale.retry')}
@@ -232,7 +232,7 @@ export default function DashboardPage(): JSX.Element {
                 action={
                   <Link
                     to="/citizen/submit"
-                    className="mt-2 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+                    className="mt-2 inline-flex min-h-[44px] items-center rounded-md bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700"
                   >
                     {t('home.empty.action')}
                   </Link>
@@ -254,7 +254,7 @@ export default function DashboardPage(): JSX.Element {
                       {r.created_at ? new Date(r.created_at).toLocaleString(locale) : '—'}
                     </div>
                   </div>
-                  <StatusBadge status={r.status} />
+                  <StatusBadge status={r.status} className="shrink-0" />
                 </li>
               ))}
             </ul>

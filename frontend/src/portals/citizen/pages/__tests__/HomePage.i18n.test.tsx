@@ -82,6 +82,6 @@ describe('HomePage i18n', () => {
     renderPage();
     expect(screen.getByText('Evidence review')).toBeInTheDocument();
     expect(screen.getByText('Department routing')).toBeInTheDocument();
-    expect(screen.getByText('Tracked resolution')).toBeInTheDocument();
+    expect(screen.getByText('Tracked fix')).toBeInTheDocument();
   });
 });

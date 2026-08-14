@@ -439,13 +439,10 @@ export default function SubmitPage(): JSX.Element {
   }, [selectedType?.requires_video]);
 
   return (
-    <form
-      onSubmit={(e) => void onSubmit(e)}
-      className="min-h-screen bg-[var(--color-canvas)] pb-32"
-    >
+    <form onSubmit={(e) => void onSubmit(e)} className="bg-[var(--color-canvas)]">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-[var(--color-border-faint)] bg-[var(--color-canvas)]">
-        <div className="mx-auto max-w-3xl px-4">
+        <div className="mx-auto max-w-3xl">
           <div className="flex items-center gap-3 py-3">
             <button
               type="button"
@@ -481,7 +478,7 @@ export default function SubmitPage(): JSX.Element {
                   }}
                   disabled={i > FORM_STEPS.indexOf(activeStep) && !completedSteps.includes(step)}
                   className={cx(
-                    'group flex flex-1 items-center gap-1.5 rounded-full py-1 transition',
+                    'group flex min-h-[44px] flex-1 items-center gap-1.5 rounded-full py-1 transition',
                     isActive || isComplete ? 'cursor-pointer' : 'cursor-not-allowed opacity-40',
                   )}
                   aria-label={`${t('submit.stepCount', { current: i + 1, total: FORM_STEPS.length })}: ${stepLabel(step)}${isComplete ? ` (${t('detail.current')})` : ''}`}
@@ -519,7 +516,7 @@ export default function SubmitPage(): JSX.Element {
       </header>
 
       {/* Content */}
-      <div className="mx-auto max-w-3xl px-4 pt-6 space-y-4">
+      <div className="mx-auto max-w-3xl pt-6 space-y-4">
         <div
           aria-live="polite"
           role="status"
@@ -1101,18 +1098,18 @@ export default function SubmitPage(): JSX.Element {
             {/* Review cards */}
             <div className="rounded-xl bg-white divide-y divide-[var(--color-border-subtle)]">
               <div className="flex items-center justify-between p-4">
-                <div>
+                <div className="min-w-0">
                   <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     {t('submit.review.category')}
                   </p>
-                  <p className="mt-1 text-sm font-medium text-[var(--color-ink)]">
+                  <p className="mt-1 break-words text-sm font-medium text-[var(--color-ink)]">
                     {selectedType?.name ?? t('submit.review.unknown')}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => goToStep('Category')}
-                  className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+                  className="ml-2 inline-flex min-h-[44px] shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
                   {t('common.edit')}
@@ -1131,7 +1128,7 @@ export default function SubmitPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => goToStep('Details')}
-                  className="ml-2 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+                  className="ml-2 inline-flex min-h-[44px] shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
                   {t('common.edit')}
@@ -1146,7 +1143,7 @@ export default function SubmitPage(): JSX.Element {
                   <button
                     type="button"
                     onClick={() => goToStep('Details')}
-                    className="ml-2 inline-flex shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+                    className="ml-2 inline-flex min-h-[44px] shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                   >
                     <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
                     {t('common.edit')}
@@ -1158,11 +1155,11 @@ export default function SubmitPage(): JSX.Element {
               </div>
 
               <div className="flex items-center justify-between p-4">
-                <div>
+                <div className="min-w-0">
                   <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     {t('submit.review.location')}
                   </p>
-                  <p className="mt-1 text-sm font-medium text-[var(--color-ink)]">
+                  <p className="mt-1 break-words text-sm font-medium text-[var(--color-ink)]">
                     {issueLocation
                       ? placeName || address || t('submit.location.captured')
                       : t('submit.review.locationNotCaptured')}
@@ -1171,7 +1168,7 @@ export default function SubmitPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => goToStep('Location')}
-                  className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+                  className="ml-2 inline-flex min-h-[44px] shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
                   {t('common.edit')}
@@ -1179,7 +1176,7 @@ export default function SubmitPage(): JSX.Element {
               </div>
 
               <div className="flex items-center justify-between p-4">
-                <div>
+                <div className="min-w-0">
                   <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     {t('submit.review.evidence')}
                   </p>
@@ -1193,7 +1190,7 @@ export default function SubmitPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => goToStep('Evidence')}
-                  className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+                  className="ml-2 inline-flex min-h-[44px] shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
                   {t('common.edit')}

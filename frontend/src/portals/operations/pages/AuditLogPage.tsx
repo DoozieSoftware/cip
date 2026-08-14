@@ -362,7 +362,7 @@ export default function AuditLogPage() {
       )}
 
       {rows.length > 0 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-sm text-[var(--color-text-secondary)]">
             Page {meta.current_page} of {meta.last_page} &middot; {meta.total} total
           </span>

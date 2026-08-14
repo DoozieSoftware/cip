@@ -4,7 +4,7 @@ import { useMessages } from '../messages';
 export default function TermsPage(): JSX.Element {
   const { t } = useMessages();
   return (
-    <article className="mx-auto max-w-2xl space-y-6 px-4 py-6 text-sm leading-6 text-slate-600">
+    <article className="mx-auto max-w-2xl space-y-6 text-sm leading-6 text-slate-600">
       <h1 className="text-lg font-semibold text-slate-800">{t('legal.termsTitle')}</h1>
       <p>
         By using CIP, you agree to submit accurate civic information and to use the service lawfully

@@ -144,7 +144,9 @@ export default function AdminIntegrations(): JSX.Element {
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">Integrations</h1>
+          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+            Integrations
+          </h1>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             External connectors (BBMP, BTP, UATS, state helpdesks). Credentials are masked on every
             read.
@@ -229,7 +231,7 @@ export default function AdminIntegrations(): JSX.Element {
           </CardBody>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full">
+            <table className="w-full min-w-[56rem]">
               <thead className="bg-[var(--color-canvas)]">
                 <tr>
                   <th className="px-5 py-3 text-left text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">

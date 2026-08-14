@@ -38,8 +38,8 @@ export default function AiPerformancePage() {
   const a = q.data;
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-xl font-semibold text-slate-900">AI performance</h1>
           <p className="text-sm text-slate-500">
             Override rate per provider — drives M8 prompt tuning.

@@ -401,7 +401,9 @@ export default function ReportListPage() {
                   </p>
                   <ReportLocationText location={r.location} />
                 </div>
-                <div className="flex shrink-0 items-center gap-6 text-xs lg:gap-8">
+                {/* Three meta columns plus the SLA badge are wider than a phone;
+                    let them wrap below each other instead of overflowing. */}
+                <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 text-xs lg:flex-nowrap lg:gap-x-8">
                   <div>
                     <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
                       Due target

@@ -125,7 +125,7 @@ export function CitizenResolutionCard({
                 type="button"
                 onClick={onVerify}
                 disabled={isVerifying || isDisputing}
-                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-emerald-600 px-4 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
               >
                 <IconCircleCheck className="h-4 w-4" stroke={1.6} />
                 {isVerifying ? t('resolution.verifying') : t('resolution.verify')}
@@ -134,7 +134,7 @@ export function CitizenResolutionCard({
                 type="button"
                 onClick={() => setShowDisputeForm(true)}
                 disabled={isVerifying || isDisputing}
-                className="inline-flex items-center gap-1.5 rounded-full border border-rose-300 bg-white px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-rose-300 bg-white px-4 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-50"
               >
                 <IconAlertTriangle className="h-4 w-4" stroke={1.6} />
                 {t('resolution.disputeAction')}
@@ -160,7 +160,7 @@ export function CitizenResolutionCard({
                   type="button"
                   onClick={handleSubmitDispute}
                   disabled={isDisputing || reason.trim().length < 5}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-50"
+                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-rose-600 px-3 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-50"
                 >
                   {isDisputing ? t('resolution.submitting') : t('resolution.submit')}
                 </button>
@@ -170,7 +170,7 @@ export function CitizenResolutionCard({
                     setShowDisputeForm(false);
                     setReason('');
                   }}
-                  className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50"
+                  className="inline-flex min-h-[44px] items-center rounded-full px-3 text-xs font-medium text-rose-700 hover:bg-rose-50"
                 >
                   {t('common.cancel')}
                 </button>

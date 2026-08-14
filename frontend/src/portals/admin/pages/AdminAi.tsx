@@ -13,15 +13,7 @@ import {
   type AiProviderInput,
   type PromptVersion,
 } from '../api/client';
-import {
-  Button,
-  Card,
-  CardBody,
-  Spinner,
-  EmptyState,
-  ErrorState,
-  Badge,
-} from '../../../shared/ui';
+import { Button, Card, CardBody, Spinner, EmptyState, ErrorState, Badge } from '../../../shared/ui';
 import { cx } from '../../../shared/ui/cx';
 import {
   IconPlus,
@@ -87,7 +79,10 @@ function ProviderRow({
             reachable
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-[var(--color-danger)]" title={testResult.error}>
+          <span
+            className="inline-flex items-center gap-1 text-[var(--color-danger)]"
+            title={testResult.error}
+          >
             <IconX className="h-3.5 w-3.5" stroke={1.8} />
             unreachable
           </span>
@@ -474,179 +469,101 @@ export default function AdminAi(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-canvas)] p-4 sm:p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
-              AI providers & prompts
-            </h1>
-            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-              Manage AI vision pipeline providers and prompt versions. Secrets are write-only;
-              rollback is non-destructive.
-            </p>
-          </div>
-          {tab === 'providers' && editing === null ? (
-            <Button
-              onClick={() => setEditing('new')}
-              leftIcon={<IconPlus className="h-4 w-4" stroke={1.6} />}
-            >
-              New provider
-            </Button>
-          ) : null}
-        </header>
-
-        <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={() => setTab('providers')}
-            className={cx(
-              'rounded-full px-4 py-2 text-sm font-medium transition',
-              tab === 'providers' ? 'bg-[var(--color-ink)] text-white' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]',
-            )}
-          >
-            Providers ({providerList.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('prompts')}
-            className={cx(
-              'rounded-full px-4 py-2 text-sm font-medium transition',
-              tab === 'prompts' ? 'bg-[var(--color-ink)] text-white' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]',
-            )}
-          >
-            Prompts ({promptList.length})
-          </button>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+            AI providers & prompts
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+            Manage AI vision pipeline providers and prompt versions. Secrets are write-only;
+            rollback is non-destructive.
+          </p>
         </div>
+        {tab === 'providers' && editing === null ? (
+          <Button
+            onClick={() => setEditing('new')}
+            leftIcon={<IconPlus className="h-4 w-4" stroke={1.6} />}
+          >
+            New provider
+          </Button>
+        ) : null}
+      </header>
 
-        {tab === 'providers' ? (
-          <div className="space-y-5">
-            {editing !== null ? (
-              <ProviderForm
-                initial={
-                  editing === 'new'
-                    ? EMPTY_FORM
-                    : {
-                        code: editing.code,
-                        driver: editing.driver,
-                        name: editing.name,
-                        base_url: editing.base_url ?? '',
-                        auth_type: editing.auth_type,
-                        credentials: { api_key: '' },
-                        extra_headers: editing.extra_headers ?? {},
-                        model: editing.model,
-                        temperature: editing.temperature,
-                        timeout_ms: editing.timeout_ms,
-                        retry_count: editing.retry_count,
-                        priority: editing.priority,
-                        is_fallback: editing.is_fallback,
-                        active: editing.active,
-                      }
-                }
-                busy={formBusy}
-                onCancel={() => setEditing(null)}
-                onSubmit={handleFormSubmit}
-              />
-            ) : null}
+      <div className="flex gap-1">
+        <button
+          type="button"
+          onClick={() => setTab('providers')}
+          className={cx(
+            'rounded-full px-4 py-2 text-sm font-medium transition',
+            tab === 'providers'
+              ? 'bg-[var(--color-ink)] text-white'
+              : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]',
+          )}
+        >
+          Providers ({providerList.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('prompts')}
+          className={cx(
+            'rounded-full px-4 py-2 text-sm font-medium transition',
+            tab === 'prompts'
+              ? 'bg-[var(--color-ink)] text-white'
+              : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]',
+          )}
+        >
+          Prompts ({promptList.length})
+        </button>
+      </div>
 
-            <Card>
-              <CardBody className="p-0">
-                {providers.isLoading ? (
-                  <div className="flex items-center justify-center py-16">
-                    <Spinner label="Loading providers" />
-                  </div>
-                ) : providers.isError ? (
-                  <div className="p-6">
-                    <ErrorState
-                      title="Failed to load providers"
-                      description="There was a problem fetching the AI providers."
-                      error={providers.error instanceof Error ? providers.error : null}
-                      action={
-                        <Button
-                          variant="secondary"
-                          onClick={() => {
-                            void providers.refetch();
-                          }}
-                        >
-                          Try again
-                        </Button>
-                      }
-                    />
-                  </div>
-                ) : providerList.length === 0 ? (
-                  <div className="p-6">
-                    <EmptyState
-                      title="No AI providers configured"
-                      description="Add a provider to start processing reports with AI vision."
-                      action={
-                        <Button variant="secondary" onClick={() => setEditing('new')}>
-                          Add provider
-                        </Button>
-                      }
-                    />
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full">
-                      <thead className="bg-[var(--color-canvas)]">
-                        <tr>
-                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                            Code / driver / model
-                          </th>
-                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                            Priority
-                          </th>
-                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                            Active
-                          </th>
-                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                            Secret
-                          </th>
-                          <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                            Last test
-                          </th>
-                          <th className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[var(--color-border-subtle)]">
-                        {providerList.map((p) => (
-                          <ProviderRow
-                            key={p.id}
-                            p={p}
-                            busy={testProvider.isPending || activateProvider.isPending}
-                            testResult={testResults[p.id] ?? null}
-                            onTest={() => handleTest(p.id)}
-                            onActivate={() => activateProvider.mutate(p.id)}
-                            onEdit={() => setEditing(p)}
-                          />
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardBody>
-            </Card>
-          </div>
-        ) : (
+      {tab === 'providers' ? (
+        <div className="space-y-5">
+          {editing !== null ? (
+            <ProviderForm
+              initial={
+                editing === 'new'
+                  ? EMPTY_FORM
+                  : {
+                      code: editing.code,
+                      driver: editing.driver,
+                      name: editing.name,
+                      base_url: editing.base_url ?? '',
+                      auth_type: editing.auth_type,
+                      credentials: { api_key: '' },
+                      extra_headers: editing.extra_headers ?? {},
+                      model: editing.model,
+                      temperature: editing.temperature,
+                      timeout_ms: editing.timeout_ms,
+                      retry_count: editing.retry_count,
+                      priority: editing.priority,
+                      is_fallback: editing.is_fallback,
+                      active: editing.active,
+                    }
+              }
+              busy={formBusy}
+              onCancel={() => setEditing(null)}
+              onSubmit={handleFormSubmit}
+            />
+          ) : null}
+
           <Card>
             <CardBody className="p-0">
-              {prompts.isLoading ? (
+              {providers.isLoading ? (
                 <div className="flex items-center justify-center py-16">
-                  <Spinner label="Loading prompts" />
+                  <Spinner label="Loading providers" />
                 </div>
-              ) : prompts.isError ? (
+              ) : providers.isError ? (
                 <div className="p-6">
                   <ErrorState
-                    title="Failed to load prompts"
-                    description="There was a problem fetching the prompt versions."
-                    error={prompts.error instanceof Error ? prompts.error : null}
+                    title="Failed to load providers"
+                    description="There was a problem fetching the AI providers."
+                    error={providers.error instanceof Error ? providers.error : null}
                     action={
                       <Button
                         variant="secondary"
                         onClick={() => {
-                          void prompts.refetch();
+                          void providers.refetch();
                         }}
                       >
                         Try again
@@ -654,32 +571,37 @@ export default function AdminAi(): JSX.Element {
                     }
                   />
                 </div>
-              ) : promptList.length === 0 ? (
+              ) : providerList.length === 0 ? (
                 <div className="p-6">
                   <EmptyState
-                    title="No prompt versions registered"
-                    description="Prompt versions will appear here once created."
+                    title="No AI providers configured"
+                    description="Add a provider to start processing reports with AI vision."
+                    action={
+                      <Button variant="secondary" onClick={() => setEditing('new')}>
+                        Add provider
+                      </Button>
+                    }
                   />
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full">
+                  <table className="w-full min-w-[60rem]">
                     <thead className="bg-[var(--color-canvas)]">
                       <tr>
                         <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                          Name / version
+                          Code / driver / model
                         </th>
                         <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                          Status
+                          Priority
                         </th>
                         <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                          Variables
+                          Active
                         </th>
                         <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                          Template
+                          Secret
                         </th>
                         <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                          Approved
+                          Last test
                         </th>
                         <th className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                           Actions
@@ -687,13 +609,15 @@ export default function AdminAi(): JSX.Element {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--color-border-subtle)]">
-                      {promptList.map((p) => (
-                        <PromptRow
+                      {providerList.map((p) => (
+                        <ProviderRow
                           key={p.id}
                           p={p}
-                          busy={approvePrompt.isPending || rollbackPrompt.isPending}
-                          onApprove={() => approvePrompt.mutate(p.id)}
-                          onRollback={() => rollbackPrompt.mutate(p.id)}
+                          busy={testProvider.isPending || activateProvider.isPending}
+                          testResult={testResults[p.id] ?? null}
+                          onTest={() => handleTest(p.id)}
+                          onActivate={() => activateProvider.mutate(p.id)}
+                          onEdit={() => setEditing(p)}
                         />
                       ))}
                     </tbody>
@@ -702,8 +626,81 @@ export default function AdminAi(): JSX.Element {
               )}
             </CardBody>
           </Card>
-        )}
-      </div>
+        </div>
+      ) : (
+        <Card>
+          <CardBody className="p-0">
+            {prompts.isLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Spinner label="Loading prompts" />
+              </div>
+            ) : prompts.isError ? (
+              <div className="p-6">
+                <ErrorState
+                  title="Failed to load prompts"
+                  description="There was a problem fetching the prompt versions."
+                  error={prompts.error instanceof Error ? prompts.error : null}
+                  action={
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        void prompts.refetch();
+                      }}
+                    >
+                      Try again
+                    </Button>
+                  }
+                />
+              </div>
+            ) : promptList.length === 0 ? (
+              <div className="p-6">
+                <EmptyState
+                  title="No prompt versions registered"
+                  description="Prompt versions will appear here once created."
+                />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[60rem]">
+                  <thead className="bg-[var(--color-canvas)]">
+                    <tr>
+                      <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                        Name / version
+                      </th>
+                      <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                        Status
+                      </th>
+                      <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                        Variables
+                      </th>
+                      <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                        Template
+                      </th>
+                      <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                        Approved
+                      </th>
+                      <th className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--color-border-subtle)]">
+                    {promptList.map((p) => (
+                      <PromptRow
+                        key={p.id}
+                        p={p}
+                        busy={approvePrompt.isPending || rollbackPrompt.isPending}
+                        onApprove={() => approvePrompt.mutate(p.id)}
+                        onRollback={() => rollbackPrompt.mutate(p.id)}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      )}
     </div>
   );
 }

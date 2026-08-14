@@ -15,9 +15,10 @@ const srcRoot = resolve(here, '../../../../');
 const TOKENISED_HEXES: Record<string, string> = {
   '#1d1d1b': '--color-ink',
   '#4f4e4a': '--color-ink-soft',
+  // --color-text-secondary and --color-text-tertiary currently share
+  // #6f6e69, so the hex maps to the first of the pair.
   '#6f6e69': '--color-text-secondary',
-  '#85847f': '--color-text-tertiary',
-  '#777670': '--color-text-subtle',
+  '#686762': '--color-text-subtle',
   '#d0cec8': '--color-border',
   '#aaa9a4': '--color-border-strong',
   '#e4e2dc': '--color-border-subtle',

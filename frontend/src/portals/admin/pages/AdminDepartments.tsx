@@ -190,188 +190,181 @@ export default function AdminDepartments(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-canvas)] p-4 sm:p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
-              Platform configuration
-            </p>
-            <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
-              Departments
-            </h1>
-            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-              Manage civic departments, hierarchy, jurisdiction, and default response target.
-            </p>
-          </div>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => {
-              setEditing(null);
-              setOpen(true);
-            }}
-            leftIcon={<IconPlus className="h-4 w-4" stroke={1.8} />}
-          >
-            New department
-          </Button>
-        </header>
-
-        {list.isLoading ? (
-          <div className="flex min-h-[200px] items-center justify-center">
-            <Spinner label="Loading departments" />
-          </div>
-        ) : list.isError || !list.data ? (
-          <ErrorState
-            title="Could not load departments"
-            description="The departments endpoint did not respond."
-            action={
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  void list.refetch();
-                }}
-              >
-                Retry
-              </Button>
-            }
-          />
-        ) : departments.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-white p-10 text-center">
-            <EmptyState
-              title="No departments"
-              description="Create a department to start organizing civic response teams."
-            />
-          </div>
-        ) : (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-surface-alt)]">
-                  <IconBuilding
-                    className="h-4 w-4 text-[var(--color-text-secondary)]"
-                    stroke={1.6}
-                  />
-                </span>
-                <CardTitle>All departments</CardTitle>
-              </div>
-              <span className="text-sm text-[var(--color-text-tertiary)]">
-                {departments.length} {departments.length === 1 ? 'department' : 'departments'}
-              </span>
-            </CardHeader>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left text-sm">
-                <thead className="bg-[var(--color-canvas)] text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                  <tr className="border-b border-[var(--color-border-subtle)]">
-                    <th className="px-5 py-3 font-medium">Name</th>
-                    <th className="px-5 py-3 font-medium">Jurisdiction</th>
-                    <th className="px-5 py-3 font-medium">Due target</th>
-                    <th className="px-5 py-3 font-medium">Status</th>
-                    <th className="px-5 py-3 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border-subtle)]">
-                  {departments.map((item) => (
-                    <tr key={item.id}>
-                      <td className="px-5 py-3">
-                        <div className="text-sm font-medium text-[var(--color-ink)]">
-                          {item.name}
-                        </div>
-                        <div className="font-mono text-xs text-[var(--color-text-tertiary)]">
-                          {item.code}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-2">
-                          <IconMapPin
-                            className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
-                            stroke={1.6}
-                          />
-                          <span className="text-sm text-[var(--color-ink)]">
-                            {item.jurisdiction ?? '—'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-2">
-                          <IconClock
-                            className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
-                            stroke={1.6}
-                          />
-                          <span className="text-sm text-[var(--color-ink)]">
-                            {item.default_sla_minutes ? `${item.default_sla_minutes} min` : '—'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3">
-                        <Badge
-                          tone={item.active ? 'success' : 'neutral'}
-                          className={
-                            item.active
-                              ? 'bg-[#edf7f0] text-[var(--color-success)] ring-0'
-                              : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] ring-0'
-                          }
-                        >
-                          <span className="flex items-center gap-1">
-                            {item.active ? (
-                              <IconCheck className="h-3 w-3" stroke={2} />
-                            ) : (
-                              <IconX className="h-3 w-3" stroke={2} />
-                            )}
-                            {item.active ? 'Active' : 'Inactive'}
-                          </span>
-                        </Badge>
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setEditing(item);
-                              setOpen(true);
-                            }}
-                            leftIcon={<IconEdit className="h-3.5 w-3.5" stroke={1.6} />}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            onClick={() => {
-                              if (confirm(`Delete ${item.name}?`)) remove.mutate(item.id);
-                            }}
-                            leftIcon={<IconTrash className="h-3.5 w-3.5" stroke={1.6} />}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        )}
-
-        <Dialog
-          open={open}
-          onClose={() => setOpen(false)}
-          title={editing ? `Edit: ${editing.name}` : 'New department'}
-          size="lg"
+    <div className="mx-auto max-w-6xl space-y-6">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+            Platform configuration
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+            Departments
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+            Manage civic departments, hierarchy, jurisdiction, and default response target.
+          </p>
+        </div>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => {
+            setEditing(null);
+            setOpen(true);
+          }}
+          leftIcon={<IconPlus className="h-4 w-4" stroke={1.8} />}
         >
-          <DepartmentForm
-            key={editing?.id ?? 'new'}
-            initial={initial}
-            departments={departments.filter((item) => item.id !== editing?.id)}
-            busy={create.isPending || update.isPending}
-            onCancel={() => setOpen(false)}
-            onSubmit={submit}
+          New department
+        </Button>
+      </header>
+
+      {list.isLoading ? (
+        <div className="flex min-h-[200px] items-center justify-center">
+          <Spinner label="Loading departments" />
+        </div>
+      ) : list.isError || !list.data ? (
+        <ErrorState
+          title="Could not load departments"
+          description="The departments endpoint did not respond."
+          action={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                void list.refetch();
+              }}
+            >
+              Retry
+            </Button>
+          }
+        />
+      ) : departments.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-white p-10 text-center">
+          <EmptyState
+            title="No departments"
+            description="Create a department to start organizing civic response teams."
           />
-        </Dialog>
-      </div>
+        </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+                <IconBuilding className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
+              </span>
+              <CardTitle>All departments</CardTitle>
+            </div>
+            <span className="text-sm text-[var(--color-text-tertiary)]">
+              {departments.length} {departments.length === 1 ? 'department' : 'departments'}
+            </span>
+          </CardHeader>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[52rem] border-collapse text-left text-sm">
+              <thead className="bg-[var(--color-canvas)] text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                <tr className="border-b border-[var(--color-border-subtle)]">
+                  <th className="px-5 py-3 font-medium">Name</th>
+                  <th className="px-5 py-3 font-medium">Jurisdiction</th>
+                  <th className="px-5 py-3 font-medium">Due target</th>
+                  <th className="px-5 py-3 font-medium">Status</th>
+                  <th className="px-5 py-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--color-border-subtle)]">
+                {departments.map((item) => (
+                  <tr key={item.id}>
+                    <td className="px-5 py-3">
+                      <div className="text-sm font-medium text-[var(--color-ink)]">{item.name}</div>
+                      <div className="font-mono text-xs text-[var(--color-text-tertiary)]">
+                        {item.code}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <IconMapPin
+                          className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
+                          stroke={1.6}
+                        />
+                        <span className="text-sm text-[var(--color-ink)]">
+                          {item.jurisdiction ?? '—'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <IconClock
+                          className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
+                          stroke={1.6}
+                        />
+                        <span className="text-sm text-[var(--color-ink)]">
+                          {item.default_sla_minutes ? `${item.default_sla_minutes} min` : '—'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3">
+                      <Badge
+                        tone={item.active ? 'success' : 'neutral'}
+                        className={
+                          item.active
+                            ? 'bg-[#edf7f0] text-[var(--color-success)] ring-0'
+                            : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] ring-0'
+                        }
+                      >
+                        <span className="flex items-center gap-1">
+                          {item.active ? (
+                            <IconCheck className="h-3 w-3" stroke={2} />
+                          ) : (
+                            <IconX className="h-3 w-3" stroke={2} />
+                          )}
+                          {item.active ? 'Active' : 'Inactive'}
+                        </span>
+                      </Badge>
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditing(item);
+                            setOpen(true);
+                          }}
+                          leftIcon={<IconEdit className="h-3.5 w-3.5" stroke={1.6} />}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => {
+                            if (confirm(`Delete ${item.name}?`)) remove.mutate(item.id);
+                          }}
+                          leftIcon={<IconTrash className="h-3.5 w-3.5" stroke={1.6} />}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title={editing ? `Edit: ${editing.name}` : 'New department'}
+        size="lg"
+      >
+        <DepartmentForm
+          key={editing?.id ?? 'new'}
+          initial={initial}
+          departments={departments.filter((item) => item.id !== editing?.id)}
+          busy={create.isPending || update.isPending}
+          onCancel={() => setOpen(false)}
+          onSubmit={submit}
+        />
+      </Dialog>
     </div>
   );
 }

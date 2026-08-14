@@ -198,8 +198,8 @@ export default function GisMapPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-ink)]">
             <IconMap className="h-5 w-5 text-white" stroke={1.6} />
           </div>

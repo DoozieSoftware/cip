@@ -160,12 +160,18 @@ export default function SettingsPage(): JSX.Element {
         <h2 className="text-sm font-semibold text-slate-700">{t('settings.privacyLegal')}</h2>
         <ul className="mt-2 space-y-1 text-sm text-blue-700">
           <li>
-            <Link to="/citizen/legal/privacy" className="underline">
+            <Link
+              to="/citizen/legal/privacy"
+              className="inline-flex min-h-[44px] items-center underline"
+            >
               {t('settings.privacyPolicy')}
             </Link>
           </li>
           <li>
-            <Link to="/citizen/legal/terms" className="underline">
+            <Link
+              to="/citizen/legal/terms"
+              className="inline-flex min-h-[44px] items-center underline"
+            >
               {t('settings.termsOfUse')}
             </Link>
           </li>
@@ -178,7 +184,7 @@ export default function SettingsPage(): JSX.Element {
         <button
           type="button"
           onClick={onSignOut}
-          className="mt-3 rounded-md border border-rose-300 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-100"
+          className="mt-3 inline-flex min-h-[44px] items-center rounded-md border border-rose-300 bg-white px-3 text-sm font-medium text-rose-700 hover:bg-rose-100"
         >
           {t('settings.signOut')}
         </button>

@@ -253,123 +253,121 @@ export default function AdminReportTypes(): JSX.Element {
   const busy = create.isPending || update.isPending;
 
   return (
-    <div className="min-h-screen bg-[var(--color-canvas)] p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
-              Report types
-            </h1>
-            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-              Categories citizens can pick. Code is the stable identifier.
-            </p>
-          </div>
-          <Button onClick={openNew} leftIcon={<IconPlus className="h-4 w-4" stroke={1.8} />}>
-            New type
-          </Button>
-        </header>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+            Report types
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+            Categories citizens can pick. Code is the stable identifier.
+          </p>
+        </div>
+        <Button onClick={openNew} leftIcon={<IconPlus className="h-4 w-4" stroke={1.8} />}>
+          New type
+        </Button>
+      </header>
 
-        {types.isLoading ? (
-          <div className="flex justify-center py-12" aria-live="polite">
-            <Spinner label="Loading report types" />
-          </div>
-        ) : types.isError ? (
-          <ErrorState title="Failed to load report types" error={types.error} />
-        ) : (types.data ?? []).length === 0 ? (
-          <EmptyState
-            title="No report types"
-            description="Add at least one — the citizen PWA shows the list at submit time."
-          />
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {(types.data ?? []).map((t: AdminReportType) => (
-              <Card key={t.id}>
-                <CardBody>
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-[var(--color-ink)]">{t.name}</h2>
-                    <span className="rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-secondary)]">
-                      {t.code}
-                    </span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {t.requires_photo && (
-                      <Badge tone="danger" className="bg-[#fbeeed] text-[var(--color-danger)] ring-transparent">
-                        <IconPhoto className="h-3 w-3" stroke={1.6} />
-                        photo required
-                      </Badge>
-                    )}
-                    {t.requires_video && (
-                      <Badge tone="purple" className="bg-[#f3eef6] text-[#6b4593] ring-transparent">
-                        <IconVideo className="h-3 w-3" stroke={1.6} />
-                        video required
-                      </Badge>
-                    )}
-                    {!t.active ? (
-                      <Badge
-                        tone="warning"
-                        className="bg-[#fff6e4] text-[#805913] ring-transparent"
-                      >
-                        inactive
-                      </Badge>
-                    ) : (
-                      <Badge
-                        tone="success"
-                        className="bg-[#edf7f0] text-[var(--color-success)] ring-transparent"
-                      >
-                        active
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="mt-3 text-xs text-[var(--color-text-secondary)]">
-                    {t.min_photos}–{t.max_photos} photos · {t.description ?? 'no description'}
-                  </p>
-                  <div className="mt-4 flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      leftIcon={<IconPencil className="h-3.5 w-3.5" stroke={1.6} />}
-                      onClick={() => openEdit(t)}
+      {types.isLoading ? (
+        <div className="flex justify-center py-12" aria-live="polite">
+          <Spinner label="Loading report types" />
+        </div>
+      ) : types.isError ? (
+        <ErrorState title="Failed to load report types" error={types.error} />
+      ) : (types.data ?? []).length === 0 ? (
+        <EmptyState
+          title="No report types"
+          description="Add at least one — the citizen PWA shows the list at submit time."
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {(types.data ?? []).map((t: AdminReportType) => (
+            <Card key={t.id}>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-[var(--color-ink)]">{t.name}</h2>
+                  <span className="rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-secondary)]">
+                    {t.code}
+                  </span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {t.requires_photo && (
+                    <Badge
+                      tone="danger"
+                      className="bg-[#fbeeed] text-[var(--color-danger)] ring-transparent"
                     >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      leftIcon={<IconTrash className="h-3.5 w-3.5" stroke={1.6} />}
-                      onClick={() => onDelete(t)}
+                      <IconPhoto className="h-3 w-3" stroke={1.6} />
+                      photo required
+                    </Badge>
+                  )}
+                  {t.requires_video && (
+                    <Badge tone="purple" className="bg-[#f3eef6] text-[#6b4593] ring-transparent">
+                      <IconVideo className="h-3 w-3" stroke={1.6} />
+                      video required
+                    </Badge>
+                  )}
+                  {!t.active ? (
+                    <Badge tone="warning" className="bg-[#fff6e4] text-[#805913] ring-transparent">
+                      inactive
+                    </Badge>
+                  ) : (
+                    <Badge
+                      tone="success"
+                      className="bg-[#edf7f0] text-[var(--color-success)] ring-transparent"
                     >
-                      Delete
-                    </Button>
-                  </div>
-                </CardBody>
-              </Card>
-            ))}
-          </div>
-        )}
+                      active
+                    </Badge>
+                  )}
+                </div>
+                <p className="mt-3 text-xs text-[var(--color-text-secondary)]">
+                  {t.min_photos}–{t.max_photos} photos · {t.description ?? 'no description'}
+                </p>
+                <div className="mt-4 flex justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={<IconPencil className="h-3.5 w-3.5" stroke={1.6} />}
+                    onClick={() => openEdit(t)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    leftIcon={<IconTrash className="h-3.5 w-3.5" stroke={1.6} />}
+                    onClick={() => onDelete(t)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+      )}
 
-        <Dialog
-          open={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-          title={editing ? `Edit: ${editing.name}` : 'New report type'}
-        >
-          <ReportTypeForm
-            initial={toDraft(editing)}
-            onSubmit={onSubmit}
-            onCancel={() => setDialogOpen(false)}
-            busy={busy}
-          />
-          {create.isError ? (
-            <p role="alert" className="mt-2 text-sm text-[var(--color-danger)]">
-              {create.error?.message}
-            </p>
-          ) : null}
-          {update.isError ? (
-            <p role="alert" className="mt-2 text-sm text-[var(--color-danger)]">
-              {update.error?.message}
-            </p>
-          ) : null}
-        </Dialog>
-      </div>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        title={editing ? `Edit: ${editing.name}` : 'New report type'}
+      >
+        <ReportTypeForm
+          initial={toDraft(editing)}
+          onSubmit={onSubmit}
+          onCancel={() => setDialogOpen(false)}
+          busy={busy}
+        />
+        {create.isError ? (
+          <p role="alert" className="mt-2 text-sm text-[var(--color-danger)]">
+            {create.error?.message}
+          </p>
+        ) : null}
+        {update.isError ? (
+          <p role="alert" className="mt-2 text-sm text-[var(--color-danger)]">
+            {update.error?.message}
+          </p>
+        ) : null}
+      </Dialog>
     </div>
   );
 }

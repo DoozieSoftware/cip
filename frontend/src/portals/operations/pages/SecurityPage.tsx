@@ -78,7 +78,9 @@ function UserList({ rows, statusLabel }: { rows: SecurityUserRecord[]; statusLab
     <ul className="space-y-1 text-sm" aria-label={`${statusLabel} users`}>
       {rows.map((u) => (
         <li key={u.id} className="flex items-center justify-between gap-2">
-          <span className="truncate">{u.name ?? u.mobile}</span>
+          {/* `truncate` only bites once the flex child may shrink below its
+              content width. */}
+          <span className="min-w-0 truncate">{u.name ?? u.mobile}</span>
           <span className="text-xs text-slate-500">{u.status}</span>
         </li>
       ))}
@@ -97,8 +99,10 @@ function EventList({ rows }: { rows: SecurityEventRow[] }) {
           key={r.id}
           className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2 last:border-0"
         >
-          <div>
-            <div className="font-mono text-xs text-slate-900">{r.event}</div>
+          <div className="min-w-0">
+            {/* Event codes are one unbroken token (`device.fingerprint_mismatch`)
+                and are wider than the widget card on a phone. */}
+            <div className="break-all font-mono text-xs text-slate-900">{r.event}</div>
             <div className="text-xs text-slate-500">
               {r.ip ?? '—'} · {r.severity}
             </div>
@@ -248,7 +252,9 @@ export default function SecurityPage() {
           {snap.security_alerts.recent.length === 0 ? (
             <p className="p-4 text-sm text-slate-500">No critical alerts in the last 24 hours.</p>
           ) : (
-            <Table>
+            /* Five columns with a full timestamp and a uuid overflow a phone;
+               scroll the table instead of clipping it inside the card. */
+            <Table className="overflow-x-auto">
               <THead>
                 <TR>
                   <TH>When</TH>

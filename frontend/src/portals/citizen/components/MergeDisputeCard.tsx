@@ -76,7 +76,7 @@ export default function MergeDisputeCard({
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-violet-300 bg-white px-3 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-50"
+        className="mt-3 inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-violet-300 bg-white px-3 text-xs font-medium text-violet-700 hover:bg-violet-50"
       >
         <IconAlertTriangle className="h-3 w-3" stroke={1.6} />
         {t('merge.action')}
@@ -120,14 +120,14 @@ export default function MergeDisputeCard({
           type="button"
           onClick={handleSubmit}
           disabled={mutation.isPending}
-          className="inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700 disabled:opacity-60"
+          className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-violet-600 px-3 text-xs font-medium text-white hover:bg-violet-700 disabled:opacity-60"
         >
           {mutation.isPending ? t('merge.submitting') : t('merge.submit')}
         </button>
         <button
           type="button"
           onClick={() => setExpanded(false)}
-          className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-50"
+          className="inline-flex min-h-[44px] items-center rounded-full px-3 text-xs font-medium text-violet-700 hover:bg-violet-50"
         >
           {t('common.cancel')}
         </button>

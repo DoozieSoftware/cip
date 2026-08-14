@@ -186,7 +186,9 @@ function WorkflowForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm">
-          <span className="font-medium text-[var(--color-ink)]">States (JSON: key, name, terminal)</span>
+          <span className="font-medium text-[var(--color-ink)]">
+            States (JSON: key, name, terminal)
+          </span>
           <textarea
             value={statesJson}
             onChange={(e) => setStatesFromJson(e.target.value)}
@@ -232,206 +234,212 @@ export default function AdminWorkflows(): JSX.Element {
   const open = rows.find((w) => w.id === openId);
 
   return (
-    <div className="min-h-screen bg-[var(--color-canvas)] p-4 sm:p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
-              Workflow builder
-            </h1>
-            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-              Definitions, states, and transitions. The transition matrix shows which role can move
-              a report between which states.
-            </p>
-          </div>
-          <Button
-            variant="primary"
-            leftIcon={<IconPlus className="h-4 w-4" stroke={1.8} />}
-            onClick={() => {
-              setCreating(true);
-              setEditing(null);
-            }}
-          >
-            New workflow
-          </Button>
-        </header>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+            Workflow builder
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+            Definitions, states, and transitions. The transition matrix shows which role can move a
+            report between which states.
+          </p>
+        </div>
+        <Button
+          variant="primary"
+          leftIcon={<IconPlus className="h-4 w-4" stroke={1.8} />}
+          onClick={() => {
+            setCreating(true);
+            setEditing(null);
+          }}
+        >
+          New workflow
+        </Button>
+      </header>
 
-        <section className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-              Definitions
-            </p>
-            <p className="mt-1 text-2xl font-semibold text-[var(--color-ink)]">{rows.length}</p>
-          </div>
-          <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-              Active
-            </p>
-            <p className="mt-1 text-2xl font-semibold text-[var(--color-success)]">
-              {rows.filter((w) => w.active).length}
-            </p>
-          </div>
-          <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-              Total transitions
-            </p>
-            <p className="mt-1 text-2xl font-semibold text-[var(--color-ink)]">
-              {rows.reduce((s, w) => s + (w.transitions?.length ?? 0), 0)}
-            </p>
-          </div>
-        </section>
+      <section className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Definitions
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-[var(--color-ink)]">{rows.length}</p>
+        </div>
+        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Active
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-[var(--color-success)]">
+            {rows.filter((w) => w.active).length}
+          </p>
+        </div>
+        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Total transitions
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-[var(--color-ink)]">
+            {rows.reduce((s, w) => s + (w.transitions?.length ?? 0), 0)}
+          </p>
+        </div>
+      </section>
 
-        {creating ? (
-          <WorkflowForm
-            initial={blank}
-            busy={create.isPending}
-            onCancel={() => setCreating(false)}
-            onSubmit={(v) => create.mutate(v as never, { onSuccess: () => setCreating(false) })}
-          />
-        ) : null}
+      {creating ? (
+        <WorkflowForm
+          initial={blank}
+          busy={create.isPending}
+          onCancel={() => setCreating(false)}
+          onSubmit={(v) => create.mutate(v as never, { onSuccess: () => setCreating(false) })}
+        />
+      ) : null}
 
-        {editing ? (
-          <WorkflowForm
-            initial={editing}
-            busy={update.isPending}
-            onCancel={() => setEditing(null)}
-            onSubmit={(v) =>
-              update.mutate(
-                { id: editing.id, ...(v as object) },
-                { onSuccess: () => setEditing(null) },
-              )
-            }
-          />
-        ) : null}
+      {editing ? (
+        <WorkflowForm
+          initial={editing}
+          busy={update.isPending}
+          onCancel={() => setEditing(null)}
+          onSubmit={(v) =>
+            update.mutate(
+              { id: editing.id, ...(v as object) },
+              { onSuccess: () => setEditing(null) },
+            )
+          }
+        />
+      ) : null}
 
-        <Card>
-          <CardHeader className="border-b border-[var(--color-border-subtle)] px-5 py-4">
-            <div className="flex items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-surface-alt)]">
-                <IconGitBranch className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
-              </span>
-              <CardTitle className="text-sm font-semibold text-[var(--color-ink)]">Workflows</CardTitle>
-            </div>
-            <span className="text-xs text-[var(--color-text-tertiary)]">
-              {rows.length} definition{rows.length !== 1 ? 's' : ''}
+      <Card>
+        <CardHeader className="border-b border-[var(--color-border-subtle)] px-5 py-4">
+          <div className="flex items-center gap-2">
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+              <IconGitBranch className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
             </span>
-          </CardHeader>
-          {list.isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Spinner label="Loading workflows" />
-            </div>
-          ) : list.isError ? (
-            <div className="p-5">
-              <ErrorState
-                title="Failed to load workflows"
-                description="There was a problem fetching workflow definitions."
-              />
-            </div>
-          ) : rows.length === 0 ? (
-            <div className="p-5">
-              <EmptyState
-                title="No workflow definitions registered"
-                description="Create your first workflow to define report states and transitions."
-                action={
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    leftIcon={<IconPlus className="h-4 w-4" stroke={1.8} />}
-                    onClick={() => setCreating(true)}
-                  >
-                    New workflow
-                  </Button>
-                }
-              />
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-[var(--color-canvas)]">
-                  <tr>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                      Code / name
-                    </th>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                      States
-                    </th>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                      Transitions
-                    </th>
-                    <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                      Status
-                    </th>
-                    <th className="px-5 py-3 text-right font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border-subtle)]">
-                  {rows.map((w) => (
-                    <tr key={w.id}>
-                      <td className="px-5 py-3 text-sm">
-                        <div className="font-mono text-xs text-[var(--color-text-secondary)]">{w.code}</div>
-                        <div className="font-medium text-[var(--color-ink)]">{w.name}</div>
-                      </td>
-                      <td className="px-5 py-3 text-sm text-[var(--color-ink)]">{w.states?.length ?? 0}</td>
-                      <td className="px-5 py-3 text-sm text-[var(--color-ink)]">
-                        {w.transitions?.length ?? 0}
-                      </td>
-                      <td className="px-5 py-3 text-sm">
-                        <Badge
-                          tone={w.active ? 'success' : 'neutral'}
-                          className={
-                            w.active ? 'bg-[#edf7f0] text-[var(--color-success)]' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'
-                          }
+            <CardTitle className="text-sm font-semibold text-[var(--color-ink)]">
+              Workflows
+            </CardTitle>
+          </div>
+          <span className="text-xs text-[var(--color-text-tertiary)]">
+            {rows.length} definition{rows.length !== 1 ? 's' : ''}
+          </span>
+        </CardHeader>
+        {list.isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Spinner label="Loading workflows" />
+          </div>
+        ) : list.isError ? (
+          <div className="p-5">
+            <ErrorState
+              title="Failed to load workflows"
+              description="There was a problem fetching workflow definitions."
+            />
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="p-5">
+            <EmptyState
+              title="No workflow definitions registered"
+              description="Create your first workflow to define report states and transitions."
+              action={
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<IconPlus className="h-4 w-4" stroke={1.8} />}
+                  onClick={() => setCreating(true)}
+                >
+                  New workflow
+                </Button>
+              }
+            />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[56rem]">
+              <thead className="bg-[var(--color-canvas)]">
+                <tr>
+                  <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                    Code / name
+                  </th>
+                  <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                    States
+                  </th>
+                  <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                    Transitions
+                  </th>
+                  <th className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                    Status
+                  </th>
+                  <th className="px-5 py-3 text-right font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--color-border-subtle)]">
+                {rows.map((w) => (
+                  <tr key={w.id}>
+                    <td className="px-5 py-3 text-sm">
+                      <div className="font-mono text-xs text-[var(--color-text-secondary)]">
+                        {w.code}
+                      </div>
+                      <div className="font-medium text-[var(--color-ink)]">{w.name}</div>
+                    </td>
+                    <td className="px-5 py-3 text-sm text-[var(--color-ink)]">
+                      {w.states?.length ?? 0}
+                    </td>
+                    <td className="px-5 py-3 text-sm text-[var(--color-ink)]">
+                      {w.transitions?.length ?? 0}
+                    </td>
+                    <td className="px-5 py-3 text-sm">
+                      <Badge
+                        tone={w.active ? 'success' : 'neutral'}
+                        className={
+                          w.active
+                            ? 'bg-[#edf7f0] text-[var(--color-success)]'
+                            : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'
+                        }
+                      >
+                        {w.active ? 'active' : 'disabled'}
+                      </Badge>
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          leftIcon={<IconEdit className="h-3.5 w-3.5" stroke={1.6} />}
+                          onClick={() => {
+                            setEditing(w);
+                            setCreating(false);
+                          }}
                         >
-                          {w.active ? 'active' : 'disabled'}
-                        </Badge>
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            leftIcon={<IconEdit className="h-3.5 w-3.5" stroke={1.6} />}
-                            onClick={() => {
-                              setEditing(w);
-                              setCreating(false);
-                            }}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            leftIcon={<IconGitBranch className="h-3.5 w-3.5" stroke={1.6} />}
-                            onClick={() => setOpenId(w.id === openId ? null : w.id)}
-                          >
-                            {w.id === openId ? 'Hide matrix' : 'Show matrix'}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            leftIcon={<IconTrash className="h-3.5 w-3.5" stroke={1.6} />}
-                            disabled={remove.isPending}
-                            onClick={() => {
-                              if (confirm(`Delete ${w.code}?`)) remove.mutate(w.id);
-                            }}
-                            className="text-[var(--color-danger)] hover:bg-[#fbeeed] hover:text-[var(--color-danger-hover)]"
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          leftIcon={<IconGitBranch className="h-3.5 w-3.5" stroke={1.6} />}
+                          onClick={() => setOpenId(w.id === openId ? null : w.id)}
+                        >
+                          {w.id === openId ? 'Hide matrix' : 'Show matrix'}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          leftIcon={<IconTrash className="h-3.5 w-3.5" stroke={1.6} />}
+                          disabled={remove.isPending}
+                          onClick={() => {
+                            if (confirm(`Delete ${w.code}?`)) remove.mutate(w.id);
+                          }}
+                          className="text-[var(--color-danger)] hover:bg-[#fbeeed] hover:text-[var(--color-danger-hover)]"
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
-        {open ? <TransitionMatrix wf={open} /> : null}
-      </div>
+      {open ? <TransitionMatrix wf={open} /> : null}
     </div>
   );
 }
@@ -482,7 +490,9 @@ function TransitionMatrix({ wf }: { wf: WorkflowDefinition }): JSX.Element {
           <tbody>
             {states.map((row) => (
               <tr key={row.id} className="border-t border-[var(--color-border-subtle)]">
-                <td className="px-3 py-2 text-xs font-medium text-[var(--color-ink)]">{row.code}</td>
+                <td className="px-3 py-2 text-xs font-medium text-[var(--color-ink)]">
+                  {row.code}
+                </td>
                 {states.map((col) => {
                   const has = set.has(`${row.code}->${col.code}`);
                   return (

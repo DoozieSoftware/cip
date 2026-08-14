@@ -143,13 +143,13 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-xl font-semibold text-slate-900">Department admin</h1>
           <p className="text-sm text-slate-500">{department?.name}</p>
         </div>
         {canChooseDepartment ? (
-          <div className="w-72">
+          <div className="w-full sm:w-72">
             <Select
               label="Department"
               value={departmentId}
@@ -223,7 +223,9 @@ export default function AdminPage() {
           {!officers || officers.length === 0 ? (
             <EmptyState title="No officers attached" description="Attach one above." />
           ) : (
-            <Table>
+            /* Six columns (incl. email and a Detach button) never fit a phone;
+               scroll the table instead of clipping it inside the card. */
+            <Table className="overflow-x-auto">
               <THead>
                 <TR>
                   <TH>Name</TH>
