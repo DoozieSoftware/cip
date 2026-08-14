@@ -9,7 +9,6 @@ import {
   IconArrowUp,
   IconUserShare,
   IconMapPin,
-  IconCalendar,
   IconCategory,
   IconBuilding,
   IconPhoto,
@@ -390,163 +389,159 @@ export default function ReportDetailPage() {
             <p className="whitespace-pre-line text-sm leading-6 text-[#1d1d1b]">
               {data.description}
             </p>
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="flex items-start gap-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#efeee9]">
-                  <IconCategory className="h-4 w-4 text-[#6f6e69]" stroke={1.6} />
-                </span>
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+            {/* Submitted-at is already in the header, so it is not
+                repeated here. Location carries a full geocoded address
+                and gets its own wider column rather than forcing every
+                field to the tallest one's height. */}
+            <dl className="mt-5 grid grid-cols-1 gap-x-6 gap-y-4 border-t border-[#e4e2dc] pt-5 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="flex items-center gap-2.5">
+                <IconCategory className="h-4 w-4 shrink-0 text-[#85847f]" stroke={1.6} />
+                <div className="min-w-0">
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
                     Category
-                  </p>
-                  <p className="mt-0.5 text-sm text-[#1d1d1b]">{data.category?.name ?? '—'}</p>
+                  </dt>
+                  <dd className="mt-0.5 truncate text-sm text-[#1d1d1b]">
+                    {data.category?.name ?? '—'}
+                  </dd>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#efeee9]">
-                  <IconBuilding className="h-4 w-4 text-[#6f6e69]" stroke={1.6} />
-                </span>
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+              <div className="flex items-center gap-2.5">
+                <IconBuilding className="h-4 w-4 shrink-0 text-[#85847f]" stroke={1.6} />
+                <div className="min-w-0">
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
                     Department
-                  </p>
-                  <p className="mt-0.5 text-sm text-[#1d1d1b]">{data.department?.name ?? '—'}</p>
+                  </dt>
+                  <dd className="mt-0.5 truncate text-sm text-[#1d1d1b]">
+                    {data.department?.name ?? 'Not routed yet'}
+                  </dd>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#efeee9]">
-                  <IconMapPin className="h-4 w-4 text-[#6f6e69]" stroke={1.6} />
-                </span>
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+              <div className="flex items-start gap-2.5 sm:col-span-2">
+                <IconMapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#85847f]" stroke={1.6} />
+                <div className="min-w-0">
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
                     Location
-                  </p>
-                  <p className="mt-0.5 text-sm text-[#1d1d1b]">
+                  </dt>
+                  <dd className="mt-0.5 text-sm leading-5 text-[#1d1d1b]">
                     {data.location ? (
                       <LocationText lat={data.location.lat} lng={data.location.lng} />
                     ) : (
                       '—'
                     )}
                     {data.ward && ` · ${data.ward}`}
-                  </p>
+                  </dd>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#efeee9]">
-                  <IconCalendar className="h-4 w-4 text-[#6f6e69]" stroke={1.6} />
-                </span>
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
-                    Submitted
-                  </p>
-                  <p className="mt-0.5 text-sm text-[#1d1d1b]">
-                    {new Date(data.submitted_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            </div>
+            </dl>
           </CardBody>
         </Card>
 
+        {/* AI Analysis runs several screens long; evidence and the
+            decision controls are short. Stacking those two in a sticky
+            left rail keeps the photo and the actions in view for the
+            whole scroll instead of leaving the column empty. */}
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
-          {/* AI Analysis routinely runs several screens longer than a
-              couple of evidence photos. Pinning Evidence in view while
-              AI Analysis scrolls keeps the photo comparable against the
-              AI's notes instead of leaving it stranded above the fold. */}
-          <div className="lg:sticky lg:top-6 lg:self-start">
+          <div className="space-y-5 lg:sticky lg:top-6 lg:self-start">
             <EvidenceViewer media={data.media} />
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <IconClipboardCheck className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+                  <CardTitle>Moderation actions</CardTitle>
+                </div>
+                <span className="hidden text-xs text-[#85847f] sm:inline">
+                  Shortcuts:{' '}
+                  <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
+                    A
+                  </kbd>{' '}
+                  <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
+                    R
+                  </kbd>{' '}
+                  <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
+                    M
+                  </kbd>{' '}
+                  <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
+                    E
+                  </kbd>{' '}
+                  <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
+                    N
+                  </kbd>
+                </span>
+              </CardHeader>
+              <CardBody>
+                <ActionFooter
+                  statusCode={data.status_code}
+                  onApprove={() => setApproveOpen(true)}
+                  onReject={() => setRejectOpen(true)}
+                  onMerge={() => setMergeOpen(true)}
+                  onEscalate={() => setEscalateOpen(true)}
+                  onAssign={() => setAssignOpen(true)}
+                  busy={
+                    review.isPending || reject.isPending || merge.isPending || escalate.isPending
+                  }
+                />
+              </CardBody>
+            </Card>
           </div>
-          <AiAnalysisPanel
-            ai={data.ai_result}
-            statusCode={data.status_code}
-            mockGpsScore={data.mock_gps_score}
-          />
-        </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <IconClipboardCheck className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
-              <CardTitle>Moderation actions</CardTitle>
-            </div>
-            <span className="text-xs text-[#85847f]">
-              Shortcuts:{' '}
-              <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
-                A
-              </kbd>{' '}
-              <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
-                R
-              </kbd>{' '}
-              <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
-                M
-              </kbd>{' '}
-              <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
-                E
-              </kbd>{' '}
-              <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
-                N
-              </kbd>
-            </span>
-          </CardHeader>
-          <CardBody>
-            <ActionFooter
+          <div className="space-y-5">
+            <AiAnalysisPanel
+              ai={data.ai_result}
               statusCode={data.status_code}
-              onApprove={() => setApproveOpen(true)}
-              onReject={() => setRejectOpen(true)}
-              onMerge={() => setMergeOpen(true)}
-              onEscalate={() => setEscalateOpen(true)}
-              onAssign={() => setAssignOpen(true)}
-              busy={review.isPending || reject.isPending || merge.isPending || escalate.isPending}
+              mockGpsScore={data.mock_gps_score}
             />
-          </CardBody>
-        </Card>
-
-        <Card>
-          <button
-            type="button"
-            onClick={() => setAuditExpanded((v) => !v)}
-            className="flex w-full items-center justify-between gap-2 px-5 py-4 text-left"
-            aria-expanded={auditExpanded}
-          >
-            <div className="flex items-center gap-2">
-              <IconClock className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
-              <CardTitle>Audit history</CardTitle>
-              <span className="rounded-full bg-[#efeee9] px-2 py-0.5 text-xs text-[#6f6e69]">
-                {data.status_history.length}
-              </span>
-            </div>
-            <IconChevronDown
-              className={`h-5 w-5 shrink-0 text-[#85847f] transition-transform duration-200 ${auditExpanded ? 'rotate-180' : ''}`}
-              stroke={1.6}
-            />
-          </button>
-          {auditExpanded ? (
-            <CardBody className="border-t border-[#e4e2dc] pt-4">
-              {data.status_history.length === 0 ? (
-                <p className="text-sm text-[#85847f]">No status changes yet.</p>
-              ) : (
-                <ol className="relative ml-3 border-l-2 border-[#e4e2dc] pl-6">
-                  {[...data.status_history].reverse().map((h, i) => (
-                    <li key={`${h.to_code}-${h.created_at}-${i}`} className="relative pb-6 last:pb-0">
-                      <span className="absolute -left-[31px] top-1 grid h-5 w-5 place-items-center rounded-full bg-[#f3f2ed] ring-2 ring-[#e4e2dc]">
-                        <span className="h-2 w-2 rounded-full bg-[#85847f]" />
-                      </span>
-                      <p className="text-sm font-medium text-[#1d1d1b]">
-                        {h.from_code
-                          ? `${staffReportStatusLabel(h.from_code)} → ${staffReportStatusLabel(h.to_code)}`
-                          : staffReportStatusLabel(h.to_code)}
-                      </p>
-                      <p className="mt-0.5 text-xs text-[#6f6e69]">{h.actor_name ?? 'System'}</p>
-                      <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[#85847f]">
-                        {new Date(h.created_at).toLocaleString()}
-                      </p>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </CardBody>
-          ) : null}
-        </Card>
+            <Card>
+              <button
+                type="button"
+                onClick={() => setAuditExpanded((v) => !v)}
+                className="flex w-full items-center justify-between gap-2 px-5 py-4 text-left"
+                aria-expanded={auditExpanded}
+              >
+                <div className="flex items-center gap-2">
+                  <IconClock className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+                  <CardTitle>Audit history</CardTitle>
+                  <span className="rounded-full bg-[#efeee9] px-2 py-0.5 text-xs text-[#6f6e69]">
+                    {data.status_history.length}
+                  </span>
+                </div>
+                <IconChevronDown
+                  className={`h-5 w-5 shrink-0 text-[#85847f] transition-transform duration-200 ${auditExpanded ? 'rotate-180' : ''}`}
+                  stroke={1.6}
+                />
+              </button>
+              {auditExpanded ? (
+                <CardBody className="border-t border-[#e4e2dc] pt-4">
+                  {data.status_history.length === 0 ? (
+                    <p className="text-sm text-[#85847f]">No status changes yet.</p>
+                  ) : (
+                    <ol className="relative ml-3 border-l-2 border-[#e4e2dc] pl-6">
+                      {[...data.status_history].reverse().map((h, i) => (
+                        <li
+                          key={`${h.to_code}-${h.created_at}-${i}`}
+                          className="relative pb-6 last:pb-0"
+                        >
+                          <span className="absolute -left-[31px] top-1 grid h-5 w-5 place-items-center rounded-full bg-[#f3f2ed] ring-2 ring-[#e4e2dc]">
+                            <span className="h-2 w-2 rounded-full bg-[#85847f]" />
+                          </span>
+                          <p className="text-sm font-medium text-[#1d1d1b]">
+                            {h.from_code
+                              ? `${staffReportStatusLabel(h.from_code)} → ${staffReportStatusLabel(h.to_code)}`
+                              : staffReportStatusLabel(h.to_code)}
+                          </p>
+                          <p className="mt-0.5 text-xs text-[#6f6e69]">{h.actor_name ?? 'System'}</p>
+                          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[#85847f]">
+                            {new Date(h.created_at).toLocaleString()}
+                          </p>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </CardBody>
+              ) : null}
+            </Card>
+          </div>
+        </div>
 
         {/* Approve dialog */}
         <Dialog
