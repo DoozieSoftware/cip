@@ -28,6 +28,11 @@ class AiProviderFactory
 
     public function make(AiProviderConfig $cfg): AIProviderInterface
     {
+        // Deployment-declared models (env) win over the DB column so the
+        // runtime never drifts from the environment the operator shipped.
+        // The DB row keeps the value as a fallback and for admin display.
+        $model = $this->envModel($cfg) ?: $cfg->model;
+
         return match ($cfg->driver) {
             self::DRIVER_QWEN_VL => new QwenVLProvider(
                 apiKey: $this->apiKey($cfg),
@@ -35,7 +40,7 @@ class AiProviderFactory
             ),
             self::DRIVER_OPENAI_COMPATIBLE => new OpenAICompatibleProvider(
                 name: $cfg->code,
-                model: $cfg->model,
+                model: $model,
                 baseUrl: $cfg->base_url,
                 apiKey: $this->apiKey($cfg),
                 timeoutMs: $cfg->timeout_ms,
@@ -50,6 +55,24 @@ class AiProviderFactory
     private function apiKey(AiProviderConfig $cfg): string
     {
         return $this->stringCredential($cfg, 'api_key');
+    }
+
+    /**
+     * Map from provider row to its env-declared model config key. Only
+     * deployment-managed providers participate: Vertex and the Modal
+     * vLLM endpoint. Everything else stays fully DB-configured.
+     */
+    private function envModel(AiProviderConfig $cfg): string
+    {
+        $key = match ($cfg->code) {
+            'vertex-gemini-flash' => 'ai.vertex.model',
+            'modal-vision' => 'ai.modal.model',
+            default => null,
+        };
+
+        $value = $key === null ? null : config($key);
+
+        return is_string($value) && trim($value) !== '' ? trim($value) : '';
     }
 
     private function bearerTokenResolver(AiProviderConfig $cfg): ?\Closure

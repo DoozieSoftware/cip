@@ -63,10 +63,20 @@ export function StepTimeline({
           {offPathBadge.label}
         </span>
       )}
-      <div className="relative flex items-start justify-between gap-2">
-        <div className="absolute left-0 right-0 top-4 h-0.5 bg-slate-200" />
+      <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
+        {/* Vertical connector line (mobile): runs down the dot centre-line. */}
         <div
-          className="absolute left-0 top-4 h-0.5 bg-emerald-500 transition-all"
+          className="absolute bottom-4 left-[15px] top-4 w-0.5 bg-slate-200 sm:hidden"
+          aria-hidden="true"
+        />
+        {/* Horizontal progress line (sm+). */}
+        <div
+          className="absolute left-0 right-0 top-4 hidden h-0.5 bg-slate-200 sm:block"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute left-0 top-4 hidden h-0.5 bg-emerald-500 transition-all sm:block"
+          aria-hidden="true"
           style={{ width: `${progressPct}%` }}
         />
         {steps.map((step, index) => {
@@ -75,7 +85,7 @@ export function StepTimeline({
           return (
             <div
               key={step.code}
-              className="relative z-10 flex flex-1 flex-col items-center min-w-0"
+              className="relative z-10 flex min-w-0 flex-1 items-start gap-3 sm:flex-col sm:items-center sm:gap-0"
             >
               <span
                 className={
@@ -92,24 +102,25 @@ export function StepTimeline({
                 )}
                 <span className="relative">{done ? '✓' : index + 1}</span>
               </span>
-              <span
-                className={
-                  'mt-1.5 w-full truncate text-center text-[11px] leading-tight ' +
-                  (active
-                    ? 'font-medium text-blue-700 '
-                    : done
-                      ? 'text-slate-700 '
-                      : 'text-slate-400 ')
-                }
-                title={step.label}
-              >
-                {step.label}
-              </span>
-              {step.at && (
-                <span className="mt-0.5 truncate text-[10px] tabular-nums text-slate-500">
-                  {formatTimestamp(step.at)}
+              <span className="flex min-w-0 flex-1 flex-col sm:w-full sm:items-center">
+                <span
+                  className={
+                    'text-[11px] leading-tight text-left sm:mt-1.5 sm:w-full sm:truncate sm:text-center ' +
+                    (active
+                      ? 'font-medium text-blue-700 '
+                      : done
+                        ? 'text-slate-700 '
+                        : 'text-slate-400 ')
+                  }
+                >
+                  {step.label}
                 </span>
-              )}
+                {step.at && (
+                  <span className="mt-0.5 text-left text-[10px] tabular-nums text-slate-500 sm:truncate sm:text-center">
+                    {formatTimestamp(step.at)}
+                  </span>
+                )}
+              </span>
             </div>
           );
         })}

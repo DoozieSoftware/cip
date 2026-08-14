@@ -6,7 +6,7 @@ return [
     'vertex' => [
         'project_id' => env('GOOGLE_CLOUD_PROJECT', env('GCLOUD_PROJECT', '')),
         'location' => env('AI_VERTEX_LOCATION', 'global'),
-        'model' => env('AI_VERTEX_MODEL', 'google/gemini-3.6-flash'),
+        'model' => env('AI_VERTEX_MODEL', 'google/gemini-3.7-flash'),
         'credentials_path' => env('GOOGLE_APPLICATION_CREDENTIALS'),
     ],
 

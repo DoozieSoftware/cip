@@ -189,7 +189,7 @@ function ProofVerificationCard({ verification }: { verification: ProofVerificati
       {provider && (
         <p className="mt-2 text-xs opacity-75">Reviewed by {provider.replaceAll('-', ' ')}</p>
       )}
-      <div className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
+      <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
         <div className="rounded-lg bg-white/70 p-2">
           <span className="block font-mono uppercase tracking-wider opacity-70">Location</span>
           <strong>{verification.location_confidence}%</strong>
@@ -685,8 +685,8 @@ export default function ReportDetailPage() {
         </div>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]">
-        <div className="space-y-5">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]">
+        <div className="min-w-0 space-y-5">
           <div className="rounded-xl bg-white p-4">
             <div className="flex items-center gap-2">
               <IconPaperclip size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
@@ -695,7 +695,7 @@ export default function ReportDetailPage() {
             <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
               Citizen report on the left; department completion proof on the right.
             </p>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="rounded-lg bg-[var(--color-canvas)] p-3">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
@@ -769,7 +769,9 @@ export default function ReportDetailPage() {
                         : (mediaId) => {
                             if (
                               removeProof.isPending ||
-                              !window.confirm('Remove this proof photo? This cannot be undone by you.')
+                              !window.confirm(
+                                'Remove this proof photo? This cannot be undone by you.',
+                              )
                             ) {
                               return;
                             }
@@ -878,7 +880,7 @@ export default function ReportDetailPage() {
           </div>
         </div>
 
-        <aside className="space-y-5">
+        <aside className="min-w-0 space-y-5">
           <LocationCard location={report.location} />
           <div className="rounded-xl bg-white p-4">
             <div className="flex items-center gap-2">

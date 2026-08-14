@@ -93,3 +93,31 @@ it('defaults to an empty api key when credentials is null (mock/none-auth provid
 
     expect($provider)->toBeInstanceOf(OpenAICompatibleProvider::class);
 });
+
+it('prefers the env-declared model for deployment-managed providers over the DB column', function (): void {
+    config()->set('ai.vertex.model', 'google/gemini-3.7-flash');
+
+    $cfg = makeAiProviderConfig([
+        'code' => 'vertex-gemini-flash',
+        'model' => 'google/gemini-3.6-flash',
+    ]);
+
+    $provider = (new AiProviderFactory)->make($cfg);
+
+    expect($provider)->toBeInstanceOf(OpenAICompatibleProvider::class)
+        ->and($provider->getModel())->toBe('google/gemini-3.7-flash');
+});
+
+it('falls back to the DB column model when the env model is not set', function (): void {
+    config()->set('ai.vertex.model', '');
+
+    $cfg = makeAiProviderConfig([
+        'code' => 'vertex-gemini-flash',
+        'model' => 'google/gemini-3.6-flash',
+    ]);
+
+    $provider = (new AiProviderFactory)->make($cfg);
+
+    expect($provider)->toBeInstanceOf(OpenAICompatibleProvider::class)
+        ->and($provider->getModel())->toBe('google/gemini-3.6-flash');
+});
