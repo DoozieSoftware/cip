@@ -103,7 +103,7 @@ export function CitizenLayout(): JSX.Element {
                         'flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors duration-150',
                         isActive
                           ? 'bg-white text-[var(--color-ink)] shadow-sm ring-1 ring-black/10'
-                          : 'text-[#686762] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)]',
+                          : 'text-[var(--color-text-subtle)] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)]',
                       )
                     }
                   >
@@ -120,7 +120,7 @@ export function CitizenLayout(): JSX.Element {
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium text-[#686762] transition-colors hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
           >
             <IconLogout className="h-4 w-4" stroke={1.7} />
             {t('common.signOut')}
@@ -143,7 +143,7 @@ export function CitizenLayout(): JSX.Element {
             <button
               type="button"
               onClick={handleSignOut}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[#686762] transition-colors hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
               aria-label={t('common.signOut')}
             >
               <IconLogout className="h-5 w-5" stroke={1.7} />

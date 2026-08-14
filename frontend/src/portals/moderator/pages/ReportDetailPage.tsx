@@ -37,6 +37,8 @@ import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 import { AiAnalysisPanel } from '../components/AiAnalysisPanel';
 import { AssignmentDialog } from '../components/AssignmentDialog';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { StepTimeline } from '../../../shared/components/StepTimeline';
+import { buildStaffTimeline } from '../../../shared/staffStatusTimeline';
 
 function LocationText({ lat, lng }: { lat: number; lng: number }): JSX.Element {
   const place = useReverseGeocode(lat, lng);
@@ -436,6 +438,18 @@ export default function ReportDetailPage() {
           </CardBody>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <IconClock className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+              <CardTitle>Status timeline</CardTitle>
+            </div>
+          </CardHeader>
+          <CardBody>
+            <StepTimeline {...buildStaffTimeline(data.status_history)} />
+          </CardBody>
+        </Card>
+
         {/* AI Analysis runs several screens long; evidence and the
             decision controls are short. Stacking those two in a sticky
             left rail keeps the photo and the actions in view for the
@@ -538,7 +552,9 @@ export default function ReportDetailPage() {
                               ? `${staffReportStatusLabel(h.from_code)} → ${staffReportStatusLabel(h.to_code)}`
                               : staffReportStatusLabel(h.to_code)}
                           </p>
-                          <p className="mt-0.5 text-xs text-[#6f6e69]">{h.actor_name ?? 'System'}</p>
+                          <p className="mt-0.5 text-xs text-[#6f6e69]">
+                            {h.actor_name ?? 'System'}
+                          </p>
                           <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[#85847f]">
                             {new Date(h.created_at).toLocaleString()}
                           </p>

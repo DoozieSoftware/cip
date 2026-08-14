@@ -32,6 +32,8 @@ import MergeDisputeCard from '../components/MergeDisputeCard';
 import { CitizenResolutionCard } from '../components/CitizenResolutionCard';
 import type { ReportDetail } from '../types';
 import type { MessageKey } from '../messages';
+import { StepTimeline } from '../../../shared/components/StepTimeline';
+import { buildCitizenTimeline } from '../../../shared/citizenStatusTimeline';
 
 type ReportMedia = ReportDetail['media'][number];
 type TimelineEntry = ReportDetail['timeline'][number];
@@ -390,7 +392,14 @@ export default function ReportDetailPage(): JSX.Element {
             </span>
             {t('detail.statusTimeline')}
           </h2>
-          <div className="mt-4">
+          {/* At-a-glance tracker of the five plain-language stages, above
+              the dated per-stage detail below. */}
+          <div className="mt-4 overflow-x-auto pb-1">
+            <div className="min-w-[18rem]">
+              <StepTimeline {...buildCitizenTimeline(timeline.data ?? [], r.status.code)} />
+            </div>
+          </div>
+          <div className="mt-4 border-t border-[var(--color-border-subtle)] pt-4">
             {timeline.isLoading ? (
               <div className="flex items-center gap-3 py-4">
                 <Spinner label={t('spinner.loadingTimeline')} />

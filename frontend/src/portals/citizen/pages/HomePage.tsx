@@ -306,7 +306,9 @@ export default function HomePage(): JSX.Element {
           <h2 className="mt-4 text-2xl font-normal leading-tight tracking-[-0.025em]">
             {t('home.oneRecord')}
           </h2>
-          <p className="mt-3 text-sm leading-6 text-[#686762]">{t('home.recordDetail')}</p>
+          <p className="mt-3 text-sm leading-6 text-[var(--color-text-subtle)]">
+            {t('home.recordDetail')}
+          </p>
           <Link
             to="/citizen/reports"
             className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium transition hover:border-black/30"

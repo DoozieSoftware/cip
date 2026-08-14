@@ -126,7 +126,7 @@ export function MediaGallery({
                   type="button"
                   onClick={() => setSelected(item)}
                   aria-label={`View ${label} image ${index + 1} full size`}
-                  className="group relative block w-full cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1d1d1b] focus-visible:ring-inset"
+                  className="group relative block w-full cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-inset"
                 >
                   <img
                     src={item.url}
@@ -134,42 +134,42 @@ export function MediaGallery({
                     loading="lazy"
                     className="aspect-square w-full object-cover transition duration-200 group-hover:scale-[1.02]"
                   />
-                  <span className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 rounded-full bg-[#1d1d1b]/90 px-2 py-1 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
+                  <span className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 rounded-full bg-[var(--color-ink)]/90 px-2 py-1 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
                     View
                   </span>
                 </button>
               ) : (
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`Open ${label} ${item.type} (${item.mime}) in a new tab`}
-                className="flex items-center gap-3 p-3 text-sm text-slate-700 hover:bg-slate-50"
-              >
-                <span className="shrink-0 text-slate-400">
-                  <FileIcon type={item.type} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium text-slate-800">
-                    {TYPE_LABEL[item.type] ?? item.type}
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Open ${label} ${item.type} (${item.mime}) in a new tab`}
+                  className="flex items-center gap-3 p-3 text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  <span className="shrink-0 text-slate-400">
+                    <FileIcon type={item.type} />
                   </span>
-                  <span className="block truncate font-mono text-xs text-slate-500">
-                    {item.mime}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium text-slate-800">
+                      {TYPE_LABEL[item.type] ?? item.type}
+                    </span>
+                    <span className="block truncate font-mono text-xs text-slate-500">
+                      {item.mime}
+                    </span>
                   </span>
-                </span>
-                <span aria-hidden className="text-xs text-slate-400">
-                  ↗
-                </span>
-              </a>
-            )}
-            {caption && (
-              <p className="border-t border-slate-100 px-2 py-1 text-xs text-slate-500">
-                {caption}
-              </p>
-            )}
-          </li>
-        );
-      })}
+                  <span aria-hidden className="text-xs text-slate-400">
+                    ↗
+                  </span>
+                </a>
+              )}
+              {caption && (
+                <p className="border-t border-slate-100 px-2 py-1 text-xs text-slate-500">
+                  {caption}
+                </p>
+              )}
+            </li>
+          );
+        })}
       </ul>
       <Dialog
         open={selected !== null}
@@ -182,9 +182,9 @@ export function MediaGallery({
             <img
               src={selected.url}
               alt={`${label} full-size preview`}
-              className="max-h-[80vh] w-full bg-[#1d1d1b] object-contain"
+              className="max-h-[80vh] w-full bg-[var(--color-ink)] object-contain"
             />
-            <figcaption className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[#6f6e69]">
+            <figcaption className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--color-text-tertiary)]">
               <span>{selected.mime}</span>
               {selected.width && selected.height && (
                 <span>

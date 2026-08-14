@@ -302,7 +302,7 @@ export default function ProfilePage(): JSX.Element {
                   <p className="text-sm font-medium text-[var(--color-ink)]">
                     {t('profile.needToUpdate')}
                   </p>
-                  <p className="mt-1 text-sm leading-relaxed text-[#686762]">
+                  <p className="mt-1 text-sm leading-relaxed text-[var(--color-text-subtle)]">
                     {t('profile.updateDetail')}
                   </p>
                 </div>
