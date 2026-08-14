@@ -160,7 +160,7 @@ class Location extends Model
             : "POINT({$lng}, {$lat})";
     }
 
-    private static function supportsSrid(): bool
+    public static function supportsSrid(): bool
     {
         $versionRow = DB::selectOne('select version() as version');
         $version = strtolower((string) (is_object($versionRow) ? ($versionRow->version ?? '') : ''));

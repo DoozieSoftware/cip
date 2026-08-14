@@ -79,11 +79,19 @@ class LocationService
             return;
         }
 
+        // boundary_polygon is stored without an explicit SRID (see
+        // Location::geomExpression()), so the probe point must match: MySQL
+        // 8+ tags it SRID 4326 via ST_SRID(); MariaDB's ST_SRID() setter
+        // doesn't accept the 2-argument form, so it stays SRID 0 there too.
+        $pointExpr = Location::supportsSrid()
+            ? 'ST_SRID(POINT(?, ?), 4326)'
+            : 'POINT(?, ?)';
+
         $ward = Ward::query()
             ->with('city')
             ->where('active', true)
             ->whereNotNull('boundary_polygon')
-            ->whereRaw('ST_Contains(boundary_polygon, ST_SRID(POINT(?, ?), 4326))', [$location->longitude, $location->latitude])
+            ->whereRaw("ST_Contains(boundary_polygon, {$pointExpr})", [$location->longitude, $location->latitude])
             ->first();
 
         if ($ward === null) {
