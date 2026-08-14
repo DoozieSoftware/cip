@@ -124,11 +124,9 @@ describe('citizen types - type constraints', () => {
   it('AiSummary has correct structure', () => {
     const summary: AiSummary = {
       labels: [{ name: 'pothole', confidence: 0.95 }],
-      fraud_score: 0.1,
       duplicate_of: null,
       recommended_department: { name: 'Roads', code: 'roads' },
     };
     expect(summary.labels).toHaveLength(1);
-    expect(summary.fraud_score).toBe(0.1);
   });
 });

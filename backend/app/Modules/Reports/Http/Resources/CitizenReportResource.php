@@ -106,9 +106,6 @@ class CitizenReportResource extends JsonResource
                         ? 0
                         : ($report->ai_confidence / 100),
                 ]],
-                'fraud_score' => $report->fraud_score === null
-                    ? null
-                    : ($report->fraud_score / 100),
                 'duplicate_of' => null,
                 'recommended_department' => $department === null ? null : [
                     'name' => $department->name,

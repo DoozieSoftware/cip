@@ -49,8 +49,32 @@ const STAFF_STATUS_LABELS: Record<string, string> = {
   escalated: 'Escalated',
 };
 
+// Plain-language "what this means" line per docs/mom-product-decisions.md
+// §2 (Meaning column), phrased for the citizen reading their own report.
+const CITIZEN_STATUS_MEANING: Record<string, string> = {
+  draft: 'Your report is saved but not yet submitted.',
+  submitted: "Your report has been received and is being checked before it's sent to the right department.",
+  ai_processing: "Your report has been received and is being checked before it's sent to the right department.",
+  pending_moderator: "Your report has been received and is being checked before it's sent to the right department.",
+  assigned: 'A department has been notified and will act on your report.',
+  accepted: 'A department has been notified and will act on your report.',
+  in_progress: 'Work on your report is underway.',
+  reopened: 'Work on your report is underway.',
+  escalated: 'Work on your report is underway.',
+  resolved: 'The department says this has been fixed. Please confirm below.',
+  resolved_pending_verification: 'The department says this has been fixed. Please confirm below.',
+  verified: 'This report has been resolved and confirmed.',
+  closed: 'This report has been resolved and confirmed.',
+  rejected: 'This report could not be acted on by the platform.',
+  merged: 'This report is being tracked together with another report of the same issue.',
+};
+
 export function citizenReportStatusLabel(code: string | null | undefined): string {
   return code ? (CITIZEN_STATUS_LABELS[code] ?? titleCaseStatus(code)) : '—';
+}
+
+export function citizenReportStatusMeaning(code: string | null | undefined): string | null {
+  return code ? (CITIZEN_STATUS_MEANING[code] ?? null) : null;
 }
 
 export function staffReportStatusLabel(code: string | null | undefined): string {

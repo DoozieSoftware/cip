@@ -11,7 +11,6 @@ import {
   IconCalendar,
   IconUser,
   IconBuilding,
-  IconShield,
   IconCamera,
   IconAlertTriangle,
 } from '@tabler/icons-react';
@@ -22,15 +21,85 @@ import {
   useVerifyResolution,
   lifecycleGroup,
 } from '../api/client';
-import { citizenReportStatusLabel } from '../../../shared/statusDisplay';
+import {
+  citizenReportStatusLabel,
+  citizenReportStatusMeaning,
+} from '../../../shared/statusDisplay';
 import { EmptyState, Spinner } from '../../../shared/ui';
 import { StatusBadge } from '../components/StatusBadge';
 import LocationMap from '../components/LocationMap';
 import MergeDisputeCard from '../components/MergeDisputeCard';
 import { CitizenResolutionCard } from '../components/CitizenResolutionCard';
 import type { ReportDetail } from '../types';
+import type { MessageKey } from '../messages';
 
 type ReportMedia = ReportDetail['media'][number];
+type TimelineEntry = ReportDetail['timeline'][number];
+
+// A report is not yet handed to a department while it's still being
+// checked by AI or a human moderator — see docs/mom-product-decisions.md §2.
+const PRE_ASSIGNMENT_STATUSES = new Set(['submitted', 'ai_processing', 'pending_moderator']);
+
+interface CitizenMilestone {
+  key: string;
+  label: string;
+  actorLabel: string | null;
+  meaning: string | null;
+  at: string;
+}
+
+function citizenActorLabel(
+  entry: TimelineEntry,
+  t: (key: MessageKey) => string,
+  departmentName: string | null,
+): string | null {
+  switch (entry.actor_role) {
+    case 'citizen':
+      return t('detail.timelineActorYou');
+    case 'moderator':
+      return t('detail.timelineActorModerator');
+    case 'department_officer':
+    case 'department':
+      return departmentName ?? t('detail.timelineActorDepartment');
+    case 'super_admin':
+      return t('detail.timelineActorAdmin');
+    default:
+      return t('detail.timelineActorSystem');
+  }
+}
+
+// Several internal statuses (submitted / ai_processing / pending_moderator)
+// all mean "Received" to a citizen — collapse consecutive raw transitions
+// that map to the same plain-language label into one milestone, per
+// docs/mom-product-decisions.md §2 ("Do not expose raw status codes in UI").
+function buildCitizenMilestones(
+  entries: TimelineEntry[],
+  t: (key: MessageKey) => string,
+  departmentName: string | null,
+): CitizenMilestone[] {
+  const chronological = [...entries].sort((a, b) => a.at.localeCompare(b.at));
+  const milestones: CitizenMilestone[] = [];
+
+  for (const entry of chronological) {
+    const label = citizenReportStatusLabel(entry.to_status_code);
+    const previous = milestones[milestones.length - 1];
+    if (previous && previous.label === label) {
+      continue;
+    }
+    milestones.push({
+      key: entry.id ?? entry.at,
+      label,
+      actorLabel: citizenActorLabel(entry, t, departmentName),
+      // Plain-language explanation derived from the status code (per
+      // docs/mom-product-decisions.md §2) — never the raw `entry.note`,
+      // which carries internal/system wording not written for citizens.
+      meaning: citizenReportStatusMeaning(entry.to_status_code),
+      at: entry.at,
+    });
+  }
+
+  return milestones.reverse();
+}
 
 function EvidencePreview({
   media,
@@ -124,17 +193,17 @@ export default function ReportDetailPage(): JSX.Element {
   const disputeResolution = useDisputeResolution(id ?? '');
   const [auditExpanded, setAuditExpanded] = useState(false);
 
+  const departmentName =
+    detail.data?.assigned_department?.name ?? detail.data?.department?.name ?? null;
+
+  const citizenMilestones = useMemo(() => {
+    if (!timeline.data) return [];
+    return buildCitizenMilestones(timeline.data, t, departmentName);
+  }, [timeline.data, t, departmentName]);
+
   const sortedTimeline = useMemo(() => {
     if (!timeline.data) return [];
     return [...timeline.data].sort((a, b) => b.at.localeCompare(a.at));
-  }, [timeline.data]);
-
-  const latestTimestamp = useMemo(() => {
-    if (!timeline.data || timeline.data.length === 0) return null;
-    return timeline.data.reduce(
-      (latest, entry) => (entry.at > latest ? entry.at : latest),
-      timeline.data[0].at,
-    );
   }, [timeline.data]);
 
   if (detail.isLoading) {
@@ -170,6 +239,7 @@ export default function ReportDetailPage(): JSX.Element {
   }
 
   const r = detail.data;
+  const statusMeaning = citizenReportStatusMeaning(r.status.code);
 
   return (
     <div className="mx-auto max-w-3xl bg-[var(--color-canvas)] pb-12">
@@ -245,6 +315,11 @@ export default function ReportDetailPage(): JSX.Element {
               </span>
             )}
           </div>
+          {statusMeaning ? (
+            <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+              {statusMeaning}
+            </p>
+          ) : null}
           {lifecycleGroup(r.status.code) === 'merged' && r.canonical_report ? (
             <div className="mt-3 rounded-lg border border-violet-200 bg-violet-50 p-3">
               <p className="text-xs font-medium text-violet-800">
@@ -296,7 +371,13 @@ export default function ReportDetailPage(): JSX.Element {
             <DetailBlock
               icon={<IconBuilding className="h-3.5 w-3.5" stroke={1.6} />}
               label={t('detail.assignedTo')}
-              value={r.assigned_department?.name ?? r.department?.name ?? t('detail.pending')}
+              value={
+                r.assigned_department?.name ??
+                r.department?.name ??
+                (PRE_ASSIGNMENT_STATUSES.has(r.status.code)
+                  ? t('detail.assignedPendingReview')
+                  : t('detail.pending'))
+              }
             />
           </div>
         </div>
@@ -317,15 +398,13 @@ export default function ReportDetailPage(): JSX.Element {
                   {t('detail.loadingStatusHistory')}
                 </span>
               </div>
-            ) : sortedTimeline.length > 0 ? (
+            ) : citizenMilestones.length > 0 ? (
               <ol className="relative">
-                {sortedTimeline.map((entry, i) => {
-                  const isLatest =
-                    entry.is_current === true ||
-                    (latestTimestamp !== null && entry.at === latestTimestamp);
+                {citizenMilestones.map((milestone, i) => {
+                  const isLatest = i === 0;
                   return (
-                    <li key={i} className="relative flex gap-3 pb-4 last:pb-0">
-                      {i < sortedTimeline.length - 1 ? (
+                    <li key={milestone.key} className="relative flex gap-3 pb-4 last:pb-0">
+                      {i < citizenMilestones.length - 1 ? (
                         <span
                           aria-hidden
                           className="absolute left-[9px] top-5 h-full w-0.5 bg-[var(--color-border-subtle)]"
@@ -349,7 +428,7 @@ export default function ReportDetailPage(): JSX.Element {
                             <span
                               className={`text-sm font-medium ${isLatest ? 'text-[var(--color-ink)]' : 'text-[var(--color-text-secondary)]'}`}
                             >
-                              {entry.event}
+                              {milestone.label}
                             </span>
                             {isLatest ? (
                               <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
@@ -358,21 +437,21 @@ export default function ReportDetailPage(): JSX.Element {
                             ) : null}
                           </div>
                           <time className="text-xs text-[var(--color-text-tertiary)]">
-                            {formatDate(entry.at, locale)}
-                            {formatTime(entry.at, locale)
-                              ? ` · ${formatTime(entry.at, locale)}`
+                            {formatDate(milestone.at, locale)}
+                            {formatTime(milestone.at, locale)
+                              ? ` · ${formatTime(milestone.at, locale)}`
                               : ''}
                           </time>
                         </div>
-                        {entry.actor ? (
+                        {milestone.actorLabel ? (
                           <p className="mt-0.5 flex items-center gap-1 text-xs text-[var(--color-text-secondary)]">
                             <IconUser className="h-3 w-3" stroke={1.6} />
-                            {entry.actor}
+                            {milestone.actorLabel}
                           </p>
                         ) : null}
-                        {entry.note ? (
+                        {milestone.meaning ? (
                           <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                            {entry.note}
+                            {milestone.meaning}
                           </p>
                         ) : null}
                       </div>
@@ -510,59 +589,6 @@ export default function ReportDetailPage(): JSX.Element {
             </p>
           </section>
         )}
-
-        {/* AI Insights */}
-        {r.ai_summary ? (
-          <section className="rounded-xl border border-sky-200 bg-sky-50 p-4">
-            <h2 className="flex items-center gap-2 text-sm font-medium text-[var(--color-ink)]">
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-sky-100">
-                <IconShield className="h-3.5 w-3.5 text-sky-600" stroke={1.7} />
-              </span>
-              {t('detail.automatedAnalysis')}
-            </h2>
-            <div className="mt-3 space-y-4">
-              {r.ai_summary.labels && r.ai_summary.labels.length > 0 ? (
-                <div>
-                  <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-                    {t('detail.detectedLabels')}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {r.ai_summary.labels.map((l) => (
-                      <span
-                        key={l.name}
-                        className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-xs font-medium text-sky-800"
-                      >
-                        {l.name}
-                        <span className="ml-1 text-sky-500">
-                          ({Math.round(l.confidence * 100)}%)
-                        </span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {r.ai_summary.recommended_department ? (
-                  <DetailBlock
-                    icon={<IconBuilding className="h-3.5 w-3.5" stroke={1.6} />}
-                    label={t('detail.recommendedDepartment')}
-                    value={r.ai_summary.recommended_department.name}
-                  />
-                ) : null}
-                {typeof r.ai_summary.fraud_score === 'number' ? (
-                  <DetailBlock
-                    icon={<IconShield className="h-3.5 w-3.5" stroke={1.6} />}
-                    label={t('detail.evidenceReviewScore')}
-                    value={`${Math.round(r.ai_summary.fraud_score * 100)}%`}
-                  />
-                ) : null}
-              </div>
-            </div>
-            <p className="mt-4 rounded-lg border border-sky-200 bg-white px-3 py-2 text-xs leading-relaxed text-sky-800">
-              <strong>{t('detail.aiNote')}</strong> {t('detail.aiNoteBody')}
-            </p>
-          </section>
-        ) : null}
 
         {/* Audit History - Collapsible */}
         <section className="overflow-hidden rounded-xl bg-white">

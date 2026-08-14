@@ -23,7 +23,6 @@ export interface Department {
 
 export interface AiSummary {
   labels: Array<{ name: string; confidence: number }>;
-  fraud_score: number;
   duplicate_of?: string | null;
   recommended_department?: { name: string; code: string } | null;
 }
@@ -49,6 +48,9 @@ export interface TimelineEntry {
   id?: string;
   at: string;
   actor?: string | null;
+  actor_role?: string | null;
+  from_status_code?: string | null;
+  to_status_code?: string | null;
   event: string;
   note?: string | null;
   is_current?: boolean;
