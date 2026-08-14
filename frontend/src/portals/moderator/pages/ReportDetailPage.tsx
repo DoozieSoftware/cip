@@ -439,12 +439,19 @@ export default function ReportDetailPage() {
         {/* AI Analysis runs several screens long; evidence and the
             decision controls are short. Stacking those two in a sticky
             left rail keeps the photo and the actions in view for the
-            whole scroll instead of leaving the column empty. */}
-        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
-          <div className="space-y-5 lg:sticky lg:top-6 lg:self-start">
-            <EvidenceViewer media={data.media} />
+            whole scroll instead of leaving the column empty.
 
-            <Card>
+            The rails are `contents` below lg so their cards become grid
+            items directly and `order-*` can interleave them: single
+            column reads evidence -> analysis -> actions -> audit, so the
+            decision controls never precede the analysis they act on. */}
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+          <div className="contents lg:sticky lg:top-6 lg:block lg:space-y-5 lg:self-start">
+            <div className="order-1">
+              <EvidenceViewer media={data.media} />
+            </div>
+
+            <Card className="order-3">
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <IconClipboardCheck className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
@@ -485,13 +492,15 @@ export default function ReportDetailPage() {
             </Card>
           </div>
 
-          <div className="space-y-5">
-            <AiAnalysisPanel
-              ai={data.ai_result}
-              statusCode={data.status_code}
-              mockGpsScore={data.mock_gps_score}
-            />
-            <Card>
+          <div className="contents lg:block lg:space-y-5">
+            <div className="order-2">
+              <AiAnalysisPanel
+                ai={data.ai_result}
+                statusCode={data.status_code}
+                mockGpsScore={data.mock_gps_score}
+              />
+            </div>
+            <Card className="order-4">
               <button
                 type="button"
                 onClick={() => setAuditExpanded((v) => !v)}
