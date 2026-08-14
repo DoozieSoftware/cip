@@ -81,6 +81,11 @@ class DepartmentReportResource extends JsonResource
                 is_string($assignmentDepartment) && $assignmentDepartment !== '',
                 fn ($query) => $query->where('department_id', $assignmentDepartment),
             )
+            // A verification for a proof photo the officer has since
+            // removed is stale, not just old — surfacing it would show
+            // an AI verdict for a photo the gallery no longer lists,
+            // right alongside an "awaiting proof" empty state.
+            ->whereHas('proofMedia', fn ($query) => $query->where('is_replaced', false))
             ->latest('checked_at')
             ->get();
 
