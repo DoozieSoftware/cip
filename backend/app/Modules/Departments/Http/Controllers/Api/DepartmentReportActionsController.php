@@ -118,6 +118,11 @@ class DepartmentReportActionsController
         return $this->proofController->uploadProof($report, $request);
     }
 
+    public function removeProof(Report $report, string $media, Request $request): JsonResponse
+    {
+        return $this->proofController->removeProof($report, $media, $request);
+    }
+
     public function addNote(Report $report, StoreInternalNoteRequest $request): JsonResponse
     {
         return $this->notesController->addNote($report, $request);

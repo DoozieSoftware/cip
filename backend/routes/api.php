@@ -362,6 +362,13 @@ Route::prefix('v1')->group(function (): void {
         Route::post('reports/{report}/photos', [DepartmentReportActionsController::class, 'uploadProof'])
             ->middleware('can:department.attach_proof,report')
             ->name('reports.photos.store');
+        // Soft-remove a wrongly-uploaded proof photo — same scoping as
+        // attaching it. The media row is marked is_replaced, not deleted,
+        // so the chain of custody survives for audit (per Media model
+        // docblock's existing is_replaced/version contract).
+        Route::delete('reports/{report}/photos/{media}', [DepartmentReportActionsController::class, 'removeProof'])
+            ->middleware('can:department.attach_proof,report')
+            ->name('reports.photos.destroy');
         Route::get('reports/{report}/notes', [DepartmentReportActionsController::class, 'listNotes'])
             ->middleware('can:department.view,report')
             ->name('reports.notes.index');

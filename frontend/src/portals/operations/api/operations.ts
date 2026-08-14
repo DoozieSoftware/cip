@@ -141,6 +141,14 @@ export const departmentApi = {
   },
 
   /**
+   * Soft-removes a wrongly-uploaded proof photo. The backend marks the
+   * media row is_replaced rather than deleting it, so it drops out of
+   * the active gallery but the file and audit trail survive.
+   */
+  removeProof: (reportId: string, mediaId: string) =>
+    api.delete<{ success: boolean }>(`/department/reports/${reportId}/photos/${mediaId}`),
+
+  /**
    * Builds the export URL for display only (e.g. showing the caller
    * what request will be made) — not for navigation/download. The
    * endpoint requires a bearer Authorization header this app has no

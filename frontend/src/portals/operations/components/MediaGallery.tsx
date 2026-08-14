@@ -75,9 +75,20 @@ function FileIcon({ type }: { type: string }): JSX.Element {
  * loses the officer's place in the report and shows no caption or
  * context; video/audio/document rows still open via link since there
  * is no in-app preview for those. `label` names the role for captions
- * and aria purposes.
+ * and aria purposes. `onRemove`, when given, adds a remove button to
+ * every item (soft-removes a wrongly-uploaded proof photo; omit it
+ * for citizen evidence, which an officer should never be able to
+ * touch).
  */
-export function MediaGallery({ items, label }: { items: DepartmentReportMedia[]; label: string }) {
+export function MediaGallery({
+  items,
+  label,
+  onRemove,
+}: {
+  items: DepartmentReportMedia[];
+  label: string;
+  onRemove?: (mediaId: string) => void;
+}) {
   const [selected, setSelected] = useState<DepartmentReportMedia | null>(null);
 
   return (
@@ -86,7 +97,30 @@ export function MediaGallery({ items, label }: { items: DepartmentReportMedia[];
         {items.map((item, index) => {
           const caption = dateCaption(item.created_at);
           return (
-            <li key={item.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+            <li
+              key={item.id}
+              className="relative overflow-hidden rounded-lg border border-slate-200 bg-white"
+            >
+              {onRemove && (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onRemove(item.id);
+                  }}
+                  aria-label={`Remove ${label} item ${index + 1}`}
+                  className="absolute right-1.5 top-1.5 z-10 grid h-6 w-6 place-items-center rounded-full bg-white/90 text-slate-600 shadow-sm ring-1 ring-slate-200 hover:bg-rose-50 hover:text-rose-600"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path
+                      d="M6 6l12 12M18 6L6 18"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              )}
               {isImageMedia(item) ? (
                 <button
                   type="button"

@@ -323,6 +323,13 @@ export default function ReportDetailPage() {
     },
   });
 
+  const removeProof = useMutation({
+    mutationFn: (mediaId: string) => departmentApi.removeProof(reportId, mediaId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['operations', 'report', reportId] });
+    },
+  });
+
   const requestAction = useCallback(
     (event: WorkflowEvent): void => {
       if (reportId === '' || actionPending || report?.current_status_code !== actionStatus[event]) {
@@ -753,7 +760,23 @@ export default function ReportDetailPage() {
                     </p>
                   </div>
                 ) : (
-                  <MediaGallery items={selectedAssignmentProof} label="Proof of completion" />
+                  <MediaGallery
+                    items={selectedAssignmentProof}
+                    label="Proof of completion"
+                    onRemove={
+                      isTerminal
+                        ? undefined
+                        : (mediaId) => {
+                            if (
+                              removeProof.isPending ||
+                              !window.confirm('Remove this proof photo? This cannot be undone by you.')
+                            ) {
+                              return;
+                            }
+                            removeProof.mutate(mediaId);
+                          }
+                    }
+                  />
                 )}
               </div>
             </div>

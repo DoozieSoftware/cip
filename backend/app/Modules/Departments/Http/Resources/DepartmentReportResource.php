@@ -71,6 +71,7 @@ class DepartmentReportResource extends JsonResource
         $media = Media::query()
             ->where('report_id', $report->id)
             ->where('scan_status', MediaScanStatus::CLEAN->value)
+            ->where('is_replaced', false)
             ->orderBy('created_at')
             ->get();
         $mediaUrl = new MediaUrl;
