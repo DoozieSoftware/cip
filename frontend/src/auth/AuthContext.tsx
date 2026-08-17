@@ -33,6 +33,8 @@ export interface SessionUser {
   }>;
 }
 
+export type SessionUserPatch = Partial<Pick<SessionUser, 'name' | 'mobile' | 'email'>>;
+
 export interface AuthContextValue {
   user: SessionUser | null;
   token: string | null;
@@ -44,6 +46,7 @@ export interface AuthContextValue {
     refreshToken?: string | null,
     refreshExpiresAt?: string | null,
   ) => void;
+  updateUser: (patch: SessionUserPatch) => void;
   logout: () => void;
   loading: boolean;
 }
@@ -98,6 +101,24 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     [],
   );
 
+  const updateUser = useCallback(
+    (patch: SessionUserPatch): void => {
+      if (user === null) {
+        return;
+      }
+      const nextUser = { ...user, ...patch };
+      setUser(nextUser);
+      const persisted = readSession();
+      if (persisted !== null) {
+        writeSession({
+          ...persisted,
+          user: { ...persisted.user, ...patch },
+        });
+      }
+    },
+    [user],
+  );
+
   const logout = useCallback((): void => {
     const persisted = readSession();
     const ownerId = user?.id;
@@ -150,10 +171,11 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       isAuthenticated: token !== null && user !== null,
       hasAnyRole,
       login,
+      updateUser,
       logout,
       loading,
     }),
-    [user, token, hasAnyRole, login, logout, loading],
+    [user, token, hasAnyRole, login, updateUser, logout, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

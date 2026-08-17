@@ -12,6 +12,7 @@ import {
   IconLogout,
   IconMap,
   IconShield,
+  IconUser,
   IconUsers,
 } from '@tabler/icons-react';
 import { useAuth, type Role } from '../../../auth/AuthContext';
@@ -36,6 +37,7 @@ const NAV: NavItem[] = [
   { to: '/operations/analytics', label: 'Analytics', icon: IconChartBar },
   { to: '/operations/map', label: 'GIS Map', icon: IconMap },
   { to: '/operations/reports/export', label: 'Export', icon: IconDatabaseExport },
+  { to: '/operations/profile', label: 'Profile', icon: IconUser },
   { to: '/operations/audit', label: 'Audit', icon: IconShield, allowedRoles: AUDIT_SECURITY_ROLES },
   {
     to: '/operations/security',

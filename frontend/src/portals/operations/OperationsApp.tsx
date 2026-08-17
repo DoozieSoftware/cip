@@ -14,6 +14,7 @@ const AuditLogPage = lazy(() => import('./pages/AuditLogPage'));
 const SecurityPage = lazy(() => import('./pages/SecurityPage'));
 const GisMapPage = lazy(() => import('./pages/GisMapPage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
+const ProfilePage = lazy(() => import('../../shared/components/StaffProfilePage'));
 
 function Fallback() {
   return (
@@ -34,6 +35,7 @@ export function OperationsApp() {
             <Route path="tasks" element={<ReportListPage />} />
             <Route path="reports/export" element={<ExportPage />} />
             <Route path="reports/:id" element={<ReportDetailPage />} />
+            <Route path="profile" element={<ProfilePage />} />
             <Route path="map" element={<GisMapPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="audit" element={<AuditLogPage />} />

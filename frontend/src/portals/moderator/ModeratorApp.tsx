@@ -10,6 +10,7 @@ const DuplicatesQueuePage = lazy(() => import('./pages/DuplicatesQueuePage'));
 const MisrepresentationQueuePage = lazy(() => import('./pages/FraudQueuePage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const AiPerformancePage = lazy(() => import('./pages/AiPerformancePage'));
+const ProfilePage = lazy(() => import('../../shared/components/StaffProfilePage'));
 
 function Fallback() {
   return (
@@ -32,6 +33,7 @@ export function ModeratorApp() {
           <Route path="reports/:id" element={<ReportDetailPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="ai-performance" element={<AiPerformancePage />} />
+          <Route path="profile" element={<ProfilePage />} />
           <Route path="*" element={<Navigate to="/moderator" replace />} />
         </Route>
       </Routes>

@@ -9,6 +9,7 @@ import {
   IconLogout,
   IconReportAnalytics,
   IconRobot,
+  IconUser,
 } from '@tabler/icons-react';
 import { useAuth } from '../../../auth/AuthContext';
 import { cx } from '../../../shared/ui/cx';
@@ -25,6 +26,7 @@ const NAV: Array<{
   { to: '/moderator/misrepresentation', label: 'Misrepresentation', icon: IconFingerprint },
   { to: '/moderator/analytics', label: 'Analytics', icon: IconReportAnalytics },
   { to: '/moderator/ai-performance', label: 'AI', icon: IconRobot },
+  { to: '/moderator/profile', label: 'Profile', icon: IconUser },
 ];
 
 const MOBILE_NAV = NAV.slice(0, 5);

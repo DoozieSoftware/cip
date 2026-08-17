@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Authentication\Services\AuthenticationService;
 use App\Modules\Authentication\Services\OtpService;
+use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -59,4 +60,50 @@ it('rejects unsupported profile language or notification channel', function (): 
         ])
         ->assertStatus(422)
         ->assertJsonValidationErrors(['preferred_locale', 'notification_channel']);
+});
+
+it('lets a user update their display name and login mobile, normalised to 10 digits', function (): void {
+    [$user, $access] = profileToken();
+
+    $this->withToken($access)
+        ->patchJson('/api/v1/auth/profile', [
+            'name' => '  Ravi Kumar  ',
+            'mobile' => '+91 989 898 9800',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.name', 'Ravi Kumar')
+        ->assertJsonPath('data.mobile', '9898989800');
+
+    expect($user->refresh()->name)->toBe('Ravi Kumar')
+        ->and($user->mobile)->toBe('9898989800');
+});
+
+it('keeps the stored mobile when no mobile is supplied', function (): void {
+    [$user, $access] = profileToken();
+
+    $this->withToken($access)
+        ->patchJson('/api/v1/auth/profile', ['name' => 'Anu'])
+        ->assertOk()
+        ->assertJsonPath('data.mobile', $user->mobile);
+
+    expect($user->refresh()->mobile)->toBe('9876543211');
+});
+
+it('rejects a mobile that already belongs to another account', function (): void {
+    [, $access] = profileToken();
+    $other = User::factory()->citizen()->create();
+
+    $this->withToken($access)
+        ->patchJson('/api/v1/auth/profile', ['mobile' => $other->mobile])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['mobile']);
+});
+
+it('rejects a malformed mobile', function (): void {
+    [, $access] = profileToken();
+
+    $this->withToken($access)
+        ->patchJson('/api/v1/auth/profile', ['mobile' => '12345'])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['mobile']);
 });
