@@ -154,7 +154,10 @@ jobs:
               fi; \
               echo \"clamscan: \$CLAMSCAN_BIN\"; \
               \"\$CLAMSCAN_BIN\" --version; \
-              set +e; \"\$CLAMSCAN_BIN\" --no-summary --stdout /dev/null; CLAMSCAN_STATUS=\$?; set -e; \
+              CLAMSCAN_PROBE=\"/tmp/cip-clamscan-probe.\$\$\"; \
+              trap 'rm -f \"\$CLAMSCAN_PROBE\"' EXIT; \
+              : > \"\$CLAMSCAN_PROBE\"; \
+              set +e; \"\$CLAMSCAN_BIN\" --no-summary --stdout \"\$CLAMSCAN_PROBE\"; CLAMSCAN_STATUS=\$?; set -e; \
               echo \"clamscan probe exit: \$CLAMSCAN_STATUS\"; \
               [ \"\$CLAMSCAN_STATUS\" -eq 0 ]"
 
