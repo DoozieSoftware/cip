@@ -140,7 +140,7 @@ jobs:
           # Verify host capabilities before replacing application files. The
           # runtime readiness endpoint repeats these checks after deploy.
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
-            $REMOTE "set -e; $PHP_BIN -m | grep -qx redis; command -v clamscan >/dev/null; clamscan --no-summary --stdout /dev/null >/dev/null"
+            $REMOTE "export LANG=C LC_ALL=C LANGUAGE=C; set -e; $PHP_BIN -m | grep -qx redis; command -v clamscan >/dev/null; clamscan --no-summary --stdout /dev/null >/dev/null"
 
           # Keep the rollback helper on the server so an operator can run a
           # code-only rollback even if the next release cannot be built.
