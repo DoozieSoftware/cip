@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Moderation\Services;
 
+use App\Modules\Departments\Models\ReportProofVerification;
 use App\Modules\Moderation\DTO\ReviewReportDto;
 use App\Modules\Moderation\Events\ReportModerated;
 use App\Modules\Moderation\Events\ReportsMerged;
@@ -62,6 +63,21 @@ class ModerationService
             // Merge is a special case — the canonical report id
             // must be present and different from the current one.
             return $this->mergeSingle($report, $dto, $moderator);
+        }
+
+        if ($dto->decision === ReviewReportDto::DECISION_COMPLETE_PROOF) {
+            $statusCode = $report->status()->value('code');
+            $hasProofReview = ReportProofVerification::query()
+                ->where('report_id', $report->id)
+                ->whereHas('proofMedia', fn ($query) => $query->where('is_replaced', false))
+                ->exists();
+
+            if ($statusCode !== 'resolved_pending_verification' || ! $hasProofReview) {
+                throw ApiException::validation(
+                    'Proof completion is available only when a completion proof is awaiting moderator review.',
+                    ['decision' => ['No pending proof review exists for this report.']],
+                );
+            }
         }
 
         $event = $this->eventFor($dto->decision);
@@ -355,6 +371,7 @@ class ModerationService
             ReviewReportDto::DECISION_APPROVE => 'approve',
             ReviewReportDto::DECISION_REJECT => 'reject',
             ReviewReportDto::DECISION_ESCALATE => 'escalate',
+            ReviewReportDto::DECISION_COMPLETE_PROOF => 'close',
             default => throw ApiException::validation("decision '{$decision}' is not a single-report event.", ['decision' => [$decision]]),
         };
     }

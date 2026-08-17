@@ -56,6 +56,7 @@ class UpdateReportTypeRequest extends FormRequest
             'requires_photo' => ['sometimes', 'boolean'],
             'min_photos' => ['sometimes', 'integer', 'min:0', 'max:99'],
             'max_photos' => ['sometimes', 'integer', 'min:0', 'max:99'],
+            'response_target_minutes' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:525600'],
             'workflow_definition_id' => ['sometimes', 'nullable', 'string', 'uuid'],
             'validation_rules' => ['sometimes', 'nullable', 'array'],
             'active' => ['sometimes', 'boolean'],

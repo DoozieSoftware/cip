@@ -70,4 +70,15 @@ final class RoutingDecision
             defaultSlaMinutes: $slaMinutes,
         );
     }
+
+    public function withSlaMinutes(int $slaMinutes): self
+    {
+        return new self(
+            matchedRule: $this->matchedRule,
+            destinationDepartment: $this->destinationDepartment,
+            defaultOfficer: $this->defaultOfficer,
+            defaultPriority: $this->defaultPriority,
+            defaultSlaMinutes: max(1, $slaMinutes),
+        );
+    }
 }

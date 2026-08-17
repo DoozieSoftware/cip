@@ -30,6 +30,7 @@ interface TypeDraft {
   requires_photo: boolean;
   min_photos: number;
   max_photos: number;
+  response_target_minutes: number | null;
   active: boolean;
 }
 
@@ -43,6 +44,7 @@ const blank: TypeDraft = {
   requires_photo: false,
   min_photos: 1,
   max_photos: 5,
+  response_target_minutes: 2880,
   active: true,
 };
 
@@ -71,6 +73,10 @@ function ReportTypeForm({
       requires_photo: draft.requires_photo,
       min_photos: Number(draft.min_photos),
       max_photos: Number(draft.max_photos),
+      response_target_minutes:
+        draft.response_target_minutes === null || draft.response_target_minutes <= 0
+          ? null
+          : Number(draft.response_target_minutes),
       active: draft.active,
     };
     if (initial.id) payload.id = initial.id;
@@ -80,6 +86,12 @@ function ReportTypeForm({
   const num = (v: string): number => {
     const n = Number(v);
     return Number.isFinite(n) && n > 0 ? n : 0;
+  };
+
+  const nullableNum = (v: string): number | null => {
+    if (v.trim() === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
   };
 
   return (
@@ -157,6 +169,21 @@ function ReportTypeForm({
             className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
+        <label className="block text-sm">
+          <span className="font-medium text-[var(--color-ink)]">Response target (minutes)</span>
+          <input
+            type="number"
+            min={1}
+            value={draft.response_target_minutes ?? ''}
+            onChange={(e) =>
+              setDraft({ ...draft, response_target_minutes: nullableNum(e.target.value) })
+            }
+            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+          />
+          <span className="mt-1 block text-xs text-[var(--color-text-secondary)]">
+            Leave blank to use the routing or department target.
+          </span>
+        </label>
       </div>
       <div className="flex flex-wrap gap-6">
         <label className="flex items-center gap-2 text-sm">
@@ -230,6 +257,7 @@ export default function AdminReportTypes(): JSX.Element {
           requires_photo: t.requires_photo,
           min_photos: t.min_photos,
           max_photos: t.max_photos,
+          response_target_minutes: t.response_target_minutes,
           active: t.active,
         }
       : blank;
@@ -321,6 +349,12 @@ export default function AdminReportTypes(): JSX.Element {
                 </div>
                 <p className="mt-3 text-xs text-[var(--color-text-secondary)]">
                   {t.min_photos}–{t.max_photos} photos · {t.description ?? 'no description'}
+                </p>
+                <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
+                  Response target:{' '}
+                  {t.response_target_minutes === null
+                    ? 'routing or department target'
+                    : `${t.response_target_minutes} minutes`}
                 </p>
                 <div className="mt-4 flex justify-end gap-2">
                   <Button

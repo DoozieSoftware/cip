@@ -16,6 +16,7 @@ export interface AdminReportType {
   requires_photo: boolean;
   min_photos: number;
   max_photos: number;
+  response_target_minutes: number | null;
   active: boolean;
   created_at?: string | null;
 }
@@ -33,6 +34,7 @@ export interface AdminReportTypeInput {
   requires_photo?: boolean;
   min_photos?: number;
   max_photos?: number;
+  response_target_minutes?: number | null;
   active?: boolean;
 }
 

@@ -135,6 +135,20 @@ export interface ReportDetail extends ReportListItem {
   assigned_to: { id: string; name: string } | null;
   audit_log: AuditEntry[];
   status_history: StatusHistoryEntry[];
+  proof_review?: ProofReview | null;
+}
+
+export interface ProofReview {
+  id: string;
+  status: 'match' | 'mismatch' | 'needs_review';
+  overall_confidence: number;
+  location_confidence: number;
+  visual_confidence: number;
+  location_match: boolean | null;
+  distance_meters: number | null;
+  summary: string;
+  perspective_note: string | null;
+  checked_at: string | null;
 }
 
 export interface AuditEntry {
@@ -155,7 +169,7 @@ export interface StatusHistoryEntry {
   created_at: string;
 }
 
-export type ModerationDecision = 'approve' | 'reject' | 'merge' | 'escalate';
+export type ModerationDecision = 'approve' | 'reject' | 'merge' | 'escalate' | 'complete_proof';
 
 export interface ReviewPayload {
   decision: ModerationDecision;

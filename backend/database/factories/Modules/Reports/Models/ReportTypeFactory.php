@@ -32,6 +32,7 @@ class ReportTypeFactory extends Factory
             'requires_photo' => true,
             'min_photos' => 1,
             'max_photos' => 5,
+            'response_target_minutes' => 2880,
             'validation_rules' => null,
             'active' => true,
         ];

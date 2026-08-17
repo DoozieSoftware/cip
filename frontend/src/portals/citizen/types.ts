@@ -66,6 +66,13 @@ export interface MediaItem {
 
 export type ProofMediaItem = MediaItem;
 
+export interface ProofReview {
+  status: 'accepted' | 'human_review' | 'reviewed';
+  label: string;
+  summary: string;
+  checked_at?: string | null;
+}
+
 export interface CanonicalReport {
   id: string;
   tracking_number: string;
@@ -89,6 +96,7 @@ export interface ReportDetail extends ReportSummary {
   merge_dispute?: MergeDispute | null;
   verification_deadline_at?: string | null;
   proof_photos?: ProofMediaItem[];
+  proof_review?: ProofReview | null;
 }
 
 export interface NotificationItem {

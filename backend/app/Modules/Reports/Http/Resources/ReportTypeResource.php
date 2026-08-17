@@ -35,6 +35,7 @@ class ReportTypeResource extends JsonResource
             'requires_photo' => (bool) $type->requires_photo,
             'min_photos' => $type->min_photos,
             'max_photos' => $type->max_photos,
+            'response_target_minutes' => $type->response_target_minutes,
             'workflow_definition_id' => $type->workflow_definition_id,
             'validation_rules' => $type->validation_rules,
             'active' => (bool) $type->active,

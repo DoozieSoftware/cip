@@ -6,6 +6,7 @@ namespace App\Modules\Moderation\Http\Resources;
 
 use App\Modules\AI\Models\AiJob;
 use App\Modules\Departments\Models\Department;
+use App\Modules\Departments\Models\ReportProofVerification;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Support\MediaUrl;
 use App\Modules\Reports\Http\Resources\ReportResource;
@@ -39,7 +40,7 @@ class ModeratorReportDetailResource extends JsonResource
     public function toArray(Request $request): array
     {
         $report = $this->resource;
-        $base = (new ReportResource($report))->resolve($request);
+        $base = (new ReportResource($report))->toArray($request);
 
         $department = $report->relationLoaded('department') ? $report->department : $report->department()->first();
         $location = $report->relationLoaded('location') ? $report->location : $report->location()->first();
@@ -60,6 +61,12 @@ class ModeratorReportDetailResource extends JsonResource
             ->latest('assigned_at')
             ->first();
 
+        $proofReview = ReportProofVerification::query()
+            ->where('report_id', $report->id)
+            ->whereHas('proofMedia', fn ($query) => $query->where('is_replaced', false))
+            ->latest('checked_at')
+            ->first();
+
         $auditLogs = AuditLog::query()
             ->where('entity_id', $report->id)
             ->with('user')
@@ -75,7 +82,7 @@ class ModeratorReportDetailResource extends JsonResource
         // over the base resource's fuller (and differently-shaped) one.
         return array_merge($base, [
             'category' => $base['report_type'],
-            'status_code' => $base['status']['code'] ?? null,
+            'status_code' => is_array($base['status'] ?? null) ? ($base['status']['code'] ?? null) : null,
             'department' => $department === null ? null : [
                 'id' => $department->id,
                 'code' => $department->code,
@@ -101,6 +108,18 @@ class ModeratorReportDetailResource extends JsonResource
                 'captured_at' => $m->captured_at?->toIso8601String(),
             ])->all(),
             'ai_result' => $this->buildAiResult($latestJob),
+            'proof_review' => $proofReview === null ? null : [
+                'id' => $proofReview->id,
+                'status' => $proofReview->status,
+                'overall_confidence' => $proofReview->overall_confidence,
+                'location_confidence' => $proofReview->location_confidence,
+                'visual_confidence' => $proofReview->visual_confidence,
+                'location_match' => $proofReview->location_match,
+                'distance_meters' => $proofReview->distance_meters,
+                'summary' => $proofReview->summary,
+                'perspective_note' => $proofReview->perspective_note,
+                'checked_at' => $proofReview->checked_at->toIso8601String(),
+            ],
             'assigned_to' => $activeAssignment?->officer === null ? null : [
                 'id' => $activeAssignment->officer->id,
                 'name' => $activeAssignment->officer->name,
@@ -117,7 +136,9 @@ class ModeratorReportDetailResource extends JsonResource
                 'from_code' => $h->fromStatus?->code,
                 'to_code' => $h->toStatus?->code,
                 'actor_id' => $h->actor_id,
-                'actor_name' => $h->actor?->name ?? self::actorRoleTitle($h->actor) ?? ($h->actor_id ? 'Official' : 'System'),
+                'actor_name' => isset($h->actor)
+                    ? ($h->actor->name ?? self::actorRoleTitle($h->actor) ?? ($h->actor_id ? 'Official' : 'System'))
+                    : ($h->actor_id ? 'Official' : 'System'),
                 'reason' => $h->reason,
                 'created_at' => $h->created_at?->toIso8601String(),
             ])->all(),

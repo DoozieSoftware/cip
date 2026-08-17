@@ -31,7 +31,13 @@ import {
 } from '../../../shared/ui';
 import { reportStatusTone, staffReportStatusLabel } from '../../../shared/statusDisplay';
 import { actionsApi, queueApi } from '../api/moderator';
-import type { MergePayload, ReportDetail, ReportStatusCode, ReviewPayload } from '../types';
+import type {
+  MergePayload,
+  ProofReview,
+  ReportDetail,
+  ReportStatusCode,
+  ReviewPayload,
+} from '../types';
 import { EvidenceViewer } from '../components/EvidenceViewer';
 import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 import { AiAnalysisPanel } from '../components/AiAnalysisPanel';
@@ -82,6 +88,8 @@ function ActionFooter({
   onReject,
   onMerge,
   onEscalate,
+  onCompleteProof,
+  proofReview,
   onAssign,
   busy,
 }: {
@@ -90,10 +98,13 @@ function ActionFooter({
   onReject: () => void;
   onMerge: () => void;
   onEscalate: () => void;
+  onCompleteProof: () => void;
+  proofReview: ProofReview | null;
   onAssign: () => void;
   busy: boolean;
 }) {
   const decisionsEnabled = MODERATION_OPEN_STATES.includes(statusCode);
+  const proofReviewEnabled = statusCode === 'resolved_pending_verification' && proofReview !== null;
 
   return (
     <div className="space-y-3" role="group" aria-label="Moderation actions">
@@ -109,6 +120,17 @@ function ActionFooter({
         >
           Approve
         </Button>
+        {proofReviewEnabled ? (
+          <Button
+            variant="success"
+            size="sm"
+            onClick={onCompleteProof}
+            disabled={busy}
+            leftIcon={<IconClipboardCheck className="h-4 w-4" stroke={1.6} />}
+          >
+            Complete after proof review
+          </Button>
+        ) : null}
         <Button
           variant="danger"
           size="md"
@@ -151,7 +173,7 @@ function ActionFooter({
           Reassign
         </Button>
       </div>
-      {!decisionsEnabled && (
+      {!decisionsEnabled && !proofReviewEnabled && (
         <p className="text-sm text-[#6f6e69]" role="status">
           Approve and Reject are available only while a report is awaiting moderator review.
         </p>
@@ -177,6 +199,7 @@ export default function ReportDetailPage() {
   const [mergeOpen, setMergeOpen] = useState(false);
   const [escalateOpen, setEscalateOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [completeProofOpen, setCompleteProofOpen] = useState(false);
 
   const [remarks, setRemarks] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -218,6 +241,7 @@ export default function ReportDetailPage() {
     setMergeOpen(false);
     setEscalateOpen(false);
     setAssignOpen(false);
+    setCompleteProofOpen(false);
     setRemarks('');
     setCategoryId('');
     setDepartmentId('');
@@ -254,6 +278,7 @@ export default function ReportDetailPage() {
       qc.setQueryData(['moderator', 'reports', id], updated);
       void qc.invalidateQueries({ queryKey: ['moderator', 'queue'] });
       setApproveOpen(false);
+      setCompleteProofOpen(false);
       setRemarks('');
       void navigate('/moderator/queue');
     },
@@ -497,6 +522,8 @@ export default function ReportDetailPage() {
                   onReject={() => setRejectOpen(true)}
                   onMerge={() => setMergeOpen(true)}
                   onEscalate={() => setEscalateOpen(true)}
+                  onCompleteProof={() => setCompleteProofOpen(true)}
+                  proofReview={data.proof_review ?? null}
                   onAssign={() => setAssignOpen(true)}
                   busy={
                     review.isPending || reject.isPending || merge.isPending || escalate.isPending
@@ -641,6 +668,62 @@ export default function ReportDetailPage() {
               />
               I am overriding the AI recommendation
             </label>
+          </div>
+        </Dialog>
+
+        <Dialog
+          open={completeProofOpen}
+          onClose={() => setCompleteProofOpen(false)}
+          title="Complete after proof review"
+          size="md"
+          footer={
+            <>
+              <Button
+                variant="secondary"
+                onClick={() => setCompleteProofOpen(false)}
+                disabled={review.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="success"
+                loading={review.isPending}
+                onClick={() =>
+                  review.mutate({
+                    decision: 'complete_proof',
+                    remarks: remarks.trim() || undefined,
+                  })
+                }
+              >
+                Mark completed
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-3">
+            <p className="text-sm text-[#6f6e69]">
+              This closes the report after you review the completion proof. The citizen will see
+              that the proof was handled by a moderator.
+            </p>
+            {data.proof_review ? (
+              <div className="rounded-lg border border-[#e4e2dc] bg-[#faf9f6] p-3 text-sm">
+                <p className="font-medium text-[#1d1d1b]">{data.proof_review.summary}</p>
+                <p className="mt-1 text-xs text-[#6f6e69]">
+                  {data.proof_review.overall_confidence}% overall confidence
+                  {data.proof_review.distance_meters !== null
+                    ? ` · ${Math.round(data.proof_review.distance_meters)} m from report location`
+                    : ' · GPS unavailable'}
+                </p>
+              </div>
+            ) : null}
+            <Textarea
+              label="Notes (optional)"
+              name="proof_remarks"
+              rows={3}
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              placeholder="Briefly note the proof-review decision."
+            />
           </div>
         </Dialog>
 

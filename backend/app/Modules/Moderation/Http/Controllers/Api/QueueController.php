@@ -27,7 +27,7 @@ class QueueController extends BaseController
         $query = $this->queueService->baseQueueQuery();
 
         if (! $request->has('status')) {
-            $query->whereIn('current_status_id', $this->queueService->statusIdsFor(['submitted', 'ai_processing', 'pending_moderator', 'escalated']));
+            $this->queueService->applyDefaultQueueScope($query);
         }
 
         $this->queueService->applyFilters($query, $request);

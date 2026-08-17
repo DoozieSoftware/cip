@@ -65,7 +65,7 @@ class RoutingFallbackService
      * suitable for the `AssignmentService`. The priority and
      * SLA carry over from the report (the fallback honours
      * the moderator's earlier choice when present) and fall
-     * back to "medium" / 24h.
+     * back to the configured platform default.
      */
     public function decisionFor(Report $report): RoutingDecision
     {
@@ -88,7 +88,10 @@ class RoutingFallbackService
             department: $department,
             officer: null,
             priority: $priority,
-            slaMinutes: self::DEFAULT_SLA_MINUTES,
+            slaMinutes: is_int($report->reportType?->response_target_minutes)
+                && $report->reportType->response_target_minutes > 0
+                ? $report->reportType->response_target_minutes
+                : self::DEFAULT_SLA_MINUTES,
         );
     }
 }

@@ -43,9 +43,21 @@ export function CitizenResolutionCard({
   const [reason, setReason] = useState('');
 
   const isAwaiting = report.status?.code === 'resolved_pending_verification';
+  const proofReview = report.proof_review;
 
-  if (!isAwaiting) {
+  if (!isAwaiting && !proofReview) {
     return null;
+  }
+
+  if (!isAwaiting && proofReview) {
+    return (
+      <section className="rounded-xl border border-sky-200 bg-sky-50 p-4">
+        <h2 className="flex items-center gap-2 text-sm font-medium text-sky-900">
+          {proofReview.label}
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-sky-800">{proofReview.summary}</p>
+      </section>
+    );
   }
 
   const deadline = report.verification_deadline_at

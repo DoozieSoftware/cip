@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property bool $requires_photo
  * @property int $min_photos
  * @property int $max_photos
+ * @property int|null $response_target_minutes
  * @property string|null $workflow_definition_id
  * @property array<string, mixed>|null $validation_rules
  * @property int $sort_order
@@ -65,6 +66,7 @@ class ReportType extends Model
         'requires_photo',
         'min_photos',
         'max_photos',
+        'response_target_minutes',
         'workflow_definition_id',
         'validation_rules',
         'sort_order',
@@ -83,6 +85,7 @@ class ReportType extends Model
             'aliases' => 'array',
             'min_photos' => 'integer',
             'max_photos' => 'integer',
+            'response_target_minutes' => 'integer',
             'validation_rules' => 'array',
             'sort_order' => 'integer',
             'active' => 'boolean',

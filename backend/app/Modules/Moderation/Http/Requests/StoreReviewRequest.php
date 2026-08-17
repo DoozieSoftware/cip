@@ -33,7 +33,7 @@ class StoreReviewRequest extends FormRequest
             // `reject` and `escalate` shortcut endpoints set it
             // themselves. The per-decision value is enforced by the
             // ReviewReportDto::fromArray() factory.
-            'decision' => ['nullable', 'string', 'in:approve,reject,merge,escalate'],
+            'decision' => ['nullable', 'string', 'in:approve,reject,merge,escalate,complete_proof'],
             'department_id' => ['nullable', 'string', 'uuid'],
             'category_id' => ['nullable', 'string', 'uuid'],
             'category_ids' => ['nullable', 'array'],
@@ -52,7 +52,7 @@ class StoreReviewRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'decision.in' => 'decision must be one of: approve, reject, merge, escalate.',
+            'decision.in' => 'decision must be one of: approve, reject, merge, escalate, complete_proof.',
             'merge_into_report_id.different' => 'A report cannot be merged into itself.',
         ];
     }

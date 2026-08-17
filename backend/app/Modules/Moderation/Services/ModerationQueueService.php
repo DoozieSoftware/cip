@@ -9,6 +9,7 @@ use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Reports\Models\ReportType;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Request;
 
 class ModerationQueueService
@@ -130,5 +131,33 @@ class ModerationQueueService
 
         /** @var list<string> $ids */
         return $ids;
+    }
+
+    /**
+     * Include proof reviews in the normal moderator queue. These reports stay
+     * in resolved_pending_verification so citizens can still confirm or
+     * dispute the fix, while the moderator can close weak/mismatched proof.
+     *
+     * @param  Builder<Report>  $query
+     */
+    public function applyDefaultQueueScope(Builder $query): void
+    {
+        $statusIds = $this->statusIdsFor(['submitted', 'ai_processing', 'pending_moderator', 'escalated']);
+        $proofStatusId = $this->statusIdsFor(['resolved_pending_verification']);
+
+        $query->where(function (Builder $scope) use ($statusIds, $proofStatusId): void {
+            $scope->whereIn('current_status_id', $statusIds)
+                ->orWhere(function (Builder $proofScope) use ($proofStatusId): void {
+                    $proofScope
+                        ->whereIn('current_status_id', $proofStatusId)
+                        ->whereExists(function (QueryBuilder $proofQuery): void {
+                            $proofQuery->selectRaw('1')
+                                ->from('report_proof_verifications')
+                                ->join('media as proof_media', 'proof_media.id', '=', 'report_proof_verifications.proof_media_id')
+                                ->whereColumn('report_proof_verifications.report_id', 'reports.id')
+                                ->where('proof_media.is_replaced', false);
+                        });
+                });
+        });
     }
 }

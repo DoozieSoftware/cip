@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Reports\Http\Resources;
 
+use App\Modules\Departments\Models\ReportProofVerification;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Support\MediaUrl;
 use App\Modules\Reports\Models\Report;
@@ -56,6 +57,12 @@ class CitizenReportResource extends JsonResource
             ->where('role', 'proof')
             ->where('is_replaced', false)
             ->values();
+        $proofVerification = ReportProofVerification::query()
+            ->where('report_id', $report->id)
+            ->whereHas('proofMedia', fn ($query) => $query->where('is_replaced', false))
+            ->latest('checked_at')
+            ->first();
+        $proofReviewCompleted = $status !== null && in_array($status->code, ['verified', 'closed'], true);
         $mediaUrl = app(MediaUrl::class);
 
         return [
@@ -120,6 +127,20 @@ class CitizenReportResource extends JsonResource
                 'kind' => 'photo',
                 'signed_url' => $mediaUrl->temporary($media),
             ])->all(),
+            'proof_review' => $proofVerification === null ? null : [
+                'status' => $proofVerification->status === 'match'
+                    ? 'accepted'
+                    : ($proofReviewCompleted ? 'reviewed' : 'human_review'),
+                'label' => $proofVerification->status === 'match'
+                    ? 'Proof accepted'
+                    : ($proofReviewCompleted ? 'Proof review completed' : 'Proof review in progress'),
+                'summary' => $proofVerification->status === 'match'
+                    ? 'The completion proof passed review.'
+                    : ($proofReviewCompleted
+                        ? 'The completion proof was reviewed and the report is now complete.'
+                        : 'The completion proof is awaiting moderator review.'),
+                'checked_at' => $proofVerification->checked_at->toIso8601String(),
+            ],
             'merged_into' => $report->merged_into,
             'merged_at' => $report->merged_at?->toIso8601String(),
             'canonical_report' => $mergedInto === null ? null : [

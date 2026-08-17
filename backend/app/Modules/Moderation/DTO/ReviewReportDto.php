@@ -15,11 +15,11 @@ use Illuminate\Support\Str;
  * validated, immutable input to `ModerationService::review()`.
  *
  * The DTO is intentionally narrow: the four moderation decisions
- * (approve / reject / merge / escalate) all share the same wire
+ * (approve / reject / merge / escalate / complete_proof) all share the same wire
  * shape, with `decision` differentiating them. The service layer
  * dispatches on `decision` and ignores the irrelevant fields.
  *
- * @phpstan-type DecisionType 'approve'|'reject'|'merge'|'escalate'
+ * @phpstan-type DecisionType 'approve'|'reject'|'merge'|'escalate'|'complete_proof'
  */
 final readonly class ReviewReportDto
 {
@@ -31,11 +31,14 @@ final readonly class ReviewReportDto
 
     public const DECISION_ESCALATE = 'escalate';
 
+    public const DECISION_COMPLETE_PROOF = 'complete_proof';
+
     public const ALLOWED_DECISIONS = [
         self::DECISION_APPROVE,
         self::DECISION_REJECT,
         self::DECISION_MERGE,
         self::DECISION_ESCALATE,
+        self::DECISION_COMPLETE_PROOF,
     ];
 
     /**

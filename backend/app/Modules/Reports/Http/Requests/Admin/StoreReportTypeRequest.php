@@ -51,6 +51,7 @@ class StoreReportTypeRequest extends FormRequest
             'requires_photo' => ['nullable', 'boolean'],
             'min_photos' => ['nullable', 'integer', 'min:0', 'max:99'],
             'max_photos' => ['nullable', 'integer', 'min:0', 'max:99'],
+            'response_target_minutes' => ['nullable', 'integer', 'min:1', 'max:525600'],
             'workflow_definition_id' => ['nullable', 'string', 'uuid'],
             'validation_rules' => ['nullable', 'array'],
             'active' => ['nullable', 'boolean'],

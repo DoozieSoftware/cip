@@ -37,6 +37,8 @@ final class ReportModerated
 
     public const DECISION_ESCALATE = 'escalate';
 
+    public const DECISION_COMPLETE_PROOF = 'complete_proof';
+
     /**
      * @param  array<string, mixed>  $metadata
      */

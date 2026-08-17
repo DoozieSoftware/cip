@@ -41,7 +41,7 @@ class RoutingEngine
                 continue;
             }
 
-            return RoutingDecision::fromRule($rule);
+            return $this->applyIssueTypeTarget($report, RoutingDecision::fromRule($rule));
         }
 
         return null;
@@ -55,19 +55,23 @@ class RoutingEngine
      */
     public function resolveWith(Report $report, iterable $rules): ?RoutingDecision
     {
-        $sorted = Collection::make($rules)
-            ->sortBy([
-                ['priority', 'asc'],
-                ['id', 'asc'],
-            ])
-            ->values();
+        /** @var list<RoutingRule> $sorted */
+        $sorted = [];
+
+        foreach ($rules as $rule) {
+            $sorted[] = $rule;
+        }
+
+        usort($sorted, static function (RoutingRule $left, RoutingRule $right): int {
+            return [$left->priority, $left->id] <=> [$right->priority, $right->id];
+        });
 
         foreach ($sorted as $rule) {
             if (! $this->condition->evaluate($rule->conditions ?? [], $report)) {
                 continue;
             }
 
-            return RoutingDecision::fromRule($rule);
+            return $this->applyIssueTypeTarget($report, RoutingDecision::fromRule($rule));
         }
 
         return null;
@@ -79,5 +83,14 @@ class RoutingEngine
     private function loadActiveRules(): Collection
     {
         return $this->repository->activeRules();
+    }
+
+    private function applyIssueTypeTarget(Report $report, RoutingDecision $decision): RoutingDecision
+    {
+        $target = $report->reportType?->response_target_minutes;
+
+        return is_int($target) && $target > 0
+            ? $decision->withSlaMinutes($target)
+            : $decision;
     }
 }
