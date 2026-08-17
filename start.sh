@@ -167,14 +167,18 @@ fi
 # ── 6. Start servers ──────────────────────────────────────────────
 info "Starting servers..."
 
-cd "$ROOT/backend"
-$PHP artisan serve --port=$BACKEND_PORT --host=0.0.0.0 > /tmp/cip-backend.log 2>&1 &
+# Run the PHP development server directly so these upload limits apply to
+# the process that parses multipart requests. `artisan serve` starts a child
+# `php -S` process without forwarding command-line `-d` settings.
+cd "$ROOT/backend/public"
+$PHP -d upload_max_filesize=64M -d post_max_size=64M -S 0.0.0.0:$BACKEND_PORT "$ROOT/backend/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php" > /tmp/cip-backend.log 2>&1 &
 BACKEND_PID=$!
 
 # Report submission, moderator queue population (AI processing), and
 # notifications all run as queued jobs (QUEUE_CONNECTION=redis) —
 # without a worker consuming them, reports sit at "Submitted" forever
 # and never reach the moderator queue.
+cd "$ROOT/backend"
 $PHP artisan queue:work --queue=media,ai,default --tries=3 --sleep=1 > /tmp/cip-queue.log 2>&1 &
 QUEUE_PID=$!
 $PHP artisan schedule:work > /tmp/cip-scheduler.log 2>&1 &

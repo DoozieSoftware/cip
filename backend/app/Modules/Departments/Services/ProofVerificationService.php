@@ -91,19 +91,33 @@ class ProofVerificationService
 
     public function assertAssignmentHasProof(Report $report, ReportAssignment $assignment): void
     {
-        $proof = Media::query()
+        $proofIds = Media::query()
             ->where('report_id', $report->getKey())
             ->where('assignment_id', $assignment->getKey())
             ->where('role', 'proof')
             ->where('type', 'PHOTO')
             ->where('scan_status', MediaScanStatus::CLEAN->value)
-            ->exists();
+            ->pluck('id');
 
-        if (! $proof) {
+        if ($proofIds->isEmpty()) {
             throw new ApiException(
                 'PROOF_REQUIRED',
                 'Upload at least one proof photo from the work location before marking this work fixed.',
                 422,
+            );
+        }
+
+        $hasVerification = ReportProofVerification::query()
+            ->where('report_id', $report->getKey())
+            ->where('assignment_id', $assignment->getKey())
+            ->whereIn('proof_media_id', $proofIds)
+            ->exists();
+
+        if (! $hasVerification) {
+            throw new ApiException(
+                'PROOF_VERIFICATION_PENDING',
+                'The proof photo was uploaded successfully and AI verification is still processing.',
+                409,
             );
         }
     }

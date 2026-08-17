@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Departments\Http\Controllers\Api;
 
+use App\Modules\Departments\Jobs\VerifyProofJob;
 use App\Modules\Departments\Services\DepartmentProofAssignmentService;
-use App\Modules\Departments\Services\ProofVerificationService;
 use App\Modules\Media\Http\Requests\UploadMediaRequest;
 use App\Modules\Media\Http\Resources\MediaResource;
 use App\Modules\Media\Models\Media;
@@ -24,7 +24,6 @@ class DepartmentReportProofController
     public function __construct(
         private readonly MediaService $mediaService,
         private readonly DepartmentProofAssignmentService $assignments,
-        private readonly ProofVerificationService $proofVerification,
     ) {}
 
     public function uploadProof(Report $report, UploadMediaRequest $request): JsonResponse
@@ -59,14 +58,17 @@ class DepartmentReportProofController
                 $capture === [] ? null : ['capture' => $capture],
             );
 
-            $this->proofVerification->verify($media);
+            VerifyProofJob::dispatch((string) $media->id);
             $created[] = new MediaResource($media);
         }
 
         return response()->json([
             'success' => true,
-            'data' => ['media' => $created],
-            'message' => 'Proof photos uploaded',
+            'data' => [
+                'media' => $created,
+                'verification_status' => 'processing',
+            ],
+            'message' => 'Proof photos uploaded; AI verification is processing',
             'trace_id' => $request->attributes->get('trace_id'),
         ], 201);
     }

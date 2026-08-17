@@ -108,6 +108,22 @@ const STATUS_GUIDANCE: Record<string, string> = {
   merged: 'This report was merged into another case.',
 };
 
+function hasPendingProofVerification(report: DepartmentReportDetail | undefined): boolean {
+  if (!report) return false;
+
+  const assignmentId = report.assignment?.id;
+  const verifiedMediaIds = new Set(
+    report.proof_verifications.map((verification) => verification.proof_media_id),
+  );
+
+  return report.media.some(
+    (media) =>
+      media.role === 'proof' &&
+      (!assignmentId || media.assignment_id === assignmentId) &&
+      !verifiedMediaIds.has(media.id),
+  );
+}
+
 const ACTION_DESCRIPTION: Record<WorkflowEvent, string> = {
   accept: 'Accept this report and take responsibility for resolving it.',
   start: 'Start field work on this report.',
@@ -231,6 +247,7 @@ export default function ReportDetailPage() {
     queryKey: ['operations', 'report', reportId, selectedId],
     queryFn: () => departmentApi.showReportInDepartment(reportId, selectedId ?? ''),
     enabled: Boolean(reportId) && ready && memberships.length > 0 && Boolean(selectedId),
+    refetchInterval: (query) => (hasPendingProofVerification(query.state.data) ? 3_000 : false),
   });
 
   const { data: notesData, refetch: refetchNotes } = useQuery<InternalNote[]>({
@@ -250,6 +267,13 @@ export default function ReportDetailPage() {
     ? proof.filter((m) => m.assignment_id === selectedAssignmentId)
     : proof;
   const hasProofForSelectedWork = selectedAssignmentProof.length > 0;
+  const verifiedProofMediaIds = new Set(
+    (report?.proof_verifications ?? []).map((verification) => verification.proof_media_id),
+  );
+  const pendingProofCount = selectedAssignmentProof.filter(
+    (media) => !verifiedProofMediaIds.has(media.id),
+  ).length;
+  const isProofVerificationPending = pendingProofCount > 0;
   const latestProofVerification = report?.proof_verifications?.[0] ?? null;
 
   const action = useMutation({
@@ -310,8 +334,24 @@ export default function ReportDetailPage() {
         report?.assignment?.id,
         selectedId ?? report?.assignment?.department_id ?? undefined,
       ),
-    onSuccess: () => {
+    onSuccess: (response) => {
       setProofCaptureError(null);
+      queryClient.setQueryData<DepartmentReportDetail>(
+        ['operations', 'report', reportId, selectedId],
+        (current) => {
+          if (!current) return current;
+
+          const uploadedIds = new Set(response.media.map((media) => media.id));
+
+          return {
+            ...current,
+            media: [
+              ...current.media.filter((media) => !uploadedIds.has(media.id)),
+              ...response.media,
+            ],
+          };
+        },
+      );
       void queryClient.invalidateQueries({ queryKey: ['operations', 'report', reportId] });
     },
   });
@@ -328,12 +368,18 @@ export default function ReportDetailPage() {
       if (reportId === '' || actionPending || report?.current_status_code !== actionStatus[event]) {
         return;
       }
-      if (event === 'resolve' && !hasProofForSelectedWork) {
+      if (event === 'resolve' && (!hasProofForSelectedWork || isProofVerificationPending)) {
         return;
       }
       setPendingAction(event);
     },
-    [actionPending, hasProofForSelectedWork, report?.current_status_code, reportId],
+    [
+      actionPending,
+      hasProofForSelectedWork,
+      isProofVerificationPending,
+      report?.current_status_code,
+      reportId,
+    ],
   );
 
   const confirmAction = useCallback(
@@ -559,7 +605,11 @@ export default function ReportDetailPage() {
                     key={event}
                     type="button"
                     onClick={() => requestAction(event)}
-                    disabled={actionPending || (event === 'resolve' && !hasProofForSelectedWork)}
+                    disabled={
+                      actionPending ||
+                      (event === 'resolve' &&
+                        (!hasProofForSelectedWork || isProofVerificationPending))
+                    }
                     aria-keyshortcuts={meta.shortcut}
                     className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
                       event === 'accept' || event === 'start'
@@ -596,6 +646,11 @@ export default function ReportDetailPage() {
           {availableActions.includes('resolve') && !hasProofForSelectedWork && (
             <p className="w-full text-xs text-amber-700 sm:basis-full">
               Upload at least one proof photo with current location before marking this work fixed.
+            </p>
+          )}
+          {availableActions.includes('resolve') && isProofVerificationPending && (
+            <p className="w-full text-xs text-amber-700 sm:basis-full">
+              Proof upload is complete. Wait for AI verification before marking this work fixed.
             </p>
           )}
           {action.isError && (
@@ -647,7 +702,9 @@ export default function ReportDetailPage() {
                 <button
                   type="button"
                   onClick={() => setTaskCompletionPending(true)}
-                  disabled={completeTask.isPending || !hasProofForSelectedWork}
+                  disabled={
+                    completeTask.isPending || !hasProofForSelectedWork || isProofVerificationPending
+                  }
                   className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-5 py-2 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:opacity-50"
                 >
                   {completeTask.isPending ? (
@@ -719,7 +776,9 @@ export default function ReportDetailPage() {
                   <span className="text-xs text-emerald-700">
                     {selectedAssignmentProof.length === 0
                       ? 'Awaiting proof'
-                      : `${selectedAssignmentProof.length} uploaded`}
+                      : isProofVerificationPending
+                        ? 'AI verification'
+                        : `${selectedAssignmentProof.length} uploaded`}
                   </span>
                 </div>
                 {selectedAssignmentProof.length === 0 ? (
@@ -778,6 +837,22 @@ export default function ReportDetailPage() {
             {latestProofVerification && (
               <ProofVerificationCard verification={latestProofVerification} />
             )}
+            {isProofVerificationPending && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="mt-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900"
+              >
+                <Spinner label="AI proof verification in progress" className="mt-0.5 h-4 w-4" />
+                <div>
+                  <p className="text-sm font-semibold">Photo upload complete</p>
+                  <p className="mt-0.5 text-xs leading-5">
+                    AI verification is in progress. This usually takes about a minute; this page
+                    will update automatically when it finishes.
+                  </p>
+                </div>
+              </div>
+            )}
             {!isTerminal && (
               <div className="mt-4 flex flex-col gap-2 border-t border-[var(--color-canvas)] pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-[var(--color-text-tertiary)]">
@@ -800,7 +875,7 @@ export default function ReportDetailPage() {
                   className="inline-flex items-center gap-2 rounded-full bg-[var(--color-canvas)] px-4 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)]/80 disabled:opacity-50"
                 >
                   <IconUpload size={14} stroke={1.6} />
-                  {uploadProof.isPending ? 'Uploading...' : 'Upload proof with location'}
+                  {uploadProof.isPending ? 'Uploading photo…' : 'Upload proof with location'}
                 </button>
                 {proofCaptureError && (
                   <p role="alert" className="text-sm text-red-600">

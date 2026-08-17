@@ -137,7 +137,10 @@ export const departmentApi = {
     if (note) {
       form.append('note', note);
     }
-    return api.upload<{ media: DepartmentReportMedia[] }>(`/department/reports/${id}/photos`, form);
+    return api.upload<{
+      media: DepartmentReportMedia[];
+      verification_status: 'processing';
+    }>(`/department/reports/${id}/photos`, form);
   },
 
   /**

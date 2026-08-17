@@ -318,6 +318,23 @@ describe('ReportDetailPage', () => {
             created_at: '2026-08-02T10:00:00+05:30',
           },
         ],
+        proof_verifications: [
+          {
+            id: 'verification-1',
+            proof_media_id: 'proof-1',
+            assignment_id: 'assignment-1',
+            department_id: 'dept-1',
+            status: 'match',
+            location_confidence: 95,
+            visual_confidence: 90,
+            overall_confidence: 93,
+            distance_meters: 8,
+            location_match: true,
+            summary: 'Proof matches the completed work.',
+            perspective_note: null,
+            checked_at: '2026-08-02T10:01:00+05:30',
+          },
+        ],
       }),
     );
 
@@ -365,7 +382,10 @@ describe('ReportDetailPage', () => {
     });
     renderPage(baseReport());
     const file = new File(['x'], 'after-fix.jpg', { type: 'image/jpeg' });
-    vi.mocked(departmentApi.uploadProof).mockResolvedValue({ media: [] });
+    vi.mocked(departmentApi.uploadProof).mockResolvedValue({
+      media: [],
+      verification_status: 'processing',
+    });
 
     const input = await screen.findByLabelText('Proof photo input');
     fireEvent.change(input, { target: { files: [file] } });
@@ -388,6 +408,47 @@ describe('ReportDetailPage', () => {
       ),
     );
     await waitFor(() => expect(departmentApi.showReportInDepartment).toHaveBeenCalledTimes(2));
+  });
+
+  it('shows AI verification separately from upload and blocks completion while it runs', async () => {
+    const assignment = {
+      id: 'assignment-1',
+      department_id: 'dept-1',
+      is_primary: true,
+      kind: 'primary' as const,
+      status: 'open' as const,
+      sla_minutes: 480,
+      assigned_at: '2026-08-01T09:00:00+05:30',
+      accepted_at: null,
+      completed_at: null,
+      officer: null,
+    };
+
+    renderPage(
+      baseReport({
+        current_status_code: 'in_progress',
+        assignment,
+        assignments: [assignment],
+        media: [
+          {
+            id: 'proof-pending',
+            assignment_id: assignment.id,
+            department_id: assignment.department_id,
+            type: 'image',
+            role: 'proof',
+            mime: 'image/jpeg',
+            url: 'https://example.test/proof-pending.jpg',
+            width: 800,
+            height: 600,
+            created_at: '2026-08-02T10:00:00+05:30',
+          },
+        ],
+      }),
+    );
+
+    expect(await screen.findByText('Photo upload complete')).toBeInTheDocument();
+    expect(screen.getByText(/AI verification is in progress/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mark as fixed' })).toBeDisabled();
   });
 });
 

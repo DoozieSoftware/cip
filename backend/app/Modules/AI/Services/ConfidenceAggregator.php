@@ -8,25 +8,25 @@ namespace App\Modules\AI\Services;
  * Maps the AI provider's overall confidence to a routing
  * decision per docs/10 §13.
  *
- *   confidence > 90  →  auto_route
+ *   confidence >= 95  →  auto_route
  *                       the orchestrator trusts the
  *                       prediction enough to route
  *                       directly to the recommended
  *                       department (M7 routing rules
  *                       win)
- *   75 ≤ confidence ≤ 90  →  moderator_review
+ *   80 ≤ confidence < 95  →  moderator_review
  *                       the AI's prediction is shown
  *                       to a moderator as a strong
  *                       recommendation, but a human
  *                       always has the final say
- *   confidence < 75  →  manual_classification
+ *   confidence < 80  →  manual_classification
  *                       the AI's prediction is shown
  *                       only as a hint; the moderator
  *                       must classify from scratch
  *
  * Thresholds are config-driven via
  * `config('cip.ai.confidence.*')` with safe defaults
- * of 90 and 75.
+ * of 95 and 80.
  */
 class ConfidenceAggregator
 {
@@ -38,10 +38,12 @@ class ConfidenceAggregator
 
     public function decide(int|float $confidence): string
     {
-        $auto = (int) config('cip.ai.confidence.auto_route_min', 95);
-        $review = (int) config('cip.ai.confidence.moderator_review_min', 80);
+        $autoValue = config('cip.ai.confidence.auto_route_min', 95);
+        $reviewValue = config('cip.ai.confidence.moderator_review_min', 80);
+        $auto = is_numeric($autoValue) ? (int) $autoValue : 95;
+        $review = is_numeric($reviewValue) ? (int) $reviewValue : 80;
 
-        if ($confidence > $auto) {
+        if ($confidence >= $auto) {
             return self::DECISION_AUTO_ROUTE;
         }
 

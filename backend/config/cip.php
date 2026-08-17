@@ -32,14 +32,14 @@ return [
     ],
     'ai' => [
         'confidence' => [
-            // Reports with AI confidence > this value are auto-routed
+            // Reports with AI confidence at or above this value are auto-routed
             // to the recommended department without moderator review.
-            // The vision provider caps at 0.95 and quality calibration
-            // can reduce it further, so 90 catches the realistic range.
-            'auto_route_min' => (int) env('CIP_AI_AUTO_ROUTE_MIN', 90),
+            // The product specification reserves auto-routing for 95+;
+            // lower-confidence recommendations must pass through moderation.
+            'auto_route_min' => (int) env('CIP_AI_AUTO_ROUTE_MIN', 95),
             // Reports with confidence >= this value go to moderator
             // review (AI recommends, human decides).
-            'moderator_review_min' => (int) env('CIP_AI_MODERATOR_REVIEW_MIN', 75),
+            'moderator_review_min' => (int) env('CIP_AI_MODERATOR_REVIEW_MIN', 80),
         ],
         'proof_review' => [
             // MoM rule: only AI proof checks above this confidence can
