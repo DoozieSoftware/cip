@@ -6,6 +6,13 @@
 # a timestamped directory under BACKUP_ROOT. It never deletes old backups.
 set -Eeuo pipefail
 
+# cPanel may have an incomplete locale installation. Keep Perl-backed host
+# utilities (and the archive metadata they produce) deterministic instead of
+# allowing a locale warning to turn the pre-deploy backup into an abort.
+export LANG=C
+export LC_ALL=C
+export LANGUAGE=C
+
 APP_DIR="${APP_DIR:-$HOME/cip}"
 BACKUP_ROOT="${BACKUP_ROOT:-$HOME/cip-backups}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"

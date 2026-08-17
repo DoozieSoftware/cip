@@ -22,7 +22,11 @@ env:
 jobs:
   deploy:
     name: Build & Deploy
-    if: github.event.workflow_run.conclusion == 'success'
+    # Scheduled CI is a diagnostic full-suite audit, not a release event.
+    # Only a successful push to main may open the production deploy gate;
+    # otherwise a red nightly audit can block an already-green release and a
+    # green nightly audit could deploy without a new push.
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     environment:
       name: production
@@ -131,7 +135,7 @@ jobs:
           scp -P $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
             deploy/production/backup-production.sh $REMOTE:/tmp/cip-backup-production.sh
           ssh -p $SSH_PORT -i /tmp/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
-            $REMOTE "chmod 700 /tmp/cip-backup-production.sh && APP_DIR=\$HOME/cip BACKUP_ROOT=\$HOME/cip-backups bash /tmp/cip-backup-production.sh && rm -f /tmp/cip-backup-production.sh"
+            $REMOTE "chmod 700 /tmp/cip-backup-production.sh && export LANG=C LC_ALL=C LANGUAGE=C && APP_DIR=\$HOME/cip BACKUP_ROOT=\$HOME/cip-backups bash /tmp/cip-backup-production.sh && rm -f /tmp/cip-backup-production.sh"
 
           # Verify host capabilities before replacing application files. The
           # runtime readiness endpoint repeats these checks after deploy.

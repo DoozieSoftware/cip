@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { subscribeToPush } from '../subscribe';
+import { pushSupport, subscribeToPush } from '../subscribe';
+
+const originalNotification = globalThis.Notification;
+const originalPushManager = globalThis.PushManager;
+const originalNavigator = globalThis.navigator;
+const originalFetch = globalThis.fetch;
 
 type Perm = 'default' | 'granted' | 'denied';
 
@@ -67,14 +72,13 @@ describe('subscribeToPush (BUG #5)', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
-    // @ts-expect-error — reset
-    globalThis.Notification = undefined;
-    // @ts-expect-error — reset
-    globalThis.PushManager = undefined;
-    // @ts-expect-error — reset
-    globalThis.navigator = undefined;
-    // @ts-expect-error — reset
-    globalThis.fetch = undefined;
+    // Restore jsdom's browser globals so this serial Vitest pool does not
+    // leak an incomplete environment into unrelated suites (Leaflet, for
+    // example, reads navigator.userAgent during module evaluation).
+    globalThis.Notification = originalNotification;
+    globalThis.PushManager = originalPushManager;
+    globalThis.navigator = originalNavigator;
+    globalThis.fetch = originalFetch;
   });
 
   it('(a) fetches the configured VAPID key when none is supplied', async () => {
@@ -86,6 +90,14 @@ describe('subscribeToPush (BUG #5)', () => {
     const callArg = pushSubscribe.mock.calls[0][0] as { applicationServerKey?: BufferSource };
     expect(callArg.applicationServerKey).toBeDefined();
     expect(res.ok).toBe(true);
+  });
+
+  it('treats a partial Notification shim without permission as unsupported', () => {
+    installStubs();
+    // @ts-expect-error — intentionally incomplete browser shim
+    globalThis.Notification = {};
+
+    expect(pushSupport()).toEqual({ supported: false, permission: null });
   });
 
   it('passes the configured applicationServerKey through to pushManager.subscribe', async () => {

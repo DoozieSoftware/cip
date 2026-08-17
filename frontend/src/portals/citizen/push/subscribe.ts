@@ -36,7 +36,16 @@ export function pushSupport(): PushSupport {
   ) {
     return { supported: false, permission: null };
   }
-  return { supported: true, permission: Notification.permission };
+
+  // Some jsdom/browser shims expose Notification without the permission
+  // property. Treat that partial API as unsupported instead of leaking
+  // `undefined` through a contract that promises NotificationPermission|null.
+  const permission = Notification.permission;
+  if (permission !== 'default' && permission !== 'denied' && permission !== 'granted') {
+    return { supported: false, permission: null };
+  }
+
+  return { supported: true, permission };
 }
 
 export interface SubscribeOptions {
