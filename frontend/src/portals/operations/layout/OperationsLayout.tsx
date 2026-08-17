@@ -172,6 +172,14 @@ export function OperationsLayout(): JSX.Element {
                 Operations
               </div>
             </div>
+            <NavLink
+              to="/operations/profile"
+              aria-label="Profile"
+              title="Profile"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--color-text-secondary)] transition-colors hover:bg-[#e9e7e2] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+            >
+              <IconUser className="h-5 w-5" stroke={1.6} />
+            </NavLink>
             <button
               type="button"
               onClick={handleSignOut}

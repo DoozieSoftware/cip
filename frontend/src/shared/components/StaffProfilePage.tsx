@@ -176,7 +176,7 @@ export default function StaffProfilePage(): JSX.Element {
   return (
     <div className="space-y-6">
       <header className="flex items-start justify-between gap-5">
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
             Staff account
           </p>
@@ -234,7 +234,11 @@ export default function StaffProfilePage(): JSX.Element {
                 Profile updated.
               </p>
             ) : null}
-            <Button type="submit" disabled={saving || !canSave}>
+            <Button
+              type="submit"
+              disabled={saving || !canSave}
+              className="w-full justify-center sm:w-auto"
+            >
               {saving ? 'Saving…' : 'Save changes'}
             </Button>
           </form>
