@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Moderation\Services;
 
 use App\Modules\AI\Models\AiJob;
+use App\Modules\AI\Models\AiProviderConfig;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Reports\Models\ReportStatusHistory;
@@ -52,7 +53,7 @@ class ModerationAnalyticsService
      *   total_ai_decisions: int,
      *   overridden_by_moderator: int,
      *   override_rate_pct: float,
-     *   per_provider: array<int, array{provider_code: string, total: int, overridden: int, avg_confidence: float}>
+     *   per_provider: array<int, array{provider_code: string, provider_name: string, total: int, overridden: int, avg_confidence: float}>
      * }
      */
     public function aiPerformance(string $window = '7d'): array
@@ -142,9 +143,21 @@ class ModerationAnalyticsService
             }
         }
 
+        // Resolve human-readable display names from the provider config
+        // table and fall back to the raw code when a code has no config row
+        // (e.g. a job recorded before the provider was configured).
+        $providerNames = AiProviderConfig::query()
+            ->whereIn('code', array_keys($perProvider))
+            ->get(['code', 'name'])
+            ->mapWithKeys(
+                static fn (AiProviderConfig $config): array => [(string) $config->code => (string) $config->name]
+            )
+            ->all();
+
         $perProviderRows = array_values(array_map(
-            static fn (array $row): array => [
+            fn (array $row): array => [
                 'provider_code' => $row['provider_code'],
+                'provider_name' => $providerNames[$row['provider_code']] ?? $row['provider_code'],
                 'total' => $row['total'],
                 'overridden' => $row['overridden'],
                 'avg_confidence' => $row['total'] > 0 ? round($row['confidence_sum'] / $row['total'], 4) : 0.0,
@@ -166,6 +179,9 @@ class ModerationAnalyticsService
      */
     private function moderationActionRows(Carbon $since): Collection
     {
+        // PHPStan cannot see the joined `to_code` column shape on the model;
+        // the @return shape above is the contract callers rely on.
+        // @phpstan-ignore-next-line return.type
         return ReportStatusHistory::query()
             ->select([
                 'report_status_history.report_id',

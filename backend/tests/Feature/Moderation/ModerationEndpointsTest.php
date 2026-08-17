@@ -3,14 +3,17 @@
 declare(strict_types=1);
 
 use App\Modules\AI\Models\AiJob;
+use App\Modules\AI\Models\AiProviderConfig;
 use App\Modules\AI\Models\AiResult;
 use App\Modules\AI\Models\PromptVersion;
+use App\Modules\Departments\Models\Department;
 use App\Modules\Departments\Models\Ward;
 use App\Modules\Reports\Models\Location;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Reports\Models\ReportStatusHistory;
 use App\Modules\Reports\Models\ReportType;
+use App\Modules\Settings\Models\AppConfig;
 use App\Modules\Users\Models\User;
 use App\Modules\Workflow\Models\WorkflowDefinition;
 use App\Modules\Workflow\Services\WorkflowEngine;
@@ -32,6 +35,14 @@ beforeEach(function (): void {
     (new DefaultWorkflowSeeder)->run();
     (new GeographySeeder)->run();
     (new PromptsSeeder)->run();
+
+    // The approve/escalate review paths assign a routing destination and
+    // need the fallback department configured (see RoutingFallbackService).
+    $routingDept = Department::factory()->create();
+    AppConfig::query()->updateOrCreate(
+        ['key' => 'routing_default_department_id'],
+        ['value' => ['department_id' => $routingDept->id]],
+    );
 });
 
 if (! function_exists('landReportInPendingModerator')) {
@@ -52,10 +63,16 @@ if (! function_exists('landReportInPendingModerator')) {
 
         $system = User::factory()->create();
         $system->assignRole('system');
-        $d = $engine->evaluate($report, 'ai_complete', $system);
-        $engine->apply($report, $d, $system);
-        $report = $report->refresh();
 
+        if ($report->status?->code === 'submitted') {
+            // ReportSubmittedListener auto-advances submitted → ai_processing,
+            // but it is faked away in some suites (Event::fake) — advance manually.
+            $d = $engine->evaluate($report, 'ai_complete', $system);
+            $engine->apply($report, $d, $system);
+            $report = $report->refresh();
+        }
+
+        // moderator_review requires a system actor.
         $d = $engine->evaluate($report, 'moderator_review', $system);
         $engine->apply($report, $d, $system);
 
@@ -119,15 +136,15 @@ it('filters the queue by ward, category, and confidence', function (): void {
 
     $pothole = ReportType::query()->where('code', 'roads')->firstOrFail();
     $garbage = ReportType::query()->where('code', 'garbage')->firstOrFail();
-    $ward12 = Ward::query()->where('ward_number', 12)->firstOrFail();
+    $ward1 = Ward::query()->where('ward_number', 1)->firstOrFail();
     $ward50 = Ward::query()->where('ward_number', 50)->firstOrFail();
 
-    $loc12 = Location::factory()->create(['ward_id' => $ward12->id]);
+    $loc1 = Location::factory()->create(['ward_id' => $ward1->id]);
     $loc50 = Location::factory()->create(['ward_id' => $ward50->id]);
 
     $match = landReportInPendingModerator();
     $match->report_type_id = $pothole->id;
-    $match->location_id = $loc12->id;
+    $match->location_id = $loc1->id;
     $match->ai_confidence = 85.0;
     $match->save();
 
@@ -141,10 +158,10 @@ it('filters the queue by ward, category, and confidence', function (): void {
         $this->getJson($url)->assertStatus(200)->json('data.items')
     )->pluck('id')->all();
 
-    // Ward filter accepts bare numbers and "W-12" style.
-    expect($idsFor('/api/v1/moderator/queue?ward=W-12'))->toContain($match->id)
-        ->and($idsFor('/api/v1/moderator/queue?ward=W-12'))->not->toContain($other->id)
-        ->and($idsFor('/api/v1/moderator/queue?ward=12'))->toContain($match->id);
+    // Ward filter accepts bare numbers and "W-1" style.
+    expect($idsFor('/api/v1/moderator/queue?ward=W-1'))->toContain($match->id)
+        ->and($idsFor('/api/v1/moderator/queue?ward=W-1'))->not->toContain($other->id)
+        ->and($idsFor('/api/v1/moderator/queue?ward=1'))->toContain($match->id);
 
     // Category filter resolves report-type code to id.
     expect($idsFor('/api/v1/moderator/queue?category=roads'))->toContain($match->id)
@@ -157,8 +174,8 @@ it('filters the queue by ward, category, and confidence', function (): void {
         ->and($idsFor('/api/v1/moderator/queue?confidence_min=90'))->not->toContain($match->id);
 
     // Combined filters narrow the result.
-    expect($idsFor('/api/v1/moderator/queue?category=roads&ward=12&confidence_min=80'))->toContain($match->id)
-        ->and($idsFor('/api/v1/moderator/queue?category=roads&ward=12&confidence_min=80'))->not->toContain($other->id);
+    expect($idsFor('/api/v1/moderator/queue?category=roads&ward=1&confidence_min=80'))->toContain($match->id)
+        ->and($idsFor('/api/v1/moderator/queue?category=roads&ward=1&confidence_min=80'))->not->toContain($other->id);
 });
 
 it('returns the duplicate queue when duplicate_score is set', function (): void {
@@ -301,13 +318,79 @@ it('counts one ai decision per report despite multiple moderation actions', func
     // One report => one decision (the final escalation), counted as overridden.
     expect($response->json('data.total_ai_decisions'))->toBe(1);
     expect($response->json('data.overridden_by_moderator'))->toBe(1);
-    expect($response->json('data.override_rate_pct'))->toBe(100.0);
+    // JSON encodes 100.0 as the integer 100.
+    expect($response->json('data.override_rate_pct'))->toBe(100);
 
     $perProvider = $response->json('data.per_provider');
     expect($perProvider)->toHaveCount(1);
     expect($perProvider[0]['provider_code'])->toBe('modal-vision');
+    // No ai_provider_configs row exists here — the name falls back to the code.
+    expect($perProvider[0]['provider_name'])->toBe('modal-vision');
     expect($perProvider[0]['total'])->toBe(1);
     expect($perProvider[0]['overridden'])->toBe(1);
+});
+
+it('labels per-provider rows with the configured provider name', function (): void {
+    $moderator = User::factory()->create();
+    $moderator->assignRole('moderator');
+    Sanctum::actingAs($moderator);
+
+    AiProviderConfig::create([
+        'code' => 'modal-vision',
+        'driver' => 'vllm_openai_compatible',
+        'name' => 'Modal Vision (vLLM)',
+        'base_url' => 'https://example.test/infer',
+        'auth_type' => 'modal',
+        'model' => 'llava-v1.6-mistral',
+        'temperature' => 0.2,
+        'timeout_ms' => 90_000,
+        'retry_count' => 2,
+        'is_fallback' => false,
+        'priority' => 1,
+        'active' => true,
+    ]);
+
+    $report = landReportInPendingModerator();
+
+    $promptVersion = PromptVersion::query()->firstOrFail();
+    $job = AiJob::create([
+        'report_id' => $report->id,
+        'prompt_version_id' => $promptVersion->id,
+        'provider_code' => 'modal-vision',
+        'model' => 'test-model',
+        'status' => AiJob::STATUS_SUCCEEDED,
+        'requested_at' => now()->subHours(2),
+        'completed_at' => now()->subHours(2),
+    ]);
+    AiResult::create([
+        'job_id' => $job->id,
+        'predicted_type' => 'pothole',
+        'confidence' => 0.92,
+        'recommended_department' => 'BBMP',
+        'severity' => 'medium',
+        'quality_score' => 80,
+        'duplicate_score' => 0,
+        'fraud_score' => 0,
+        'summary' => 'test',
+        'raw_response' => ['labels' => []],
+        'created_at' => now()->subHours(2),
+    ]);
+
+    $assigned = ReportStatus::query()->where('code', 'assigned')->firstOrFail();
+    ReportStatusHistory::create([
+        'report_id' => $report->id,
+        'from_status_id' => $assigned->id,
+        'to_status_id' => $assigned->id,
+        'created_at' => now()->subMinutes(30),
+    ]);
+
+    $response = $this->getJson('/api/v1/moderator/analytics/ai-performance?window=7d');
+    $response->assertOk();
+
+    $perProvider = $response->json('data.per_provider');
+    expect($perProvider)->toHaveCount(1);
+    expect($perProvider[0]['provider_code'])->toBe('modal-vision');
+    expect($perProvider[0]['provider_name'])->toBe('Modal Vision (vLLM)');
 });
 
 it('the review endpoint applies an approve decision', function (): void {

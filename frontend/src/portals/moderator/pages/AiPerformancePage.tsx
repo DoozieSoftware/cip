@@ -115,7 +115,10 @@ export default function AiPerformancePage() {
             <tbody className="divide-y divide-slate-100 bg-white">
               {a.per_provider.map((p) => (
                 <tr key={p.provider_code}>
-                  <td className="px-3 py-2 font-mono text-xs">{p.provider_code}</td>
+                  <td className="px-3 py-2">
+                    <p className="font-medium text-slate-900">{p.provider_name}</p>
+                    <p className="font-mono text-[11px] text-slate-400">{p.provider_code}</p>
+                  </td>
                   <td className="px-3 py-2">{p.total}</td>
                   <td className="px-3 py-2">
                     {p.overridden} ({p.total > 0 ? ((p.overridden / p.total) * 100).toFixed(0) : 0}

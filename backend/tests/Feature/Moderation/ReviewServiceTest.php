@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Departments\Models\Department;
 use App\Modules\Moderation\DTO\ReviewReportDto;
 use App\Modules\Moderation\Events\ReportModerated;
 use App\Modules\Moderation\Services\ModerationService;
@@ -10,6 +11,7 @@ use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
 use App\Modules\Reports\Models\ReportType;
 use App\Modules\Security\Models\AuditLog;
+use App\Modules\Settings\Models\AppConfig;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
 use App\Modules\Workflow\Models\WorkflowDefinition;
@@ -38,6 +40,14 @@ beforeEach(function (): void {
     (new ReportStatusesSeeder)->run();
     (new DefaultWorkflowSeeder)->run();
     Event::fake([ReportStatusChanged::class, ReportModerated::class]);
+
+    // The approve/escalate review paths assign a routing destination and
+    // need the fallback department configured (see RoutingFallbackService).
+    $routingDept = Department::factory()->create();
+    AppConfig::query()->updateOrCreate(
+        ['key' => 'routing_default_department_id'],
+        ['value' => ['department_id' => $routingDept->id]],
+    );
 });
 
 if (! function_exists('makeModerator')) {
@@ -72,15 +82,19 @@ if (! function_exists('landReportInPendingModerator')) {
         $report = $report->refresh();
         $report->load('status');
 
-        // ai_complete requires a system actor.
+        // moderator_review requires a system actor.
         $system = User::factory()->create();
         $system->assignRole('system');
-        $d = $engine->evaluate($report, 'ai_complete', $system);
-        $engine->apply($report, $d, $system);
-        $report = $report->refresh();
-        $report->load('status');
 
-        // moderator_review also requires system.
+        if ($report->status?->code === 'submitted') {
+            // ReportSubmittedListener auto-advances submitted → ai_processing,
+            // but it is faked away in some suites (Event::fake) — advance manually.
+            $d = $engine->evaluate($report, 'ai_complete', $system);
+            $engine->apply($report, $d, $system);
+            $report = $report->refresh();
+            $report->load('status');
+        }
+
         $d = $engine->evaluate($report, 'moderator_review', $system);
         $engine->apply($report, $d, $system);
 

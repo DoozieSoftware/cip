@@ -210,6 +210,7 @@ export interface AiPerformance {
   override_rate_pct: number;
   per_provider: {
     provider_code: string;
+    provider_name: string;
     total: number;
     overridden: number;
     avg_confidence: number;
