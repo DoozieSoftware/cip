@@ -331,9 +331,7 @@ export function LandingPage(): JSX.Element {
             <IconGlobe className="h-4 w-4" stroke={1.6} />
             Public transparency portal
           </Link>
-          <p className="font-mono text-xs text-[#85847f]">
-            Built for the Government of Karnataka · Demo seed data · 2026
-          </p>
+          <p className="font-mono text-xs text-[#85847f]">Built for transparency and efficiency</p>
         </div>
       </main>
     </div>

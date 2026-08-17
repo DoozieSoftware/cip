@@ -16,6 +16,7 @@ import {
   IconMessageCircle,
   IconLink,
   IconCircleDotted,
+  IconChevronDown,
 } from '@tabler/icons-react';
 import { Badge, EmptyState, Spinner, Textarea } from '../../../shared/ui';
 import { departmentApi } from '../api/operations';
@@ -173,59 +174,126 @@ function captureCurrentPosition(): Promise<ProofCaptureLocation> {
   });
 }
 
-function ProofVerificationCard({ verification }: { verification: ProofVerification }) {
-  const tone =
+function ProofVerificationCard({
+  verification,
+  nextStep,
+}: {
+  verification: ProofVerification;
+  nextStep: string;
+}) {
+  const result =
     verification.status === 'match'
-      ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+      ? {
+          title: 'Strong match',
+          tone: 'success' as const,
+        }
       : verification.status === 'mismatch'
-        ? 'border-red-200 bg-red-50 text-red-900'
-        : 'border-amber-200 bg-amber-50 text-amber-900';
-  const title =
+        ? {
+            title: 'Proof may not match',
+            tone: 'danger' as const,
+          }
+        : {
+            title: 'Review needed',
+            tone: 'warning' as const,
+          };
+  const locationLabel =
+    verification.location_match === true
+      ? 'Location confirmed'
+      : verification.location_match === false
+        ? 'Location differs'
+        : 'Location unavailable';
+  const distanceLabel =
+    verification.distance_meters == null
+      ? 'GPS was not available'
+      : `${Math.round(verification.distance_meters)} m from report location`;
+  const guidance =
     verification.status === 'match'
-      ? 'Proof review: likely valid'
+      ? nextStep
       : verification.status === 'mismatch'
-        ? 'Proof review: needs correction'
-        : 'Proof review: human review needed';
+        ? 'Remove this photo and upload proof that clearly shows the completed work at this location.'
+        : 'Compare the before-and-after photos before deciding whether to continue.';
 
   return (
-    <div className={`mt-4 rounded-xl border p-4 ${tone}`}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <section
+      aria-labelledby={`proof-verification-${verification.id}`}
+      className="mt-4 rounded-lg bg-[var(--color-canvas)] p-4"
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <h3
+          id={`proof-verification-${verification.id}`}
+          className="text-sm font-semibold text-[var(--color-ink)]"
+        >
+          Proof check
+        </h3>
+        <Badge tone={result.tone}>{result.title}</Badge>
+      </div>
+      <p className="mt-2 max-w-3xl text-sm leading-5 text-[var(--color-text-secondary)]">
+        {verification.summary}
+      </p>
+
+      <dl className="mt-3 grid grid-cols-1 gap-3 border-y border-white py-3 text-xs sm:grid-cols-2">
         <div>
-          <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-1 text-sm leading-5">{verification.summary}</p>
+          <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+            Location
+          </dt>
+          <dd className="mt-0.5 font-medium text-[var(--color-ink)]">
+            {locationLabel} · {distanceLabel}
+          </dd>
         </div>
-        <span className="rounded-full bg-white/75 px-3 py-1 text-xs font-semibold">
-          {verification.overall_confidence}% confidence
-        </span>
-      </div>
-      <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
-        <div className="rounded-lg bg-white/70 p-2">
-          <span className="block font-mono uppercase tracking-wider opacity-70">Location</span>
-          <strong>{verification.location_confidence}%</strong>
-          <span className="ml-1">
-            {verification.distance_meters == null
-              ? 'GPS unavailable'
-              : `${Math.round(verification.distance_meters)} m away`}
-          </span>
+        <div>
+          <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+            Visual match
+          </dt>
+          <dd className="mt-0.5 font-medium text-[var(--color-ink)]">
+            {verification.visual_confidence}% similarity
+          </dd>
         </div>
-        <div className="rounded-lg bg-white/70 p-2">
-          <span className="block font-mono uppercase tracking-wider opacity-70">Visual</span>
-          <strong>{verification.visual_confidence}%</strong>
-          <span className="ml-1">before/after match</span>
-        </div>
-        <div className="rounded-lg bg-white/70 p-2">
-          <span className="block font-mono uppercase tracking-wider opacity-70">Checked</span>
-          <span>
-            {verification.checked_at
-              ? new Date(verification.checked_at).toLocaleString()
-              : 'Just now'}
-          </span>
-        </div>
-      </div>
-      {verification.perspective_note && (
-        <p className="mt-3 text-xs leading-5 opacity-80">{verification.perspective_note}</p>
-      )}
-    </div>
+      </dl>
+
+      <p className="mt-3 text-xs leading-5 text-[var(--color-text-secondary)]">
+        <span className="font-semibold text-[var(--color-ink)]">Next: </span>
+        {guidance}
+      </p>
+
+      <details className="group mt-3">
+        <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 text-xs font-medium text-[var(--color-text-tertiary)] outline-none transition hover:text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]/20 [&::-webkit-details-marker]:hidden">
+          AI check details
+          <IconChevronDown
+            size={14}
+            stroke={1.7}
+            className="transition-transform group-open:rotate-180"
+            aria-hidden
+          />
+        </summary>
+        <dl className="mt-3 grid grid-cols-1 gap-3 text-xs sm:grid-cols-3">
+          <div>
+            <dt className="text-[var(--color-text-tertiary)]">Overall confidence</dt>
+            <dd className="mt-0.5 font-medium text-[var(--color-ink)]">
+              {verification.overall_confidence}%
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[var(--color-text-tertiary)]">Location confidence</dt>
+            <dd className="mt-0.5 font-medium text-[var(--color-ink)]">
+              {verification.location_confidence}%
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[var(--color-text-tertiary)]">Checked</dt>
+            <dd className="mt-0.5 text-[var(--color-ink)]">
+              {verification.checked_at
+                ? new Date(verification.checked_at).toLocaleString()
+                : 'Just now'}
+            </dd>
+          </div>
+        </dl>
+        {verification.perspective_note && (
+          <p className="mt-3 text-xs leading-5 text-[var(--color-text-secondary)]">
+            {verification.perspective_note}
+          </p>
+        )}
+      </details>
+    </section>
   );
 }
 
@@ -835,7 +903,18 @@ export default function ReportDetailPage() {
               </div>
             </div>
             {latestProofVerification && (
-              <ProofVerificationCard verification={latestProofVerification} />
+              <ProofVerificationCard
+                verification={latestProofVerification}
+                nextStep={
+                  isTerminal
+                    ? 'This AI check is recorded with the completed work.'
+                    : isSecondaryTask
+                      ? 'Proof is ready. You can complete this department task.'
+                      : status === 'in_progress'
+                        ? 'Proof is ready. You can mark the work as fixed.'
+                        : 'Review this result before continuing with the report.'
+                }
+              />
             )}
             {isProofVerificationPending && (
               <div

@@ -342,6 +342,14 @@ describe('ReportDetailPage', () => {
     expect(screen.getByText('Open')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Accept assignment' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mark as fixed' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Proof check' })).toBeInTheDocument();
+    expect(screen.getByText('Strong match')).toBeInTheDocument();
+    expect(screen.getByText(/Location confirmed · 8 m from report location/)).toBeInTheDocument();
+    expect(screen.getByText('90% similarity')).toBeInTheDocument();
+    expect(
+      screen.getByText('Proof is ready. You can complete this department task.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('AI check details')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Mark task complete' }));
     fireEvent.change(await screen.findByLabelText('Note (required)'), {
