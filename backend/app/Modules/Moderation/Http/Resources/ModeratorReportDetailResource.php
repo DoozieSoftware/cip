@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Moderation\Http\Resources;
 
 use App\Modules\AI\Models\AiJob;
+use App\Modules\AI\Services\AiReviewGate;
 use App\Modules\Departments\Models\Department;
 use App\Modules\Departments\Models\ReportProofVerification;
 use App\Modules\Media\Models\Media;
@@ -107,7 +108,7 @@ class ModeratorReportDetailResource extends JsonResource
                 'duration_seconds' => $m->duration,
                 'captured_at' => $m->captured_at?->toIso8601String(),
             ])->all(),
-            'ai_result' => $this->buildAiResult($latestJob),
+            'ai_result' => $this->buildAiResult($latestJob, $report),
             'proof_review' => $proofReview === null ? null : [
                 'id' => $proofReview->id,
                 'status' => $proofReview->status,
@@ -181,7 +182,7 @@ class ModeratorReportDetailResource extends JsonResource
     /**
      * @return array<string, mixed>|null
      */
-    private function buildAiResult(?AiJob $job): ?array
+    private function buildAiResult(?AiJob $job, Report $report): ?array
     {
         $result = $job?->result;
 
@@ -217,6 +218,17 @@ class ModeratorReportDetailResource extends JsonResource
             $unresolvedDepartmentHint = null;
         }
 
+        $confidence = $result->confidence === null ? 0.0 : (float) $result->confidence * 100;
+        $reviewReasons = app(AiReviewGate::class)->reasons(
+            confidencePercent: $confidence,
+            duplicateScore: $result->duplicate_score,
+            fraudScore: $result->fraud_score,
+            claimMatchesEvidence: $result->claim_matches_evidence,
+            consistencyScore: $result->consistency_score,
+            syntheticScore: $result->synthetic_score,
+            mockGpsScore: $report->mock_gps_score,
+        );
+
         return [
             'job_id' => $job->id,
             'provider_code' => $job->provider_code,
@@ -226,6 +238,8 @@ class ModeratorReportDetailResource extends JsonResource
             // needs to be on the same 0..100 scale as fraud_score/
             // duplicate_score/quality_score.
             'confidence' => $result->confidence === null ? null : $result->confidence * 100,
+            'review_required' => $reviewReasons !== [],
+            'review_reasons' => $reviewReasons,
             'recommended_category' => $category === null ? null : [
                 'id' => $category->id,
                 'code' => $category->code,

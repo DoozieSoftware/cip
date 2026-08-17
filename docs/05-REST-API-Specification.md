@@ -401,12 +401,19 @@ duplicate and misrepresentation scores, plus evidence consistency fields:
 
 ```json
 {
+  "review_required": true,
+  "review_reasons": ["classification_review", "duplicate_risk"],
   "claim_matches_evidence": false,
   "consistency_score": 0,
   "mismatch_reason": "The image shows illegal dumping, not a pothole.",
   "synthetic_score": 0.0
 }
 ```
+
+`confidence` remains the visual classification confidence. `review_required`
+is the operational verdict and is true when confidence is below the auto-route
+threshold or when duplicate, misrepresentation, synthetic-media, location, or
+evidence-consistency checks require a moderator.
 
 ---
 

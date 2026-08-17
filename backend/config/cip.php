@@ -41,6 +41,14 @@ return [
             // review (AI recommends, human decides).
             'moderator_review_min' => (int) env('CIP_AI_MODERATOR_REVIEW_MIN', 80),
         ],
+        'risk' => [
+            // Security scores do not alter classification confidence, but any
+            // signal at or above its threshold must block automatic routing.
+            'duplicate_review_min' => (int) env('CIP_AI_DUPLICATE_REVIEW_MIN', 60),
+            'misrepresentation_review_min' => (int) env('CIP_AI_MISREPRESENTATION_REVIEW_MIN', 60),
+            'synthetic_review_min' => (int) env('CIP_AI_SYNTHETIC_REVIEW_MIN', 50),
+            'location_review_min' => (int) env('CIP_AI_LOCATION_REVIEW_MIN', 60),
+        ],
         'proof_review' => [
             // MoM rule: only AI proof checks above this confidence can
             // complete a report without an extra manual closure step.

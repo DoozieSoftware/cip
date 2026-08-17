@@ -36,10 +36,15 @@ class ConfidenceAggregator
 
     public const DECISION_MANUAL_CLASSIFICATION = 'manual_classification';
 
+    public function __construct(
+        private readonly ?int $autoRouteMin = null,
+        private readonly ?int $moderatorReviewMin = null,
+    ) {}
+
     public function decide(int|float $confidence): string
     {
-        $autoValue = config('cip.ai.confidence.auto_route_min', 95);
-        $reviewValue = config('cip.ai.confidence.moderator_review_min', 80);
+        $autoValue = $this->autoRouteMin ?? config('cip.ai.confidence.auto_route_min', 95);
+        $reviewValue = $this->moderatorReviewMin ?? config('cip.ai.confidence.moderator_review_min', 80);
         $auto = is_numeric($autoValue) ? (int) $autoValue : 95;
         $review = is_numeric($reviewValue) ? (int) $reviewValue : 80;
 

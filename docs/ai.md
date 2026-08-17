@@ -289,13 +289,19 @@ lower / exclusive upper bounds respectively — see the unit tests in
 `auto_route` is applied by `AiCompletedListener` (`App\Modules\AI\Listeners`),
 **not** inside the pipeline job itself — the listener converts the
 `AiCompleted` event's `confidence` (0..1) to the 0-100 scale
-`ConfidenceAggregator` expects. Anything below `auto_route` transitions
-the report to `pending_moderator` via the workflow engine's
-`moderator_review` event and does **not** create a department
-assignment — this is the concrete mechanism behind AGENTS.md's
-"moderator always overrides AI" rule. The M7 routing engine still
-evaluates the `routing_rules` DSL for the `auto_route` case, and a
-moderator can always override a completed assignment afterward.
+`ConfidenceAggregator` expects. Anything below `auto_route`, or any configured
+duplicate, misrepresentation, synthetic-media, location, or
+evidence-consistency risk, transitions the report to `pending_moderator` via
+the workflow engine's `moderator_review` event and does **not** create a
+department assignment. Classification confidence remains a separate score;
+`AiReviewGate` produces the operational review verdict and auditable reason
+codes. The M7 routing engine evaluates the `routing_rules` DSL only when
+confidence is eligible and all review gates are clear.
+
+`FraudScorer` combines its security inputs using their declared weights. A
+100% duplicate/replay signal contributes 25 points to misrepresentation risk;
+the duplicate score independently raises the duplicate review gate rather than
+being relabelled as 100% fraud.
 
 ## PII masking
 

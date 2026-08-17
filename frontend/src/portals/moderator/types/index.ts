@@ -73,6 +73,8 @@ export interface AiResult {
   provider_code: string;
   prompt_version: number;
   confidence: number;
+  review_required?: boolean;
+  review_reasons?: string[];
   recommended_category: Category | null;
   recommended_department: Department | null;
   labels: AiLabel[];

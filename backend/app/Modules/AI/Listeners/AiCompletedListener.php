@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\AI\Listeners;
 
 use App\Modules\AI\Events\AiCompleted;
-use App\Modules\AI\Services\ConfidenceAggregator;
+use App\Modules\AI\Services\AiReviewGate;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Routing\Services\AssignmentService;
 use App\Modules\Routing\Services\RoutingEngine;
@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Log;
  *
  *   ai_completed
  *      ├─ confidence below the auto-route threshold
+ *      │   OR any configured review risk is raised
  *      │   (ConfidenceAggregator)   -> WorkflowEngine 'moderator_review'
  *      │                               (ai_processing -> pending_moderator)
  *      │                               NO department assignment — the
@@ -33,11 +34,11 @@ use Illuminate\Support\Facades\Log;
  *      │                               human commits it. This is the
  *      │                               "moderator always overrides AI"
  *      │                               guarantee (AGENTS.md).
- *      ├─ confidence above threshold + routing rule matched
+ *      ├─ confidence above threshold + no review risks + routing rule matched
  *      │                            -> AssignmentService::assign
  *      │                               -> WorkflowEngine 'ai_auto_assign'
  *      │                                  (ai_processing -> assigned)
- *      ├─ confidence above threshold + no rule matched + config
+ *      ├─ confidence above threshold + no review risks + no rule matched + config
  *      │   present                 -> AssignmentService::assign via
  *      │                            RoutingFallbackService
  *      │                            -> WorkflowEngine 'ai_auto_assign'
@@ -67,7 +68,7 @@ class AiCompletedListener
         private readonly WorkflowEngine $workflow,
         private readonly SystemUserService $system,
         private readonly RoutingFallbackService $fallback,
-        private readonly ConfidenceAggregator $confidence,
+        private readonly AiReviewGate $reviewGate,
         private readonly SecondaryRoutingService $secondary,
     ) {}
 
@@ -99,19 +100,21 @@ class AiCompletedListener
         $confidenceRaw = $event->visionResult['confidence'] ?? 0.0;
         $confidencePct = is_numeric($confidenceRaw) ? ((float) $confidenceRaw) * 100 : 0.0;
 
-        // Claim-mismatch gate: even when confidence is high enough
-        // to auto-route, a claim that doesn't match the evidence
-        // must go through a human moderator. The AI may have
-        // hallucinated a category that looks plausible but isn't
-        // actually visible in the image. The moderator can verify
-        // the visual classification before committing it.
         $claimMatches = $event->visionResult['claim_matches_evidence'] ?? true;
         $consistencyRaw = $event->visionResult['consistency_score'] ?? null;
-        $lowConsistency = is_numeric($consistencyRaw) && ((int) $consistencyRaw) < 50;
-        $hasMismatch = $claimMatches === false || $lowConsistency;
+        $reviewReasons = $this->reviewGate->reasons(
+            confidencePercent: $confidencePct,
+            duplicateScore: $report->duplicate_score,
+            fraudScore: $report->fraud_score,
+            claimMatchesEvidence: is_bool($claimMatches) ? $claimMatches : null,
+            consistencyScore: is_numeric($consistencyRaw) ? (float) $consistencyRaw : null,
+            syntheticScore: is_numeric($event->visionResult['synthetic_score'] ?? null)
+                ? (float) $event->visionResult['synthetic_score']
+                : null,
+            mockGpsScore: $report->mock_gps_score,
+        );
 
-        $autoRoute = $this->confidence->decide($confidencePct) === ConfidenceAggregator::DECISION_AUTO_ROUTE
-            && ! $hasMismatch;
+        $autoRoute = $reviewReasons === [];
 
         // Phase 1: read the emergency flag and secondary triggers so the
         // assignment reason carries them for Track B's
@@ -135,6 +138,7 @@ class AiCompletedListener
         $signalMetadata = [
             'ai_emergency_flag' => $emergencyFlag,
             'ai_secondary_triggers' => $secondaryTriggers,
+            'ai_review_reasons' => $reviewReasons,
         ];
 
         if ($emergencyFlag) {

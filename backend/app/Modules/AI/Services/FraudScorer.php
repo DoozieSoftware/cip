@@ -48,13 +48,6 @@ class FraudScorer
         $repeatedDevice = (float) ($securityEvents['repeated_device'] ?? 0.0);
         $rateLimit = (float) ($securityEvents['rate_limit'] ?? 0.0);
 
-        $perSignal = [
-            $mockGps * 100,
-            $replay * 100,
-            $aiSynth * 100,
-            $repeatedDevice * 100,
-            $rateLimit * 100,
-        ];
         $weighted =
             ($mockGps * 0.40)
             + ($replay * 0.25)
@@ -62,7 +55,10 @@ class FraudScorer
             + ($repeatedDevice * 0.10)
             + ($rateLimit * 0.05);
 
-        $score = (int) round(max(max($perSignal), $weighted * 100));
+        // Preserve the declared weighting. Taking the maximum raw signal here
+        // made an exact duplicate (replay=1) appear as 100% independent
+        // misrepresentation risk even though replay carries a 25% weight.
+        $score = (int) round($weighted * 100);
 
         return max(0, min(100, $score));
     }

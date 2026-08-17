@@ -26,6 +26,11 @@ function mockGpsPct(n: number | null | undefined): string {
   return `${Math.round(n * 100)}%`;
 }
 
+function unitPct(n: number | null | undefined): string {
+  if (n === null || n === undefined) return '—';
+  return `${Math.round(n * 100)}%`;
+}
+
 function riskTone(n: number | null | undefined, threshold = 60): Tone {
   if (n === null || n === undefined) return 'neutral';
   if (n >= threshold + 20) return 'danger';
@@ -38,6 +43,55 @@ function qualityTone(n: number | null | undefined): Tone {
   if (n >= 80) return 'success';
   if (n >= 60) return 'warning';
   return 'danger';
+}
+
+function confidenceTone(n: number | null | undefined): Tone {
+  if (n === null || n === undefined) return 'neutral';
+  if (n >= 95) return 'success';
+  if (n >= 80) return 'warning';
+  return 'danger';
+}
+
+function confidenceStatus(n: number | null | undefined): string {
+  if (n === null || n === undefined) return 'Unavailable';
+  if (n >= 95) return 'Auto-route eligible';
+  if (n >= 80) return 'Moderator review';
+  return 'Manual classification';
+}
+
+const reviewReasonCopy: Record<string, string> = {
+  classification_review: 'Classification confidence is below the auto-route threshold.',
+  manual_classification: 'Classification confidence requires manual classification.',
+  evidence_mismatch: 'The submitted description may not match the visual evidence.',
+  duplicate_risk: 'Possible duplicate or reused evidence was detected.',
+  misrepresentation_risk: 'Misrepresentation signals are above the review threshold.',
+  synthetic_media_risk: 'The image may be synthetic or AI-generated.',
+  location_risk: 'The submitted location requires verification.',
+};
+
+const securityReviewReasons = new Set([
+  'evidence_mismatch',
+  'duplicate_risk',
+  'misrepresentation_risk',
+  'synthetic_media_risk',
+  'location_risk',
+]);
+
+function inferReviewReasons(ai: AiResult, mockGpsScore?: number | null): string[] {
+  const reasons: string[] = [];
+
+  if (ai.confidence < 80) reasons.push('manual_classification');
+  else if (ai.confidence < 95) reasons.push('classification_review');
+
+  if (ai.claim_matches_evidence === false || (ai.consistency_score ?? 100) < 50) {
+    reasons.push('evidence_mismatch');
+  }
+  if (ai.duplicate_score >= 60) reasons.push('duplicate_risk');
+  if (ai.fraud_score >= 60) reasons.push('misrepresentation_risk');
+  if ((ai.synthetic_score ?? 0) >= 0.5) reasons.push('synthetic_media_risk');
+  if ((mockGpsScore ?? 0) >= 0.6) reasons.push('location_risk');
+
+  return reasons;
 }
 
 const toneStyles: Record<
@@ -101,6 +155,10 @@ export function AiAnalysisPanel({ ai, statusCode, mockGpsScore }: AiAnalysisPane
     );
   }
 
+  const reviewReasons = ai.review_reasons ?? inferReviewReasons(ai, mockGpsScore);
+  const reviewRequired = ai.review_required ?? reviewReasons.length > 0;
+  const hasSecurityRisk = reviewReasons.some((reason) => securityReviewReasons.has(reason));
+
   return (
     <section className="rounded-xl bg-white p-4" aria-labelledby="ai-analysis-title">
       <PanelHeader subtitle={`${ai.provider_code} · Prompt v${ai.prompt_version}`} />
@@ -138,12 +196,38 @@ export function AiAnalysisPanel({ ai, statusCode, mockGpsScore }: AiAnalysisPane
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
+      {reviewRequired && (
+        <div
+          role="status"
+          className={`mt-4 border-l-2 px-4 py-3 ${
+            hasSecurityRisk
+              ? 'border-[#c6534c] bg-[#fbeeed] text-[#72231f]'
+              : 'border-[#b9822b] bg-[#fff6e4] text-[#66470f]'
+          }`}
+        >
+          <p className="flex items-center gap-2 text-sm font-semibold">
+            <IconAlertTriangle className="h-4 w-4 shrink-0" stroke={1.8} />
+            Moderator review required
+          </p>
+          {reviewReasons.length > 0 && (
+            <ul className="mt-2 space-y-1 pl-6 text-xs leading-5">
+              {reviewReasons.map((reason) => (
+                <li key={reason} className="list-disc">
+                  {reviewReasonCopy[reason] ?? 'An AI review signal requires verification.'}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Metric
           icon={<IconShieldCheck className="h-4 w-4" stroke={1.7} />}
-          label="AI confidence"
+          label="Classification confidence"
           value={pct(ai.confidence)}
-          tone={qualityTone(ai.confidence)}
+          tone={confidenceTone(ai.confidence)}
+          statusLabel={confidenceStatus(ai.confidence)}
         />
         <Metric
           icon={<IconInfoCircle className="h-4 w-4" stroke={1.7} />}
@@ -175,8 +259,8 @@ export function AiAnalysisPanel({ ai, statusCode, mockGpsScore }: AiAnalysisPane
           <Metric
             icon={<IconSparkles className="h-4 w-4" stroke={1.7} />}
             label="Synthetic media"
-            value={pct(ai.synthetic_score)}
-            tone={riskTone(ai.synthetic_score)}
+            value={unitPct(ai.synthetic_score)}
+            tone={riskTone(ai.synthetic_score * 100)}
           />
         )}
         <Metric
@@ -264,11 +348,13 @@ function Metric({
   label,
   value,
   tone,
+  statusLabel,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   tone: Tone;
+  statusLabel?: string;
 }) {
   const styles = toneStyles[tone];
 
@@ -280,7 +366,7 @@ function Metric({
       </div>
       <p className="mt-2 text-xl font-semibold text-[#1d1d1b]">{value}</p>
       <p className={`mt-0.5 text-[10px] font-medium uppercase tracking-[0.08em] ${styles.icon}`}>
-        {styles.label}
+        {statusLabel ?? styles.label}
       </p>
     </div>
   );
