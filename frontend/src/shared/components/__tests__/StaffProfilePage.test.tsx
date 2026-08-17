@@ -185,10 +185,6 @@ describe('StaffProfilePage', () => {
     expect(screen.getByText(/2024/)).toBeInTheDocument();
     expect(screen.getByText('Last login')).toBeInTheDocument();
     expect(screen.getByText(/2026/)).toBeInTheDocument();
-
-    // Account card explains who manages the rest of the record.
-    expect(screen.getByText('Account')).toBeInTheDocument();
-    expect(screen.getByText(/managed by your organisation/i)).toBeInTheDocument();
   });
 
   it('exposes only name and mobile as editable fields', async () => {

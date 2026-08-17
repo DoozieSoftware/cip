@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent, type JSX } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { IconBuilding, IconClock, IconUser } from '@tabler/icons-react';
+import { IconBuilding, IconUser } from '@tabler/icons-react';
 import { apiRequest, type ApiEnvelope } from '../../auth/api';
 import { useAuth } from '../../auth/AuthContext';
 import {
@@ -315,21 +315,6 @@ export default function StaffProfilePage(): JSX.Element {
           </CardBody>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <IconClock className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
-            <CardTitle>Account</CardTitle>
-          </div>
-        </CardHeader>
-        <CardBody>
-          <p className="text-sm leading-6 text-[var(--color-text-secondary)]">
-            Your email, role, and department memberships are managed by your organisation. Contact
-            your administrator to update them.
-          </p>
-        </CardBody>
-      </Card>
     </div>
   );
 }
