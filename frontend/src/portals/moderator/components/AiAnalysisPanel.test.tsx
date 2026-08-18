@@ -37,6 +37,12 @@ describe('AiAnalysisPanel', () => {
     expect(screen.getByText('Classification confidence')).toBeInTheDocument();
     expect(screen.getByText('Moderator review')).toBeInTheDocument();
     expect(screen.getAllByText('100%')).toHaveLength(3);
+    expect(
+      screen.getByText(
+        'The suggested category needs your review before this report is sent to a department.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/auto-route threshold/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Possible duplicate or reused evidence/)).toBeInTheDocument();
   });
 

@@ -51,6 +51,63 @@ function LocationText({ lat, lng }: { lat: number; lng: number }): JSX.Element {
   return <>{place || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}</>;
 }
 
+export function ModeratorReportHeader({
+  data,
+}: {
+  data: Pick<
+    ReportDetail,
+    'tracking_number' | 'title' | 'submitted_at' | 'status_code' | 'evidence_count'
+  >;
+}): JSX.Element {
+  return (
+    <header>
+      <Link
+        to="/moderator/queue"
+        className="inline-flex min-h-[44px] items-center gap-2 text-sm text-[#6f6e69] transition hover:text-[#1d1d1b]"
+      >
+        <IconArrowLeft className="h-4 w-4" stroke={1.6} />
+        Back to review reports
+      </Link>
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="w-full min-w-0 sm:flex-1">
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#85847f]">
+            {data.tracking_number}
+          </p>
+          <h1 className="mt-2 w-full break-words text-2xl font-medium tracking-[-0.02em] text-[#1d1d1b]">
+            {data.title}
+          </h1>
+          <p className="mt-2 text-sm text-[#6f6e69]">
+            Submitted {new Date(data.submitted_at).toLocaleString()}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
+              reportStatusTone(data.status_code) === 'warning'
+                ? 'bg-amber-50 text-amber-700'
+                : reportStatusTone(data.status_code) === 'danger'
+                  ? 'bg-violet-50 text-violet-700'
+                  : reportStatusTone(data.status_code) === 'success'
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : reportStatusTone(data.status_code) === 'info'
+                      ? 'bg-sky-50 text-sky-700'
+                      : 'bg-slate-50 text-slate-700'
+            }`}
+          >
+            {staffReportStatusLabel(data.status_code)}
+          </span>
+          {data.evidence_count > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs text-[#6f6e69] ring-1 ring-[#d8d6cf]">
+              <IconPhoto className="h-3.5 w-3.5" stroke={1.6} />
+              {data.evidence_count} evidence
+            </span>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
 const REJECT_REASONS = [
   { value: 'invalid_evidence', label: 'Invalid evidence' },
   { value: 'duplicate', label: 'Duplicate of another report' },
@@ -365,51 +422,7 @@ export default function ReportDetailPage() {
   return (
     <div className="w-full">
       <div className="mx-auto max-w-6xl space-y-6">
-        <header>
-          <Link
-            to="/moderator/queue"
-            className="inline-flex min-h-[44px] items-center gap-2 text-sm text-[#6f6e69] transition hover:text-[#1d1d1b]"
-          >
-            <IconArrowLeft className="h-4 w-4" stroke={1.6} />
-            Back to review reports
-          </Link>
-          <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#85847f]">
-                {data.tracking_number}
-              </p>
-              <h1 className="mt-2 text-2xl font-medium tracking-[-0.02em] text-[#1d1d1b]">
-                {data.title}
-              </h1>
-              <p className="mt-2 text-sm text-[#6f6e69]">
-                Submitted {new Date(data.submitted_at).toLocaleString()}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
-                  reportStatusTone(data.status_code) === 'warning'
-                    ? 'bg-amber-50 text-amber-700'
-                    : reportStatusTone(data.status_code) === 'danger'
-                      ? 'bg-violet-50 text-violet-700'
-                      : reportStatusTone(data.status_code) === 'success'
-                        ? 'bg-emerald-50 text-emerald-700'
-                        : reportStatusTone(data.status_code) === 'info'
-                          ? 'bg-sky-50 text-sky-700'
-                          : 'bg-slate-50 text-slate-700'
-                }`}
-              >
-                {staffReportStatusLabel(data.status_code)}
-              </span>
-              {data.evidence_count > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs text-[#6f6e69] ring-1 ring-[#d8d6cf]">
-                  <IconPhoto className="h-3.5 w-3.5" stroke={1.6} />
-                  {data.evidence_count} evidence
-                </span>
-              )}
-            </div>
-          </div>
-        </header>
+        <ModeratorReportHeader data={data} />
 
         <Card>
           <CardBody>

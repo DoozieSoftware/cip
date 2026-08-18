@@ -60,7 +60,8 @@ function confidenceStatus(n: number | null | undefined): string {
 }
 
 const reviewReasonCopy: Record<string, string> = {
-  classification_review: 'Classification confidence is below the auto-route threshold.',
+  classification_review:
+    'The suggested category needs your review before this report is sent to a department.',
   manual_classification: 'Classification confidence requires manual classification.',
   evidence_mismatch: 'The submitted description may not match the visual evidence.',
   duplicate_risk: 'Possible duplicate or reused evidence was detected.',
