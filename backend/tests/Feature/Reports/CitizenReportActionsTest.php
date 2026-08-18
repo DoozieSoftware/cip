@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Modules\Departments\Services\DepartmentReportService;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportStatus;
+use App\Modules\Security\Models\AuditLog;
 use App\Modules\Users\Models\User;
+use App\Modules\Workflow\Models\WorkflowDefinition;
 use App\Modules\Workflow\Services\ConditionEvaluator;
 use App\Modules\Workflow\Services\TransitionGuard;
 use App\Modules\Workflow\Services\WorkflowEngine;
@@ -27,14 +29,18 @@ beforeEach(function (): void {
     Role::firstOrCreate(['name' => 'moderator', 'guard_name' => 'web']);
 
     $this->engine = new WorkflowEngine(new TransitionGuard(new ConditionEvaluator));
-    $this->service = new DepartmentReportService($this->engine);
+    $this->service = app(DepartmentReportService::class);
 });
 
 function citizenActionReportAt(string $code): Report
 {
     $status = ReportStatus::query()->where('code', $code)->firstOrFail();
+    $workflow = WorkflowDefinition::query()->where('code', 'civic_default')->firstOrFail();
 
-    return Report::factory()->create(['current_status_id' => $status->id]);
+    return Report::factory()->create([
+        'current_status_id' => $status->id,
+        'workflow_id' => $workflow->id,
+    ]);
 }
 
 it('department resolve moves the report into resolved_pending_verification and opens the deadline', function (): void {
@@ -68,6 +74,11 @@ it('citizen verify moves the report to verified', function (): void {
     $response->assertStatus(200);
     $status = ReportStatus::query()->find($report->refresh()->current_status_id);
     expect($status->code)->toBe('verified');
+    expect(AuditLog::query()
+        ->where('entity', 'reports')
+        ->where('entity_id', $report->id)
+        ->latest('created_at')
+        ->value('action'))->toBe('report.citizen_verify');
 });
 
 it('citizen dispute reopens the report and requires a reason', function (): void {

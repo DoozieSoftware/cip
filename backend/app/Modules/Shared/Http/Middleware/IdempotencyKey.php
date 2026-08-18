@@ -65,7 +65,14 @@ class IdempotencyKey
 
         $user = $request->user();
         $userId = $user instanceof User ? (string) $user->id : null;
-        $route = (string) $request->route()?->getName();
+        // This middleware is global and can run before Laravel attaches the
+        // route name to the request. Falling back to the concrete request
+        // path keeps separate endpoints (for example report creation and
+        // report finalization) from sharing one idempotency scope.
+        $routeName = $request->route()?->getName();
+        $route = is_string($routeName) && $routeName !== ''
+            ? $routeName
+            : '/'.ltrim($request->path(), '/');
         $method = $request->getMethod();
         $requestHash = hash('sha256', (string) $request->getContent());
 

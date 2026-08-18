@@ -6,6 +6,7 @@ export const en_IN: MessageCatalog = {
   'common.back': 'Back',
   'common.submit': 'Submit',
   'common.cancel': 'Cancel',
+  'common.close': 'Close',
   'common.retry': 'Retry',
   'common.edit': 'Edit',
   'common.save': 'Save',
@@ -80,6 +81,10 @@ export const en_IN: MessageCatalog = {
 
   // Submit page
   'submit.newReport': 'New Report',
+  'submit.discard.button': 'Discard draft',
+  'submit.discard.confirm': 'Discard this saved report draft and start over?',
+  'submit.discard.conflictAction': 'Discard saved draft and start over',
+  'submit.discard.done': 'Draft discarded. You can start a new report.',
   'submit.stepCount': 'Step {current} of {total}',
   'submit.step.category': 'Category',
   'submit.step.details': 'Details',
@@ -166,6 +171,9 @@ export const en_IN: MessageCatalog = {
   'submit.evidence.videoRequiredSuffix': ' (required)',
   'submit.evidence.videoOptionalSuffix': ' (optional)',
   'submit.evidence.filesAttached': '{count} file{plural} attached',
+  'submit.evidence.viewFile': 'View {name}',
+  'submit.evidence.previewTitle': 'Evidence preview',
+  'submit.evidence.closePreview': 'Close preview',
   'submit.evidence.removeFile': 'Remove {name}',
   'submit.evidence.requiresPhoto': 'This category requires at least one photo.',
   'submit.evidence.requiresVideo': 'This category requires a video.',
@@ -177,6 +185,7 @@ export const en_IN: MessageCatalog = {
   'submit.review.description': 'Description',
   'submit.review.location': 'Location',
   'submit.review.evidence': 'Evidence',
+  'submit.review.evidenceHint': 'Tap a photo to view it.',
   'submit.review.locationNotCaptured': 'Not captured',
   'submit.review.unknown': 'Unknown',
   'submit.review.confirmation':

@@ -15,6 +15,7 @@ use App\Modules\Security\Models\AuditLog;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Support\DepartmentScope;
 use App\Modules\Users\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -134,25 +135,48 @@ class DepartmentReportProofController
         $validated = $request->validated();
         $lat = $validated['capture_latitude'] ?? null;
         $lng = $validated['capture_longitude'] ?? null;
+        $source = $validated['proof_capture_source'] ?? null;
+        $timestamp = $validated['capture_timestamp'] ?? null;
 
-        if (! is_numeric($lat) || ! is_numeric($lng)) {
+        if (
+            ! in_array($source, ['browser_camera', 'gallery_upload'], true)
+            || ! is_numeric($lat)
+            || ! is_numeric($lng)
+            || ! is_string($timestamp)
+        ) {
             throw ApiException::validation(
-                'Proof photos must include the officer device location.',
+                'Attach proof with the current device location.',
                 [
-                    'capture_latitude' => ['Capture the current location before uploading proof.'],
-                    'capture_longitude' => ['Capture the current location before uploading proof.'],
+                    'proof_capture_source' => ['Select a supported proof capture method.'],
+                    'capture_latitude' => ['Capture the current location before attaching proof.'],
+                    'capture_longitude' => ['Capture the current location before attaching proof.'],
+                    'capture_timestamp' => ['Record the current location time.'],
+                ],
+            );
+        }
+
+        $capturedAt = CarbonImmutable::parse($timestamp);
+        $now = CarbonImmutable::now();
+
+        if ($capturedAt->lt($now->subMinutes(15)) || $capturedAt->gt($now->addMinutes(2))) {
+            throw ApiException::validation(
+                'Proof location must be captured at the work location just before upload.',
+                [
+                    'capture_timestamp' => ['Capture the current location and upload proof within 15 minutes.'],
                 ],
             );
         }
 
         return [
+            'source' => $source,
             'latitude' => (float) $lat,
             'longitude' => (float) $lng,
             'accuracy' => is_numeric($validated['capture_accuracy'] ?? null) ? (float) $validated['capture_accuracy'] : null,
             'altitude' => is_numeric($validated['capture_altitude'] ?? null) ? (float) $validated['capture_altitude'] : null,
             'heading' => is_numeric($validated['capture_heading'] ?? null) ? (float) $validated['capture_heading'] : null,
             'speed' => is_numeric($validated['capture_speed'] ?? null) ? (float) $validated['capture_speed'] : null,
-            'captured_at' => is_string($validated['capture_timestamp'] ?? null) ? $validated['capture_timestamp'] : now()->toIso8601String(),
+            'location_captured_at' => $capturedAt->toIso8601String(),
+            ...($source === 'browser_camera' ? ['captured_at' => $capturedAt->toIso8601String()] : []),
             'provider' => 'browser_geolocation',
         ];
     }

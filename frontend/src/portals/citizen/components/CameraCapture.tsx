@@ -28,7 +28,8 @@ export type CameraError =
 
 export interface CameraCaptureProps {
   mode: 'photo' | 'video';
-  onCapture: (file: File) => void;
+  /** The timestamp is captured at the device when the media is created. */
+  onCapture: (file: File, capturedAt: string) => void;
   onError?: (err: CameraError) => void;
   videoMinMs?: number;
   videoMaxMs?: number;
@@ -166,6 +167,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
 
   async function takePhoto(): Promise<void> {
     if (!videoRef.current) return;
+    const capturedAt = new Date().toISOString();
     setProcessingProgress(10);
     setStatusMessage(t('camera.compressing'));
     const v = videoRef.current;
@@ -183,7 +185,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
     const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
     const cleaned = await scrubFile(file);
     setProcessingProgress(100);
-    onCapture(cleaned);
+    onCapture(cleaned, capturedAt);
     setStatusMessage(t('camera.photoReady'));
     stopStream();
     setProcessingProgress(null);
@@ -258,7 +260,7 @@ export function CameraCapture(props: CameraCaptureProps): JSX.Element {
       const ext = blobType.includes('mp4') ? 'mp4' : 'webm';
       const file = new File([blob], `video-${Date.now()}.${ext}`, { type: blobType });
       setProcessingProgress(100);
-      onCapture(file);
+      onCapture(file, new Date().toISOString());
       setStatusMessage(t('camera.videoReady'));
       stopStream();
       setProcessingProgress(null);

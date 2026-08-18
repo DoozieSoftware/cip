@@ -22,6 +22,16 @@ vi.mock('../api/operations', () => ({
   },
 }));
 
+const liveProofFile = new File(['live-proof'], 'proof-live.jpg', { type: 'image/jpeg' });
+
+vi.mock('../../citizen/components/CameraCapture', () => ({
+  CameraCapture: ({ onCapture }: { onCapture: (file: File, capturedAt: string) => void }) => (
+    <button type="button" onClick={() => onCapture(liveProofFile, '2026-08-02T04:29:58.000Z')}>
+      Capture live proof photo
+    </button>
+  ),
+}));
+
 const REPORT_ID = '11111111-1111-1111-1111-111111111111';
 
 function baseReport(overrides: Partial<DepartmentReportDetail> = {}): DepartmentReportDetail {
@@ -117,9 +127,11 @@ describe('ReportDetailPage', () => {
     expect(await screen.findByText('No evidence')).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Click or drop proof photos from the fixed location after the field crew completes the work.',
+        'Capture a fresh proof photo at the work location after the field crew completes the work.',
       ),
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Take proof photo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Upload existing photo' })).toBeInTheDocument();
   });
 
   it('renders evidence and proof media in separate galleries', async () => {
@@ -228,8 +240,7 @@ describe('ReportDetailPage', () => {
   it('hides the proof upload control for terminal reports', async () => {
     renderPage(baseReport({ current_status_code: 'closed' }));
     expect(await screen.findByRole('heading', { name: 'Pothole on Main St' })).toBeInTheDocument();
-    expect(screen.queryByLabelText('Proof photo input')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Upload proof photos' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Take proof photo' })).toBeNull();
   });
 
   it('requires a note before confirming progress, then passes it to the action', async () => {
@@ -389,33 +400,81 @@ describe('ReportDetailPage', () => {
       },
     });
     renderPage(baseReport());
-    const file = new File(['x'], 'after-fix.jpg', { type: 'image/jpeg' });
     vi.mocked(departmentApi.uploadProof).mockResolvedValue({
       media: [],
       verification_status: 'processing',
     });
 
-    const input = await screen.findByLabelText('Proof photo input');
-    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Take proof photo' }));
+    expect(screen.getByRole('dialog', { name: 'Capture proof photo' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Capture live proof photo' }));
 
     await waitFor(() =>
       expect(departmentApi.uploadProof).toHaveBeenCalledWith(
         REPORT_ID,
-        [file],
+        [liveProofFile],
         {
+          source: 'browser_camera',
           latitude: 12.9716,
           longitude: 77.5946,
           accuracy: 9,
           altitude: null,
           heading: null,
           speed: null,
-          timestamp: '2026-08-02T04:30:00.000Z',
+          timestamp: '2026-08-02T04:29:58.000Z',
         },
         undefined,
         'dept-1',
       ),
     );
     await waitFor(() => expect(departmentApi.showReportInDepartment).toHaveBeenCalledTimes(2));
+  });
+
+  it('uploads an existing proof photo with the current location marked as a gallery upload', async () => {
+    Object.defineProperty(window, 'isSecureContext', { configurable: true, value: true });
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: vi.fn((success: PositionCallback) =>
+          success({
+            coords: {
+              latitude: 12.9716,
+              longitude: 77.5946,
+              accuracy: 9,
+              altitude: null,
+              altitudeAccuracy: null,
+              heading: null,
+              speed: null,
+            },
+            timestamp: new Date('2026-08-02T10:00:00+05:30').getTime(),
+          } as GeolocationPosition),
+        ),
+      },
+    });
+    vi.mocked(departmentApi.uploadProof).mockResolvedValue({
+      media: [],
+      verification_status: 'processing',
+    });
+    renderPage(baseReport());
+
+    const file = new File(['existing-proof'], 'after-fix.jpg', { type: 'image/jpeg' });
+    fireEvent.change(await screen.findByLabelText('Existing proof photo input'), {
+      target: { files: [file] },
+    });
+
+    await waitFor(() =>
+      expect(departmentApi.uploadProof).toHaveBeenCalledWith(
+        REPORT_ID,
+        [file],
+        expect.objectContaining({
+          source: 'gallery_upload',
+          latitude: 12.9716,
+          longitude: 77.5946,
+        }),
+        undefined,
+        'dept-1',
+      ),
+    );
   });
 
   it('shows AI verification separately from upload and blocks completion while it runs', async () => {

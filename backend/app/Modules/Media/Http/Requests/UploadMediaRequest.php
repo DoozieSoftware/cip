@@ -89,6 +89,7 @@ class UploadMediaRequest extends FormRequest
             'capture_heading' => ['nullable', 'numeric', 'min:0', 'max:360'],
             'capture_speed' => ['nullable', 'numeric', 'min:0'],
             'capture_timestamp' => ['nullable', 'date'],
+            'proof_capture_source' => ['nullable', 'string', 'in:browser_camera,gallery_upload'],
         ];
     }
 }

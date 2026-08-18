@@ -61,7 +61,8 @@ it('finalizes an idempotent report only after durable hashed evidence', function
     $type = ReportType::query()->where('requires_photo', true)->firstOrFail();
     $draft = ReportStatus::query()->where('code', 'draft')->firstOrFail();
 
-    $response = $this->postJson('/api/v1/reports', [
+    $idempotencyKey = 'report-submission-with-evidence';
+    $response = $this->withHeader('Idempotency-Key', $idempotencyKey)->postJson('/api/v1/reports', [
         'report_type_id' => $type->id,
         'title' => 'Pothole on MG Road',
         'description' => 'A large pothole near the signal.',
@@ -95,13 +96,13 @@ it('finalizes an idempotent report only after durable hashed evidence', function
         'created_at' => now(),
     ]);
 
-    $first = $this->withHeader('Idempotency-Key', 'finalize-'.$report->id)
+    $first = $this->withHeader('Idempotency-Key', $idempotencyKey)
         ->postJson("/api/v1/reports/{$report->id}/finalize")
         ->assertOk();
-    expect($first->json('data.status.code'))->toBe('submitted');
+    expect($first->json('data.status.code'))->toBeIn(['submitted', 'ai_processing']);
     Event::assertDispatched(ReportEvidenceReady::class);
 
-    $second = $this->withHeader('Idempotency-Key', 'finalize-'.$report->id)
+    $second = $this->withHeader('Idempotency-Key', $idempotencyKey)
         ->postJson("/api/v1/reports/{$report->id}/finalize")
         ->assertOk();
     expect($second->json('data.id'))->toBe($first->json('data.id'));

@@ -11,6 +11,7 @@ import {
   IconShield,
   IconUser,
   IconAlertTriangle,
+  IconCamera,
   IconUpload,
   IconFileText,
   IconMessageCircle,
@@ -18,7 +19,8 @@ import {
   IconCircleDotted,
   IconChevronDown,
 } from '@tabler/icons-react';
-import { Badge, EmptyState, Spinner, Textarea } from '../../../shared/ui';
+import { Badge, Dialog, EmptyState, Spinner, Textarea } from '../../../shared/ui';
+import { CameraCapture, type CameraError } from '../../citizen/components/CameraCapture';
 import { departmentApi } from '../api/operations';
 import type {
   DepartmentReportDetail,
@@ -134,7 +136,9 @@ const ACTION_DESCRIPTION: Record<WorkflowEvent, string> = {
   close: 'Mark this report complete. A note is required documenting the outcome.',
 };
 
-function captureCurrentPosition(): Promise<ProofCaptureLocation> {
+function captureCurrentPosition(
+  source: ProofCaptureLocation['source'],
+): Promise<ProofCaptureLocation> {
   if (!window.isSecureContext) {
     return Promise.reject(
       new Error('Proof upload needs location access. Open this page on localhost or HTTPS.'),
@@ -149,6 +153,7 @@ function captureCurrentPosition(): Promise<ProofCaptureLocation> {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         resolve({
+          source,
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
           accuracy: position.coords.accuracy,
@@ -328,6 +333,7 @@ export default function ReportDetailPage() {
   const [pendingAction, setPendingAction] = useState<WorkflowEvent | null>(null);
   const [taskCompletionPending, setTaskCompletionPending] = useState(false);
   const [proofCaptureError, setProofCaptureError] = useState<string | null>(null);
+  const [proofCameraOpen, setProofCameraOpen] = useState(false);
   const evidence = report?.media.filter((m) => m.role === 'evidence') ?? [];
   const proof = report?.media.filter((m) => m.role === 'proof') ?? [];
   const selectedAssignmentId = report?.assignment?.id ?? null;
@@ -459,32 +465,60 @@ export default function ReportDetailPage() {
     [action, pendingAction],
   );
 
-  const uploadProofFiles = (files: File[]): void => {
-    if (files.length === 0) return;
+  const uploadCapturedProof = (file: File, capturedAt: string): void => {
     setProofCaptureError(null);
-    void captureCurrentPosition()
-      .then((capture) => uploadProof.mutate({ files, capture }))
+    setProofCameraOpen(false);
+    void captureCurrentPosition('browser_camera')
+      .then((capture) =>
+        uploadProof.mutate({
+          files: [file],
+          capture: { ...capture, timestamp: capturedAt },
+        }),
+      )
       .catch((error: unknown) => {
         setProofCaptureError(
           error instanceof Error
-            ? error.message
-            : 'Could not capture your current location for proof upload.',
+            ? `Proof photo was not uploaded: ${error.message}`
+            : 'Proof photo was not uploaded because the current location could not be captured.',
         );
       });
   };
 
-  const handleProofFiles = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = '';
-    uploadProofFiles(files);
+  const openProofCamera = (): void => {
+    setProofCaptureError(null);
+    setProofCameraOpen(true);
   };
 
-  const handleProofDrop = (e: React.DragEvent<HTMLDivElement>): void => {
-    e.preventDefault();
-    if (uploadProof.isPending || isTerminal) return;
-    uploadProofFiles(
-      Array.from(e.dataTransfer.files).filter((file) => file.type.startsWith('image/')),
+  const handleProofCameraError = (error: CameraError): void => {
+    setProofCaptureError(error.message);
+  };
+
+  const uploadExistingProof = (files: File[]): void => {
+    if (files.length === 0) return;
+
+    setProofCaptureError(null);
+    void captureCurrentPosition('gallery_upload')
+      .then((capture) => uploadProof.mutate({ files, capture }))
+      .catch((error: unknown) => {
+        setProofCaptureError(
+          error instanceof Error
+            ? `Existing photo was not uploaded: ${error.message}`
+            : 'Existing photo was not uploaded because the current location could not be captured.',
+        );
+      });
+  };
+
+  const handleExistingProof = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    const files = Array.from(event.target.files ?? []).filter((file) =>
+      file.type.startsWith('image/'),
     );
+    event.target.value = '';
+    uploadExistingProof(files);
+  };
+
+  const openExistingProofPicker = (): void => {
+    setProofCaptureError(null);
+    proofInputRef.current?.click();
   };
 
   const focusNote = useCallback((): void => {
@@ -813,6 +847,17 @@ export default function ReportDetailPage() {
             <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
               Citizen report on the left; department completion proof on the right.
             </p>
+            {!isTerminal && (
+              <input
+                ref={proofInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                hidden
+                aria-label="Existing proof photo input"
+                onChange={handleExistingProof}
+              />
+            )}
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="rounded-lg bg-[var(--color-canvas)] p-3">
                 <div className="mb-3 flex items-center justify-between">
@@ -850,34 +895,34 @@ export default function ReportDetailPage() {
                   </span>
                 </div>
                 {selectedAssignmentProof.length === 0 ? (
-                  <div
-                    role={!isTerminal ? 'button' : undefined}
-                    tabIndex={!isTerminal ? 0 : undefined}
-                    onClick={() => {
-                      if (!isTerminal && !uploadProof.isPending) proofInputRef.current?.click();
-                    }}
-                    onKeyDown={(event) => {
-                      if (
-                        !isTerminal &&
-                        !uploadProof.isPending &&
-                        (event.key === 'Enter' || event.key === ' ')
-                      ) {
-                        event.preventDefault();
-                        proofInputRef.current?.click();
-                      }
-                    }}
-                    onDragOver={(event) => {
-                      if (!isTerminal) event.preventDefault();
-                    }}
-                    onDrop={handleProofDrop}
-                    className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-emerald-300 bg-white/70 py-8 text-center transition hover:border-emerald-500 hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                    aria-label="Upload proof photos with current location"
-                  >
-                    <IconUpload size={20} stroke={1.6} className="text-emerald-600" />
+                  <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-emerald-300 bg-white/70 px-4 py-8 text-center">
+                    <IconCamera size={20} stroke={1.6} className="text-emerald-600" />
                     <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
-                      Click or drop proof photos from the fixed location after the field crew
+                      Capture a fresh proof photo at the work location after the field crew
                       completes the work.
                     </p>
+                    {!isTerminal && (
+                      <div className="mt-4 flex flex-wrap justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={openProofCamera}
+                          disabled={uploadProof.isPending}
+                          className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:opacity-50"
+                        >
+                          <IconCamera size={15} stroke={1.7} />
+                          Take proof photo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={openExistingProofPicker}
+                          disabled={uploadProof.isPending}
+                          className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border-subtle)] bg-white px-4 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)] disabled:opacity-50"
+                        >
+                          <IconUpload size={15} stroke={1.7} />
+                          Upload existing photo
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <MediaGallery
@@ -932,30 +977,32 @@ export default function ReportDetailPage() {
                 </div>
               </div>
             )}
-            {!isTerminal && (
+            {!isTerminal && selectedAssignmentProof.length > 0 && (
               <div className="mt-4 flex flex-col gap-2 border-t border-[var(--color-canvas)] pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-[var(--color-text-tertiary)]">
-                  Proof photos require current location access and stay department-private until the
-                  report is closed.
+                  Proof stays department-private. Existing photos include current location and any
+                  available image metadata, then require review before completion.
                 </p>
-                <input
-                  ref={proofInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  hidden
-                  aria-label="Proof photo input"
-                  onChange={handleProofFiles}
-                />
-                <button
-                  type="button"
-                  onClick={() => proofInputRef.current?.click()}
-                  disabled={uploadProof.isPending}
-                  className="inline-flex items-center gap-2 rounded-full bg-[var(--color-canvas)] px-4 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)]/80 disabled:opacity-50"
-                >
-                  <IconUpload size={14} stroke={1.6} />
-                  {uploadProof.isPending ? 'Uploading photo…' : 'Upload proof with location'}
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={openProofCamera}
+                    disabled={uploadProof.isPending}
+                    className="inline-flex items-center gap-2 rounded-full bg-[var(--color-canvas)] px-4 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)]/80 disabled:opacity-50"
+                  >
+                    <IconCamera size={14} stroke={1.6} />
+                    {uploadProof.isPending ? 'Uploading proof…' : 'Take another proof photo'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openExistingProofPicker}
+                    disabled={uploadProof.isPending}
+                    className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border-subtle)] bg-white px-4 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)] disabled:opacity-50"
+                  >
+                    <IconUpload size={14} stroke={1.6} />
+                    Upload existing photo
+                  </button>
+                </div>
                 {proofCaptureError && (
                   <p role="alert" className="text-sm text-red-600">
                     {proofCaptureError}
@@ -1130,6 +1177,31 @@ export default function ReportDetailPage() {
           </div>
         </div>
       </div>
+
+      <Dialog
+        open={proofCameraOpen}
+        onClose={() => setProofCameraOpen(false)}
+        title="Capture proof photo"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-950">
+            <IconShield size={18} stroke={1.7} className="mt-0.5 shrink-0 text-emerald-700" />
+            <div>
+              <p className="text-sm font-semibold">Capture the completed work at this location</p>
+              <p className="mt-0.5 text-xs leading-5 text-emerald-800">
+                The photo, current device location, capture time, officer, and file integrity record
+                are kept with this proof. This is the preferred way to submit completion proof.
+              </p>
+            </div>
+          </div>
+          <CameraCapture
+            mode="photo"
+            onCapture={uploadCapturedProof}
+            onError={handleProofCameraError}
+          />
+        </div>
+      </Dialog>
 
       <ConfirmActionDialog
         open={pendingAction !== null}

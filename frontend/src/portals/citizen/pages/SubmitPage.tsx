@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, type FormEvent } from 'react';
+import { useRef, useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -11,6 +11,7 @@ import {
   IconFileText,
   IconShield,
   IconPencil,
+  IconTrash,
   IconUpload,
   IconRefresh,
 } from '@tabler/icons-react';
@@ -31,7 +32,7 @@ import {
 import { type IssueLocation } from '../components/issueLocation';
 import { getQueue } from '../offline/queue';
 import { useToast } from '../components/Toast';
-import { evidencePreviewHandlers } from '../security/evidenceGuards';
+import { evidencePreviewHandlers, scrubFile } from '../security/evidenceGuards';
 import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
 import { ApiError } from '../../../auth/api';
 import { useMessages } from '../messages';
@@ -42,6 +43,9 @@ import { trackProductEvent } from '../../../shared/analytics';
 
 const FORM_STEPS = ['Category', 'Details', 'Location', 'Evidence', 'Review'] as const;
 type Step = (typeof FORM_STEPS)[number];
+
+const localTestUploadEnabled =
+  import.meta.env.DEV && import.meta.env.VITE_ENABLE_TEST_UPLOAD !== 'false';
 
 function currentStep(typeId: string, location: CapturedLocation | null): Step {
   if (!typeId) return 'Category';
@@ -109,6 +113,7 @@ export default function SubmitPage(): JSX.Element {
     issueLocation?.longitude ?? NaN,
   );
   const [files, setFiles] = useState<File[]>([]);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [showVideo, setShowVideo] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -118,6 +123,7 @@ export default function SubmitPage(): JSX.Element {
   >({});
   const [currentViewStep, setCurrentViewStep] = useState<Step>('Category');
   const [idempotencyKey, setIdempotencyKey] = useState<string>(newIdempotencyKey);
+  const [hasSavedDraft, setHasSavedDraft] = useState<boolean>(false);
   const draftReadyRef = useRef(false);
   const draftCompleteRef = useRef(false);
 
@@ -142,6 +148,7 @@ export default function SubmitPage(): JSX.Element {
     void loadDraft(ownerId).then((draft) => {
       if (cancelled) return;
       if (draft) {
+        setHasSavedDraft(true);
         setTypeId(draft.type_id);
         setTitle(draft.title);
         setDescription(draft.description);
@@ -183,7 +190,7 @@ export default function SubmitPage(): JSX.Element {
       current_step: currentViewStep,
       files,
       idempotency_key: idempotencyKey,
-    });
+    }).then(() => setHasSavedDraft(true));
   }, [
     ownerId,
     typeId,
@@ -215,7 +222,34 @@ export default function SubmitPage(): JSX.Element {
   }
 
   function removeFile(idx: number): void {
+    setPreviewIndex(null);
     setFiles((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  async function discardSavedDraft(): Promise<void> {
+    if (!ownerId) return;
+    if (!window.confirm(t('submit.discard.confirm'))) return;
+
+    await clearDraft(ownerId);
+    // Stop the autosave effect before resetting state; the reset itself must
+    // not immediately create a new empty draft.
+    draftCompleteRef.current = true;
+    setHasSavedDraft(false);
+    setTypeId('');
+    setTitle('');
+    setDescription('');
+    setLocation(null);
+    setIssueLocation(null);
+    setAddress('');
+    setFiles([]);
+    setPreviewIndex(null);
+    setShowVideo(false);
+    setError(null);
+    setFieldErrors({});
+    setIdempotencyKey(newIdempotencyKey());
+    setCurrentViewStep('Category');
+    toast.show(t('submit.discard.done'), 'info', 4000);
+    void navigate('/citizen');
   }
 
   function addPhoto(f: File): void {
@@ -225,6 +259,17 @@ export default function SubmitPage(): JSX.Element {
       return;
     }
     setFiles((prev) => [...prev, f].slice(0, 6));
+  }
+
+  async function handleTestPhotoChange(event: ChangeEvent<HTMLInputElement>): Promise<void> {
+    const file = event.currentTarget.files?.[0] ?? null;
+    event.currentTarget.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file for local testing.');
+      return;
+    }
+    addPhoto(await scrubFile(file));
   }
 
   function addVideo(f: File): void {
@@ -461,6 +506,19 @@ export default function SubmitPage(): JSX.Element {
               </p>
             </div>
           </div>
+
+          {hasSavedDraft && ownerId ? (
+            <div className="flex justify-end pb-3">
+              <button
+                type="button"
+                onClick={() => void discardSavedDraft()}
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-red-200 bg-white px-4 text-sm font-medium text-red-700 transition hover:bg-red-50"
+              >
+                <IconTrash className="h-4 w-4" stroke={1.6} />
+                {t('submit.discard.button')}
+              </button>
+            </div>
+          ) : null}
 
           {/* Progress dots */}
           <div className="flex items-center gap-2 pb-3">
@@ -990,6 +1048,31 @@ export default function SubmitPage(): JSX.Element {
                 </div>
               </div>
               <CameraCapture mode="photo" onCapture={addPhoto} onError={onCameraError} />
+              {localTestUploadEnabled ? (
+                <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 px-3 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-amber-900">
+                    Local testing only
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-amber-800">
+                    Choose an existing photo to test the report workflow. This option is hidden in
+                    production.
+                  </p>
+                  <label
+                    htmlFor="local-test-photo"
+                    className="mt-3 inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-amber-300 bg-white px-4 text-sm font-medium text-amber-900 transition hover:bg-amber-100"
+                  >
+                    <IconUpload className="mr-2 h-4 w-4" stroke={1.6} />
+                    Upload test photo
+                  </label>
+                  <input
+                    id="local-test-photo"
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={(event) => void handleTestPhotoChange(event)}
+                  />
+                </div>
+              ) : null}
               <button
                 type="button"
                 onClick={() => setShowVideo((v) => !v)}
@@ -1198,6 +1281,59 @@ export default function SubmitPage(): JSX.Element {
               </div>
             </div>
 
+            {files.length > 0 ? (
+              <div className="rounded-xl bg-white p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                      {t('submit.review.evidence')}
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                      {t('submit.review.evidenceHint')}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => goToStep('Evidence')}
+                    className="inline-flex min-h-[44px] shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+                  >
+                    <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
+                    {t('common.edit')}
+                  </button>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {files.map((file, index) =>
+                    file.type.startsWith('image/') ? (
+                      <button
+                        key={`${file.name}-${index}`}
+                        type="button"
+                        onClick={() => setPreviewIndex(index)}
+                        className="aspect-square overflow-hidden rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ink)]"
+                        aria-label={t('submit.evidence.viewFile', { name: file.name })}
+                      >
+                        <img
+                          src={previewUrls[index]}
+                          alt={file.name}
+                          className="h-full w-full object-cover"
+                          {...evidencePreviewHandlers()}
+                        />
+                      </button>
+                    ) : (
+                      <video
+                        key={`${file.name}-${index}`}
+                        src={previewUrls[index]}
+                        controls
+                        muted
+                        preload="metadata"
+                        className="aspect-square w-full rounded-lg border border-[var(--color-border-subtle)] bg-black object-contain"
+                        aria-label={t('detail.video')}
+                      />
+                    ),
+                  )}
+                </div>
+              </div>
+            ) : null}
+
             {/* Error summary */}
             {error !== null ? (
               <div className="rounded-xl bg-red-50 p-4 ring-1 ring-red-200">
@@ -1208,6 +1344,15 @@ export default function SubmitPage(): JSX.Element {
                   />
                   <p className="text-sm font-medium text-red-800">{error}</p>
                 </div>
+                {error.toLowerCase().includes('idempotency-key') && ownerId ? (
+                  <button
+                    type="button"
+                    onClick={() => void discardSavedDraft()}
+                    className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-red-300 bg-white px-4 text-sm font-medium text-red-800 transition hover:bg-red-100"
+                  >
+                    {t('submit.discard.conflictAction')}
+                  </button>
+                ) : null}
               </div>
             ) : null}
 
@@ -1236,6 +1381,38 @@ export default function SubmitPage(): JSX.Element {
             </button>
           </section>
         )}
+
+        {previewIndex !== null && files[previewIndex]?.type.startsWith('image/') ? (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('submit.evidence.previewTitle')}
+          >
+            <button
+              type="button"
+              className="absolute inset-0 h-full w-full cursor-default"
+              onClick={() => setPreviewIndex(null)}
+              aria-label={t('submit.evidence.closePreview')}
+            />
+            <div className="relative z-10 max-h-full max-w-3xl">
+              <img
+                src={previewUrls[previewIndex]}
+                alt={files[previewIndex]?.name ?? ''}
+                className="max-h-[85vh] max-w-full rounded-xl object-contain"
+                {...evidencePreviewHandlers()}
+              />
+              <button
+                type="button"
+                onClick={() => setPreviewIndex(null)}
+                className="absolute -right-2 -top-2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl text-[var(--color-ink)] shadow-lg"
+                aria-label={t('common.close')}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </form>
   );

@@ -37,6 +37,7 @@ for arg in "$@"; do
       echo "            trust a clicked-through self-signed cert for service"
       echo "            worker script fetches, so push subscriptions silently"
       echo "            fail with 'subscription_failed' over https://<lan-ip>."
+      echo "            Do not use --http for phone camera/location testing."
       exit 0
       ;;
   esac
@@ -136,7 +137,38 @@ if [ ! -d node_modules ]; then
 fi
 cd "$ROOT"
 
-# ── 5. Check ports ────────────────────────────────────────────────
+# ── 5. Prepare local HTTPS for phone camera/location testing ──────
+# Mobile browsers only expose camera and geolocation to secure contexts.
+# Generate a local certificate with the current LAN IP so a phone can use
+# the same Vite proxy and local database over https://<lan-ip>:5173.
+LOCAL_LAN_IP=$(hostname -I 2>/dev/null | tr ' ' '\n' | awk '/^[0-9]+\./ {print; exit}')
+DEV_SSL_DIR="$ROOT/frontend/.devssl"
+DEV_SSL_KEY="$DEV_SSL_DIR/key.pem"
+DEV_SSL_CERT="$DEV_SSL_DIR/cert.pem"
+if [ "$DEV_HTTP" = false ] && [ -n "$LOCAL_LAN_IP" ]; then
+  if ! command -v openssl >/dev/null 2>&1; then
+    warn "openssl is missing — LAN HTTPS/camera/location testing is unavailable."
+  else
+    NEED_DEV_CERT=true
+    if [ -s "$DEV_SSL_KEY" ] && [ -s "$DEV_SSL_CERT" ]; then
+      if openssl x509 -in "$DEV_SSL_CERT" -noout -ext subjectAltName 2>/dev/null | grep -q "IP Address:$LOCAL_LAN_IP"; then
+        NEED_DEV_CERT=false
+      fi
+    fi
+    if [ "$NEED_DEV_CERT" = true ]; then
+      mkdir -p "$DEV_SSL_DIR"
+      openssl req -x509 -newkey rsa:2048 -sha256 -nodes -days 30 \
+        -keyout "$DEV_SSL_KEY" -out "$DEV_SSL_CERT" \
+        -subj "/CN=$LOCAL_LAN_IP" \
+        -addext "subjectAltName=IP:$LOCAL_LAN_IP,DNS:localhost,IP:127.0.0.1" \
+        >/dev/null 2>&1
+      chmod 600 "$DEV_SSL_KEY"
+      info "Generated local HTTPS certificate for $LOCAL_LAN_IP"
+    fi
+  fi
+fi
+
+# ── 6. Check ports ────────────────────────────────────────────────
 BACKEND_PORT=8000
 FRONTEND_PORT=5173
 
@@ -164,7 +196,7 @@ if pgrep -f "artisan schedule:work" >/dev/null 2>&1; then
   pkill -f "artisan schedule:work" 2>/dev/null || true
 fi
 
-# ── 6. Start servers ──────────────────────────────────────────────
+# ── 7. Start servers ──────────────────────────────────────────────
 info "Starting servers..."
 
 # Run the PHP development server directly so these upload limits apply to
@@ -195,7 +227,7 @@ fi
 FRONTEND_PID=$!
 cd "$ROOT"
 
-# ── 7. Health check ───────────────────────────────────────────────
+# ── 8. Health check ───────────────────────────────────────────────
 sleep 3
 if curl -sf http://localhost:$BACKEND_PORT/api/v1/health >/dev/null 2>&1; then
   info "Backend health: OK"
@@ -204,7 +236,7 @@ else
   cat /tmp/cip-backend.log | tail -5
 fi
 
-# ── 8. Summary ─────────────────────────────────────────────────────
+# ── 9. Summary ─────────────────────────────────────────────────────
 echo ""
 echo -e "${GREEN}════════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}  CIP is running!${NC}"
@@ -216,14 +248,15 @@ if [ "$DEV_HTTP" = true ] || [ ! -f "$ROOT/frontend/.devssl/key.pem" ] || [ ! -f
 fi
 echo "  Backend API:   http://localhost:$BACKEND_PORT/api/v1"
 echo "  Frontend:      $FRONTEND_SCHEME://localhost:$FRONTEND_PORT"
-LAN_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+LAN_IP="$LOCAL_LAN_IP"
 if [ -n "$LAN_IP" ]; then
   echo "  LAN frontend:  $FRONTEND_SCHEME://$LAN_IP:$FRONTEND_PORT"
   echo "  LAN API proxy: $FRONTEND_SCHEME://$LAN_IP:$FRONTEND_PORT/api/v1"
 fi
 if [ "$FRONTEND_SCHEME" = "https" ]; then
-  echo "                 (self-signed cert — service workers/push won't work here;"
-  echo "                 rerun with --http for push/service-worker testing)"
+  echo "                 (for phone testing, open this URL, accept the local cert,"
+  echo "                 then allow Camera and Location in the browser)"
+  echo "                 (use --http only for localhost service-worker/push testing)"
 fi
 echo ""
 echo "  Demo accounts (OTP via response):"

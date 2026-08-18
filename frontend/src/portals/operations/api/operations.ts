@@ -72,6 +72,7 @@ export interface AttachableUser {
 }
 
 export interface ProofCaptureLocation {
+  source: 'browser_camera' | 'gallery_upload';
   latitude: number;
   longitude: number;
   accuracy: number | null;
@@ -132,6 +133,7 @@ export const departmentApi = {
     if (capture.heading != null) form.append('capture_heading', String(capture.heading));
     if (capture.speed != null) form.append('capture_speed', String(capture.speed));
     form.append('capture_timestamp', capture.timestamp);
+    form.append('proof_capture_source', capture.source);
     if (assignmentId) form.append('assignment_id', assignmentId);
     if (departmentId) form.append('department_id', departmentId);
     if (note) {

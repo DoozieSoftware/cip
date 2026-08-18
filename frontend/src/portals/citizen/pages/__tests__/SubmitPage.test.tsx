@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type * as ClientApi from '../../api/client';
 import SubmitPage from '../SubmitPage';
+import { STORAGE_KEY } from '../../../../auth/storage';
 
 const mutateAsyncMock = vi.fn();
 
@@ -125,6 +126,10 @@ describe('SubmitPage', () => {
 
     // Step 5: Review & Submit
     await waitFor(() => expect(screen.getByText('Review Your Report')).toBeInTheDocument());
+    const previewButton = screen.getByRole('button', { name: /view photo\.jpg/i });
+    fireEvent.click(previewButton);
+    expect(screen.getByRole('dialog', { name: /evidence preview/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^close$/i }));
     fireEvent.click(screen.getByRole('button', { name: /file report/i }));
 
     await waitFor(() => {
@@ -141,10 +146,101 @@ describe('SubmitPage', () => {
     expect(screen.queryByText('This category requires a video.')).toBeNull();
   });
 
+  it('offers the local-only test photo picker without changing the location requirement', async () => {
+    const getCurrentPosition = vi.fn((success: PositionCallback) => {
+      success({
+        coords: {
+          latitude: 12.9716,
+          longitude: 77.5946,
+          accuracy: 25,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: 1_700_000_000_000,
+      } as GeolocationPosition);
+    });
+    vi.stubGlobal('navigator', {
+      ...globalThis.navigator,
+      geolocation: { getCurrentPosition },
+    });
+    Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
+
+    renderSubmitPage();
+    fireEvent.click(screen.getByText('Roads').closest('label') ?? screen.getByText('Roads'));
+    fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
+    await waitFor(() => expect(screen.getByText('Issue Details')).toBeInTheDocument());
+    fireEvent.change(screen.getByPlaceholderText(/Large pothole/i), {
+      target: { value: 'Large pothole near metro' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/Describe the issue/i), {
+      target: { value: 'Vehicles are swerving into the bus lane near the metro gate.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
+    await waitFor(() => expect(screen.getByText('Location Verification')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /use my location/i }));
+    await waitFor(() => expect(screen.getByText('Location captured')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
+    await waitFor(() => expect(screen.getByText('Attach Evidence')).toBeInTheDocument());
+
+    expect(screen.getByLabelText('Upload test photo')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Upload test photo'), {
+      target: {
+        files: [new File(['test-photo'], 'garbage-test.jpg', { type: 'image/jpeg' })],
+      },
+    });
+
+    await waitFor(() => expect(screen.getByText('1 file attached')).toBeInTheDocument());
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+  });
+
   it('validates category selection', () => {
     renderSubmitPage();
     fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
     expect(screen.getByText('Pick a category.')).toBeInTheDocument();
+  });
+
+  it('allows a citizen to discard a saved draft before submitting', async () => {
+    const ownerId = 'citizen-draft-test';
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        token: 'test-token',
+        user: { id: ownerId, name: 'Test Citizen', roles: ['citizen'] },
+      }),
+    );
+    localStorage.setItem(
+      `cip.citizen.draft.v1:${ownerId}`,
+      JSON.stringify({
+        id: ownerId,
+        owner_id: ownerId,
+        updated_at: Date.now(),
+        type_id: 'type-roads',
+        title: 'Saved road issue',
+        description: 'A saved road issue waiting to be submitted.',
+        location: null,
+        address: '',
+        current_step: 'Details',
+        files: [],
+        idempotency_key: 'stale-key',
+      }),
+    );
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    renderSubmitPage();
+
+    const discardButton = await screen.findByRole('button', { name: /discard draft/i });
+    fireEvent.click(discardButton);
+
+    await waitFor(() => {
+      expect(localStorage.getItem(`cip.citizen.draft.v1:${ownerId}`)).toBeNull();
+      expect(screen.getByText('Report Category')).toBeInTheDocument();
+    });
+    expect(confirmSpy).toHaveBeenCalledWith('Discard this saved report draft and start over?');
+
+    confirmSpy.mockRestore();
+    localStorage.removeItem(STORAGE_KEY);
   });
 
   it('validates title and description length', async () => {

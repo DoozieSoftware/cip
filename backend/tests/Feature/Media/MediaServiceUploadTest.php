@@ -6,9 +6,10 @@ use App\Modules\Media\Jobs\ComputeHashesJob;
 use App\Modules\Media\Jobs\ExtractVideoMetadataJob;
 use App\Modules\Media\Jobs\GenerateThumbnailJob;
 use App\Modules\Media\Models\Media;
-use App\Modules\Media\Services\LogScanner;
+use App\Modules\Media\Models\MediaAccessLog;
 use App\Modules\Media\Services\MediaService;
 use App\Modules\Media\Services\MimeValidator;
+use App\Modules\Media\Services\NullScanner;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Users\Models\User;
@@ -45,7 +46,7 @@ function msuBigJpeg(int $sizeBytes): UploadedFile
 beforeEach(function (): void {
     Storage::fake('local');
     config(['cip.media.disk' => 'local']);
-    $this->service = new MediaService(new MimeValidator, new LogScanner);
+    $this->service = new MediaService(new MimeValidator, new NullScanner);
 });
 
 it('rejects an 11th photo (acceptance: 11th photo rejected)', function (): void {
@@ -148,6 +149,35 @@ it('dispatches ComputeHashesJob and GenerateThumbnailJob for photos', function (
     Bus::assertDispatched(ComputeHashesJob::class);
     Bus::assertDispatched(GenerateThumbnailJob::class);
     Bus::assertNotDispatched(ExtractVideoMetadataJob::class);
+});
+
+it('records live proof capture time and location metadata in the custody trail', function (): void {
+    Bus::fake([ComputeHashesJob::class, GenerateThumbnailJob::class]);
+
+    $report = Report::factory()->create();
+    $capturedAt = now()->subMinute();
+    $media = $this->service->uploadPhoto(
+        $report->id,
+        msuJpeg(),
+        User::factory()->create()->id,
+        hints: [
+            'capture' => [
+                'source' => 'browser_camera',
+                'latitude' => 12.9716,
+                'longitude' => 77.5946,
+                'accuracy' => 8.0,
+                'captured_at' => $capturedAt->toIso8601String(),
+                'provider' => 'browser_geolocation',
+            ],
+        ],
+    );
+
+    $audit = MediaAccessLog::query()->where('media_id', $media->id)->firstOrFail();
+
+    expect($media->captured_at?->toIso8601String())->toBe($capturedAt->toIso8601String())
+        ->and(data_get($media->metadata, 'upload.capture.source'))->toBe('browser_camera')
+        ->and(data_get($audit->metadata, 'capture.latitude'))->toBe(12.9716)
+        ->and(data_get($audit->metadata, 'capture.longitude'))->toBe(77.5946);
 });
 
 it('dispatches ComputeHashesJob and ExtractVideoMetadataJob for videos (and not GenerateThumbnailJob)', function (): void {

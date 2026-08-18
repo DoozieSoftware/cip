@@ -6,6 +6,7 @@ export const kn_IN: MessageCatalog = {
   'common.back': 'ಹಿಂದೆ',
   'common.submit': 'ಸಲ್ಲಿಸಿ',
   'common.cancel': 'ರದ್ದುಮಾಡಿ',
+  'common.close': 'ಮುಚ್ಚಿ',
   'common.retry': 'ಮರುಪ್ರಯತ್ನ',
   'common.edit': 'ಸಂಪಾದಿಸಿ',
   'common.save': 'ಉಳಿಸಿ',
@@ -81,6 +82,10 @@ export const kn_IN: MessageCatalog = {
 
   // Submit page
   'submit.newReport': 'ಹೊಸ ವರದಿ',
+  'submit.discard.button': 'ಕರಡು ಅಳಿಸಿ',
+  'submit.discard.confirm': 'ಉಳಿಸಿದ ವರದಿ ಕರಡನ್ನು ಅಳಿಸಿ ಮತ್ತೆ ಪ್ರಾರಂಭಿಸಬೇಕೆ?',
+  'submit.discard.conflictAction': 'ಉಳಿಸಿದ ಕರಡನ್ನು ಅಳಿಸಿ ಮತ್ತೆ ಪ್ರಾರಂಭಿಸಿ',
+  'submit.discard.done': 'ಕರಡು ಅಳಿಸಲಾಗಿದೆ. ನೀವು ಹೊಸ ವರದಿಯನ್ನು ಪ್ರಾರಂಭಿಸಬಹುದು.',
   'submit.stepCount': 'ಹಂತ {current} / {total}',
   'submit.step.category': 'ವರ್ಗ',
   'submit.step.details': 'ವಿವರಗಳು',
@@ -168,6 +173,9 @@ export const kn_IN: MessageCatalog = {
   'submit.evidence.videoRequiredSuffix': ' (ಅಗತ್ಯವಿದೆ)',
   'submit.evidence.videoOptionalSuffix': ' (ಐಚ್ಛಿಕ)',
   'submit.evidence.filesAttached': '{count} ಫೈಲ್{plural} ಲಗತ್ತಿಸಲಾಗಿದೆ',
+  'submit.evidence.viewFile': '{name} ವೀಕ್ಷಿಸಿ',
+  'submit.evidence.previewTitle': 'ಪ್ರಮಾಣದ ಪೂರ್ವವೀಕ್ಷಣೆ',
+  'submit.evidence.closePreview': 'ಪೂರ್ವವೀಕ್ಷಣೆ ಮುಚ್ಚಿ',
   'submit.evidence.removeFile': '{name} ತೆಗೆಯಿರಿ',
   'submit.evidence.requiresPhoto': 'ಈ ವರ್ಗಕ್ಕೆ ಕನಿಷ್ಠ ಒಂದು ಫೋಟೋ ಅಗತ್ಯವಿದೆ.',
   'submit.evidence.requiresVideo': 'ಈ ವರ್ಗಕ್ಕೆ ವೀಡಿಯೊ ಅಗತ್ಯವಿದೆ.',
@@ -180,6 +188,7 @@ export const kn_IN: MessageCatalog = {
   'submit.review.description': 'ವಿವರಣೆ',
   'submit.review.location': 'ಸ್ಥಳ',
   'submit.review.evidence': 'ಪ್ರಮಾಣ',
+  'submit.review.evidenceHint': 'ವೀಕ್ಷಿಸಲು ಫೋಟೋವನ್ನು ಟ್ಯಾಪ್ ಮಾಡಿ.',
   'submit.review.locationNotCaptured': 'ಕಪ್ಚರ್ ಆಗಿಲ್ಲ',
   'submit.review.unknown': 'ಅಜ್ಞಾತ',
   'submit.review.confirmation':

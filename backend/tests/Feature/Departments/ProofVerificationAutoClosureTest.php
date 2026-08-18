@@ -33,7 +33,10 @@ it('allows automatic completion only above the configured threshold', function (
         'status' => 'match',
         'location_match' => true,
         'overall_confidence' => 81,
-        'metadata' => ['engine' => 'proof_verification_ai_v1'],
+        'metadata' => [
+            'engine' => 'proof_verification_ai_v1',
+            'proof_capture_source' => 'browser_camera',
+        ],
     ]))->toBeTrue()
         ->and(autoClosureDecision([
             'status' => 'match',
@@ -106,7 +109,10 @@ it('honors configurable threshold values and clamps invalid configuration safely
     $validProof = [
         'status' => 'match',
         'location_match' => true,
-        'metadata' => ['engine' => 'proof_verification_ai_v1'],
+        'metadata' => [
+            'engine' => 'proof_verification_ai_v1',
+            'proof_capture_source' => 'browser_camera',
+        ],
     ];
 
     config()->set('cip.ai.proof_review.auto_close_min', 90);
@@ -125,4 +131,18 @@ it('honors configurable threshold values and clamps invalid configuration safely
     expect(proofVerificationServiceForAutoClosure()->automaticClosureThreshold())->toBe(0)
         ->and(autoClosureDecision($validProof + ['overall_confidence' => 1]))->toBeTrue()
         ->and(autoClosureDecision($validProof + ['overall_confidence' => 0]))->toBeFalse();
+});
+
+it('requires human review before a gallery proof can complete a report automatically', function (): void {
+    config()->set('cip.ai.proof_review.auto_close_min', 80);
+
+    expect(autoClosureDecision([
+        'status' => 'match',
+        'location_match' => true,
+        'overall_confidence' => 99,
+        'metadata' => [
+            'engine' => 'proof_verification_ai_v1',
+            'proof_capture_source' => 'gallery_upload',
+        ],
+    ]))->toBeFalse();
 });

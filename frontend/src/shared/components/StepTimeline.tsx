@@ -63,21 +63,23 @@ export function StepTimeline({
           {offPathBadge.label}
         </span>
       )}
-      <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
+      <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-2">
         {/* Vertical connector line (mobile): runs down the dot centre-line. */}
         <div
-          className="absolute bottom-4 left-[15px] top-4 w-0.5 bg-slate-200 sm:hidden"
+          className="absolute bottom-4 left-[15px] top-4 w-0.5 bg-slate-200 lg:hidden"
           aria-hidden="true"
         />
         {/* Horizontal progress line (sm+). */}
         <div
-          className="absolute left-0 right-0 top-4 hidden h-0.5 bg-slate-200 sm:block"
+          className="absolute left-4 right-4 top-4 hidden h-0.5 bg-slate-200 lg:block"
           aria-hidden="true"
         />
         <div
-          className="absolute left-0 top-4 hidden h-0.5 bg-emerald-500 transition-all sm:block"
+          className="absolute left-4 top-4 hidden h-0.5 bg-emerald-500 transition-all lg:block"
           aria-hidden="true"
-          style={{ width: `${progressPct}%` }}
+          style={{
+            width: `calc(${progressPct}% - ${progressPct > 0 ? (progressPct * 32) / 100 : 0}px)`,
+          }}
         />
         {steps.map((step, index) => {
           const done = index < currentIndex;
@@ -85,7 +87,7 @@ export function StepTimeline({
           return (
             <div
               key={step.code}
-              className="relative z-10 flex min-w-0 flex-1 items-start gap-3 sm:flex-col sm:items-center sm:gap-0"
+              className="relative z-10 flex min-w-0 flex-1 items-start gap-3 lg:flex-col lg:items-center lg:gap-0"
             >
               <span
                 className={
@@ -102,10 +104,10 @@ export function StepTimeline({
                 )}
                 <span className="relative">{done ? '✓' : index + 1}</span>
               </span>
-              <span className="flex min-w-0 flex-1 flex-col sm:w-full sm:items-center">
+              <span className="flex min-w-0 flex-1 flex-col lg:w-full lg:items-center">
                 <span
                   className={
-                    'text-[11px] leading-tight text-left sm:mt-1.5 sm:w-full sm:truncate sm:text-center ' +
+                    'text-[11px] leading-snug text-left lg:mt-1.5 lg:w-full lg:max-w-[8rem] lg:whitespace-normal lg:break-words lg:text-center [overflow-wrap:anywhere] ' +
                     (active
                       ? 'font-medium text-blue-700 '
                       : done
@@ -116,7 +118,7 @@ export function StepTimeline({
                   {step.label}
                 </span>
                 {step.at && (
-                  <span className="mt-0.5 text-left text-[10px] tabular-nums text-slate-500 sm:truncate sm:text-center">
+                  <span className="mt-0.5 text-left text-[10px] leading-snug tabular-nums text-slate-500 lg:w-full lg:max-w-[8rem] lg:whitespace-normal lg:break-words lg:text-center [overflow-wrap:anywhere]">
                     {formatTimestamp(step.at)}
                   </span>
                 )}

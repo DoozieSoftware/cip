@@ -61,6 +61,16 @@ class ProofVerificationService
             $status = 'needs_review';
         }
 
+        $capture = $this->captureMetadata($proof);
+        $captureSource = $capture['source'] ?? null;
+
+        if ($captureSource === 'gallery_upload' && $status === 'match') {
+            // Embedded photo metadata can be missing or altered. A gallery
+            // upload can support a decision, but cannot silently complete a
+            // report without a person reviewing the proof.
+            $status = 'needs_review';
+        }
+
         return ReportProofVerification::query()->updateOrCreate(
             ['proof_media_id' => $proof->getKey()],
             [
@@ -79,7 +89,8 @@ class ProofVerificationService
                 'metadata' => [
                     'engine' => $aiReview === null ? 'proof_validation_v1_fallback' : 'proof_verification_ai_v1',
                     'location_match_threshold_m' => self::LOCATION_MATCH_METERS,
-                    'proof_capture' => $this->captureMetadata($proof),
+                    'proof_capture' => $capture,
+                    'proof_capture_source' => $captureSource,
                     'evidence_media_present' => $evidence !== null,
                     'same_file_reused' => $evidence !== null && $evidence->checksum === $proof->checksum,
                     'ai_review' => $aiReview,
@@ -136,9 +147,11 @@ class ProofVerificationService
     {
         $metadata = is_array($verification->metadata) ? $verification->metadata : [];
         $engine = $metadata['engine'] ?? null;
+        $captureSource = $metadata['proof_capture_source'] ?? null;
         $threshold = $this->automaticClosureThreshold();
 
         return $engine === 'proof_verification_ai_v1'
+            && $captureSource === 'browser_camera'
             && $verification->status === 'match'
             && $verification->location_match === true
             && $verification->overall_confidence > $threshold;

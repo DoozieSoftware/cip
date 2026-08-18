@@ -18,6 +18,7 @@ use App\Modules\Media\Repositories\MediaQuarantineRepository;
 use App\Modules\Shared\Enums\ErrorCode;
 use App\Modules\Shared\Exceptions\ApiException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -103,9 +104,15 @@ final class MediaQuarantineService
                     'scanner' => $this->scanner->name(),
                     'quarantine' => true,
                 ];
+                $capturedAt = $this->captureTimeFromHints($hints);
+                $imageMetadata = $this->imageMetadata($file, $type);
 
                 if ($hints !== null && $hints !== []) {
                     $metadata['upload'] = $hints;
+                }
+
+                if ($imageMetadata !== []) {
+                    $metadata['image_metadata'] = $imageMetadata;
                 }
 
                 [$width, $height] = $this->photoDimensions($file, $type);
@@ -126,7 +133,7 @@ final class MediaQuarantineService
                     'checksum' => $sha256,
                     'scan_status' => MediaScanStatus::PENDING,
                     'scan_attempted_at' => now(),
-                    'captured_at' => null,
+                    'captured_at' => $capturedAt,
                     'uploaded_at' => now(),
                     'uploaded_by' => $uploaderId,
                     'metadata' => $metadata,
@@ -135,16 +142,26 @@ final class MediaQuarantineService
                 ]);
 
                 $quarantine = $this->quarantines->createFor($media, $this->scanner->name(), $sha256);
+                $auditMetadata = [
+                    'scanner' => $this->scanner->name(),
+                    'quarantine_id' => $quarantine->id,
+                    'quarantine_path' => $quarantinePath,
+                    'sha256' => $sha256,
+                ];
+
+                if (is_array($hints['capture'] ?? null)) {
+                    $auditMetadata['capture'] = $hints['capture'];
+                }
+
+                if ($imageMetadata !== []) {
+                    $auditMetadata['image_metadata'] = $imageMetadata;
+                }
+
                 $this->chainOfCustody->record(
                     $media,
                     ChainOfCustodyWriter::EVENT_UPLOAD,
                     $media->uploader()->first(),
-                    metadata: [
-                        'scanner' => $this->scanner->name(),
-                        'quarantine_id' => $quarantine->id,
-                        'quarantine_path' => $quarantinePath,
-                        'sha256' => $sha256,
-                    ],
+                    metadata: $auditMetadata,
                 );
 
                 return [$media, $quarantine];
@@ -206,6 +223,105 @@ final class MediaQuarantineService
 
             throw $this->unavailableException($media, $e);
         }
+    }
+
+    /** @param array<string, mixed>|null $hints */
+    private function captureTimeFromHints(?array $hints): ?Carbon
+    {
+        $capture = $hints['capture'] ?? null;
+        $capturedAt = is_array($capture) ? ($capture['captured_at'] ?? null) : null;
+
+        if (! is_string($capturedAt) || $capturedAt === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($capturedAt);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /** @return array<string, mixed> */
+    private function imageMetadata(UploadedFile $file, string $type): array
+    {
+        if ($type !== 'PHOTO' || ! function_exists('exif_read_data')) {
+            return [];
+        }
+
+        $path = $file->getRealPath();
+
+        if (! is_string($path) || $path === '') {
+            return [];
+        }
+
+        try {
+            $data = @exif_read_data($path, 'EXIF,GPS', true, false);
+        } catch (Throwable) {
+            return [];
+        }
+
+        if (! is_array($data)) {
+            return [];
+        }
+
+        $exif = is_array($data['EXIF'] ?? null) ? $data['EXIF'] : [];
+        $gps = is_array($data['GPS'] ?? null) ? $data['GPS'] : [];
+        $metadata = ['source' => 'embedded_exif', 'trusted' => false];
+        $originalTime = $exif['DateTimeOriginal'] ?? null;
+
+        if (is_string($originalTime) && $originalTime !== '') {
+            $metadata['original_datetime'] = $originalTime;
+        }
+
+        $latitude = $this->exifCoordinate($gps['GPSLatitude'] ?? null, $gps['GPSLatitudeRef'] ?? null);
+        $longitude = $this->exifCoordinate($gps['GPSLongitude'] ?? null, $gps['GPSLongitudeRef'] ?? null);
+
+        if ($latitude !== null && $longitude !== null) {
+            $metadata['latitude'] = $latitude;
+            $metadata['longitude'] = $longitude;
+        }
+
+        return count($metadata) > 2 ? $metadata : [];
+    }
+
+    private function exifCoordinate(mixed $value, mixed $hemisphere): ?float
+    {
+        if (! is_array($value) || count($value) < 3 || ! is_string($hemisphere)) {
+            return null;
+        }
+
+        $parts = array_values($value);
+        $degrees = $this->exifRational($parts[0] ?? null);
+        $minutes = $this->exifRational($parts[1] ?? null);
+        $seconds = $this->exifRational($parts[2] ?? null);
+
+        if ($degrees === null || $minutes === null || $seconds === null) {
+            return null;
+        }
+
+        $coordinate = $degrees + ($minutes / 60) + ($seconds / 3600);
+
+        return in_array(strtoupper($hemisphere), ['S', 'W'], true) ? -$coordinate : $coordinate;
+    }
+
+    private function exifRational(mixed $value): ?float
+    {
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        if (! is_string($value) || ! str_contains($value, '/')) {
+            return null;
+        }
+
+        [$numerator, $denominator] = array_pad(explode('/', $value, 2), 2, null);
+
+        if (! is_numeric($numerator) || ! is_numeric($denominator) || (float) $denominator === 0.0) {
+            return null;
+        }
+
+        return (float) $numerator / (float) $denominator;
     }
 
     /**

@@ -165,7 +165,7 @@ class CitizenReportActionService
             );
         }
 
-        return DB::transaction(function () use ($report, $decision, $citizen, $expectedWorkflowVersion): Report {
+        return DB::transaction(function () use ($report, $decision, $citizen, $event, $expectedWorkflowVersion): Report {
             $updated = $this->engine->apply(
                 $report,
                 $decision,
@@ -177,7 +177,7 @@ class CitizenReportActionService
                 'user_id' => $citizen->id,
                 'entity' => 'reports',
                 'entity_id' => $report->id,
-                'action' => 'report.citizen_'.$decision->matchedTransitionId,
+                'action' => 'report.citizen_'.$event,
                 'before' => ['current_status_id' => $report->current_status_id],
                 'after' => ['current_status_id' => $updated->current_status_id],
                 'ip' => request()->ip(),
