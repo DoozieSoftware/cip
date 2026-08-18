@@ -45,6 +45,7 @@ import { AssignmentDialog } from '../components/AssignmentDialog';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { StepTimeline } from '../../../shared/components/StepTimeline';
 import { buildStaffTimeline } from '../../../shared/staffStatusTimeline';
+import { moderatorActionMessage } from './moderatorStatus';
 
 function LocationText({ lat, lng }: { lat: number; lng: number }): JSX.Element {
   const place = useReverseGeocode(lat, lng);
@@ -232,7 +233,7 @@ function ActionFooter({
       </div>
       {!decisionsEnabled && !proofReviewEnabled && (
         <p className="text-sm text-[#6f6e69]" role="status">
-          Approve and Reject are available only while a report is awaiting moderator review.
+          {moderatorActionMessage(statusCode)}
         </p>
       )}
     </div>

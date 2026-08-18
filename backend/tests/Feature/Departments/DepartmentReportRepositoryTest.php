@@ -50,6 +50,22 @@ it('filters compose on status + search', function (): void {
     expect($page->items()[0]->title)->toContain('pothole');
 });
 
+it('filters both terminal completion paths as one completed queue', function (): void {
+    $deptA = Department::factory()->create(['code' => 'A-COMPLETED']);
+    $verified = ReportStatus::query()->where('code', 'verified')->firstOrFail();
+    $closed = ReportStatus::query()->where('code', 'closed')->firstOrFail();
+    $assigned = ReportStatus::query()->where('code', 'assigned')->firstOrFail();
+    Report::factory()->create(['department_id' => $deptA->id, 'current_status_id' => $verified->id]);
+    Report::factory()->create(['department_id' => $deptA->id, 'current_status_id' => $closed->id]);
+    Report::factory()->create(['department_id' => $deptA->id, 'current_status_id' => $assigned->id]);
+
+    $page = app(DepartmentReportRepository::class)->assignedTo($deptA->id, [
+        'status' => 'verified,closed',
+    ]);
+
+    expect($page->total())->toBe(2);
+});
+
 it('filters by report type code when category is supplied', function (): void {
     $deptA = Department::factory()->create(['code' => 'A']);
     $pothole = ReportType::query()->where('code', 'pothole')->firstOrFail();

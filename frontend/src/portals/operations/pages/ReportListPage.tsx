@@ -28,8 +28,7 @@ const STATUS_OPTIONS = [
   { value: 'resolved', label: statusLabel('resolved') },
   { value: 'resolved_pending_verification', label: statusLabel('resolved_pending_verification') },
   { value: 'reopened', label: statusLabel('reopened') },
-  { value: 'verified', label: statusLabel('verified') },
-  { value: 'closed', label: statusLabel('closed') },
+  { value: 'verified,closed', label: statusLabel('verified') },
   { value: 'escalated', label: statusLabel('escalated') },
 ];
 
@@ -40,7 +39,7 @@ const NEXT_ACTION: Record<string, string> = {
   resolved: 'Review fix proof',
   resolved_pending_verification: 'Waiting for citizen',
   reopened: 'Resume work',
-  verified: 'Citizen confirmed',
+  verified: 'Completed',
   closed: 'Completed',
   escalated: 'Supervisor attention',
   merged: 'Merged duplicate',

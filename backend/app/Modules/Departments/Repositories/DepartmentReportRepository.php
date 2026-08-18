@@ -9,7 +9,6 @@ use App\Modules\Reports\Models\ReportAssignment;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
 
 /**
  * M11 — Repository for the operations-portal report views.
@@ -20,7 +19,8 @@ use Illuminate\Support\Facades\DB;
  * or from the authenticated user's primary department) and
  * composes the standard filter set:
  *
- *   - status (free-text code, exact match on `report_statuses.code`)
+ *   - status (free-text code, or a comma-separated set of
+ *     `report_statuses.code` values)
  *   - priority (code)
  *   - category (code)
  *   - ward (id)
@@ -168,7 +168,15 @@ class DepartmentReportRepository
     private function applyFilters(Builder $query, array $filters): void
     {
         if (! empty($filters['status'])) {
-            $query->whereHas('status', fn ($q) => $q->where('code', $filters['status']));
+            $statusFilter = $filters['status'];
+            $statuses = array_values(array_filter(array_map(
+                static fn (string $status): string => trim($status),
+                is_string($statusFilter) ? explode(',', $statusFilter) : [],
+            )));
+
+            if ($statuses !== []) {
+                $query->whereHas('status', fn ($q) => $q->whereIn('code', $statuses));
+            }
         }
 
         if (! empty($filters['priority'])) {
@@ -194,15 +202,10 @@ class DepartmentReportRepository
         if (! empty($filters['search']) && is_string($filters['search'])) {
             $search = trim($filters['search']);
             $query->where(function (Builder $q) use ($search): void {
+                $term = '%'.$search.'%';
                 $q->where('tracking_number', 'like', $search.'%');
-
-                if (DB::getDriverName() === 'mysql') {
-                    $q->orWhereFullText(['title', 'description'], $search);
-                } else {
-                    $term = '%'.$search.'%';
-                    $q->orWhere('title', 'like', $term)
-                        ->orWhere('description', 'like', $term);
-                }
+                $q->orWhere('title', 'like', $term)
+                    ->orWhere('description', 'like', $term);
             });
         }
     }

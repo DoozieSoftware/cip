@@ -46,7 +46,12 @@ const STATUS_FILTERS = [
   { value: 'assigned', label: staffReportStatusLabel('assigned') },
   { value: 'reopened', label: staffReportStatusLabel('reopened') },
   { value: 'escalated', label: staffReportStatusLabel('escalated') },
+  { value: 'verified,closed', label: 'Completed' },
 ];
+
+function isCompletedFilter(status: string | undefined): boolean {
+  return status === 'verified,closed' || status === 'verified' || status === 'closed';
+}
 
 export default function ReviewQueuePage() {
   const [params, setParams] = useSearchParams();
@@ -105,14 +110,12 @@ export default function ReviewQueuePage() {
               Moderator · Queue
             </p>
             <h1 className="mt-2 text-2xl font-medium tracking-[-0.02em] text-[#1d1d1b]">
-              Reports awaiting review
+              {isCompletedFilter(filters.status) ? 'Completed reports' : 'Reports awaiting review'}
             </h1>
             <p className="mt-1 text-sm text-[#6f6e69]">
-              Reports awaiting moderator action. Use{' '}
-              <kbd className="rounded bg-white px-1.5 py-0.5 font-mono text-xs text-[#1d1d1b] ring-1 ring-[#d8d6cf]">
-                N
-              </kbd>{' '}
-              in a detail page to jump to the next item.
+              {isCompletedFilter(filters.status)
+                ? 'Reports confirmed by citizens or closed by a moderator.'
+                : 'Reports awaiting moderator action. Use N in a detail page to jump to the next item.'}
             </p>
           </div>
           <div className="flex items-center gap-2">

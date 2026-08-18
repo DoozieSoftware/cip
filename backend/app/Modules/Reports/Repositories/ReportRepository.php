@@ -213,7 +213,10 @@ class ReportRepository
         $q = Report::query();
 
         if (! empty($filters['status']) && is_string($filters['status'])) {
-            $status = $filters['status'];
+            $requestedStatuses = array_values(array_filter(array_map(
+                static fn (string $status): string => trim($status),
+                explode(',', $filters['status']),
+            )));
             $groups = [
                 'open' => ['submitted', 'ai_processing', 'pending_moderator', 'assigned', 'accepted', 'in_progress', 'escalated'],
                 'awaiting_citizen' => ['resolved_pending_verification'],
@@ -221,7 +224,9 @@ class ReportRepository
                 'rejected' => ['rejected'],
                 'merged' => ['merged'],
             ];
-            $codes = $groups[$status] ?? [$status];
+            $codes = array_values(array_unique(array_merge(
+                ...array_map(static fn (string $status): array => $groups[$status] ?? [$status], $requestedStatuses),
+            )));
             $statusIds = ReportStatus::query()->whereIn('code', $codes)->pluck('id')->all();
 
             if ($statusIds !== []) {

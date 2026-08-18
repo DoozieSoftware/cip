@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import { ModeratorReportHeader } from './ReportDetailPage';
+import { moderatorActionMessage } from './moderatorStatus';
 
 describe('ModeratorReportHeader', () => {
   it('gives the report title the full mobile width before showing header badges', () => {
@@ -28,5 +29,16 @@ describe('ModeratorReportHeader', () => {
     expect(headerLayout).toHaveClass('flex-col', 'sm:flex-row');
     expect(screen.getByText('Needs review')).toBeInTheDocument();
     expect(screen.getByText('1 evidence')).toBeInTheDocument();
+  });
+});
+
+describe('moderatorActionMessage', () => {
+  it('explains that citizen-confirmed and closed reports need no further action', () => {
+    expect(moderatorActionMessage('verified')).toBe(
+      'This report is complete. No further moderator action is needed.',
+    );
+    expect(moderatorActionMessage('closed')).toBe(
+      'This report is complete. No further moderator action is needed.',
+    );
   });
 });

@@ -11,7 +11,7 @@
  * happened). Each portal is responsible for turning its own status
  * history into this shape, since "what counts as a step" differs by
  * audience (citizens see collapsed plain-language stages; staff see
- * every workflow status).
+ * operational checkpoints with the same single Completed stage).
  */
 
 export interface StepTimelineStep {

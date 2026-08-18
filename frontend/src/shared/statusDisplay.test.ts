@@ -17,14 +17,14 @@ describe('status display labels', () => {
     expect(citizenReportStatusLabel('closed')).toBe('Completed');
   });
 
-  it('keeps staff labels specific without leaking raw status codes', () => {
+  it('uses the same final status label across staff-facing surfaces', () => {
     expect(staffReportStatusLabel('pending_moderator')).toBe('Needs review');
     expect(staffReportStatusLabel('resolved')).toBe('Fixed — proof submitted');
     expect(staffReportStatusLabel('resolved_pending_verification')).toBe(
       'Waiting for citizen confirmation',
     );
     expect(staffReportStatusLabel('reopened')).toBe('Reopened by citizen');
-    expect(staffReportStatusLabel('verified')).toBe('Citizen confirmed');
+    expect(staffReportStatusLabel('verified')).toBe('Completed');
     expect(staffReportStatusLabel('closed')).toBe('Completed');
   });
 
@@ -32,6 +32,7 @@ describe('status display labels', () => {
     expect(reportStatusTone('resolved_pending_verification')).toBe('warning');
     expect(reportStatusTone('reopened')).toBe('info');
     expect(reportStatusTone('merged')).toBe('danger');
-    expect(reportStatusTone('closed')).toBe('neutral');
+    expect(reportStatusTone('verified')).toBe('success');
+    expect(reportStatusTone('closed')).toBe('success');
   });
 });

@@ -41,4 +41,25 @@ describe('Moderator review queue', () => {
       );
     });
   });
+
+  it('shows completed reports, including citizen-confirmed and closed statuses', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <ReviewQueuePage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Completed' }));
+
+    await waitFor(() => {
+      expect(queueApi.list).toHaveBeenLastCalledWith(
+        expect.objectContaining({ status: 'verified,closed' }),
+      );
+    });
+    expect(screen.getByRole('heading', { name: 'Completed reports' })).toBeInTheDocument();
+  });
 });

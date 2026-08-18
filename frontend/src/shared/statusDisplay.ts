@@ -42,7 +42,10 @@ const STAFF_STATUS_LABELS: Record<string, string> = {
   resolved: 'Fixed — proof submitted',
   resolved_pending_verification: 'Waiting for citizen confirmation',
   reopened: 'Reopened by citizen',
-  verified: 'Citizen confirmed',
+  // `verified` is the internal transition written after citizen validation.
+  // It is already the terminal positive outcome, so every portal displays it
+  // with the same user-facing label as the alternate `closed` path.
+  verified: 'Completed',
   closed: 'Completed',
   rejected: 'Rejected',
   merged: 'Merged duplicate',
@@ -53,9 +56,12 @@ const STAFF_STATUS_LABELS: Record<string, string> = {
 // §2 (Meaning column), phrased for the citizen reading their own report.
 const CITIZEN_STATUS_MEANING: Record<string, string> = {
   draft: 'Your report is saved but not yet submitted.',
-  submitted: "Your report has been received and is being checked before it's sent to the right department.",
-  ai_processing: "Your report has been received and is being checked before it's sent to the right department.",
-  pending_moderator: "Your report has been received and is being checked before it's sent to the right department.",
+  submitted:
+    "Your report has been received and is being checked before it's sent to the right department.",
+  ai_processing:
+    "Your report has been received and is being checked before it's sent to the right department.",
+  pending_moderator:
+    "Your report has been received and is being checked before it's sent to the right department.",
   assigned: 'A department has been notified and will act on your report.',
   accepted: 'A department has been notified and will act on your report.',
   in_progress: 'Work on your report is underway.',
@@ -90,6 +96,7 @@ export function reportStatusTone(code: string | null | undefined): ReportStatusT
       return 'info';
     case 'resolved':
     case 'verified':
+    case 'closed':
       return 'success';
     case 'resolved_pending_verification':
     case 'submitted':
@@ -119,8 +126,7 @@ export const STAFF_STATUS_FILTER_OPTIONS = [
     label: STAFF_STATUS_LABELS.resolved_pending_verification,
   },
   { value: 'reopened', label: STAFF_STATUS_LABELS.reopened },
-  { value: 'verified', label: STAFF_STATUS_LABELS.verified },
-  { value: 'closed', label: STAFF_STATUS_LABELS.closed },
+  { value: 'verified,closed', label: STAFF_STATUS_LABELS.verified },
   { value: 'escalated', label: STAFF_STATUS_LABELS.escalated },
   { value: 'rejected', label: STAFF_STATUS_LABELS.rejected },
   { value: 'merged', label: STAFF_STATUS_LABELS.merged },

@@ -80,7 +80,7 @@ export default function ExportPage() {
                 {statusLabel('resolved_pending_verification')}
               </option>
               <option value="reopened">{statusLabel('reopened')}</option>
-              <option value="closed">{statusLabel('closed')}</option>
+              <option value="verified,closed">{statusLabel('verified')}</option>
             </select>
           </label>
           <Input
