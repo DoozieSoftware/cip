@@ -185,6 +185,10 @@ describe('MyReportsPage', () => {
     expect(screen.getByText('Pothole on Main St')).toBeTruthy();
     expect(screen.getByText('Broken streetlight')).toBeTruthy();
     expect(screen.getByText('2 reports')).toBeTruthy();
+
+    const title = screen.getByText('Pothole on Main St');
+    expect(title.parentElement).toHaveClass('flex-col');
+    expect(screen.getByText('Received')).toHaveClass('whitespace-nowrap');
   });
 
   it('shows auth error state with sign-in link when 401', () => {

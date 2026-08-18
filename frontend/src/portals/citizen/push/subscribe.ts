@@ -28,9 +28,12 @@ export interface PushSupport {
 }
 
 export function pushSupport(): PushSupport {
+  const notification = typeof Notification === 'undefined' ? null : Notification;
+
   if (
     typeof window === 'undefined' ||
-    !('Notification' in window) ||
+    notification === null ||
+    typeof navigator === 'undefined' ||
     !('serviceWorker' in navigator) ||
     !('PushManager' in window)
   ) {
@@ -40,7 +43,7 @@ export function pushSupport(): PushSupport {
   // Some jsdom/browser shims expose Notification without the permission
   // property. Treat that partial API as unsupported instead of leaking
   // `undefined` through a contract that promises NotificationPermission|null.
-  const permission = Notification.permission;
+  const permission = notification.permission;
   if (permission !== 'default' && permission !== 'denied' && permission !== 'granted') {
     return { supported: false, permission: null };
   }

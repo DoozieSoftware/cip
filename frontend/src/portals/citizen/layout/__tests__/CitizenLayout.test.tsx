@@ -51,47 +51,21 @@ describe('CitizenLayout navigation', () => {
     return { sidebar, bottom };
   }
 
-  it('renders Settings as a navigable item in the desktop sidebar', () => {
-    renderAt('/citizen/settings');
-    const { sidebar } = getNavs();
-    expect(within(sidebar).getByText('Settings')).toBeTruthy();
-  });
-
-  it('renders Settings as a navigable item in the mobile bottom nav', () => {
-    renderAt('/citizen/settings');
-    const { bottom } = getNavs();
-    expect(within(bottom).getByText('Settings')).toBeTruthy();
-  });
-
-  it('links Settings to the /citizen/settings route', () => {
+  it('renders the four primary navigation items in the sidebar', () => {
     renderAt('/citizen');
     const { sidebar } = getNavs();
-    const settingsLink = within(sidebar).getByText('Settings').closest('a');
-    expect(settingsLink?.getAttribute('href')).toBe('/citizen/settings');
-  });
-
-  it('marks Settings as active when on the settings route', () => {
-    renderAt('/citizen/settings');
-    const { sidebar } = getNavs();
-    const settingsLink = within(sidebar).getByText('Settings').closest('a');
-    expect(settingsLink?.getAttribute('aria-current')).toBe('page');
-    expect(settingsLink).toHaveClass('bg-white', 'text-[var(--color-ink)]');
-    expect(settingsLink).not.toHaveClass('text-white');
-  });
-
-  it('renders all five primary navigation items in the sidebar', () => {
-    renderAt('/citizen');
-    const { sidebar } = getNavs();
-    for (const label of ['Home', 'Reports', 'New report', 'Account', 'Settings']) {
+    for (const label of ['Home', 'Reports', 'New report', 'Account']) {
       expect(within(sidebar).getByText(label)).toBeTruthy();
     }
+    expect(within(sidebar).queryByText('Settings')).toBeNull();
   });
 
-  it('renders all five primary navigation items in the bottom nav', () => {
+  it('renders the four primary navigation items in the bottom nav', () => {
     renderAt('/citizen');
     const { bottom } = getNavs();
-    for (const label of ['Home', 'Reports', 'New report', 'Account', 'Settings']) {
+    for (const label of ['Home', 'Reports', 'New report', 'Account']) {
       expect(within(bottom).getByText(label)).toBeTruthy();
     }
+    expect(within(bottom).queryByText('Settings')).toBeNull();
   });
 });

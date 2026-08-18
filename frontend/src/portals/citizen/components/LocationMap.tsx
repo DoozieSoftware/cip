@@ -1,5 +1,5 @@
 import { type JSX } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useReverseGeocode } from '../../../shared/geo/useReverseGeocode';
@@ -17,7 +17,6 @@ const PIN = L.divIcon({
   </svg>`,
   iconSize: [28, 38],
   iconAnchor: [14, 38],
-  popupAnchor: [0, -34],
 });
 
 export interface LocationMapProps {
@@ -58,9 +57,7 @@ export default function LocationMap({
           attributionControl={false}
         >
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <Marker position={[latitude, longitude]} icon={PIN}>
-            <Popup>{placeLabel || 'Report location'}</Popup>
-          </Marker>
+          <Marker position={[latitude, longitude]} icon={PIN} />
         </MapContainer>
       </div>
       <p className="flex items-start gap-1.5 text-sm text-slate-700">

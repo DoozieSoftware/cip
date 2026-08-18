@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { type JSX } from 'react';
-import { Route, Routes, useNavigate } from 'react-router-dom';
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { CitizenLayout } from './layout/CitizenLayout';
 import { ErrorBoundary, ErrorState, Spinner } from '../../shared/ui';
@@ -24,7 +24,6 @@ const ReportDetailPage = lazy(() => import('./pages/ReportDetailPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
-const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 
@@ -132,7 +131,7 @@ export function CitizenApp(): JSX.Element {
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="settings" element={<SettingsPage />} />
+            <Route path="settings" element={<Navigate to="/citizen/profile" replace />} />
             <Route path="legal/privacy" element={<PrivacyPage />} />
             <Route path="legal/terms" element={<TermsPage />} />
             <Route path="*" element={<RouteError />} />

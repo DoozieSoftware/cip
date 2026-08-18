@@ -62,7 +62,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps): JSX.Elemen
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold',
+        'inline-flex max-w-full shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold leading-tight',
         color,
         className,
       )}

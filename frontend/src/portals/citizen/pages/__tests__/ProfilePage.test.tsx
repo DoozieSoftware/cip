@@ -87,6 +87,21 @@ describe('ProfilePage', () => {
     expect(screen.getByText('citizen')).toBeTruthy();
   });
 
+  it('keeps notification and legal settings in the Account page', async () => {
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <ProfilePage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText('Push notifications')).toBeTruthy();
+    expect(screen.getByText('Privacy & legal')).toBeTruthy();
+    expect(screen.getByText('Privacy policy')).toBeTruthy();
+    expect(screen.getByText('Terms of use')).toBeTruthy();
+  });
+
   it('shows loading state', () => {
     (apiRequest as unknown as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
     render(

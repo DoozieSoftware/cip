@@ -1,10 +1,24 @@
 import { useEffect, useState, type FormEvent, type JSX } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../../auth/AuthContext';
 import { apiRequest, type ApiEnvelope } from '../../../auth/api';
 import { Spinner } from '../../../shared/ui';
-import { IconUser, IconMail, IconPhone, IconShield, IconAlertCircle } from '@tabler/icons-react';
+import {
+  IconAlertCircle,
+  IconBell,
+  IconLock,
+  IconMail,
+  IconPhone,
+  IconShield,
+  IconUser,
+} from '@tabler/icons-react';
+import { useToast } from '../components/Toast';
+import { pushSupport, subscribeToPush, unsubscribeFromPush } from '../push/subscribe';
 import { useMessages } from '../messages';
+
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY ?? '';
+const PUSH_SUBSCRIBE_URL = '/notifications/push/subscriptions';
 
 interface ProfileData {
   id: string;
@@ -57,11 +71,14 @@ function Section({ title, icon, children }: SectionProps): JSX.Element {
 export default function ProfilePage(): JSX.Element {
   const { user } = useAuth();
   const { t, locale, setLocale } = useMessages();
+  const toast = useToast();
   const queryClient = useQueryClient();
   const [preferredName, setPreferredName] = useState('');
   const [email, setEmail] = useState('');
   const [profileLocale, setProfileLocale] = useState<'en-IN' | 'kn-IN'>(locale);
   const [notificationChannel, setNotificationChannel] = useState<'sms' | 'push' | 'email'>('sms');
+  const [pushOn, setPushOn] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const me = useQuery({
@@ -79,6 +96,22 @@ export default function ProfilePage(): JSX.Element {
     setProfileLocale(me.data.preferred_locale ?? locale);
     setNotificationChannel(me.data.notification_channel ?? 'sms');
   }, [me.data, locale]);
+
+  useEffect(() => {
+    const support = pushSupport();
+    if (!support.supported || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
+      setPushOn(false);
+      return;
+    }
+
+    navigator.serviceWorker
+      .getRegistration()
+      .then((registration) =>
+        registration ? registration.pushManager.getSubscription() : Promise.resolve(null),
+      )
+      .then((subscription) => setPushOn(Boolean(subscription)))
+      .catch(() => setPushOn(false));
+  }, []);
 
   const profileNeedsCompletion =
     me.data != null &&
@@ -104,6 +137,39 @@ export default function ProfilePage(): JSX.Element {
       setSaveError(error instanceof Error ? error.message : t('profile.saveError'));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function togglePush(): Promise<void> {
+    setPushBusy(true);
+    try {
+      if (pushOn) {
+        await unsubscribeFromPush();
+        setPushOn(false);
+        toast.show(t('settings.pushOffToast'), 'info');
+        return;
+      }
+
+      const result = await subscribeToPush({
+        applicationServerKey: VAPID_PUBLIC_KEY,
+        subscribeUrl: PUSH_SUBSCRIBE_URL,
+      });
+
+      if (result.ok) {
+        setPushOn(true);
+        toast.show(t('settings.pushOnToast'), 'success');
+      } else if (result.reason === 'permission_denied') {
+        toast.show(t('settings.permissionDeniedToast'), 'error');
+      } else if (result.reason === 'unsupported') {
+        toast.show(t('settings.unsupportedToast'), 'error');
+      } else {
+        toast.show(
+          t('settings.enableFailedToast', { detail: result.detail ?? result.reason ?? 'unknown' }),
+          'error',
+        );
+      }
+    } finally {
+      setPushBusy(false);
     }
   }
 
@@ -288,6 +354,54 @@ export default function ProfilePage(): JSX.Element {
                   ))}
                 </div>
               )}
+            </Section>
+
+            <Section
+              title={t('settings.pushNotifications')}
+              icon={<IconBell className="h-4 w-4" stroke={1.6} />}
+            >
+              <div className="flex items-center justify-between gap-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-[var(--color-ink)]">
+                    {pushOn ? t('settings.pushOn') : t('settings.pushOff')}
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                    {t('settings.pushDetail')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={pushBusy}
+                  onClick={() => void togglePush()}
+                  aria-label={t('settings.pushNotifications')}
+                  aria-pressed={pushOn}
+                  className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 ${pushOn ? 'bg-[var(--color-ink)]' : 'bg-[#d8d6cf]'} disabled:cursor-not-allowed disabled:opacity-50`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${pushOn ? 'translate-x-6' : 'translate-x-1'}`}
+                  />
+                </button>
+              </div>
+            </Section>
+
+            <Section
+              title={t('settings.privacyLegal')}
+              icon={<IconLock className="h-4 w-4" stroke={1.6} />}
+            >
+              <div className="flex flex-wrap gap-x-6 gap-y-1 py-2">
+                <Link
+                  to="/citizen/legal/privacy"
+                  className="inline-flex min-h-11 items-center text-sm text-[var(--color-ink)] underline underline-offset-4"
+                >
+                  {t('settings.privacyPolicy')}
+                </Link>
+                <Link
+                  to="/citizen/legal/terms"
+                  className="inline-flex min-h-11 items-center text-sm text-[var(--color-ink)] underline underline-offset-4"
+                >
+                  {t('settings.termsOfUse')}
+                </Link>
+              </div>
             </Section>
 
             <div className="rounded-2xl border border-[#d8cfae] bg-[#f1ead4] p-5">

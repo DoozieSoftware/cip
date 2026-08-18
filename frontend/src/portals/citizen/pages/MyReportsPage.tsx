@@ -146,9 +146,9 @@ function ReportRow({ report, locale }: { report: ReportRow; locale: string }): J
   return (
     <Link
       to={`/citizen/reports/${report.id}`}
-      className="group block rounded-xl bg-white p-4 transition hover:shadow-md"
+      className="group block min-w-0 rounded-xl bg-white p-4 transition hover:shadow-md"
     >
-      <div className="flex items-start gap-3">
+      <div className="flex min-w-0 items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
           {group === 'closed' || group === 'merged' ? (
             <IconCheck className="h-5 w-5" stroke={1.8} />
@@ -157,8 +157,10 @@ function ReportRow({ report, locale }: { report: ReportRow; locale: string }): J
           )}
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <p className="truncate text-sm font-medium text-[var(--color-ink)]">{report.title}</p>
+          <div className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+            <p className="w-full min-w-0 truncate text-sm font-medium text-[var(--color-ink)] sm:flex-1">
+              {report.title}
+            </p>
             <StatusBadge status={report.status} />
           </div>
           <p className="mt-1 line-clamp-1 text-xs text-[var(--color-text-secondary)]">

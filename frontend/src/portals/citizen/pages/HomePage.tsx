@@ -53,7 +53,7 @@ export default function HomePage(): JSX.Element {
 
   if (!online && !reports.data) {
     return (
-      <div className="space-y-8">
+      <div className="min-w-0 space-y-8">
         <header className="flex items-start justify-between gap-5 border-b border-[var(--color-border-faint)] pb-7">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
@@ -101,7 +101,7 @@ export default function HomePage(): JSX.Element {
 
     if (isAuthError) {
       return (
-        <div className="space-y-8">
+        <div className="min-w-0 space-y-8">
           <header className="flex items-start justify-between gap-5 border-b border-[var(--color-border-faint)] pb-7">
             <div>
               <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
@@ -143,7 +143,7 @@ export default function HomePage(): JSX.Element {
     }
 
     return (
-      <div className="space-y-8">
+      <div className="min-w-0 space-y-8">
         <header className="flex items-start justify-between gap-5 border-b border-[var(--color-border-faint)] pb-7">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
@@ -179,7 +179,7 @@ export default function HomePage(): JSX.Element {
 
   if (reports.isLoading && !reports.data) {
     return (
-      <div className="space-y-8">
+      <div className="min-w-0 space-y-8">
         <header className="flex items-start justify-between gap-5 border-b border-[var(--color-border-faint)] pb-7">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
@@ -215,7 +215,7 @@ export default function HomePage(): JSX.Element {
   const recent = reportRows.slice(0, 3);
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-8">
       <header className="flex items-start justify-between gap-5 border-b border-[var(--color-border-faint)] pb-7">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
@@ -332,9 +332,9 @@ export default function HomePage(): JSX.Element {
       )}
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <div className="rounded-2xl border border-black/10 bg-white">
-          <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] px-5 py-4">
-            <div>
+        <div className="min-w-0 rounded-2xl border border-black/10 bg-white">
+          <div className="flex min-w-0 items-center justify-between border-b border-[var(--color-border-subtle)] px-5 py-4">
+            <div className="min-w-0">
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
                 {t('home.recentActivity')}
               </p>
@@ -370,7 +370,7 @@ export default function HomePage(): JSX.Element {
                 <Link
                   key={report.id}
                   to={`/citizen/reports/${report.id}`}
-                  className="group flex min-h-16 items-center gap-3 px-5 py-3 transition hover:bg-[#faf9f6]"
+                  className="group flex min-h-16 min-w-0 items-center gap-3 px-5 py-3 transition hover:bg-[#faf9f6]"
                 >
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
                     {['resolved', 'verified', 'closed'].includes(report.status.code) ? (
@@ -395,7 +395,7 @@ export default function HomePage(): JSX.Element {
           )}
         </div>
 
-        <div className="rounded-2xl border border-black/10 bg-white">
+        <div className="min-w-0 rounded-2xl border border-black/10 bg-white">
           <div className="border-b border-[var(--color-border-subtle)] px-5 py-4">
             <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
               {t('home.fromReportToResolution')}
@@ -425,14 +425,14 @@ export default function HomePage(): JSX.Element {
                 icon: IconCheck,
               },
             ].map((step) => (
-              <div key={step.n} className="flex items-center gap-4 px-5 py-4">
+              <div key={step.n} className="flex min-w-0 items-center gap-4 px-5 py-4">
                 <span className="font-mono text-[11px] text-[var(--color-text-tertiary)]">
                   {step.n}
                 </span>
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
                   <step.icon className="h-4 w-4" stroke={1.6} />
                 </span>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{step.title}</p>
                   <p className="mt-0.5 text-xs text-[var(--color-text-subtle)]">{step.desc}</p>
                 </div>

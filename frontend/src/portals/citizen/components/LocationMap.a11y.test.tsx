@@ -14,7 +14,6 @@ vi.mock('react-leaflet', () => ({
   Marker: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="marker">{children}</div>
   ),
-  Popup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
 describe('LocationMap accessibility', () => {
@@ -24,6 +23,7 @@ describe('LocationMap accessibility', () => {
     expect(mapRegion).toBeInTheDocument();
     expect(mapRegion.getAttribute('aria-label')).toContain('12.9716');
     expect(mapRegion.getAttribute('aria-label')).toContain('77.5946');
+    expect(screen.getByTestId('marker')).toBeEmptyDOMElement();
   });
 
   it('renders the place label as visible text', () => {

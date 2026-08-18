@@ -7,7 +7,6 @@ import {
   IconLogout,
   IconPlus,
   IconRefresh,
-  IconSettings,
   IconUser,
 } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -28,7 +27,6 @@ const NAV: Array<{
   { to: '/citizen/reports', label: 'nav.reports', icon: IconFileDescription },
   { to: '/citizen/submit', label: 'nav.newReport', icon: IconPlus },
   { to: '/citizen/profile', label: 'nav.account', icon: IconUser },
-  { to: '/citizen/settings', label: 'nav.settings', icon: IconSettings },
 ];
 
 export function CitizenLayout(): JSX.Element {
@@ -69,7 +67,7 @@ export function CitizenLayout(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-ink)] lg:flex">
+    <div className="min-h-screen min-w-0 overflow-x-hidden bg-[var(--color-canvas)] text-[var(--color-ink)] lg:flex">
       <a
         href="#cip-main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-[var(--color-ink)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:outline-none focus:ring-2 focus:ring-white"
@@ -157,7 +155,7 @@ export function CitizenLayout(): JSX.Element {
             <main
               id="cip-main-content"
               tabIndex={-1}
-              className="w-full flex-1 px-4 py-7 pb-28 focus:outline-none sm:px-6 lg:px-10 lg:py-10 lg:pb-12"
+              className="min-w-0 w-full flex-1 overflow-x-clip px-4 py-7 pb-28 focus:outline-none sm:px-6 lg:px-10 lg:py-10 lg:pb-12"
             >
               <Outlet />
             </main>
@@ -249,7 +247,7 @@ function PullToRefresh({ children }: { children: JSX.Element }): JSX.Element {
 
   return (
     <div
-      className="relative flex flex-1 flex-col"
+      className="relative flex min-w-0 flex-1 flex-col"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -267,7 +265,7 @@ function PullToRefresh({ children }: { children: JSX.Element }): JSX.Element {
             : t('pullToRefresh.pullToRefresh')}
       </div>
       <div
-        className="flex flex-1 flex-col transition-transform"
+        className="flex min-w-0 flex-1 flex-col transition-transform"
         style={{ transform: `translateY(${distance}px)` }}
       >
         {children}
