@@ -17,6 +17,10 @@ export type ProductEventCode =
 
 const API_BASE = (import.meta.env['VITE_API_BASE'] as string | undefined) ?? '/api/v1';
 
+export function canUseAnalyticsBeacon(url: string, pageOrigin = window.location.origin): boolean {
+  return new URL(url, pageOrigin).origin === pageOrigin;
+}
+
 export function trackProductEvent(
   eventCode: ProductEventCode,
   properties: Record<string, string> = {},
@@ -25,7 +29,11 @@ export function trackProductEvent(
   const url = `${API_BASE}/public/analytics/events`;
 
   try {
-    if (typeof navigator.sendBeacon === 'function') {
+    // sendBeacon includes credentials for cross-origin requests. Production
+    // serves the SPA and API on different origins, so that mode conflicts with
+    // the API's credential-free public CORS policy. Keep beacon for same-origin
+    // development only and use an explicitly credential-free fetch otherwise.
+    if (canUseAnalyticsBeacon(url) && typeof navigator.sendBeacon === 'function') {
       const accepted = navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));
       if (accepted) return;
     }
@@ -33,7 +41,7 @@ export function trackProductEvent(
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: payload,
-      credentials: 'same-origin',
+      credentials: 'omit',
       keepalive: true,
     }).catch(() => undefined);
   } catch {

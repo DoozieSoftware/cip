@@ -62,6 +62,31 @@ interface EvidenceManifest {
   revision: string;
 }
 
+const EVIDENCE_MANIFEST_RETRY_DELAYS_MS = [750, 1_500, 3_000, 5_000, 7_500, 10_000] as const;
+
+export async function waitForEvidenceManifest(
+  reportId: string,
+  readManifest: (path: string) => Promise<EvidenceManifest> = request,
+  wait: (delayMs: number) => Promise<void> = (delayMs) =>
+    new Promise((resolve) => window.setTimeout(resolve, delayMs)),
+): Promise<boolean> {
+  for (let attempt = 0; attempt <= EVIDENCE_MANIFEST_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      const manifest = await readManifest(`/reports/${reportId}/evidence-manifest`);
+      if (manifest.ready) return true;
+    } catch {
+      // Manifest reads are best-effort while the asynchronous media hash settles.
+      // Finalization remains the authoritative evidence gate.
+    }
+
+    const retryDelay = EVIDENCE_MANIFEST_RETRY_DELAYS_MS[attempt];
+    if (retryDelay === undefined) break;
+    await wait(retryDelay);
+  }
+
+  return false;
+}
+
 export function normalizeReport(payload: ApiReportPayload): ReportDetail {
   return {
     ...payload,
@@ -222,20 +247,9 @@ export async function submitReportPayload(
     });
 
   if (files.length > 0) {
-    // Hashing is asynchronous. Poll the server manifest so a successful
-    // response always means the durable evidence set was actually finalized.
-    const deadline = Date.now() + 30_000;
-    while (true) {
-      try {
-        const manifest = await request<EvidenceManifest>(`/reports/${reportId}/evidence-manifest`);
-        if (manifest.ready) break;
-      } catch {
-        // A transient manifest read is safe to retry while the upload queue
-        // settles; finalization below remains the authoritative gate.
-      }
-      if (Date.now() >= deadline) break;
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
+    // Hashing is asynchronous. Use bounded backoff so evidence processing
+    // cannot exhaust the citizen API rate limit before finalization.
+    await waitForEvidenceManifest(reportId);
   }
 
   try {

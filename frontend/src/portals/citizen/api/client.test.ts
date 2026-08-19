@@ -1,5 +1,10 @@
-import { describe, expect, it } from 'vitest';
-import { normalizeReport, shouldRefreshSubmittedReport, lifecycleGroup } from './client';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  normalizeReport,
+  shouldRefreshSubmittedReport,
+  lifecycleGroup,
+  waitForEvidenceManifest,
+} from './client';
 
 describe('citizen api client - report normalization', () => {
   it('maps backend report_type to the frontend type field and defaults missing collections', () => {
@@ -45,6 +50,30 @@ describe('citizen api client - report normalization', () => {
     expect(shouldRefreshSubmittedReport(submitted)).toBe(true);
     expect(shouldRefreshSubmittedReport(mediaStillUploading)).toBe(true);
     expect(shouldRefreshSubmittedReport(ready)).toBe(false);
+  });
+});
+
+describe('waitForEvidenceManifest', () => {
+  it('stops polling as soon as the evidence is ready', async () => {
+    const readManifest = vi
+      .fn()
+      .mockResolvedValueOnce({ ready: false, errors: {}, revision: '1' })
+      .mockResolvedValueOnce({ ready: false, errors: {}, revision: '2' })
+      .mockResolvedValueOnce({ ready: true, errors: {}, revision: '3' });
+    const wait = vi.fn().mockResolvedValue(undefined);
+
+    await expect(waitForEvidenceManifest('report-1', readManifest, wait)).resolves.toBe(true);
+    expect(readManifest).toHaveBeenCalledTimes(3);
+    expect(wait).toHaveBeenCalledTimes(2);
+  });
+
+  it('caps manifest reads so finalization keeps rate-limit capacity', async () => {
+    const readManifest = vi.fn().mockResolvedValue({ ready: false, errors: {}, revision: '1' });
+    const wait = vi.fn().mockResolvedValue(undefined);
+
+    await expect(waitForEvidenceManifest('report-1', readManifest, wait)).resolves.toBe(false);
+    expect(readManifest).toHaveBeenCalledTimes(7);
+    expect(wait).toHaveBeenCalledTimes(6);
   });
 });
 
