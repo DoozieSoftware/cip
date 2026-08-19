@@ -33,3 +33,10 @@ it('retry_after exceeds the longest worker timeout', function (): void {
 
     expect($retryAfter)->toBeGreaterThan($longestTimeout);
 });
+
+it('production workers consume every application queue', function (): void {
+    $workflow = file_get_contents(base_path('../.github/workflows/deploy-production.yml'));
+
+    expect($workflow)->not->toBeFalse()
+        ->and(substr_count((string) $workflow, '--queue=media,ai,notifications,default'))->toBe(2);
+});
