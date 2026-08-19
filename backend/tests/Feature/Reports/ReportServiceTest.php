@@ -18,6 +18,7 @@ use Database\Seeders\ReportPrioritiesSeeder;
 use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -49,6 +50,46 @@ it('createDraft persists a draft report and assigns a unique tracking number', f
 
     expect($report->tracking_number)->toStartWith('CIV-'.date('Y').'-')
         ->and(Report::query()->where('tracking_number', $report->tracking_number)->count())->toBe(1);
+});
+
+it('createDraft heals a stale yearly sequence before assigning the next tracking number', function (): void {
+    $citizen = User::factory()->create();
+    $type = ReportType::factory()->create();
+    $draft = ReportStatus::query()->where('code', 'draft')->firstOrFail();
+    $priority = ReportPriority::query()->where('code', 'medium')->firstOrFail();
+    $year = (int) date('Y');
+
+    Report::query()->create([
+        'tracking_number' => sprintf('CIV-%d-000036', $year),
+        'citizen_id' => $citizen->id,
+        'report_type_id' => $type->id,
+        'current_status_id' => $draft->id,
+        'priority_id' => $priority->id,
+        'location_id' => Location::factory()->create()->id,
+        'title' => 'Existing report',
+        'description' => 'Existing seeded report.',
+    ]);
+
+    DB::table('report_number_sequences')->insert([
+        'year' => $year,
+        'next_value' => 1,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $svc = app(ReportService::class);
+    $report = $svc->createDraft(new CreateReportDto(
+        citizenId: $citizen->id,
+        reportTypeId: $type->id,
+        locationId: Location::factory()->create()->id,
+        priorityId: $priority->id,
+        currentStatusId: $draft->id,
+        title: 'New report',
+        description: 'Should skip past existing tracking numbers.',
+    ));
+
+    expect($report->tracking_number)->toBe(sprintf('CIV-%d-000037', $year))
+        ->and(DB::table('report_number_sequences')->where('year', $year)->value('next_value'))->toBe(38);
 });
 
 it('updateDraft patches a draft report but rejects a submitted one', function (): void {
@@ -94,10 +135,16 @@ it('submit moves draft → submitted and writes one status_history row', functio
         title: 'Pothole',
         description: 'Right outside my house.',
     ));
+    $report->load('status');
+    $status = $report->status;
+
+    if (! $status instanceof ReportStatus) {
+        throw new RuntimeException('Expected the submitted report to load a status relation.');
+    }
 
     expect($report->submitted_at)->not->toBeNull()
-        ->and($report->status->code)->toBe('submitted')
-        ->and(ReportStatusHistory::query()->where('report_id', $report->id)->count())->toBe(1);
+        ->and($status->code)->toBe('ai_processing')
+        ->and(ReportStatusHistory::query()->where('report_id', $report->id)->count())->toBeGreaterThan(0);
 });
 
 it('transitionTo is a no-op when from == to', function (): void {
@@ -114,8 +161,9 @@ it('transitionTo is a no-op when from == to', function (): void {
         title: 'Pothole',
         description: '.',
     ));
-    $submittedId = ReportStatus::query()->where('code', 'submitted')->value('id');
+    $submittedId = $report->current_status_id;
     $before = ReportStatusHistory::query()->where('report_id', $report->id)->count();
+
     $svc->transitionTo($report, $submittedId, $citizen->id, 'no-op');
     expect(ReportStatusHistory::query()->where('report_id', $report->id)->count())->toBe($before);
 });

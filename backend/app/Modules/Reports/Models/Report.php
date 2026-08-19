@@ -174,6 +174,8 @@ class Report extends Model
 
             $rawNextValue = $sequence !== null ? $sequence->next_value : null;
             $nextValue = is_numeric($rawNextValue) ? max(1, (int) $rawNextValue) : 1;
+            $nextValue = max($nextValue, self::nextValueFromExistingReports($year));
+
             DB::table('report_number_sequences')
                 ->where('year', $year)
                 ->update(['next_value' => $nextValue + 1, 'updated_at' => now()]);
@@ -182,6 +184,24 @@ class Report extends Model
         });
 
         return "CIV-{$year}-".str_pad((string) $next, 6, '0', STR_PAD_LEFT);
+    }
+
+    public static function nextValueFromExistingReports(int $year): int
+    {
+        $prefix = "CIV-{$year}-";
+        $latestTrackingNumber = self::query()
+            ->where('tracking_number', 'like', $prefix.'%')
+            ->max('tracking_number');
+
+        if (! is_string($latestTrackingNumber)) {
+            return 1;
+        }
+
+        if (! preg_match('/^CIV-\d{4}-(\d{6})$/', $latestTrackingNumber, $matches)) {
+            return 1;
+        }
+
+        return ((int) $matches[1]) + 1;
     }
 
     /**
