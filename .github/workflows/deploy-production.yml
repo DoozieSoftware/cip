@@ -275,8 +275,13 @@ jobs:
               $PHP_BIN artisan config:cache || true; \
               $PHP_BIN artisan route:cache || true; \
               $PHP_BIN artisan event:cache || true; \
-              QUEUE_CRON=\"* * * * * cd \$HOME/cip && $PHP_BIN artisan queue:work --queue=media,ai,notifications,default --stop-when-empty --tries=1 --timeout=180 >> /dev/null 2>&1\"; \
-              (crontab -l 2>/dev/null | grep -v 'artisan queue:work' || true; echo \"\$QUEUE_CRON\") | crontab -; \
+              MEDIA_QUEUE_CMD=\"cd \$HOME/cip && flock -n \$HOME/cip/storage/framework/media-queue-worker.lock $PHP_BIN artisan queue:work --queue=media --stop-when-empty --tries=1 --timeout=180 --max-time=50 >> /dev/null 2>&1\"; \
+              MEDIA_CRON_0=\"* * * * * \$MEDIA_QUEUE_CMD\"; \
+              MEDIA_CRON_15=\"* * * * * sleep 15; \$MEDIA_QUEUE_CMD\"; \
+              MEDIA_CRON_30=\"* * * * * sleep 30; \$MEDIA_QUEUE_CMD\"; \
+              MEDIA_CRON_45=\"* * * * * sleep 45; \$MEDIA_QUEUE_CMD\"; \
+              GENERAL_QUEUE_CRON=\"* * * * * cd \$HOME/cip && flock -n \$HOME/cip/storage/framework/general-queue-worker.lock $PHP_BIN artisan queue:work --queue=ai,notifications,default --stop-when-empty --tries=1 --timeout=180 --max-time=50 >> /dev/null 2>&1\"; \
+              (crontab -l 2>/dev/null | grep -v 'artisan queue:work' || true; printf '%s\\n' \"\$MEDIA_CRON_0\" \"\$MEDIA_CRON_15\" \"\$MEDIA_CRON_30\" \"\$MEDIA_CRON_45\" \"\$GENERAL_QUEUE_CRON\") | crontab -; \
               echo 'Queue cron installed'; \
               $PHP_BIN artisan queue:work --queue=media,ai,notifications,default --stop-when-empty --tries=1 --timeout=180 --max-time=300 -v; \
               echo 'Post-deploy complete'"

@@ -62,7 +62,9 @@ interface EvidenceManifest {
   revision: string;
 }
 
-const EVIDENCE_MANIFEST_RETRY_DELAYS_MS = [750, 1_500, 3_000, 5_000, 7_500, 10_000] as const;
+const EVIDENCE_MANIFEST_RETRY_DELAYS_MS = [
+  750, 1_500, 3_000, 5_000, 7_500, 10_000, 15_000,
+] as const;
 
 export async function waitForEvidenceManifest(
   reportId: string,

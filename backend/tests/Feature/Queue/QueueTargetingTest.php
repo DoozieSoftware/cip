@@ -34,9 +34,14 @@ it('retry_after exceeds the longest worker timeout', function (): void {
     expect($retryAfter)->toBeGreaterThan($longestTimeout);
 });
 
-it('production workers consume every application queue', function (): void {
+it('production workers consume every application queue without delaying media', function (): void {
     $workflow = file_get_contents(base_path('../.github/workflows/deploy-production.yml'));
 
     expect($workflow)->not->toBeFalse()
-        ->and(substr_count((string) $workflow, '--queue=media,ai,notifications,default'))->toBe(2);
+        ->and(substr_count((string) $workflow, 'MEDIA_CRON_'))->toBe(8)
+        ->and((string) $workflow)->toContain('sleep 15;', 'sleep 30;', 'sleep 45;')
+        ->and((string) $workflow)->toContain('flock -n \\$HOME/cip/storage/framework/media-queue-worker.lock')
+        ->and((string) $workflow)->toContain('--queue=media --stop-when-empty')
+        ->and((string) $workflow)->toContain('--queue=ai,notifications,default --stop-when-empty')
+        ->and((string) $workflow)->toContain('--queue=media,ai,notifications,default --stop-when-empty');
 });

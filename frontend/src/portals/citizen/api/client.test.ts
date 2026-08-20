@@ -72,8 +72,8 @@ describe('waitForEvidenceManifest', () => {
     const wait = vi.fn().mockResolvedValue(undefined);
 
     await expect(waitForEvidenceManifest('report-1', readManifest, wait)).resolves.toBe(false);
-    expect(readManifest).toHaveBeenCalledTimes(7);
-    expect(wait).toHaveBeenCalledTimes(6);
+    expect(readManifest).toHaveBeenCalledTimes(8);
+    expect(wait).toHaveBeenCalledTimes(7);
   });
 });
 
