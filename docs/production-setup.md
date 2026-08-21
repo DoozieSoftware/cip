@@ -101,10 +101,13 @@ The scheduler is registered in `backend/bootstrap/app.php` via `->withSchedule()
 
 # 6. Production cache requirement
 
-Production uses `CACHE_STORE=redis`. Laravel's `Cache::tags()` is not
-supported by the file driver, while routing and distributed locks require
-tagged cache semantics. The cPanel PHP build must provide `ext-redis` and the
-Redis service must be reachable at the configured host/port.
+The supported production profile uses `CACHE_STORE=redis` so web, queue, and
+scheduler processes share one fast cache. Application cache operations remain
+compatible with Laravel's file and database stores; routing uses a dedicated
+key rather than cache tags.
+
+The cPanel PHP build must provide `ext-redis` and the Redis service must be
+reachable at the configured host/port when the production profile is enabled.
 
 The deploy workflow rejects a production template that regresses to the file
 cache and probes both `PONG` and a cache round-trip. The `/api/v1/health/ready`
@@ -188,5 +191,5 @@ DEFAULT_CRON="* * * * * cd \$HOME/cip && $PHP_BIN artisan queue:work --queue=def
 | Notifications never sent | No worker consuming `notifications` queue | Add notifications cron |
 | SLA breaches never detected | Scheduler cron not installed | Add `schedule:run` cron |
 | Jobs running twice | `retry_after` < `--timeout` | Increase `DB_QUEUE_RETRY_AFTER` |
-| `Cache::tags()` exception | Redis unavailable or wrong PHP client | Restore Redis/ext-redis; verify `/api/v1/health/ready` |
+| Moderator action reports unsupported cache tags | A legacy release is using tagged routing cache with a file/database store | Deploy the current release, which uses a portable dedicated cache key |
 | `failed_jobs` table growing | Job failures not being cleaned | Run `queue:flush` or prune manually |

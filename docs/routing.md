@@ -257,11 +257,11 @@ The reason is required and must be 3-500 characters.
 
 ## Cache strategy
 
-`RoutingRepository::activeRules()` caches the active rule set
-in the `routing` cache tag for 1 hour. CRUD writes (POST, PUT,
-DELETE, reorder) call `Cache::tags('routing')->flush()` so the
-next read picks up the new state. The 1-hour TTL is the safety
-net for any cache miss.
+`RoutingRepository::activeRules()` caches the active rule set under the
+dedicated `routing:active_rules` key for 1 hour. CRUD writes (POST, PUT,
+DELETE, reorder) forget that key so the next read picks up the new state.
+This works with Redis, file, and database cache stores. The 1-hour TTL is
+the safety net for any missed invalidation.
 
 ## Audit + observability
 

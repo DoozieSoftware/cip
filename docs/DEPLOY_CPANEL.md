@@ -307,7 +307,7 @@ ownership should already be correct.
 | Component | Production (Docker) | cPanel (Pilot) |
 |-----------|-------------------|----------------|
 | Queue | Redis + Horizon daemon | Database + cron worker |
-| Cache | Redis | Redis (`ext-redis`, tagged routing cache) |
+| Cache | Redis | Redis (`ext-redis`, shared application cache) |
 | Session | Redis | Database (`sessions` table) |
 | File storage | MinIO (S3) | Local filesystem (`storage/app/media/`) |
 | AI provider | Mock (dev default) | Modal vision endpoint |

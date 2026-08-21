@@ -151,9 +151,9 @@ class HealthController extends BaseController
         $cache = self::asString(config('cache.default'), 'database');
         $queue = self::asString(config('queue.default'), 'sync');
 
-        // Redis is a required production dependency for tagged routing
-        // caches and distributed locks. Local/CI database and array stores
-        // intentionally skip this probe so their readiness is meaningful.
+        // Redis is the required production cache/queue service. Local and CI
+        // may use portable file, database, or array stores, so only probe
+        // Redis when one of the configured services actually depends on it.
         if ($cache !== 'redis' && $queue !== 'redis') {
             return ['ok' => true, 'message' => "not required (cache:{$cache};queue:{$queue})"];
         }
