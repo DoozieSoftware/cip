@@ -157,4 +157,35 @@ describe('LoginPage', () => {
       expect(screen.getByText('Failed to send OTP')).toBeTruthy();
     });
   });
+
+  it('requests trusted-device approval without changing the OTP flow', async () => {
+    apiRequestMock.mockImplementation((path: string) => {
+      if (path === '/auth/push-login') {
+        return Promise.resolve({
+          data: {
+            challenge_id: 'challenge-1',
+            request_secret: 'a'.repeat(64),
+            expires_at: '2026-08-21T12:00:00Z',
+          },
+        });
+      }
+      if (path.includes('/exchange')) {
+        return new Promise(() => undefined);
+      }
+      return Promise.reject(new Error(`unexpected path ${path}`));
+    });
+
+    renderLoginPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Push approval' }));
+    fireEvent.change(screen.getByLabelText('Mobile number'), { target: { value: '9999900001' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send approval request' }));
+
+    await waitFor(() => {
+      expect(apiRequestMock).toHaveBeenCalledWith('/auth/push-login', {
+        method: 'POST',
+        body: { mobile: '9999900001' },
+      });
+      expect(screen.getByText('Waiting for approval')).toBeTruthy();
+    });
+  });
 });

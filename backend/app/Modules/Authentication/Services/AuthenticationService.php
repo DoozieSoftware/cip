@@ -194,6 +194,41 @@ class AuthenticationService extends BaseService
     }
 
     /**
+     * Complete a login that was explicitly approved from an already
+     * authenticated device. OTP remains the independent fallback path.
+     *
+     * @return array{token: NewAccessToken, refresh: array{token: RefreshToken, plain: string, expires_at: Carbon}, user: User, access_token: string}
+     */
+    public function loginAfterPushApproval(User $user, ?string $ip = null, ?string $userAgent = null): array
+    {
+        $this->assertUserActive($user);
+        $user->recordLogin($ip ?? '0.0.0.0');
+
+        $token = $user->createToken(
+            name: 'push-approval',
+            abilities: ['*'],
+            expiresAt: $this->accessTokenExpiry(),
+        );
+        $refresh = $this->refreshTokens->issue($user, $ip, $userAgent);
+
+        $this->recordLoginHistory($user, (string) $user->mobile, $ip, $userAgent, null, success: true);
+        $this->securityEvents->recordSafe(
+            'LOGIN_SUCCESS',
+            SecurityEventService::SEVERITY_INFO,
+            ['channel' => 'push_approval', 'ip' => $ip],
+            $user,
+        );
+        UserAuthenticated::dispatch($user, 'push_approval', ['ip' => $ip, 'user_agent' => $userAgent]);
+
+        return [
+            'token' => $token,
+            'access_token' => $token->plainTextToken,
+            'refresh' => $refresh,
+            'user' => $user,
+        ];
+    }
+
+    /**
      * Rotate a refresh token and issue a new Sanctum PAT. The old
      * refresh token is revoked as part of the rotation (see
      * RefreshTokenService::rotate). Reuse of a revoked parent is

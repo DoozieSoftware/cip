@@ -7,6 +7,7 @@ use App\Modules\AI\Http\Controllers\Admin\AiPromptAdminController;
 use App\Modules\AI\Http\Controllers\Admin\AiProviderAdminController;
 use App\Modules\AI\Http\Controllers\Internal\InternalAiController;
 use App\Modules\Authentication\Http\Controllers\AuthController;
+use App\Modules\Authentication\Http\Controllers\PushLoginController;
 use App\Modules\Departments\Http\Controllers\Admin\AdminOrganizationController;
 use App\Modules\Departments\Http\Controllers\Admin\DepartmentAdminController;
 use App\Modules\Departments\Http\Controllers\Admin\DepartmentController;
@@ -87,11 +88,19 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware('throttle:'.RouteServiceProvider::LIMITER_LOGIN)
         ->post('auth/login', [AuthController::class, 'login'])
         ->name('api.v1.auth.login');
+    Route::middleware('throttle:'.RouteServiceProvider::LIMITER_PUSH_LOGIN_REQUEST)
+        ->post('auth/push-login', [PushLoginController::class, 'request'])
+        ->name('api.v1.auth.push-login.request');
+    Route::middleware('throttle:'.RouteServiceProvider::LIMITER_PUSH_LOGIN_EXCHANGE)
+        ->post('auth/push-login/{challenge}/exchange', [PushLoginController::class, 'exchange'])
+        ->name('api.v1.auth.push-login.exchange');
 
     // Authenticated routes
     Route::middleware(['auth:sanctum', 'throttle:'.RouteServiceProvider::LIMITER_CITIZEN])->group(function (): void {
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
         Route::get('auth/me', [AuthController::class, 'me'])->name('api.v1.auth.me');
+        Route::post('auth/push-login/{challenge}/approve', [PushLoginController::class, 'approve'])->name('api.v1.auth.push-login.approve');
+        Route::post('auth/push-login/{challenge}/reject', [PushLoginController::class, 'reject'])->name('api.v1.auth.push-login.reject');
         Route::patch('auth/profile', [ProfileController::class, 'update'])->name('api.v1.auth.profile.update');
 
         // Notifications inbox (T-M9-015/016)

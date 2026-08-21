@@ -17,7 +17,6 @@ import { useToast } from '../components/Toast';
 import { pushSupport, subscribeToPush, unsubscribeFromPush } from '../push/subscribe';
 import { useMessages } from '../messages';
 
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY ?? '';
 const PUSH_SUBSCRIBE_URL = '/notifications/push/subscriptions';
 
 interface ProfileData {
@@ -151,7 +150,6 @@ export default function ProfilePage(): JSX.Element {
       }
 
       const result = await subscribeToPush({
-        applicationServerKey: VAPID_PUBLIC_KEY,
         subscribeUrl: PUSH_SUBSCRIBE_URL,
       });
 

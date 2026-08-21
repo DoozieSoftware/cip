@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
+import { PushLoginApprovalPage } from './pages/PushLoginApprovalPage';
 import { ModeratorApp } from './portals/moderator/ModeratorApp';
 import { OperationsApp } from './portals/operations/OperationsApp';
 import { CitizenApp } from './portals/citizen/CitizenApp';
@@ -42,6 +43,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/login/push/:challenge" element={<PushLoginApprovalPage />} />
             <Route path="/public/*" element={<PublicApp />} />
             <Route
               path="/citizen/*"

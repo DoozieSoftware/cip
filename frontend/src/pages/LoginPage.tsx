@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { type JSX } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, type Role, type SessionUser } from '../auth/AuthContext';
@@ -62,7 +62,7 @@ const DEMO_ACCOUNTS: {
 export function LoginPage(): JSX.Element {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [authMode, setAuthMode] = useState<'otp' | 'password'>('otp');
+  const [authMode, setAuthMode] = useState<'otp' | 'push' | 'password'>('otp');
   const [mobile, setMobile] = useState<string>('9999900001');
   const [otp, setOtp] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -71,7 +71,88 @@ export function LoginPage(): JSX.Element {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [debugOtp, setDebugOtp] = useState<string | null>(null);
+  const [pushChallenge, setPushChallenge] = useState<{
+    id: string;
+    secret: string;
+    expiresAt: string;
+  } | null>(null);
   const selectedAccount = DEMO_ACCOUNTS.find((acc) => acc.mobile === mobile) ?? null;
+
+  useEffect(() => {
+    if (pushChallenge === null) return;
+
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const checkApproval = async (): Promise<void> => {
+      try {
+        const res = await apiRequest<
+          ApiEnvelope<{
+            status: string;
+            token?: { access_token: string };
+            refresh_token?: string;
+            refresh_expires_at?: string;
+            user?: SessionUser;
+          }>
+        >(`/auth/push-login/${pushChallenge.id}/exchange`, {
+          method: 'POST',
+          body: { request_secret: pushChallenge.secret },
+        });
+        if (stopped) return;
+        if (res.data.status === 'approved' && res.data.token && res.data.user) {
+          login(
+            res.data.token.access_token,
+            res.data.user,
+            res.data.refresh_token,
+            res.data.refresh_expires_at,
+          );
+          void navigate(routeForRoles(res.data.user.roles), { replace: true });
+          return;
+        }
+        if (res.data.status === 'rejected') {
+          setError('The sign-in request was declined on your trusted device.');
+          setPushChallenge(null);
+          return;
+        }
+        if (res.data.status === 'expired' || res.data.status === 'consumed') {
+          setError('The sign-in request expired. Please try again or use OTP.');
+          setPushChallenge(null);
+          return;
+        }
+        timer = setTimeout(() => void checkApproval(), 2000);
+      } catch (err) {
+        if (!stopped) {
+          setError(err instanceof ApiError ? err.message : 'Could not check sign-in approval.');
+          setPushChallenge(null);
+        }
+      }
+    };
+
+    void checkApproval();
+    return () => {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [pushChallenge, login, navigate]);
+
+  async function requestPushLogin(e: FormEvent): Promise<void> {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await apiRequest<
+        ApiEnvelope<{ challenge_id: string; request_secret: string; expires_at: string }>
+      >('/auth/push-login', { method: 'POST', body: { mobile } });
+      setPushChallenge({
+        id: res.data.challenge_id,
+        secret: res.data.request_secret,
+        expiresAt: res.data.expires_at,
+      });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not request push approval.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function loginWithPassword(e: FormEvent): Promise<void> {
     e.preventDefault();
@@ -192,10 +273,12 @@ export function LoginPage(): JSX.Element {
             <p className="mt-4 text-[15px] leading-6 text-[#4f4e4a]">
               {authMode === 'otp'
                 ? 'Choose a demo role or enter your mobile number. The demo uses a one-time code printed in the response so you can sign in without a phone.'
-                : 'Staff accounts can use their registered mobile number and password.'}
+                : authMode === 'push'
+                  ? 'Approve this sign-in from a phone or browser where you are already signed in and notifications are enabled.'
+                  : 'Staff accounts can use their registered mobile number and password.'}
             </p>
 
-            <div className="mt-8 grid grid-cols-2 rounded-xl border border-[#d0cec8] bg-[#e9e7e1] p-1">
+            <div className="mt-8 grid grid-cols-3 rounded-xl border border-[#d0cec8] bg-[#e9e7e1] p-1">
               <button
                 type="button"
                 onClick={() => {
@@ -205,6 +288,17 @@ export function LoginPage(): JSX.Element {
                 className={`min-h-11 rounded-lg px-3 text-sm font-medium transition ${authMode === 'otp' ? 'bg-white text-[#1d1d1b] shadow-sm' : 'text-[#4f4e4a] hover:text-[#1d1d1b]'}`}
               >
                 Sign in with OTP
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('push');
+                  setPushChallenge(null);
+                  setError(null);
+                }}
+                className={`min-h-11 rounded-lg px-2 text-sm font-medium transition ${authMode === 'push' ? 'bg-white text-[#1d1d1b] shadow-sm' : 'text-[#4f4e4a] hover:text-[#1d1d1b]'}`}
+              >
+                Push approval
               </button>
               <button
                 type="button"
@@ -308,6 +402,68 @@ export function LoginPage(): JSX.Element {
                     ← Use a different number
                   </button>
                 )}
+              </form>
+            ) : authMode === 'push' ? (
+              <form onSubmit={(e) => void requestPushLogin(e)} className="mt-4 space-y-4">
+                <div>
+                  <label htmlFor="push-mobile" className="text-sm font-medium text-[#1d1d1b]">
+                    Mobile number
+                  </label>
+                  <input
+                    id="push-mobile"
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    pattern="[0-9]*"
+                    className="mt-2 block w-full rounded-xl border border-[#d0cec8] bg-white px-4 py-3.5 text-base shadow-sm focus:border-[#1d1d1b] focus:ring-1 focus:ring-[#1d1d1b]"
+                    required
+                    disabled={pushChallenge !== null}
+                  />
+                </div>
+                {pushChallenge !== null && (
+                  <div className="rounded-xl border border-[#c8ded3] bg-[#eaf7f0] px-4 py-4 text-sm text-[#205c40]">
+                    <p className="font-medium">Waiting for approval</p>
+                    <p className="mt-1 text-[#386b54]">
+                      Check your trusted device and approve this sign-in. This request expires at{' '}
+                      {new Date(pushChallenge.expiresAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                      .
+                    </p>
+                  </div>
+                )}
+                {error !== null && (
+                  <p
+                    role="alert"
+                    className="rounded-xl bg-[#f6e6e6] px-4 py-3 text-sm text-[#9b2c2c]"
+                  >
+                    {error}
+                  </p>
+                )}
+                {pushChallenge === null ? (
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#1d1d1b] px-6 text-sm font-medium text-white disabled:opacity-50"
+                  >
+                    {loading ? 'Sending…' : 'Send approval request'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setPushChallenge(null)}
+                    className="w-full text-sm text-[#686762] hover:text-[#1d1d1b]"
+                  >
+                    Cancel and use another method
+                  </button>
+                )}
+                <p className="text-xs leading-5 text-[#686762]">
+                  No notification? Use OTP instead. Push approval only works after this account has
+                  enabled notifications on a trusted device.
+                </p>
               </form>
             ) : (
               <form

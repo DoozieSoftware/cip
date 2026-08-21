@@ -6,8 +6,8 @@ import { pushSupport, subscribeToPush, unsubscribeFromPush } from '../push/subsc
 import { useMessages, type Locale } from '../messages';
 import { trackProductEvent } from '../../../shared/analytics';
 
-/** VAPID public key comes from configuration, never hardcoded. */
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY ?? '';
+// The VAPID public key is fetched from the backend at subscribe time
+// (see push/subscribe.ts) so it always matches the server signing pair.
 const PUSH_SUBSCRIBE_URL = '/notifications/push/subscriptions';
 
 /**
@@ -59,7 +59,6 @@ export default function SettingsPage(): JSX.Element {
         toast.show(t('settings.pushOffToast'), 'info');
       } else {
         const res = await subscribeToPush({
-          applicationServerKey: VAPID_PUBLIC_KEY,
           subscribeUrl: PUSH_SUBSCRIBE_URL,
         });
         if (res.ok) {

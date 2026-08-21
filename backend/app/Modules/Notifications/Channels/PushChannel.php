@@ -198,7 +198,7 @@ class PushChannel implements ChannelInterface
 
             $sent = 0;
             $failed = 0;
-            $expired = [];
+            $pruned = [];
 
             foreach ($webPush->flush() as $report) {
                 if (! $report instanceof MessageSentReport) {
@@ -210,16 +210,20 @@ class PushChannel implements ChannelInterface
                 } else {
                     $failed++;
 
-                    if ($report->isSubscriptionExpired()) {
-                        $expired[] = $report->getEndpoint();
+                    // 403 "VAPID credentials" rejections are permanent for
+                    // the subscription (keypair mismatch or rotation) —
+                    // prune them alongside expired endpoints so future
+                    // sends stop retrying rows that can never succeed.
+                    if ($report->isSubscriptionExpired() || str_contains($report->getReason(), 'VAPID credentials')) {
+                        $pruned[] = $report->getEndpoint();
                     }
                 }
             }
 
-            if ($expired !== []) {
+            if ($pruned !== []) {
                 PushSubscription::query()
                     ->where('user_id', $notification->user_id)
-                    ->whereIn('endpoint', $expired)
+                    ->whereIn('endpoint', $pruned)
                     ->delete();
             }
 

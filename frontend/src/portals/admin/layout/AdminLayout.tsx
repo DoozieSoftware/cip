@@ -89,6 +89,7 @@ const NAV: SidebarNavItem[] = [
     icon: <Icon name="settings" />,
     group: 'Platform',
   },
+  { to: '/admin/profile', label: 'My profile', icon: <Icon name="users" />, group: 'Account' },
 ];
 
 export function AdminLayout() {
