@@ -240,6 +240,20 @@ function ActionFooter({
   );
 }
 
+export function ModeratorActionError({ error }: { error: unknown }): JSX.Element | null {
+  if (!error) return null;
+
+  const message =
+    error instanceof Error ? error.message : 'The action could not be completed. Please try again.';
+
+  return (
+    <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4" role="alert">
+      <p className="text-sm font-medium text-red-800">Action could not be completed</p>
+      <p className="mt-1 text-sm leading-5 text-red-700">{message}</p>
+    </div>
+  );
+}
+
 export default function ReportDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -377,6 +391,8 @@ export default function ReportDetailPage() {
       setAssignOpen(false);
     },
   });
+
+  const actionError = review.error ?? reject.error ?? merge.error ?? escalate.error ?? assign.error;
 
   const shortcuts = useMemo(
     () => ({
@@ -530,6 +546,7 @@ export default function ReportDetailPage() {
                 </span>
               </CardHeader>
               <CardBody>
+                <ModeratorActionError error={actionError} />
                 <ActionFooter
                   statusCode={data.status_code}
                   onApprove={() => setApproveOpen(true)}
@@ -540,7 +557,11 @@ export default function ReportDetailPage() {
                   proofReview={data.proof_review ?? null}
                   onAssign={() => setAssignOpen(true)}
                   busy={
-                    review.isPending || reject.isPending || merge.isPending || escalate.isPending
+                    review.isPending ||
+                    reject.isPending ||
+                    merge.isPending ||
+                    escalate.isPending ||
+                    assign.isPending
                   }
                 />
               </CardBody>
@@ -643,6 +664,7 @@ export default function ReportDetailPage() {
           }
         >
           <div className="space-y-3">
+            <ModeratorActionError error={review.error} />
             <p className="text-sm text-[#6f6e69]">
               Approving moves the report to the next review step. Tick the override box if you are
               correcting the AI recommendation.
@@ -715,6 +737,7 @@ export default function ReportDetailPage() {
           }
         >
           <div className="space-y-3">
+            <ModeratorActionError error={review.error} />
             <p className="text-sm text-[#6f6e69]">
               This closes the report after you review the completion proof. The citizen will see
               that the proof was handled by a moderator.

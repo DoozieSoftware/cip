@@ -42,7 +42,7 @@ it('serves the second call from the cache (no extra DB query)', function (): voi
         ->and($second->pluck('id')->all())->toEqual($first->pluck('id')->all());
 });
 
-it('invalidate() flushes the routing cache tag so the next call re-reads the DB', function (): void {
+it('invalidate() forgets the routing cache key so the next call re-reads the DB', function (): void {
     $repo = new RoutingRepository;
     RoutingRule::factory()->count(2)->create();
     $first = $repo->activeRules();
@@ -69,8 +69,28 @@ it('keeps the order stable (priority asc, id asc)', function (): void {
         ->and($ids[2])->toBe($a->id);
 });
 
-it('uses the "routing" cache tag for surgical invalidation', function (): void {
+it('uses a dedicated cache key for surgical invalidation', function (): void {
     $repo = new RoutingRepository;
-    expect($repo::CACHE_TAG)->toBe('routing')
+    expect($repo::CACHE_KEY)->toBe('routing:active_rules')
         ->and($repo::CACHE_TTL_SECONDS)->toBe(3600);
+});
+
+it('works with the file cache store used in production', function (): void {
+    config()->set('cache.default', 'file');
+    Cache::forget(RoutingRepository::CACHE_KEY);
+
+    try {
+        RoutingRule::factory()->count(2)->create();
+        $repo = new RoutingRepository;
+
+        expect($repo->activeRules())->toHaveCount(2);
+
+        RoutingRule::factory()->create();
+        expect($repo->activeRules())->toHaveCount(2);
+
+        $repo->invalidate();
+        expect($repo->activeRules())->toHaveCount(3);
+    } finally {
+        Cache::forget(RoutingRepository::CACHE_KEY);
+    }
 });

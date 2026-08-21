@@ -13,18 +13,18 @@ use Illuminate\Support\Facades\Cache;
  *
  * The engine evaluates every active rule on every report, so
  * a DB round-trip per `AiCompleted` event would be wasteful.
- * `activeRules()` returns the active rule set from the
- * `routing` cache tag (1h TTL) on the second and subsequent
+ * `activeRules()` returns the active rule set from a dedicated
+ * cache key (1h TTL) on the second and subsequent
  * calls; the first call, and every call after a CRUD write,
  * hits the database.
  *
- * CRUD writes call `invalidate()` which flushes the `routing`
- * tag so the next read repopulates the cache.
+ * CRUD writes call `invalidate()` which forgets that key so the
+ * next read repopulates the cache. A dedicated key keeps this
+ * compatible with file and database cache stores, which do not
+ * support cache tags.
  */
 class RoutingRepository
 {
-    public const CACHE_TAG = 'routing';
-
     public const CACHE_KEY = 'routing:active_rules';
 
     public const CACHE_TTL_SECONDS = 3600;
@@ -34,7 +34,7 @@ class RoutingRepository
      */
     public function activeRules(): Collection
     {
-        return Cache::tags([self::CACHE_TAG])->remember(
+        return Cache::remember(
             self::CACHE_KEY,
             self::CACHE_TTL_SECONDS,
             fn (): Collection => RoutingRule::query()
@@ -52,6 +52,6 @@ class RoutingRepository
      */
     public function invalidate(): void
     {
-        Cache::tags([self::CACHE_TAG])->flush();
+        Cache::forget(self::CACHE_KEY);
     }
 }

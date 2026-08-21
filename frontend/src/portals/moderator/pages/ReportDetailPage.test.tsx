@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
-import { ModeratorReportHeader } from './ReportDetailPage';
+import { ModeratorActionError, ModeratorReportHeader } from './ReportDetailPage';
 import { moderatorActionMessage } from './moderatorStatus';
 
 describe('ModeratorReportHeader', () => {
@@ -40,5 +40,20 @@ describe('moderatorActionMessage', () => {
     expect(moderatorActionMessage('closed')).toBe(
       'This report is complete. No further moderator action is needed.',
     );
+  });
+});
+
+describe('ModeratorActionError', () => {
+  it('shows the reason when a moderator action fails', () => {
+    render(<ModeratorActionError error={new Error('Approval could not be routed.')} />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Action could not be completed');
+    expect(screen.getByRole('alert')).toHaveTextContent('Approval could not be routed.');
+  });
+
+  it('renders nothing when there is no error', () => {
+    const { container } = render(<ModeratorActionError error={null} />);
+
+    expect(container).toBeEmptyDOMElement();
   });
 });
