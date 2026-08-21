@@ -10,6 +10,9 @@
 #   ./start.sh              # start backend + frontend
 #   ./start.sh --setup      # first-time: create DB, migrate, seed
 #
+# Port overrides:
+#   CIP_BACKEND_PORT=8101 CIP_FRONTEND_PORT=5181 ./start.sh
+#
 # Requirements:
 #   - PHP 8.4 (php8.4 binary)
 #   - Node >= 18
@@ -23,13 +26,16 @@ cd "$ROOT"
 
 SETUP=false
 DEV_HTTP=false
+FORCE_PORTS=false
 for arg in "$@"; do
   case "$arg" in
     --setup) SETUP=true ;;
     --http) DEV_HTTP=true ;;
+    --force) FORCE_PORTS=true ;;
     -h|--help)
-      echo "Usage: $0 [--setup] [--http]"
+      echo "Usage: $0 [--setup] [--http] [--force]"
       echo "  --setup   First-time setup: create DB, run migrations + seed"
+      echo "  --force   Kill processes using CIP's configured ports before starting"
       echo "  --http    Serve the frontend over plain HTTP on localhost instead"
       echo "            of HTTPS with the self-signed .devssl cert. Use this to"
       echo "            test service workers / push notifications: browsers"
@@ -140,7 +146,7 @@ cd "$ROOT"
 # ── 5. Prepare local HTTPS for phone camera/location testing ──────
 # Mobile browsers only expose camera and geolocation to secure contexts.
 # Generate a local certificate with the current LAN IP so a phone can use
-# the same Vite proxy and local database over https://<lan-ip>:5173.
+# the same Vite proxy and local database over the configured LAN port.
 LOCAL_LAN_IP=$(hostname -I 2>/dev/null | tr ' ' '\n' | awk '/^[0-9]+\./ {print; exit}')
 DEV_SSL_DIR="$ROOT/frontend/.devssl"
 DEV_SSL_KEY="$DEV_SSL_DIR/key.pem"
@@ -169,14 +175,29 @@ if [ "$DEV_HTTP" = false ] && [ -n "$LOCAL_LAN_IP" ]; then
 fi
 
 # ── 6. Check ports ────────────────────────────────────────────────
-BACKEND_PORT=8000
-FRONTEND_PORT=5173
+BACKEND_PORT="${CIP_BACKEND_PORT:-8100}"
+FRONTEND_PORT="${CIP_FRONTEND_PORT:-5180}"
 
-for port in $BACKEND_PORT $FRONTEND_PORT; do
-  if lsof -i :$port -sTCP:LISTEN >/dev/null 2>&1; then
-    warn "Port $port is in use — killing existing process..."
-    fuser -k $port/tcp 2>/dev/null || true
-    sleep 1
+validate_port() {
+  local name="$1"
+  local port="$2"
+  if ! [[ "$port" =~ ^[0-9]+$ ]] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+    fail "$name must be a valid TCP port (1-65535); got '$port'."
+  fi
+}
+
+validate_port "CIP_BACKEND_PORT" "$BACKEND_PORT"
+validate_port "CIP_FRONTEND_PORT" "$FRONTEND_PORT"
+
+for port in "$BACKEND_PORT" "$FRONTEND_PORT"; do
+  if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+    if [ "$FORCE_PORTS" = true ]; then
+      warn "Port $port is in use — killing the process because --force was supplied..."
+      fuser -k "$port/tcp" 2>/dev/null || true
+      sleep 1
+    else
+      fail "Port $port is already in use. Choose different ports with CIP_BACKEND_PORT/CIP_FRONTEND_PORT, or rerun with --force if it is CIP's stale process."
+    fi
   fi
 done
 
@@ -220,9 +241,9 @@ cd "$ROOT"
 cd "$ROOT/frontend"
 if [ "$DEV_HTTP" = true ]; then
   info "Serving frontend over plain HTTP (--http) — use http://localhost:$FRONTEND_PORT for push/service-worker testing"
-  VITE_API_BASE=/api/v1 VITE_API_BASE_URL=/api/v1 CIP_DEV_HTTP=1 npx vite --host 0.0.0.0 --port $FRONTEND_PORT > /tmp/cip-frontend.log 2>&1 &
+  VITE_API_BASE=/api/v1 VITE_API_BASE_URL=/api/v1 CIP_DEV_HTTP=1 CIP_BACKEND_PORT="$BACKEND_PORT" CIP_FRONTEND_PORT="$FRONTEND_PORT" npx vite --host 0.0.0.0 --port "$FRONTEND_PORT" > /tmp/cip-frontend.log 2>&1 &
 else
-  VITE_API_BASE=/api/v1 VITE_API_BASE_URL=/api/v1 npx vite --host 0.0.0.0 --port $FRONTEND_PORT > /tmp/cip-frontend.log 2>&1 &
+  VITE_API_BASE=/api/v1 VITE_API_BASE_URL=/api/v1 CIP_BACKEND_PORT="$BACKEND_PORT" CIP_FRONTEND_PORT="$FRONTEND_PORT" npx vite --host 0.0.0.0 --port "$FRONTEND_PORT" > /tmp/cip-frontend.log 2>&1 &
 fi
 FRONTEND_PID=$!
 cd "$ROOT"

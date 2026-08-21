@@ -7,7 +7,7 @@ import path from 'node:path';
 // Local self-signed certs (gitignored) let you test camera + geolocation
 // from a phone over the LAN. Browsers only expose getUserMedia and the
 // Geolocation API on a secure context (https:// or localhost), so plain
-// http://<lan-ip>:5173 is blocked. When the certs exist we serve HTTPS;
+// http://<lan-ip>:<frontend-port> is blocked. When the certs exist we serve HTTPS;
 // otherwise we fall back to plain HTTP (localhost dev keeps working).
 // CIP_DEV_HTTP=1 forces plain HTTP even when certs exist. Useful for
 // testing service workers / push subscriptions: browsers treat
@@ -21,18 +21,20 @@ const https =
   process.env['CIP_DEV_HTTP'] !== '1' && fs.existsSync(keyPath) && fs.existsSync(certPath)
     ? { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) }
     : undefined;
+const frontendPort = Number.parseInt(process.env['CIP_FRONTEND_PORT'] ?? '5173', 10);
+const backendPort = process.env['CIP_BACKEND_PORT'] ?? '8000';
 
 export default defineConfig({
   base: '/',
   plugins: [react(), tailwindcss()],
   server: {
     host: true,
-    port: 5173,
+    port: frontendPort,
     strictPort: true,
     ...(https ? { https } : {}),
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000',
+        target: `http://127.0.0.1:${backendPort}`,
         changeOrigin: true,
       },
     },
