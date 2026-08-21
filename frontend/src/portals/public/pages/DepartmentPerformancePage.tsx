@@ -33,7 +33,7 @@ export default function DepartmentPerformancePage(): JSX.Element {
       ) : departments.length === 0 ? (
         <EmptyState
           title="No department data yet"
-          description="Performance figures will appear once departments start resolving reports."
+          description="Performance figures will appear once departments start resolving complaints."
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -41,7 +41,7 @@ export default function DepartmentPerformancePage(): JSX.Element {
             <THead>
               <TR>
                 <TH>Department</TH>
-                <TH>Reports</TH>
+                <TH>Complaints</TH>
                 <TH>Fixed</TH>
                 <TH>Fix rate</TH>
                 <TH>Median fix time</TH>

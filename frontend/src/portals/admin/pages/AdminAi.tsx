@@ -575,7 +575,7 @@ export default function AdminAi(): JSX.Element {
                 <div className="p-6">
                   <EmptyState
                     title="No AI providers configured"
-                    description="Add a provider to start processing reports with AI vision."
+                    description="Add a provider to start processing complaints with AI vision."
                     action={
                       <Button variant="secondary" onClick={() => setEditing('new')}>
                         Add provider

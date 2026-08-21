@@ -56,7 +56,7 @@ const NAV: NavItem[] = [
 
 const MOBILE_NAV: NavItem[] = [
   { to: '/operations', label: 'Home', end: true, icon: IconHome },
-  { to: '/operations/reports', label: 'Reports', icon: IconClipboardList },
+  { to: '/operations/reports', label: 'Complaints', icon: IconClipboardList },
   { to: '/operations/tasks', label: 'Cross Agency', icon: IconFileAnalytics },
   { to: '/operations/analytics', label: 'Analytics', icon: IconChartBar },
   {

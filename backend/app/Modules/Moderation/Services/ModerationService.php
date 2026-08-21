@@ -211,7 +211,7 @@ class ModerationService
             $canonical = $lockedReports->get($canonicalId);
 
             if (! $canonical instanceof Report) {
-                throw ApiException::validation("Canonical report '{$canonicalId}' not found.", ['canonical_id' => [$canonicalId]]);
+                throw ApiException::validation("Canonical complaint '{$canonicalId}' not found.", ['canonical_id' => [$canonicalId]]);
             }
 
             if ($expectedCanonicalVersion !== null && $canonical->workflow_version !== $expectedCanonicalVersion) {
@@ -345,7 +345,7 @@ class ModerationService
         }
 
         if ($dto->mergeIntoReportId === $report->id) {
-            throw ApiException::validation('a report cannot be merged into itself.', ['merge_into_report_id' => [$report->id]]);
+            throw ApiException::validation('a complaint cannot be merged into itself.', ['merge_into_report_id' => [$report->id]]);
         }
 
         $this->merge(

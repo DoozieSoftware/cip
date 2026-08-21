@@ -23,7 +23,7 @@ describe('EvidenceViewer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'View evidence image 1 full size' }));
 
     expect(screen.getByRole('dialog', { name: 'Evidence preview' })).toBeTruthy();
-    expect(screen.getByAltText('Report evidence full-size preview')).toBeTruthy();
+    expect(screen.getByAltText('Complaint evidence full-size preview')).toBeTruthy();
 
     fireEvent.keyDown(document, { key: 'Escape' });
 

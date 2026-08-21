@@ -23,7 +23,7 @@ interface BulkReportOption {
 
 const REJECT_REASONS = [
   { value: 'invalid_evidence', label: 'Invalid evidence' },
-  { value: 'duplicate', label: 'Duplicate of another report' },
+  { value: 'duplicate', label: 'Duplicate of another complaint' },
   { value: 'fraudulent', label: 'Misrepresentation' },
   { value: 'out_of_scope', label: 'Out of platform scope' },
   { value: 'incomplete', label: 'Incomplete information' },
@@ -111,7 +111,7 @@ export function BulkActionsBar({
                 setOpen(false);
               }}
             >
-              Apply to {count} reports
+              Apply to {count} complaints
             </Button>
           </>
         }
@@ -119,12 +119,12 @@ export function BulkActionsBar({
         <div className="space-y-3">
           {type === 'merge' && (
             <Select
-              label="Canonical report"
+              label="Canonical complaint"
               name="canonical_id"
               value={canonical}
               onChange={(e) => setCanonical(e.target.value)}
               options={[
-                { value: '', label: 'Select the canonical report' },
+                { value: '', label: 'Select the canonical complaint' },
                 ...reports.map((report) => ({
                   value: report.id,
                   label: `${report.tracking_number} — ${report.title}`,

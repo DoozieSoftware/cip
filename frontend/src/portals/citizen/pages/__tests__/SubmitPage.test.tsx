@@ -122,15 +122,15 @@ describe('SubmitPage', () => {
     // Step 4: Evidence
     await waitFor(() => expect(screen.getByText('Attach Evidence')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('camera-photo'));
-    fireEvent.click(screen.getByRole('button', { name: /review your report/i }));
+    fireEvent.click(screen.getByRole('button', { name: /review your complaint/i }));
 
     // Step 5: Review & Submit
-    await waitFor(() => expect(screen.getByText('Review Your Report')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Review Your Complaint')).toBeInTheDocument());
     const previewButton = screen.getByRole('button', { name: /view photo\.jpg/i });
     fireEvent.click(previewButton);
     expect(screen.getByRole('dialog', { name: /evidence preview/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /^close$/i }));
-    fireEvent.click(screen.getByRole('button', { name: /file report/i }));
+    fireEvent.click(screen.getByRole('button', { name: /file complaint/i }));
 
     await waitFor(() => {
       expect(mutateAsyncMock).toHaveBeenCalledWith(
@@ -235,9 +235,9 @@ describe('SubmitPage', () => {
 
     await waitFor(() => {
       expect(localStorage.getItem(`cip.citizen.draft.v1:${ownerId}`)).toBeNull();
-      expect(screen.getByText('Report Category')).toBeInTheDocument();
+      expect(screen.getByText('Complaint Category')).toBeInTheDocument();
     });
-    expect(confirmSpy).toHaveBeenCalledWith('Discard this saved report draft and start over?');
+    expect(confirmSpy).toHaveBeenCalledWith('Discard this saved complaint draft and start over?');
 
     confirmSpy.mockRestore();
     localStorage.removeItem(STORAGE_KEY);
@@ -279,6 +279,6 @@ describe('SubmitPage', () => {
     fireEvent.click(backButton);
 
     // Should be back on category
-    await waitFor(() => expect(screen.getByText('Report Category')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Complaint Category')).toBeInTheDocument());
   });
 });

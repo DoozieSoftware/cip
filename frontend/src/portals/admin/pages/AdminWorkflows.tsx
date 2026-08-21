@@ -334,7 +334,7 @@ export default function AdminWorkflows(): JSX.Element {
           <div className="p-5">
             <EmptyState
               title="No workflow definitions registered"
-              description="Create your first workflow to define report states and transitions."
+              description="Create your first workflow to define complaint states and transitions."
               action={
                 <Button
                   variant="primary"

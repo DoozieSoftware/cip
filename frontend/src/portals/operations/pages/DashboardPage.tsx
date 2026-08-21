@@ -122,7 +122,7 @@ export default function DashboardPage() {
         aria-label="Operational metrics"
         className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
       >
-        <MetricCard label="Open reports" value={data.open} hint="Not yet closed" />
+        <MetricCard label="Open complaints" value={data.open} hint="Not yet closed" />
         <MetricCard
           label="Due today"
           value={data.due_today}
@@ -130,7 +130,7 @@ export default function DashboardPage() {
           tone="warning"
         />
         <MetricCard
-          label="Overdue reports"
+          label="Overdue complaints"
           value={data.sla_breached}
           hint="Open more than a day"
           tone="danger"
@@ -141,16 +141,18 @@ export default function DashboardPage() {
       <section aria-label="By category" className="space-y-4">
         <div className="flex items-center gap-2">
           <IconFolder className="h-4 w-4 text-[var(--color-text-tertiary)]" stroke={1.6} />
-          <h2 className="text-sm font-medium text-[var(--color-ink)]">Open reports by category</h2>
+          <h2 className="text-sm font-medium text-[var(--color-ink)]">
+            Open complaints by category
+          </h2>
         </div>
 
         {categoryEntries.length === 0 ? (
           <Card>
             <CardBody>
               <div className="flex flex-col items-center justify-center gap-1 py-6 text-center">
-                <p className="text-sm font-medium text-[var(--color-ink)]">No open reports</p>
+                <p className="text-sm font-medium text-[var(--color-ink)]">No open complaints</p>
                 <p className="text-xs text-[var(--color-text-tertiary)]">
-                  Your department has no open reports.
+                  Your department has no open complaints.
                 </p>
               </div>
             </CardBody>

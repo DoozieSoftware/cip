@@ -42,6 +42,8 @@ describe('LandingPage — public stats', () => {
     });
     expect(screen.getByText('87.3%')).toBeTruthy();
     expect(screen.getByText('1m 35s')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /file a complaint/i })).toBeTruthy();
+    expect(screen.getByText('Complaints processed')).toBeTruthy();
     expect(apiRequestMock).toHaveBeenCalledWith('/public/stats');
 
     // The old hardcoded stakeholder-facing values must be gone.

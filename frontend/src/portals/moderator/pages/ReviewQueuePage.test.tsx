@@ -60,6 +60,6 @@ describe('Moderator review queue', () => {
         expect.objectContaining({ status: 'verified,closed' }),
       );
     });
-    expect(screen.getByRole('heading', { name: 'Completed reports' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Completed complaints' })).toBeInTheDocument();
   });
 });

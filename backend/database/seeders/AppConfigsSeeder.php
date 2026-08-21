@@ -34,7 +34,7 @@ class AppConfigsSeeder extends Seeder
             'enabled' => true,
             'rollout_percentage' => 100,
             'cohort' => null,
-            'description' => 'Allows citizens to submit reports without authentication.',
+            'description' => 'Allows citizens to submit complaints without authentication.',
         ],
         [
             'key' => 'ai_enabled',
@@ -58,7 +58,7 @@ class AppConfigsSeeder extends Seeder
             'enabled' => false,
             'rollout_percentage' => 0,
             'cohort' => null,
-            'description' => 'Require a video attachment for every report.',
+            'description' => 'Require a video attachment for every complaint.',
         ],
         [
             'key' => 'moderator_required',
@@ -74,7 +74,7 @@ class AppConfigsSeeder extends Seeder
             'enabled' => true,
             'rollout_percentage' => 100,
             'cohort' => null,
-            'description' => 'Expose the public reports dashboard without authentication.',
+            'description' => 'Expose the public complaints dashboard without authentication.',
         ],
         [
             'key' => 'offline_mode',
@@ -82,7 +82,7 @@ class AppConfigsSeeder extends Seeder
             'enabled' => true,
             'rollout_percentage' => 100,
             'cohort' => null,
-            'description' => 'Citizen PWA queues reports when offline and replays on reconnect.',
+            'description' => 'Citizen PWA queues complaints when offline and replays on reconnect.',
         ],
         [
             'key' => 'push_notifications',
@@ -98,7 +98,7 @@ class AppConfigsSeeder extends Seeder
             'enabled' => true,
             'rollout_percentage' => 100,
             'cohort' => null,
-            'description' => 'AI-assisted fraud scoring on incoming reports.',
+            'description' => 'AI-assisted fraud scoring on incoming complaints.',
         ],
         [
             'key' => 'duplicate_detection',
@@ -106,7 +106,7 @@ class AppConfigsSeeder extends Seeder
             'enabled' => true,
             'rollout_percentage' => 100,
             'cohort' => null,
-            'description' => 'Detect near-duplicate reports within a 50m / 14-day window.',
+            'description' => 'Detect near-duplicate complaints within a 50m / 14-day window.',
         ],
         [
             'key' => 'secondary_routing_trigger_map',

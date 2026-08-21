@@ -190,10 +190,10 @@ export default function SecurityPage() {
         </WidgetCard>
 
         <WidgetCard
-          title="Fake location reports"
+          title="Fake location complaints"
           count={snap.mock_gps_reports.count}
           tone="danger"
-          hint="Reports flagged for a likely spoofed/fake GPS location"
+          hint="Complaints flagged for a likely spoofed/fake GPS location"
         >
           <EventList rows={snap.mock_gps_reports.recent} />
         </WidgetCard>

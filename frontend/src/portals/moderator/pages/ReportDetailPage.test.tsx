@@ -35,10 +35,10 @@ describe('ModeratorReportHeader', () => {
 describe('moderatorActionMessage', () => {
   it('explains that citizen-confirmed and closed reports need no further action', () => {
     expect(moderatorActionMessage('verified')).toBe(
-      'This report is complete. No further moderator action is needed.',
+      'This complaint is complete. No further moderator action is needed.',
     );
     expect(moderatorActionMessage('closed')).toBe(
-      'This report is complete. No further moderator action is needed.',
+      'This complaint is complete. No further moderator action is needed.',
     );
   });
 });

@@ -10,9 +10,13 @@ use Illuminate\Database\Seeder;
 /**
  * Seeds the 15 report lifecycle states from docs/02 §7 + M10 moderation (merged, escalated)
  * + citizen verification (resolved_pending_verification, reopened):
- *   Draft, Submitted, AI Processing, Pending Moderator, Assigned,
+ *   Pending for Submission, Submitted, AI Processing, Pending Moderator, Assigned,
  *   Accepted, In Progress, Resolved, Resolved — Pending Verification,
- *   Verified, Reopened, Closed, Rejected, Merged, Escalated.
+ *   Verified, Reopened, Resolved (closed), Rejected, Merged, Escalated.
+ *
+ * Display names for `draft` ("Pending for Submission") and `closed`
+ * ("Resolved") follow decision D6/D8 — the previous "Draft"/"Closed"
+ * names leaked into emails and audit text. Codes are unchanged.
  *
  * Idempotent: `updateOrCreate` on `code`. Re-running is a no-op.
  */
@@ -22,7 +26,7 @@ class ReportStatusesSeeder extends Seeder
      * @var list<array<string, mixed>>
      */
     private const STATUSES = [
-        ['code' => 'draft',                        'name' => 'Draft',                        'color' => '#9E9E9E', 'is_terminal' => false, 'sort_order' => 10],
+        ['code' => 'draft',                        'name' => 'Pending for Submission',       'color' => '#9E9E9E', 'is_terminal' => false, 'sort_order' => 10],
         ['code' => 'submitted',                    'name' => 'Submitted',                    'color' => '#2196F3', 'is_terminal' => false, 'sort_order' => 20],
         ['code' => 'ai_processing',                'name' => 'AI Processing',                'color' => '#9C27B0', 'is_terminal' => false, 'sort_order' => 30],
         ['code' => 'pending_moderator',            'name' => 'Pending Moderator',            'color' => '#FF9800', 'is_terminal' => false, 'sort_order' => 40],
@@ -33,7 +37,7 @@ class ReportStatusesSeeder extends Seeder
         ['code' => 'resolved_pending_verification', 'name' => 'Resolved — Pending Verification', 'color' => '#66BB6A', 'is_terminal' => false, 'sort_order' => 80],
         ['code' => 'verified',                     'name' => 'Verified',                     'color' => '#1B5E20', 'is_terminal' => true,  'sort_order' => 85],
         ['code' => 'reopened',                     'name' => 'Reopened',                     'color' => '#FF7043', 'is_terminal' => false, 'sort_order' => 87],
-        ['code' => 'closed',                       'name' => 'Closed',                       'color' => '#212121', 'is_terminal' => true,  'sort_order' => 90],
+        ['code' => 'closed',                       'name' => 'Resolved',                     'color' => '#212121', 'is_terminal' => true,  'sort_order' => 90],
         ['code' => 'rejected',                     'name' => 'Rejected',                     'color' => '#F44336', 'is_terminal' => true,  'sort_order' => 100],
         ['code' => 'merged',                       'name' => 'Merged',                       'color' => '#7B1FA2', 'is_terminal' => true,  'sort_order' => 110],
         ['code' => 'escalated',                    'name' => 'Escalated',                    'color' => '#E91E63', 'is_terminal' => false, 'sort_order' => 120],

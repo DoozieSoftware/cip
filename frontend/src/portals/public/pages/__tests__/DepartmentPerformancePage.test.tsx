@@ -48,10 +48,11 @@ describe('Public DepartmentPerformancePage', () => {
     expect(screen.getByText('BBMP-R')).toBeTruthy();
     expect(screen.getByText('75%')).toBeTruthy();
     expect(screen.getByText('1.3d')).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Complaints' })).toBeTruthy();
     expect(apiRequestMock).toHaveBeenCalledWith('/public/departments/performance');
   });
 
-  it('shows an empty state when no department has any reports yet', async () => {
+  it('shows an empty state when no department has any complaints yet', async () => {
     apiRequestMock.mockResolvedValue({ data: { departments: [] } });
 
     renderPage();

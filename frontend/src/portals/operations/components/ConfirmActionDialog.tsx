@@ -69,7 +69,7 @@ export function ConfirmActionDialog({
             rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Required — recorded in the report timeline and audit trail."
+            placeholder="Required — recorded in the complaint timeline and audit trail."
           />
         )}
       </div>

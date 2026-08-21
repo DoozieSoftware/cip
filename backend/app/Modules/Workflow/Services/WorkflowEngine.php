@@ -156,7 +156,7 @@ class WorkflowEngine
             $lockedReport = Report::query()->lockForUpdate()->find($report->id);
 
             if ($lockedReport === null) {
-                throw ApiException::notFound('Report');
+                throw ApiException::notFound('Complaint');
             }
 
             if ((string) $lockedReport->current_status_id !== (string) $fromStateId) {

@@ -18,8 +18,8 @@ export default function OverviewPage(): JSX.Element {
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Platform overview</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Live, aggregate statistics for public reports. Values are cached for five minutes and
-          exclude drafts, rejected reports, and merged duplicates.
+          Live, aggregate statistics for public complaints. Values are cached for five minutes and
+          exclude drafts, rejected complaints, and merged duplicates.
         </p>
       </header>
 
@@ -32,7 +32,7 @@ export default function OverviewPage(): JSX.Element {
       ) : (
         <div className="grid grid-cols-1 gap-6 rounded-3xl border border-slate-200 bg-white p-8 sm:grid-cols-3">
           <Stat
-            label="Reports processed"
+            label="Complaints processed"
             value={stats.data.total_reports.toLocaleString()}
             sub="all time"
           />

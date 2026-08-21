@@ -24,11 +24,11 @@ function makeQuery(
 describe('PageStates (T-M13-020)', () => {
   it('renders the spinner while loading', () => {
     render(
-      <PageStates query={makeQuery({ isLoading: true })} loadingLabel="Loading reports">
+      <PageStates query={makeQuery({ isLoading: true })} loadingLabel="Loading complaints">
         {() => <p>data</p>}
       </PageStates>,
     );
-    expect(screen.getByRole('status', { name: /loading reports/i })).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /loading complaints/i })).toBeInTheDocument();
   });
 
   it('renders the error state with retry button when isError', () => {
@@ -52,13 +52,13 @@ describe('PageStates (T-M13-020)', () => {
       <PageStates
         query={makeQuery({ data: undefined })}
         emptyTitle="No notifications"
-        emptyDescription="Submit a report to see updates here."
+        emptyDescription="Submit a complaint to see updates here."
       >
         {() => <p>data</p>}
       </PageStates>,
     );
     expect(screen.getByText(/no notifications/i)).toBeInTheDocument();
-    expect(screen.getByText(/submit a report/i)).toBeInTheDocument();
+    expect(screen.getByText(/submit a complaint/i)).toBeInTheDocument();
   });
 
   it('renders the data view when data is present', () => {

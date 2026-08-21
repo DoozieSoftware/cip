@@ -45,7 +45,7 @@ class ReportSubmissionController extends BaseController
         $fresh = $report->fresh();
 
         if ($fresh === null) {
-            throw ApiException::notFound('Report');
+            throw ApiException::notFound('Complaint');
         }
 
         return $this->respond(
@@ -61,7 +61,7 @@ class ReportSubmissionController extends BaseController
         $user = $request->user();
 
         if ($report === null) {
-            throw ApiException::notFound('Report');
+            throw ApiException::notFound('Complaint');
         }
 
         if (! $user instanceof User) {
@@ -83,7 +83,7 @@ class ReportSubmissionController extends BaseController
         $user = $request->user();
 
         if ($report === null) {
-            throw ApiException::notFound('Report');
+            throw ApiException::notFound('Complaint');
         }
 
         if (! $user instanceof User) {

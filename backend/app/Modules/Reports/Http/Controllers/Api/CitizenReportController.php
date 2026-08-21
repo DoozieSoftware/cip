@@ -89,7 +89,7 @@ class CitizenReportController extends BaseController
         $report = $this->repository->findById($id);
 
         if ($report === null) {
-            throw ApiException::notFound('Report');
+            throw ApiException::notFound('Complaint');
         }
 
         $user = $request->user();
@@ -103,7 +103,7 @@ class CitizenReportController extends BaseController
             && (string) $report->citizen_id === (string) $user->id;
 
         if (! $isOwner && ! $user->hasAnyRole(['moderator', 'department_officer', 'department', 'super_admin', 'system'])) {
-            throw ApiException::forbidden('You cannot view this report.');
+            throw ApiException::forbidden('You cannot view this complaint.');
         }
 
         if (! $isOwner) {
@@ -126,7 +126,7 @@ class CitizenReportController extends BaseController
     private function assertDepartmentScopeAllows(User $user, Report $report): void
     {
         if (! DepartmentScope::canViewReport($user, $report)) {
-            throw ApiException::forbidden('This report is outside your department scope.');
+            throw ApiException::forbidden('This complaint is outside your department scope.');
         }
     }
 }

@@ -66,7 +66,7 @@ final class ReportSubmissionFinalizer
         $fresh = $report->fresh();
 
         if ($fresh === null) {
-            throw ApiException::notFound('Report');
+            throw ApiException::notFound('Complaint');
         }
 
         return new ReportFinalizationResult($fresh, false);

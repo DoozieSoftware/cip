@@ -118,7 +118,7 @@ export default function AnalyticsPage() {
           Could not load analytics
         </h3>
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-          The dashboard or reports endpoint did not respond.
+          The dashboard or complaints endpoint did not respond.
         </p>
       </div>
     );
@@ -167,10 +167,10 @@ export default function AnalyticsPage() {
       </header>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Open reports" value={counts.open} icon={IconChecklist} />
+        <StatCard label="Open complaints" value={counts.open} icon={IconChecklist} />
         <StatCard label="Due today" value={counts.due_today} icon={IconClock} tone="warning" />
         <StatCard
-          label="Overdue reports"
+          label="Overdue complaints"
           value={counts.sla_breached}
           icon={IconAlertTriangle}
           tone="danger"
@@ -180,7 +180,7 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartCard
           title="By status"
-          subtitle="Current progress labels for open reports"
+          subtitle="Current progress labels for open complaints"
           icon={IconChartPie}
         >
           <ReactECharts
@@ -192,13 +192,20 @@ export default function AnalyticsPage() {
                   type: 'pie',
                   radius: ['40%', '70%'],
                   data: byStatus,
-                  label: { color: '#1d1d1b', fontSize: 11 },
+                  label: {
+                    color: '#1d1d1b',
+                    fontSize: 11,
+                    // D9: show the raw count and share next to each
+                    // slice, not only on hover.
+                    formatter: (p: { name: string; value: number; percent: number }) =>
+                      `${p.name}: ${p.value} (${p.percent}%)`,
+                  },
                   itemStyle: { borderColor: '#fff', borderWidth: 2 },
                 },
               ],
             }}
             style={{ height: 320 }}
-            aria-label="Open reports by status"
+            aria-label="Open complaints by status"
           />
         </ChartCard>
         <ChartCard title="By report type" subtitle="Category breakdown" icon={IconChartBar}>
@@ -222,17 +229,20 @@ export default function AnalyticsPage() {
                   type: 'bar',
                   data: byType.map((d) => d.value),
                   itemStyle: { borderRadius: [4, 4, 0, 0], color: '#1d1d1b' },
+                  // D9: vertical bars — pin the count above each bar so
+                  // it is readable without hovering.
+                  label: { show: true, position: 'top', color: '#6f6e69', fontSize: 10 },
                 },
               ],
             }}
             style={{ height: 320 }}
-            aria-label="Open reports by report type"
+            aria-label="Open complaints by report type"
           />
         </ChartCard>
       </div>
 
       <ChartCard
-        title="Reports filed per day"
+        title="Complaints filed per day"
         subtitle="Trend over the selected period"
         icon={IconChartLine}
       >
@@ -263,7 +273,7 @@ export default function AnalyticsPage() {
             ],
           }}
           style={{ height: 320 }}
-          aria-label="Reports filed per day"
+          aria-label="Complaints filed per day"
         />
       </ChartCard>
     </div>

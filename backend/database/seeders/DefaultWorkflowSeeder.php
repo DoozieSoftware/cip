@@ -66,7 +66,7 @@ class DefaultWorkflowSeeder extends Seeder
             $def = WorkflowDefinition::query()->updateOrCreate(
                 ['code' => 'civic_default'],
                 [
-                    'name' => 'Civic Report (default)',
+                    'name' => 'Civic Complaint (default)',
                     'description' => 'Canonical lifecycle: draft → submitted → ai_processing → pending_moderator → assigned → accepted → in_progress → resolved_pending_verification → verified → closed. Supports citizen verification, reopening, supervisor escalation, and merge dispute.',
                     'active' => true,
                 ],
@@ -85,7 +85,7 @@ class DefaultWorkflowSeeder extends Seeder
     private function seedStates(string $defId): array
     {
         $rows = [
-            ['code' => 'draft',                        'name' => 'Draft',                        'is_initial' => true,  'is_terminal' => false, 'sort_order' => 10,  'color' => '#9E9E9E'],
+            ['code' => 'draft',                        'name' => 'Pending for Submission',       'is_initial' => true,  'is_terminal' => false, 'sort_order' => 10,  'color' => '#9E9E9E'],
             ['code' => 'submitted',                    'name' => 'Submitted',                    'is_initial' => false, 'is_terminal' => false, 'sort_order' => 20,  'color' => '#2196F3'],
             ['code' => 'ai_processing',                'name' => 'AI Processing',                'is_initial' => false, 'is_terminal' => false, 'sort_order' => 30,  'color' => '#9C27B0'],
             ['code' => 'pending_moderator',            'name' => 'Pending Moderator',            'is_initial' => false, 'is_terminal' => false, 'sort_order' => 40,  'color' => '#FF9800'],
@@ -96,7 +96,7 @@ class DefaultWorkflowSeeder extends Seeder
             ['code' => 'resolved_pending_verification', 'name' => 'Resolved — Pending Verification', 'is_initial' => false, 'is_terminal' => false, 'sort_order' => 80,  'color' => '#66BB6A'],
             ['code' => 'verified',                     'name' => 'Verified',                     'is_initial' => false, 'is_terminal' => true,  'sort_order' => 85,  'color' => '#1B5E20'],
             ['code' => 'reopened',                     'name' => 'Reopened',                     'is_initial' => false, 'is_terminal' => false, 'sort_order' => 87,  'color' => '#FF7043'],
-            ['code' => 'closed',                       'name' => 'Closed',                       'is_initial' => false, 'is_terminal' => true,  'sort_order' => 90,  'color' => '#212121'],
+            ['code' => 'closed',                       'name' => 'Resolved',                     'is_initial' => false, 'is_terminal' => true,  'sort_order' => 90,  'color' => '#212121'],
             ['code' => 'rejected',                     'name' => 'Rejected',                     'is_initial' => false, 'is_terminal' => true,  'sort_order' => 100, 'color' => '#F44336'],
             ['code' => 'merged',                       'name' => 'Merged',                       'is_initial' => false, 'is_terminal' => true,  'sort_order' => 110, 'color' => '#7B1FA2'],
             ['code' => 'escalated',                    'name' => 'Escalated',                    'is_initial' => false, 'is_terminal' => false, 'sort_order' => 120, 'color' => '#E91E63'],

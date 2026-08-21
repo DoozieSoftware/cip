@@ -146,7 +146,7 @@ class ModerationActionsController extends BaseController
         $report = Report::query()->find($reportId);
 
         if ($report === null) {
-            throw ApiException::notFound('Report');
+            throw ApiException::notFound('Complaint');
         }
 
         return $report;

@@ -50,7 +50,7 @@ describe('CitizenLayout i18n', () => {
   it('renders nav labels from the message catalog (en-IN defaults)', () => {
     renderAt('/citizen');
     const { sidebar } = getNavs();
-    for (const label of ['Home', 'Reports', 'New report', 'Account']) {
+    for (const label of ['Home', 'Complaints', 'New complaint', 'Account']) {
       expect(within(sidebar).getByText(label)).toBeTruthy();
     }
   });

@@ -37,8 +37,8 @@ export default function DuplicatesQueuePage() {
       <header>
         <h1 className="text-xl font-semibold text-[#1d1d1b]">Duplicate review</h1>
         <p className="text-sm text-[#6f6e69]">
-          Reports flagged by the AI pipeline as potentially the same incident. Open one to merge it
-          into its canonical report.
+          Complaints flagged by the AI pipeline as potentially the same incident. Open one to merge
+          it into its canonical complaint.
         </p>
       </header>
       {q.data.data.length === 0 ? (

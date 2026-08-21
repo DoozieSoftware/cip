@@ -3,12 +3,12 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   'report.department_action': 'Department action recorded',
   'report.department_progress': 'Department progress updated',
   'report.review': 'Moderator review completed',
-  'report.approved': 'Report approved',
-  'report.rejected': 'Report rejected',
-  'report.merged': 'Reports merged',
-  'report.escalated': 'Report escalated',
+  'report.approved': 'Complaint approved',
+  'report.rejected': 'Complaint rejected',
+  'report.merged': 'Complaints merged',
+  'report.escalated': 'Complaint escalated',
   'report.reassigned': 'Assignment updated',
-  'report.created': 'Report created',
+  'report.created': 'Complaint created',
 };
 
 /** Turns internal audit event codes into language suitable for staff screens. */

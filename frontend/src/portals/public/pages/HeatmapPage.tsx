@@ -8,7 +8,7 @@ const BENGALURU_CENTER: [number, number] = [12.9716, 77.5946];
 
 /**
  * Every point here is a `(round(lat, 2), round(lng, 2))` grid cell
- * count from `PublicHeatmapService` — never an individual report's
+ * count from `PublicHeatmapService` — never an individual complaint's
  * exact coordinates. A cell always represents an aggregate.
  */
 export default function HeatmapPage(): JSX.Element {
@@ -23,9 +23,10 @@ export default function HeatmapPage(): JSX.Element {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold text-slate-900">Report density</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Complaint density</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Reports grouped into a ~1.1 km grid — never an individual report&apos;s exact location.
+          Complaints grouped into a ~1.1 km grid — never an individual complaint&apos;s exact
+          location.
         </p>
       </header>
 
@@ -37,8 +38,8 @@ export default function HeatmapPage(): JSX.Element {
         <EmptyState title="Heat map unavailable" description="Please try again shortly." />
       ) : points.length === 0 ? (
         <EmptyState
-          title="No reports yet"
-          description="The heat map will populate as reports come in."
+          title="No complaints yet"
+          description="The heat map will populate as complaints come in."
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200" style={{ height: 480 }}>
@@ -59,7 +60,7 @@ export default function HeatmapPage(): JSX.Element {
                 pathOptions={{ color: '#4f46e5', fillColor: '#4f46e5', fillOpacity: 0.5 }}
               >
                 <Popup>
-                  {p.count} report{p.count === 1 ? '' : 's'} in this area
+                  {p.count} complaint{p.count === 1 ? '' : 's'} in this area
                 </Popup>
               </CircleMarker>
             ))}

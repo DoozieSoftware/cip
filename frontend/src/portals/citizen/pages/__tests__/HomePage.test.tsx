@@ -124,7 +124,7 @@ function renderPage(opts: { online?: boolean } = {}): void {
 describe('HomePage — status classification', () => {
   it('keeps the file-report card light until it is hovered', () => {
     renderPage();
-    expect(screen.getByRole('link', { name: /File a new report/i })).toHaveClass(
+    expect(screen.getByRole('link', { name: /File a new complaint/i })).toHaveClass(
       'bg-white',
       'hover:bg-[var(--color-ink-soft)]',
     );
@@ -150,7 +150,7 @@ describe('HomePage — status classification', () => {
 
   it('counts Active using lifecycleGroup open — rejected/merged are not Active (2 of 6)', () => {
     renderPage();
-    expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.getByText('Pending')).toBeInTheDocument();
   });
 
   it('counts verified as resolved per lifecycleGroup closed (P1-05)', () => {
@@ -197,7 +197,7 @@ describe('HomePage — status classification', () => {
     renderPage();
     // Of 6 reports: open=2 (in_progress, accepted), awaiting_citizen=1 (resolved),
     // closed=1 (closed), rejected=1, merged=1. Active must be exactly 2.
-    const activeLabels = screen.getAllByText('Active');
+    const activeLabels = screen.getAllByText('Pending');
     const statLabel = activeLabels.find(
       (el) => el.classList.contains('uppercase') && el.classList.contains('tracking-[0.12em]'),
     );
@@ -216,7 +216,7 @@ describe('HomePage — distinct failure states (P2-04)', () => {
       refetch: vi.fn(),
     });
     renderPage();
-    expect(screen.getByText('Unable to load reports')).toBeInTheDocument();
+    expect(screen.getByText('Unable to load complaints')).toBeInTheDocument();
     expect(screen.getByText('Check your connection and try again.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
@@ -266,7 +266,7 @@ describe('HomePage — distinct failure states (P2-04)', () => {
       refetch: vi.fn(),
     });
     renderPage();
-    expect(screen.getByText('Showing cached reports. Could not refresh.')).toBeInTheDocument();
+    expect(screen.getByText('Showing cached complaints. Could not refresh.')).toBeInTheDocument();
     expect(screen.getByText('Cached report')).toBeInTheDocument();
   });
 
@@ -279,7 +279,7 @@ describe('HomePage — distinct failure states (P2-04)', () => {
       refetch: vi.fn(),
     });
     renderPage();
-    expect(screen.queryByText('No reports filed yet.')).not.toBeInTheDocument();
+    expect(screen.queryByText('No complaints filed yet.')).not.toBeInTheDocument();
   });
 
   it('shows a full-page loading state on initial load with no cached data', () => {
@@ -303,7 +303,7 @@ describe('HomePage — distinct failure states (P2-04)', () => {
     });
     renderPage();
     expect(screen.queryByText('Filed')).not.toBeInTheDocument();
-    expect(screen.queryByText('Active')).not.toBeInTheDocument();
+    expect(screen.queryByText('Pending')).not.toBeInTheDocument();
   });
 
   it('shows empty state when reports returns empty list', () => {
@@ -317,7 +317,7 @@ describe('HomePage — distinct failure states (P2-04)', () => {
       refetch: vi.fn(),
     });
     renderPage();
-    expect(screen.getByText('No reports filed yet.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /file a report/i })).toBeInTheDocument();
+    expect(screen.getByText('No complaints filed yet.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /file a complaint/i })).toBeInTheDocument();
   });
 });

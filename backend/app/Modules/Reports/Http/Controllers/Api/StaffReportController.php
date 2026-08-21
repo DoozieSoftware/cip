@@ -84,7 +84,7 @@ class StaffReportController extends BaseController
         $report = $this->repository->findById($id);
 
         if ($report === null) {
-            throw ApiException::notFound('Report');
+            throw ApiException::notFound('Complaint');
         }
 
         $user = $request->user();
@@ -105,7 +105,7 @@ class StaffReportController extends BaseController
         $report = $this->repository->findById($id);
 
         if ($report === null) {
-            throw ApiException::notFound('Report');
+            throw ApiException::notFound('Complaint');
         }
 
         $user = $request->user();

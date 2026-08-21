@@ -85,8 +85,8 @@ const ACTION_META: Record<
     variant: 'success',
   },
   close: {
-    label: 'Complete report',
-    confirmLabel: 'Complete report',
+    label: 'Complete complaint',
+    confirmLabel: 'Complete complaint',
     requiresNote: true,
     shortcut: 'C',
     variant: 'danger',
@@ -101,14 +101,15 @@ const ACTIONS_BY_STATUS: Partial<Record<ReportStatusCode, WorkflowEvent[]>> = {
 };
 
 const STATUS_GUIDANCE: Record<string, string> = {
-  assigned: 'Review the evidence and location, then accept responsibility for this report.',
+  assigned: 'Review the evidence and location, then accept responsibility for this complaint.',
   accepted: 'The assignment is yours. Start field work when the team is ready to proceed.',
   in_progress: 'Record a field update or mark the work as fixed when it is complete.',
-  resolved: 'Review the completion proof and mark the report complete when the fix is confirmed.',
+  resolved:
+    'Review the completion proof and mark the complaint complete when the fix is confirmed.',
   verified: 'Completion has been verified. No further officer action is required.',
-  closed: 'This report is complete.',
-  escalated: 'This report has been escalated for supervisor attention.',
-  merged: 'This report was merged into another case.',
+  closed: 'This complaint is complete.',
+  escalated: 'This complaint has been escalated for supervisor attention.',
+  merged: 'This complaint was merged into another case.',
 };
 
 function hasPendingProofVerification(report: DepartmentReportDetail | undefined): boolean {
@@ -128,12 +129,12 @@ function hasPendingProofVerification(report: DepartmentReportDetail | undefined)
 }
 
 const ACTION_DESCRIPTION: Record<WorkflowEvent, string> = {
-  accept: 'Accept this report and take responsibility for resolving it.',
-  start: 'Start field work on this report.',
+  accept: 'Accept this complaint and take responsibility for resolving it.',
+  start: 'Start field work on this complaint.',
   progress:
     'Record a progress update. A note is required so the citizen and supervisor know what is happening.',
-  resolve: 'Mark this report as fixed. A note is required describing what was done.',
-  close: 'Mark this report complete. A note is required documenting the outcome.',
+  resolve: 'Mark this complaint as fixed. A note is required describing what was done.',
+  close: 'Mark this complaint complete. A note is required documenting the outcome.',
 };
 
 function captureCurrentPosition(
@@ -166,7 +167,7 @@ function captureCurrentPosition(
       () => {
         reject(
           new Error(
-            'Allow location access before uploading proof, so we can verify the work was captured at the report location.',
+            'Allow location access before uploading proof, so we can verify the work was captured at the complaint location.',
           ),
         );
       },
@@ -210,7 +211,7 @@ function ProofVerificationCard({
   const distanceLabel =
     verification.distance_meters == null
       ? 'GPS was not available'
-      : `${Math.round(verification.distance_meters)} m from report location`;
+      : `${Math.round(verification.distance_meters)} m from complaint location`;
   const guidance =
     verification.status === 'match'
       ? nextStep
@@ -540,15 +541,15 @@ export default function ReportDetailPage() {
   if (isLoading || !ready || (memberships.length > 0 && !selectedId)) {
     return (
       <div className="flex items-center justify-center py-20" aria-live="polite">
-        <Spinner label="Loading report" />
+        <Spinner label="Loading complaint" />
       </div>
     );
   }
   if (error || !report) {
     return (
       <EmptyState
-        title="Report could not be loaded"
-        description="Refresh this page, or go back to the reports list if this report is no longer assigned to your department."
+        title="Complaint could not be loaded"
+        description="Refresh this page, or go back to the complaints list if this complaint is no longer assigned to your department."
         action={
           <button
             type="button"
@@ -585,7 +586,7 @@ export default function ReportDetailPage() {
         className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
       >
         <IconArrowLeft size={16} stroke={1.6} />
-        Back to reports
+        Back to complaints
       </Link>
 
       <header className="rounded-xl bg-white p-4">
@@ -593,7 +594,7 @@ export default function ReportDetailPage() {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone={isSecondaryTask ? 'purple' : 'neutral'}>
-                {isSecondaryTask ? 'Cross Agency report' : 'Primary report'}
+                {isSecondaryTask ? 'Cross Agency complaint' : 'Primary complaint'}
               </Badge>
               <Badge tone={statusTone(status)}>{statusLabel(status)}</Badge>
               {report.report_type && <Badge tone="neutral">{report.report_type.name}</Badge>}
@@ -628,7 +629,7 @@ export default function ReportDetailPage() {
             </h2>
           </div>
           <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-            This report needs action from multiple departments.
+            This complaint needs action from multiple departments.
           </p>
           <div className="mt-3 space-y-0 divide-y divide-[var(--color-canvas)]">
             {report.assignments.map((a) => (
@@ -694,7 +695,7 @@ export default function ReportDetailPage() {
             </h2>
             <p className="mt-1 text-sm leading-5 text-[var(--color-text-secondary)]">
               {isSecondaryTask
-                ? 'This cross agency work has its own completion state. The primary department keeps control of the main report.'
+                ? 'This cross agency work has its own completion state. The primary department keeps control of the main complaint.'
                 : (STATUS_GUIDANCE[status] ?? 'No action is available for this status.')}
             </p>
           </div>
@@ -757,7 +758,9 @@ export default function ReportDetailPage() {
           )}
           {action.isError && (
             <p role="alert" className="w-full text-sm text-red-600 sm:basis-full">
-              {action.error instanceof Error ? action.error.message : 'The report action failed.'}
+              {action.error instanceof Error
+                ? action.error.message
+                : 'The complaint action failed.'}
             </p>
           )}
         </div>
@@ -770,12 +773,12 @@ export default function ReportDetailPage() {
               <div className="flex items-center gap-2">
                 <IconLink size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
                 <h2 className="text-sm font-semibold text-[var(--color-ink)]">
-                  Cross Agency report
+                  Cross Agency complaint
                 </h2>
               </div>
               <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
                 Complete this department’s cross agency work without resolving or closing the
-                report.
+                complaint.
               </p>
               <div className="mt-3 flex items-center gap-4 text-xs">
                 <div>
@@ -845,7 +848,7 @@ export default function ReportDetailPage() {
               <h2 className="text-sm font-semibold text-[var(--color-ink)]">Evidence and proof</h2>
             </div>
             <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-              Citizen report on the left; department completion proof on the right.
+              Citizen complaint on the left; department completion proof on the right.
             </p>
             {!isTerminal && (
               <input
@@ -957,7 +960,7 @@ export default function ReportDetailPage() {
                       ? 'Proof is ready. You can complete this department task.'
                       : status === 'in_progress'
                         ? 'Proof is ready. You can mark the work as fixed.'
-                        : 'Review this result before continuing with the report.'
+                        : 'Review this result before continuing with the complaint.'
                 }
               />
             )}
@@ -1022,7 +1025,7 @@ export default function ReportDetailPage() {
           <div className="rounded-xl bg-white p-4">
             <div className="flex items-center gap-2">
               <IconFileText size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
-              <h2 className="text-sm font-semibold text-[var(--color-ink)]">Report details</h2>
+              <h2 className="text-sm font-semibold text-[var(--color-ink)]">Complaint details</h2>
             </div>
             <div className="mt-3 space-y-3">
               {report.description && (
@@ -1219,7 +1222,7 @@ export default function ReportDetailPage() {
       <ConfirmActionDialog
         open={taskCompletionPending}
         title="Mark task complete"
-        description="Confirm that your department's Cross Agency work is complete. This will not change the primary report status."
+        description="Confirm that your department's Cross Agency work is complete. This will not change the primary complaint status."
         confirmLabel="Complete task"
         confirmVariant="success"
         requiresNote

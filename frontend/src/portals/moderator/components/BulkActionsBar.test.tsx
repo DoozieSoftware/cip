@@ -15,11 +15,11 @@ describe('BulkActionsBar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Bulk merge' }));
 
     expect(screen.queryByText(/UUID/i)).not.toBeInTheDocument();
-    const apply = screen.getByRole('button', { name: 'Apply to 2 reports' });
+    const apply = screen.getByRole('button', { name: 'Apply to 2 complaints' });
     expect(apply).toBeDisabled();
     expect(apply).toHaveClass('disabled:text-white');
 
-    fireEvent.change(screen.getByLabelText('Canonical report'), {
+    fireEvent.change(screen.getByLabelText('Canonical complaint'), {
       target: { value: 'internal-report-2' },
     });
     fireEvent.click(apply);
@@ -39,7 +39,7 @@ describe('BulkActionsBar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Bulk reject' }));
 
     expect(screen.queryByLabelText('Reason code')).not.toBeInTheDocument();
-    const apply = screen.getByRole('button', { name: 'Apply to 2 reports' });
+    const apply = screen.getByRole('button', { name: 'Apply to 2 complaints' });
     expect(apply).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText('Reason'), { target: { value: 'invalid_evidence' } });

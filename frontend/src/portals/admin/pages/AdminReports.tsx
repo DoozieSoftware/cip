@@ -82,10 +82,10 @@ export default function AdminReports(): JSX.Element {
               Cross-department oversight
             </p>
             <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
-              All reports
+              All complaints
             </h1>
             <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-              Review report ownership and active primary or secondary assignments across the
+              Review complaint ownership and active primary or secondary assignments across the
               platform.
             </p>
           </div>
@@ -187,12 +187,12 @@ export default function AdminReports(): JSX.Element {
 
       {reports.isLoading ? (
         <div className="flex min-h-[200px] items-center justify-center">
-          <Spinner label="Loading reports" />
+          <Spinner label="Loading complaints" />
         </div>
       ) : reports.isError || !reports.data ? (
         <ErrorState
-          title="Could not load reports"
-          description="The admin report endpoint did not respond."
+          title="Could not load complaints"
+          description="The admin complaints endpoint did not respond."
           action={
             <Button
               variant="secondary"
@@ -207,7 +207,7 @@ export default function AdminReports(): JSX.Element {
         />
       ) : reports.data.reports.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-white p-10 text-center">
-          <EmptyState title="No reports match" description="Try clearing one or more filters." />
+          <EmptyState title="No complaints match" description="Try clearing one or more filters." />
         </div>
       ) : (
         <>
@@ -220,14 +220,14 @@ export default function AdminReports(): JSX.Element {
                     stroke={1.6}
                   />
                 </span>
-                <CardTitle>Reports</CardTitle>
+                <CardTitle>Complaints</CardTitle>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <span className="text-[var(--color-text-secondary)]">
                   <strong className="font-medium text-[var(--color-ink)]">
                     {reports.data.meta.total}
                   </strong>{' '}
-                  reports
+                  complaints
                 </span>
                 <span className="text-[var(--color-text-tertiary)]">
                   Page {reports.data.meta.page} of {reports.data.meta.last_page}
@@ -238,7 +238,7 @@ export default function AdminReports(): JSX.Element {
               <table className="w-full min-w-[64rem] border-collapse text-left text-sm">
                 <thead className="bg-[var(--color-canvas)] text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                   <tr className="border-b border-[var(--color-border-subtle)]">
-                    <th className="px-5 py-3 font-medium">Report</th>
+                    <th className="px-5 py-3 font-medium">Complaint</th>
                     <th className="px-5 py-3 font-medium">Status</th>
                     <th className="px-5 py-3 font-medium">Category</th>
                     <th className="px-5 py-3 font-medium">Primary department</th>

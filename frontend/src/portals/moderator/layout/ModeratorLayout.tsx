@@ -21,7 +21,7 @@ const NAV: Array<{
   end?: boolean;
 }> = [
   { to: '/moderator', label: 'Dashboard', icon: IconGauge, end: true },
-  { to: '/moderator/queue', label: 'Review reports', icon: IconClipboardCheck },
+  { to: '/moderator/queue', label: 'Review complaints', icon: IconClipboardCheck },
   { to: '/moderator/duplicates', label: 'Duplicates', icon: IconLink },
   { to: '/moderator/misrepresentation', label: 'Misrepresentation', icon: IconFingerprint },
   { to: '/moderator/analytics', label: 'Analytics', icon: IconReportAnalytics },

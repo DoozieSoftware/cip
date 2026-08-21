@@ -155,7 +155,7 @@ export default function ReportListPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20" aria-live="polite">
-        <Spinner label="Loading reports" />
+        <Spinner label="Loading complaints" />
       </div>
     );
   }
@@ -163,8 +163,8 @@ export default function ReportListPage() {
   if (error || !data) {
     return (
       <EmptyState
-        title="Could not load reports"
-        description="The reports endpoint did not respond."
+        title="Could not load complaints"
+        description="The complaints endpoint did not respond."
         action={
           <button
             type="button"
@@ -216,7 +216,7 @@ export default function ReportListPage() {
             {secondaryOnly ? 'Cross Agency' : 'Officer queue'}
           </p>
           <h1 className="mt-1 text-xl font-semibold text-[var(--color-ink)]">
-            {secondaryOnly ? 'Cross Agency' : 'Assigned reports'}
+            {secondaryOnly ? 'Cross Agency' : 'Assigned complaints'}
           </h1>
         </div>
         <div className="flex items-center gap-2">
@@ -225,7 +225,7 @@ export default function ReportListPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-x-3 text-xs text-[var(--color-text-secondary)]">
-        <span className="font-semibold text-[var(--color-ink)]">{data.meta.total} reports</span>
+        <span className="font-semibold text-[var(--color-ink)]">{data.meta.total} complaints</span>
         <span aria-hidden className="text-[var(--color-text-tertiary)]">
           |
         </span>
@@ -249,7 +249,7 @@ export default function ReportListPage() {
       <div className="rounded-xl bg-white p-3">
         <div className="flex gap-2">
           <label className="relative min-w-0 flex-1">
-            <span className="sr-only">Search reports</span>
+            <span className="sr-only">Search complaints</span>
             <IconSearch
               size={16}
               stroke={1.6}
@@ -259,7 +259,7 @@ export default function ReportListPage() {
             <input
               name="search"
               type="search"
-              placeholder="Search title or report number"
+              placeholder="Search title or complaint number"
               value={filters.search ?? ''}
               onChange={(e) => updateFilter('search', e.target.value)}
               className="h-10 w-full rounded-full border-0 bg-[var(--color-canvas)] pl-9 pr-3 text-sm text-[var(--color-ink)] outline-none transition placeholder:text-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-ink)]/10"
@@ -361,7 +361,7 @@ export default function ReportListPage() {
       </div>
 
       {data.data.length === 0 ? (
-        <EmptyState title="No reports match" description="Try clearing your filters." />
+        <EmptyState title="No complaints match" description="Try clearing your filters." />
       ) : (
         <div className="space-y-3">
           {data.data.map((r) => (
@@ -375,8 +375,8 @@ export default function ReportListPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={r.assignment?.kind === 'secondary' ? 'purple' : 'neutral'}>
                       {r.assignment?.kind === 'secondary'
-                        ? 'Cross Agency report'
-                        : 'Primary report'}
+                        ? 'Cross Agency complaint'
+                        : 'Primary complaint'}
                     </Badge>
                     <Badge
                       tone={

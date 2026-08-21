@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   citizenReportStatusLabel,
+  citizenReportStatusMeaning,
   reportStatusTone,
   staffReportStatusLabel,
 } from './statusDisplay';
@@ -15,6 +16,32 @@ describe('status display labels', () => {
     expect(citizenReportStatusLabel('resolved_pending_verification')).toBe('Fixed — please verify');
     expect(citizenReportStatusLabel('verified')).toBe('Completed');
     expect(citizenReportStatusLabel('closed')).toBe('Completed');
+  });
+
+  it('phrases citizen-facing merged status as a complaint', () => {
+    expect(citizenReportStatusLabel('merged')).toBe('Combined with another complaint');
+  });
+
+  it('labels unsaved drafts as pending for submission on both surfaces', () => {
+    expect(citizenReportStatusLabel('draft')).toBe('Pending for submission');
+    expect(staffReportStatusLabel('draft')).toBe('Pending for submission');
+  });
+
+  it('labels freshly submitted complaints for staff', () => {
+    expect(staffReportStatusLabel('submitted')).toBe('New complaint');
+  });
+
+  it('uses complaint wording in plain-language meaning lines', () => {
+    expect(citizenReportStatusMeaning('draft')).toBe(
+      'Your complaint is saved but not yet submitted.',
+    );
+    expect(citizenReportStatusMeaning('in_progress')).toBe('Work on your complaint is underway.');
+    expect(citizenReportStatusMeaning('verified')).toBe(
+      'This complaint has been resolved and confirmed.',
+    );
+    expect(citizenReportStatusMeaning('merged')).toBe(
+      'This complaint is being tracked together with another complaint of the same issue.',
+    );
   });
 
   it('uses the same final status label across staff-facing surfaces', () => {

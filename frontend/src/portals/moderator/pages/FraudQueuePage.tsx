@@ -37,7 +37,7 @@ export default function FraudQueuePage() {
       <header>
         <h1 className="text-xl font-semibold text-[#1d1d1b]">Misrepresentation review</h1>
         <p className="text-sm text-[#6f6e69]">
-          Reports flagged as likely spam, repeat offenders, or synthetic media. Reject the clear
+          Complaints flagged as likely spam, repeat offenders, or synthetic media. Reject the clear
           cases; escalate the ambiguous ones.
         </p>
       </header>

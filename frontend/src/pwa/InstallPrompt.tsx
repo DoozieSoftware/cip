@@ -113,7 +113,7 @@ export function InstallPrompt(): JSX.Element | null {
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold text-slate-900">Install the app</div>
         <p className="mt-0.5 text-xs text-slate-600">
-          Add Civic Intelligence Platform to your home screen for offline report drafting and
+          Add Civic Intelligence Platform to your home screen for offline complaint drafting and
           one-tap camera capture.
         </p>
         <div className="mt-3 flex gap-2">

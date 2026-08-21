@@ -136,7 +136,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">Dashboard</h1>
-          <p className="mt-0.5 text-sm text-[#6f6e69]">Live report review workload</p>
+          <p className="mt-0.5 text-sm text-[#6f6e69]">Live complaint review workload</p>
         </div>
         <span className="hidden items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#6f6e69] shadow-sm ring-1 ring-black/5 sm:inline-flex">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
@@ -212,7 +212,7 @@ export default function DashboardPage() {
       </section>
 
       {/* Recent reports + Review CTA */}
-      <section aria-label="Reports awaiting review">
+      <section aria-label="Complaints awaiting review">
         <div className="flex items-center justify-between">
           <h2 className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
             Awaiting review
@@ -245,7 +245,7 @@ export default function DashboardPage() {
             </ul>
           ) : (
             <div className="p-6 text-center">
-              <p className="text-sm text-[#6f6e69]">No reports are awaiting review</p>
+              <p className="text-sm text-[#6f6e69]">No complaints are awaiting review</p>
             </div>
           )}
         </div>
@@ -259,7 +259,7 @@ export default function DashboardPage() {
             className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#2d2d2b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d1d1b] focus-visible:ring-offset-2 sm:w-auto"
           >
             <IconEye className="h-4 w-4" stroke={1.6} />
-            Review reports
+            Review complaints
           </button>
         </div>
       </section>

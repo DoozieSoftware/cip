@@ -61,7 +61,7 @@ function confidenceStatus(n: number | null | undefined): string {
 
 const reviewReasonCopy: Record<string, string> = {
   classification_review:
-    'The suggested category needs your review before this report is sent to a department.',
+    'The suggested category needs your review before this complaint is sent to a department.',
   manual_classification: 'Classification confidence requires manual classification.',
   evidence_mismatch: 'The submitted description may not match the visual evidence.',
   duplicate_risk: 'Possible duplicate or reused evidence was detected.',
@@ -136,7 +136,7 @@ export function AiAnalysisPanel({ ai, statusCode, mockGpsScore }: AiAnalysisPane
     const message =
       statusCode === 'submitted' || statusCode === 'ai_processing'
         ? 'AI analysis is queued or still processing. This can take a few minutes while the vision provider completes the review.'
-        : 'No AI result is available for this report.';
+        : 'No AI result is available for this complaint.';
 
     return (
       <section className="rounded-xl bg-white p-4" aria-labelledby="ai-analysis-title">

@@ -39,7 +39,7 @@ export function LocationCard({ location }: { location: DepartmentReportLocation 
         {location === null ? (
           <EmptyState
             title="No location"
-            description="The citizen did not share a location with this report."
+            description="The citizen did not share a location with this complaint."
           />
         ) : (
           <div className="space-y-3">

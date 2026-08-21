@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { IconMaximize } from '@tabler/icons-react';
 import type { MediaItem } from '../types';
-import { Card, CardHeader, CardTitle, CardBody, Badge, Dialog, EmptyState } from '../../../shared/ui';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardBody,
+  Badge,
+  Dialog,
+  EmptyState,
+} from '../../../shared/ui';
 
 export function EvidenceViewer({ media }: { media: MediaItem[] }) {
   const [selectedImage, setSelectedImage] = useState<MediaItem | null>(null);
@@ -15,7 +23,7 @@ export function EvidenceViewer({ media }: { media: MediaItem[] }) {
         <CardBody>
           <EmptyState
             title="No evidence attached"
-            description="The citizen did not upload photos or video with this report."
+            description="The citizen did not upload photos or video with this complaint."
           />
         </CardBody>
       </Card>
@@ -43,7 +51,9 @@ export function EvidenceViewer({ media }: { media: MediaItem[] }) {
                   <img
                     src={m.url}
                     alt={
-                      m.captured_at ? `Captured ${m.captured_at}` : `Report evidence ${index + 1}`
+                      m.captured_at
+                        ? `Captured ${m.captured_at}`
+                        : `Complaint evidence ${index + 1}`
                     }
                     className="h-48 w-full object-cover transition duration-200 group-hover:scale-[1.02]"
                     loading="lazy"
@@ -89,7 +99,7 @@ export function EvidenceViewer({ media }: { media: MediaItem[] }) {
               alt={
                 selectedImage.captured_at
                   ? `Captured ${selectedImage.captured_at}`
-                  : 'Report evidence full-size preview'
+                  : 'Complaint evidence full-size preview'
               }
               className="max-h-[80vh] w-full bg-[#1d1d1b] object-contain"
             />

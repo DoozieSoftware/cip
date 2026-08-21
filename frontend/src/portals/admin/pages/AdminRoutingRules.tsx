@@ -279,7 +279,7 @@ export default function AdminRoutingRules(): JSX.Element {
           <div className="p-5">
             <EmptyState
               title="No routing rules defined"
-              description="Create your first rule to start matching reports to departments."
+              description="Create your first rule to start matching complaints to departments."
               action={
                 <Button
                   variant="primary"

@@ -54,7 +54,7 @@ class AssignmentService
             $lockedReport = Report::query()->lockForUpdate()->find($report->id);
 
             if ($lockedReport === null) {
-                throw ApiException::notFound('Report');
+                throw ApiException::notFound('Complaint');
             }
 
             if ((int) $lockedReport->workflow_version !== $expectedWorkflowVersion) {

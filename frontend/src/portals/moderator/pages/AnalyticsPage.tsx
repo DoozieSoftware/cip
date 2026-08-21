@@ -53,7 +53,13 @@ function OutcomesChart({ data }: { data: AnalyticsSummary }) {
           name: 'Today',
           type: 'pie',
           radius: ['45%', '70%'],
-          label: { color: '#1d1d1b' },
+          label: {
+            color: '#1d1d1b',
+            // D9: show the raw count and share next to each slice, not
+            // only on hover.
+            formatter: (p: { name: string; value: number; percent: number }) =>
+              `${p.name}: ${p.value} (${p.percent}%)`,
+          },
           data: [
             { name: 'Approved', value: data.approved_today, itemStyle: { color: '#16a34a' } },
             {

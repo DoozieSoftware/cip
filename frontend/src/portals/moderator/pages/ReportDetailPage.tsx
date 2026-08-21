@@ -67,7 +67,7 @@ export function ModeratorReportHeader({
         className="inline-flex min-h-[44px] items-center gap-2 text-sm text-[#6f6e69] transition hover:text-[#1d1d1b]"
       >
         <IconArrowLeft className="h-4 w-4" stroke={1.6} />
-        Back to review reports
+        Back to review complaints
       </Link>
       <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="w-full min-w-0 sm:flex-1">
@@ -111,7 +111,7 @@ export function ModeratorReportHeader({
 
 const REJECT_REASONS = [
   { value: 'invalid_evidence', label: 'Invalid evidence' },
-  { value: 'duplicate', label: 'Duplicate of another report' },
+  { value: 'duplicate', label: 'Duplicate of another complaint' },
   { value: 'fraudulent', label: 'Misrepresentation' },
   { value: 'out_of_scope', label: 'Out of platform scope' },
   { value: 'incomplete', label: 'Incomplete information' },
@@ -412,7 +412,7 @@ export default function ReportDetailPage() {
         className="flex min-h-screen items-center justify-center bg-[#f3f2ed]"
         aria-live="polite"
       >
-        <Spinner label="Loading report" />
+        <Spinner label="Loading complaint" />
       </div>
     );
   }
@@ -420,15 +420,15 @@ export default function ReportDetailPage() {
     return (
       <div className="w-full">
         <EmptyState
-          title="Report not found"
-          description="The report may have been merged or rejected, or you may not have access to it."
+          title="Complaint not found"
+          description="The complaint may have been merged or rejected, or you may not have access to it."
           action={
             <Link
               to="/moderator/queue"
               className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#1d1d1b] px-5 text-sm text-white transition hover:bg-black"
             >
               <IconArrowLeft className="h-4 w-4" stroke={1.6} />
-              Back to review reports
+              Back to review complaints
             </Link>
           }
         />
@@ -666,8 +666,8 @@ export default function ReportDetailPage() {
           <div className="space-y-3">
             <ModeratorActionError error={review.error} />
             <p className="text-sm text-[#6f6e69]">
-              Approving moves the report to the next review step. Tick the override box if you are
-              correcting the AI recommendation.
+              Approving moves the complaint to the next review step. Tick the override box if you
+              are correcting the AI recommendation.
             </p>
             <Textarea
               label="Remarks (optional)"
@@ -739,7 +739,7 @@ export default function ReportDetailPage() {
           <div className="space-y-3">
             <ModeratorActionError error={review.error} />
             <p className="text-sm text-[#6f6e69]">
-              This closes the report after you review the completion proof. The citizen will see
+              This closes the complaint after you review the completion proof. The citizen will see
               that the proof was handled by a moderator.
             </p>
             {data.proof_review ? (
@@ -748,7 +748,7 @@ export default function ReportDetailPage() {
                 <p className="mt-1 text-xs text-[#6f6e69]">
                   {data.proof_review.overall_confidence}% overall confidence
                   {data.proof_review.distance_meters !== null
-                    ? ` · ${Math.round(data.proof_review.distance_meters)} m from report location`
+                    ? ` · ${Math.round(data.proof_review.distance_meters)} m from complaint location`
                     : ' · GPS unavailable'}
                 </p>
               </div>
@@ -767,7 +767,7 @@ export default function ReportDetailPage() {
         <Dialog
           open={rejectOpen}
           onClose={() => setRejectOpen(false)}
-          title="Reject report"
+          title="Reject complaint"
           size="md"
           footer={
             <>
@@ -849,11 +849,11 @@ export default function ReportDetailPage() {
         >
           <div className="space-y-3">
             <p className="text-sm text-[#6f6e69]">
-              This report (<span className="font-mono">{data.tracking_number}</span>) becomes the
-              canonical report; the ids below are folded into it and marked as merged.
+              This complaint (<span className="font-mono">{data.tracking_number}</span>) becomes the
+              canonical complaint; the ids below are folded into it and marked as merged.
             </p>
             <Input
-              label="Duplicate report ids (comma separated)"
+              label="Duplicate complaint ids (comma separated)"
               name="duplicate_ids"
               value={duplicateIds}
               onChange={(e) => setDuplicateIds(e.target.value)}

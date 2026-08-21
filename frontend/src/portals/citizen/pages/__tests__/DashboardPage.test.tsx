@@ -9,9 +9,9 @@ vi.mock('../../../../auth/AuthContext', () => ({
   useAuth: vi.fn(() => ({ user: { name: 'Test Citizen' } })),
 }));
 
-const apiRequestMock = vi.fn<
-  (path?: string, options?: unknown) => Promise<{ data: unknown[] }>
->(() => Promise.resolve({ data: [] }));
+const apiRequestMock = vi.fn<(path?: string, options?: unknown) => Promise<{ data: unknown[] }>>(
+  () => Promise.resolve({ data: [] }),
+);
 vi.mock('../../../../auth/api', () => ({
   apiRequest: vi.fn((path?: string, options?: unknown) => apiRequestMock(path, options)),
   type: {},
@@ -80,7 +80,7 @@ describe('DashboardPage — distinct failure states (P2-04)', () => {
     apiRequestMock.mockReturnValueOnce(Promise.reject(new Error('Network error')));
     renderPage();
     await waitFor(() => {
-      expect(screen.getByText('Unable to load reports')).toBeInTheDocument();
+      expect(screen.getByText('Unable to load complaints')).toBeInTheDocument();
     });
     expect(screen.getByText('Check your connection and try again.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
@@ -110,9 +110,9 @@ describe('DashboardPage — distinct failure states (P2-04)', () => {
     apiRequestMock.mockReturnValueOnce(Promise.resolve({ data: [] }));
     renderPage();
     await waitFor(() => {
-      expect(screen.getByText('No reports yet')).toBeInTheDocument();
+      expect(screen.getByText('No complaints yet')).toBeInTheDocument();
     });
-    expect(screen.getByRole('link', { name: 'File a report' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'File a complaint' })).toBeInTheDocument();
   });
 
   it('renders the report list when data is returned', async () => {
@@ -158,7 +158,7 @@ describe('DashboardPage — distinct failure states (P2-04)', () => {
     );
     renderPage();
     expect(screen.queryByText('Recent reports')).not.toBeInTheDocument();
-    expect(screen.queryByText('No reports yet')).not.toBeInTheDocument();
+    expect(screen.queryByText('No complaints yet')).not.toBeInTheDocument();
     resolvePromise({ data: [] });
   });
 

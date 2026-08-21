@@ -178,9 +178,11 @@ export default function GisMapPage() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
           <IconAlertCircle className="h-6 w-6 text-red-500" stroke={1.6} />
         </div>
-        <h3 className="text-base font-semibold text-[var(--color-ink)]">Could not load reports</h3>
+        <h3 className="text-base font-semibold text-[var(--color-ink)]">
+          Could not load complaints
+        </h3>
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-          The reports endpoint did not respond.
+          The complaints endpoint did not respond.
         </p>
         <button
           type="button"
@@ -205,13 +207,13 @@ export default function GisMapPage() {
           <div>
             <h1 className="text-lg font-semibold text-[var(--color-ink)]">GIS map</h1>
             <p className="text-xs text-[var(--color-text-tertiary)]">
-              Geospatial view of department reports
+              Geospatial view of department complaints
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm ring-1 ring-black/5">
           <IconMapPin className="h-3.5 w-3.5" stroke={1.6} />
-          {points.length} report{points.length === 1 ? '' : 's'} on map
+          {points.length} complaint{points.length === 1 ? '' : 's'} on map
         </div>
       </header>
 
@@ -243,7 +245,7 @@ export default function GisMapPage() {
               maxBounds={KARNATAKA_BOUNDS}
               maxBoundsViscosity={1}
               style={{ height: '100%', width: '100%' }}
-              aria-label="Department reports on a map"
+              aria-label="Department complaints on a map"
             >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -265,7 +267,7 @@ export default function GisMapPage() {
                   <Popup>
                     <div className="max-w-64 space-y-2 text-xs">
                       <p className="font-semibold text-[var(--color-ink)]">
-                        {cluster.reports.length} report
+                        {cluster.reports.length} complaint
                         {cluster.reports.length === 1 ? '' : 's'} in this area
                       </p>
                       {cluster.reports.slice(0, 5).map((report) => (
@@ -292,25 +294,25 @@ export default function GisMapPage() {
             </MapContainer>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-black/5 px-4 py-2.5 text-[11px] text-[var(--color-text-secondary)]">
-            <span className="font-medium text-[var(--color-ink)]">Reports by area</span>
+            <span className="font-medium text-[var(--color-ink)]">Complaints by area</span>
             <span className="flex items-center gap-1.5">
               <i className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
                 1
               </i>
-              One report
+              One complaint
             </span>
             <span className="flex items-center gap-1.5">
               <i className="inline-grid h-5 min-w-5 place-items-center rounded-full bg-red-800 px-1 text-[9px] font-bold text-white">
                 5+
               </i>
-              More reports
+              More complaints
             </span>
           </div>
         </div>
 
         {selected && (
           <aside
-            aria-label="Selected report details"
+            aria-label="Selected complaint details"
             className="fixed inset-x-0 bottom-0 z-10 max-h-[75vh] overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl ring-1 ring-black/10 lg:static lg:z-auto lg:col-span-1 lg:max-h-none lg:rounded-xl lg:ring-1 lg:ring-black/5"
           >
             <div className="mb-4 flex items-start justify-between gap-2">
@@ -320,7 +322,7 @@ export default function GisMapPage() {
               <button
                 type="button"
                 onClick={() => setSelectedId(null)}
-                aria-label="Close report details"
+                aria-label="Close complaint details"
                 className="rounded-md p-1 text-[var(--color-text-tertiary)] hover:bg-[var(--color-canvas)] hover:text-[var(--color-ink)]"
               >
                 <IconX className="h-4 w-4" stroke={1.6} />
@@ -382,7 +384,7 @@ export default function GisMapPage() {
               to={`/operations/reports/${selected.id}`}
               className="mt-5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--color-ink)] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#2d2d28]"
             >
-              Open report
+              Open complaint
               <IconArrowRight className="h-4 w-4" stroke={1.6} />
             </Link>
           </aside>
@@ -394,9 +396,11 @@ export default function GisMapPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-canvas)]">
             <IconMapPin className="h-6 w-6 text-[var(--color-text-tertiary)]" stroke={1.6} />
           </div>
-          <h3 className="text-base font-semibold text-[var(--color-ink)]">No reports on the map</h3>
+          <h3 className="text-base font-semibold text-[var(--color-ink)]">
+            No complaints on the map
+          </h3>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            Try clearing the status filter or check that your reports have a location.
+            Try clearing the status filter or check that your complaints have a location.
           </p>
         </div>
       )}

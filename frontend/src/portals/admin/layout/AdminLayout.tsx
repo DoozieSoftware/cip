@@ -23,7 +23,12 @@ const NAV: SidebarNavItem[] = [
     group: 'Directory',
   },
   { to: '/admin/users', label: 'Users', icon: <Icon name="users" />, group: 'Directory' },
-  { to: '/admin/reports', label: 'All reports', icon: <Icon name="reports" />, group: 'Oversight' },
+  {
+    to: '/admin/reports',
+    label: 'All complaints',
+    icon: <Icon name="reports" />,
+    group: 'Oversight',
+  },
   { to: '/admin/roles', label: 'Access control', icon: <Icon name="shield" />, group: 'Directory' },
   {
     to: '/admin/report-types',

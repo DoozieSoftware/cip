@@ -27,11 +27,11 @@ final class ReportSubmissionAccessService
         $isStaff = $user->hasAnyRole(self::STAFF_ROLES);
 
         if (! $isOwner && ! $isStaff) {
-            throw ApiException::forbidden('You cannot submit this report.');
+            throw ApiException::forbidden('You cannot submit this complaint.');
         }
 
         if (! $isOwner && ! DepartmentScope::canViewReport($user, $report)) {
-            throw ApiException::forbidden('This report is outside your department scope.');
+            throw ApiException::forbidden('This complaint is outside your department scope.');
         }
     }
 }

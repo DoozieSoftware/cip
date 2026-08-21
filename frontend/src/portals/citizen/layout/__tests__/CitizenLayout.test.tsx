@@ -54,7 +54,7 @@ describe('CitizenLayout navigation', () => {
   it('renders the four primary navigation items in the sidebar', () => {
     renderAt('/citizen');
     const { sidebar } = getNavs();
-    for (const label of ['Home', 'Reports', 'New report', 'Account']) {
+    for (const label of ['Home', 'Complaints', 'New complaint', 'Account']) {
       expect(within(sidebar).getByText(label)).toBeTruthy();
     }
     expect(within(sidebar).queryByText('Settings')).toBeNull();
@@ -63,7 +63,7 @@ describe('CitizenLayout navigation', () => {
   it('renders the four primary navigation items in the bottom nav', () => {
     renderAt('/citizen');
     const { bottom } = getNavs();
-    for (const label of ['Home', 'Reports', 'New report', 'Account']) {
+    for (const label of ['Home', 'Complaints', 'New complaint', 'Account']) {
       expect(within(bottom).getByText(label)).toBeTruthy();
     }
     expect(within(bottom).queryByText('Settings')).toBeNull();

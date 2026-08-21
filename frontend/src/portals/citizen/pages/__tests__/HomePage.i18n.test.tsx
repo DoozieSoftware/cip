@@ -61,21 +61,21 @@ describe('HomePage i18n', () => {
     renderPage();
     expect(
       screen.getByText(
-        'Report an issue, follow department action, and keep one reference for every update.',
+        'File a complaint, follow department action, and keep one reference for every update.',
       ),
     ).toBeInTheDocument();
   });
 
   it('renders stats labels from the catalog', () => {
     renderPage();
-    for (const label of ['Filed', 'Active', 'Fixed', 'Offline']) {
+    for (const label of ['Filed', 'Pending', 'Fixed', 'Offline']) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
   });
 
   it('renders the empty-state message from the catalog', () => {
     renderPage();
-    expect(screen.getByText('No reports filed yet.')).toBeInTheDocument();
+    expect(screen.getByText('No complaints filed yet.')).toBeInTheDocument();
   });
 
   it('renders the whats-next step titles from the catalog', () => {

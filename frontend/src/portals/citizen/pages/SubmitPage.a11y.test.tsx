@@ -85,14 +85,14 @@ describe('SubmitPage accessibility', () => {
   it('wraps each step section with aria-labelledby pointing to its heading', () => {
     renderSubmit();
 
-    const section = screen.getByRole('region', { name: /report category/i });
+    const section = screen.getByRole('region', { name: /complaint category/i });
     expect(section).toBeInTheDocument();
   });
 
   it('gives each step heading a stable id and makes it programmatically focusable', () => {
     renderSubmit();
 
-    const heading = screen.getByText('Report Category');
+    const heading = screen.getByText('Complaint Category');
     expect(heading.getAttribute('id')).toBe('step-heading');
     expect(heading.getAttribute('tabindex')).toBe('-1');
   });

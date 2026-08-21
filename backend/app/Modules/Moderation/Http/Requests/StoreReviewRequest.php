@@ -53,7 +53,7 @@ class StoreReviewRequest extends FormRequest
     {
         return [
             'decision.in' => 'decision must be one of: approve, reject, merge, escalate, complete_proof.',
-            'merge_into_report_id.different' => 'A report cannot be merged into itself.',
+            'merge_into_report_id.different' => 'A complaint cannot be merged into itself.',
         ];
     }
 

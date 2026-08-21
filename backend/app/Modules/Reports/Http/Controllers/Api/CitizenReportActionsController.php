@@ -125,7 +125,7 @@ class CitizenReportActionsController extends BaseController
         $report = Report::query()->find($reportId);
 
         if ($report === null) {
-            throw ApiException::notFound('Report');
+            throw ApiException::notFound('Complaint');
         }
 
         $user = $request->user();
@@ -139,7 +139,7 @@ class CitizenReportActionsController extends BaseController
             && (string) $report->citizen_id === (string) $user->id;
 
         if (! $isOwner) {
-            throw ApiException::forbidden('You cannot act on this report.');
+            throw ApiException::forbidden('You cannot act on this complaint.');
         }
 
         return $report;

@@ -47,6 +47,7 @@ describe('InstallPrompt', () => {
     expect(
       screen.getByRole('dialog', { name: /install civic intelligence platform/i }),
     ).toBeInTheDocument();
+    expect(screen.getByText(/offline complaint drafting/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^install$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /not now/i })).toBeInTheDocument();
   });

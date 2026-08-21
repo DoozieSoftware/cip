@@ -31,7 +31,7 @@ export function AssignmentDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title="Reassign report"
+      title="Reassign complaint"
       size="md"
       footer={
         <>
@@ -75,7 +75,7 @@ export function AssignmentDialog({
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={3}
-          placeholder="Why is this report being reassigned? (required, min 3 characters)"
+          placeholder="Why is this complaint being reassigned? (required, min 3 characters)"
         />
       </div>
     </Dialog>

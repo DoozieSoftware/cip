@@ -14,7 +14,7 @@ function titleCaseStatus(code: string | null | undefined): string {
 }
 
 const CITIZEN_STATUS_LABELS: Record<string, string> = {
-  draft: 'Draft',
+  draft: 'Pending for submission',
   submitted: 'Received',
   ai_processing: 'Received',
   pending_moderator: 'Received',
@@ -28,12 +28,12 @@ const CITIZEN_STATUS_LABELS: Record<string, string> = {
   verified: 'Completed',
   closed: 'Completed',
   rejected: 'Could not accept',
-  merged: 'Combined with another report',
+  merged: 'Combined with another complaint',
 };
 
 const STAFF_STATUS_LABELS: Record<string, string> = {
-  draft: 'Draft',
-  submitted: 'New report',
+  draft: 'Pending for submission',
+  submitted: 'New complaint',
   ai_processing: 'AI checking',
   pending_moderator: 'Needs review',
   assigned: 'Assigned',
@@ -53,26 +53,26 @@ const STAFF_STATUS_LABELS: Record<string, string> = {
 };
 
 // Plain-language "what this means" line per docs/mom-product-decisions.md
-// §2 (Meaning column), phrased for the citizen reading their own report.
+// §2 (Meaning column), phrased for the citizen reading their own complaint.
 const CITIZEN_STATUS_MEANING: Record<string, string> = {
-  draft: 'Your report is saved but not yet submitted.',
+  draft: 'Your complaint is saved but not yet submitted.',
   submitted:
-    "Your report has been received and is being checked before it's sent to the right department.",
+    "Your complaint has been received and is being checked before it's sent to the right department.",
   ai_processing:
-    "Your report has been received and is being checked before it's sent to the right department.",
+    "Your complaint has been received and is being checked before it's sent to the right department.",
   pending_moderator:
-    "Your report has been received and is being checked before it's sent to the right department.",
-  assigned: 'A department has been notified and will act on your report.',
-  accepted: 'A department has been notified and will act on your report.',
-  in_progress: 'Work on your report is underway.',
-  reopened: 'Work on your report is underway.',
-  escalated: 'Work on your report is underway.',
+    "Your complaint has been received and is being checked before it's sent to the right department.",
+  assigned: 'A department has been notified and will act on your complaint.',
+  accepted: 'A department has been notified and will act on your complaint.',
+  in_progress: 'Work on your complaint is underway.',
+  reopened: 'Work on your complaint is underway.',
+  escalated: 'Work on your complaint is underway.',
   resolved: 'The department says this has been fixed. Please confirm below.',
   resolved_pending_verification: 'The department says this has been fixed. Please confirm below.',
-  verified: 'This report has been resolved and confirmed.',
-  closed: 'This report has been resolved and confirmed.',
-  rejected: 'This report could not be acted on by the platform.',
-  merged: 'This report is being tracked together with another report of the same issue.',
+  verified: 'This complaint has been resolved and confirmed.',
+  closed: 'This complaint has been resolved and confirmed.',
+  rejected: 'This complaint could not be acted on by the platform.',
+  merged: 'This complaint is being tracked together with another complaint of the same issue.',
 };
 
 export function citizenReportStatusLabel(code: string | null | undefined): string {

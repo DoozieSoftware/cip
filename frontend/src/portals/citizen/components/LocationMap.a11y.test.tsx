@@ -19,7 +19,7 @@ vi.mock('react-leaflet', () => ({
 describe('LocationMap accessibility', () => {
   it('exposes the map as a labelled img role with coordinates in the description', () => {
     render(<LocationMap latitude={12.9716} longitude={77.5946} />);
-    const mapRegion = screen.getByRole('img', { name: /map showing report location/i });
+    const mapRegion = screen.getByRole('img', { name: /map showing complaint location/i });
     expect(mapRegion).toBeInTheDocument();
     expect(mapRegion.getAttribute('aria-label')).toContain('12.9716');
     expect(mapRegion.getAttribute('aria-label')).toContain('77.5946');

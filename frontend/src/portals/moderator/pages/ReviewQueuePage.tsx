@@ -110,12 +110,14 @@ export default function ReviewQueuePage() {
               Moderator · Queue
             </p>
             <h1 className="mt-2 text-2xl font-medium tracking-[-0.02em] text-[#1d1d1b]">
-              {isCompletedFilter(filters.status) ? 'Completed reports' : 'Reports awaiting review'}
+              {isCompletedFilter(filters.status)
+                ? 'Completed complaints'
+                : 'Complaints awaiting review'}
             </h1>
             <p className="mt-1 text-sm text-[#6f6e69]">
               {isCompletedFilter(filters.status)
-                ? 'Reports confirmed by citizens or closed by a moderator.'
-                : 'Reports awaiting moderator action. Use N in a detail page to jump to the next item.'}
+                ? 'Complaints confirmed by citizens or closed by a moderator.'
+                : 'Complaints awaiting moderator action. Use N in a detail page to jump to the next item.'}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -198,16 +200,16 @@ export default function ReviewQueuePage() {
 
         {query.isLoading ? (
           <div className="flex items-center justify-center py-16" aria-live="polite">
-            <Spinner label="Loading reports awaiting review" />
+            <Spinner label="Loading complaints awaiting review" />
           </div>
         ) : query.isError || !query.data ? (
           <EmptyState
-            title="Could not load reports awaiting review"
+            title="Could not load complaints awaiting review"
             description="The /api/v1/moderator/queue endpoint did not respond."
           />
         ) : query.data.data.length === 0 ? (
           <EmptyState
-            title="No reports match these filters"
+            title="No complaints match these filters"
             description="Try widening the filters or check back in a few minutes."
           />
         ) : (
@@ -279,7 +281,7 @@ export default function ReviewQueuePage() {
 
             <div className="flex items-center justify-between pt-2">
               <span className="text-xs text-[#85847f]">
-                {query.data.data.length} reports on this page
+                {query.data.data.length} complaints on this page
               </span>
               <div className="flex gap-2">
                 <button

@@ -31,7 +31,7 @@ class ProofVerificationService
         $report = $proof->report()->with('location')->first();
 
         if (! $report instanceof Report) {
-            throw ApiException::notFound('Report');
+            throw ApiException::notFound('Complaint');
         }
 
         $evidence = Media::query()

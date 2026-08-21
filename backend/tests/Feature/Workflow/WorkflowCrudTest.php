@@ -129,7 +129,7 @@ it('update invalidates the workflow cache so the next read sees the new name', f
     // Prime the cache by reading through the repository.
     $cached = app(WorkflowRepository::class)
         ->findActiveByCode('civic_default');
-    expect($cached->name)->toBe('Civic Report (default)');
+    expect($cached->name)->toBe('Civic Complaint (default)');
 
     $this->putJson("/api/v1/admin/workflows/{$def->id}", [
         'name' => 'Cache-busted name',

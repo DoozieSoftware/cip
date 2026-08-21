@@ -41,6 +41,7 @@ describe('Public OverviewPage', () => {
     });
     expect(screen.getByText('72.5%')).toBeTruthy();
     expect(screen.getByText('45s')).toBeTruthy();
+    expect(screen.getByText('Complaints processed')).toBeTruthy();
     expect(apiRequestMock).toHaveBeenCalledWith('/public/stats');
   });
 

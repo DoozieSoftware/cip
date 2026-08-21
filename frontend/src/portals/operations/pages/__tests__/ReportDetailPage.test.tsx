@@ -101,7 +101,7 @@ describe('OperationsReportDetailPage', () => {
     vi.mocked(departmentApi.showReportInDepartment).mockReturnValue(new Promise(() => {}));
     vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
     renderWithClient(<ReportDetailPage />);
-    expect(screen.getByLabelText('Loading report')).toBeTruthy();
+    expect(screen.getByLabelText('Loading complaint')).toBeTruthy();
   });
 
   it('shows error state when the report fails to load', async () => {
@@ -113,7 +113,7 @@ describe('OperationsReportDetailPage', () => {
     );
     vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
     renderWithClient(<ReportDetailPage />);
-    expect(await screen.findByText('Report could not be loaded')).toBeTruthy();
+    expect(await screen.findByText('Complaint could not be loaded')).toBeTruthy();
   });
 
   it('shows empty evidence state when no media is attached', async () => {
@@ -121,7 +121,7 @@ describe('OperationsReportDetailPage', () => {
     expect(await screen.findByText('No evidence')).toBeTruthy();
     expect(
       screen.getByText(
-        'Click or drop proof photos from the fixed location after the field crew completes the work.',
+        'Capture a fresh proof photo at the work location after the field crew completes the work.',
       ),
     ).toBeTruthy();
   });

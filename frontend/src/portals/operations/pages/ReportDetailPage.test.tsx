@@ -106,7 +106,7 @@ describe('ReportDetailPage', () => {
     vi.mocked(departmentApi.showReportInDepartment).mockReturnValue(new Promise(() => {}));
     vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
     renderWithClient(<ReportDetailPage />);
-    expect(screen.getByLabelText('Loading report')).toBeInTheDocument();
+    expect(screen.getByLabelText('Loading complaint')).toBeInTheDocument();
   });
 
   it('shows an error state with retry when the report fails to load', async () => {
@@ -118,7 +118,7 @@ describe('ReportDetailPage', () => {
     );
     vi.mocked(departmentApi.listNotes).mockResolvedValue([]);
     renderWithClient(<ReportDetailPage />);
-    expect(await screen.findByText('Report could not be loaded')).toBeInTheDocument();
+    expect(await screen.findByText('Complaint could not be loaded')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
   });
 
@@ -296,7 +296,7 @@ describe('ReportDetailPage', () => {
     expect(screen.getByRole('button', { name: 'Mark as fixed' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Accept assignment' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start field work' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Complete report' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Complete complaint' })).toBeNull();
   });
 
   it('keeps secondary tasks out of the report workflow and completes the task safely', async () => {
@@ -349,13 +349,15 @@ describe('ReportDetailPage', () => {
       }),
     );
 
-    expect(await screen.findAllByText('Cross Agency report')).not.toHaveLength(0);
+    expect(await screen.findAllByText('Cross Agency complaint')).not.toHaveLength(0);
     expect(screen.getByText('Open')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Accept assignment' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mark as fixed' })).toBeNull();
     expect(screen.getByRole('heading', { name: 'Proof check' })).toBeInTheDocument();
     expect(screen.getByText('Strong match')).toBeInTheDocument();
-    expect(screen.getByText(/Location confirmed · 8 m from report location/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Location confirmed · 8 m from complaint location/),
+    ).toBeInTheDocument();
     expect(screen.getByText('90% similarity')).toBeInTheDocument();
     expect(
       screen.getByText('Proof is ready. You can complete this department task.'),

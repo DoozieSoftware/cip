@@ -174,7 +174,7 @@ class MediaService
         $exists = Report::query()->whereKey($reportId)->exists();
 
         if (! $exists) {
-            throw ApiException::notFound('Report');
+            throw ApiException::notFound('Complaint');
         }
     }
 

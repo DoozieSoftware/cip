@@ -64,7 +64,7 @@ const PORTALS: Portal[] = [
     title: 'Moderator',
     path: '/moderator',
     audience: 'Moderators',
-    description: 'Review AI-suggested reports, merge duplicates, and flag misrepresentation.',
+    description: 'Review AI-suggested complaints, merge duplicates, and flag misrepresentation.',
     highlight: 'Keyboard shortcuts · AI overlay · Bulk actions',
     roles: ['moderator', 'super_admin', 'system'],
     icon: IconShieldCheck,
@@ -73,7 +73,7 @@ const PORTALS: Portal[] = [
     title: 'Operations',
     path: '/operations',
     audience: 'Departments',
-    description: 'Officers accept, progress, and resolve assigned reports. GIS map and exports.',
+    description: 'Officers accept, progress, and resolve assigned complaints. GIS map and exports.',
     highlight: 'BBMP / BTP / BWSSB · Overdue tracking · CSV / Excel / PDF',
     roles: ['department_officer', 'department_admin', 'super_admin', 'system'],
     icon: IconClipboardList,
@@ -149,11 +149,11 @@ export function LandingPage(): JSX.Element {
             Government of Karnataka
           </p>
           <h1 className="mt-3 text-4xl font-normal leading-[1.08] tracking-[-0.04em] text-[#1d1d1b] sm:text-6xl">
-            Report an issue. Track the response.
+            File a complaint. Track the response.
           </h1>
           <p className="mt-4 max-w-2xl text-lg leading-7 text-[#6f6e69]">
-            A resident-first civic service for Bengaluru. Send a location-aware report in Kannada or
-            English, follow the official case number, and see what happens next.
+            A resident-first civic service for Bengaluru. Send a location-aware complaint in Kannada
+            or English, follow the official case number, and see what happens next.
           </p>
         </section>
 
@@ -170,24 +170,24 @@ export function LandingPage(): JSX.Element {
             onClick={() => trackProductEvent('report_start_clicked')}
             className="group rounded-2xl bg-[#1d1d1b] p-6 text-white transition hover:bg-black hover:shadow-sm"
           >
-            <h3 className="text-xl font-medium">Report a civic issue</h3>
+            <h3 className="text-xl font-medium">File a civic complaint</h3>
             <p className="mt-2 text-sm leading-6 text-white/75">
               Start with a category and location. Add evidence when it is safe to do so.
             </p>
             <span className="mt-5 inline-flex items-center gap-1 text-sm font-medium">
-              Start a report <IconArrowRight className="h-4 w-4" stroke={1.7} />
+              Start a complaint <IconArrowRight className="h-4 w-4" stroke={1.7} />
             </span>
           </Link>
           <Link
             to="/citizen/reports"
             className="group rounded-2xl border border-black/10 bg-white p-6 transition hover:border-black/20 hover:shadow-sm"
           >
-            <h3 className="text-xl font-medium text-[#1d1d1b]">Track a report</h3>
+            <h3 className="text-xl font-medium text-[#1d1d1b]">Track a complaint</h3>
             <p className="mt-2 text-sm leading-6 text-[#6f6e69]">
               Use your stable case number to follow assignment, progress, and resolution.
             </p>
             <span className="mt-5 inline-flex items-center gap-1 text-sm font-medium text-[#1d1d1b]">
-              Open my reports <IconArrowRight className="h-4 w-4" stroke={1.7} />
+              Open my complaints <IconArrowRight className="h-4 w-4" stroke={1.7} />
             </span>
           </Link>
           <Link
@@ -286,7 +286,7 @@ export function LandingPage(): JSX.Element {
               <div className="grid grid-cols-1 sm:grid-cols-3">
                 {[
                   {
-                    label: 'Reports processed',
+                    label: 'Complaints processed',
                     value: stats.data.total_reports.toLocaleString(),
                     sub: 'all time',
                   },

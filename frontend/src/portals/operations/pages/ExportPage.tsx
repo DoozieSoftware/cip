@@ -34,9 +34,9 @@ export default function ExportPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-xl font-semibold text-slate-900">Export reports</h1>
+        <h1 className="text-xl font-semibold text-slate-900">Export complaints</h1>
         <p className="text-sm text-slate-500">
-          Download the reports assigned to your department as a CSV, Excel, or PDF file.
+          Download the complaints assigned to your department as a CSV, Excel, or PDF file.
         </p>
       </header>
 

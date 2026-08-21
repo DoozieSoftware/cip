@@ -36,8 +36,8 @@ describe('MyReportsPage', () => {
       </MemoryRouter>,
     );
 
-    const action = screen.getByRole('link', { name: 'New Report' });
-    expect(action).toHaveTextContent('New Report');
+    const action = screen.getByRole('link', { name: 'New Complaint' });
+    expect(action).toHaveTextContent('New Complaint');
     expect(action.querySelector('span')).toHaveClass('sm:inline');
   });
 
@@ -55,7 +55,7 @@ describe('MyReportsPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('status', { name: 'Loading your reports' })).toBeTruthy();
+    expect(screen.getByRole('status', { name: 'Loading your complaints' })).toBeTruthy();
   });
 
   it('shows error state when API fails', () => {
@@ -72,7 +72,7 @@ describe('MyReportsPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Unable to load reports')).toBeTruthy();
+    expect(screen.getByText('Unable to load complaints')).toBeTruthy();
     expect(screen.getByText('Please check your connection and try again.')).toBeTruthy();
   });
 
@@ -102,7 +102,7 @@ describe('MyReportsPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('No reports yet')).toBeTruthy();
+    expect(screen.getByText('No complaints yet')).toBeTruthy();
     expect(
       screen.getByText('File your first service request and track its progress.'),
     ).toBeTruthy();
@@ -137,11 +137,11 @@ describe('MyReportsPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('No open reports')).toBeTruthy();
+    expect(screen.getByText('No open complaints')).toBeTruthy();
     expect(
-      screen.getByText('You have reports in other categories. Try a different filter.'),
+      screen.getByText('You have complaints in other categories. Try a different filter.'),
     ).toBeTruthy();
-    expect(screen.getByText('Show all reports')).toBeTruthy();
+    expect(screen.getByText('Show all complaints')).toBeTruthy();
   });
 
   it('shows reports list when data is available', () => {
@@ -184,7 +184,7 @@ describe('MyReportsPage', () => {
 
     expect(screen.getByText('Pothole on Main St')).toBeTruthy();
     expect(screen.getByText('Broken streetlight')).toBeTruthy();
-    expect(screen.getByText('2 reports')).toBeTruthy();
+    expect(screen.getByText('2 complaints')).toBeTruthy();
 
     const title = screen.getByText('Pothole on Main St');
     expect(title.parentElement).toHaveClass('flex-col');
@@ -207,7 +207,7 @@ describe('MyReportsPage', () => {
     );
 
     expect(screen.getByText('Session expired')).toBeTruthy();
-    expect(screen.getByText('Sign in again to see your latest reports.')).toBeTruthy();
+    expect(screen.getByText('Sign in again to see your latest complaints.')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Sign in again' })).toBeTruthy();
   });
 
@@ -264,7 +264,7 @@ describe('MyReportsPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Showing cached reports. Could not refresh.')).toBeTruthy();
+    expect(screen.getByText('Showing cached complaints. Could not refresh.')).toBeTruthy();
     expect(screen.getByText('Pothole on Main St')).toBeTruthy();
     fireEvent.click(screen.getByText('Retry'));
     expect(refetch).toHaveBeenCalledOnce();

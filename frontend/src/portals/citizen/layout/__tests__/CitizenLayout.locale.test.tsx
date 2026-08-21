@@ -50,8 +50,8 @@ describe('CitizenLayout locale support', () => {
 
   it('translates nav keys to kn-IN correctly', () => {
     expect(translate('kn-IN', 'nav.home')).toBe('ಮುಖಪುಟ');
-    expect(translate('kn-IN', 'nav.reports')).toBe('ವರದಿಗಳು');
-    expect(translate('kn-IN', 'nav.newReport')).toBe('ಹೊಸ ವರದಿ');
+    expect(translate('kn-IN', 'nav.reports')).toBe('ದೂರುಗಳು');
+    expect(translate('kn-IN', 'nav.newReport')).toBe('ಹೊಸ ದೂರು');
     expect(translate('kn-IN', 'nav.account')).toBe('ಖಾತೆ');
     expect(translate('kn-IN', 'citizenServices')).toBe('ನಾಗರಿಕ ಸೇವೆಗಳು');
   });
@@ -60,8 +60,8 @@ describe('CitizenLayout locale support', () => {
     renderAt('/citizen');
     const { sidebar } = getNavs();
     expect(within(sidebar).getByText('Home')).toBeTruthy();
-    expect(within(sidebar).getByText('Reports')).toBeTruthy();
-    expect(within(sidebar).getByText('New report')).toBeTruthy();
+    expect(within(sidebar).getByText('Complaints')).toBeTruthy();
+    expect(within(sidebar).getByText('New complaint')).toBeTruthy();
     expect(within(sidebar).getByText('Account')).toBeTruthy();
   });
 

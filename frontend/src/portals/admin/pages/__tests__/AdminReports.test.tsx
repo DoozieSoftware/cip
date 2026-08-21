@@ -59,7 +59,7 @@ describe('AdminReports', () => {
       </QueryClientProvider>,
     );
 
-    expect(screen.getByRole('heading', { name: 'All reports' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'All complaints' })).toBeTruthy();
     expect(screen.getByText('Broken water main')).toBeTruthy();
     expect(screen.getByText('secondary')).toBeTruthy();
     fireEvent.change(screen.getByDisplayValue('All assignments'), {

@@ -118,7 +118,7 @@ describe('SubmitPage report types states', () => {
 
     renderSubmitPage();
 
-    expect(screen.getByText(/loading report categories/i)).toBeInTheDocument();
+    expect(screen.getByText(/loading complaint categories/i)).toBeInTheDocument();
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();
   });
 
@@ -168,7 +168,7 @@ describe('SubmitPage report types states', () => {
     renderSubmitPage();
 
     expect(screen.getByText(/no categories available/i)).toBeInTheDocument();
-    expect(screen.getByText(/no active report categories are available/i)).toBeInTheDocument();
+    expect(screen.getByText(/no active complaint categories are available/i)).toBeInTheDocument();
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();
   });
 

@@ -58,7 +58,7 @@ describe('NotificationsPage', () => {
     });
     await renderPage();
     expect(screen.getByText('No notifications')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'File a report' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'File a complaint' })).toBeTruthy();
   });
 
   it('renders an error state with retry when the query fails without data', async () => {

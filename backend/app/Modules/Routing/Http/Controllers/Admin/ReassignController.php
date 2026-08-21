@@ -38,7 +38,7 @@ class ReassignController extends BaseController
         $reportModel = Report::query()->find($report);
 
         if ($reportModel === null) {
-            throw ApiException::notFound('Report');
+            throw ApiException::notFound('Complaint');
         }
 
         $department = Department::query()->find($request->string('department_id')->toString());
