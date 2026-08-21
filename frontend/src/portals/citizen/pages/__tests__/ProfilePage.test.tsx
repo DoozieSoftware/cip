@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -100,6 +100,37 @@ describe('ProfilePage', () => {
     expect(screen.getByText('Privacy & legal')).toBeTruthy();
     expect(screen.getByText('Privacy policy')).toBeTruthy();
     expect(screen.getByText('Terms of use')).toBeTruthy();
+  });
+
+  it('allows saving language and channel without a preferred name', async () => {
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <ProfilePage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    // Regression: an empty preferred name must not block saving language
+    // choices — the mock profile has no preferred_name and the Save button
+    // used to stay disabled until one was typed.
+    const saveButton = await screen.findByRole('button', { name: 'Save profile' });
+    expect(saveButton).not.toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Language'), { target: { value: 'kn-IN' } });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      const call = (apiRequest as unknown as ReturnType<typeof vi.fn>).mock.calls.find(
+        ([url, opts]) =>
+          url === '/auth/profile' && (opts as { method?: string } | undefined)?.method === 'PATCH',
+      );
+      expect(call).toBeDefined();
+      expect((call![1] as { body: Record<string, unknown> }).body).toMatchObject({
+        preferred_name: null,
+        preferred_locale: 'kn-IN',
+      });
+    });
   });
 
   it('shows loading state', () => {

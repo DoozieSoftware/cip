@@ -306,7 +306,11 @@ export default function ProfilePage(): JSX.Element {
               ) : null}
               <button
                 type="submit"
-                disabled={saving || preferredName.trim().length === 0}
+                // Language / notification-channel choices are saveable on
+                // their own; only `saving` disables the button. The backend
+                // accepts preferred_name: null (UpdateProfileRequest), and
+                // the completion banner above keeps nudging for a name.
+                disabled={saving}
                 className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? t('profile.saving') : t('profile.save')}
