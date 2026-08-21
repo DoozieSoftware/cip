@@ -79,6 +79,49 @@ const localizedTypes: TestReportType[] = [
   },
 ];
 
+const wasteStreamTypes: TestReportType[] = [
+  {
+    id: 'w1',
+    code: 'garbage',
+    name: 'Garbage & Dumping',
+    requires_photo: true,
+    requires_video: false,
+    min_photos: 1,
+    max_photos: 5,
+    sort_order: 1,
+  },
+  {
+    id: 'w2',
+    code: 'clothes_waste',
+    name: 'Clothes & Textiles',
+    requires_photo: true,
+    requires_video: false,
+    min_photos: 1,
+    max_photos: 5,
+    sort_order: 2,
+  },
+  {
+    id: 'w3',
+    code: 'metal_scrap',
+    name: 'Metal Scrap',
+    requires_photo: true,
+    requires_video: false,
+    min_photos: 1,
+    max_photos: 5,
+    sort_order: 3,
+  },
+  {
+    id: 'w4',
+    code: 'e_waste',
+    name: 'Electronic Waste (E-Waste)',
+    requires_photo: true,
+    requires_video: false,
+    min_photos: 1,
+    max_photos: 5,
+    sort_order: 4,
+  },
+];
+
 function renderPicker(props: Partial<CategoryPickerProps> = {}): void {
   render(<CategoryPicker types={baseTypes} selectedId="" onSelect={() => undefined} {...props} />);
 }
@@ -174,5 +217,38 @@ describe('CategoryPicker', () => {
     const radios = screen.getAllByRole('radio');
     const roadsRadio = radios.find((r) => r.getAttribute('value') === 't1');
     expect(roadsRadio?.getAttribute('checked')).toBe('');
+  });
+
+  it('renders an icon and label for each new waste-stream category', () => {
+    renderPicker({ types: wasteStreamTypes });
+    for (const label of ['Clothes & Textiles', 'Metal Scrap', 'Electronic Waste (E-Waste)']) {
+      const row = screen.getByText(label).closest('label');
+      expect(row).not.toBeNull();
+      expect(row?.querySelector('svg')).not.toBeNull();
+    }
+  });
+
+  it('keeps the generic fallback icon for unknown codes', () => {
+    const unknown: TestReportType[] = [
+      {
+        id: 'u1',
+        code: 'mystery_stream',
+        name: 'Mystery Stream',
+        requires_photo: false,
+        requires_video: false,
+        min_photos: 0,
+        max_photos: 5,
+        sort_order: 50,
+      },
+    ];
+    renderPicker({ types: unknown });
+    const row = screen.getByText('Mystery Stream').closest('label');
+    expect(row?.querySelector('svg')).not.toBeNull();
+  });
+
+  it('orders waste-stream categories by sort_order after garbage', () => {
+    renderPicker({ types: wasteStreamTypes });
+    const order = screen.getAllByRole('radio').map((r) => r.getAttribute('value'));
+    expect(order).toEqual(['w1', 'w2', 'w3', 'w4']);
   });
 });

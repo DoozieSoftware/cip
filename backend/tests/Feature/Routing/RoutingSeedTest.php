@@ -30,15 +30,16 @@ beforeEach(function (): void {
     (new DefaultWorkflowSeeder)->run();
 });
 
-it('seeds the fifteen approved Bangalore routing rules', function (): void {
+it('seeds the sixteen approved Bangalore routing rules', function (): void {
     (new RoutingRulesSeeder)->run();
 
-    expect(RoutingRule::query()->where('active', true)->count())->toBe(15);
+    expect(RoutingRule::query()->where('active', true)->count())->toBe(16);
 
     $this->assertDatabaseHas('routing_rules', ['name' => 'Roads -> BBMP Roads', 'priority' => 20]);
     $this->assertDatabaseHas('routing_rules', ['name' => 'Electricity -> BESCOM', 'priority' => 22]);
     $this->assertDatabaseHas('routing_rules', ['name' => 'Traffic & Parking -> BTP', 'priority' => 24]);
     $this->assertDatabaseHas('routing_rules', ['name' => 'Encroachment -> BBMP Town Planning', 'priority' => 25]);
+    $this->assertDatabaseHas('routing_rules', ['name' => 'Clothes, Metal Scrap & E-Waste -> BBMP SWM', 'priority' => 26]);
 });
 
 it('upserts the approved routing destination departments', function (): void {
@@ -53,7 +54,7 @@ it('is idempotent (re-running does not duplicate rules)', function (): void {
     (new RoutingRulesSeeder)->run();
     (new RoutingRulesSeeder)->run();
 
-    expect(RoutingRule::query()->where('active', true)->count())->toBe(15);
+    expect(RoutingRule::query()->where('active', true)->count())->toBe(16);
 });
 
 it('routes a garbage report to BBMP SWM via the seeder', function (): void {
@@ -92,4 +93,33 @@ it('routes an illegal parking report to BTP via the seeder', function (): void {
 
     expect($decision)->not->toBeNull()
         ->and($decision->destinationDepartment->code)->toBe('BTP');
+});
+
+it('routes every waste-stream category to BBMP SWM via the shared rule', function (): void {
+    (new RoutingRulesSeeder)->run();
+
+    $rule = RoutingRule::query()
+        ->where('name', 'Clothes, Metal Scrap & E-Waste -> BBMP SWM')
+        ->firstOrFail();
+
+    expect($rule->conditions)->toBe(['category_in' => ['clothes_waste', 'metal_scrap', 'e_waste']])
+        ->and($rule->default_sla_minutes)->toBe(1440)
+        ->and($rule->priority)->toBe(26)
+        ->and($rule->destinationDepartment->code)->toBe('BBMP_SWM');
+
+    foreach (['clothes_waste', 'metal_scrap', 'e_waste'] as $code) {
+        $type = ReportType::query()->where('code', $code)->firstOrFail();
+        $workflow = WorkflowDefinition::query()->where('code', 'civic_default')->firstOrFail();
+        $report = Report::factory()->create([
+            'report_type_id' => $type->id,
+            'current_status_id' => ReportStatus::query()->where('code', 'ai_processing')->firstOrFail()->id,
+            'priority_id' => ReportPriority::query()->where('code', 'medium')->firstOrFail()->id,
+            'workflow_id' => $workflow->id,
+        ]);
+
+        $decision = app(RoutingEngine::class)->resolve($report);
+
+        expect($decision)->not->toBeNull("no routing decision for {$code}")
+            ->and($decision->destinationDepartment->code)->toBe('BBMP_SWM');
+    }
 });

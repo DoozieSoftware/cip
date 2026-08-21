@@ -6,6 +6,7 @@ use App\Modules\AI\Models\AiProviderConfig;
 use App\Modules\AI\Models\PromptVersion;
 use Database\Seeders\AiProvidersSeeder;
 use Database\Seeders\PromptsSeeder;
+use Database\Seeders\ReportTypesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -39,16 +40,19 @@ it('AiProvidersSeeder is idempotent (re-running does not duplicate rows)', funct
 });
 
 it('PromptsSeeder inserts the phase one category prompt and the two base v1 prompts', function (): void {
+    (new ReportTypesSeeder)->run();
     (new PromptsSeeder)->run();
 
     $names = ['category_classifier', 'severity_estimator', 'ai_labeller'];
 
-    $category = PromptVersion::query()->where('name', 'category_classifier')->where('version', 6)->first();
+    $category = PromptVersion::query()->where('name', 'category_classifier')->where('version', 7)->first();
     expect($category)->not->toBeNull()
         ->and($category->status)->toBe(PromptVersion::STATUS_APPROVED)
         ->and($category->prompt_text)->toContain('image is authoritative evidence')
         ->and($category->prompt_text)->toContain('emergency_flag')
         ->and($category->prompt_text)->toContain('secondary_triggers')
+        ->and($category->prompt_text)->toContain('Configured category codes: roads, water_sewage, electricity, garbage, traffic_violation, illegal_parking, encroachment, dead_animal, clothes_waste, metal_scrap, e_waste.')
+        ->and($category->prompt_text)->toContain('Waste-stream categories')
         ->and($category->expected_json_schema['required'])->toContain('emergency_flag')
         ->and($category->expected_json_schema['required'])->toContain('secondary_triggers');
 

@@ -34,13 +34,16 @@ it('seeds the 5 priority levels with sensible SLAs', function (): void {
         ->and($low->sla_minutes)->toBeGreaterThanOrEqual(7 * 24 * 60);
 });
 
-it('seeds the 8 Bengaluru report types with a required photo and optional video', function (): void {
+it('seeds the 11 Bengaluru report types with a required photo and optional video', function (): void {
     (new ReportTypesSeeder)->run();
 
-    expect(ReportType::query()->where('active', true)->count())->toBe(8);
+    expect(ReportType::query()->where('active', true)->count())->toBe(11);
     expect(ReportType::query()->where('active', true)->where('code', 'roads')->exists())->toBeTrue()
         ->and(ReportType::query()->where('active', true)->where('code', 'garbage')->exists())->toBeTrue()
         ->and(ReportType::query()->where('active', true)->where('code', 'traffic_violation')->exists())->toBeTrue()
+        ->and(ReportType::query()->where('active', true)->where('code', 'clothes_waste')->exists())->toBeTrue()
+        ->and(ReportType::query()->where('active', true)->where('code', 'metal_scrap')->exists())->toBeTrue()
+        ->and(ReportType::query()->where('active', true)->where('code', 'e_waste')->exists())->toBeTrue()
         ->and(ReportType::query()->where('active', true)->where('code', 'pothole')->exists())->toBeFalse();
 
     ReportType::query()->each(function (ReportType $type): void {
@@ -49,6 +52,34 @@ it('seeds the 8 Bengaluru report types with a required photo and optional video'
             ->and($type->min_photos)->toBeGreaterThanOrEqual(1)
             ->and($type->max_photos)->toBeGreaterThan($type->min_photos);
     });
+});
+
+it('seeds Kannada localizations and search aliases on the waste-stream categories', function (): void {
+    (new ReportTypesSeeder)->run();
+
+    $clothes = ReportType::query()->where('code', 'clothes_waste')->firstOrFail();
+    expect($clothes->name)->toBe('Clothes & Textiles')
+        ->and($clothes->localizations)->toBe(['kn-IN' => 'ಬಟ್ಟೆಗಳು ಮತ್ತು ಜವಳಿ'])
+        ->and($clothes->aliases)->toBe(['old clothes', 'clothes donation', 'textiles', 'ಬಟ್ಟೆ'])
+        ->and($clothes->sort_order)->toBe(9)
+        ->and($clothes->response_target_minutes)->toBe(2880)
+        ->and($clothes->department_default_id)->toBeNull();
+
+    $metal = ReportType::query()->where('code', 'metal_scrap')->firstOrFail();
+    expect($metal->name)->toBe('Metal Scrap')
+        ->and($metal->localizations)->toBe(['kn-IN' => 'ಲೋಹದ ಸ್ಕ್ರ್ಯಾಪ್'])
+        ->and($metal->aliases)->toBe(['scrap metal', 'loha', 'ಸ್ಕ್ರ್ಯಾಪ್'])
+        ->and($metal->sort_order)->toBe(10)
+        ->and($metal->response_target_minutes)->toBe(2880)
+        ->and($metal->department_default_id)->toBeNull();
+
+    $ewaste = ReportType::query()->where('code', 'e_waste')->firstOrFail();
+    expect($ewaste->name)->toBe('Electronic Waste (E-Waste)')
+        ->and($ewaste->localizations)->toBe(['kn-IN' => 'ಎಲೆಕ್ಟ್ರಾನಿಕ್ ತ್ಯಾಜ್ಯ (ಇ-ವೇಸ್ಟ್)'])
+        ->and($ewaste->aliases)->toBe(['e-waste', 'ewaste', 'electronics', 'computer'])
+        ->and($ewaste->sort_order)->toBe(11)
+        ->and($ewaste->response_target_minutes)->toBe(2880)
+        ->and($ewaste->department_default_id)->toBeNull();
 });
 
 it('is idempotent — re-running each seeder does not duplicate rows', function (): void {
@@ -62,5 +93,5 @@ it('is idempotent — re-running each seeder does not duplicate rows', function 
 
     (new ReportTypesSeeder)->run();
     (new ReportTypesSeeder)->run();
-    expect(ReportType::query()->where('active', true)->count())->toBe(8);
+    expect(ReportType::query()->where('active', true)->count())->toBe(11);
 });

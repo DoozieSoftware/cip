@@ -244,16 +244,19 @@ Display
 
 Searchable list
 
-Examples
+Categories (eleven active; expanded from the original eight by the waste-stream categories, product defaults D10–D15)
 
-* Garbage
+* Roads
+* Water & Sewage
+* Electricity
+* Garbage & Dumping
+* Traffic Violation
 * Illegal Parking
-* Pothole
-* Water Leakage
-* Broken Streetlight
-* Illegal Dumping
-* Open Drain
 * Encroachment
+* Dead Animal
+* Clothes & Textiles
+* Metal Scrap
+* Electronic Waste (E-Waste)
 
 Categories are loaded from API.
 

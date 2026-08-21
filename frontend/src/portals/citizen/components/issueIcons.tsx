@@ -1,4 +1,5 @@
 import type { JSX } from 'react';
+import { IconDeviceDesktop, IconHanger, IconSettings } from '@tabler/icons-react';
 
 const iconClass = 'h-5 w-5';
 
@@ -58,6 +59,9 @@ export function IssueIcon({ code }: { code: string }): JSX.Element {
         <path d="M10 11v6M14 11v6" />
       </svg>
     ),
+    clothes_waste: <IconHanger className={iconClass} stroke={1.8} />,
+    metal_scrap: <IconSettings className={iconClass} stroke={1.8} />,
+    e_waste: <IconDeviceDesktop className={iconClass} stroke={1.8} />,
     traffic_violation: (
       <svg
         viewBox="0 0 24 24"

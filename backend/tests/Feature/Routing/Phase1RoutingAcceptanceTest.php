@@ -45,6 +45,9 @@ dataset('phase1PrimaryRouting', [
     'T006 illegal parking' => ['illegal_parking', 'BTP'],
     'T007 encroachment' => ['encroachment', 'BBMP_TP'],
     'T008 dead animal' => ['dead_animal', 'BBMP_SWM'],
+    'T009 clothes and textiles' => ['clothes_waste', 'BBMP_SWM'],
+    'T010 metal scrap' => ['metal_scrap', 'BBMP_SWM'],
+    'T011 e-waste' => ['e_waste', 'BBMP_SWM'],
 ]);
 
 it('routes every approved Phase 1 category to its primary department', function (string $category, string $department): void {
@@ -116,7 +119,7 @@ it('T020 requires the Phase 1 AI routing fields in the seeded prompt', function 
 
     $prompt = DB::table('prompt_versions')
         ->where('name', 'category_classifier')
-        ->where('version', 6)
+        ->where('version', 7)
         ->firstOrFail();
     $schema = json_decode((string) $prompt->expected_json_schema, true);
 

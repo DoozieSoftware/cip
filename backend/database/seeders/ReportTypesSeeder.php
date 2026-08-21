@@ -8,9 +8,11 @@ use App\Modules\Reports\Models\ReportType;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeds the original citizen-facing report categories for Bengaluru.
- * Categories remain broad and citizen-friendly; department routing happens
- * after submission and is not exposed as extra issue types in the PWA.
+ * Seeds the citizen-facing report categories for Bengaluru: the eight
+ * broad original categories plus the three waste-stream categories
+ * (product defaults D10–D15). Categories remain broad and
+ * citizen-friendly; department routing happens after submission and is
+ * not exposed as extra issue types in the PWA.
  *
  * Each row carries the platform-wide defaults:
  *  - `requires_video = false` (video is optional by default)
@@ -20,6 +22,11 @@ use Illuminate\Database\Seeder;
  * The `department_default_id` is intentionally null at seed time
  * — the Routing engine (M7) populates it via routing rules so a
  * type can be re-routed without a schema change.
+ *
+ * The waste-stream rows additionally carry Kannada localizations and
+ * citizen search aliases; they mirror migration
+ * 2026_08_21_020000_add_waste_stream_categories so production
+ * (`migrate --force` only) and fresh installs converge.
  *
  * Idempotent: `updateOrCreate` on `code`.
  */
@@ -40,6 +47,43 @@ class ReportTypesSeeder extends Seeder
     ];
 
     /**
+     * Waste-stream categories (D10–D15). These rows additionally carry
+     * Kannada localizations (`localizations`) and citizen search terms
+     * (`aliases`).
+     *
+     * @var list<array<string, mixed>>
+     */
+    private const WASTE_STREAM_TYPES = [
+        [
+            'name' => 'Clothes & Textiles',
+            'code' => 'clothes_waste',
+            'icon' => 'hanger',
+            'color' => '#00897B',
+            'sort_order' => 9,
+            'localizations' => ['kn-IN' => 'ಬಟ್ಟೆಗಳು ಮತ್ತು ಜವಳಿ'],
+            'aliases' => ['old clothes', 'clothes donation', 'textiles', 'ಬಟ್ಟೆ'],
+        ],
+        [
+            'name' => 'Metal Scrap',
+            'code' => 'metal_scrap',
+            'icon' => 'scrap',
+            'color' => '#607D8B',
+            'sort_order' => 10,
+            'localizations' => ['kn-IN' => 'ಲೋಹದ ಸ್ಕ್ರ್ಯಾಪ್'],
+            'aliases' => ['scrap metal', 'loha', 'ಸ್ಕ್ರ್ಯಾಪ್'],
+        ],
+        [
+            'name' => 'Electronic Waste (E-Waste)',
+            'code' => 'e_waste',
+            'icon' => 'device',
+            'color' => '#C62828',
+            'sort_order' => 11,
+            'localizations' => ['kn-IN' => 'ಎಲೆಕ್ಟ್ರಾನಿಕ್ ತ್ಯಾಜ್ಯ (ಇ-ವೇಸ್ಟ್)'],
+            'aliases' => ['e-waste', 'ewaste', 'electronics', 'computer'],
+        ],
+    ];
+
+    /**
      * Codes superseded by the approved taxonomy. Deactivated (not
      * deleted) so existing reports keep their history.
      *
@@ -53,22 +97,32 @@ class ReportTypesSeeder extends Seeder
 
     public function run(): void
     {
-        foreach (self::TYPES as $row) {
+        foreach ([...self::TYPES, ...self::WASTE_STREAM_TYPES] as $row) {
+            $attributes = [
+                'name' => $row['name'],
+                'description' => 'Default seeded report type for '.$row['name'].'.',
+                'icon' => $row['icon'],
+                'color' => $row['color'],
+                'sort_order' => $row['sort_order'],
+                'requires_video' => false,
+                'requires_photo' => true,
+                'min_photos' => 1,
+                'max_photos' => 5,
+                'response_target_minutes' => 2880,
+                'active' => true,
+            ];
+
+            if (array_key_exists('localizations', $row)) {
+                $attributes['localizations'] = $row['localizations'];
+            }
+
+            if (array_key_exists('aliases', $row)) {
+                $attributes['aliases'] = $row['aliases'];
+            }
+
             ReportType::query()->updateOrCreate(
                 ['code' => $row['code']],
-                [
-                    'name' => $row['name'],
-                    'description' => 'Default seeded report type for '.$row['name'].'.',
-                    'icon' => $row['icon'],
-                    'color' => $row['color'],
-                    'sort_order' => $row['sort_order'],
-                    'requires_video' => false,
-                    'requires_photo' => true,
-                    'min_photos' => 1,
-                    'max_photos' => 5,
-                    'response_target_minutes' => 2880,
-                    'active' => true,
-                ],
+                $attributes,
             );
         }
 

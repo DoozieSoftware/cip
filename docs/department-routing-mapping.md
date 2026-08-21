@@ -5,7 +5,9 @@ Scope: Department-wise civic complaint routing for Bengaluru Urban across munici
 Out of scope (deferred for future phase): Detailed ward-level assignment, location-based geofence routing, 1-to-1 officer mapping.
 
 **Category boundary:** the citizen-facing selector keeps the original eight
-broad categories. The fine-grained labels in the routing tables below are
+broad categories plus the three waste-stream categories added per product
+defaults D10–D15 (`clothes_waste`, `metal_scrap`, `e_waste`) — eleven
+choices in total. The fine-grained labels in the routing tables below are
 internal AI/routing vocabulary and must not be added as extra PWA choices.
 
 ---
@@ -32,7 +34,7 @@ BBMP classifies grievances across specialized department wings. Each wing receiv
 | BBMP Wing Name | Code | Specific Issues & Complaint Scope |
 | :--- | :--- | :--- |
 | **Road Maintenance (Engineering)** | `BBMP_ENG` | Potholes, road damage, damaged footpaths, footpath encroachment (structures), road cutting permissions, water stagnation on roads |
-| **Solid Waste Management** | `BBMP_SWM` | Uncollected garbage, open garbage dumping, street sweeping, garbage burning, public dustbin overflow, dead animal disposal |
+| **Solid Waste Management** | `BBMP_SWM` | Uncollected garbage, open garbage dumping, street sweeping, garbage burning, public dustbin overflow, dead animal disposal, clothes & textiles donation pickup, metal scrap, electronic waste (e-waste) |
 | **Electrical Works** | `BBMP_ELEC` | Non-functional streetlights, park lighting, streetlights on in daytime, exposed junction boxes on streetlight poles |
 | **Storm Water Drain** | `BBMP_SWD` | SWD desilting, storm drain blockage, garbage in SWD, structural damage to storm drains |
 | **Health Department** | `BBMP_HLTH` | Mosquito fogging/spraying, unhygienic eateries, public toilet sanitation, vector control |
@@ -82,6 +84,15 @@ BBMP classifies grievances across specialized department wings. Each wing receiv
 | `stray_animal` | Stray Dog / Animal Menace | `BBMP_AH` | — | stray dog pack, rabid dog, cattle on road, dog bite risk |
 | `encroachment` | Public Property Encroachment | `BBMP_TP` | `BBMP_ENG` | footpath shop, illegal shed, property encroachment |
 | `noise_pollution` | Industrial / Commercial Noise | `KSPCB` | `BTP` / Local Police | loud speaker, factory noise late night, generator noise |
+| `clothes_waste` | Clothes & Textiles | `BBMP_SWM` | — | old clothes, clothes donation, textile bundle, rags, ಬಟ್ಟೆ |
+| `metal_scrap` | Metal Scrap | `BBMP_SWM` | — | scrap metal, metal drum, metal pipe, utensil scrap, ಸ್ಕ್ರ್ಯಾಪ್ |
+| `e_waste` | Electronic Waste (E-Waste) | `BBMP_SWM` | — | e-waste, old computer, monitor, TV, cable heap, battery disposal |
+
+The three waste-stream categories are citizen-facing PWA choices (unlike
+the fine-grained labels above). They share one broad routing rule —
+`category_in ["clothes_waste", "metal_scrap", "e_waste"]` → `BBMP_SWM`,
+medium priority, 1440-minute SLA, evaluation order 26 — mirroring the
+`Garbage & Dead Animal -> BBMP SWM` rule pattern.
 
 ---
 

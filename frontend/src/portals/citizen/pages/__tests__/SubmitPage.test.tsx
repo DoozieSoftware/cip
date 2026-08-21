@@ -7,13 +7,15 @@ import { STORAGE_KEY } from '../../../../auth/storage';
 
 const mutateAsyncMock = vi.fn();
 
+let mockReportTypes: ClientApi.ReportType[] | null = null;
+
 vi.mock('../../api/client', async () => {
   const actual = await vi.importActual<typeof ClientApi>('../../api/client');
   return {
     ...actual,
     useReportTypes: () => ({
       isLoading: false,
-      data: [
+      data: mockReportTypes ?? [
         {
           id: 'type-roads',
           code: 'roads',
@@ -59,6 +61,7 @@ describe('SubmitPage', () => {
   beforeEach(() => {
     mutateAsyncMock.mockReset();
     mutateAsyncMock.mockResolvedValue({ id: 'report-1', status: 'submitted' });
+    mockReportTypes = null;
     window.scrollTo = vi.fn();
     if (typeof URL.createObjectURL !== 'function') {
       URL.createObjectURL = vi.fn(() => 'blob:mock');
@@ -280,5 +283,72 @@ describe('SubmitPage', () => {
 
     // Should be back on category
     await waitFor(() => expect(screen.getByText('Complaint Category')).toBeInTheDocument());
+  });
+
+  it('places waste-stream categories right after garbage in the category step', () => {
+    mockReportTypes = [
+      {
+        id: 'type-roads',
+        code: 'roads',
+        name: 'Roads',
+        requires_photo: true,
+        requires_video: false,
+        min_photos: 1,
+        max_photos: 5,
+      },
+      {
+        id: 'type-garbage',
+        code: 'garbage',
+        name: 'Garbage & Dumping',
+        requires_photo: true,
+        requires_video: false,
+        min_photos: 1,
+        max_photos: 5,
+      },
+      {
+        id: 'type-clothes-waste',
+        code: 'clothes_waste',
+        name: 'Clothes & Textiles',
+        requires_photo: true,
+        requires_video: false,
+        min_photos: 1,
+        max_photos: 5,
+      },
+      {
+        id: 'type-metal-scrap',
+        code: 'metal_scrap',
+        name: 'Metal Scrap',
+        requires_photo: true,
+        requires_video: false,
+        min_photos: 1,
+        max_photos: 5,
+      },
+      {
+        id: 'type-e-waste',
+        code: 'e_waste',
+        name: 'Electronic Waste (E-Waste)',
+        requires_photo: true,
+        requires_video: false,
+        min_photos: 1,
+        max_photos: 5,
+      },
+    ];
+
+    renderSubmitPage();
+
+    const order = screen.getAllByRole('radio').map((r) => r.getAttribute('value'));
+    expect(order).toEqual([
+      'type-garbage',
+      'type-clothes-waste',
+      'type-metal-scrap',
+      'type-e-waste',
+      'type-roads',
+    ]);
+
+    for (const label of ['Clothes & Textiles', 'Metal Scrap', 'Electronic Waste (E-Waste)']) {
+      const row = screen.getByText(label).closest('label');
+      expect(row).not.toBeNull();
+      expect(row?.querySelector('svg')).not.toBeNull();
+    }
   });
 });
