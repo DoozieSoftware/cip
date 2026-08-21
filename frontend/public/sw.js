@@ -27,6 +27,14 @@ const SHELL_CACHE = `${VERSION}-shell`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const SYNC_TAG = 'cip-queue-drain';
 
+// Dev variant: main.tsx registers this file as /sw.js?dev=1 in development.
+// The dev worker performs no caching at all (no precache, no runtime cache,
+// no fetch interception) so the Vite dev server always serves fresh modules,
+// while the push/sync/notification handlers keep working so Web Push can be
+// exercised locally. On activation it wipes every cache this origin holds,
+// clearing anything a production build left behind.
+const IS_DEV = self.location.search.includes('dev');
+
 const APP_SHELL = [
   '/citizen/',
   '/citizen/login',
@@ -36,6 +44,10 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', (event) => {
+  if (IS_DEV) {
+    self.skipWaiting();
+    return;
+  }
   event.waitUntil(
     caches
       .open(SHELL_CACHE)
@@ -47,6 +59,12 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
+      if (IS_DEV) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((key) => caches.delete(key)));
+        await self.clients.claim();
+        return;
+      }
       const keys = await caches.keys();
       await Promise.all(
         keys.filter((key) => !key.startsWith(VERSION)).map((key) => caches.delete(key)),
@@ -74,6 +92,10 @@ function isStaticAsset(url) {
 }
 
 self.addEventListener('fetch', (event) => {
+  if (IS_DEV) {
+    // Dev never intercepts requests — Vite must serve fresh modules.
+    return;
+  }
   const { request } = event;
   if (request.method !== 'GET') {
     return;

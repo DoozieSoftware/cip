@@ -69,10 +69,28 @@ export interface SubscribeResult {
   subscription?: PushSubscriptionJSON;
 }
 
+async function ensureServiceWorkerRegistration(): Promise<ServiceWorkerRegistration> {
+  const existing = await navigator.serviceWorker.getRegistration();
+  if (existing) return existing;
+
+  // Registration normally happens from main.tsx after page load. The user can
+  // still reach the toggle before that asynchronous work finishes, or a prior
+  // registration may have been removed while rotating push credentials. Make
+  // enabling push self-contained instead of asking the user to keep reloading.
+  const scriptUrl = import.meta.env.DEV ? '/sw.js?dev=1' : '/sw.js';
+  return navigator.serviceWorker.register(scriptUrl);
+}
+
 /**
- * Resolve the VAPID public key: prefer an explicit key, otherwise
- * fetch it from the backend (which reads it from config). Hardcoding
- * the key in the bundle is avoided per security rules.
+ * Resolve the VAPID public key. The backend endpoint is the single
+ * source of truth: it returns the public half of the exact keypair the
+ * delivery services sign with, so the subscription can never drift from
+ * the sender (a drift makes the push provider reject sends with
+ * "403 VAPID" errors and the notification silently never appears).
+ *
+ * `VITE_VAPID_PUBLIC_KEY` is only a last-resort local-dev fallback for
+ * when the API is unreachable, and it must hold the same public key as
+ * the backend's VAPID_PUBLIC_KEY.
  */
 async function resolveVapidKey(provided?: string | null): Promise<string | null> {
   if (provided) return provided;
@@ -80,10 +98,12 @@ async function resolveVapidKey(provided?: string | null): Promise<string | null>
     const res = await apiRequest<{ data: { public_key: string } }>(
       '/notifications/push/vapid-public-key',
     );
-    return res.data.public_key ?? null;
+    const backendKey = res.data.public_key ?? null;
+    if (backendKey) return backendKey;
   } catch {
-    return null;
+    // API unreachable — fall through to the build-time fallback below.
   }
+  return import.meta.env.VITE_VAPID_PUBLIC_KEY ?? null;
 }
 
 /**
@@ -105,33 +125,42 @@ export async function subscribeToPush(opts: SubscribeOptions = {}): Promise<Subs
     return { ok: false, reason: 'subscription_failed', detail: 'No VAPID public key configured.' };
 
   let sub: PushSubscription;
+  let registration: ServiceWorkerRegistration | undefined;
   try {
-    // Wait for an *active* worker rather than any registration — you
-    // cannot subscribe against a worker that is still installing.
-    const reg = await navigator.serviceWorker.getRegistration();
-    if (!reg) {
-      return {
-        ok: false,
-        reason: 'no_service_worker',
-        detail: 'Service worker is not registered on this origin. Reload the page and retry.',
-      };
-    }
+    registration = await ensureServiceWorkerRegistration();
+    // Wait for an *active* worker rather than only an installing registration.
+    // PushManager cannot subscribe until activation has completed.
     await navigator.serviceWorker.ready;
-    sub = await reg.pushManager.subscribe({
+    sub = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(vapidKey) as unknown as BufferSource,
     });
   } catch (err) {
-    // The push service rejected the subscription. The most common
-    // causes: the browser's push backend is disabled (e.g. Brave
-    // disables Google FCM by default), a pre-existing subscription
-    // uses a different applicationServerKey, or there is no network
-    // route to the push service. Surface the real error so it is
-    // diagnosable instead of a generic failure.
-    const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    if (!registration) {
+      const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+      return { ok: false, reason: 'no_service_worker', detail };
+    }
 
-    console.error('[push] pushManager.subscribe failed:', err);
-    return { ok: false, reason: 'subscription_failed', detail };
+    // A VAPID key rotation leaves an existing browser subscription bound to
+    // the old key. Remove that stale subscription and retry once with the
+    // current key; ordinary provider failures still return a clear error.
+    try {
+      const existing = await registration?.pushManager.getSubscription();
+      if (!existing || !registration) throw err;
+      await existing.unsubscribe();
+      sub = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey) as unknown as BufferSource,
+      });
+    } catch (retryError) {
+      const detail =
+        retryError instanceof Error
+          ? `${retryError.name}: ${retryError.message}`
+          : String(retryError);
+
+      console.error('[push] pushManager.subscribe failed:', retryError);
+      return { ok: false, reason: 'subscription_failed', detail };
+    }
   }
 
   const json = sub.toJSON();
@@ -141,7 +170,11 @@ export async function subscribeToPush(opts: SubscribeOptions = {}): Promise<Subs
       body: {
         endpoint: json.endpoint,
         keys: json.keys,
-        content_encoding: (json as { contentEncoding?: string }).contentEncoding ?? 'aesgcm',
+        // PushSubscriptionJSON does not expose contentEncoding in current
+        // Chromium browsers. RFC 8291 Web Push uses aes128gcm; the legacy
+        // aesgcm fallback causes otherwise-valid Brave/Chrome subscriptions
+        // to reject encrypted payloads.
+        content_encoding: (json as { contentEncoding?: string }).contentEncoding ?? 'aes128gcm',
       },
     });
   } catch {

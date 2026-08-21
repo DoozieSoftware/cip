@@ -24,6 +24,7 @@ const AdminRoutingRules = lazy(() => import('./pages/AdminRoutingRules'));
 const AdminWorkflows = lazy(() => import('./pages/AdminWorkflows'));
 const AdminDataRetention = lazy(() => import('./pages/AdminDataRetention'));
 const AdminSystemConfig = lazy(() => import('./pages/AdminSystemConfig'));
+const StaffProfilePage = lazy(() => import('../../shared/components/StaffProfilePage'));
 
 function Fallback() {
   return (
@@ -58,6 +59,7 @@ export function AdminApp(): JSX.Element {
           <Route path="workflows" element={<AdminWorkflows />} />
           <Route path="retention" element={<AdminDataRetention />} />
           <Route path="system" element={<AdminSystemConfig />} />
+          <Route path="profile" element={<StaffProfilePage />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Route>
       </Routes>

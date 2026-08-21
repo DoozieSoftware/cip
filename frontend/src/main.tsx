@@ -14,18 +14,30 @@ createRoot(container).render(
   </StrictMode>,
 );
 
-if ('serviceWorker' in navigator) {
+if (import.meta.env.DEV) {
+  // Web Push requires a service worker, so dev registers one — but the
+  // production caching strategy must never run against the dev server: its
+  // cache-first assets and precached /citizen/ shell serve stale built HTML
+  // for module scripts ("Expected a JavaScript-or-Wasm module script...
+  // MIME type text/html"). The ?dev=1 variant of sw.js skips all caching
+  // and wipes leftover caches on activation while keeping push/sync.
+  // Any previous registration is removed first so every dev session starts
+  // from a fresh worker.
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('/sw.js')
-      .then((registration) => {
-        // Optional: log to the console for support tickets.
-        if (import.meta.env.DEV) {
-          console.info('Service worker registered:', registration.scope);
-        }
-      })
+      .getRegistrations()
+      .then((registrations) =>
+        Promise.all(registrations.map((registration) => registration.unregister())),
+      )
+      .then(() => navigator.serviceWorker.register('/sw.js?dev=1'))
       .catch((error) => {
-        console.warn('Service worker registration failed:', error);
+        console.warn('Dev service worker registration failed:', error);
       });
+  });
+} else if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((error) => {
+      console.warn('Service worker registration failed:', error);
+    });
   });
 }

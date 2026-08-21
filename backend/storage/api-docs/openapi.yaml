@@ -681,6 +681,92 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         422:
           $ref: '#/components/responses/ValidationError'
+  /api/v1/auth/push-login:
+    post:
+      tags: [Authentication]
+      summary: 'Request approval from a trusted device'
+      operationId: auth.pushLogin.request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mobile]
+              properties:
+                mobile: { type: string, example: '9876543210' }
+      responses:
+        200:
+          description: 'Generic challenge response; does not reveal account or subscription existence.'
+        422: { $ref: '#/components/responses/ValidationError' }
+        429: { $ref: '#/components/responses/RateLimited' }
+  /api/v1/auth/push-login/{challenge}/exchange:
+    post:
+      tags: [Authentication]
+      summary: 'Poll and exchange an approved challenge for a session'
+      operationId: auth.pushLogin.exchange
+      parameters:
+        - { in: path, name: challenge, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [request_secret]
+              properties:
+                request_secret: { type: string, minLength: 64, maxLength: 64 }
+      responses:
+        200: { description: 'Challenge status or a newly issued one-time session.' }
+        401: { $ref: '#/components/responses/Unauthorized' }
+        422: { $ref: '#/components/responses/ValidationError' }
+        429: { $ref: '#/components/responses/RateLimited' }
+  /api/v1/auth/push-login/{challenge}/approve:
+    post:
+      tags: [Authentication]
+      summary: 'Approve a sign-in from the matching trusted account'
+      operationId: auth.pushLogin.approve
+      security: [{ sanctum: {} }]
+      parameters:
+        - { in: path, name: challenge, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approval_secret]
+              properties:
+                approval_secret: { type: string, minLength: 64, maxLength: 64 }
+      responses:
+        200: { description: 'Sign-in approved.' }
+        401: { $ref: '#/components/responses/Unauthorized' }
+        403: { description: 'The signed-in account does not own this challenge.' }
+        410: { description: 'The challenge expired.' }
+        422: { $ref: '#/components/responses/ValidationError' }
+  /api/v1/auth/push-login/{challenge}/reject:
+    post:
+      tags: [Authentication]
+      summary: 'Reject a sign-in from the matching trusted account'
+      operationId: auth.pushLogin.reject
+      security: [{ sanctum: {} }]
+      parameters:
+        - { in: path, name: challenge, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approval_secret]
+              properties:
+                approval_secret: { type: string, minLength: 64, maxLength: 64 }
+      responses:
+        200: { description: 'Sign-in rejected.' }
+        401: { $ref: '#/components/responses/Unauthorized' }
+        403: { description: 'The signed-in account does not own this challenge.' }
+        410: { description: 'The challenge expired.' }
+        422: { $ref: '#/components/responses/ValidationError' }
   /api/v1/auth/logout:
     post:
       tags:

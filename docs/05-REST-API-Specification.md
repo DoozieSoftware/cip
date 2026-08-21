@@ -182,6 +182,26 @@ Response
 
 ---
 
+## Push Login Approval
+
+Push approval is an optional login path for accounts that previously enabled
+notifications on a trusted, signed-in device. It does not replace or modify
+OTP/password login.
+
+```
+POST /auth/push-login
+POST /auth/push-login/{challenge}/exchange
+POST /auth/push-login/{challenge}/approve
+POST /auth/push-login/{challenge}/reject
+```
+
+Challenges expire after five minutes. Approval requires an existing session
+for the same account, and an approved challenge can issue a session only once.
+The request endpoint returns the same response shape whether or not the mobile
+number has a trusted device, preventing account discovery.
+
+---
+
 ## Logout
 
 ```

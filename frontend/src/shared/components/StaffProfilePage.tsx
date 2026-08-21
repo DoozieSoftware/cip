@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent, type JSX } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { IconBuilding, IconUser } from '@tabler/icons-react';
+import { IconBell, IconBuilding, IconUser } from '@tabler/icons-react';
 import { apiRequest, type ApiEnvelope } from '../../auth/api';
 import { useAuth } from '../../auth/AuthContext';
+import { pushSupport, subscribeToPush } from '../../portals/citizen/push/subscribe';
 import {
   Badge,
   Button,
@@ -107,6 +108,8 @@ export default function StaffProfilePage(): JSX.Element {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [enablingPush, setEnablingPush] = useState(false);
+  const [pushMessage, setPushMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!profile) return;
@@ -135,6 +138,18 @@ export default function StaffProfilePage(): JSX.Element {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function enableTrustedDevice(): Promise<void> {
+    setEnablingPush(true);
+    setPushMessage(null);
+    const result = await subscribeToPush();
+    setPushMessage(
+      result.ok
+        ? 'This device can now approve future sign-ins.'
+        : (result.detail ?? 'Push notifications could not be enabled on this device.'),
+    );
+    setEnablingPush(false);
   }
 
   if (isLoading) {
@@ -242,6 +257,39 @@ export default function StaffProfilePage(): JSX.Element {
               {saving ? 'Saving…' : 'Save changes'}
             </Button>
           </form>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <IconBell className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+            <CardTitle>Trusted device</CardTitle>
+          </div>
+        </CardHeader>
+        <CardBody>
+          <p className="max-w-2xl text-sm leading-6 text-[#686762]">
+            Enable notifications on this signed-in device to approve future sign-ins without
+            replacing your OTP or password fallback.
+          </p>
+          {pushMessage ? (
+            <p role="status" className="mt-3 text-sm text-[#286548]">
+              {pushMessage}
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            className="mt-4 w-full justify-center sm:w-auto"
+            disabled={enablingPush || !pushSupport().supported}
+            onClick={() => void enableTrustedDevice()}
+          >
+            {enablingPush ? 'Enabling…' : 'Enable sign-in approvals'}
+          </Button>
+          {!pushSupport().supported ? (
+            <p className="mt-2 text-xs text-[#85847f]">
+              Push notifications are not available in this browser.
+            </p>
+          ) : null}
         </CardBody>
       </Card>
 

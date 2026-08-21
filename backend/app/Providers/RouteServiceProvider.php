@@ -35,6 +35,10 @@ class RouteServiceProvider extends ServiceProvider
 
     public const LIMITER_LOGIN = 'login';
 
+    public const LIMITER_PUSH_LOGIN_EXCHANGE = 'push-login-exchange';
+
+    public const LIMITER_PUSH_LOGIN_REQUEST = 'push-login-request';
+
     public const LIMITER_CITIZEN = 'citizen';
 
     public const LIMITER_UPLOADS = 'uploads';
@@ -111,6 +115,30 @@ class RouteServiceProvider extends ServiceProvider
 
             return [
                 Limit::perHour(10)->by('login:'.$this->ipKey($request).':'.$mobile),
+            ];
+        });
+
+        // A waiting login screen polls every two seconds. Keep this separate
+        // from the stricter challenge-creation limit so legitimate polling
+        // cannot lock out OTP or password login attempts.
+        RateLimiter::for(self::LIMITER_PUSH_LOGIN_EXCHANGE, function (Request $request): array {
+            $challenge = $request->route('challenge');
+            $challengeKey = is_string($challenge) ? $challenge : 'unknown';
+
+            return [
+                Limit::perMinute(40)->by('push-login:'.$this->ipKey($request).':'.$challengeKey),
+            ];
+        });
+
+        // Push-login retries are deliberately independent from password
+        // login attempts. Five requests per minute is enough for a user who
+        // needs to retry while keeping challenge creation bounded.
+        RateLimiter::for(self::LIMITER_PUSH_LOGIN_REQUEST, function (Request $request): array {
+            $mobileInput = $request->input('mobile', '');
+            $mobile = is_string($mobileInput) ? $mobileInput : '';
+
+            return [
+                Limit::perMinute(5)->by('push-login-request:'.$this->ipKey($request).':'.$mobile),
             ];
         });
 
