@@ -6,7 +6,9 @@ use App\Modules\Media\Contracts\VirusScanServiceInterface;
 use App\Modules\Media\Services\ClamAvScanner;
 use App\Modules\Media\Services\LogScanner;
 use Illuminate\Support\Facades\Log;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('LogScanner always returns true (verdict CLEAN)', function (): void {
     $tmp = tempnam(sys_get_temp_dir(), 'cip-vs-');
     file_put_contents($tmp, 'whatever');

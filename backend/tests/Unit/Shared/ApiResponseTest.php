@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Modules\Shared\Http\Responses\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('returns the success envelope with data and meta', function (): void {
     $response = ApiResponse::success(['id' => 1], 'Created', 201, ['trace' => 'abc']);
     $payload = $response->getData(true);

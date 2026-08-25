@@ -103,8 +103,13 @@ it('upserts a district / city / zone / ward through the same service', function 
     expect($ward->name)->toBe('Ward 7')
         ->and($ward->city_id)->toBe($city->id)
         ->and($ward->zone_id)->toBe($zone->id)
-        ->and($ward->ward_number)->toBe(7)
-        ->and($ward->boundary_polygon)->toBe('POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))');
+        ->and($ward->ward_number)->toBe(7);
+    // ST_AsText returns canonical WKT (no space after commas); compare
+    // with all whitespace stripped so the assertion is independent of
+    // the input formatting and of the storage driver.
+    $actualWkt = preg_replace('/\s+/', '', (string) $ward->boundary_polygon);
+    $expectedWkt = (string) preg_replace('/\s+/', '', 'POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))');
+    expect($actualWkt)->toBe($expectedWkt);
 });
 
 it('rejects an unknown geography level', function (): void {

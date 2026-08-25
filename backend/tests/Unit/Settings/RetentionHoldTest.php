@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Modules\Settings\Models\RetentionHold;
 use Illuminate\Support\Carbon;
+use Tests\TestCase;
 
+uses(TestCase::class);
 function retentionHold(array $attributes): RetentionHold
 {
     $hold = new RetentionHold;

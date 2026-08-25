@@ -12,7 +12,9 @@ use App\Modules\Routing\Services\RoutingCondition;
 use App\Modules\Routing\Services\RoutingEngine;
 use App\Modules\Routing\ValueObjects\RoutingDecision;
 use App\Modules\Users\Models\User;
+use Tests\TestCase;
 
+uses(TestCase::class);
 beforeEach(function (): void {
     $this->evaluator = new RoutingCondition;
     $this->repository = new RoutingRepository;

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Modules\AI\Services\AiReviewGate;
 use App\Modules\AI\Services\ConfidenceAggregator;
+use Tests\TestCase;
 
+uses(TestCase::class);
 function reviewGate(): AiReviewGate
 {
     return new AiReviewGate(

@@ -7,7 +7,9 @@ use App\Modules\Media\Models\MediaHash;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Users\Models\User;
 use Illuminate\Database\QueryException;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('uses a UUID primary key and the media table', function (): void {
     $media = new Media;
     expect($media->getTable())->toBe('media')

@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Modules\Integrations\Jobs\ProbeIntegrationHealthJob;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('has bounded retry and uniqueness settings for asynchronous probes', function (): void {
     $job = new ProbeIntegrationHealthJob('integration-id', 'requesting-user-id');
 

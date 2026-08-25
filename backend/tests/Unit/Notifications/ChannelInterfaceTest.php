@@ -6,7 +6,9 @@ use App\Modules\Notifications\Contracts\ChannelInterface;
 use App\Modules\Notifications\Models\Notification;
 use App\Modules\Notifications\Models\NotificationTemplate;
 use App\Modules\Notifications\ValueObjects\ChannelResult;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('ChannelResult::ok() returns a success result with latency and response', function (): void {
     $r = ChannelResult::ok(latencyMs: 87, providerResponse: ['message_id' => 'fcm-1234']);
 

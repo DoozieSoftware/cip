@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Modules\AI\Services\PiiMaskingService;
 use Illuminate\Support\Facades\Log;
+use Tests\TestCase;
 
+uses(TestCase::class);
 beforeEach(function (): void {
     Log::spy();
 });

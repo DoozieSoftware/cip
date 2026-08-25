@@ -4,9 +4,20 @@ declare(strict_types=1);
 
 use App\Modules\Workflow\Jobs\CheckSlaBreaches;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    // The withSchedule() callback in bootstrap/app.php only executes when
+    // the console kernel actually builds the schedule (schedule:run /
+    // schedule:list in a real process). In-process tests start with an
+    // empty Schedule::events(); building it via an in-process artisan call
+    // mirrors what `php artisan schedule:list` does and registers the same
+    // singleton instance the facade exposes.
+    Artisan::call('schedule:list');
+});
 
 it('CheckSlaBreaches is registered to run every 5 minutes', function (): void {
     $match = null;
@@ -57,8 +68,11 @@ it('php artisan schedule:list renders the CheckSlaBreaches entry', function (): 
 
     expect($exit)->toBe(0);
     $combined = implode("\n", $output);
-    expect($combined)->toContain('workflow:check-sla-breaches')
-        ->and($combined)->toContain('*/5 * * * *');
+    // Laravel renders the schedule table with padded columns
+    // (e.g. "*/5  * * * *"), so collapse whitespace before matching.
+    $normalized = (string) preg_replace('/\s+/', ' ', $combined);
+    expect($normalized)->toContain('workflow:check-sla-breaches')
+        ->and($normalized)->toContain('*/5 * * * *');
 });
 
 it('the CheckSlaBreaches class is loadable from the registered callback', function (): void {

@@ -12,7 +12,9 @@ use App\Modules\Workflow\Models\WorkflowTransition;
 use App\Modules\Workflow\Services\ConditionEvaluator;
 use App\Modules\Workflow\Services\TransitionGuard;
 use Spatie\Permission\Models\Role;
+use Tests\TestCase;
 
+uses(TestCase::class);
 beforeEach(function (): void {
     $this->guard = new TransitionGuard(new ConditionEvaluator);
     $this->report = Report::factory()->make(['citizen_id' => null, 'fraud_score' => 0.2]);

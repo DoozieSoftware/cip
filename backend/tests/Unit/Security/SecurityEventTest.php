@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Modules\Security\Models\SecurityEvent;
 use App\Modules\Shared\Exceptions\ModelImmutableException;
 use App\Modules\Users\Models\User;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('boots the SecurityEvent model with a uuid PK and no updated_at', function (): void {
     $event = new SecurityEvent;
 

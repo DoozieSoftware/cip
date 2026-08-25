@@ -9,7 +9,9 @@ use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
 
+uses(TestCase::class);
 beforeEach(function (): void {
     Storage::fake('local');
     (new RolesAndPermissionsSeeder)->run();

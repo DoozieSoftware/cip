@@ -14,6 +14,7 @@ use App\Modules\Departments\Models\Zone;
 use App\Modules\Departments\Repositories\GeographyRepository;
 use App\Modules\Shared\Exceptions\ApiException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 /**
  * GeographyService per docs/04 §8 and docs/09 §7.
@@ -193,15 +194,41 @@ class GeographyService
 
         $extras = $this->stringifyScalars($dto->attributes);
 
-        return Ward::query()->updateOrCreate(
+        $attributes = [
+            'zone_id' => $extras['zone_id'] ?? null,
+            'name' => $dto->name,
+            'municipality' => $extras['municipality'] ?? null,
+            'active' => $dto->active,
+        ];
+
+        $wkt = $extras['boundary_polygon'] ?? null;
+
+        if ($wkt === null) {
+            $attributes['boundary_polygon'] = null;
+        } elseif (DB::connection()->getDriverName() === 'mysql') {
+            // boundary_polygon is a real POLYGON SRID 4326 column on MySQL:
+            // a bound WKT string is rejected (error 1416), so the write must
+            // go through ST_GeomFromText. Reads select ST_AsText(...) (see
+            // repository) so the application keeps seeing WKT.
+            $attributes['boundary_polygon'] = DB::raw('ST_GeomFromText('
+                .DB::connection()->getPdo()->quote($wkt).', 4326)');
+        } else {
+            $attributes['boundary_polygon'] = $wkt;
+        }
+
+        $ward = Ward::query()->updateOrCreate(
             ['city_id' => $dto->parentId, 'ward_number' => $wardNumber],
-            [
-                'zone_id' => $extras['zone_id'] ?? null,
-                'name' => $dto->name,
-                'municipality' => $extras['municipality'] ?? null,
-                'boundary_polygon' => $extras['boundary_polygon'] ?? null,
-                'active' => $dto->active,
-            ],
+            $attributes,
         );
+
+        if ($wkt !== null && DB::connection()->getDriverName() === 'mysql') {
+            // Re-read through ST_AsText so the returned model carries WKT,
+            // matching the SQLite behaviour and the API contract (D-020).
+            $ward->boundary_polygon = (string) DB::table('wards')
+                ->where('id', $ward->id)
+                ->value(DB::raw('ST_AsText(boundary_polygon)'));
+        }
+
+        return $ward;
     }
 }

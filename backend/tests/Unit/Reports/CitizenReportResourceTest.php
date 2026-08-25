@@ -15,6 +15,7 @@ use App\Modules\Reports\Models\ReportType;
 use Illuminate\Http\Request;
 use Tests\TestCase;
 
+uses(TestCase::class);
 /**
  * Non-DB unit test of the citizen detail contract. Builds the model
  * graph in memory (relations set explicitly, `media` eager-loaded) so

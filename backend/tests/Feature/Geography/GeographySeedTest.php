@@ -40,9 +40,17 @@ it('is idempotent — a second run does not duplicate rows', function (): void {
 it('assigns a non-null WKT boundary polygon to every ward', function (): void {
     (new GeographySeeder)->run();
 
-    Ward::query()->each(function (Ward $ward): void {
-        expect($ward->boundary_polygon)->toBeString()
-            ->and(strtoupper($ward->boundary_polygon))->toStartWith('POLYGON((')
+    $isMysql = DB::connection()->getDriverName() === 'mysql';
+
+    Ward::query()->each(function (Ward $ward) use ($isMysql): void {
+        // On MySQL the raw column is internal WKB binary; read the WKT
+        // back through ST_AsText to mirror what the seeder wrote.
+        $wkt = $isMysql
+            ? (string) DB::table('wards')->where('id', $ward->id)->value(DB::raw('ST_AsText(boundary_polygon)'))
+            : (string) $ward->boundary_polygon;
+
+        expect($wkt)->toBeString()
+            ->and(strtoupper($wkt))->toStartWith('POLYGON((')
             ->and($ward->active)->toBeTrue();
     });
 });

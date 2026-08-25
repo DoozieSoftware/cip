@@ -5,7 +5,9 @@ declare(strict_types=1);
 use Illuminate\Cache\FileStore;
 use Illuminate\Cache\Repository;
 use Illuminate\Filesystem\Filesystem;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('supports every cache operation used by the application on the file store', function (): void {
     $files = new Filesystem;
     $directory = sys_get_temp_dir().'/cip-cache-compatibility-'.bin2hex(random_bytes(8));

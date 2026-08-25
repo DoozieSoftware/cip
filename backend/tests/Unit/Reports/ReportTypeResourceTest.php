@@ -9,6 +9,7 @@ use App\Modules\Reports\Models\ReportType;
 use Illuminate\Http\Request;
 use Tests\TestCase;
 
+uses(TestCase::class);
 class ReportTypeResourceTest extends TestCase
 {
     public function test_resource_exposes_localization_alias_and_order_contract(): void

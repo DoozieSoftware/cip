@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Modules\AI\Exceptions\InvalidAiResponseException;
 use App\Modules\AI\Services\AiResponseValidator;
 use App\Modules\AI\ValueObjects\AiResponse;
+use Tests\TestCase;
 
+uses(TestCase::class);
 function validAiResponse(): AiResponse
 {
     return new AiResponse(

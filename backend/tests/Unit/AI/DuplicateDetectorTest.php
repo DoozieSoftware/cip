@@ -12,7 +12,9 @@ use Database\Seeders\ReportTypesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Tests\TestCase;
 
+uses(TestCase::class);
 beforeEach(function (): void {
     Cache::flush();
     (new RolesAndPermissionsSeeder)->run();

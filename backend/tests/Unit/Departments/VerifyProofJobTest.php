@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Modules\Departments\Jobs\VerifyProofJob;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('queues proof verification with bounded retries and one job per media item', function (): void {
     $job = new VerifyProofJob('proof-media-id');
 

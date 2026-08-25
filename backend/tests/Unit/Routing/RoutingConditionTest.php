@@ -8,7 +8,9 @@ use App\Modules\Reports\Models\ReportPriority;
 use App\Modules\Reports\Models\ReportType;
 use App\Modules\Routing\Services\RoutingCondition;
 use Illuminate\Support\Carbon;
+use Tests\TestCase;
 
+uses(TestCase::class);
 beforeEach(function (): void {
     $this->evaluator = new RoutingCondition;
 

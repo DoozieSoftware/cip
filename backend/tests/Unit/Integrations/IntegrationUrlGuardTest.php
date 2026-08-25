@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Modules\Integrations\Services\IntegrationUrlGuard;
 use App\Modules\Shared\Exceptions\ApiException;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('rejects loopback, private, link-local, and metadata probe targets', function (string $url): void {
     expect(fn (): null => (new IntegrationUrlGuard)->assertSafe($url))
         ->toThrow(ApiException::class, 'Integration probe');
