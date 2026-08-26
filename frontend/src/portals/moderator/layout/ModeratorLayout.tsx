@@ -69,7 +69,7 @@ export function ModeratorLayout(): JSX.Element {
               <IconBuildingCommunity className="h-5 w-5" stroke={1.7} />
             </span>
             <div className="min-w-0">
-              <div className="truncate text-sm font-semibold tracking-[-0.01em]">CIP Karnataka</div>
+              <div className="truncate text-sm font-semibold tracking-[-0.01em]">CIP India</div>
               <div className="truncate text-xs text-[#777670]">Moderator</div>
             </div>
           </div>
@@ -149,7 +149,7 @@ export function ModeratorLayout(): JSX.Element {
               <IconBuildingCommunity className="h-5 w-5" stroke={1.7} />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold tracking-[-0.01em]">CIP Karnataka</div>
+              <div className="truncate text-sm font-semibold tracking-[-0.01em]">CIP India</div>
               <div className="truncate text-[11px] text-[#6f6e69]">Moderator</div>
             </div>
             <button

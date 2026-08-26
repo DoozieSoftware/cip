@@ -81,7 +81,7 @@ export function CitizenLayout(): JSX.Element {
           <div className="flex items-center gap-3.5">
             <BrandMark />
             <div className="min-w-0">
-              <div className="truncate text-sm font-semibold tracking-[-0.01em]">CIP Karnataka</div>
+              <div className="truncate text-sm font-semibold tracking-[-0.01em]">CIP India</div>
               <div className="truncate text-xs text-[#74736f]">{t('citizenServices')}</div>
             </div>
           </div>
@@ -133,7 +133,7 @@ export function CitizenLayout(): JSX.Element {
           <div className="flex min-h-16 items-center gap-3 px-4">
             <BrandMark />
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold tracking-[-0.01em]">CIP Karnataka</div>
+              <div className="truncate text-sm font-semibold tracking-[-0.01em]">CIP India</div>
               <div className="truncate text-[11px] text-[var(--color-text-subtle)]">
                 {t('citizenServices')}
               </div>

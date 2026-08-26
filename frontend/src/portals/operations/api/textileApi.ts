@@ -8,6 +8,7 @@ export interface TextileCollectionListItem {
   status: string;
   requester_type: string;
   requester_name: string;
+  rwa_name: string | null;
   contact_email: string;
   contact_phone: string;
   pickup_address: string;
@@ -23,7 +24,13 @@ export interface TextileCollectionListItem {
   rejection_reason: string | null;
   missed_pickup_reason: string | null;
   picked_up_at: string | null;
-  service_zone: { id: string; code: string; name: string } | null;
+  service_zone: {
+    id: string;
+    code: string;
+    name: string;
+    dropoff_name: string | null;
+    dropoff_address: string | null;
+  } | null;
   batch: { id: string; reference: string; collection_date: string; status: string } | null;
   submitted_at: string | null;
   photos?: Array<{ id: string; role: 'evidence' | 'proof'; url: string }>;
@@ -156,4 +163,16 @@ export function uploadTextileProofPhoto(
     formData,
     opts,
   );
+}
+
+export function updateTextileZoneDropoff(
+  zoneId: string,
+  data: { dropoff_name: string | null; dropoff_address: string | null },
+  departmentId?: string,
+) {
+  return request<TextileServiceZone>(`/department/textile-zones/${zoneId}`, {
+    method: 'PUT',
+    body: data,
+    query: departmentId ? { department_id: departmentId } : {},
+  });
 }

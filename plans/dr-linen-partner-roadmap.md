@@ -140,3 +140,17 @@ configuration, not code.
 - Volume estimates (bags / weight) are optional with an at-least-one rule.
 - Demo data: 16 requests across all workflow stages; staff login `9999900006`
   (Dr. Linen Officer), citizen `9999900001`.
+
+
+---
+
+## Pending changes (client feedback, not yet implemented)
+
+| # | Change | Detail | Status |
+|---|---|---|---|
+| 1 | Rebrand "CIP Karnataka" → "CIP India" | Replace across all portals (sidebar, login, page titles) | Pending |
+| 2 | Rename volume labels | "Estimated bags (optional)" → "No. of bags"; "Estimated weight (optional)" → "Approximate weight". Remove "optional" from labels | Pending |
+| 3 | Minimum quantity warning | Add minimum threshold per category (clothes/textiles, metal scrap, e-waste). Show a warning/info when the citizen enters below the minimum — a company cannot justify a pickup route for 1 kg. Backend validation + frontend hint | Pending |
+| 4a | Drop-off point display + config | When citizen selects "Drop-off", show the nearest drop-off point address for the selected zone. Dr. Linen staff/admin can edit the drop-off point address per zone (currently hardcoded demo text in the seeder). Needs: editable `dropoff_name` + `dropoff_address` fields on the zone, editable from the partner desk or admin panel | Pending — needs discussion on who edits it (partner staff vs admin) |
+| 4b | Citizen photo replace after submission | Allow the citizen to replace/retake their uploaded photo after the request is submitted (before collection). The backend already supports replace semantics (is_replaced chain) | Pending |
+| 5 | Photo capture option | Add "Take a photo" (camera) alongside "Choose photo" (file picker) for the citizen photo. Use `capture="environment"` attribute or the existing CameraCapture component | Pending |

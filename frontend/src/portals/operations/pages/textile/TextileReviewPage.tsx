@@ -1,4 +1,5 @@
 import { useState, type JSX } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { IconCheck, IconRefresh } from '@tabler/icons-react';
 import { ConfirmActionDialog } from '../../components/ConfirmActionDialog';
@@ -187,7 +188,12 @@ export default function TextileReviewPage(): JSX.Element {
                     />
                   </td>
                   <td className="px-3 py-2.5">
-                    <p className="font-mono text-xs font-medium">{item.reference}</p>
+                    <Link
+                      to={`/operations/textile-collections/${item.id}`}
+                      className="font-mono text-xs font-medium text-[var(--color-ink)] underline-offset-2 hover:underline"
+                    >
+                      {item.reference}
+                    </Link>
                     <p className="mt-0.5 max-w-[220px] truncate text-xs text-[var(--color-text-secondary)]">
                       {item.title}
                     </p>
@@ -213,6 +219,12 @@ export default function TextileReviewPage(): JSX.Element {
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex justify-end gap-2">
+                      <Link
+                        to={`/operations/textile-collections/${item.id}`}
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-black/15 px-3.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)]"
+                      >
+                        View
+                      </Link>
                       <button
                         type="button"
                         disabled={busy || approve.isPending}

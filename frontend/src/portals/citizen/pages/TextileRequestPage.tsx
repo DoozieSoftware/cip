@@ -4,6 +4,7 @@ import {
   IconArrowLeft,
   IconDeviceDesktop,
   IconHanger,
+  IconCamera,
   IconMapPin,
   IconPhoto,
   IconRecycle,
@@ -11,6 +12,12 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { cx } from '../../../shared/ui';
+import { MapContainer, Marker, TileLayer } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import IssueLocationPicker from '../components/IssueLocationPicker';
+import { CameraCapture } from '../components/CameraCapture';
+import { issueLocationFromReporter, type IssueLocation } from '../components/issueLocation';
 import { ApiError } from '../../../shared/api/errors';
 import { TextileCollectionFields } from '../components/TextileCollectionFields';
 import {
@@ -33,6 +40,50 @@ const CATEGORY_OPTIONS: {
   { value: 'e_waste', label: 'E-Waste', icon: IconDeviceDesktop },
 ];
 
+const DROP_OFF_PIN = L.divIcon({
+  className: 'cip-dropoff-pin',
+  html: '<span aria-hidden="true" style="display:block;width:22px;height:22px;border-radius:50%;background:#1d6fb8;border:3px solid #fff;box-shadow:0 1px 5px #0008"></span>',
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+});
+
+function DropOffMap({ center }: { center: { latitude: number; longitude: number } }): JSX.Element {
+  return (
+    <div
+      role="img"
+      aria-label="Map showing the collection point area"
+      className="mt-3 overflow-hidden rounded-lg border border-blue-200"
+      style={{ height: 190 }}
+    >
+      <MapContainer
+        center={[center.latitude, center.longitude]}
+        zoom={15}
+        style={{ height: '100%', width: '100%' }}
+        scrollWheelZoom={false}
+        attributionControl={false}
+        dragging={false}
+        doubleClickZoom={false}
+        zoomControl={false}
+        touchZoom={false}
+      >
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <Marker position={[center.latitude, center.longitude]} icon={DROP_OFF_PIN} />
+      </MapContainer>
+    </div>
+  );
+}
+
+function googleMapsUrl(info: {
+  name: string;
+  address: string;
+  center: { latitude: number; longitude: number } | null;
+}): string {
+  if (info.center) {
+    return `https://www.google.com/maps?q=${info.center.latitude}%2C${info.center.longitude}`;
+  }
+  return `https://www.google.com/maps?q=${encodeURIComponent(`${info.name} ${info.address}`)}`;
+}
+
 function validatePhotoFile(file: File): string | null {
   if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
     return 'Please select a JPEG, PNG, or WebP image.';
@@ -47,12 +98,18 @@ export default function TextileRequestPage(): JSX.Element {
   const navigate = useNavigate();
   const create = useCreateTextileCollection();
   const [category, setCategory] = useState<TextileCollectionCategory>('clothes_waste');
-  const [title, setTitle] = useState('Collection request');
+  const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [details, setDetails] = useState<TextileCollectionPayload | null>(null);
   const [detailsValid, setDetailsValid] = useState(false);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationMessage, setLocationMessage] = useState<string | null>(null);
+  const [issueLocation, setIssueLocation] = useState<IssueLocation | null>(null);
+  const [dropoffInfo, setDropoffInfo] = useState<{
+    name: string;
+    address: string;
+    center: { latitude: number; longitude: number } | null;
+  } | null>(null);
 
   // --- Photo picker state ---
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -61,6 +118,7 @@ export default function TextileRequestPage(): JSX.Element {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoUploadWarning, setPhotoUploadWarning] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
 
   // Revoke object URL on cleanup or when the preview changes.
   useEffect(() => {
@@ -69,29 +127,30 @@ export default function TextileRequestPage(): JSX.Element {
     };
   }, [photoPreview]);
 
-  function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>): void {
-    const file = event.target.files?.[0] ?? null;
+  function applyPhotoFile(file: File): void {
     setPhotoError(null);
     setPhotoUploadWarning(null);
+    const error = validatePhotoFile(file);
+    if (error) {
+      setPhotoError(error);
+      return;
+    }
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  }
 
+  function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>): void {
+    const file = event.target.files?.[0] ?? null;
     if (!file) {
       if (photoPreview) URL.revokeObjectURL(photoPreview);
       setPhotoFile(null);
       setPhotoPreview(null);
       return;
     }
-
-    const error = validatePhotoFile(file);
-    if (error) {
-      setPhotoError(error);
-      // Clear the input so the same invalid file can be re-selected.
-      event.target.value = '';
-      return;
-    }
-
-    if (photoPreview) URL.revokeObjectURL(photoPreview);
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
+    applyPhotoFile(file);
+    // Clear the input so the same file can be re-selected after removal.
+    event.target.value = '';
   }
 
   function removePhoto(): void {
@@ -123,7 +182,23 @@ export default function TextileRequestPage(): JSX.Element {
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         setLocation({ latitude: coords.latitude, longitude: coords.longitude });
-        setLocationMessage('Current location added to this pickup request.');
+        setIssueLocation(
+          issueLocationFromReporter({
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            accuracy_m: coords.accuracy,
+            gps_provider: 'gps',
+            captured_at: Date.now(),
+            mock_heuristic: {
+              likely: false,
+              score: 0,
+              reasons: [],
+              accuracy_m: null,
+              age_ms: null,
+            },
+          }),
+        );
+        setLocationMessage('Drag the pin to your exact pickup spot, or keep it here.');
       },
       () => setLocationMessage('Location could not be captured. You can still continue.'),
       { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 },
@@ -207,6 +282,7 @@ export default function TextileRequestPage(): JSX.Element {
           <input
             id="textile-title"
             value={title}
+            placeholder="e.g. Wardrobe cleanout"
             onChange={(event) => setTitle(event.target.value)}
             className="mt-1 block min-h-11 w-full rounded-lg border border-[#d8d6cf] px-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
@@ -257,6 +333,14 @@ export default function TextileRequestPage(): JSX.Element {
             </label>
           ))}
         </div>
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          <p className="font-medium">Minimum quantities for a collection route:</p>
+          <ul className="mt-1 space-y-0.5 pl-4" style={{ listStyleType: 'disc' }}>
+            <li>Clothes &amp; Textiles — about 5 kg</li>
+            <li>Metal Scrap — about 5 kg</li>
+            <li>E-Waste — about 2 kg</li>
+          </ul>
+        </div>
         {categoryError ? (
           <p role="alert" className="text-xs font-medium text-red-600">
             {categoryError}
@@ -269,26 +353,90 @@ export default function TextileRequestPage(): JSX.Element {
         value={details}
         onChange={onDetailsChange}
         onValidityChange={onValidityChange}
+        onDropoffChange={setDropoffInfo}
       />
 
-      <section className="rounded-xl border border-black/10 bg-white p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-sm font-medium">Pickup location</h2>
-            <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
-              Optional. Adding your current location helps the collection team find the address.
-            </p>
-            {locationMessage ? <p className="mt-2 text-xs font-medium">{locationMessage}</p> : null}
+      {dropoffInfo ? (
+        <section className="rounded-xl border border border-black/10 bg-white p-5">
+          <h2 className="text-sm font-medium">Drop-off location</h2>
+          <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
+            Take your items to the collection point below. No pickup is arranged.
+          </p>
+          <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <p className="text-xs font-medium text-blue-800">📍 Drop-off point</p>
+            <p className="mt-0.5 text-base font-semibold text-blue-900">{dropoffInfo.name}</p>
+            <p className="mt-0.5 text-sm text-blue-700">{dropoffInfo.address}</p>
+            <a
+              href={googleMapsUrl(dropoffInfo)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full border border-blue-300 bg-white px-5 text-sm font-medium text-blue-700 hover:bg-blue-50"
+            >
+              <IconMapPin className="h-4 w-4" stroke={1.6} />
+              Open in Google Maps
+            </a>
           </div>
-          <button
-            type="button"
-            onClick={captureLocation}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-black/15 px-5 text-sm font-medium"
-          >
-            <IconMapPin className="h-4 w-4" stroke={1.6} /> Use current location
-          </button>
-        </div>
-      </section>
+          {dropoffInfo.center ? <DropOffMap center={dropoffInfo.center} /> : null}
+        </section>
+      ) : (
+        <section className="rounded-xl border border-black/10 bg-white p-5">
+          <h2 className="text-sm font-medium">Pickup location</h2>
+          <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
+            Optional. Add your exact location so the collection team finds you easily.
+          </p>
+          {locationMessage ? <p className="mt-2 text-xs font-medium">{locationMessage}</p> : null}
+
+          {location ? (
+            <div className="mt-3 space-y-3">
+              <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)]">
+                <IssueLocationPicker
+                  title="Your pickup location"
+                  detail="Drag the pin to the exact spot where the collection team should pick up your textiles."
+                  confirmLabel="Confirm pickup location"
+                  reporterLocation={{
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    accuracy_m: null,
+                    gps_provider: 'gps',
+                    captured_at: Date.now(),
+                    mock_heuristic: {
+                      likely: false,
+                      score: 0,
+                      reasons: [],
+                      accuracy_m: null,
+                      age_ms: null,
+                    },
+                  }}
+                  value={
+                    issueLocation ?? {
+                      latitude: location.latitude,
+                      longitude: location.longitude,
+                      source: 'reporter_gps',
+                    }
+                  }
+                  onChange={(pin) => {
+                    setIssueLocation(pin);
+                    setLocation({ latitude: pin.latitude, longitude: pin.longitude });
+                  }}
+                />
+              </div>
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                {issueLocation?.source === 'manual_pin'
+                  ? 'Pin placed manually. Drag to adjust.'
+                  : 'GPS location captured. Drag the pin to refine, or leave as-is.'}
+              </p>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={captureLocation}
+              className="mt-3 inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-black/15 px-5 text-sm font-medium"
+            >
+              <IconMapPin className="h-4 w-4" stroke={1.6} /> Use current location
+            </button>
+          )}
+        </section>
+      )}
 
       {/* --- Optional photo picker --- */}
       <section className="rounded-xl border border-black/10 bg-white p-5">
@@ -319,22 +467,52 @@ export default function TextileRequestPage(): JSX.Element {
             </p>
           </div>
         ) : (
-          <label
-            htmlFor="textile-photo-input"
-            className="mt-3 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-black/15 px-5 text-sm font-medium"
-          >
-            <IconPhoto className="h-4 w-4" stroke={1.6} />
-            Choose photo
-            <input
-              ref={fileInputRef}
-              id="textile-photo-input"
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handlePhotoChange}
-              className="sr-only"
-            />
-          </label>
+          <div className="mt-3 space-y-3">
+            {showCamera ? (
+              <div>
+                <CameraCapture
+                  mode="photo"
+                  onCapture={(file) => {
+                    applyPhotoFile(file);
+                    setShowCamera(false);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCamera(false)}
+                  className="mt-2 inline-flex min-h-10 items-center rounded-full border border-black/15 px-5 text-sm font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCamera(true)}
+                  className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-black/15 px-5 text-sm font-medium"
+                >
+                  <IconCamera className="h-4 w-4" stroke={1.6} />
+                  Take photo
+                </button>
+                <label
+                  htmlFor="textile-photo-input"
+                  className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-black/15 px-5 text-sm font-medium"
+                >
+                  <IconPhoto className="h-4 w-4" stroke={1.6} />
+                  Choose photo
+                  <input
+                    ref={fileInputRef}
+                    id="textile-photo-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+            )}
+          </div>
         )}
 
         {photoError ? (

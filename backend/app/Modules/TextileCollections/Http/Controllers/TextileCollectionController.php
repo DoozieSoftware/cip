@@ -534,4 +534,58 @@ final class TextileCollectionController extends BaseController
 
         return $out;
     }
+
+    /**
+     * Update drop-off details for a service zone owned by the staff's partner.
+     */
+    public function updateZone(TextileServiceZone $zone, Request $request): JsonResponse
+    {
+        $this->assertCollectionPartner($request, null);
+
+        // Verify the zone belongs to the staff's working department.
+        $resolved = $this->departments->resolve(
+            $this->authenticatedUser($request),
+            $request->query('department_id'),
+        );
+
+        if ($zone->department_id !== null && (string) $zone->department_id !== (string) $resolved->id) {
+            throw ApiException::forbidden('This zone belongs to another partner.');
+        }
+
+        $data = $request->validate([
+            'dropoff_name' => ['nullable', 'string', 'max:255'],
+            'dropoff_address' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $before = [
+            'dropoff_name' => $zone->dropoff_name,
+            'dropoff_address' => $zone->dropoff_address,
+        ];
+
+        $zone->update([
+            'dropoff_name' => $data['dropoff_name'] ?? $zone->dropoff_name,
+            'dropoff_address' => $data['dropoff_address'] ?? $zone->dropoff_address,
+        ]);
+
+        AuditLog::query()->create([
+            'user_id' => (string) $this->authenticatedUser($request)->id,
+            'entity' => 'textile_service_zone',
+            'entity_id' => $zone->id,
+            'action' => 'textile.update_zone',
+            'before' => $before,
+            'after' => [
+                'dropoff_name' => $zone->fresh()->dropoff_name,
+                'dropoff_address' => $zone->fresh()->dropoff_address,
+            ],
+            'ip' => $request->ip(),
+            'device_fingerprint' => null,
+            'request_id' => $request->attributes->get('trace_id'),
+            'created_at' => now(),
+        ]);
+
+        return $this->respond(
+            (new TextileServiceZoneResource($zone->fresh()))->toArray($request),
+            'Drop-off details updated.',
+        );
+    }
 }

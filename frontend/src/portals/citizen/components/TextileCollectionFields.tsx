@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type JSX } from 'react';
+import { IconAlertTriangle } from '@tabler/icons-react';
 import { Spinner, cx } from '../../../shared/ui';
 import {
   useTextileServiceZones,
@@ -10,11 +11,18 @@ import {
 
 const PHONE_PATTERN = '^[0-9+() -]{8,20}$';
 
+export interface TextileDropoffView {
+  name: string;
+  address: string;
+  center: { latitude: number; longitude: number } | null;
+}
+
 export interface TextileCollectionFieldsProps {
   category: TextileCollectionCategory;
   value: TextileCollectionPayload | null;
   onChange: (next: TextileCollectionPayload | null) => void;
   onValidityChange: (valid: boolean) => void;
+  onDropoffChange?: (dropoff: TextileDropoffView | null) => void;
 }
 
 type FieldKey =
@@ -114,11 +122,40 @@ function buildInitial(
   };
 }
 
+function minimumWarning(
+  payload: TextileCollectionPayload | null,
+  category: TextileCollectionCategory,
+): string | null {
+  if (!payload) {
+    return null;
+  }
+  if (category === 'clothes_waste') {
+    const lowWeight = payload.estimated_weight_kg !== null && payload.estimated_weight_kg < 5;
+    if (lowWeight) {
+      return 'This is below the recommended minimum (5 kg). A pickup route may not be economical.';
+    }
+  }
+  if (category === 'metal_scrap') {
+    const weight = payload.estimated_weight_kg;
+    if (weight !== null && weight < 5) {
+      return 'This is below the recommended minimum (5 kg) for a collection route.';
+    }
+  }
+  if (category === 'e_waste') {
+    const weight = payload.estimated_weight_kg;
+    if (weight !== null && weight < 2) {
+      return 'This is below the recommended minimum (2 kg) for a collection route.';
+    }
+  }
+  return null;
+}
+
 export function TextileCollectionFields({
   category,
   value,
   onChange,
   onValidityChange,
+  onDropoffChange,
 }: TextileCollectionFieldsProps): JSX.Element {
   const zonesQuery = useTextileServiceZones(category);
 
@@ -134,6 +171,7 @@ export function TextileCollectionFields({
       value={value}
       onChange={onChange}
       onValidityChange={onValidityChange}
+      onDropoffChange={onDropoffChange}
     />
   );
 }
@@ -147,6 +185,7 @@ interface InnerProps {
   value: TextileCollectionPayload | null;
   onChange: (next: TextileCollectionPayload | null) => void;
   onValidityChange: (valid: boolean) => void;
+  onDropoffChange?: (dropoff: TextileDropoffView | null) => void;
 }
 
 function TextileCollectionFieldsInner({
@@ -158,10 +197,12 @@ function TextileCollectionFieldsInner({
   value,
   onChange,
   onValidityChange,
+  onDropoffChange,
 }: InnerProps): JSX.Element {
   const [draft, setDraft] = useState<TextileCollectionPayload>(
     () => value ?? buildInitial(zones[0]?.id, category),
   );
+  const [touched, setTouched] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (value === null && draft.service_zone_id === '' && zones.length > 0) {
@@ -175,7 +216,23 @@ function TextileCollectionFieldsInner({
     [zones, draft.service_zone_id],
   );
 
+  const dropoffView = useMemo<TextileDropoffView | null>(() => {
+    if (draft.collection_method !== 'dropoff' || !selectedZone?.dropoff) {
+      return null;
+    }
+    return {
+      name: selectedZone.dropoff.name,
+      address: selectedZone.dropoff.address,
+      center: selectedZone.center,
+    };
+  }, [draft.collection_method, selectedZone]);
+
+  useEffect(() => {
+    onDropoffChange?.(dropoffView);
+  }, [dropoffView, onDropoffChange]);
+
   const errors = useMemo(() => validate(draft, selectedZone), [draft, selectedZone]);
+  const minWarn = minimumWarning(draft, category);
   const isValid = Object.keys(errors).length === 0 && draft.service_zone_id !== '';
 
   useEffect(() => {
@@ -236,7 +293,7 @@ function TextileCollectionFieldsInner({
           >
             {zones.map((z) => (
               <option key={z.id} value={z.id}>
-                {z.name} ({z.code})
+                {z.name}
               </option>
             ))}
           </select>
@@ -290,6 +347,8 @@ function TextileCollectionFieldsInner({
           value={draft.rwa_name ?? ''}
           onChange={(v) => patch('rwa_name', v || null)}
           error={errors.rwa_name}
+          fieldTouched={touched.has('rwa_name')}
+          onBlur={() => setTouched((prev) => new Set([...prev, 'rwa_name']))}
         />
       ) : null}
 
@@ -299,6 +358,8 @@ function TextileCollectionFieldsInner({
         value={draft.requester_name}
         onChange={(v) => patch('requester_name', v)}
         error={errors.requester_name}
+        fieldTouched={touched.has('requester_name')}
+        onBlur={() => setTouched((prev) => new Set([...prev, 'requester_name']))}
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -309,6 +370,8 @@ function TextileCollectionFieldsInner({
           value={draft.contact_email}
           onChange={(v) => patch('contact_email', v)}
           error={errors.contact_email}
+          fieldTouched={touched.has('contact_email')}
+          onBlur={() => setTouched((prev) => new Set([...prev, 'contact_email']))}
         />
         <Field
           id="textile-phone"
@@ -319,6 +382,8 @@ function TextileCollectionFieldsInner({
           value={draft.contact_phone}
           onChange={(v) => patch('contact_phone', v)}
           error={errors.contact_phone}
+          fieldTouched={touched.has('contact_phone')}
+          onBlur={() => setTouched((prev) => new Set([...prev, 'contact_phone']))}
         />
       </div>
 
@@ -335,9 +400,10 @@ function TextileCollectionFieldsInner({
           value={draft.pickup_address}
           onChange={(e) => patch('pickup_address', e.target.value)}
           className="mt-1 block w-full rounded-lg border border-[#d8d6cf] bg-white p-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
-          aria-invalid={Boolean(errors.pickup_address)}
+          aria-invalid={touched.has('pickup_address') && Boolean(errors.pickup_address)}
+          onBlur={() => setTouched((prev) => new Set([...prev, 'pickup_address']))}
         />
-        {errors.pickup_address ? (
+        {touched.has('pickup_address') && errors.pickup_address ? (
           <p className="mt-1 text-xs text-red-600">{errors.pickup_address}</p>
         ) : null}
       </div>
@@ -364,11 +430,7 @@ function TextileCollectionFieldsInner({
             description="A partner collects from your address."
           />
         </div>
-        {draft.collection_method === 'dropoff' && selectedZone?.dropoff ? (
-          <p className="mt-2 rounded-md bg-[var(--color-surface-alt)] p-2 text-xs text-[var(--color-text-secondary)]">
-            Drop-off at: {selectedZone.dropoff.name}, {selectedZone.dropoff.address}
-          </p>
-        ) : null}
+
         {errors.collection_method ? (
           <p className="mt-1 text-xs text-red-600">{errors.collection_method}</p>
         ) : null}
@@ -377,18 +439,20 @@ function TextileCollectionFieldsInner({
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
           id="textile-bags"
-          label="Estimated bags (optional)"
+          label="No. of bags"
           type="number"
           min={1}
           max={999}
           value={draft.estimated_bags === null ? '' : String(draft.estimated_bags)}
           onChange={(v) => patch('estimated_bags', v === '' ? null : Number(v))}
           error={errors.estimated_bags}
+          fieldTouched={touched.has('estimated_bags')}
+          onBlur={() => setTouched((prev) => new Set([...prev, 'estimated_bags']))}
           placeholder="e.g. 3"
         />
         <Field
           id="textile-weight"
-          label="Estimated weight (optional)"
+          label="Approximate weight (kg)"
           type="number"
           min={0.1}
           max={99999.99}
@@ -396,9 +460,18 @@ function TextileCollectionFieldsInner({
           value={draft.estimated_weight_kg === null ? '' : String(draft.estimated_weight_kg)}
           onChange={(v) => patch('estimated_weight_kg', v === '' ? null : Number(v))}
           error={errors.estimated_weight_kg}
+          fieldTouched={touched.has('estimated_weight_kg')}
+          onBlur={() => setTouched((prev) => new Set([...prev, 'estimated_weight_kg']))}
           placeholder="e.g. 8.5"
         />
       </div>
+
+      {minWarn ? (
+        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          <IconAlertTriangle className="mt-0.5 h-4 w-4 shrink-0" stroke={1.8} />
+          <span>{minWarn}</span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -416,6 +489,8 @@ interface FieldProps {
   max?: number;
   step?: number;
   placeholder?: string;
+  fieldTouched?: boolean;
+  onBlur?: () => void;
 }
 
 function Field({
@@ -431,6 +506,8 @@ function Field({
   max,
   step,
   placeholder,
+  fieldTouched = true,
+  onBlur,
 }: FieldProps): JSX.Element {
   return (
     <div>
@@ -449,7 +526,8 @@ function Field({
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 block w-full rounded-lg border border-[#d8d6cf] bg-white py-2.5 px-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
-        aria-invalid={Boolean(error)}
+        aria-invalid={fieldTouched && Boolean(error)}
+        onBlur={onBlur}
       />
       {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
     </div>

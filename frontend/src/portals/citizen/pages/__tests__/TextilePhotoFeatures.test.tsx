@@ -147,11 +147,13 @@ describe('TextileRequestPage — photo picker', () => {
     );
   });
 
-  it('shows a file input with image accept and capture attributes', () => {
-    const input = screen.getByLabelText('Choose photo');
-    expect(input).toBeInTheDocument();
-    expect(input).toHaveAttribute('accept', 'image/*');
-    expect(input).toHaveAttribute('capture', 'environment');
+  it('shows file inputs with correct accept and capture attributes', () => {
+    const fileInput = screen.getByLabelText('Choose photo');
+    expect(fileInput).toHaveAttribute('accept', 'image/*');
+    expect(fileInput).not.toHaveAttribute('capture');
+    const cameraInput = screen.getByLabelText('Take photo');
+    expect(cameraInput).toHaveAttribute('accept', 'image/*');
+    expect(cameraInput).toHaveAttribute('capture', 'environment');
   });
 
   it('rejects files larger than 10 MB', async () => {
@@ -201,6 +203,9 @@ describe('TextileRequestPage — photo picker', () => {
 
     await waitFor(() => expect(screen.getByAltText('Preview of your bags')).toBeInTheDocument());
 
+    fireEvent.change(screen.getByLabelText('Request title'), {
+      target: { value: 'Test pickup request' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /send pickup request/i }));
 
     await waitFor(() => {
@@ -218,6 +223,9 @@ describe('TextileRequestPage — photo picker', () => {
 
     await waitFor(() => expect(screen.getByAltText('Preview of your bags')).toBeInTheDocument());
 
+    fireEvent.change(screen.getByLabelText('Request title'), {
+      target: { value: 'Test pickup request' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /send pickup request/i }));
 
     await waitFor(() => {
@@ -241,6 +249,9 @@ describe('TextileRequestPage — photo picker', () => {
 
     await waitFor(() => expect(screen.getByAltText('Preview of your bags')).toBeInTheDocument());
 
+    fireEvent.change(screen.getByLabelText('Request title'), {
+      target: { value: 'Test pickup request' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /send pickup request/i }));
 
     await waitFor(() => {
@@ -302,6 +313,9 @@ describe('TextileRequestPage — category picker', () => {
       { wrapper: qcWrapper },
     );
 
+    fireEvent.change(screen.getByLabelText('Request title'), {
+      target: { value: 'Test pickup request' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /send pickup request/i }));
 
     await waitFor(() => {

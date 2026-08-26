@@ -1,10 +1,11 @@
-import { useState, type JSX } from 'react';
+import { useRef, useState, type JSX } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { IconArrowLeft, IconCalendar, IconMapPin, IconPackage } from '@tabler/icons-react';
 import { ErrorState, Spinner } from '../../../shared/ui';
 import {
   useCancelTextileCollection,
   useCitizenTextileCollection,
+  uploadTextileCollectionPhoto,
   type TextileCollectionPhoto,
 } from '../api/textileZones';
 
@@ -25,6 +26,65 @@ const LABELS: Record<string, string> = {
   rejected: 'Request was not accepted',
   cancelled: 'Request cancelled',
 };
+
+function ReplacePhotoButton({
+  reportId,
+  onReplaced,
+}: {
+  reportId: string;
+  onReplaced: () => void;
+}): JSX.Element {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  async function handleChange(e: React.ChangeEvent<HTMLInputElement>): Promise<void> {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setError('Only JPEG, PNG, or WebP images are supported.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Photo must be under 10 MB.');
+      return;
+    }
+    setError(null);
+    setBusy(true);
+    try {
+      await uploadTextileCollectionPhoto(reportId, file);
+      onReplaced();
+    } catch {
+      setError('Upload failed. Please try again.');
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+
+  return (
+    <div className="mt-2">
+      <label
+        htmlFor="textile-replace-photo"
+        className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-[var(--color-text-secondary)] underline-offset-2 hover:underline"
+      >
+        Replace photo
+        <input
+          ref={inputRef}
+          id="textile-replace-photo"
+          type="file"
+          accept="image/*"
+          onChange={void handleChange}
+          className="sr-only"
+        />
+      </label>
+      {busy ? (
+        <span className="ml-2 text-xs text-[var(--color-text-secondary)]">Uploading…</span>
+      ) : null}
+      {error ? <p className="mt-1 text-xs font-medium text-red-600">{error}</p> : null}
+    </div>
+  );
+}
 
 export default function TextileCollectionDetailPage(): JSX.Element {
   const { id = '' } = useParams();
@@ -104,7 +164,11 @@ export default function TextileCollectionDetailPage(): JSX.Element {
         </section>
       ) : null}
 
-      <PhotoTrustView photos={item.photos} />
+      <PhotoTrustView
+        photos={item.photos}
+        reportId={id}
+        onPhotoChanged={() => void query.refetch()}
+      />
 
       {canCancel ? (
         <section className="rounded-xl border border-black/10 bg-white p-5">
@@ -173,7 +237,15 @@ function Detail({
   );
 }
 
-function PhotoTrustView({ photos }: { photos?: TextileCollectionPhoto[] }): JSX.Element | null {
+function PhotoTrustView({
+  photos,
+  reportId,
+  onPhotoChanged,
+}: {
+  photos?: TextileCollectionPhoto[];
+  reportId: string;
+  onPhotoChanged: () => void;
+}): JSX.Element | null {
   if (!photos || photos.length === 0) return null;
 
   const evidence = photos.find((p) => p.role === 'evidence');
@@ -185,7 +257,10 @@ function PhotoTrustView({ photos }: { photos?: TextileCollectionPhoto[] }): JSX.
       <section className="rounded-xl border border-black/10 bg-white p-5">
         <h2 className="text-sm font-medium">Photos</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <PhotoCard heading="Your photo" url={evidence.url} alt="Photo of your bags" />
+          <div>
+            <PhotoCard heading="Your photo" url={evidence.url} alt="Photo of your bags" />
+            <ReplacePhotoButton reportId={reportId} onReplaced={onPhotoChanged} />
+          </div>
           <div className="flex items-center justify-center rounded-lg border border-dashed border-black/15 bg-[var(--color-bg-faint,#f9f8f6)] p-5">
             <p className="text-center text-xs text-[var(--color-text-secondary)]">
               Collection proof will appear here after pickup.
@@ -203,7 +278,10 @@ function PhotoTrustView({ photos }: { photos?: TextileCollectionPhoto[] }): JSX.
         <h2 className="text-sm font-medium">Photos</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {evidence ? (
-            <PhotoCard heading="Your photo" url={evidence.url} alt="Photo of your bags" />
+            <div>
+              <PhotoCard heading="Your photo" url={evidence.url} alt="Photo of your bags" />
+              <ReplacePhotoButton reportId={reportId} onReplaced={onPhotoChanged} />
+            </div>
           ) : null}
           {proof ? (
             <PhotoCard heading="Collection proof" url={proof.url} alt="Crew collection proof" />

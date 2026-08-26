@@ -25,6 +25,9 @@ interface IssueLocationPickerProps {
   onChange: (value: IssueLocation) => void;
   onConfirm?: () => void;
   confirmed?: boolean;
+  title?: string;
+  detail?: string;
+  confirmLabel?: string;
 }
 
 function MapClickHandler({
@@ -52,15 +55,21 @@ export default function IssueLocationPicker({
   onChange,
   onConfirm,
   confirmed = false,
+  title,
+  detail,
+  confirmLabel,
 }: IssueLocationPickerProps): JSX.Element {
   const { t } = useMessages();
   const pin = (latitude: number, longitude: number): void =>
     onChange(issueLocationFromPin(latitude, longitude));
+  const resolvedTitle = title ?? t('submit.location.issueTitle');
+  const resolvedDetail = detail ?? t('submit.location.issueDetail');
+  const resolvedConfirmLabel = confirmLabel ?? t('submit.location.confirmIssueLocation');
 
   return (
     <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
-      <h3 className="text-sm font-semibold text-amber-950">{t('submit.location.issueTitle')}</h3>
-      <p className="mt-1 text-xs leading-5 text-amber-900">{t('submit.location.issueDetail')}</p>
+      <h3 className="text-sm font-semibold text-amber-950">{resolvedTitle}</h3>
+      <p className="mt-1 text-xs leading-5 text-amber-900">{resolvedDetail}</p>
       <div
         role="img"
         aria-label={t('submit.location.issueMapLabel')}
@@ -94,7 +103,7 @@ export default function IssueLocationPicker({
               onClick={onConfirm}
               className="min-h-10 rounded-full bg-amber-950 px-3 font-medium text-white hover:bg-amber-900"
             >
-              {t('submit.location.confirmIssueLocation')}
+              {resolvedConfirmLabel}
             </button>
           ) : null}
           <button

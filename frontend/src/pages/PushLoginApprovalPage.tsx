@@ -38,7 +38,7 @@ export function PushLoginApprovalPage(): JSX.Element {
             <IconBuildingCommunity className="h-5 w-5" />
           </span>
           <div>
-            <p className="font-semibold text-[#1d1d1b]">CIP Karnataka</p>
+            <p className="font-semibold text-[#1d1d1b]">CIP India</p>
             <p className="text-xs text-[#686762]">Secure sign-in request</p>
           </div>
         </div>

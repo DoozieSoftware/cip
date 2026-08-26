@@ -143,7 +143,7 @@ export function OperationsLayout(): JSX.Element {
             </span>
             <div className="min-w-0">
               <div className="truncate text-sm font-semibold tracking-[-0.01em] text-white">
-                CIP Karnataka
+                CIP India
               </div>
               <div className="truncate text-xs text-white/50">Operations</div>
             </div>
@@ -210,7 +210,7 @@ export function OperationsLayout(): JSX.Element {
             </span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
-                CIP Karnataka
+                CIP India
               </div>
               <div className="truncate text-[11px] text-[var(--color-text-tertiary)]">
                 Operations

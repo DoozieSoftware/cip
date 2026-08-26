@@ -65,7 +65,7 @@ describe('TextileCollectionFields', () => {
       />,
       { wrapper },
     );
-    expect(screen.getByText('Zone A (DRL-A)')).toBeDefined();
+    expect(screen.getByText('Zone A')).toBeDefined();
     expect(screen.getByText('Individual')).toBeDefined();
   });
 
@@ -80,7 +80,7 @@ describe('TextileCollectionFields', () => {
       />,
       { wrapper },
     );
-    expect(screen.getByText('Zone A (DRL-A)')).toBeDefined();
+    expect(screen.getByText('Zone A')).toBeDefined();
     expect(screen.getByText('Individual')).toBeDefined();
     expect(screen.getByText('RWA / Community')).toBeDefined();
   });
@@ -140,7 +140,9 @@ describe('TextileCollectionFields', () => {
     );
     fireEvent.click(screen.getByText('Drop-off'));
     await waitFor(() => {
-      expect(screen.getByText(/Drop-off at: Drop A, 100 Main St/)).toBeDefined();
+      expect(screen.getByText(/Drop-off point/)).toBeDefined();
+      expect(screen.getByText(/Drop A/)).toBeDefined();
+      expect(screen.getByText(/100 Main St/)).toBeDefined();
     });
   });
 

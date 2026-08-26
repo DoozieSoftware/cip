@@ -391,6 +391,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('textile-collections/report', [TextileCollectionController::class, 'report'])
             ->middleware('can:textile.report')
             ->name('textile-collections.report');
+        Route::put('textile-zones/{zone}', [TextileCollectionController::class, 'updateZone'])
+            ->middleware('can:textile.schedule_batch')
+            ->name('textile-zones.update');
         Route::get('textile-collections/{collection}', [TextileCollectionController::class, 'show'])
             ->middleware('can:textile.view,collection')
             ->name('textile-collections.show');
