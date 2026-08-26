@@ -60,6 +60,9 @@ class ReportTypesSeeder extends Seeder
             'icon' => 'hanger',
             'color' => '#00897B',
             'sort_order' => 9,
+            'requires_photo' => false,
+            'min_photos' => 0,
+            'active' => false,
             'localizations' => ['kn-IN' => 'ಬಟ್ಟೆಗಳು ಮತ್ತು ಜವಳಿ'],
             'aliases' => ['old clothes', 'clothes donation', 'textiles', 'ಬಟ್ಟೆ'],
         ],
@@ -118,6 +121,18 @@ class ReportTypesSeeder extends Seeder
 
             if (array_key_exists('aliases', $row)) {
                 $attributes['aliases'] = $row['aliases'];
+            }
+
+            if (array_key_exists('requires_photo', $row)) {
+                $attributes['requires_photo'] = $row['requires_photo'];
+            }
+
+            if (array_key_exists('min_photos', $row)) {
+                $attributes['min_photos'] = $row['min_photos'];
+            }
+
+            if (array_key_exists('active', $row)) {
+                $attributes['active'] = $row['active'];
             }
 
             ReportType::query()->updateOrCreate(

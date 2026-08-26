@@ -26,6 +26,9 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
+const TextileRequestPage = lazy(() => import('./pages/TextileRequestPage'));
+const TextileCollectionsPage = lazy(() => import('./pages/TextileCollectionsPage'));
+const TextileCollectionDetailPage = lazy(() => import('./pages/TextileCollectionDetailPage'));
 
 function Fallback() {
   const { t } = useMessages();
@@ -128,6 +131,9 @@ export function CitizenApp(): JSX.Element {
             <Route path="submit" element={<SubmitPage />} />
             <Route path="reports" element={<MyReportsPage />} />
             <Route path="reports/:id" element={<ReportDetailPage />} />
+            <Route path="textile-collections" element={<TextileCollectionsPage />} />
+            <Route path="textile-collections/new" element={<TextileRequestPage />} />
+            <Route path="textile-collections/:id" element={<TextileCollectionDetailPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="dashboard" element={<DashboardPage />} />

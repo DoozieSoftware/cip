@@ -232,7 +232,7 @@ BACKEND_PID=$!
 # without a worker consuming them, reports sit at "Submitted" forever
 # and never reach the moderator queue.
 cd "$ROOT/backend"
-$PHP artisan queue:work --queue=media,ai,default --tries=3 --sleep=1 > /tmp/cip-queue.log 2>&1 &
+$PHP artisan queue:work --queue=media,ai,notifications,default --tries=3 --sleep=1 > /tmp/cip-queue.log 2>&1 &
 QUEUE_PID=$!
 $PHP artisan schedule:work > /tmp/cip-scheduler.log 2>&1 &
 SCHEDULER_PID=$!

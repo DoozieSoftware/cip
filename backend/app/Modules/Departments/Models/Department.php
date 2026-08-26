@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Departments\Models;
 
+use App\Modules\TextileCollections\Models\TextilePartnerCapability;
 use App\Modules\Users\Models\User;
 use Database\Factories\Modules\Departments\Models\DepartmentFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -131,5 +132,15 @@ class Department extends Model
             'user_id',
         )->withPivot(['id', 'is_manager', 'assigned_at'])
             ->withTimestamps();
+    }
+
+    /**
+     * Waste categories this partner department collects.
+     *
+     * @return HasMany<TextilePartnerCapability, $this>
+     */
+    public function textilePartnerCapabilities(): HasMany
+    {
+        return $this->hasMany(TextilePartnerCapability::class, 'department_id');
     }
 }

@@ -19,8 +19,8 @@ use Illuminate\Support\Facades\DB;
  *
  *   - internal AI-label rules run before broad citizen-category fallbacks
  *   - broad citizen categories remain the only PWA choices
- *   - waste-stream categories (clothes_waste, metal_scrap, e_waste)
- *     share one category_in rule to BBMP_SWM (order 26)
+ *   - clothes_waste is handled by the standalone Dr. Linen module;
+ *     metal and e-waste remain BBMP SWM complaint routes
  *   - legacy demo rules (BBMP_WARD_112 / merged categories) deactivated
  *   - fallback `routing_default_department_id` -> BBMP_ENG
  *
@@ -63,7 +63,7 @@ class RoutingRulesSeeder extends Seeder
                 ['name' => 'Garbage & Dead Animal -> BBMP SWM', 'conditions' => ['category_in' => ['garbage', 'dead_animal']], 'code' => 'BBMP_SWM', 'priority' => $medium, 'sla' => 1440, 'order' => 23],
                 ['name' => 'Traffic & Parking -> BTP', 'conditions' => ['category_in' => ['traffic_violation', 'illegal_parking']], 'code' => 'BTP', 'priority' => $high, 'sla' => 480, 'order' => 24],
                 ['name' => 'Encroachment -> BBMP Town Planning', 'conditions' => ['category_in' => ['encroachment']], 'code' => 'BBMP_TP', 'priority' => $medium, 'sla' => 2880, 'order' => 25],
-                ['name' => 'Clothes, Metal Scrap & E-Waste -> BBMP SWM', 'conditions' => ['category_in' => ['clothes_waste', 'metal_scrap', 'e_waste']], 'code' => 'BBMP_SWM', 'priority' => $medium, 'sla' => 1440, 'order' => 26],
+                ['name' => 'Metal Scrap & E-Waste -> BBMP SWM', 'conditions' => ['category_in' => ['metal_scrap', 'e_waste']], 'code' => 'BBMP_SWM', 'priority' => $medium, 'sla' => 1440, 'order' => 26],
             ];
 
             foreach ($rules as $rule) {
@@ -97,6 +97,8 @@ class RoutingRulesSeeder extends Seeder
                 'Dead Animal -> BBMP SWM',
                 'Traffic Violation -> BTP',
                 'Illegal Parking -> BTP',
+                'Clothes, Metal Scrap & E-Waste -> BBMP SWM',
+                'Clothes & Textiles -> Dr. Linen',
             ];
 
             RoutingRule::query()

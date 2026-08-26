@@ -88,6 +88,38 @@ class NotificationTemplatesSeeder extends Seeder
             'body' => "Hi {name},\n\nWe detected a suspicious {event_type} on your account from {ip}. If this wasn't you, please reset your password and contact support.\n\nThank you,\nCivic Platform Security",
             'variables' => ['name', 'event_type', 'ip'],
         ],
+        [
+            'code' => 'textile.acknowledged',
+            'name' => 'Textile Collection Received',
+            'channel' => 'email',
+            'subject' => 'We received your textile collection request {tracking_number}',
+            'body' => "Hi {name},\n\nThank you for requesting a {partner} textile collection. We have received your request (ref {tracking_number}) for the {zone} zone and will notify you once a collection date is assigned.\n\nThank you for supporting circular textiles.",
+            'variables' => ['name', 'tracking_number', 'zone', 'partner'],
+        ],
+        [
+            'code' => 'textile.scheduled',
+            'name' => 'Textile Collection Scheduled',
+            'channel' => 'sms',
+            'subject' => null,
+            'body' => 'Hi {name}, your {partner} textile collection is scheduled for {date} ({window}). Please keep the waste ready. Tracking: {tracking_number}.',
+            'variables' => ['name', 'date', 'window', 'tracking_number', 'partner'],
+        ],
+        [
+            'code' => 'textile.collected',
+            'name' => 'Textile Collection Completed',
+            'channel' => 'email',
+            'subject' => 'Your textile collection is complete - {tracking_number}',
+            'body' => "Hi {name},\n\nYour {partner} textile collection has been completed. {bags} bag(s), {weight} kg were collected. Thank you for supporting circular textiles.",
+            'variables' => ['name', 'tracking_number', 'bags', 'weight', 'partner'],
+        ],
+        [
+            'code' => 'textile.rejected',
+            'name' => 'Textile Collection Rejected',
+            'channel' => 'email',
+            'subject' => 'Update on your textile collection request {tracking_number}',
+            'body' => "Hi {name},\n\nWe regret to inform you that your textile collection request (ref {tracking_number}) cannot be fulfilled at this time.\n\nReason: {reason}\n\nIf you have any questions, please contact support.\n\nThank you,\n{partner} Collection Service",
+            'variables' => ['name', 'tracking_number', 'reason', 'partner'],
+        ],
     ];
 
     public function run(): void

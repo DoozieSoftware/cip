@@ -45,6 +45,7 @@ use App\Modules\Settings\Http\Controllers\Admin\RetentionHoldController;
 use App\Modules\Settings\Http\Controllers\Admin\SettingController;
 use App\Modules\Shared\Http\Controllers\Admin\PlatformHealthController;
 use App\Modules\Shared\Http\Controllers\Admin\SchedulerController;
+use App\Modules\TextileCollections\Http\Controllers\TextileCollectionController;
 use App\Modules\Users\Http\Controllers\Admin\AdminPermissionController;
 use App\Modules\Users\Http\Controllers\Admin\AdminRoleController;
 use App\Modules\Users\Http\Controllers\Admin\AdminUserController;
@@ -381,12 +382,37 @@ Route::prefix('v1')->group(function (): void {
         Route::get('reports/{report}/notes', [DepartmentReportActionsController::class, 'listNotes'])
             ->middleware('can:department.view,report')
             ->name('reports.notes.index');
+        Route::get('textile-collections', [TextileCollectionController::class, 'index'])
+            ->middleware('can:textile.view_queue')
+            ->name('textile-collections.index');
+        Route::post('textile-collections/schedule', [TextileCollectionController::class, 'schedule'])
+            ->middleware('can:textile.schedule_batch')
+            ->name('textile-collections.schedule');
+        Route::get('textile-collections/report', [TextileCollectionController::class, 'report'])
+            ->middleware('can:textile.report')
+            ->name('textile-collections.report');
+        Route::get('textile-collections/{collection}', [TextileCollectionController::class, 'show'])
+            ->middleware('can:textile.view,collection')
+            ->name('textile-collections.show');
+        Route::post('textile-collections/{collection}/approve', [TextileCollectionController::class, 'approve'])
+            ->middleware('can:textile.record_outcome')
+            ->name('textile-collections.approve');
+        Route::post('textile-collections/{collection}/outcome', [TextileCollectionController::class, 'recordOutcome'])
+            ->middleware('can:textile.record_outcome')
+            ->name('textile-collections.outcome');
+        Route::post('textile-collections/{collection}/proof', [TextileCollectionController::class, 'uploadStaffProof'])
+            ->middleware('can:textile.record_outcome')
+            ->name('textile-collections.proof');
     });
 
     // Citizen PWA — report submission and read-back (M4)
     Route::middleware(['auth:sanctum', 'throttle:'.RouteServiceProvider::LIMITER_CITIZEN])->group(function (): void {
         // Report types for citizen submit form (active only)
         Route::get('report-types', [ReportsController::class, 'reportTypes'])->name('api.v1.report-types.index');
+        Route::get('textile-collection/zones', [TextileCollectionController::class, 'zones'])
+            ->name('api.v1.textile-collection.zones');
+        Route::post('textile-collection/requests', [TextileCollectionController::class, 'store'])
+            ->name('api.v1.textile-collection.requests.store');
         // T-M4-022 — POST /api/v1/reports
         Route::post('reports', [ReportsController::class, 'store'])->name('api.v1.reports.store');
         // T-M5-012 — POST /api/v1/reports/{id}/photos
@@ -406,6 +432,17 @@ Route::prefix('v1')->group(function (): void {
         // T-M4-028 — GET /api/v1/citizen/reports and /{id}
         Route::get('citizen/reports', [ReportsController::class, 'citizenIndex'])->name('api.v1.citizen.reports.index');
         Route::get('citizen/reports/{id}', [ReportsController::class, 'citizenShow'])->name('api.v1.citizen.reports.show');
+        Route::get('citizen/textile-collections', [TextileCollectionController::class, 'citizenIndex'])
+            ->name('api.v1.citizen.textile-collections.index');
+        Route::get('citizen/textile-collections/{collection}', [TextileCollectionController::class, 'citizenShow'])
+            ->middleware('can:textile.view,collection')
+            ->name('api.v1.citizen.textile-collections.show');
+        Route::post('citizen/textile-collections/{collection}/cancel', [TextileCollectionController::class, 'citizenCancel'])
+            ->middleware('can:textile.cancel,collection')
+            ->name('api.v1.citizen.textile-collections.cancel');
+        Route::post('citizen/textile-collections/{collection}/photo', [TextileCollectionController::class, 'uploadCitizenPhoto'])
+            ->middleware('can:textile.view,collection')
+            ->name('api.v1.citizen.textile-collections.photo');
         Route::post('citizen/reports/{report}/verify', [CitizenReportActionsController::class, 'verify'])
             ->name('api.v1.citizen.reports.verify');
         Route::post('citizen/reports/{report}/dispute', [CitizenReportActionsController::class, 'dispute'])

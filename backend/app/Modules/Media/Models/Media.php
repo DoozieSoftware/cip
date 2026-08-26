@@ -8,6 +8,7 @@ use App\Modules\Departments\Models\Department;
 use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Reports\Models\Report;
 use App\Modules\Reports\Models\ReportAssignment;
+use App\Modules\TextileCollections\Models\TextileCollectionRequest;
 use App\Modules\Users\Models\User;
 use Database\Factories\Modules\Media\Models\MediaFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -76,6 +77,7 @@ class Media extends Model
      */
     protected $fillable = [
         'report_id',
+        'textile_collection_id',
         'assignment_id',
         'department_id',
         'type',
@@ -124,6 +126,14 @@ class Media extends Model
     public function report(): BelongsTo
     {
         return $this->belongsTo(Report::class, 'report_id');
+    }
+
+    /**
+     * @return BelongsTo<TextileCollectionRequest, $this>
+     */
+    public function textileCollection(): BelongsTo
+    {
+        return $this->belongsTo(TextileCollectionRequest::class, 'textile_collection_id');
     }
 
     /** @return BelongsTo<ReportAssignment, $this> */
