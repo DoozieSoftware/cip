@@ -84,7 +84,7 @@ final class TextileCollectionRequest extends Model
 
     /** @var list<string> */
     protected $fillable = [
-        'dropoff_confirmed_at', 'dropoff_valid_from', 'dropoff_valid_until', 'receipt_id', 'stop_order',
+        'dropoff_confirmed_at', 'dropoff_valid_from', 'dropoff_valid_until', 'receipt_id', 'stop_order', 'outcome_idempotency_key', 'offline_queued_at',
         'report_id', 'citizen_id', 'reference', 'title', 'notes',
         'category', 'service_zone_id', 'department_id', 'batch_id', 'requester_type',
         'requester_name', 'rwa_name', 'contact_email', 'contact_phone',
@@ -117,6 +117,7 @@ final class TextileCollectionRequest extends Model
             'submitted_at' => 'datetime',
             'rescheduled_at' => 'datetime',
             'reminder_sent_at' => 'datetime',
+            'offline_queued_at' => 'datetime',
         ];
     }
 

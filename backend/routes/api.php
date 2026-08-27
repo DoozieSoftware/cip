@@ -415,6 +415,12 @@ Route::prefix('v1')->group(function (): void {
         Route::get('textile-trips/mine', [TextileCollectionController::class, 'myTrips'])
             ->middleware('can:textile.operate_trip')
             ->name('textile-trips.mine');
+        Route::get('textile-collections/offline-recovery', [TextileCollectionController::class, 'listOfflineRecovery'])
+            ->middleware('can:textile.record_outcome')
+            ->name('textile-collections.offline-recovery.index');
+        Route::post('textile-collections/offline-recovery/{recoveryItem}/resolve', [TextileCollectionController::class, 'resolveOfflineRecovery'])
+            ->middleware('can:textile.record_outcome')
+            ->name('textile-collections.offline-recovery.resolve');
         Route::get('textile-collections/{collection}', [TextileCollectionController::class, 'show'])
             ->middleware('can:textile.view,collection')
             ->name('textile-collections.show');
@@ -427,6 +433,10 @@ Route::prefix('v1')->group(function (): void {
         Route::post('textile-collections/{collection}/proof', [TextileCollectionController::class, 'uploadStaffProof'])
             ->middleware('can:textile.record_outcome')
             ->name('textile-collections.proof');
+        // Phase 4: offline failure reporting (per-collection)
+        Route::post('textile-collections/{collection}/offline-failure', [TextileCollectionController::class, 'reportOfflineFailure'])
+            ->middleware('can:textile.record_outcome')
+            ->name('textile-collections.offline-failure');
         // Phase 3: reschedule (partner override), unavailability management
         Route::post('textile-collections/{collection}/reschedule', [TextileCollectionController::class, 'partnerReschedule'])
             ->middleware('can:textile.reschedule,collection')

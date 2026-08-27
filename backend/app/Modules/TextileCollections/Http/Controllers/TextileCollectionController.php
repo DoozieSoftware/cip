@@ -28,9 +28,11 @@ use App\Modules\TextileCollections\Models\TextileCollectionBatch;
 use App\Modules\TextileCollections\Models\TextileCollectionRequest;
 use App\Modules\TextileCollections\Models\TextileServiceZone;
 use App\Modules\TextileCollections\Models\TextileZoneUnavailability;
+use App\Modules\TextileCollections\Models\TextileOfflineRecoveryItem;
 use App\Modules\TextileCollections\Services\TextileCollectionMediaService;
 use App\Modules\TextileCollections\Services\TextileCollectionOperationsService;
 use App\Modules\TextileCollections\Services\TextileCollectionService;
+use App\Modules\TextileCollections\Services\TextileOfflineRecoveryService;
 use App\Modules\TextileCollections\Services\TextileReceiptService;
 use App\Modules\TextileCollections\Services\TextileRescheduleService;
 use App\Modules\TextileCollections\Services\TextileTripService;
@@ -54,6 +56,7 @@ final class TextileCollectionController extends BaseController
         private readonly TextileTripService $trips,
         private readonly TextileRescheduleService $reschedules,
         private readonly TextileUnavailabilityService $unavailability,
+        private readonly TextileOfflineRecoveryService $offlineRecovery,
     ) {}
 
     public function zones(Request $request): JsonResponse
@@ -481,6 +484,12 @@ final class TextileCollectionController extends BaseController
         $user = $this->authenticatedUser($request);
 
         $data = $request->validated();
+        $idempotencyKey = $request->header('Idempotency-Key');
+        if (! is_string($idempotencyKey) || trim($idempotencyKey) === '') {
+            $idempotencyKey = null;
+        } else {
+            $idempotencyKey = trim($idempotencyKey);
+        }
 
         $updated = $this->operations->recordOutcome(
             collection: $collection,
@@ -489,6 +498,7 @@ final class TextileCollectionController extends BaseController
             actualWeightKg: $this->optionalFloat($data, 'actual_weight_kg'),
             reason: $this->optionalString($data, 'reason'),
             actor: $user,
+            idempotencyKey: $idempotencyKey,
         );
 
         return $this->respond(
@@ -607,6 +617,60 @@ final class TextileCollectionController extends BaseController
             'Proof photo uploaded.',
             201,
         );
+    }
+
+    /**
+     * Phase 4: Report a permanently failed offline upload for recovery.
+     */
+    public function reportOfflineFailure(TextileCollectionRequest $collection, Request $request): JsonResponse
+    {
+        $this->assertCollectionPartner($request, $collection);
+        $user = $this->authenticatedUser($request);
+        /** @var array<string, mixed> $data */
+        $data = $request->validate([
+            'idempotency_key' => ['nullable', 'string', 'max:128'],
+            'failure_reason' => ['nullable', 'string', 'max:500'],
+            'payload_snapshot' => ['nullable', 'array'],
+        ]);
+        $item = $this->offlineRecovery->report(
+            collectionId: $collection->id,
+            reporter: $user,
+            idempotencyKey: isset($data['idempotency_key']) && is_string($data['idempotency_key']) ? $data['idempotency_key'] : $request->header('Idempotency-Key'),
+            failureReason: isset($data['failure_reason']) && is_string($data['failure_reason']) ? $data['failure_reason'] : null,
+            payload: isset($data['payload_snapshot']) && is_array($data['payload_snapshot']) ? $data['payload_snapshot'] : null,
+        );
+
+        return $this->respond(['id' => $item->id, 'status' => $item->status], 'Offline failure reported.', 201);
+    }
+
+    /**
+     * Phase 4: Authorised recovery view for uploads that permanently failed.
+     */
+    public function listOfflineRecovery(Request $request): JsonResponse
+    {
+        $dept = $this->assertCollectionPartner($request);
+        $status = is_string($request->query('status')) ? $request->query('status') : 'pending';
+        $items = TextileOfflineRecoveryItem::query()
+            ->where('status', in_array($status, ['pending', 'resolved'], true) ? $status : 'pending')
+            ->whereHas('collection', fn ($q) => $q->where('department_id', $dept->id))
+            ->with(['collection:id,reference,status,pickup_address'])
+            ->orderByDesc('created_at')
+            ->limit(100)
+            ->get();
+
+        return $this->respond($items->toArray());
+    }
+
+    public function resolveOfflineRecovery(TextileOfflineRecoveryItem $recoveryItem, Request $request): JsonResponse
+    {
+        $dept = $this->assertCollectionPartner($request);
+        $recoveryItem->loadMissing('collection');
+        if ($recoveryItem->collection === null || (string) $recoveryItem->collection->department_id !== (string) $dept->id) {
+            throw ApiException::forbidden('This recovery item belongs to another partner.');
+        }
+        $updated = $this->offlineRecovery->resolve($recoveryItem, $this->authenticatedUser($request));
+
+        return $this->respond(['id' => $updated->id, 'status' => $updated->status], 'Recovery item resolved.');
     }
 
     public function report(Request $request): JsonResponse

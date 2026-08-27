@@ -155,7 +155,25 @@ final class TextileCollectionOperationsService
         ?float $actualWeightKg,
         ?string $reason,
         User $actor,
+        ?string $idempotencyKey = null,
     ): TextileCollectionRequest {
+        // Idempotency: retry with same key must not create a second outcome.
+        if ($idempotencyKey !== null && $idempotencyKey !== '' && $collection->outcome_idempotency_key === $idempotencyKey) {
+            // Already applied — return current state without duplicating audit/events.
+            return $collection->refresh()->load(['serviceZone', 'batch']);
+        }
+
+        // If already finalized, a different idempotency key is a conflict (prevents double outcome).
+        if (in_array($collection->status, [TextileCollectionRequest::STATUS_PICKED_UP, TextileCollectionRequest::STATUS_MISSED, TextileCollectionRequest::STATUS_REJECTED], true)
+            && $collection->outcome_idempotency_key !== null
+            && $idempotencyKey !== $collection->outcome_idempotency_key) {
+            // For already-terminal records, only the original idempotency key is idempotent.
+            // Without a matching key, treat as conflict to avoid overwriting a staff member's later outcome.
+            if ($collection->status === TextileCollectionRequest::STATUS_PICKED_UP) {
+                throw ApiException::validation('Collection outcome already recorded.');
+            }
+        }
+
         $this->assertOutcomeAllowed($collection, $outcome);
 
         if ($outcome === 'collected') {
@@ -169,26 +187,47 @@ final class TextileCollectionOperationsService
                 'actual_bags' => $actualBags,
                 'actual_weight_kg' => $actualWeightKg,
                 'picked_up_at' => now(),
+                'outcome_idempotency_key' => $idempotencyKey,
             ],
             'missed' => [
                 'status' => TextileCollectionRequest::STATUS_MISSED,
                 'missed_pickup_reason' => $reason,
                 'batch_id' => null,
+                'outcome_idempotency_key' => $idempotencyKey,
             ],
             'rejected' => [
                 'status' => TextileCollectionRequest::STATUS_REJECTED,
                 'rejection_reason' => $reason,
                 'batch_id' => null,
+                'outcome_idempotency_key' => $idempotencyKey,
             ],
             'cancelled' => [
                 'status' => TextileCollectionRequest::STATUS_CANCELLED,
                 'cancellation_reason' => $reason,
                 'batch_id' => null,
+                'outcome_idempotency_key' => $idempotencyKey,
             ],
             default => throw ApiException::validation('Unsupported collection outcome.'),
         };
 
-        $collection->update($updates);
+        // Guard against concurrent outcome overwrite via row-level idempotency check.
+        $affected = DB::table('textile_collection_requests')
+            ->where('id', $collection->id)
+            ->where(function ($q) use ($collection): void {
+                // Only allow transition from the status we validated above.
+                $q->where('status', $collection->status);
+            })
+            ->update(array_merge($updates, ['updated_at' => now()]));
+
+        if ($affected === 0) {
+            // Concurrent update — check if idempotency now matches (retry won).
+            $fresh = TextileCollectionRequest::query()->find($collection->id);
+            if ($fresh !== null && $idempotencyKey !== null && $fresh->outcome_idempotency_key === $idempotencyKey) {
+                return $fresh->load(['serviceZone', 'batch']);
+            }
+            throw ApiException::validation('Concurrent outcome conflict; please retry.');
+        }
+        $collection->refresh();
         $this->audit($actor, $collection->id, 'textile.outcome', $before, [
             'status' => $collection->status,
             'actual_bags' => $collection->actual_bags,

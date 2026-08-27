@@ -130,15 +130,17 @@ export function recordTextileOutcome(
     actual_weight_kg?: number;
     reason?: string;
     department_id?: string;
+    idempotencyKey?: string;
   },
 ) {
-  const { department_id, ...body } = payload;
+  const { department_id, idempotencyKey, ...body } = payload;
   return request<TextileCollectionListItem>(
     `/department/textile-collections/${collectionId}/outcome`,
     {
       method: 'POST',
       body,
       query: department_id ? { department_id } : {},
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
     },
   );
 }
@@ -178,18 +180,51 @@ export function uploadTextileProofPhoto(
   file: File,
   departmentId?: string,
   signal?: AbortSignal,
+  idempotencyKey?: string,
 ) {
   const formData = new FormData();
   formData.append('photo', file);
   const opts: UploadOptions = {
     query: departmentId ? { department_id: departmentId } : {},
     signal,
+    headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
   };
   return upload<TextileProofPhoto>(
     `/department/textile-collections/${collectionId}/proof`,
     formData,
     opts,
   );
+}
+
+/** Phase 4 — offline-safe: report a permanently failed upload for recovery view. */
+export function reportOfflineFailure(
+  collectionId: string,
+  payload: {
+    idempotency_key?: string;
+    failure_reason?: string;
+    payload_snapshot?: Record<string, unknown>;
+    department_id?: string;
+  },
+) {
+  const { department_id, ...body } = payload;
+  return request<{ id: string; status: string }>(`/department/textile-collections/${collectionId}/offline-failure`, {
+    method: 'POST',
+    body,
+    query: department_id ? { department_id } : {},
+  });
+}
+
+export function fetchOfflineRecovery(params: { department_id?: string; status?: string }) {
+  return request<Array<Record<string, unknown>>>('/department/textile-collections/offline-recovery', {
+    query: params,
+  });
+}
+
+export function resolveOfflineRecovery(recoveryId: string, departmentId?: string) {
+  return request<{ id: string; status: string }>(`/department/textile-collections/offline-recovery/${recoveryId}/resolve`, {
+    method: 'POST',
+    query: departmentId ? { department_id: departmentId } : {},
+  });
 }
 
 export function assignTextileTrip(
