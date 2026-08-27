@@ -24,7 +24,12 @@
  *    by the upload pipeline).
  */
 
-export type QueueItemKind = 'report.create' | 'report.media.upload';
+export type QueueItemKind =
+  | 'report.create'
+  | 'report.media.upload'
+  | 'textile.request.create'
+  | 'textile.request.photo'
+  | 'textile.field.outcome';
 
 export type QueueItemStatus = 'pending' | 'in_flight' | 'failed' | 'dead' | 'done';
 

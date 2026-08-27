@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { IconChevronRight, IconPlus, IconRecycle } from '@tabler/icons-react';
 import { EmptyState, Spinner } from '../../../shared/ui';
 import { useCitizenTextileCollections } from '../api/textileZones';
+import { TextileOfflineBanner } from '../components/TextileOfflineBanner';
 
 const LABELS: Record<string, string> = {
   pending_review: 'Awaiting Dr. Linen review',
@@ -74,6 +75,7 @@ export default function TextileCollectionsPage(): JSX.Element {
   if (data.length === 0) {
     return (
       <div className="mx-auto min-w-0 max-w-4xl space-y-6">
+        <TextileOfflineBanner />
         <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
@@ -106,8 +108,10 @@ export default function TextileCollectionsPage(): JSX.Element {
       </div>
     );
   }
+
   return (
     <div className="mx-auto min-w-0 max-w-4xl space-y-6">
+      <TextileOfflineBanner />
       <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
