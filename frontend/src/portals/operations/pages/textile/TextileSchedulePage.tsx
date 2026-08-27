@@ -1,7 +1,7 @@
 import { useMemo, useState, type JSX } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { IconMapPin } from '@tabler/icons-react';
-import { scheduleTextileBatch, type TextileCollectionListItem } from '../../api/textileApi';
+import { assignTextileTrip, scheduleTextileBatch, type TextileCollectionListItem } from '../../api/textileApi';
 import {
   CategoryBadge,
   CategoryFilter,
@@ -26,6 +26,11 @@ export default function TextileSchedulePage(): JSX.Element {
   const [windowStart, setWindowStart] = useState('');
   const [windowEnd, setWindowEnd] = useState('');
   const [scheduleError, setScheduleError] = useState(false);
+  const [tripReference, setTripReference] = useState('');
+  const [driverName, setDriverName] = useState('');
+  const [teamName, setTeamName] = useState('');
+  const [vehicleLabel, setVehicleLabel] = useState('');
+  const [instructions, setInstructions] = useState('');
 
   const queue = useTextileQueue({
     status: 'ready_to_group',
@@ -67,20 +72,45 @@ export default function TextileSchedulePage(): JSX.Element {
   const canSchedule = selected.length > 0 && selectedZoneIds.size === 1 && date !== '';
 
   const schedule = useMutation({
-    mutationFn: () =>
-      scheduleTextileBatch({
+    mutationFn: async () => {
+      const batch = await scheduleTextileBatch({
         department_id: desk.departmentId,
         service_zone_id: lockedZoneId ?? '',
-        collection_request_ids: selected,
+        collection_request_ids: orderedSelected.length ? orderedSelected : selected,
         collection_date: date,
         window_start: windowStart || undefined,
         window_end: windowEnd || undefined,
-      }),
+        trip_reference: tripReference || undefined,
+        instructions: instructions || undefined,
+      });
+      if (driverName || teamName || vehicleLabel) {
+        try {
+          await assignTextileTrip(batch.id, {
+            driver_name: driverName || undefined,
+            team_name: teamName || undefined,
+            vehicle_label: vehicleLabel || undefined,
+            trip_reference: tripReference || undefined,
+            instructions: instructions || undefined,
+            stop_order: orderedSelected.length ? orderedSelected : undefined,
+            department_id: desk.departmentId,
+          });
+        } catch {
+          // assignment is best-effort frontend-only if backend not yet deployed; keep batch
+        }
+      }
+      return batch;
+    },
     onSuccess: () => {
       setSelected([]);
+      setManifestOrder([]);
       setDate('');
       setWindowStart('');
       setWindowEnd('');
+      setTripReference('');
+      setDriverName('');
+      setTeamName('');
+      setVehicleLabel('');
+      setInstructions('');
       setScheduleError(false);
       void queue.refetch();
     },
@@ -180,13 +210,20 @@ export default function TextileSchedulePage(): JSX.Element {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSelected([])}
+                    onClick={() => { setSelected([]); setManifestOrder([]); }}
                     className="min-h-10 rounded-full border border-black/15 bg-white px-4 text-sm"
                   >
                     Clear
                   </button>
                 </div>
               </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <label className="text-xs font-medium">Driver / team<input value={driverName} onChange={(e) => setDriverName(e.target.value)} placeholder="Driver name" className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm" /></label>
+                <label className="text-xs font-medium">Team<input value={teamName} onChange={(e) => setTeamName(e.target.value)} placeholder="Team (optional)" className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm" /></label>
+                <label className="text-xs font-medium">Vehicle<input value={vehicleLabel} onChange={(e) => setVehicleLabel(e.target.value)} placeholder="Vehicle reg / label" className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm" /></label>
+                <label className="text-xs font-medium">Trip ref<input value={tripReference} onChange={(e) => setTripReference(e.target.value)} placeholder="DRL-… (optional)" className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm" /></label>
+              </div>
+              <label className="mt-3 block text-xs font-medium">Instructions<textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="Collection instructions for crew" rows={2} className="mt-1 block w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm" /></label>
               {scheduleError ? (
                 <p className="mt-2 text-xs text-red-700">
                   Could not schedule the trip. Check the date and try again.

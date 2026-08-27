@@ -15,6 +15,17 @@ export function CategoryBadge({ category }: { category: string }): JSX.Element |
 export function StatusBadge({ status }: { status: string }): JSX.Element {
   return <span className={cx('rounded-full px-2.5 py-1 text-[11px] font-medium', STATUS_STYLES[status] ?? 'bg-neutral-100')}>{STATUS_LABELS[status] ?? status}</span>;
 }
+export function TripProgressBadge({ done, total }: { done: number; total: number }): JSX.Element {
+  const pct = total > 0 ? done / total : 0;
+  let cls = 'bg-indigo-50 text-indigo-700';
+  if (pct === 1) cls = 'bg-emerald-50 text-emerald-700';
+  else if (pct > 0) cls = 'bg-amber-50 text-amber-800';
+  return <span className={cx('rounded-full px-2 py-0.5 text-[11px] font-medium', cls)}>{done}/{total} stops</span>;
+}
+export function TripStatusBadge({ status }: { status: string }): JSX.Element {
+  const map: Record<string, string> = { planned: 'bg-indigo-50 text-indigo-700', in_progress: 'bg-amber-50 text-amber-800', completed: 'bg-emerald-50 text-emerald-700' };
+  return <span className={cx('rounded-full px-2 py-0.5 text-[11px] font-medium', map[status] ?? 'bg-neutral-100 text-neutral-700')}>{status.replace('_', ' ')}</span>;
+}
 export function VarianceBadge({ actual, estimated }: { actual: number | null; estimated: number | null }): JSX.Element | null {
   if (actual === null || estimated === null || estimated === 0) return null;
   const pct = ((actual - estimated) / estimated) * 100;
