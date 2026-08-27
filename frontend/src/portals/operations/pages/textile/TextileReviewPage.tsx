@@ -1,7 +1,7 @@
 import { useState, type JSX } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { IconCheck, IconRefresh } from '@tabler/icons-react';
+import { IconCheck } from '@tabler/icons-react';
 import { ConfirmActionDialog } from '../../components/ConfirmActionDialog';
 import { approveTextileCollection } from '../../api/textileApi';
 import {
@@ -33,6 +33,7 @@ export default function TextileReviewPage(): JSX.Element {
     page,
     zoneId: zoneId || undefined,
     categoryId: categoryId || undefined,
+    autoRefresh: selected.length === 0 && approveTarget === null,
     enabled: desk.ready && desk.isDrLinen,
     departmentId: desk.departmentId,
   });
@@ -84,13 +85,6 @@ export default function TextileReviewPage(): JSX.Element {
               setPage(1);
             }}
           />
-          <button
-            type="button"
-            onClick={() => void queue.refetch()}
-            className="inline-flex min-h-10 items-center gap-2 self-start rounded-full border border-black/15 bg-white px-4 text-sm font-medium"
-          >
-            <IconRefresh className="h-4 w-4" /> Refresh
-          </button>
         </div>
       }
     >

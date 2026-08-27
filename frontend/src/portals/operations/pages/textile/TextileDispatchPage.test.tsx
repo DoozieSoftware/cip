@@ -85,6 +85,12 @@ describe('TextileDispatchPage', () => {
     } as unknown as ReturnType<typeof useTextileQueue>);
   });
 
+  it('does not expose a manual refresh action on the dispatch board', () => {
+    renderPage();
+
+    expect(screen.queryByRole('button', { name: 'Refresh' })).not.toBeInTheDocument();
+  });
+
   it('uses an accessible proof-photo button instead of exposing the raw file picker', () => {
     renderPage();
 
