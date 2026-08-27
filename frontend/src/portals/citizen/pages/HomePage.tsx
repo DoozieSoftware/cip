@@ -328,11 +328,11 @@ export default function HomePage(): JSX.Element {
             </span>
             <div className="min-w-0">
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
-                Pickup service
+                Collection service
               </p>
-              <h2 className="mt-1 text-lg font-medium">Clothes, scrap & e-waste pickup</h2>
+              <h2 className="mt-1 text-lg font-medium">Clothes, scrap & e-waste</h2>
               <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
-                Book a scheduled collection with a verified local partner.
+                Book a pickup or drop-off with a verified local partner.
               </p>
             </div>
           </div>
@@ -341,13 +341,13 @@ export default function HomePage(): JSX.Element {
               to="/citizen/textile-collections"
               className="inline-flex min-h-11 items-center rounded-full border border-black/15 px-4 text-sm font-medium"
             >
-              My pickups
+              My collections
             </Link>
             <Link
               to="/citizen/textile-collections/new"
               className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-ink)] px-4 text-sm font-medium text-white"
             >
-              Request pickup
+              Request collection
             </Link>
           </div>
         </div>

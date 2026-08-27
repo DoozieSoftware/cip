@@ -24,6 +24,7 @@ export const en_IN: MessageCatalog = {
   'nav.home': 'Home',
   'nav.reports': 'Complaints',
   'nav.newReport': 'New complaint',
+  'nav.collections': 'Collections',
   'nav.pickup': 'Pickups',
   'nav.account': 'Account',
   'nav.notifications': 'Notifications',

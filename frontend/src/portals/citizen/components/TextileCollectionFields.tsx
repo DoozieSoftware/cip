@@ -73,8 +73,11 @@ function validate(
   if (!isPhone(payload.contact_phone)) {
     errors.contact_phone = 'Enter a valid phone (8-20 digits, spaces allowed).';
   }
+  const isDropoff = payload.collection_method === 'dropoff';
   if (payload.pickup_address.trim().length < 10) {
-    errors.pickup_address = 'Add a full pickup address.';
+    errors.pickup_address = isDropoff
+      ? 'Add a full address for your receipt.'
+      : 'Add a full pickup address.';
   }
   // Either estimate is enough — requesters often cannot weigh textiles.
   if (payload.estimated_bags === null && payload.estimated_weight_kg === null) {
@@ -106,7 +109,12 @@ function validate(
 function buildInitial(
   zoneId?: string,
   category?: TextileCollectionCategory,
+  zone?: TextileServiceZone,
 ): TextileCollectionPayload {
+  const firstMethod = zone?.methods[0] ?? 'premises';
+  const method = (['dropoff', 'premises'] as const).includes(firstMethod)
+    ? firstMethod
+    : 'premises';
   return {
     service_zone_id: zoneId ?? '',
     category: category ?? 'clothes_waste',
@@ -116,7 +124,7 @@ function buildInitial(
     contact_email: '',
     contact_phone: '',
     pickup_address: '',
-    collection_method: 'premises',
+    collection_method: method,
     estimated_bags: null,
     estimated_weight_kg: null,
   };
@@ -126,26 +134,23 @@ function minimumWarning(
   payload: TextileCollectionPayload | null,
   category: TextileCollectionCategory,
 ): string | null {
-  if (!payload) {
-    return null;
-  }
+  if (!payload) return null;
+  if (payload.collection_method === 'dropoff')
+    return 'No minimum — drop off any amount during centre hours.';
   if (category === 'clothes_waste') {
     const lowWeight = payload.estimated_weight_kg !== null && payload.estimated_weight_kg < 5;
-    if (lowWeight) {
+    if (lowWeight)
       return 'This is below the recommended minimum (5 kg). A pickup route may not be economical.';
-    }
   }
   if (category === 'metal_scrap') {
     const weight = payload.estimated_weight_kg;
-    if (weight !== null && weight < 5) {
+    if (weight !== null && weight < 5)
       return 'This is below the recommended minimum (5 kg) for a collection route.';
-    }
   }
   if (category === 'e_waste') {
     const weight = payload.estimated_weight_kg;
-    if (weight !== null && weight < 2) {
+    if (weight !== null && weight < 2)
       return 'This is below the recommended minimum (2 kg) for a collection route.';
-    }
   }
   return null;
 }
@@ -200,16 +205,20 @@ function TextileCollectionFieldsInner({
   onDropoffChange,
 }: InnerProps): JSX.Element {
   const [draft, setDraft] = useState<TextileCollectionPayload>(
-    () => value ?? buildInitial(zones[0]?.id, category),
+    () => value ?? buildInitial(zones[0]?.id, category, zones[0]),
   );
   const [touched, setTouched] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (value === null && draft.service_zone_id === '' && zones.length > 0) {
-      setDraft((prev) => ({ ...prev, service_zone_id: zones[0]?.id ?? '' }));
+      const z = zones[0];
+      setDraft((prev) => ({
+        ...prev,
+        service_zone_id: z.id,
+        collection_method: z.methods[0] ?? prev.collection_method,
+      }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zones]);
+  }, [zones, value, draft.service_zone_id]);
 
   const selectedZone = useMemo(
     () => zones.find((z) => z.id === draft.service_zone_id),
@@ -252,7 +261,7 @@ function TextileCollectionFieldsInner({
       <div>
         <h3 className="text-base font-semibold text-[var(--color-ink)]">Collection details</h3>
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-          We use this to schedule a pickup with your local collection partner once your request is
+          We route your request to a local partner for pickup or drop-off once your request is
           reviewed.
         </p>
       </div>
@@ -392,7 +401,9 @@ function TextileCollectionFieldsInner({
           htmlFor="textile-address"
           className="block text-sm font-medium text-[var(--color-ink)]"
         >
-          Pickup address
+          {draft.collection_method === 'dropoff'
+            ? 'Your address (for contact & receipt)'
+            : 'Pickup address'}
         </label>
         <textarea
           id="textile-address"
@@ -408,7 +419,7 @@ function TextileCollectionFieldsInner({
         ) : null}
       </div>
 
-      <fieldset>
+      <fieldset role="radiogroup" aria-label="Collection method">
         <legend className="block text-sm font-medium text-[var(--color-ink)]">
           Collection method
         </legend>
@@ -552,8 +563,10 @@ function MethodToggle({
   description,
 }: MethodToggleProps): JSX.Element {
   const selected = current === value;
+  const id = `method-${value}`;
   return (
     <label
+      htmlFor={id}
       className={cx(
         'flex cursor-pointer flex-col gap-1 rounded-lg border px-3 py-2.5 text-sm',
         !available && 'cursor-not-allowed opacity-50',
@@ -563,16 +576,23 @@ function MethodToggle({
       )}
     >
       <input
+        id={id}
         type="radio"
         name="textile-method"
         value={value}
         checked={selected}
         disabled={!available}
+        aria-describedby={!available ? `${id}-desc` : undefined}
         onChange={() => onSelect(value)}
         className="sr-only"
       />
       <span className="text-[var(--color-ink)]">{label}</span>
       <span className="text-xs text-[var(--color-text-secondary)]">{description}</span>
+      {!available ? (
+        <span id={`${id}-desc`} className="sr-only">
+          Not available in this zone
+        </span>
+      ) : null}
     </label>
   );
 }
