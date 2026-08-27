@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\TextileCollections\Services;
 
+use App\Modules\Notifications\Services\NotificationDispatcher;
 use App\Modules\TextileCollections\Models\TextileCollectionRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -54,12 +55,13 @@ final class TextileReminderService
             }
 
             $citizen = $collection->citizen;
+
             if (! $citizen) {
                 continue;
             }
 
             try {
-                app(\App\Modules\Notifications\Services\NotificationDispatcher::class)->dispatch(
+                app(NotificationDispatcher::class)->dispatch(
                     $citizen,
                     'textile.pickup_reminder',
                     [
@@ -96,6 +98,6 @@ final class TextileReminderService
             return 'all day';
         }
 
-        return $start . '-' . $end;
+        return $start.'-'.$end;
     }
 }

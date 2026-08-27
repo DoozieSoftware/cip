@@ -60,6 +60,7 @@ final class TextileRescheduleService
         // Cutoff: must be before scheduled_date minus CUTOFF_HOURS
         if (! $isPartnerOverride && $collection->scheduled_date instanceof Carbon) {
             $cutoff = $collection->scheduled_date->copy()->subHours(self::CUTOFF_HOURS)->startOfDay();
+
             // Use scheduled_date at midnight as boundary; allow reschedule up to cutoff.
             if (Carbon::now()->greaterThan($cutoff)) {
                 throw new ApiException(
@@ -73,6 +74,7 @@ final class TextileRescheduleService
         // Freeze when field execution has started (batch in_progress/completed)
         if ($collection->batch_id !== null) {
             $batch = TextileCollectionBatch::query()->find($collection->batch_id);
+
             if ($batch !== null && in_array($batch->status, [TextileCollectionBatch::STATUS_IN_PROGRESS, TextileCollectionBatch::STATUS_COMPLETED], true)) {
                 if (! $isPartnerOverride) {
                     throw new ApiException(
@@ -176,15 +178,19 @@ final class TextileRescheduleService
         ];
 
         $updates = [];
+
         if ($readinessInstructions !== null) {
             $updates['readiness_instructions'] = $readinessInstructions;
         }
+
         if ($contactPhone !== null) {
             $updates['contact_phone'] = $contactPhone;
         }
+
         if ($contactEmail !== null) {
             $updates['contact_email'] = mb_strtolower($contactEmail);
         }
+
         if ($pickupAddress !== null) {
             $updates['pickup_address'] = $pickupAddress;
         }

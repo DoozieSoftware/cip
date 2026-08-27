@@ -25,12 +25,15 @@ final class TextileCollectionBatch extends Model
     use HasUuids;
 
     public const STATUS_PLANNED = 'planned';
+
     public const STATUS_ASSIGNED = 'assigned';
+
     public const STATUS_IN_PROGRESS = 'in_progress';
+
     public const STATUS_COMPLETED = 'completed';
+
     public const STATUS_CANCELLED = 'cancelled';
     // TODO D-04: stop-level en_route/visited pending decision.
-
 
     protected $table = 'textile_collection_batches';
 

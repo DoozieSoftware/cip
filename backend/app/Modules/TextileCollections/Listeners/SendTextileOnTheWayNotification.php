@@ -51,6 +51,7 @@ final class SendTextileOnTheWayNotification
             }
 
             $citizen = $collection->citizen;
+
             if (! $citizen instanceof User) {
                 continue;
             }
@@ -86,6 +87,6 @@ final class SendTextileOnTheWayNotification
             return 'all day';
         }
 
-        return $start . '-' . $end;
+        return $start.'-'.$end;
     }
 }

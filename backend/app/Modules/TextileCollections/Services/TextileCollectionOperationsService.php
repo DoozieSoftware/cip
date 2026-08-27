@@ -34,6 +34,7 @@ final class TextileCollectionOperationsService
         if ($collection->status !== TextileCollectionRequest::STATUS_PENDING_REVIEW) {
             throw ApiException::validation('Only requests awaiting review can be approved.');
         }
+
         if ($collection->collection_method !== 'dropoff') {
             throw ApiException::validation('confirmDropoff only for dropoff method.');
         }
@@ -96,9 +97,11 @@ final class TextileCollectionOperationsService
                 if ($collection->service_zone_id !== $serviceZoneId) {
                     throw ApiException::validation('All requests in a trip must belong to the same service zone.');
                 }
+
                 if ($collection->collection_method === 'dropoff') {
                     throw ApiException::validation('Drop-off requests must never enter a trip.');
                 }
+
                 if (! in_array($collection->status, [
                     TextileCollectionRequest::STATUS_READY_TO_GROUP,
                     TextileCollectionRequest::STATUS_MISSED,

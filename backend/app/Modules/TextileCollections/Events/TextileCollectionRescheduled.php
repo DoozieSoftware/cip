@@ -12,8 +12,8 @@ final class TextileCollectionRescheduled
     use Dispatchable;
 
     /**
-     * @param array<string,mixed> $oldSchedule
-     * @param array<string,mixed> $newSchedule
+     * @param  array<string,mixed>  $oldSchedule
+     * @param  array<string,mixed>  $newSchedule
      */
     public function __construct(
         public readonly TextileCollectionRequest $collection,

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Modules\TextileCollections\Listeners;
 
 use App\Modules\Notifications\Services\NotificationDispatcher;
-use App\Modules\TextileCollections\Events\TextileCollectionScheduled;
 use App\Modules\TextileCollections\Models\TextileCollectionRequest;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Facades\Log;
@@ -40,6 +39,7 @@ final class SendTextilePickupReminderNotification
         }
 
         $citizen = $collection->citizen;
+
         if (! $citizen instanceof User) {
             return false;
         }
@@ -74,6 +74,6 @@ final class SendTextilePickupReminderNotification
             return 'all day';
         }
 
-        return $start . '-' . $end;
+        return $start.'-'.$end;
     }
 }

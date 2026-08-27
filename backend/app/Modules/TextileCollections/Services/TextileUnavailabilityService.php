@@ -24,6 +24,7 @@ final class TextileUnavailabilityService
         if ($from !== null) {
             $query->where('unavailable_date', '>=', $from);
         }
+
         if ($to !== null) {
             $query->where('unavailable_date', '<=', $to);
         }
@@ -71,7 +72,7 @@ final class TextileUnavailabilityService
 
         throw new ApiException(
             'SLOT_UNAVAILABLE',
-            'The requested pickup slot is unavailable.' . ($conflict->reason ? ' Reason: ' . $conflict->reason : '') . ($suggestion ? ' Suggested next available: ' . $suggestion : ''),
+            'The requested pickup slot is unavailable.'.($conflict->reason ? ' Reason: '.$conflict->reason : '').($suggestion ? ' Suggested next available: '.$suggestion : ''),
             422,
             ['unavailable_reason' => $conflict->reason, 'suggestion' => $suggestion],
         );
@@ -86,6 +87,7 @@ final class TextileUnavailabilityService
     {
         // Look ahead 14 days for the first non-unavailable date.
         $cursor = Carbon::parse($fromDate)->addDay();
+
         for ($i = 0; $i < 14; $i++) {
             $dateStr = $cursor->toDateString();
             $blockedWholeDay = TextileZoneUnavailability::query()
@@ -94,6 +96,7 @@ final class TextileUnavailabilityService
                 ->whereNull('window_start')
                 ->whereNull('window_end')
                 ->exists();
+
             if (! $blockedWholeDay) {
                 return $dateStr;
             }

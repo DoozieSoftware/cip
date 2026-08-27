@@ -37,6 +37,7 @@ final class SendTextileRescheduledNotification
         }
 
         $citizen = $collection->citizen;
+
         if (! $citizen instanceof User) {
             Log::info('textile.rescheduled skipped: no citizen', ['collection_id' => $collection->id]);
 
@@ -72,6 +73,6 @@ final class SendTextileRescheduledNotification
             return 'all day';
         }
 
-        return $start . '-' . $end;
+        return $start.'-'.$end;
     }
 }

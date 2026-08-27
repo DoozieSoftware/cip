@@ -54,12 +54,35 @@ final class TextileCollectionPolicy extends BasePolicy
         return $this->isCollectionPartner($user);
     }
 
-    public function approve(User $user): bool { return $this->isCollectionPartner($user); }
-    public function recordReceipt(User $user): bool { return $this->isCollectionPartner($user); }
-    public function reverseReceipt(User $user): bool { return $this->isCollectionPartner($user); }
-    public function manageCentre(User $user): bool { return $this->isCollectionPartner($user); }
-    public function assignTrip(User $user): bool { return $this->isCollectionPartner($user); }
-    public function operateTrip(User $user): bool { return $this->isCollectionPartner($user); }
+    public function approve(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
+
+    public function recordReceipt(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
+
+    public function reverseReceipt(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
+
+    public function manageCentre(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
+
+    public function assignTrip(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
+
+    public function operateTrip(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
 
     public function reschedule(User $user, TextileCollectionRequest $collection): bool
     {
@@ -72,9 +95,20 @@ final class TextileCollectionPolicy extends BasePolicy
         return (string) $collection->citizen_id === (string) $user->id;
     }
 
-    public function viewUnavailability(User $user): bool { return true; }
-    public function manageUnavailability(User $user): bool { return $this->isCollectionPartner($user); }
-    public function rescheduleOverride(User $user): bool { return $this->isCollectionPartner($user); }
+    public function viewUnavailability(User $user): bool
+    {
+        return true;
+    }
+
+    public function manageUnavailability(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
+
+    public function rescheduleOverride(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
 
     /**
      * Check if the user is a member of a department that has ≥1

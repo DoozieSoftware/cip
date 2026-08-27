@@ -9,14 +9,17 @@ use Illuminate\Foundation\Http\FormRequest;
 
 final class ReorderTextileBatchStopsRequest extends FormRequest
 {
-    public function authorize(): bool { return $this->user() instanceof User; }
+    public function authorize(): bool
+    {
+        return $this->user() instanceof User;
+    }
 
     /** @return array<string,mixed> */
     public function rules(): array
     {
         return [
-            'ordered_ids' => ['required','array','min:1'],
-            'ordered_ids.*' => ['required','uuid','exists:textile_collection_requests,id'],
+            'ordered_ids' => ['required', 'array', 'min:1'],
+            'ordered_ids.*' => ['required', 'uuid', 'exists:textile_collection_requests,id'],
         ];
     }
 }
