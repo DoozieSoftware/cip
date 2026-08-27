@@ -440,3 +440,232 @@ export function StatusBadge({ status }: { status: string }): JSX.Element {
     </span>
   );
 }
+
+/* ── Phase 3: reschedule / unavailable / trip progress ──────────────── */
+
+export const RESCHEDULE_REASON_LABELS: Record<string, string> = {
+  citizen_request: 'Citizen rescheduled',
+  missed_pickup: 'Missed — rescheduled',
+  capacity_full: 'Capacity — rescheduled',
+  window_unavailable: 'Slot unavailable',
+  partner_override: 'Partner override',
+};
+
+export const UNAVAILABLE_REASON_LABELS: Record<string, string> = {
+  capacity_full: 'Capacity full',
+  window_closed: 'Window closed',
+  holiday: 'Centre closed',
+  vehicle_unavailable: 'Vehicle unavailable',
+  slot_taken: 'Slot taken',
+};
+
+export function isRescheduleFrozen(batchStatus: string | undefined): boolean {
+  return batchStatus === 'in_progress' || batchStatus === 'completed';
+}
+
+export function formatPreviousWindow(
+  date: string | null | undefined,
+  start: string | null | undefined,
+  end: string | null | undefined,
+): string | null {
+  if (!date) return null;
+  if (start && end) return `${date} · ${start}–${end}`;
+  return date;
+}
+
+export function RescheduleBadge({
+  reason,
+  previous,
+}: {
+  reason?: string | null;
+  previous?: string | null;
+}): JSX.Element | null {
+  if (!reason && !previous) return null;
+  const label = reason ? (RESCHEDULE_REASON_LABELS[reason] ?? reason) : 'Rescheduled';
+  return (
+    <span
+      title={previous ? `Previously ${previous}` : undefined}
+      className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-800"
+    >
+      {label}
+      {previous ? <span className="ml-1 font-normal opacity-70">· was {previous}</span> : null}
+    </span>
+  );
+}
+
+export function UnavailableBadge({ reason }: { reason?: string | null }): JSX.Element | null {
+  if (!reason) return null;
+  const label = UNAVAILABLE_REASON_LABELS[reason] ?? reason;
+  return (
+    <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-medium text-rose-700">
+      Unavailable · {label}
+    </span>
+  );
+}
+
+export function RescheduleDetail({
+  item,
+}: {
+  item: {
+    reschedule_reason?: string | null;
+    previous_scheduled_date?: string | null;
+    previous_window_start?: string | null;
+    previous_window_end?: string | null;
+    rescheduled_at?: string | null;
+    unavailable_reason?: string | null;
+    unavailable_until?: string | null;
+    missed_pickup_reason?: string | null;
+    status?: string;
+  };
+}): JSX.Element | null {
+  const prev = formatPreviousWindow(
+    item.previous_scheduled_date,
+    item.previous_window_start,
+    item.previous_window_end,
+  );
+  const hasReschedule = !!(item.reschedule_reason || prev);
+  const hasUnavailable = !!item.unavailable_reason;
+  const hasMissedReschedule =
+    item.status === 'missed' && !!item.missed_pickup_reason && prev === null && hasReschedule === false;
+  if (!hasReschedule && !hasUnavailable && !hasMissedReschedule) return null;
+  return (
+    <div className="mt-1.5 space-y-1">
+      {hasReschedule ? (
+        <p className="text-[11px] leading-4 text-amber-800">
+          <span className="font-medium">Rescheduled</span>
+          {item.reschedule_reason ? `: ${RESCHEDULE_REASON_LABELS[item.reschedule_reason] ?? item.reschedule_reason}` : ''}
+          {prev ? ` — previously ${prev}` : ''}
+          {item.rescheduled_at ? ` · ${new Date(item.rescheduled_at).toLocaleDateString()}` : ''}
+        </p>
+      ) : null}
+      {hasUnavailable ? (
+        <p className="text-[11px] leading-4 text-rose-700">
+          <span className="font-medium">Unavailable</span>: {UNAVAILABLE_REASON_LABELS[item.unavailable_reason!] ?? item.unavailable_reason}
+          {item.unavailable_until ? ` · until ${item.unavailable_until}` : ''}
+        </p>
+      ) : null}
+      {hasMissedReschedule ? (
+        <p className="text-[11px] leading-4 text-amber-800">
+          Previously missed: {item.missed_pickup_reason}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export function UnavailableBanner({
+  unavailableDates,
+  reason,
+}: {
+  unavailableDates: string[];
+  reason?: string | null;
+}): JSX.Element | null {
+  if (unavailableDates.length === 0 && !reason) return null;
+  return (
+    <div
+      role="status"
+      aria-label="Unavailable dates"
+      className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"
+    >
+      <p className="text-xs font-medium text-amber-800">Some dates or windows are unavailable</p>
+      {reason ? <p className="mt-1 text-xs text-amber-700">{reason}</p> : null}
+      {unavailableDates.length > 0 ? (
+        <p className="mt-1 text-xs text-amber-700">
+          Unavailable: {unavailableDates.join(', ')}. Choose the next available slot; an override requires a reason.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export function TripProgressBar({
+  batchStatus,
+  collected,
+  missed,
+  pending,
+  total,
+}: {
+  batchStatus: string;
+  collected: number;
+  missed: number;
+  pending: number;
+  total: number;
+}): JSX.Element {
+  const pct = total > 0 ? Math.round((collected / total) * 100) : 0;
+  const label =
+    batchStatus === 'completed'
+      ? 'Completed'
+      : batchStatus === 'in_progress'
+        ? 'In progress'
+        : batchStatus === 'assigned'
+          ? 'Assigned'
+          : 'Unstarted';
+  return (
+    <div className="flex items-center gap-3" aria-label={`Trip progress ${label}`}>
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/10">
+        <div
+          className="h-full rounded-full bg-emerald-500 transition-all"
+          style={{ width: `${pct}%` }}
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        />
+      </div>
+      <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium">
+        {label} · {collected}/{total} collected
+        {missed > 0 ? ` · ${missed} missed` : ''}
+        {pending > 0 ? ` · ${pending} pending` : ''}
+      </span>
+    </div>
+  );
+}
+
+export function getTripProgress(items: Array<{ status: string }>): {
+  collected: number;
+  missed: number;
+  pending: number;
+  total: number;
+} {
+  let collected = 0;
+  let missed = 0;
+  for (const it of items) {
+    if (it.status === 'picked_up') collected += 1;
+    else if (it.status === 'missed') missed += 1;
+  }
+  const total = items.length;
+  const pending = Math.max(0, total - collected - missed);
+  return { collected, missed, pending, total };
+}
+
+export function RescheduleOverrideNotice({
+  frozen,
+  reason,
+  onReasonChange,
+}: {
+  frozen: boolean;
+  reason: string;
+  onReasonChange: (next: string) => void;
+}): JSX.Element | null {
+  if (!frozen) return null;
+  return (
+    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+      <p className="text-xs font-medium text-amber-800">Rescheduling is frozen — crew is on the route</p>
+      <p className="mt-1 text-[11px] text-amber-700">
+        A partner override is required. Add a reason to reschedule or reassign.
+      </p>
+      <label className="mt-2 block text-[11px] font-medium text-amber-800">
+        Override reason
+        <textarea
+          value={reason}
+          onChange={(e) => onReasonChange(e.target.value)}
+          placeholder="Why this override is needed (audit-logged)"
+          rows={2}
+          aria-label="Override reason"
+          className="mt-1 block w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm"
+        />
+      </label>
+    </div>
+  );
+}
+
