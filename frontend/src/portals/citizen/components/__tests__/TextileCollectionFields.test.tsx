@@ -127,22 +127,28 @@ describe('TextileCollectionFields', () => {
     expect(screen.getByText(/No collection partner is serving your area/)).toBeDefined();
   });
 
-  it('shows dropoff hint when collection_method is dropoff and zone has dropoff block', async () => {
+  it('reports the zone drop-off point upward when Drop-off is selected', async () => {
     mockZones([ZONE_A]);
+    const onDropoffChange = vi.fn();
     render(
       <TextileCollectionFields
         category="clothes_waste"
         value={null}
         onChange={vi.fn()}
         onValidityChange={vi.fn()}
+        onDropoffChange={onDropoffChange}
       />,
       { wrapper },
     );
     fireEvent.click(screen.getByText('Drop-off'));
+    // The drop-off card (name, address, map, Maps link) now renders in
+    // TextileRequestPage, so this component's job is to report it upward.
     await waitFor(() => {
-      expect(screen.getByText(/Drop-off point/)).toBeDefined();
-      expect(screen.getByText(/Drop A/)).toBeDefined();
-      expect(screen.getByText(/100 Main St/)).toBeDefined();
+      expect(onDropoffChange).toHaveBeenCalledWith({
+        name: 'Drop A',
+        address: '100 Main St',
+        center: null,
+      });
     });
   });
 
