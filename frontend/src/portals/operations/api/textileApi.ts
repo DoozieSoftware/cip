@@ -24,12 +24,25 @@ export interface TextileCollectionListItem {
   rejection_reason: string | null;
   missed_pickup_reason: string | null;
   picked_up_at: string | null;
+  // Phase 3 — reschedule / availability (optional until backend ships)
+  reschedule_reason?: string | null;
+  rescheduled_at?: string | null;
+  previous_scheduled_date?: string | null;
+  previous_window_start?: string | null;
+  previous_window_end?: string | null;
+  rescheduled_from_batch_id?: string | null;
+  unavailable_reason?: string | null;
+  unavailable_until?: string | null;
+  override_required?: boolean | null;
+  cancellation_reason?: string | null;
   service_zone: {
     id: string;
     code: string;
     name: string;
     dropoff_name: string | null;
     dropoff_address: string | null;
+    centre_status?: string | null;
+    centre_closed_note?: string | null;
   } | null;
   batch: {
     id: string;
@@ -41,6 +54,9 @@ export interface TextileCollectionListItem {
     team_name?: string | null;
     vehicle_label?: string | null;
     instructions?: string | null;
+    started_at?: string | null;
+    completed_at?: string | null;
+    progress?: { collected: number; missed: number; pending: number; total: number } | null;
   } | null;
   submitted_at: string | null;
   photos?: Array<{ id: string; role: 'evidence' | 'proof'; url: string }>;
@@ -206,4 +222,37 @@ export function updateTextileZoneDropoff(
     body: data,
     query: departmentId ? { department_id: departmentId } : {},
   });
+}
+
+/** Phase 3 — citizen reschedule that ops may override. No-op if backend not deployed. */
+export function rescheduleTextileCollection(
+  collectionId: string,
+  payload: {
+    collection_date: string;
+    window_start?: string;
+    window_end?: string;
+    reason?: string;
+    override_reason?: string;
+    department_id?: string;
+  },
+) {
+  const { department_id, ...body } = payload;
+  return request<TextileCollectionListItem>(
+    `/department/textile-collections/${collectionId}/reschedule`,
+    {
+      method: 'POST',
+      body,
+      query: department_id ? { department_id } : {},
+    },
+  );
+}
+
+export function fetchTextileAvailability(params: {
+  service_zone_id: string;
+  department_id?: string;
+}) {
+  return request<{ unavailable_dates: string[]; unavailable_windows: Array<{ date: string; reason: string }>; reason?: string }>(
+    '/department/textile-collections/availability',
+    { query: params },
+  );
 }

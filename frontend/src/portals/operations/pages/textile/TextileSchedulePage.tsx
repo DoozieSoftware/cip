@@ -1,6 +1,6 @@
 import { useMemo, useState, type JSX } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { IconMapPin } from '@tabler/icons-react';
+import { IconAlertTriangle, IconMapPin } from '@tabler/icons-react';
 import { assignTextileTrip, scheduleTextileBatch, type TextileCollectionListItem } from '../../api/textileApi';
 import {
   CategoryBadge,
@@ -8,7 +8,14 @@ import {
   DeskPage,
   DeskStates,
   Pager,
+  RescheduleDetail,
+  RescheduleOverrideNotice,
   SearchBox,
+  UnavailableBanner,
+  UnavailableBadge,
+  RescheduleBadge,
+  formatPreviousWindow,
+  isRescheduleFrozen,
   useDesk,
   useTextileQueue,
   ZoneFilter,
@@ -31,6 +38,7 @@ export default function TextileSchedulePage(): JSX.Element {
   const [teamName, setTeamName] = useState('');
   const [vehicleLabel, setVehicleLabel] = useState('');
   const [instructions, setInstructions] = useState('');
+  const [overrideReason, setOverrideReason] = useState('');
 
   const queue = useTextileQueue({
     status: 'ready_to_group',
@@ -69,7 +77,21 @@ export default function TextileSchedulePage(): JSX.Element {
   const selectedItems = rows.filter((r) => selected.includes(r.id));
   const selectedZoneIds = new Set(selectedItems.map((r) => r.service_zone?.id).filter(Boolean));
   const lockedZoneId = selectedZoneIds.size === 1 ? ([...selectedZoneIds][0] ?? null) : null;
-  const canSchedule = selected.length > 0 && selectedZoneIds.size === 1 && date !== '';
+
+  // Phase 3: derive unavailable/rescheduled signals from scheduled queue + missed buffer
+  const unavailableDates = useMemo(() => {
+    const dates = new Set<string>();
+    for (const r of rows) {
+      if (r.unavailable_until) dates.add(r.unavailable_until);
+      if (r.unavailable_reason && r.scheduled_date) dates.add(r.scheduled_date);
+    }
+    return [...dates].sort();
+  }, [rows]);
+  const hasUnavailableItems = rows.some((r) => !!r.unavailable_reason);
+  const hasRescheduledItems = rows.some((r) => !!r.reschedule_reason || !!r.previous_scheduled_date);
+  const frozen = selectedItems.some((r) => isRescheduleFrozen(r.batch?.status));
+  const canSchedule = selected.length > 0 && selectedZoneIds.size === 1 && date !== '' && (!frozen || overrideReason.trim().length >= 5);
+  const requestedSlotUnavailable = date !== '' && unavailableDates.includes(date);
 
   const schedule = useMutation({
     mutationFn: async () => {
@@ -111,6 +133,7 @@ export default function TextileSchedulePage(): JSX.Element {
       setTeamName('');
       setVehicleLabel('');
       setInstructions('');
+      setOverrideReason('');
       setScheduleError(false);
       void queue.refetch();
     },
@@ -157,6 +180,20 @@ export default function TextileSchedulePage(): JSX.Element {
         emptyBody="Approve requests on the Pickup reviews page to make them schedulable."
       >
         <div className="space-y-4">
+          {/* Phase 3: surface why slots are unavailable and why items were rescheduled */}
+          {(hasUnavailableItems || hasRescheduledItems || unavailableDates.length > 0) ? (
+            <UnavailableBanner
+              unavailableDates={unavailableDates}
+              reason={
+                hasUnavailableItems
+                  ? 'Some requests show why their previous slot became unavailable — see badges below.'
+                  : hasRescheduledItems
+                    ? 'Rescheduled requests show previous date and reason inline.'
+                    : null
+              }
+            />
+          ) : null}
+
           {selected.length > 0 ? (
             <section className="rounded-xl border border-black/10 bg-[#f1efe8] p-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
@@ -170,6 +207,11 @@ export default function TextileSchedulePage(): JSX.Element {
                   <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
                     Zone: {selectedItems[0]?.service_zone?.name ?? '—'}
                   </p>
+                  {selectedItems.some((r) => r.reschedule_reason || r.previous_scheduled_date) ? (
+                    <p className="mt-1 text-xs text-amber-800">
+                      {selectedItems.filter((r) => r.reschedule_reason || r.previous_scheduled_date).length} rescheduled — previous slot shown per request below.
+                    </p>
+                  ) : null}
                 </div>
                 <label className="text-xs font-medium">
                   Pickup date
@@ -178,6 +220,7 @@ export default function TextileSchedulePage(): JSX.Element {
                     value={date}
                     min={new Date().toISOString().slice(0, 10)}
                     onChange={(event) => setDate(event.target.value)}
+                    aria-label="Pickup date"
                     className="mt-1 block min-h-10 rounded-lg border border-black/15 bg-white px-3 text-sm"
                   />
                 </label>
@@ -210,20 +253,77 @@ export default function TextileSchedulePage(): JSX.Element {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setSelected([]); setManifestOrder([]); }}
+                    onClick={() => {
+                      setSelected([]);
+                      setManifestOrder([]);
+                      setOverrideReason('');
+                    }}
                     className="min-h-10 rounded-full border border-black/15 bg-white px-4 text-sm"
                   >
                     Clear
                   </button>
                 </div>
               </div>
+              {/* Phase 3: frozen reschedule override */}
+              {frozen ? (
+                <div className="mt-3">
+                  <RescheduleOverrideNotice frozen={frozen} reason={overrideReason} onReasonChange={setOverrideReason} />
+                </div>
+              ) : null}
+              {requestedSlotUnavailable ? (
+                <p role="alert" className="mt-2 flex items-center gap-1.5 text-xs text-rose-700">
+                  <IconAlertTriangle className="h-3.5 w-3.5" />
+                  Requested date {date} is unavailable. Next available slots are outside {unavailableDates.join(', ')} — choose a different date or add an override reason.
+                </p>
+              ) : null}
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <label className="text-xs font-medium">Driver / team<input value={driverName} onChange={(e) => setDriverName(e.target.value)} placeholder="Driver name" className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm" /></label>
-                <label className="text-xs font-medium">Team<input value={teamName} onChange={(e) => setTeamName(e.target.value)} placeholder="Team (optional)" className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm" /></label>
-                <label className="text-xs font-medium">Vehicle<input value={vehicleLabel} onChange={(e) => setVehicleLabel(e.target.value)} placeholder="Vehicle reg / label" className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm" /></label>
-                <label className="text-xs font-medium">Trip ref<input value={tripReference} onChange={(e) => setTripReference(e.target.value)} placeholder="DRL-… (optional)" className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm" /></label>
+                <label className="text-xs font-medium">
+                  Driver / team
+                  <input
+                    value={driverName}
+                    onChange={(e) => setDriverName(e.target.value)}
+                    placeholder="Driver name"
+                    className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm"
+                  />
+                </label>
+                <label className="text-xs font-medium">
+                  Team
+                  <input
+                    value={teamName}
+                    onChange={(e) => setTeamName(e.target.value)}
+                    placeholder="Team (optional)"
+                    className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm"
+                  />
+                </label>
+                <label className="text-xs font-medium">
+                  Vehicle
+                  <input
+                    value={vehicleLabel}
+                    onChange={(e) => setVehicleLabel(e.target.value)}
+                    placeholder="Vehicle reg / label"
+                    className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm"
+                  />
+                </label>
+                <label className="text-xs font-medium">
+                  Trip ref
+                  <input
+                    value={tripReference}
+                    onChange={(e) => setTripReference(e.target.value)}
+                    placeholder="DRL-… (optional)"
+                    className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm"
+                  />
+                </label>
               </div>
-              <label className="mt-3 block text-xs font-medium">Instructions<textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="Collection instructions for crew" rows={2} className="mt-1 block w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm" /></label>
+              <label className="mt-3 block text-xs font-medium">
+                Instructions
+                <textarea
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                  placeholder="Collection instructions for crew"
+                  rows={2}
+                  className="mt-1 block w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm"
+                />
+              </label>
               {scheduleError ? (
                 <p className="mt-2 text-xs text-red-700">
                   Could not schedule the trip. Check the date and try again.
@@ -235,6 +335,7 @@ export default function TextileSchedulePage(): JSX.Element {
           {groups.map(({ zone, items }) => {
             const zoneLocked = lockedZoneId !== null && zone?.id !== lockedZoneId;
             const allZoneSelected = items.every((r) => selected.includes(r.id));
+            const zoneUnavailable = items.some((r) => !!r.unavailable_reason);
             return (
               <section
                 key={zone?.id ?? 'none'}
@@ -248,6 +349,11 @@ export default function TextileSchedulePage(): JSX.Element {
                       {items.length} request{items.length === 1 ? '' : 's'} ·{' '}
                       {items.reduce((s, r) => s + (r.estimated_bags ?? 0), 0)} bags
                     </span>
+                    {zoneUnavailable ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
+                        <IconAlertTriangle className="h-3 w-3" /> Unavailable slots in zone
+                      </span>
+                    ) : null}
                   </div>
                   <label className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary)]">
                     <input
@@ -269,36 +375,50 @@ export default function TextileSchedulePage(): JSX.Element {
                   </label>
                 </header>
                 <ul className="divide-y divide-black/5">
-                  {items.map((item) => (
-                    <li
-                      key={item.id}
-                      className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 text-sm"
-                    >
-                      <input
-                        type="checkbox"
-                        aria-label={`Select ${item.reference}`}
-                        disabled={zoneLocked}
-                        checked={selected.includes(item.id)}
-                        onChange={() =>
-                          setSelected((current) =>
-                            current.includes(item.id)
-                              ? current.filter((id) => id !== item.id)
-                              : [...current, item.id],
-                          )
-                        }
-                        className="h-4 w-4 shrink-0 accent-[var(--color-ink)]"
-                      />
-                      <span className="font-mono text-xs">{item.reference}</span>
-                      <CategoryBadge category={item.category} />
-                      <span className="min-w-0 flex-1 truncate">
-                        {item.requester_name} · {item.pickup_address}
-                      </span>
-                      <span className="whitespace-nowrap text-xs text-[var(--color-text-secondary)]">
-                        {formatVolume(item.estimated_bags, item.estimated_weight_kg)} ·{' '}
-                        {item.collection_method === 'dropoff' ? 'Drop-off' : 'Pickup'}
-                      </span>
-                    </li>
-                  ))}
+                  {items.map((item) => {
+                    const prev = formatPreviousWindow(
+                      item.previous_scheduled_date,
+                      item.previous_window_start,
+                      item.previous_window_end,
+                    );
+                    return (
+                      <li
+                        key={item.id}
+                        className="flex flex-col gap-1 px-4 py-2.5 text-sm"
+                      >
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${item.reference}`}
+                            disabled={zoneLocked}
+                            checked={selected.includes(item.id)}
+                            onChange={() =>
+                              setSelected((current) =>
+                                current.includes(item.id)
+                                  ? current.filter((id) => id !== item.id)
+                                  : [...current, item.id],
+                              )
+                            }
+                            className="h-4 w-4 shrink-0 accent-[var(--color-ink)]"
+                          />
+                          <span className="font-mono text-xs">{item.reference}</span>
+                          <CategoryBadge category={item.category} />
+                          {item.reschedule_reason || prev ? (
+                            <RescheduleBadge reason={item.reschedule_reason ?? null} previous={prev} />
+                          ) : null}
+                          {item.unavailable_reason ? <UnavailableBadge reason={item.unavailable_reason} /> : null}
+                          <span className="min-w-0 flex-1 truncate">
+                            {item.requester_name} · {item.pickup_address}
+                          </span>
+                          <span className="whitespace-nowrap text-xs text-[var(--color-text-secondary)]">
+                            {formatVolume(item.estimated_bags, item.estimated_weight_kg)} ·{' '}
+                            {item.collection_method === 'dropoff' ? 'Drop-off' : 'Pickup'}
+                          </span>
+                        </div>
+                        <RescheduleDetail item={item} />
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
             );
