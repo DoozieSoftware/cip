@@ -1,4 +1,4 @@
-import { useMemo, type JSX } from 'react';
+import { useEffect, useMemo, type JSX } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -102,6 +102,7 @@ const DR_LINEN_NAV: NavItem[] = [
   { to: '/operations/textile-collections/receipt', label: 'Receipt', icon: IconClipboardList },
   { to: '/operations/textile-collections/dispatch', label: 'Dispatch', icon: IconTruck },
   { to: '/operations/textile-collections/completed', label: 'History', icon: IconHistory },
+  { to: '/operations/textile-collections/recovery', label: 'Recovery', icon: IconShield },
   { to: '/operations/profile', label: 'Profile', icon: IconUser },
 ];
 
@@ -132,6 +133,18 @@ export function OperationsLayout(): JSX.Element {
     void queryClient.clear();
     void navigate('/');
   };
+
+  // Phase 4 offline-safe: tie queued evidence to session and clear on logout / expiry.
+  useEffect(() => {
+    const onLogout = (e: Event) => {
+      const ownerId = (e as CustomEvent<{ ownerId: string }>).detail?.ownerId;
+      if (ownerId) {
+        void import('../offline/queue').then(({ stopAndClearOpsQueue }) => stopAndClearOpsQueue(ownerId));
+      }
+    };
+    window.addEventListener('cip:auth-logout', onLogout as EventListener);
+    return () => window.removeEventListener('cip:auth-logout', onLogout as EventListener);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-ink)] lg:flex">

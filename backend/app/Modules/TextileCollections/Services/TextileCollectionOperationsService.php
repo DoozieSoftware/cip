@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\TextileCollections\Services;
 
 use App\Modules\Media\Models\Media;
+use App\Modules\Media\Services\ChainOfCustodyWriter;
+use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Security\Models\AuditLog;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\TextileCollections\Events\TextileCollectionCollected;
@@ -19,6 +21,9 @@ use Illuminate\Support\Str;
 
 final class TextileCollectionOperationsService
 {
+    public function __construct(
+        private readonly ChainOfCustodyWriter $chainOfCustody = new ChainOfCustodyWriter(),
+    ) {}
     public function approve(TextileCollectionRequest $collection, User $actor): TextileCollectionRequest
     {
         // Lane-aware approve: dropoff -> dropoff_awaiting_drop, premises -> ready_to_group
@@ -247,6 +252,142 @@ final class TextileCollectionOperationsService
                 422,
             );
         }
+    }
+
+    /**
+     * Phase 4 offline-safe: atomic proof + outcome. Idempotent when
+     * the Idempotency-Key middleware replays the stored 2xx; within
+     * the handler we also guard against double-collect via status
+     * check so a retry that somehow re-enters (e.g. pending_expiry)
+     * returns the already-picked_up row instead of creating a second
+     * proof/media chain.
+     */
+    public function recordCollectedWithProof(
+        TextileCollectionRequest $collection,
+        User $actor,
+        int $actualBags,
+        float $actualWeightKg,
+        \Illuminate\Http\UploadedFile $photo,
+        ?string $reason = null,
+    ): TextileCollectionRequest {
+        if ($collection->collection_method === 'dropoff') {
+            throw ApiException::validation('Use receipt for drop-off collections.');
+        }
+
+        // If already collected, return idempotently — the proof chain
+        // is authoritative and we must not create a second media row.
+        if ($collection->status === TextileCollectionRequest::STATUS_PICKED_UP) {
+            return $collection->load(['serviceZone', 'batch', 'photos']);
+        }
+
+        if ($collection->status !== TextileCollectionRequest::STATUS_SCHEDULED) {
+            throw ApiException::validation('This action is not available at the current collection stage.');
+        }
+
+        return DB::transaction(function () use ($collection, $actor, $actualBags, $actualWeightKg, $photo, $reason): TextileCollectionRequest {
+            $locked = TextileCollectionRequest::query()->whereKey($collection->id)->lockForUpdate()->firstOrFail();
+            if ($locked->status === TextileCollectionRequest::STATUS_PICKED_UP) {
+                return $locked->load(['serviceZone', 'batch', 'photos']);
+            }
+            if ($locked->status !== TextileCollectionRequest::STATUS_SCHEDULED) {
+                throw ApiException::validation('This action is not available at the current collection stage.');
+            }
+
+            // Store proof via textile media pipeline (reuse same logic as TextileCollectionMediaService::store
+            // but inline to keep the whole collect atomic). We delegate to Media model creation directly
+            // to avoid duplicating storage logic — but we keep checksum/audit.
+            $media = $this->storeProofMedia($collection->id, $photo, (string) $actor->id);
+
+            $before = ['status' => $locked->status];
+            $locked->update([
+                'status' => TextileCollectionRequest::STATUS_PICKED_UP,
+                'actual_bags' => $actualBags,
+                'actual_weight_kg' => $actualWeightKg,
+                'picked_up_at' => now(),
+            ]);
+
+            $this->audit($actor, $locked->id, 'textile.outcome', $before, [
+                'status' => TextileCollectionRequest::STATUS_PICKED_UP,
+                'actual_bags' => $actualBags,
+                'actual_weight_kg' => $actualWeightKg,
+                'proof_media_id' => $media->id,
+                'reason' => $reason,
+            ]);
+
+            $refreshed = $locked->refresh()->load(['serviceZone', 'batch', 'photos']);
+            TextileCollectionCollected::dispatch($refreshed);
+
+            return $refreshed;
+        });
+    }
+
+    private function storeProofMedia(string $collectionId, \Illuminate\Http\UploadedFile $file, string $uploaderId): Media
+    {
+        $id = (string) \Illuminate\Support\Str::uuid();
+        $extension = strtolower((string) $file->getClientOriginalExtension()) ?: match (strtolower((string) $file->getMimeType())) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => 'bin',
+        };
+        /** @var string $diskName */
+        $diskName = config('cip.media.disk', 'local');
+        $storagePath = sprintf('proof/textile/%s/photo/%s.%s', $collectionId, $id, $extension);
+        $sourcePath = $file->getRealPath();
+        if (! is_string($sourcePath) || $sourcePath === '' || ! is_file($sourcePath)) {
+            throw ApiException::serverError('Unable to stage the uploaded photo.');
+        }
+        $sha256 = hash_file('sha256', $sourcePath);
+        if (! is_string($sha256) || preg_match('/^[a-f0-9]{64}$/', $sha256) !== 1) {
+            throw ApiException::serverError('Unable to establish uploaded photo integrity.');
+        }
+        $stream = fopen($sourcePath, 'rb');
+        if ($stream === false) {
+            throw ApiException::serverError('Unable to read uploaded photo.');
+        }
+        try {
+            $written = \Illuminate\Support\Facades\Storage::disk($diskName)->put($storagePath, $stream);
+        } finally {
+            fclose($stream);
+        }
+        if (! $written) {
+            throw ApiException::serverError('Failed to store uploaded photo.');
+        }
+        $dimensions = @getimagesize($sourcePath);
+        $width = is_array($dimensions) && $dimensions[0] > 0 ? $dimensions[0] : null;
+        $height = is_array($dimensions) && $dimensions[1] > 0 ? $dimensions[1] : null;
+
+        $media = Media::query()->create([
+            'id' => $id,
+            'report_id' => null,
+            'textile_collection_id' => $collectionId,
+            'type' => 'PHOTO',
+            'role' => 'proof',
+            'storage_disk' => $diskName,
+            'storage_path' => $storagePath,
+            'mime' => (string) $file->getMimeType(),
+            'size' => (int) $file->getSize(),
+            'width' => $width,
+            'height' => $height,
+            'checksum' => $sha256,
+            'scan_status' => MediaScanStatus::CLEAN,
+            'uploaded_at' => now(),
+            'uploaded_by' => $uploaderId,
+            'metadata' => ['source' => 'textile_collect_offline_safe'],
+            'version' => 1,
+            'is_replaced' => false,
+        ]);
+
+        $this->chainOfCustody->record($media, ChainOfCustodyWriter::EVENT_UPLOAD, metadata: [
+            'sha256' => $sha256,
+            'storage_path' => $storagePath,
+            'context' => 'textile_collect',
+        ]);
+
+        \App\Modules\Media\Jobs\ComputeHashesJob::dispatch($media->id);
+        \App\Modules\Media\Jobs\GenerateThumbnailJob::dispatch($media->id);
+
+        return $media;
     }
 
     /**

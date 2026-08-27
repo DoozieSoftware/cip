@@ -192,6 +192,22 @@ export function uploadTextileProofPhoto(
   );
 }
 
+export function collectTextileWithProof(
+  collectionId: string,
+  payload: { actual_bags: number; actual_weight_kg: number; photo: File; reason?: string; idempotencyKey: string },
+  departmentId?: string,
+) {
+  const formData = new FormData();
+  formData.append('actual_bags', String(payload.actual_bags));
+  formData.append('actual_weight_kg', String(payload.actual_weight_kg));
+  if (payload.reason) formData.append('reason', payload.reason);
+  formData.append('photo', payload.photo);
+  return upload<TextileCollectionListItem>(`/department/textile-collections/${collectionId}/collect`, formData, {
+    query: departmentId ? { department_id: departmentId } : {},
+    headers: { 'Idempotency-Key': payload.idempotencyKey },
+  });
+}
+
 export function assignTextileTrip(
   batchId: string,
   payload: {

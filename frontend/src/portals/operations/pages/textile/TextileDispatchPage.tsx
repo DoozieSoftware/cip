@@ -4,10 +4,15 @@ import { IconAlertTriangle, IconCalendar, IconNavigation, IconPhone } from '@tab
 import { ApiError } from '../../../../shared/api/errors';
 import { ConfirmActionDialog } from '../../components/ConfirmActionDialog';
 import {
+  collectTextileWithProof,
   recordTextileOutcome,
-  uploadTextileProofPhoto,
   type TextileCollectionListItem,
 } from '../../api/textileApi';
+import { getOpsQueue } from '../../offline/queue';
+import { registerTextileOfflineRetry, type CollectPayload } from '../../offline/textileOfflineQueue';
+import { OfflineBanner } from '../../offline/OfflineBanner';
+import { useAuth } from '../../../../auth/AuthContext';
+import { useOpsQueue } from '../../offline/useOpsQueue';
 import {
   CategoryBadge,
   DeskPage,
@@ -39,8 +44,15 @@ function mapsHref(address: string) {
   return isIOS ? `maps://?q=${q}` : `https://www.google.com/maps/search/?api=1&query=${q}`;
 }
 
+function newIdempotencyKey(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return `collect-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+function isNetworkFailure(err: unknown): boolean { return !(err instanceof ApiError); }
+
 export default function TextileDispatchPage(): JSX.Element {
   const desk = useDesk();
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [zoneId, setZoneId] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -51,6 +63,8 @@ export default function TextileDispatchPage(): JSX.Element {
   const [overrideReason, setOverrideReason] = useState('');
   const [assignmentOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [queuedNotice, setQueuedNotice] = useState<string | null>(null);
+  const opsQueue = useOpsQueue();
 
   const queue = useTextileQueue({
     status: 'scheduled',
@@ -95,13 +109,36 @@ export default function TextileDispatchPage(): JSX.Element {
 
   async function handleCollect(
     item: TextileCollectionListItem,
-    p: { bags: number; weight: number; file: File },
+    p: { bags: number; weight: number; file: File; reason?: string },
   ) {
     setServerError(null);
+    setQueuedNotice(null);
+    const idempotencyKey = newIdempotencyKey();
     try {
-      await uploadTextileProofPhoto(item.id, p.file, desk.departmentId);
-      await outcome.mutateAsync({ id: item.id, kind: 'collected', bags: p.bags, weight: p.weight });
+      await collectTextileWithProof(item.id, { actual_bags: p.bags, actual_weight_kg: p.weight, photo: p.file, reason: p.reason, idempotencyKey }, desk.departmentId);
+      setExpandedId(null);
+      void queue.refetch();
     } catch (e) {
+      if (isNetworkFailure(e)) {
+        // Offline — queue locally and show explicit pending state
+        registerTextileOfflineRetry(user?.id ?? null);
+        const payload: CollectPayload = {
+          collectionId: item.id,
+          actualBags: p.bags,
+          actualWeightKg: p.weight,
+          reason: p.reason,
+          photoName: p.file.name,
+          photoType: p.file.type,
+          photoBlob: p.file,
+          idempotencyKey,
+          departmentId: desk.departmentId,
+          reference: item.reference,
+        };
+        await getOpsQueue(user?.id ?? null).enqueue({ kind: 'textile.collect', payload, id: idempotencyKey });
+        setQueuedNotice(`Queued offline — ${item.reference} will upload when you are back online.`);
+        setExpandedId(null);
+        return;
+      }
       if (e instanceof ApiError) setServerError(e.message);
       else setServerError('Failed to record collection');
     }
@@ -158,6 +195,9 @@ export default function TextileDispatchPage(): JSX.Element {
         </div>
       }
     >
+      <OfflineBanner />
+      {queuedNotice ? <p role="status" className="rounded-lg bg-sky-50 px-4 py-2 text-xs text-sky-800">{queuedNotice}</p> : null}
+      {opsQueue.pending.length > 0 ? <p aria-label={`${opsQueue.pending.length} pending uploads`} className="text-xs text-sky-700">{opsQueue.pending.length} pending upload{opsQueue.pending.length === 1 ? '' : 's'} queued for this account — retry is automatic and idempotent.</p> : null}
       <DeskStates
         loading={queue.isLoading}
         error={queue.isError}

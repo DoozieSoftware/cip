@@ -13,6 +13,7 @@ use App\Modules\Shared\Http\Controllers\BaseController;
 use App\Modules\TextileCollections\DTO\TextileCollectionInput;
 use App\Modules\TextileCollections\Http\Requests\ApproveTextileCollectionRequest;
 use App\Modules\TextileCollections\Http\Requests\AssignTextileBatchRequest;
+use App\Modules\TextileCollections\Http\Requests\CollectTextileRequest;
 use App\Modules\TextileCollections\Http\Requests\CreateCollectionBatchRequest;
 use App\Modules\TextileCollections\Http\Requests\RecordCollectionOutcomeRequest;
 use App\Modules\TextileCollections\Http\Requests\RecordDropoffReceiptRequest;
@@ -473,6 +474,34 @@ final class TextileCollectionController extends BaseController
             'request_count' => count($requests),
             'requests' => $requests,
         ], 'Batch scheduled.', 201);
+    }
+
+    /**
+     * Phase 4 offline-safe: atomic proof + collected outcome.
+     * The client sends a stable Idempotency-Key header; the global
+     * IdempotencyKey middleware replays the stored 2xx without
+     * re-entering the handler. Inside the handler we also tolerate
+     * a retry that reaches the service after a 5xx by returning the
+     * already-picked_up row.
+     */
+    public function collect(TextileCollectionRequest $collection, CollectTextileRequest $request): JsonResponse
+    {
+        $this->assertCollectionPartner($request, $collection);
+        $user = $this->authenticatedUser($request);
+        $data = $request->validated();
+        $updated = $this->operations->recordCollectedWithProof(
+            collection: $collection,
+            actor: $user,
+            actualBags: (int) $data['actual_bags'],
+            actualWeightKg: (float) $data['actual_weight_kg'],
+            photo: $request->file('photo'),
+            reason: isset($data['reason']) && is_string($data['reason']) ? $data['reason'] : null,
+        );
+
+        return $this->respond(
+            (new TextileCollectionResource($updated->load(['photos', 'department'])))->toArray($request),
+            'Collection recorded.',
+        );
     }
 
     public function recordOutcome(TextileCollectionRequest $collection, RecordCollectionOutcomeRequest $request): JsonResponse
