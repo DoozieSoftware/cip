@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type JSX } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { IconCamera, IconSearch } from '@tabler/icons-react';
 import { ApiError } from '../../../../shared/api/errors';
 import {
@@ -57,7 +57,7 @@ export default function TextileReceiptPage(): JSX.Element {
     enabled: desk.ready && desk.isDrLinen && search.length > 0,
     departmentId: desk.departmentId,
   });
-  const rows = queue.data?.data ?? [];
+  const rows = useMemo(() => queue.data?.data ?? [], [queue.data]);
 
   // when search results arrive, auto-select exact reference match
   useEffect(() => {
@@ -107,7 +107,8 @@ export default function TextileReceiptPage(): JSX.Element {
     setBusy(true);
     setServerError(null);
     try {
-      await uploadTextileProofPhoto(selected.id, photoFile!, desk.departmentId);
+      if (!photoFile) return;
+      await uploadTextileProofPhoto(selected.id, photoFile, desk.departmentId);
       await recordTextileOutcome(selected.id, {
         outcome: 'collected',
         actual_bags: Number(bags),
@@ -142,7 +143,6 @@ export default function TextileReceiptPage(): JSX.Element {
             <div className="relative flex-1">
               <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
               <input
-                autoFocus
                 inputMode="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

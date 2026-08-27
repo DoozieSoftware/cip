@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 
 // Phase 1 drop-off receipt page — blocked by D-01/D-02 (reservation vs walk-in, ack contents)
 // Tests are marked todo until design decisions unblock the surface.

@@ -41,6 +41,7 @@ final class TextileReceiptService
 
             // Idempotency: if receipt already exists return it
             $existing = TextileDropoffReceipt::query()->where('collection_request_id', $collection->id)->first();
+
             if ($existing !== null) {
                 return $existing;
             }
