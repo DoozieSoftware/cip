@@ -1,5 +1,4 @@
 import { useState, type JSX } from 'react';
-import { IconRefresh } from '@tabler/icons-react';
 import { cx } from '../../../../shared/ui';
 import type { TextileCollectionListItem } from '../../api/textileApi';
 import {
@@ -39,6 +38,7 @@ export default function TextileCompletedPage(): JSX.Element {
     page,
     zoneId: zoneId || undefined,
     categoryId: categoryId || undefined,
+    autoRefresh: true,
     enabled: desk.ready && desk.isDrLinen,
     departmentId: desk.departmentId,
   });
@@ -72,13 +72,6 @@ export default function TextileCompletedPage(): JSX.Element {
               setPage(1);
             }}
           />
-          <button
-            type="button"
-            onClick={() => void queue.refetch()}
-            className="inline-flex min-h-10 items-center gap-2 self-start rounded-full border border-black/15 bg-white px-4 text-sm font-medium"
-          >
-            <IconRefresh className="h-4 w-4" /> Refresh
-          </button>
         </div>
       }
     >

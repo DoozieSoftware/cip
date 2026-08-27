@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { IconCalendar, IconCamera, IconPhoto, IconRefresh } from '@tabler/icons-react';
+import { IconCalendar, IconCamera, IconPhoto } from '@tabler/icons-react';
 import { ApiError } from '../../../../shared/api/errors';
 import { ConfirmActionDialog } from '../../components/ConfirmActionDialog';
 import {
@@ -63,6 +63,7 @@ export default function TextileDispatchPage(): JSX.Element {
     page,
     zoneId: zoneId || undefined,
     categoryId: categoryId || undefined,
+    autoRefresh: expandedId === null && missedTarget === null,
     enabled: desk.ready && desk.isDrLinen,
     departmentId: desk.departmentId,
   });
@@ -208,13 +209,6 @@ export default function TextileDispatchPage(): JSX.Element {
               setPage(1);
             }}
           />
-          <button
-            type="button"
-            onClick={() => void queue.refetch()}
-            className="inline-flex min-h-10 items-center gap-2 self-start rounded-full border border-black/15 bg-white px-4 text-sm font-medium"
-          >
-            <IconRefresh className="h-4 w-4" /> Refresh
-          </button>
         </div>
       }
     >

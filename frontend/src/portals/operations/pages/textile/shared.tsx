@@ -10,6 +10,7 @@ import {
 } from '../../api/textileApi';
 
 export const PER_PAGE = 25;
+export const OPERATIONS_QUEUE_REFRESH_MS = 30_000;
 
 export const STATUS_LABELS: Record<string, string> = {
   pending_review: 'Needs review',
@@ -77,13 +78,24 @@ interface QueueArgs {
   categoryId?: string;
   enabled: boolean;
   departmentId?: string;
+  /** Pause updates while an officer has selections or a form in progress. */
+  autoRefresh?: boolean;
 }
 
 export function useTextileQueue(args: QueueArgs): UseQueryResult<{
   data: TextileCollectionListItem[];
   meta: { page: number; per_page: number; total: number; last_page: number };
 }> {
-  const { status, search, page, zoneId, categoryId, enabled, departmentId } = args;
+  const {
+    status,
+    search,
+    page,
+    zoneId,
+    categoryId,
+    enabled,
+    departmentId,
+    autoRefresh = true,
+  } = args;
   return useQuery({
     queryKey: ['operations', 'textile', status, departmentId, zoneId, categoryId, search, page],
     queryFn: () =>
@@ -98,6 +110,13 @@ export function useTextileQueue(args: QueueArgs): UseQueryResult<{
       }),
     enabled,
     placeholderData: (previous) => previous,
+    // Queues change while another officer or field worker acts. Refresh them
+    // without making officers hunt for a manual toolbar control; pages pause
+    // this while selection or form data is in progress.
+    refetchInterval: autoRefresh ? OPERATIONS_QUEUE_REFRESH_MS : false,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: autoRefresh,
+    refetchOnReconnect: autoRefresh,
   });
 }
 

@@ -1,6 +1,6 @@
 import { useMemo, useState, type JSX } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { IconMapPin, IconRefresh } from '@tabler/icons-react';
+import { IconMapPin } from '@tabler/icons-react';
 import { scheduleTextileBatch, type TextileCollectionListItem } from '../../api/textileApi';
 import {
   CategoryBadge,
@@ -33,6 +33,7 @@ export default function TextileSchedulePage(): JSX.Element {
     page,
     zoneId: zoneId || undefined,
     categoryId: categoryId || undefined,
+    autoRefresh: selected.length === 0,
     enabled: desk.ready && desk.isDrLinen,
     departmentId: desk.departmentId,
   });
@@ -106,13 +107,6 @@ export default function TextileSchedulePage(): JSX.Element {
               setPage(1);
             }}
           />
-          <button
-            type="button"
-            onClick={() => void queue.refetch()}
-            className="inline-flex min-h-10 items-center gap-2 self-start rounded-full border border-black/15 bg-white px-4 text-sm font-medium"
-          >
-            <IconRefresh className="h-4 w-4" /> Refresh
-          </button>
         </div>
       }
     >
