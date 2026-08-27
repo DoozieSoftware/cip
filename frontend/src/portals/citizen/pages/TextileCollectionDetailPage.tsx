@@ -1,6 +1,13 @@
 import { useRef, useState, type JSX } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { IconArrowLeft, IconCalendar, IconMapPin, IconPackage } from '@tabler/icons-react';
+import {
+  IconArrowLeft,
+  IconCamera,
+  IconCalendar,
+  IconMapPin,
+  IconPackage,
+  IconX,
+} from '@tabler/icons-react';
 import { ErrorState, Spinner } from '../../../shared/ui';
 import {
   useCancelTextileCollection,
@@ -63,25 +70,30 @@ function ReplacePhotoButton({
   }
 
   return (
-    <div className="mt-2">
-      <label
-        htmlFor="textile-replace-photo"
-        className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-[var(--color-text-secondary)] underline-offset-2 hover:underline"
+    <div className="mt-3">
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={busy}
+        className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-black/15 bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-alt)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Replace photo
-        <input
-          ref={inputRef}
-          id="textile-replace-photo"
-          type="file"
-          accept="image/*"
-          onChange={void handleChange}
-          className="sr-only"
-        />
-      </label>
-      {busy ? (
-        <span className="ml-2 text-xs text-[var(--color-text-secondary)]">Uploading…</span>
+        <IconCamera className="h-4 w-4" stroke={1.6} />
+        {busy ? 'Uploading…' : 'Replace photo'}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        onChange={void handleChange}
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+      {error ? (
+        <p role="alert" className="mt-2 text-xs font-medium text-red-600">
+          {error}
+        </p>
       ) : null}
-      {error ? <p className="mt-1 text-xs font-medium text-red-600">{error}</p> : null}
     </div>
   );
 }
@@ -180,36 +192,52 @@ export default function TextileCollectionDetailPage(): JSX.Element {
               <textarea
                 id="cancel-reason"
                 rows={3}
+                placeholder="For example: I dropped the bags off at the collection point myself."
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
+                aria-describedby="cancel-reason-hint"
                 className="block w-full rounded-lg border border-[#d8d6cf] p-3"
               />
-              <div className="flex gap-2">
+              <p id="cancel-reason-hint" className="text-xs text-[var(--color-text-secondary)]">
+                The collection partner sees this reason, so a short sentence is enough.
+              </p>
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   disabled={reason.trim().length < 5 || cancel.isPending}
                   onClick={() => void cancel.mutateAsync(reason.trim())}
-                  className="min-h-11 rounded-full border border-red-300 px-5 text-sm text-red-700 disabled:opacity-40"
+                  className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-red-600 bg-red-600 px-5 text-sm font-medium text-white transition-colors hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Confirm cancellation
+                  <IconX className="h-4 w-4" stroke={1.6} />
+                  {cancel.isPending ? 'Cancelling…' : 'Confirm cancellation'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowCancel(false)}
-                  className="min-h-11 px-4 text-sm"
+                  className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-black/15 bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-alt)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ink)]"
                 >
                   Keep request
                 </button>
               </div>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => setShowCancel(true)}
-              className="min-h-11 text-sm text-red-700"
-            >
-              Cancel this pickup request
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-sm font-medium">Need to cancel this pickup?</h2>
+                <p className="mt-1 max-w-prose text-xs text-[var(--color-text-secondary)]">
+                  We will tell the collection partner you no longer need this visit. A cancelled
+                  request cannot be reopened — you would have to book a new one.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCancel(true)}
+                className="inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center gap-2 self-start rounded-full border border-red-300 bg-white px-4 text-sm font-medium text-red-800 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 sm:self-auto"
+              >
+                <IconX className="h-4 w-4" stroke={1.6} />
+                Cancel this pickup request
+              </button>
+            </div>
           )}
         </section>
       ) : null}

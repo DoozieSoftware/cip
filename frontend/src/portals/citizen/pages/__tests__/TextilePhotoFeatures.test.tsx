@@ -11,6 +11,7 @@ import type { TextileCollectionRequest } from '../../api/textileZones';
 // ── Mock the textileZones API module ──────────────────────────────────────────
 const mockCreate = vi.fn();
 const mockUploadPhoto = vi.fn();
+const mockCancel = vi.fn();
 const mockCollectionData = vi.fn<() => TextileCollectionRequest | null>();
 
 vi.mock('../../api/textileZones', () => ({
@@ -25,7 +26,8 @@ vi.mock('../../api/textileZones', () => ({
     isError: false,
   }),
   useCancelTextileCollection: () => ({
-    mutateAsync: vi.fn(),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock passthrough
+    mutateAsync: (...args: unknown[]) => mockCancel(...args),
     isPending: false,
   }),
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock passthrough
@@ -35,6 +37,22 @@ vi.mock('../../api/textileZones', () => ({
     isLoading: false,
     isError: false,
   }),
+}));
+
+// ── Mock CameraCapture: jsdom has no getUserMedia ─────────────────────────
+vi.mock('../../components/CameraCapture', () => ({
+  CameraCapture: ({ onCapture }: { onCapture: (file: File) => void }) => (
+    <div data-testid="camera-capture">
+      <button
+        type="button"
+        onClick={() =>
+          onCapture(new File([new ArrayBuffer(64)], 'shot.jpg', { type: 'image/jpeg' }))
+        }
+      >
+        stub capture
+      </button>
+    </div>
+  ),
 }));
 
 // ── Mock TextileCollectionFields to avoid its internal zone loading ──────────
@@ -147,13 +165,40 @@ describe('TextileRequestPage — photo picker', () => {
     );
   });
 
-  it('shows file inputs with correct accept and capture attributes', () => {
+  it('keeps "Choose photo" as a plain file picker', () => {
     const fileInput = screen.getByLabelText('Choose photo');
     expect(fileInput).toHaveAttribute('accept', 'image/*');
     expect(fileInput).not.toHaveAttribute('capture');
-    const cameraInput = screen.getByLabelText('Take photo');
-    expect(cameraInput).toHaveAttribute('accept', 'image/*');
-    expect(cameraInput).toHaveAttribute('capture', 'environment');
+  });
+
+  // Regression: "Take photo" used to be a hidden file input with
+  // capture="environment", which only opens a camera on some mobile browsers.
+  // It is now a button that mounts the getUserMedia CameraCapture component.
+  it('opens the live camera from "Take photo" instead of a capture input', () => {
+    expect(screen.queryByTestId('camera-capture')).not.toBeInTheDocument();
+    // The legacy capture input must be gone, not merely hidden.
+    expect(screen.queryByLabelText('Take photo')).not.toBeInstanceOf(HTMLInputElement);
+
+    fireEvent.click(screen.getByRole('button', { name: /take photo/i }));
+
+    expect(screen.getByTestId('camera-capture')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /take photo/i })).not.toBeInTheDocument();
+  });
+
+  it('accepts a camera shot and closes the camera', () => {
+    fireEvent.click(screen.getByRole('button', { name: /take photo/i }));
+    fireEvent.click(screen.getByRole('button', { name: /stub capture/i }));
+
+    expect(screen.queryByTestId('camera-capture')).not.toBeInTheDocument();
+    expect(screen.getByAltText('Preview of your bags')).toBeInTheDocument();
+  });
+
+  it('closes the camera on cancel without selecting a photo', () => {
+    fireEvent.click(screen.getByRole('button', { name: /take photo/i }));
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+
+    expect(screen.queryByTestId('camera-capture')).not.toBeInTheDocument();
+    expect(screen.queryByAltText('Preview of your bags')).not.toBeInTheDocument();
   });
 
   it('rejects files larger than 10 MB', async () => {
@@ -394,5 +439,88 @@ describe('TextileCollectionDetailPage — photo trust view', () => {
 
     expect(screen.queryByText('Your photo')).not.toBeInTheDocument();
     expect(screen.queryByText('Collection proof')).not.toBeInTheDocument();
+  });
+
+  // Regression: "Replace photo" was a bare <label> styled as 12px grey text
+  // whose only affordance was hover:underline, so on touch devices it read as
+  // a caption and it was unreachable by keyboard. It must be a real button.
+  it('exposes "Replace photo" as a focusable button, not bare text', () => {
+    mockCollectionData.mockReturnValue({
+      ...BASE_COLLECTION,
+      status: 'scheduled',
+      photos: [{ id: 'p1', role: 'evidence', url: 'https://example.com/evidence.jpg' }],
+    });
+
+    renderDetail();
+
+    const button = screen.getByRole('button', { name: /replace photo/i });
+    expect(button).toBeInTheDocument();
+    expect(button).toBeEnabled();
+  });
+
+  it('opens the file picker from the button without adding a second tab stop', () => {
+    mockCollectionData.mockReturnValue({
+      ...BASE_COLLECTION,
+      status: 'scheduled',
+      photos: [{ id: 'p1', role: 'evidence', url: 'https://example.com/evidence.jpg' }],
+    });
+
+    renderDetail();
+
+    const input = document.querySelector<HTMLInputElement>('input[type="file"]');
+    expect(input).not.toBeNull();
+    // The visible button drives the picker, so the input stays out of the tab
+    // order and out of the accessibility tree.
+    expect(input).toHaveAttribute('tabindex', '-1');
+
+    const clickSpy = vi.spyOn(input as HTMLInputElement, 'click');
+    fireEvent.click(screen.getByRole('button', { name: /replace photo/i }));
+
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    clickSpy.mockRestore();
+  });
+
+  // Regression: the cancel entry point was bare red text (no border, padding or
+  // icon) inside an empty card, so it read as a caption rather than an action.
+  it('presents cancellation as a button that opens a reason form', () => {
+    mockCollectionData.mockReturnValue({ ...BASE_COLLECTION, status: 'scheduled', photos: [] });
+
+    renderDetail();
+
+    const trigger = screen.getByRole('button', { name: /cancel this pickup request/i });
+    expect(trigger).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /confirm cancellation/i })).not.toBeInTheDocument();
+
+    fireEvent.click(trigger);
+
+    expect(screen.getByLabelText(/why are you cancelling/i)).toBeInTheDocument();
+  });
+
+  it('requires a reason before the cancellation can be confirmed', () => {
+    mockCollectionData.mockReturnValue({ ...BASE_COLLECTION, status: 'scheduled', photos: [] });
+
+    renderDetail();
+    fireEvent.click(screen.getByRole('button', { name: /cancel this pickup request/i }));
+
+    const confirm = screen.getByRole('button', { name: /confirm cancellation/i });
+    expect(confirm).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/why are you cancelling/i), {
+      target: { value: 'Bags already donated myself' },
+    });
+    expect(confirm).toBeEnabled();
+
+    fireEvent.click(confirm);
+    expect(mockCancel).toHaveBeenCalledWith('Bags already donated myself');
+  });
+
+  it('hides the cancel action once the collection has been picked up', () => {
+    mockCollectionData.mockReturnValue({ ...BASE_COLLECTION, status: 'picked_up', photos: [] });
+
+    renderDetail();
+
+    expect(
+      screen.queryByRole('button', { name: /cancel this pickup request/i }),
+    ).not.toBeInTheDocument();
   });
 });
