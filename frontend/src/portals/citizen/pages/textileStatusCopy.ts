@@ -1,4 +1,22 @@
 export type TextileMethod = 'dropoff' | 'premises';
+export type TextileTripStatus =
+  | 'planned'
+  | 'assigned'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled'
+  | string;
+export function tripStatusLabel(tripStatus: string | null | undefined): string | null {
+  if (!tripStatus) return null;
+  const map: Record<string, string> = {
+    planned: 'Scheduled',
+    assigned: 'Scheduled',
+    in_progress: 'In progress',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+  };
+  return map[tripStatus] ?? tripStatus;
+}
 export function statusHeading(status: string, method: TextileMethod): string {
   const dropoff: Record<string, string> = {
     pending_review: 'Drop-off request created',
@@ -30,6 +48,7 @@ export function nextStepCopy(
     window?: string;
     date?: string;
     actual?: string;
+    tripStatus?: string | null;
   },
 ): string {
   if (status === 'pending_review')
@@ -40,10 +59,13 @@ export function nextStepCopy(
     return method === 'dropoff'
       ? `Bring your bags to ${ctx.centre ?? 'the centre'}. Show reference ${ctx.reference ?? ''} at the counter.`
       : "We are grouping nearby collections. You'll get a pickup date soon.";
-  if (status === 'scheduled')
-    return method === 'dropoff'
-      ? `Reference ${ctx.reference ?? ''} is valid at the counter until ${ctx.date ?? 'the scheduled date'}.`
-      : `Keep bags at ${ctx.address ?? 'your address'} between ${ctx.window ?? 'the scheduled window'}. Crew photo confirms collection.`;
+  if (status === 'scheduled') {
+    if (method === 'dropoff')
+      return `Reference ${ctx.reference ?? ''} is valid at the counter until ${ctx.date ?? 'the scheduled date'}.`;
+    if (ctx.tripStatus === 'in_progress')
+      return `Crew is on the route today — keep bags at ${ctx.address ?? 'your address'} between ${ctx.window ?? 'the scheduled window'}.`;
+    return `Keep bags at ${ctx.address ?? 'your address'} between ${ctx.window ?? 'the scheduled window'}. Crew photo confirms collection.`;
+  }
   if (status === 'picked_up')
     return method === 'dropoff'
       ? `The centre logged your drop-off. We counted ${ctx.actual ?? 'your items'}.`

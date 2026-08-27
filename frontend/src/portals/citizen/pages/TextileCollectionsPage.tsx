@@ -18,6 +18,20 @@ const DROPOFF_LABELS: Record<string, string> = {
   scheduled: 'Pass active',
   picked_up: 'Received at centre',
 };
+const TRIP_LABELS: Record<string, string> = {
+  planned: 'Scheduled',
+  assigned: 'Scheduled',
+  in_progress: 'In progress',
+  completed: 'Completed',
+};
+function formatListDate(d: string | null | undefined): string | null {
+  if (!d) return null;
+  try {
+    return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(d));
+  } catch {
+    return d;
+  }
+}
 
 function MethodBadge({ method }: { method: string }): JSX.Element {
   const isDropoff = method === 'dropoff';
@@ -116,6 +130,41 @@ export default function TextileCollectionsPage(): JSX.Element {
           const isDropoff = item.collection_method === 'dropoff';
           const label =
             (isDropoff && DROPOFF_LABELS[item.status]) ?? LABELS[item.status] ?? item.status;
+          const batchDate =
+            (
+              item as unknown as {
+                scheduled_date?: string | null;
+                batch?: {
+                  collection_date?: string;
+                  window_start?: string | null;
+                  window_end?: string | null;
+                  status?: string;
+                } | null;
+              }
+            ).scheduled_date ??
+            (item as unknown as { batch?: { collection_date?: string } | null }).batch
+              ?.collection_date ??
+            null;
+          const batch =
+            (
+              item as unknown as {
+                batch?: {
+                  window_start?: string | null;
+                  window_end?: string | null;
+                  status?: string;
+                } | null;
+              }
+            ).batch ?? null;
+          const windowStr =
+            batch?.window_start && batch?.window_end
+              ? `${batch.window_start}–${batch.window_end}`
+              : null;
+          const tripChip =
+            !isDropoff && item.status === 'scheduled' && batch?.status
+              ? (TRIP_LABELS[batch.status] ?? null)
+              : null;
+          const dateLabel =
+            !isDropoff && item.status === 'scheduled' ? formatListDate(batchDate) : null;
           return (
             <Link
               key={item.id}
@@ -130,10 +179,21 @@ export default function TextileCollectionsPage(): JSX.Element {
                 <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
                   {item.reference}
                 </p>
-                <p className="mt-2 flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
+                <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-secondary)]">
                   <MethodBadge method={item.collection_method} />
-                  {label}
+                  <span>{label}</span>
+                  {tripChip ? (
+                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium">
+                      {tripChip}
+                    </span>
+                  ) : null}
                 </p>
+                {dateLabel ? (
+                  <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+                    {dateLabel}
+                    {windowStr ? ` · ${windowStr}` : ''}
+                  </p>
+                ) : null}
               </div>
               <IconChevronRight className="h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]" />
             </Link>
