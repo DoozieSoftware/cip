@@ -31,7 +31,17 @@ export interface TextileCollectionListItem {
     dropoff_name: string | null;
     dropoff_address: string | null;
   } | null;
-  batch: { id: string; reference: string; collection_date: string; status: string } | null;
+  batch: {
+    id: string;
+    reference: string;
+    collection_date: string;
+    status: string;
+    trip_reference?: string | null;
+    driver_name?: string | null;
+    team_name?: string | null;
+    vehicle_label?: string | null;
+    instructions?: string | null;
+  } | null;
   submitted_at: string | null;
   photos?: Array<{ id: string; role: 'evidence' | 'proof'; url: string }>;
   category: string;
@@ -164,6 +174,26 @@ export function uploadTextileProofPhoto(
     formData,
     opts,
   );
+}
+
+export function assignTextileTrip(
+  batchId: string,
+  payload: {
+    driver_name?: string;
+    team_name?: string;
+    vehicle_label?: string;
+    trip_reference?: string;
+    instructions?: string;
+    stop_order?: string[];
+    department_id?: string;
+  },
+) {
+  const { department_id, ...body } = payload;
+  return request<TextileBatchResult>(`/department/textile-collections/batches/${batchId}/assign`, {
+    method: 'POST',
+    body,
+    query: department_id ? { department_id } : {},
+  });
 }
 
 export function updateTextileZoneDropoff(

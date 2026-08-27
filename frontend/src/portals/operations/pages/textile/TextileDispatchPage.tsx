@@ -167,8 +167,11 @@ export default function TextileDispatchPage(): JSX.Element {
                   {trip.items.length} stops
                 </span>
                 <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] text-indigo-700">
-                  planned
+                  {trip.items[0]?.batch?.status ?? 'planned'}
                 </span>
+                {trip.items[0]?.batch?.driver_name ? <span className="text-xs text-[var(--color-text-secondary)]">Driver: {trip.items[0].batch.driver_name}</span> : null}
+                {trip.items[0]?.batch?.team_name ? <span className="text-xs text-[var(--color-text-secondary)]">Team: {trip.items[0].batch.team_name}</span> : null}
+                {trip.items[0]?.batch?.vehicle_label ? <span className="text-xs text-[var(--color-text-secondary)]">Vehicle: {trip.items[0].batch.vehicle_label}</span> : null}
               </header>
               <ul className="divide-y divide-black/5">
                 {trip.items.map((item, idx) => {
@@ -195,8 +198,9 @@ export default function TextileDispatchPage(): JSX.Element {
                             </span>
                           </div>
                           <p className="mt-0.5 line-clamp-2 text-xs text-[var(--color-text-secondary)]">
-                            {item.requester_name} · {item.pickup_address}
+                            {item.requester_name} · {item.pickup_address} {idx === 0 ? <span className="ml-1 rounded bg-amber-100 px-1 py-0.5 text-[10px] font-medium text-amber-800">Next stop</span> : null}
                           </p>
+                          {item.readiness_instructions ? <p className="mt-1 text-xs italic text-[var(--color-text-secondary)]">{item.readiness_instructions}</p> : null}
                           <div className="mt-2 flex gap-2">
                             <a
                               href={telHref(item.contact_phone)}
@@ -217,11 +221,12 @@ export default function TextileDispatchPage(): JSX.Element {
                         <div className="flex gap-2">
                           <button
                             type="button"
+                            aria-label="Record collection"
                             disabled={outcome.isPending}
                             onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
                             className="min-h-9 rounded-full bg-[var(--color-ink)] px-3.5 text-xs font-medium text-white disabled:opacity-40"
                           >
-                            {expandedId === item.id ? 'Close' : 'Record'}
+                            {expandedId === item.id ? 'Close' : 'Record collection'}
                           </button>
                           <button
                             type="button"
