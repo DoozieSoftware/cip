@@ -9,6 +9,8 @@ import {
   CategoryFilter,
   DeskPage,
   DeskStates,
+  MethodBadge,
+  MethodFilter,
   Pager,
   SearchBox,
   TableShell,
@@ -23,6 +25,7 @@ export default function TextileReviewPage(): JSX.Element {
   const [search, setSearch] = useState('');
   const [zoneId, setZoneId] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [method, setMethod] = useState('');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<string[]>([]);
   const [approveTarget, setApproveTarget] = useState<string[] | null>(null);
@@ -33,6 +36,7 @@ export default function TextileReviewPage(): JSX.Element {
     page,
     zoneId: zoneId || undefined,
     categoryId: categoryId || undefined,
+    collectionMethod: method || undefined,
     autoRefresh: selected.length === 0 && approveTarget === null,
     enabled: desk.ready && desk.isDrLinen,
     departmentId: desk.departmentId,
@@ -78,6 +82,7 @@ export default function TextileReviewPage(): JSX.Element {
               setPage(1);
             }}
           />
+          <MethodFilter value={method} onChange={(next) => { setMethod(next); setPage(1); }} />
           <CategoryFilter
             value={categoryId}
             onChange={(next) => {
@@ -175,9 +180,11 @@ export default function TextileReviewPage(): JSX.Element {
                   <p className="mt-0.5 max-w-[220px] truncate text-xs text-[var(--color-text-secondary)]">
                     {item.title}
                   </p>
-                  <div className="mt-0.5">
+                  <div className="mt-0.5 flex flex-wrap gap-1">
                     <CategoryBadge category={item.category} />
+                    <MethodBadge method={item.collection_method} />
                   </div>
+                  {item.service_zone?.dropoff_name ? <p className="mt-0.5 text-[10px] text-[var(--color-text-tertiary)]">{item.service_zone.dropoff_name}</p> : null}
                 </td>
                 <td className="px-3 py-2.5">
                   <p className="font-medium">{item.requester_name}</p>

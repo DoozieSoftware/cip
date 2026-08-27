@@ -99,6 +99,7 @@ const MOBILE_NAV: NavItem[] = [
 const DR_LINEN_NAV: NavItem[] = [
   { to: '/operations/textile-collections/review', label: 'Reviews', icon: IconClipboardCheck },
   { to: '/operations/textile-collections/schedule', label: 'Trips', icon: IconCalendarStats },
+  { to: '/operations/textile-collections/receipt', label: 'Receipt', icon: IconClipboardList },
   { to: '/operations/textile-collections/dispatch', label: 'Dispatch', icon: IconTruck },
   { to: '/operations/textile-collections/completed', label: 'History', icon: IconHistory },
   { to: '/operations/profile', label: 'Profile', icon: IconUser },

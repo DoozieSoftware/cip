@@ -38,6 +38,8 @@ export const STATUS_STYLES: Record<string, string> = {
   cancelled: 'bg-neutral-100 text-neutral-600',
 };
 
+export const COLLECTION_METHODS = { dropoff: 'Drop-off', premises: 'Pickup' } as const;
+
 /** Department gating + ids shared by every textile desk page. */
 export function useDesk(): {
   ready: boolean;
@@ -45,10 +47,16 @@ export function useDesk(): {
   departmentId: string | undefined;
 } {
   const { memberships, selectedId, ready } = useDepartmentSelection();
-  const selectedDepartment = memberships.find((item) => item.id === selectedId);
+  const selectedDepartment = memberships.find((item) => item.id === selectedId) as unknown as
+    | Record<string, unknown>
+    | undefined;
+  const isDrLinen =
+    selectedDepartment?.code === 'DR_LINEN' ||
+    (selectedDepartment as unknown as { is_collection_partner?: boolean })
+      ?.is_collection_partner === true;
   return {
     ready,
-    isDrLinen: selectedDepartment?.code === 'DR_LINEN',
+    isDrLinen: Boolean(isDrLinen),
     departmentId: selectedId ?? undefined,
   };
 }
@@ -76,6 +84,7 @@ interface QueueArgs {
   page: number;
   zoneId?: string;
   categoryId?: string;
+  collectionMethod?: string;
   enabled: boolean;
   departmentId?: string;
   /** Pause updates while an officer has selections or a form in progress. */
@@ -92,12 +101,23 @@ export function useTextileQueue(args: QueueArgs): UseQueryResult<{
     page,
     zoneId,
     categoryId,
+    collectionMethod,
     enabled,
     departmentId,
     autoRefresh = true,
   } = args;
   return useQuery({
-    queryKey: ['operations', 'textile', status, departmentId, zoneId, categoryId, search, page],
+    queryKey: [
+      'operations',
+      'textile',
+      status,
+      departmentId,
+      zoneId,
+      categoryId,
+      collectionMethod,
+      search,
+      page,
+    ],
     queryFn: () =>
       fetchTextileQueue({
         department_id: departmentId,
@@ -105,6 +125,7 @@ export function useTextileQueue(args: QueueArgs): UseQueryResult<{
         search: search || undefined,
         service_zone_id: zoneId || undefined,
         category: categoryId || undefined,
+        collection_method: collectionMethod || undefined,
         per_page: PER_PAGE,
         page,
       }),
@@ -256,6 +277,54 @@ export function CategoryBadge({ category }: { category: string }): JSX.Element |
     </span>
   );
 }
+export function MethodBadge({ method }: { method: string }): JSX.Element {
+  const style = method === 'dropoff' ? 'bg-sky-50 text-sky-800' : 'bg-violet-50 text-violet-800';
+  const label = method === 'dropoff' ? 'Drop-off' : method === 'premises' ? 'Pickup' : method;
+  return (
+    <span className={cx('rounded-full px-2 py-0.5 text-[11px] font-medium', style)}>{label}</span>
+  );
+}
+export function VarianceBadge({
+  actual,
+  estimated,
+}: {
+  actual: number | null;
+  estimated: number | null;
+}): JSX.Element | null {
+  if (actual === null || estimated === null || estimated === 0) return null;
+  const pct = ((actual - estimated) / estimated) * 100;
+  const abs = Math.abs(pct);
+  let cls = 'bg-emerald-50 text-emerald-700';
+  if (abs >= 50 || pct < 0) cls = 'bg-rose-50 text-rose-700';
+  else if (abs >= 25) cls = 'bg-amber-50 text-amber-800';
+  return (
+    <span className={cx('rounded-full px-2 py-0.5 text-[10px] font-medium', cls)}>
+      {pct > 0 ? '+' : ''}
+      {pct.toFixed(0)}%
+    </span>
+  );
+}
+export function MethodFilter({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}): JSX.Element {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      aria-label="Filter by collection method"
+      className="min-h-10 rounded-full border border-black/15 bg-white px-4 text-sm"
+    >
+      <option value="">All methods</option>
+      <option value="dropoff">Drop-off</option>
+      <option value="premises">Pickup</option>
+    </select>
+  );
+}
+export { MAX_PHOTO_BYTES, ALLOWED_PHOTO_TYPES, validatePhotoFile } from './photoCapture';
 
 export function TableShell({
   head,
