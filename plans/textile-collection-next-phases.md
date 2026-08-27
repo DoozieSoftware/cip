@@ -8,24 +8,28 @@
 
 ## 0. Progress as of 2026-08-27 — what is now complete
 
-**Branch:** `codex/textile-phase-0` @ `a3950bdd`.
+**Branch:** `codex/textile-phase-0` @ `f99cdffb`.
 
-| Phase          | What                                                    | Where                                                            | Status |
-| -------------- | ------------------------------------------------------- | ---------------------------------------------------------------- | ------ |
-| Phase 0        | Decision register (D-01..D-08)                          | `plans/textile-phase-0-decision-register.md`                     | ✅     |
-| Phase 0        | Flow audit (status machine, guards, routes, migrations) | `plans/phase0/flow-audit.md` (16K)                               | ✅     |
-| Phase 0        | Citizen journey audit                                   | `plans/phase0/citizen-journey-audit.md` (11K)                    | ✅     |
-| Phase 0        | Ops queue audit                                         | `plans/phase0/ops-queue-audit.md` (13K)                          | ✅     |
-| Phase 0        | Metrics audit                                           | `plans/phase0/metrics-audit.md` (13K)                            | ✅     |
-| Phase 0        | Security/media/notification/concurrency audit           | `plans/phase0/security-audit.md` (12K)                           | ✅     |
-| Phase 1 design | Backend spec (statuses, schema, API, authZ, audit)      | `plans/phase1/01-backend-spec.md` (20K)                          | ✅     |
-| Phase 1 design | Citizen UX spec                                         | `plans/phase1/02-citizen-ux.md` (16K)                            | ✅     |
-| Phase 1 design | Ops UX spec (receipt + trip manifest)                   | `plans/phase1/03-ops-ux.md` (15K)                                | ✅     |
-| Phase 1 design | QA matrix                                               | `plans/phase1/04-qa-matrix.md` (11K)                             | ✅     |
-| Phase 1 code   | Backend (migrations, models, services)                  | `codex/textile-phase1-backend` @ `1d8e3573` — 25 files +798/-26  | ✅     |
-| Phase 1 code   | Citizen UI (CentreCard, Progress, Receipt)              | `codex/textile-phase1-citizen` @ `a126fadc` — 15 files +699/-267 | ✅     |
-| Phase 1 code   | Ops UI (ReceiptPage, Schedule, Dispatch)                | `codex/textile-phase1-ops` @ `6d5ae96a` — 12 files +779/-261     | ✅     |
-| Phase 1 code   | Tests (Pest + Vitest + Playwright, many `todo` for D-*) | `codex/textile-phase1-qa` @ `28a1c510` — 8 files +551            | ✅     |
+| Phase          | What                                                     | Where                                                            | Status |
+| -------------- | -------------------------------------------------------- | ---------------------------------------------------------------- | ------ |
+| Phase 0        | Decision register (D-01..D-08)                           | `plans/textile-phase-0-decision-register.md`                     | ✅     |
+| Phase 0        | Flow audit (status machine, guards, routes, migrations)  | `plans/phase0/flow-audit.md` (16K)                               | ✅     |
+| Phase 0        | Citizen journey audit                                    | `plans/phase0/citizen-journey-audit.md` (11K)                    | ✅     |
+| Phase 0        | Ops queue audit                                          | `plans/phase0/ops-queue-audit.md` (13K)                          | ✅     |
+| Phase 0        | Metrics audit                                            | `plans/phase0/metrics-audit.md` (13K)                            | ✅     |
+| Phase 0        | Security/media/notification/concurrency audit            | `plans/phase0/security-audit.md` (12K)                           | ✅     |
+| Phase 1 design | Backend spec (statuses, schema, API, authZ, audit)       | `plans/phase1/01-backend-spec.md` (20K)                          | ✅     |
+| Phase 1 design | Citizen UX spec                                          | `plans/phase1/02-citizen-ux.md` (16K)                            | ✅     |
+| Phase 1 design | Ops UX spec (receipt + trip manifest)                    | `plans/phase1/03-ops-ux.md` (15K)                                | ✅     |
+| Phase 1 design | QA matrix                                                | `plans/phase1/04-qa-matrix.md` (11K)                             | ✅     |
+| Phase 1 code   | Backend (migrations, models, services)                   | `codex/textile-phase1-backend` @ `1d8e3573` — 25 files +798/-26  | ✅     |
+| Phase 1 code   | Citizen UI (CentreCard, Progress, Receipt)               | `codex/textile-phase1-citizen` @ `a126fadc` — 15 files +699/-267 | ✅     |
+| Phase 1 code   | Ops UI (ReceiptPage, Schedule, Dispatch)                 | `codex/textile-phase1-ops` @ `6d5ae96a` — 12 files +779/-261     | ✅     |
+| Phase 1 code   | Tests (Pest + Vitest + Playwright, many `todo` for D-\*) | `codex/textile-phase1-qa` @ `28a1c510` — 8 files +551            | ✅     |
+| Phase 2 code   | Backend (trip execution, assignment, reorder)            | `codex/textile-phase2-backend` @ `a5872087` — 2 files +28/-4     | ✅     |
+| Phase 2 code   | Citizen (trip status, contact)                           | `codex/textile-phase2-citizen` @ `d4772437` — 4 files +189/-10   | ✅     |
+| Phase 2 code   | Ops (trip manifest, assignment, schedule)                | `codex/textile-phase2-ops` @ `ff7199bc` — 5 files +134/-20       | ✅     |
+| Phase 2 code   | Tests (trip execution, concurrency, manifest)            | `codex/textile-phase2-qa` @ `f6f66117` — 3 files +498/-16        | ✅     |
 
 ## 1. Current baseline
 
