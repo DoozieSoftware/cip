@@ -20,10 +20,12 @@ import { TextileCollectionFields } from '../components/TextileCollectionFields';
 import { CentreCard } from '../components/CentreCard';
 import {
   useCreateTextileCollection,
+  useTextileAvailability,
   uploadTextileCollectionPhoto,
   type TextileCollectionCategory,
   type TextileCollectionPayload,
 } from '../api/textileZones';
+import { slotUnavailableFallback } from './textileStatusCopy';
 
 const MAX_PHOTO_SIZE_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -106,6 +108,13 @@ export default function TextileRequestPage(): JSX.Element {
     [],
   );
   const onValidityChange = useCallback((valid: boolean) => setDetailsValid(valid), []);
+  const availability = useTextileAvailability(
+    details?.service_zone_id ?? null,
+    details?.collection_method ?? null,
+  );
+  const isPremises = details?.collection_method === 'premises';
+  const unavailableDates = availability.data?.unavailable_dates ?? [];
+  const nextAvailableDate = availability.data?.next_available_date ?? null;
   function handleCategoryChange(next: TextileCollectionCategory): void {
     setCategory(next);
     setDetails(null);
@@ -174,7 +183,11 @@ export default function TextileRequestPage(): JSX.Element {
     apiError instanceof ApiError && apiError.code === 'CATEGORY_NOT_SERVED'
       ? apiError.message
       : null;
-  const generalError = categoryError ? null : apiError?.message;
+  const slotUnavailableError =
+    apiError instanceof ApiError && (apiError.code === 'SLOT_UNAVAILABLE' || apiError.status === 409)
+      ? apiError
+      : null;
+  const generalError = categoryError || slotUnavailableError ? null : apiError?.message;
   const isSubmitting = create.isPending || uploadingPhoto;
   const dropoffActive = dropoffInfo !== null;
   return (
@@ -290,6 +303,41 @@ export default function TextileRequestPage(): JSX.Element {
         onValidityChange={onValidityChange}
         onDropoffChange={setDropoffInfo}
       />
+      {isPremises && details ? (
+        <section aria-label="Availability" className="rounded-xl border border-black/10 bg-white p-5">
+          <h2 className="text-sm font-medium">Pickup availability</h2>
+          {availability.isLoading ? (
+            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Checking dates…</p>
+          ) : unavailableDates.length > 0 ? (
+            <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <p className="text-xs font-medium text-amber-800">Unavailable dates</p>
+              <p className="mt-1 text-xs leading-5 text-amber-800">{unavailableDates.slice(0, 8).join(', ')}{unavailableDates.length > 8 ? ` +${unavailableDates.length - 8} more` : ''}</p>
+              {nextAvailableDate ? <p className="mt-1 text-xs text-amber-700">Next available: <span className="font-medium">{nextAvailableDate}</span> — your request will be grouped for then.</p> : null}
+              {availability.data?.reason ? <p className="mt-1 text-[11px] text-amber-700">{availability.data.reason}</p> : null}
+            </div>
+          ) : nextAvailableDate ? (
+            <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">Next available pickup: <span className="font-medium text-[var(--color-ink)]">{nextAvailableDate}</span>. Submit now and we will schedule for the next open window.</p>
+          ) : (
+            <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">Pickups are available on upcoming dates. We group nearby requests into the next trip window.</p>
+          )}
+          {availability.data && availability.data.windows?.length ? (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {availability.data.windows.map((w) => (
+                <span key={`${w.window_start}-${w.window_end}`} className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${w.available ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-zinc-100 text-zinc-500 border border-black/10 line-through'}`}>
+                  {w.window_start}–{w.window_end}{w.available ? '' : ' unavailable'}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {unavailableDates.length > 0 && availability.data?.windows?.every((w) => !w.available) ? (
+            <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs leading-5 text-blue-800">
+              <p className="font-medium">No pickup window available right now</p>
+              <p className="mt-1">{slotUnavailableFallback('premises')}</p>
+              <p className="mt-2 text-[11px]">You can still submit for the next open slot, or switch to drop-off above.</p>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
       {dropoffActive ? (
         <section className="rounded-xl border border-black/10 bg-white p-5">
           <h2 className="text-sm font-medium">Drop-off location</h2>
@@ -444,6 +492,13 @@ export default function TextileRequestPage(): JSX.Element {
           </p>
         ) : null}
       </section>
+      {slotUnavailableError ? (
+        <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-medium text-amber-800">Slot no longer available</p>
+          <p className="mt-1 text-sm leading-5 text-amber-800">{slotUnavailableError.message || slotUnavailableFallback('premises')}</p>
+          {nextAvailableDate ? <p className="mt-2 text-xs text-amber-700">Next open pickup: <span className="font-medium">{nextAvailableDate}</span>. Try resubmitting, or switch to drop-off — no slot needed.</p> : <p className="mt-2 text-xs text-amber-700">Try a different zone or switch to drop-off — no slot needed.</p>}
+        </div>
+      ) : null}
       {generalError ? (
         <div
           role="alert"
