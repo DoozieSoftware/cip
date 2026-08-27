@@ -71,6 +71,12 @@ final class TextileCollectionRequest extends Model
 
     public const STATUS_MISSED = 'missed';
 
+    public const STATUS_DROPOFF_AWAITING_DROP = 'dropoff_awaiting_drop';
+
+    public const STATUS_RECEIVED_AT_CENTRE = 'received_at_centre';
+
+    // TODO D-01/D-02: extra end states dropoff_expired / no_show pending decision.
+
     /** @var list<string> */
     public const VALID_CATEGORIES = ['clothes_waste', 'metal_scrap', 'e_waste'];
 
@@ -78,6 +84,7 @@ final class TextileCollectionRequest extends Model
 
     /** @var list<string> */
     protected $fillable = [
+        'dropoff_confirmed_at', 'dropoff_valid_from', 'dropoff_valid_until', 'receipt_id', 'stop_order',
         'report_id', 'citizen_id', 'reference', 'title', 'notes',
         'category', 'service_zone_id', 'department_id', 'batch_id', 'requester_type',
         'requester_name', 'rwa_name', 'contact_email', 'contact_phone',
@@ -96,7 +103,10 @@ final class TextileCollectionRequest extends Model
             'estimated_weight_kg' => 'float',
             'actual_bags' => 'integer',
             'actual_weight_kg' => 'float',
-            'latitude' => 'float',
+            'dropoff_confirmed_at' => 'datetime',
+        'dropoff_valid_from' => 'date',
+        'dropoff_valid_until' => 'date',
+        'latitude' => 'float',
             'longitude' => 'float',
             'scheduled_date' => 'date',
             'picked_up_at' => 'datetime',

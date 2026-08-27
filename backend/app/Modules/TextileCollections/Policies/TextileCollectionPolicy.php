@@ -54,6 +54,13 @@ final class TextileCollectionPolicy extends BasePolicy
         return $this->isCollectionPartner($user);
     }
 
+    public function approve(User $user): bool { return $this->isCollectionPartner($user); }
+    public function recordReceipt(User $user): bool { return $this->isCollectionPartner($user); }
+    public function reverseReceipt(User $user): bool { return $this->isCollectionPartner($user); }
+    public function manageCentre(User $user): bool { return $this->isCollectionPartner($user); }
+    public function assignTrip(User $user): bool { return $this->isCollectionPartner($user); }
+    public function operateTrip(User $user): bool { return $this->isCollectionPartner($user); }
+
     /**
      * Check if the user is a member of a department that has ≥1
      * textile_partner_capabilities row (optionally matching the

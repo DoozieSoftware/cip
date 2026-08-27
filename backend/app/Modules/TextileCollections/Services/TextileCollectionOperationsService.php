@@ -8,6 +8,7 @@ use App\Modules\Media\Models\Media;
 use App\Modules\Security\Models\AuditLog;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\TextileCollections\Events\TextileCollectionCollected;
+use App\Modules\TextileCollections\Events\TextileCollectionDropoffConfirmed;
 use App\Modules\TextileCollections\Events\TextileCollectionRejected;
 use App\Modules\TextileCollections\Events\TextileCollectionScheduled;
 use App\Modules\TextileCollections\Models\TextileCollectionBatch;
@@ -20,14 +21,41 @@ final class TextileCollectionOperationsService
 {
     public function approve(TextileCollectionRequest $collection, User $actor): TextileCollectionRequest
     {
+        // Lane-aware approve: dropoff -> dropoff_awaiting_drop, premises -> ready_to_group
+        if ($collection->collection_method === 'dropoff') {
+            return $this->confirmDropoff($collection, $actor);
+        }
+
+        return $this->approvePickup($collection, $actor);
+    }
+
+    public function confirmDropoff(TextileCollectionRequest $collection, User $actor, ?string $validFrom = null, ?string $validUntil = null): TextileCollectionRequest
+    {
         if ($collection->status !== TextileCollectionRequest::STATUS_PENDING_REVIEW) {
             throw ApiException::validation('Only requests awaiting review can be approved.');
         }
-
-        $collection->update(['status' => TextileCollectionRequest::STATUS_READY_TO_GROUP]);
-        $this->audit($actor, $collection->id, 'textile.approve', ['status' => TextileCollectionRequest::STATUS_PENDING_REVIEW], [
-            'status' => TextileCollectionRequest::STATUS_READY_TO_GROUP,
+        if ($collection->collection_method !== 'dropoff') {
+            throw ApiException::validation('confirmDropoff only for dropoff method.');
+        }
+        $collection->update([
+            'status' => TextileCollectionRequest::STATUS_DROPOFF_AWAITING_DROP,
+            'dropoff_confirmed_at' => now(),
+            'dropoff_valid_from' => $validFrom,
+            'dropoff_valid_until' => $validUntil,
         ]);
+        $this->audit($actor, $collection->id, 'textile.approve_dropoff', ['status' => TextileCollectionRequest::STATUS_PENDING_REVIEW], ['status' => TextileCollectionRequest::STATUS_DROPOFF_AWAITING_DROP]);
+        TextileCollectionDropoffConfirmed::dispatch($collection->refresh());
+
+        return $collection->refresh()->load(['citizen', 'serviceZone', 'batch']);
+    }
+
+    public function approvePickup(TextileCollectionRequest $collection, User $actor): TextileCollectionRequest
+    {
+        if ($collection->status !== TextileCollectionRequest::STATUS_PENDING_REVIEW) {
+            throw ApiException::validation('Only requests awaiting review can be approved.');
+        }
+        $collection->update(['status' => TextileCollectionRequest::STATUS_READY_TO_GROUP]);
+        $this->audit($actor, $collection->id, 'textile.approve', ['status' => TextileCollectionRequest::STATUS_PENDING_REVIEW], ['status' => TextileCollectionRequest::STATUS_READY_TO_GROUP]);
 
         return $collection->refresh()->load(['citizen', 'serviceZone', 'batch']);
     }
@@ -68,7 +96,9 @@ final class TextileCollectionOperationsService
                 if ($collection->service_zone_id !== $serviceZoneId) {
                     throw ApiException::validation('All requests in a trip must belong to the same service zone.');
                 }
-
+                if ($collection->collection_method === 'dropoff') {
+                    throw ApiException::validation('Drop-off requests must never enter a trip.');
+                }
                 if (! in_array($collection->status, [
                     TextileCollectionRequest::STATUS_READY_TO_GROUP,
                     TextileCollectionRequest::STATUS_MISSED,
@@ -83,7 +113,7 @@ final class TextileCollectionOperationsService
                 'collection_date' => $collectionDate,
                 'window_start' => $windowStart,
                 'window_end' => $windowEnd,
-                'status' => 'planned',
+                'status' => TextileCollectionBatch::STATUS_PLANNED,
                 'trip_reference' => $tripReference,
                 'instructions' => $instructions,
                 'created_by' => $actor->id,
@@ -178,12 +208,16 @@ final class TextileCollectionOperationsService
 
     private function assertOutcomeAllowed(TextileCollectionRequest $collection, string $outcome): void
     {
+        if ($outcome === 'collected' && $collection->collection_method === 'dropoff') {
+            throw ApiException::validation('Use receipt for drop-off collections.');
+        }
         $allowedStatuses = match ($outcome) {
             'collected', 'missed' => [TextileCollectionRequest::STATUS_SCHEDULED],
             'rejected' => [TextileCollectionRequest::STATUS_PENDING_REVIEW],
             'cancelled' => [
                 TextileCollectionRequest::STATUS_PENDING_REVIEW,
                 TextileCollectionRequest::STATUS_READY_TO_GROUP,
+                TextileCollectionRequest::STATUS_DROPOFF_AWAITING_DROP,
                 TextileCollectionRequest::STATUS_SCHEDULED,
                 TextileCollectionRequest::STATUS_MISSED,
             ],
