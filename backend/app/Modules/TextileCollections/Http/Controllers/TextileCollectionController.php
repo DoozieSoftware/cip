@@ -7,6 +7,7 @@ namespace App\Modules\TextileCollections\Http\Controllers;
 use App\Modules\Departments\Models\Department;
 use App\Modules\Departments\Services\OperationDepartmentResolver;
 use App\Modules\Media\Support\MediaUrl;
+use App\Modules\Security\Models\AuditLog;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Controllers\BaseController;
 use App\Modules\TextileCollections\DTO\TextileCollectionInput;
@@ -16,7 +17,9 @@ use App\Modules\TextileCollections\Http\Requests\CreateCollectionBatchRequest;
 use App\Modules\TextileCollections\Http\Requests\RecordCollectionOutcomeRequest;
 use App\Modules\TextileCollections\Http\Requests\RecordDropoffReceiptRequest;
 use App\Modules\TextileCollections\Http\Requests\ReorderTextileBatchStopsRequest;
+use App\Modules\TextileCollections\Http\Requests\RescheduleTextileCollectionRequest;
 use App\Modules\TextileCollections\Http\Requests\StoreTextileCollectionRequest;
+use App\Modules\TextileCollections\Http\Requests\UpdateTextileInstructionsRequest;
 use App\Modules\TextileCollections\Http\Requests\UpdateTextileZoneRequest;
 use App\Modules\TextileCollections\Http\Requests\UploadTextilePhotoRequest;
 use App\Modules\TextileCollections\Http\Resources\TextileCollectionResource;
@@ -24,11 +27,14 @@ use App\Modules\TextileCollections\Http\Resources\TextileServiceZoneResource;
 use App\Modules\TextileCollections\Models\TextileCollectionBatch;
 use App\Modules\TextileCollections\Models\TextileCollectionRequest;
 use App\Modules\TextileCollections\Models\TextileServiceZone;
+use App\Modules\TextileCollections\Models\TextileZoneUnavailability;
 use App\Modules\TextileCollections\Services\TextileCollectionMediaService;
 use App\Modules\TextileCollections\Services\TextileCollectionOperationsService;
 use App\Modules\TextileCollections\Services\TextileCollectionService;
 use App\Modules\TextileCollections\Services\TextileReceiptService;
+use App\Modules\TextileCollections\Services\TextileRescheduleService;
 use App\Modules\TextileCollections\Services\TextileTripService;
+use App\Modules\TextileCollections\Services\TextileUnavailabilityService;
 use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -46,6 +52,8 @@ final class TextileCollectionController extends BaseController
         private readonly MediaUrl $mediaUrl,
         private readonly TextileReceiptService $receipts,
         private readonly TextileTripService $trips,
+        private readonly TextileRescheduleService $reschedules,
+        private readonly TextileUnavailabilityService $unavailability,
     ) {}
 
     public function zones(Request $request): JsonResponse
@@ -69,6 +77,175 @@ final class TextileCollectionController extends BaseController
         $zones = $query->get();
 
         return $this->respond(TextileServiceZoneResource::collection($zones)->resolve($request));
+    }
+
+    /**
+     * Phase 3: Show unavailable dates/windows for a zone.
+     * Used by citizen booking/reschedule UI to avoid accepting an unavailable slot.
+     */
+    public function zoneUnavailability(TextileServiceZone $zone, Request $request): JsonResponse
+    {
+        $this->authenticatedUser($request);
+
+        $from = is_string($request->query('from')) ? $request->query('from') : null;
+        $to = is_string($request->query('to')) ? $request->query('to') : null;
+
+        $slots = $this->unavailability->listForZone($zone->id, $from, $to);
+
+        return $this->respond([
+            'zone_id' => $zone->id,
+            'zone_name' => $zone->name,
+            'centre_status' => $zone->centre_status,
+            'centre_closed_note' => $zone->centre_closed_note,
+            'unavailable_slots' => $slots,
+        ]);
+    }
+
+    /**
+     * Phase 3: Partner creates an unavailable slot (day or window).
+     */
+    public function storeUnavailability(TextileServiceZone $zone, Request $request): JsonResponse
+    {
+        $this->assertCollectionPartner($request);
+        $resolved = $this->departments->resolve(
+            $this->authenticatedUser($request),
+            $request->query('department_id'),
+        );
+
+        if ($zone->department_id !== null && (string) $zone->department_id !== (string) $resolved->id) {
+            throw ApiException::forbidden('This zone belongs to another partner.');
+        }
+
+        /** @var array<string,mixed> $data */
+        $data = $request->validate([
+            'unavailable_date' => ['required', 'date', 'after_or_equal:today'],
+            'window_start' => ['nullable', 'date_format:H:i'],
+            'window_end' => ['nullable', 'date_format:H:i', 'after:window_start'],
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $row = TextileZoneUnavailability::query()->create([
+            'service_zone_id' => $zone->id,
+            'unavailable_date' => $data['unavailable_date'],
+            'window_start' => $data['window_start'] ?? null,
+            'window_end' => $data['window_end'] ?? null,
+            'reason' => $data['reason'] ?? null,
+            'created_by' => $this->authenticatedUser($request)->id,
+        ]);
+
+        AuditLog::query()->create([
+            'user_id' => (string) $this->authenticatedUser($request)->id,
+            'entity' => 'textile_service_zone',
+            'entity_id' => $zone->id,
+            'action' => 'textile.unavailable_add',
+            'before' => null,
+            'after' => [
+                'unavailable_date' => $row->unavailable_date->toDateString(),
+                'window_start' => $row->window_start,
+                'window_end' => $row->window_end,
+                'reason' => $row->reason,
+            ],
+            'ip' => $request->ip(),
+            'device_fingerprint' => null,
+            'request_id' => $request->attributes->get('trace_id'),
+            'created_at' => now(),
+        ]);
+
+        return $this->respond([
+            'id' => $row->id,
+            'unavailable_date' => $row->unavailable_date->toDateString(),
+            'window_start' => $row->window_start,
+            'window_end' => $row->window_end,
+            'reason' => $row->reason,
+        ], 'Unavailable slot added.', 201);
+    }
+
+    /**
+     * Citizen self-service reschedule before cutoff.
+     */
+    public function citizenReschedule(
+        TextileCollectionRequest $collection,
+        RescheduleTextileCollectionRequest $request,
+    ): JsonResponse {
+        $user = $this->authenticatedUser($request);
+
+        if ((string) $collection->citizen_id !== (string) $user->id) {
+            throw ApiException::forbidden('You cannot reschedule this collection request.');
+        }
+
+        $data = $request->validated();
+
+        $updated = $this->reschedules->reschedule(
+            collection: $collection,
+            actor: $user,
+            newDate: (string) $data['scheduled_date'],
+            newWindowStart: isset($data['scheduled_window_start']) && is_string($data['scheduled_window_start']) ? $data['scheduled_window_start'] : null,
+            newWindowEnd: isset($data['scheduled_window_end']) && is_string($data['scheduled_window_end']) ? $data['scheduled_window_end'] : null,
+            reason: isset($data['reason']) && is_string($data['reason']) ? $data['reason'] : null,
+            isPartnerOverride: false,
+        );
+
+        return $this->respond(
+            (new TextileCollectionResource($updated->load(['citizen', 'serviceZone', 'batch', 'photos', 'department'])))->toArray($request),
+            'Pickup rescheduled.',
+        );
+    }
+
+    /**
+     * Partner override reschedule (after cutoff or when trip has started).
+     */
+    public function partnerReschedule(
+        TextileCollectionRequest $collection,
+        RescheduleTextileCollectionRequest $request,
+    ): JsonResponse {
+        $this->assertCollectionPartner($request, $collection);
+
+        $data = $request->validated();
+
+        $updated = $this->reschedules->reschedule(
+            collection: $collection,
+            actor: $this->authenticatedUser($request),
+            newDate: (string) $data['scheduled_date'],
+            newWindowStart: isset($data['scheduled_window_start']) && is_string($data['scheduled_window_start']) ? $data['scheduled_window_start'] : null,
+            newWindowEnd: isset($data['scheduled_window_end']) && is_string($data['scheduled_window_end']) ? $data['scheduled_window_end'] : null,
+            reason: isset($data['reason']) && is_string($data['reason']) ? $data['reason'] : null,
+            isPartnerOverride: true,
+        );
+
+        return $this->respond(
+            (new TextileCollectionResource($updated->load(['citizen', 'serviceZone', 'batch', 'photos', 'department'])))->toArray($request),
+            'Pickup rescheduled (partner override).',
+        );
+    }
+
+    /**
+     * Citizen updates permitted readiness/contact instructions without touching protected evidence.
+     */
+    public function updateInstructions(
+        TextileCollectionRequest $collection,
+        UpdateTextileInstructionsRequest $request,
+    ): JsonResponse {
+        $user = $this->authenticatedUser($request);
+
+        if ((string) $collection->citizen_id !== (string) $user->id) {
+            throw ApiException::forbidden('You cannot update this collection request.');
+        }
+
+        $data = $request->validated();
+
+        $updated = $this->reschedules->updateInstructions(
+            collection: $collection,
+            actor: $user,
+            readinessInstructions: isset($data['readiness_instructions']) && is_string($data['readiness_instructions']) ? $data['readiness_instructions'] : null,
+            contactPhone: isset($data['contact_phone']) && is_string($data['contact_phone']) ? $data['contact_phone'] : null,
+            contactEmail: isset($data['contact_email']) && is_string($data['contact_email']) ? $data['contact_email'] : null,
+            pickupAddress: isset($data['pickup_address']) && is_string($data['pickup_address']) ? $data['pickup_address'] : null,
+        );
+
+        return $this->respond(
+            (new TextileCollectionResource($updated->load(['serviceZone', 'batch', 'photos', 'department'])))->toArray($request),
+            'Instructions updated.',
+        );
     }
 
     public function store(StoreTextileCollectionRequest $request): JsonResponse

@@ -61,6 +61,21 @@ final class TextileCollectionPolicy extends BasePolicy
     public function assignTrip(User $user): bool { return $this->isCollectionPartner($user); }
     public function operateTrip(User $user): bool { return $this->isCollectionPartner($user); }
 
+    public function reschedule(User $user, TextileCollectionRequest $collection): bool
+    {
+        // Citizen owns the booking; partner override is checked in controller via isCollectionPartner.
+        return (string) $collection->citizen_id === (string) $user->id || $this->isCollectionPartner($user, (string) $collection->department_id);
+    }
+
+    public function updateInstructions(User $user, TextileCollectionRequest $collection): bool
+    {
+        return (string) $collection->citizen_id === (string) $user->id;
+    }
+
+    public function viewUnavailability(User $user): bool { return true; }
+    public function manageUnavailability(User $user): bool { return $this->isCollectionPartner($user); }
+    public function rescheduleOverride(User $user): bool { return $this->isCollectionPartner($user); }
+
     /**
      * Check if the user is a member of a department that has ≥1
      * textile_partner_capabilities row (optionally matching the
