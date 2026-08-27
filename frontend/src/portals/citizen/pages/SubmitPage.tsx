@@ -55,6 +55,10 @@ function currentStep(typeId: string, location: CapturedLocation | null): Step {
 
 const CATEGORY_PRIORITY: Record<string, number> = {
   garbage: 1,
+  // Keeps the three waste streams grouped under Garbage. These categories are
+  // retired from the complaint form today, but remain reactivatable, so the
+  // ordering rule is retained rather than dropped.
+  clothes_waste: 2,
   metal_scrap: 3,
   e_waste: 4,
   roads: 5,
