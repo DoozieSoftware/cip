@@ -10,9 +10,14 @@ use App\Modules\Media\Support\MediaUrl;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Controllers\BaseController;
 use App\Modules\TextileCollections\DTO\TextileCollectionInput;
+use App\Modules\TextileCollections\Http\Requests\ApproveTextileCollectionRequest;
+use App\Modules\TextileCollections\Http\Requests\AssignTextileBatchRequest;
 use App\Modules\TextileCollections\Http\Requests\CreateCollectionBatchRequest;
 use App\Modules\TextileCollections\Http\Requests\RecordCollectionOutcomeRequest;
+use App\Modules\TextileCollections\Http\Requests\RecordDropoffReceiptRequest;
+use App\Modules\TextileCollections\Http\Requests\ReorderTextileBatchStopsRequest;
 use App\Modules\TextileCollections\Http\Requests\StoreTextileCollectionRequest;
+use App\Modules\TextileCollections\Http\Requests\UpdateTextileZoneRequest;
 use App\Modules\TextileCollections\Http\Requests\UploadTextilePhotoRequest;
 use App\Modules\TextileCollections\Http\Resources\TextileCollectionResource;
 use App\Modules\TextileCollections\Http\Resources\TextileServiceZoneResource;
@@ -22,6 +27,8 @@ use App\Modules\TextileCollections\Models\TextileServiceZone;
 use App\Modules\TextileCollections\Services\TextileCollectionMediaService;
 use App\Modules\TextileCollections\Services\TextileCollectionOperationsService;
 use App\Modules\TextileCollections\Services\TextileCollectionService;
+use App\Modules\TextileCollections\Services\TextileReceiptService;
+use App\Modules\TextileCollections\Services\TextileTripService;
 use App\Modules\Users\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,6 +44,8 @@ final class TextileCollectionController extends BaseController
         private readonly TextileCollectionService $collections,
         private readonly TextileCollectionMediaService $mediaService,
         private readonly MediaUrl $mediaUrl,
+        private readonly TextileReceiptService $receipts,
+        private readonly TextileTripService $trips,
     ) {}
 
     public function zones(Request $request): JsonResponse
@@ -115,6 +124,7 @@ final class TextileCollectionController extends BaseController
         $zoneId = $request->query('service_zone_id');
         $search = $request->query('search');
         $category = $request->query('category');
+        $method = $request->query('method') ?? $request->query('collection_method');
 
         // Accept a single status or a comma-separated list so the desk can
         // request grouped views (e.g. `picked_up,missed,rejected,cancelled`).
@@ -131,6 +141,7 @@ final class TextileCollectionController extends BaseController
                 is_string($category) && $category !== '' && in_array($category, TextileCollectionRequest::VALID_CATEGORIES, true),
                 fn ($query) => $query->where('category', $category),
             )
+            ->when(is_string($method) && in_array($method, ['dropoff','premises'], true), fn ($q) => $q->where('collection_method', $method))
             ->when(is_string($search) && trim($search) !== '', function ($query) use ($search): void {
                 $needle = '%'.str_replace('%', '\%', trim($search)).'%';
                 $query->where(function ($inner) use ($needle): void {
@@ -166,12 +177,69 @@ final class TextileCollectionController extends BaseController
         return $this->respond((new TextileCollectionResource($collection->load(['citizen', 'serviceZone', 'batch', 'photos', 'department'])))->toArray($request));
     }
 
-    public function approve(TextileCollectionRequest $collection, Request $request): JsonResponse
+    public function approve(TextileCollectionRequest $collection, ApproveTextileCollectionRequest $request): JsonResponse
     {
         $this->assertCollectionPartner($request, $collection);
+        $data = $request->validated();
         $updated = $this->operations->approve($collection, $this->authenticatedUser($request));
-
+        // TODO D-01 validity window from request not yet wired to confirmDropoff overload
         return $this->respond((new TextileCollectionResource($updated->load(['photos', 'department'])))->toArray($request), 'Collection request approved.');
+    }
+
+    public function lookupByReference(Request $request): JsonResponse
+    {
+        $this->assertCollectionPartner($request);
+        $ref = (string) $request->query('reference', '');
+        $item = TextileCollectionRequest::query()->where('reference', $ref)->with(['serviceZone','batch','department'])->first();
+        if ($item === null) { throw ApiException::validation('Reference not found.'); }
+        return $this->respond((new TextileCollectionResource($item))->toArray($request));
+    }
+
+    public function recordReceipt(TextileServiceZone $zone, RecordDropoffReceiptRequest $request): JsonResponse
+    {
+        $this->assertCollectionPartner($request);
+        $data = $request->validated();
+        $collectionId = (string) $request->input('collection_request_id', '');
+        $collection = TextileCollectionRequest::query()->findOrFail($collectionId);
+        $receipt = $this->receipts->record($collection, $this->authenticatedUser($request), $data['actual_bags'] ?? null, isset($data['actual_weight_kg']) ? (float) $data['actual_weight_kg'] : null, $data['proof_media_id'] ?? null, $data['exception_code'] ?? null, $data['exception_reason'] ?? null, $request->header('Idempotency-Key'));
+        return $this->respond(['id' => $receipt->id, 'collection_request_id' => $receipt->collection_request_id], 'Receipt recorded.', 201);
+    }
+
+    public function assignTrip(TextileCollectionBatch $batch, AssignTextileBatchRequest $request): JsonResponse
+    {
+        $this->assertCollectionPartner($request);
+        $data = $request->validated();
+        $updated = $this->trips->assign($batch, $this->authenticatedUser($request), $data['assigned_team_id'] ?? null, $data['assigned_user_id'] ?? null, $data['vehicle_label'] ?? null, $data['reason'] ?? null);
+        return $this->respond(['id' => $updated->id, 'status' => $updated->status], 'Trip assigned.');
+    }
+
+    public function startTrip(TextileCollectionBatch $batch, Request $request): JsonResponse
+    {
+        $this->assertCollectionPartner($request);
+        $updated = $this->trips->start($batch, $this->authenticatedUser($request));
+        return $this->respond(['id' => $updated->id, 'status' => $updated->status], 'Trip started.');
+    }
+
+    public function completeTrip(TextileCollectionBatch $batch, Request $request): JsonResponse
+    {
+        $this->assertCollectionPartner($request);
+        $updated = $this->trips->complete($batch, $this->authenticatedUser($request));
+        return $this->respond(['id' => $updated->id, 'status' => $updated->status], 'Trip completed.');
+    }
+
+    public function reorderStops(TextileCollectionBatch $batch, ReorderTextileBatchStopsRequest $request): JsonResponse
+    {
+        $this->assertCollectionPartner($request);
+        $data = $request->validated();
+        $updated = $this->trips->reorder($batch, $this->authenticatedUser($request), $data['ordered_ids']);
+        return $this->respond(['id' => $updated->id], 'Stops reordered.');
+    }
+
+    public function myTrips(Request $request): JsonResponse
+    {
+        $user = $this->authenticatedUser($request);
+        $batches = TextileCollectionBatch::query()->where('assigned_user_id', $user->id)->with(['serviceZone','requests'])->orderBy('collection_date')->get();
+        return $this->respond($batches->toArray());
     }
 
     public function schedule(CreateCollectionBatchRequest $request): JsonResponse
@@ -538,7 +606,7 @@ final class TextileCollectionController extends BaseController
     /**
      * Update drop-off details for a service zone owned by the staff's partner.
      */
-    public function updateZone(TextileServiceZone $zone, Request $request): JsonResponse
+    public function updateZone(TextileServiceZone $zone, UpdateTextileZoneRequest $request): JsonResponse
     {
         $this->assertCollectionPartner($request, null);
 
@@ -552,20 +620,14 @@ final class TextileCollectionController extends BaseController
             throw ApiException::forbidden('This zone belongs to another partner.');
         }
 
-        $data = $request->validate([
-            'dropoff_name' => ['nullable', 'string', 'max:255'],
-            'dropoff_address' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $data = $request->validated();
 
-        $before = [
-            'dropoff_name' => $zone->dropoff_name,
-            'dropoff_address' => $zone->dropoff_address,
-        ];
-
-        $zone->update([
-            'dropoff_name' => $data['dropoff_name'] ?? $zone->dropoff_name,
-            'dropoff_address' => $data['dropoff_address'] ?? $zone->dropoff_address,
-        ]);
+        $before = $zone->only(['dropoff_name','dropoff_address','centre_status','public_phone']);
+        $updates = [];
+        foreach (['dropoff_name','dropoff_address','operating_hours','public_phone','centre_status','centre_closed_note','receipt_requires_photo','receipt_requires_bags','receipt_requires_weight','max_open_dropoffs_per_citizen'] as $field) {
+            if (array_key_exists($field, $data)) { $updates[$field] = $data[$field]; }
+        }
+        if ($updates !== []) { $zone->update($updates); }
 
         AuditLog::query()->create([
             'user_id' => (string) $this->authenticatedUser($request)->id,

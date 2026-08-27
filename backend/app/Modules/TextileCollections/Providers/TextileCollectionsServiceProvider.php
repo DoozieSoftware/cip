@@ -25,5 +25,11 @@ final class TextileCollectionsServiceProvider extends ServiceProvider
         Gate::define('textile.record_outcome', [TextileCollectionPolicy::class, 'recordOutcome']);
         Gate::define('textile.cancel', [TextileCollectionPolicy::class, 'cancel']);
         Gate::define('textile.report', [TextileCollectionPolicy::class, 'report']);
+        Gate::define('textile.approve', [TextileCollectionPolicy::class, 'approve']);
+        Gate::define('textile.record_receipt', [TextileCollectionPolicy::class, 'recordReceipt']);
+        Gate::define('textile.reverse_receipt', [TextileCollectionPolicy::class, 'reverseReceipt']);
+        Gate::define('textile.manage_centre', [TextileCollectionPolicy::class, 'manageCentre']);
+        Gate::define('textile.assign_trip', [TextileCollectionPolicy::class, 'assignTrip']);
+        Gate::define('textile.operate_trip', [TextileCollectionPolicy::class, 'operateTrip']);
     }
 }

@@ -392,13 +392,34 @@ Route::prefix('v1')->group(function (): void {
             ->middleware('can:textile.report')
             ->name('textile-collections.report');
         Route::put('textile-zones/{zone}', [TextileCollectionController::class, 'updateZone'])
-            ->middleware('can:textile.schedule_batch')
+            ->middleware('can:textile.manage_centre')
             ->name('textile-zones.update');
+        Route::get('dropoff-centres/lookup', [TextileCollectionController::class, 'lookupByReference'])
+            ->middleware('can:textile.record_receipt')
+            ->name('dropoff-centres.lookup');
+        Route::post('dropoff-centres/{zone}/receipts', [TextileCollectionController::class, 'recordReceipt'])
+            ->middleware('can:textile.record_receipt')
+            ->name('dropoff-centres.receipts.store');
+        Route::post('textile-batches/{batch}/assignment', [TextileCollectionController::class, 'assignTrip'])
+            ->middleware('can:textile.assign_trip')
+            ->name('textile-batches.assignment');
+        Route::post('textile-batches/{batch}/start', [TextileCollectionController::class, 'startTrip'])
+            ->middleware('can:textile.operate_trip')
+            ->name('textile-batches.start');
+        Route::post('textile-batches/{batch}/complete', [TextileCollectionController::class, 'completeTrip'])
+            ->middleware('can:textile.operate_trip')
+            ->name('textile-batches.complete');
+        Route::put('textile-batches/{batch}/stops/order', [TextileCollectionController::class, 'reorderStops'])
+            ->middleware('can:textile.assign_trip')
+            ->name('textile-batches.stops.order');
+        Route::get('textile-trips/mine', [TextileCollectionController::class, 'myTrips'])
+            ->middleware('can:textile.operate_trip')
+            ->name('textile-trips.mine');
         Route::get('textile-collections/{collection}', [TextileCollectionController::class, 'show'])
             ->middleware('can:textile.view,collection')
             ->name('textile-collections.show');
         Route::post('textile-collections/{collection}/approve', [TextileCollectionController::class, 'approve'])
-            ->middleware('can:textile.record_outcome')
+            ->middleware('can:textile.approve')
             ->name('textile-collections.approve');
         Route::post('textile-collections/{collection}/outcome', [TextileCollectionController::class, 'recordOutcome'])
             ->middleware('can:textile.record_outcome')

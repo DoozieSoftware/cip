@@ -50,6 +50,9 @@ final class TextileCollectionResource extends JsonResource
             'missed_pickup_reason' => $this->resource->missed_pickup_reason,
             'picked_up_at' => $this->resource->picked_up_at?->toIso8601String(),
             'submitted_at' => $this->resource->submitted_at?->toIso8601String(),
+            'dropoff_confirmed_at' => $this->resource->dropoff_confirmed_at?->toIso8601String(),
+            'dropoff_valid_until' => $this->resource->dropoff_valid_until?->toDateString(),
+            'next_step' => $this->nextStep(),
             'service_zone' => $zone === null ? null : [
                 'id' => $zone->id,
                 'code' => $zone->code,
@@ -72,6 +75,15 @@ final class TextileCollectionResource extends JsonResource
             ],
             'photos' => $this->photosArray(),
         ];
+    }
+
+    private function nextStep(): ?string
+    {
+        return match ($this->resource->status) {
+            'dropoff_awaiting_drop' => 'Drop off at centre',
+            'pending_review' => 'Awaiting review',
+            default => null,
+        };
     }
 
     /** @return list<array{id: string, role: string, url: string}> */

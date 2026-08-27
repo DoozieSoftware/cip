@@ -24,18 +24,34 @@ final class TextileCollectionBatch extends Model
 {
     use HasUuids;
 
+    public const STATUS_PLANNED = 'planned';
+    public const STATUS_ASSIGNED = 'assigned';
+    public const STATUS_IN_PROGRESS = 'in_progress';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_CANCELLED = 'cancelled';
+    // TODO D-04: stop-level en_route/visited pending decision.
+
+
     protected $table = 'textile_collection_batches';
 
     /** @var list<string> */
     protected $fillable = [
         'service_zone_id', 'reference', 'collection_date', 'window_start',
         'window_end', 'status', 'trip_reference', 'instructions', 'created_by',
+        'assigned_team_id', 'assigned_user_id', 'vehicle_label', 'assignment_reason',
+        'assigned_by', 'assigned_at', 'started_at', 'completed_at', 'row_version',
     ];
 
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['collection_date' => 'date'];
+        return [
+            'collection_date' => 'date',
+            'assigned_at' => 'datetime',
+            'started_at' => 'datetime',
+            'completed_at' => 'datetime',
+            'row_version' => 'integer',
+        ];
     }
 
     /** @return BelongsTo<TextileServiceZone, $this> */
