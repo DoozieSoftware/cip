@@ -75,6 +75,7 @@ final class TextileTripService
         return $batch->refresh();
     }
 
+    /** @param list<string> $orderedIds */
     public function reorder(TextileCollectionBatch $batch, User $actor, array $orderedIds): TextileCollectionBatch
     {
         if ($batch->status === TextileCollectionBatch::STATUS_IN_PROGRESS || $batch->status === TextileCollectionBatch::STATUS_COMPLETED) {
@@ -86,6 +87,7 @@ final class TextileTripService
         sort($sortedExisting);
         $sortedOrdered = $orderedIds;
         sort($sortedOrdered);
+
         if ($sortedExisting !== $sortedOrdered) {
             throw ApiException::validation('Ordered ids must exactly match batch requests.');
         }
@@ -102,6 +104,10 @@ final class TextileTripService
         return $batch->refresh();
     }
 
+    /**
+     * @param  array<string, mixed>|null  $before
+     * @param  array<string, mixed>  $after
+     */
     private function audit(User $actor, string $entityId, string $action, ?array $before, array $after): void
     {
         $requestId = request()->attributes->get('trace_id');

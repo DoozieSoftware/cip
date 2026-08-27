@@ -141,7 +141,7 @@ final class TextileCollectionController extends BaseController
                 is_string($category) && $category !== '' && in_array($category, TextileCollectionRequest::VALID_CATEGORIES, true),
                 fn ($query) => $query->where('category', $category),
             )
-            ->when(is_string($method) && in_array($method, ['dropoff','premises'], true), fn ($q) => $q->where('collection_method', $method))
+            ->when(is_string($method) && in_array($method, ['dropoff', 'premises'], true), fn ($q) => $q->where('collection_method', $method))
             ->when(is_string($search) && trim($search) !== '', function ($query) use ($search): void {
                 $needle = '%'.str_replace('%', '\%', trim($search)).'%';
                 $query->where(function ($inner) use ($needle): void {
@@ -182,6 +182,7 @@ final class TextileCollectionController extends BaseController
         $this->assertCollectionPartner($request, $collection);
         $data = $request->validated();
         $updated = $this->operations->approve($collection, $this->authenticatedUser($request));
+
         // TODO D-01 validity window from request not yet wired to confirmDropoff overload
         return $this->respond((new TextileCollectionResource($updated->load(['photos', 'department'])))->toArray($request), 'Collection request approved.');
     }
@@ -190,8 +191,12 @@ final class TextileCollectionController extends BaseController
     {
         $this->assertCollectionPartner($request);
         $ref = (string) $request->query('reference', '');
-        $item = TextileCollectionRequest::query()->where('reference', $ref)->with(['serviceZone','batch','department'])->first();
-        if ($item === null) { throw ApiException::validation('Reference not found.'); }
+        $item = TextileCollectionRequest::query()->where('reference', $ref)->with(['serviceZone', 'batch', 'department'])->first();
+
+        if ($item === null) {
+            throw ApiException::validation('Reference not found.');
+        }
+
         return $this->respond((new TextileCollectionResource($item))->toArray($request));
     }
 
@@ -202,6 +207,7 @@ final class TextileCollectionController extends BaseController
         $collectionId = (string) $request->input('collection_request_id', '');
         $collection = TextileCollectionRequest::query()->findOrFail($collectionId);
         $receipt = $this->receipts->record($collection, $this->authenticatedUser($request), $data['actual_bags'] ?? null, isset($data['actual_weight_kg']) ? (float) $data['actual_weight_kg'] : null, $data['proof_media_id'] ?? null, $data['exception_code'] ?? null, $data['exception_reason'] ?? null, $request->header('Idempotency-Key'));
+
         return $this->respond(['id' => $receipt->id, 'collection_request_id' => $receipt->collection_request_id], 'Receipt recorded.', 201);
     }
 
@@ -211,6 +217,7 @@ final class TextileCollectionController extends BaseController
         $this->assertBatchOwnership($batch, $dept->id);
         $data = $request->validated();
         $updated = $this->trips->assign($batch, $this->authenticatedUser($request), $data['assigned_team_id'] ?? null, $data['assigned_user_id'] ?? null, $data['vehicle_label'] ?? null, $data['reason'] ?? null);
+
         return $this->respond(['id' => $updated->id, 'status' => $updated->status], 'Trip assigned.');
     }
 
@@ -219,6 +226,7 @@ final class TextileCollectionController extends BaseController
         $dept = $this->assertCollectionPartner($request);
         $this->assertBatchOwnership($batch, $dept->id);
         $updated = $this->trips->start($batch, $this->authenticatedUser($request));
+
         return $this->respond(['id' => $updated->id, 'status' => $updated->status], 'Trip started.');
     }
 
@@ -227,6 +235,7 @@ final class TextileCollectionController extends BaseController
         $dept = $this->assertCollectionPartner($request);
         $this->assertBatchOwnership($batch, $dept->id);
         $updated = $this->trips->complete($batch, $this->authenticatedUser($request));
+
         return $this->respond(['id' => $updated->id, 'status' => $updated->status], 'Trip completed.');
     }
 
@@ -236,13 +245,15 @@ final class TextileCollectionController extends BaseController
         $this->assertBatchOwnership($batch, $dept->id);
         $data = $request->validated();
         $updated = $this->trips->reorder($batch, $this->authenticatedUser($request), $data['ordered_ids']);
+
         return $this->respond(['id' => $updated->id], 'Stops reordered.');
     }
 
     public function myTrips(Request $request): JsonResponse
     {
         $user = $this->authenticatedUser($request);
-        $batches = TextileCollectionBatch::query()->where('assigned_user_id', $user->id)->with(['serviceZone','requests'])->orderBy('collection_date')->get();
+        $batches = TextileCollectionBatch::query()->where('assigned_user_id', $user->id)->with(['serviceZone', 'requests'])->orderBy('collection_date')->get();
+
         return $this->respond($batches->toArray());
     }
 
@@ -505,6 +516,7 @@ final class TextileCollectionController extends BaseController
     {
         $batch->loadMissing('serviceZone');
         $zoneDept = $batch->serviceZone?->department_id;
+
         if ($zoneDept !== null && (string) $zoneDept !== $departmentId) {
             throw ApiException::forbidden('This trip belongs to another partner.');
         }
@@ -636,12 +648,18 @@ final class TextileCollectionController extends BaseController
 
         $data = $request->validated();
 
-        $before = $zone->only(['dropoff_name','dropoff_address','centre_status','public_phone']);
+        $before = $zone->only(['dropoff_name', 'dropoff_address', 'centre_status', 'public_phone']);
         $updates = [];
-        foreach (['dropoff_name','dropoff_address','operating_hours','public_phone','centre_status','centre_closed_note','receipt_requires_photo','receipt_requires_bags','receipt_requires_weight','max_open_dropoffs_per_citizen'] as $field) {
-            if (array_key_exists($field, $data)) { $updates[$field] = $data[$field]; }
+
+        foreach (['dropoff_name', 'dropoff_address', 'operating_hours', 'public_phone', 'centre_status', 'centre_closed_note', 'receipt_requires_photo', 'receipt_requires_bags', 'receipt_requires_weight', 'max_open_dropoffs_per_citizen'] as $field) {
+            if (array_key_exists($field, $data)) {
+                $updates[$field] = $data[$field];
+            }
         }
-        if ($updates !== []) { $zone->update($updates); }
+
+        if ($updates !== []) {
+            $zone->update($updates);
+        }
 
         AuditLog::query()->create([
             'user_id' => (string) $this->authenticatedUser($request)->id,
