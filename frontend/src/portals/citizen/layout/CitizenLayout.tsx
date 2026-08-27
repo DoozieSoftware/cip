@@ -3,6 +3,7 @@ import { type JSX, type TouchEvent, useEffect, useRef, useState } from 'react';
 import {
   IconBuildingCommunity,
   IconFileDescription,
+  IconHanger,
   IconHome,
   IconLogout,
   IconPlus,
@@ -26,6 +27,9 @@ const NAV: Array<{
   { to: '/citizen', label: 'nav.home', icon: IconHome, end: true },
   { to: '/citizen/reports', label: 'nav.reports', icon: IconFileDescription },
   { to: '/citizen/submit', label: 'nav.newReport', icon: IconPlus },
+  // Partner pickup booking — kept visually distinct from the complaint flow
+  // (booking a service vs reporting a dumped-waste problem).
+  { to: '/citizen/textile-collections', label: 'nav.pickup', icon: IconHanger },
   { to: '/citizen/profile', label: 'nav.account', icon: IconUser },
 ];
 
@@ -168,7 +172,12 @@ export function CitizenLayout(): JSX.Element {
           aria-label={t('nav.sections')}
           className="fixed inset-x-3 bottom-3 z-30 rounded-2xl border border-black/10 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_12px_40px_rgba(29,29,27,0.16)] backdrop-blur-xl lg:hidden"
         >
-          <ul className="grid grid-cols-4 items-stretch px-1">
+          {/* Columns follow NAV.length so adding an item can never wrap the
+              last entry onto a second row inside this fixed-bottom pill. */}
+          <ul
+            className="grid items-stretch px-1"
+            style={{ gridTemplateColumns: `repeat(${NAV.length}, minmax(0, 1fr))` }}
+          >
             {NAV.map((n) => {
               const Icon = n.icon;
               return (

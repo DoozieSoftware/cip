@@ -24,6 +24,7 @@ export const kn_IN: MessageCatalog = {
   'nav.home': 'ಮುಖಪುಟ',
   'nav.reports': 'ದೂರುಗಳು',
   'nav.newReport': 'ಹೊಸ ದೂರು',
+  'nav.pickup': 'ಪಿಕಪ್‌ಗಳು',
   'nav.account': 'ಖಾತೆ',
   'nav.notifications': 'ಸೂಚನೆಗಳು',
   'nav.profile': 'ಪ್ರೊಫೈಲ್',
