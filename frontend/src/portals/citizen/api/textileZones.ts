@@ -60,9 +60,24 @@ export interface TextileCollectionRequest extends TextileCollectionPayload {
   missed_pickup_reason: string | null;
   picked_up_at: string | null;
   submitted_at: string | null;
-  service_zone: { id: string; code: string; name: string; dropoff_name: string | null; dropoff_address: string | null; center: { latitude: number; longitude: number } | null } | null;
+  service_zone: {
+    id: string;
+    code: string;
+    name: string;
+    dropoff_name: string | null;
+    dropoff_address: string | null;
+    center: { latitude: number; longitude: number } | null;
+  } | null;
   partner: { id: string; name: string } | null;
-  batch: { id: string; reference: string; collection_date: string; status: string } | null;
+  batch: {
+    id: string;
+    reference: string;
+    collection_date: string;
+    status: string;
+    window_start: string | null;
+    window_end: string | null;
+    trip_reference: string | null;
+  } | null;
   photos?: TextileCollectionPhoto[];
 }
 

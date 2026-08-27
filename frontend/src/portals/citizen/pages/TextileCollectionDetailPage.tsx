@@ -19,7 +19,7 @@ import { CentreCard } from '../components/CentreCard';
 import { ReferencePass } from '../components/ReferencePass';
 import { CollectionProgress } from '../components/CollectionProgress';
 import { ReceiptCard } from '../components/ReceiptCard';
-import { statusHeading, nextStepCopy } from './textileStatusCopy';
+import { statusHeading, nextStepCopy, tripStatusLabel } from './textileStatusCopy';
 
 function formatVolume(bags: number | null, weightKg: number | null, method: string): string {
   const parts: string[] = [];
@@ -163,7 +163,12 @@ export default function TextileCollectionDetailPage(): JSX.Element {
   const centreCenter = item.service_zone?.center ?? null;
   const actualStr = formatVolume(item.actual_bags, item.actual_weight_kg, method);
   const heading = statusHeading(item.status, method);
-  const windowStr = formatWindow(item.scheduled_window_start, item.scheduled_window_end);
+  const windowStr = formatWindow(
+    item.scheduled_window_start ?? item.batch?.window_start ?? null,
+    item.scheduled_window_end ?? item.batch?.window_end ?? null,
+  );
+  const tripStatus = item.batch?.status ?? null;
+  const tripLabel = tripStatusLabel(tripStatus);
   const nextStep = nextStepCopy(item.status, method, {
     centre: centreName,
     reference: item.reference,
@@ -171,7 +176,12 @@ export default function TextileCollectionDetailPage(): JSX.Element {
     window: windowStr ?? undefined,
     date: item.scheduled_date ?? item.batch?.collection_date ?? undefined,
     actual: actualStr,
+    tripStatus: tripStatus ?? undefined,
   });
+  const confirmedDate = item.scheduled_date ?? item.batch?.collection_date ?? null;
+  const isScheduledPremises = !isDropoff && item.status === 'scheduled';
+  const canReschedule =
+    isScheduledPremises && tripStatus !== 'in_progress' && tripStatus !== 'completed';
   return (
     <div className="mx-auto min-w-0 max-w-3xl space-y-5">
       <Link
@@ -226,6 +236,78 @@ export default function TextileCollectionDetailPage(): JSX.Element {
           />
           <ReferencePass reference={item.reference} />
         </>
+      ) : null}
+
+      {isScheduledPremises ? (
+        <section
+          aria-label="Pickup schedule"
+          className="rounded-xl border border-black/10 bg-white p-5"
+        >
+          <h2 className="text-sm font-medium">Confirmed pickup</h2>
+          <p className="mt-2 text-sm">
+            <span className="font-medium">{formatDate(confirmedDate)}</span>
+            {windowStr ? (
+              <span className="text-[var(--color-text-secondary)]"> · {windowStr}</span>
+            ) : null}
+          </p>
+          {tripLabel ? (
+            <p className="mt-2 inline-flex rounded-full bg-[var(--color-surface-alt)] px-2.5 py-1 text-xs font-medium">
+              Collection status: {tripLabel}
+            </p>
+          ) : null}
+          {item.readiness_instructions ? (
+            <p className="mt-3 text-xs leading-5 text-[var(--color-text-secondary)]">
+              {item.readiness_instructions}
+            </p>
+          ) : null}
+          {item.batch?.trip_reference ? (
+            <p className="mt-2 font-mono text-[11px] text-[var(--color-text-tertiary)]">
+              Trip {item.batch.trip_reference}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
+      {!isDropoff ? (
+        <section
+          aria-label="Service contact"
+          className="rounded-xl border border-black/10 bg-white p-5"
+        >
+          <h2 className="text-sm font-medium">Service contact</h2>
+          <p className="mt-2 text-xs leading-5 text-[var(--color-text-secondary)]">
+            {item.partner?.name ? `Partner: ${item.partner.name}. ` : ''}
+            For help with this pickup, use the support channel in the app. Staff contact details are
+            not shared for privacy.
+          </p>
+          <Link
+            to="/citizen/reports"
+            className="mt-3 inline-flex min-h-11 items-center rounded-full border border-black/15 bg-white px-4 text-xs font-medium"
+          >
+            Contact support
+          </Link>
+        </section>
+      ) : null}
+
+      {!isDropoff && ['scheduled', 'ready_to_group'].includes(item.status) ? (
+        <section aria-label="Reschedule" className="rounded-xl border border-black/10 bg-white p-5">
+          <h2 className="text-sm font-medium">Need a different date?</h2>
+          <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
+            {canReschedule
+              ? 'Rescheduling will be available before the crew starts the trip. If the date no longer works, cancel and create a new request or contact support.'
+              : 'Rescheduling is paused while the crew is on the route. Please contact support if you need help.'}
+          </p>
+          <button
+            type="button"
+            disabled
+            aria-describedby="reschedule-hint"
+            className="mt-3 inline-flex min-h-11 items-center rounded-full border border-black/15 bg-white px-4 text-xs font-medium disabled:opacity-50"
+          >
+            Reschedule — coming soon
+          </button>
+          <p id="reschedule-hint" className="mt-2 text-[11px] text-[var(--color-text-tertiary)]">
+            No staff contact is shown here. Use Contact support above.
+          </p>
+        </section>
       ) : null}
 
       <section className="grid gap-3 sm:grid-cols-2">
