@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { IconCalendar, IconPhoto, IconRefresh } from '@tabler/icons-react';
+import { IconCalendar, IconCamera, IconPhoto, IconRefresh } from '@tabler/icons-react';
 import { ApiError } from '../../../../shared/api/errors';
 import { ConfirmActionDialog } from '../../components/ConfirmActionDialog';
 import {
@@ -292,7 +292,7 @@ export default function TextileDispatchPage(): JSX.Element {
                       </div>
                       {expandedId === item.id ? (
                         <div className="mt-3 rounded-lg bg-[var(--color-surface-alt)] p-3">
-                          <div className="flex flex-wrap items-end gap-3">
+                          <div className="flex flex-wrap items-start gap-3">
                             <label className="text-xs font-medium">
                               Actual bags
                               <input
@@ -300,7 +300,7 @@ export default function TextileDispatchPage(): JSX.Element {
                                 min="1"
                                 value={bags}
                                 onChange={(event) => setBags(event.target.value)}
-                                className="mt-1 block min-h-10 w-28 rounded-lg border border-black/15 bg-white px-3 text-sm"
+                                className="mt-1 block min-h-11 w-28 rounded-lg border border-black/15 bg-white px-3 text-sm"
                               />
                             </label>
                             <label className="text-xs font-medium">
@@ -311,22 +311,38 @@ export default function TextileDispatchPage(): JSX.Element {
                                 step="0.1"
                                 value={weight}
                                 onChange={(event) => setWeight(event.target.value)}
-                                className="mt-1 block min-h-10 w-32 rounded-lg border border-black/15 bg-white px-3 text-sm"
+                                className="mt-1 block min-h-11 w-32 rounded-lg border border-black/15 bg-white px-3 text-sm"
                               />
                             </label>
-                            <label className="text-xs font-medium">
-                              Proof photo (required)
+                            <div className="min-w-[220px]">
+                              <p className="text-xs font-medium">
+                                Proof photo <span className="text-red-700">(required)</span>
+                              </p>
                               <input
                                 ref={photoInputRef}
                                 type="file"
-                                accept="image/*"
+                                accept="image/jpeg,image/png,image/webp"
                                 capture="environment"
                                 onChange={(event) =>
                                   handlePhotoChange(event.target.files?.[0] ?? null)
                                 }
-                                className="mt-1 block min-h-10 w-full max-w-xs cursor-pointer rounded-lg border border-black/15 bg-white px-3 text-sm file:mr-3 file:inline-flex file:min-h-8 file:items-center file:rounded-full file:border-0 file:bg-[var(--color-ink)] file:px-3 file:text-xs file:font-medium file:text-white"
+                                className="sr-only"
+                                tabIndex={-1}
+                                aria-hidden="true"
                               />
-                            </label>
+                              <button
+                                type="button"
+                                disabled={outcome.isPending || uploadBusy}
+                                onClick={() => photoInputRef.current?.click()}
+                                className="mt-1 inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-black/15 bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-alt)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <IconCamera className="h-4 w-4" stroke={1.6} />
+                                {photoFile ? 'Replace proof photo' : 'Choose proof photo'}
+                              </button>
+                              <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                                JPG, PNG or WebP, up to 10 MB.
+                              </p>
+                            </div>
                           </div>
 
                           {/* Photo preview + filename */}
@@ -349,10 +365,19 @@ export default function TextileDispatchPage(): JSX.Element {
 
                           {/* Validation / server errors */}
                           {photoError ? (
-                            <p className="mt-1 text-xs text-red-600">{photoError}</p>
+                            <p role="alert" className="mt-1 text-xs text-red-600">
+                              {photoError}
+                            </p>
                           ) : null}
                           {serverError ? (
-                            <p className="mt-1 text-xs text-red-600">{serverError}</p>
+                            <p role="alert" className="mt-1 text-xs text-red-600">
+                              {serverError}
+                            </p>
+                          ) : null}
+                          {!canConfirm ? (
+                            <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
+                              Enter the actual bags and weight, then add a proof photo to confirm.
+                            </p>
                           ) : null}
 
                           <div className="mt-3 flex gap-2">
