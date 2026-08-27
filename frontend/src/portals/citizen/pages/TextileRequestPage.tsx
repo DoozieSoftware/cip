@@ -12,14 +12,12 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { cx } from '../../../shared/ui';
-import { MapContainer, Marker, TileLayer } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import IssueLocationPicker from '../components/IssueLocationPicker';
 import { CameraCapture } from '../components/CameraCapture';
 import { issueLocationFromReporter, type IssueLocation } from '../components/issueLocation';
 import { ApiError } from '../../../shared/api/errors';
 import { TextileCollectionFields } from '../components/TextileCollectionFields';
+import { CentreCard } from '../components/CentreCard';
 import {
   useCreateTextileCollection,
   uploadTextileCollectionPhoto,
@@ -27,9 +25,8 @@ import {
   type TextileCollectionPayload,
 } from '../api/textileZones';
 
-const MAX_PHOTO_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_PHOTO_SIZE_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-
 const CATEGORY_OPTIONS: {
   value: TextileCollectionCategory;
   label: string;
@@ -39,61 +36,12 @@ const CATEGORY_OPTIONS: {
   { value: 'metal_scrap', label: 'Metal Scrap', icon: IconSettings },
   { value: 'e_waste', label: 'E-Waste', icon: IconDeviceDesktop },
 ];
-
-const DROP_OFF_PIN = L.divIcon({
-  className: 'cip-dropoff-pin',
-  html: '<span aria-hidden="true" style="display:block;width:22px;height:22px;border-radius:50%;background:#1d6fb8;border:3px solid #fff;box-shadow:0 1px 5px #0008"></span>',
-  iconSize: [22, 22],
-  iconAnchor: [11, 11],
-});
-
-function DropOffMap({ center }: { center: { latitude: number; longitude: number } }): JSX.Element {
-  return (
-    <div
-      role="img"
-      aria-label="Map showing the collection point area"
-      className="mt-3 overflow-hidden rounded-lg border border-blue-200"
-      style={{ height: 190 }}
-    >
-      <MapContainer
-        center={[center.latitude, center.longitude]}
-        zoom={15}
-        style={{ height: '100%', width: '100%' }}
-        scrollWheelZoom={false}
-        attributionControl={false}
-        dragging={false}
-        doubleClickZoom={false}
-        zoomControl={false}
-        touchZoom={false}
-      >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <Marker position={[center.latitude, center.longitude]} icon={DROP_OFF_PIN} />
-      </MapContainer>
-    </div>
-  );
-}
-
-function googleMapsUrl(info: {
-  name: string;
-  address: string;
-  center: { latitude: number; longitude: number } | null;
-}): string {
-  if (info.center) {
-    return `https://www.google.com/maps?q=${info.center.latitude}%2C${info.center.longitude}`;
-  }
-  return `https://www.google.com/maps?q=${encodeURIComponent(`${info.name} ${info.address}`)}`;
-}
-
 function validatePhotoFile(file: File): string | null {
-  if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-    return 'Please select a JPEG, PNG, or WebP image.';
-  }
-  if (file.size > MAX_PHOTO_SIZE_BYTES) {
+  if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) return 'Please select a JPEG, PNG, or WebP image.';
+  if (file.size > MAX_PHOTO_SIZE_BYTES)
     return 'Photo must be 10 MB or smaller. Please choose a smaller file.';
-  }
   return null;
 }
-
 export default function TextileRequestPage(): JSX.Element {
   const navigate = useNavigate();
   const create = useCreateTextileCollection();
@@ -110,8 +58,6 @@ export default function TextileRequestPage(): JSX.Element {
     address: string;
     center: { latitude: number; longitude: number } | null;
   } | null>(null);
-
-  // --- Photo picker state ---
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -119,14 +65,11 @@ export default function TextileRequestPage(): JSX.Element {
   const [photoUploadWarning, setPhotoUploadWarning] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [showCamera, setShowCamera] = useState(false);
-
-  // Revoke object URL on cleanup or when the preview changes.
   useEffect(() => {
     return () => {
       if (photoPreview) URL.revokeObjectURL(photoPreview);
     };
   }, [photoPreview]);
-
   function applyPhotoFile(file: File): void {
     setPhotoError(null);
     setPhotoUploadWarning(null);
@@ -139,7 +82,6 @@ export default function TextileRequestPage(): JSX.Element {
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
   }
-
   function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>): void {
     const file = event.target.files?.[0] ?? null;
     if (!file) {
@@ -149,10 +91,8 @@ export default function TextileRequestPage(): JSX.Element {
       return;
     }
     applyPhotoFile(file);
-    // Clear the input so the same file can be re-selected after removal.
     event.target.value = '';
   }
-
   function removePhoto(): void {
     if (photoPreview) URL.revokeObjectURL(photoPreview);
     setPhotoFile(null);
@@ -161,18 +101,15 @@ export default function TextileRequestPage(): JSX.Element {
     setPhotoUploadWarning(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
-
-  const onDetailsChange = useCallback((next: TextileCollectionPayload | null) => {
-    setDetails(next);
-  }, []);
+  const onDetailsChange = useCallback(
+    (next: TextileCollectionPayload | null) => setDetails(next),
+    [],
+  );
   const onValidityChange = useCallback((valid: boolean) => setDetailsValid(valid), []);
-
   function handleCategoryChange(next: TextileCollectionCategory): void {
     setCategory(next);
-    // Clear zone selection when category changes — the zone list will refetch.
     setDetails(null);
   }
-
   function captureLocation(): void {
     if (!navigator.geolocation) {
       setLocationMessage('Location is not available in this browser. You can still continue.');
@@ -204,10 +141,8 @@ export default function TextileRequestPage(): JSX.Element {
       { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 },
     );
   }
-
   async function submit(): Promise<void> {
     if (!details || !detailsValid || title.trim().length < 5) return;
-
     const created = await create.mutateAsync({
       ...details,
       title: title.trim(),
@@ -215,10 +150,6 @@ export default function TextileRequestPage(): JSX.Element {
       latitude: location?.latitude ?? null,
       longitude: location?.longitude ?? null,
     });
-
-    // Upload the optional photo *after* the request is created.
-    // A photo upload failure is non-blocking — the user is redirected
-    // to the detail page with a warning.
     if (photoFile) {
       setUploadingPhoto(true);
       try {
@@ -231,10 +162,8 @@ export default function TextileRequestPage(): JSX.Element {
         setUploadingPhoto(false);
       }
     }
-
     void navigate(`/citizen/textile-collections/${created.id}`);
   }
-
   const apiError =
     create.error instanceof ApiError
       ? create.error
@@ -247,7 +176,7 @@ export default function TextileRequestPage(): JSX.Element {
       : null;
   const generalError = categoryError ? null : apiError?.message;
   const isSubmitting = create.isPending || uploadingPhoto;
-
+  const dropoffActive = dropoffInfo !== null;
   return (
     <div className="mx-auto min-w-0 max-w-3xl space-y-6">
       <header className="border-b border-[var(--color-border-faint)] pb-6">
@@ -263,17 +192,15 @@ export default function TextileRequestPage(): JSX.Element {
           </span>
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
-              Pickup service
+              Collection service
             </p>
             <h1 className="mt-1 text-3xl font-normal tracking-[-0.035em]">Request a collection</h1>
             <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-              This is a pickup request sent to a verified local partner. It is not a civic
-              complaint.
+              Send items to a verified local partner for pickup or drop-off.
             </p>
           </div>
         </div>
       </header>
-
       <section className="space-y-4 rounded-xl bg-white p-5 shadow-sm">
         <div>
           <label htmlFor="textile-title" className="text-sm font-medium">
@@ -283,7 +210,7 @@ export default function TextileRequestPage(): JSX.Element {
             id="textile-title"
             value={title}
             placeholder="e.g. Wardrobe cleanout"
-            onChange={(event) => setTitle(event.target.value)}
+            onChange={(e) => setTitle(e.target.value)}
             className="mt-1 block min-h-11 w-full rounded-lg border border-[#d8d6cf] px-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </div>
@@ -294,14 +221,13 @@ export default function TextileRequestPage(): JSX.Element {
           <textarea
             id="textile-notes"
             value={notes}
-            onChange={(event) => setNotes(event.target.value)}
+            onChange={(e) => setNotes(e.target.value)}
             rows={3}
             placeholder="For example: wearable clothes, bedsheets and curtains"
             className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </div>
       </section>
-
       <section className="space-y-3 rounded-xl bg-white p-5 shadow-sm">
         <div>
           <h2 className="text-sm font-medium">What are we collecting?</h2>
@@ -309,12 +235,16 @@ export default function TextileRequestPage(): JSX.Element {
             Choose the material type so we can route your request to the right partner.
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Material category">
+        <div
+          className="grid grid-cols-2 gap-2 sm:grid-cols-3 max-[360px]:grid-cols-2"
+          role="radiogroup"
+          aria-label="Material category"
+        >
           {CATEGORY_OPTIONS.map(({ value, label, icon: Icon }) => (
             <label
               key={value}
               className={cx(
-                'flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border px-2 py-3 text-center text-sm',
+                'flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border px-2 py-3 text-center text-sm min-h-11',
                 category === value
                   ? 'border-[var(--color-ink)] bg-[var(--color-surface-alt)] font-medium'
                   : 'border-[#d8d6cf] bg-white',
@@ -333,21 +263,26 @@ export default function TextileRequestPage(): JSX.Element {
             </label>
           ))}
         </div>
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-          <p className="font-medium">Minimum quantities for a collection route:</p>
-          <ul className="mt-1 space-y-0.5 pl-4" style={{ listStyleType: 'disc' }}>
-            <li>Clothes &amp; Textiles — about 5 kg</li>
-            <li>Metal Scrap — about 5 kg</li>
-            <li>E-Waste — about 2 kg</li>
-          </ul>
-        </div>
+        {dropoffActive ? (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800">
+            No minimum — drop off any amount during centre hours.
+          </div>
+        ) : (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+            <p className="font-medium">Minimum quantities for a collection route:</p>
+            <ul className="mt-1 space-y-0.5 pl-4" style={{ listStyleType: 'disc' }}>
+              <li>Clothes &amp; Textiles — about 5 kg</li>
+              <li>Metal Scrap — about 5 kg</li>
+              <li>E-Waste — about 2 kg</li>
+            </ul>
+          </div>
+        )}
         {categoryError ? (
           <p role="alert" className="text-xs font-medium text-red-600">
             {categoryError}
           </p>
         ) : null}
       </section>
-
       <TextileCollectionFields
         category={category}
         value={details}
@@ -355,28 +290,19 @@ export default function TextileRequestPage(): JSX.Element {
         onValidityChange={onValidityChange}
         onDropoffChange={setDropoffInfo}
       />
-
-      {dropoffInfo ? (
-        <section className="rounded-xl border border border-black/10 bg-white p-5">
+      {dropoffActive ? (
+        <section className="rounded-xl border border-black/10 bg-white p-5">
           <h2 className="text-sm font-medium">Drop-off location</h2>
           <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
             Take your items to the collection point below. No pickup is arranged.
           </p>
-          <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
-            <p className="text-xs font-medium text-blue-800">📍 Drop-off point</p>
-            <p className="mt-0.5 text-base font-semibold text-blue-900">{dropoffInfo.name}</p>
-            <p className="mt-0.5 text-sm text-blue-700">{dropoffInfo.address}</p>
-            <a
-              href={googleMapsUrl(dropoffInfo)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full border border-blue-300 bg-white px-5 text-sm font-medium text-blue-700 hover:bg-blue-50"
-            >
-              <IconMapPin className="h-4 w-4" stroke={1.6} />
-              Open in Google Maps
-            </a>
+          <div className="mt-3">
+            <CentreCard
+              name={dropoffInfo.name}
+              address={dropoffInfo.address}
+              center={dropoffInfo.center}
+            />
           </div>
-          {dropoffInfo.center ? <DropOffMap center={dropoffInfo.center} /> : null}
         </section>
       ) : (
         <section className="rounded-xl border border-black/10 bg-white p-5">
@@ -385,7 +311,6 @@ export default function TextileRequestPage(): JSX.Element {
             Optional. Add your exact location so the collection team finds you easily.
           </p>
           {locationMessage ? <p className="mt-2 text-xs font-medium">{locationMessage}</p> : null}
-
           {location ? (
             <div className="mt-3 space-y-3">
               <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)]">
@@ -437,14 +362,13 @@ export default function TextileRequestPage(): JSX.Element {
           )}
         </section>
       )}
-
-      {/* --- Optional photo picker --- */}
       <section className="rounded-xl border border-black/10 bg-white p-5">
         <h2 className="text-sm font-medium">Add a photo of your bags (optional)</h2>
         <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
-          A photo helps the collection team identify your items. You can also add one later.
+          {dropoffActive
+            ? 'A photo helps centre staff recognise your bags. You can also add one later.'
+            : 'A photo helps the collection team identify your items. You can also add one later.'}
         </p>
-
         {photoPreview ? (
           <div className="mt-3 inline-block">
             <div className="relative">
@@ -514,14 +438,12 @@ export default function TextileRequestPage(): JSX.Element {
             )}
           </div>
         )}
-
         {photoError ? (
           <p role="alert" className="mt-2 text-xs font-medium text-red-600">
             {photoError}
           </p>
         ) : null}
       </section>
-
       {generalError ? (
         <div
           role="alert"
@@ -530,7 +452,6 @@ export default function TextileRequestPage(): JSX.Element {
           {generalError}
         </div>
       ) : null}
-
       {photoUploadWarning ? (
         <div
           role="status"
@@ -539,7 +460,6 @@ export default function TextileRequestPage(): JSX.Element {
           {photoUploadWarning}
         </div>
       ) : null}
-
       <button
         type="button"
         disabled={!detailsValid || title.trim().length < 5 || isSubmitting}
@@ -550,7 +470,9 @@ export default function TextileRequestPage(): JSX.Element {
           ? 'Uploading photo…'
           : create.isPending
             ? 'Sending request…'
-            : 'Send pickup request'}
+            : dropoffActive
+              ? 'Create drop-off plan'
+              : 'Send pickup request'}
       </button>
     </div>
   );

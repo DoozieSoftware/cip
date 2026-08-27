@@ -29,7 +29,7 @@ const NAV: Array<{
   { to: '/citizen/submit', label: 'nav.newReport', icon: IconPlus },
   // Partner pickup booking — kept visually distinct from the complaint flow
   // (booking a service vs reporting a dumped-waste problem).
-  { to: '/citizen/textile-collections', label: 'nav.pickup', icon: IconHanger },
+  { to: '/citizen/textile-collections', label: 'nav.collections', icon: IconHanger },
   { to: '/citizen/profile', label: 'nav.account', icon: IconUser },
 ];
 

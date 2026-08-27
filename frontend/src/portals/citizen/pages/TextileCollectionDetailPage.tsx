@@ -15,24 +15,46 @@ import {
   uploadTextileCollectionPhoto,
   type TextileCollectionPhoto,
 } from '../api/textileZones';
+import { CentreCard } from '../components/CentreCard';
+import { ReferencePass } from '../components/ReferencePass';
+import { CollectionProgress } from '../components/CollectionProgress';
+import { ReceiptCard } from '../components/ReceiptCard';
+import { statusHeading, nextStepCopy } from './textileStatusCopy';
 
-function formatVolume(bags: number | null, weightKg: number | null): string {
+function formatVolume(bags: number | null, weightKg: number | null, method: string): string {
   const parts: string[] = [];
   if (bags !== null) parts.push(`${bags} bag${bags === 1 ? '' : 's'}`);
   if (weightKg !== null) parts.push(`${weightKg} kg`);
-  return parts.length > 0 ? parts.join(' · ') : 'To be confirmed at pickup';
+  return parts.length > 0
+    ? parts.join(' · ')
+    : method === 'dropoff'
+      ? 'To be confirmed at the centre'
+      : 'To be confirmed at pickup';
 }
-
-const STEPS = ['pending_review', 'ready_to_group', 'scheduled', 'picked_up'];
-const LABELS: Record<string, string> = {
-  pending_review: 'Dr. Linen is reviewing your request',
-  ready_to_group: 'Approved and waiting to be grouped by area',
-  scheduled: 'Pickup has been scheduled',
-  picked_up: 'Textiles collected',
-  missed: 'Pickup was missed',
-  rejected: 'Request was not accepted',
-  cancelled: 'Request cancelled',
-};
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return 'Not scheduled yet';
+  try {
+    return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(dateStr));
+  } catch {
+    return dateStr;
+  }
+}
+function formatWindow(start: string | null, end: string | null): string | null {
+  if (!start || !end) return null;
+  return `Between ${start}–${end}`;
+}
+const PICKUP_STEPS = [
+  { key: 'pending_review', label: 'Requested' },
+  { key: 'ready_to_group', label: 'Approved' },
+  { key: 'scheduled', label: 'Scheduled' },
+  { key: 'picked_up', label: 'Collected' },
+];
+const DROPOFF_STEPS = [
+  { key: 'pending_review', label: 'Requested' },
+  { key: 'ready_to_group', label: 'Ready to drop off' },
+  { key: 'scheduled', label: 'Pass active' },
+  { key: 'picked_up', label: 'Received' },
+];
 
 function ReplacePhotoButton({
   reportId,
@@ -44,7 +66,6 @@ function ReplacePhotoButton({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-
   async function handleChange(e: React.ChangeEvent<HTMLInputElement>): Promise<void> {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -68,14 +89,14 @@ function ReplacePhotoButton({
       if (inputRef.current) inputRef.current.value = '';
     }
   }
-
   return (
     <div className="mt-3">
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={busy}
-        className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-black/15 bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-alt)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-60"
+        aria-live="polite"
+        className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-black/15 bg-white px-4 text-sm font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] disabled:opacity-60"
       >
         <IconCamera className="h-4 w-4" stroke={1.6} />
         {busy ? 'Uploading…' : 'Replace photo'}
@@ -97,75 +118,154 @@ function ReplacePhotoButton({
     </div>
   );
 }
-
 export default function TextileCollectionDetailPage(): JSX.Element {
   const { id = '' } = useParams();
   const query = useCitizenTextileCollection(id);
   const cancel = useCancelTextileCollection(id);
   const [showCancel, setShowCancel] = useState(false);
   const [reason, setReason] = useState('');
-
   if (query.isLoading)
     return (
       <div className="py-20">
-        <Spinner label="Loading pickup request" />
+        <Spinner label="Loading request" />
       </div>
     );
   if (!query.data || query.isError)
     return (
       <ErrorState
-        title="Pickup request not available"
-        description="Return to your textile pickups and try again."
+        title="Request not available"
+        description="Return to your textile collections and try again."
+        action={
+          <Link
+            to="/citizen/textile-collections"
+            className="mt-3 inline-flex min-h-11 items-center rounded-full border border-black/15 px-4 text-sm"
+          >
+            Retry
+          </Link>
+        }
       />
     );
   const item = query.data;
-  const step = STEPS.indexOf(item.status);
+  const method = item.collection_method === 'dropoff' ? 'dropoff' : 'premises';
+  const isDropoff = method === 'dropoff';
+  const steps = isDropoff ? DROPOFF_STEPS : PICKUP_STEPS;
+  const stepIndex = steps.findIndex((s) => s.key === item.status);
+  const currentIndex =
+    stepIndex >= 0 ? stepIndex : item.status === 'missed' ? 2 : item.status === 'rejected' ? 0 : -1;
+  const tone: 'ok' | 'warn' | 'bad' =
+    item.status === 'rejected' ? 'bad' : item.status === 'missed' ? 'warn' : 'ok';
   const canCancel = !['picked_up', 'cancelled', 'rejected'].includes(item.status);
-
+  const centreName =
+    item.service_zone?.dropoff_name ?? item.service_zone?.name ?? 'Collection centre';
+  const centreAddress =
+    (item as unknown as { service_zone?: { dropoff_address?: string | null } }).service_zone
+      ?.dropoff_address ?? '';
+  const centreCenter = item.service_zone?.center ?? null;
+  const actualStr = formatVolume(item.actual_bags, item.actual_weight_kg, method);
+  const heading = statusHeading(item.status, method);
+  const windowStr = formatWindow(item.scheduled_window_start, item.scheduled_window_end);
+  const nextStep = nextStepCopy(item.status, method, {
+    centre: centreName,
+    reference: item.reference,
+    address: item.pickup_address,
+    window: windowStr ?? undefined,
+    date: item.scheduled_date ?? item.batch?.collection_date ?? undefined,
+    actual: actualStr,
+  });
   return (
     <div className="mx-auto min-w-0 max-w-3xl space-y-5">
       <Link
         to="/citizen/textile-collections"
         className="inline-flex min-h-11 items-center gap-2 text-sm text-[var(--color-text-secondary)]"
       >
-        <IconArrowLeft className="h-4 w-4" /> Textile pickups
+        <IconArrowLeft className="h-4 w-4" /> Textile collections
       </Link>
       <header className="rounded-2xl border border-black/10 bg-white p-5 sm:p-7">
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
           {item.reference}
         </p>
         <h1 className="mt-2 break-words text-2xl font-normal tracking-[-0.025em]">{item.title}</h1>
-        <p className="mt-3 text-sm font-medium">{LABELS[item.status] ?? item.status}</p>
-        {step >= 0 ? (
-          <div className="mt-5 grid grid-cols-4 gap-1" aria-label="Collection progress">
-            {STEPS.map((status, index) => (
-              <span
-                key={status}
-                className={`h-1.5 rounded-full ${index <= step ? 'bg-[var(--color-ink)]' : 'bg-[#dfddd7]'}`}
-              />
-            ))}
-          </div>
+        <p className="mt-1 inline-flex rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 text-xs font-medium">
+          {isDropoff ? 'Drop-off at a centre' : 'Pickup at your address'}
+        </p>
+        <p className="mt-3 text-sm font-medium">{heading}</p>
+        {item.rejection_reason ? (
+          <p className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            {item.rejection_reason}
+          </p>
         ) : null}
+        {item.missed_pickup_reason ? (
+          <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+            {item.missed_pickup_reason}
+          </p>
+        ) : null}
+        {item.cancellation_reason ? (
+          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+            {item.cancellation_reason}
+          </p>
+        ) : null}
+        <p className="mt-3 text-sm text-[var(--color-text-secondary)]">{nextStep}</p>
+        <CollectionProgress
+          steps={steps}
+          currentIndex={currentIndex >= 0 ? currentIndex : 0}
+          tone={currentIndex >= 0 ? tone : 'bad'}
+        />
       </header>
 
+      {isDropoff ? (
+        <>
+          <CentreCard
+            name={centreName}
+            address={centreAddress || item.pickup_address}
+            hours={
+              (item as unknown as { service_zone?: { dropoff_hours?: string } }).service_zone
+                ?.dropoff_hours ?? null
+            }
+            center={centreCenter}
+            state={item.status === 'picked_up' ? 'muted' : 'active'}
+          />
+          <ReferencePass reference={item.reference} />
+        </>
+      ) : null}
+
       <section className="grid gap-3 sm:grid-cols-2">
-        <Detail icon={IconMapPin} label="Pickup address" value={item.pickup_address} />
+        <Detail
+          icon={IconMapPin}
+          label={isDropoff ? 'Your address' : 'Pickup address'}
+          value={item.pickup_address}
+          hint={isDropoff ? 'for contact and receipt only — not a pickup point' : undefined}
+        />
         <Detail
           icon={IconPackage}
           label="Estimated collection"
-          value={formatVolume(item.estimated_bags, item.estimated_weight_kg)}
+          value={formatVolume(item.estimated_bags, item.estimated_weight_kg, method)}
         />
         <Detail
           icon={IconCalendar}
-          label="Pickup date"
-          value={item.scheduled_date ?? 'Not scheduled yet'}
+          label={isDropoff ? 'Pass valid until' : 'Pickup date'}
+          value={(() => {
+            const d = item.scheduled_date ?? item.batch?.collection_date ?? null;
+            const base = formatDate(d);
+            if (!isDropoff && windowStr) return `${base} · ${windowStr}`;
+            return base;
+          })()}
         />
         <Detail
           icon={IconPackage}
           label="Collection method"
-          value={item.collection_method === 'premises' ? 'Pickup from address' : 'Drop-off'}
+          value={isDropoff ? 'Drop-off at a centre' : 'Pickup at your address'}
         />
       </section>
+
+      {item.status === 'picked_up' ? (
+        <ReceiptCard
+          reference={item.reference}
+          date={item.picked_up_at ? formatDate(item.picked_up_at) : formatDate(item.scheduled_date)}
+          actual={actualStr}
+          centre={centreName}
+          proofUrl={item.photos?.find((p) => p.role === 'proof')?.url}
+        />
+      ) : null}
 
       {item.notes ? (
         <section className="rounded-xl border border-black/10 bg-white p-5">
@@ -175,13 +275,12 @@ export default function TextileCollectionDetailPage(): JSX.Element {
           </p>
         </section>
       ) : null}
-
       <PhotoTrustView
         photos={item.photos}
         reportId={id}
         onPhotoChanged={() => void query.refetch()}
+        isDropoff={isDropoff}
       />
-
       {canCancel ? (
         <section className="rounded-xl border border-black/10 bg-white p-5">
           {showCancel ? (
@@ -194,7 +293,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
                 rows={3}
                 placeholder="For example: I dropped the bags off at the collection point myself."
                 value={reason}
-                onChange={(event) => setReason(event.target.value)}
+                onChange={(e) => setReason(e.target.value)}
                 aria-describedby="cancel-reason-hint"
                 className="block w-full rounded-lg border border-[#d8d6cf] p-3"
               />
@@ -206,7 +305,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
                   type="button"
                   disabled={reason.trim().length < 5 || cancel.isPending}
                   onClick={() => void cancel.mutateAsync(reason.trim())}
-                  className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-red-600 bg-red-600 px-5 text-sm font-medium text-white transition-colors hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-red-600 bg-red-600 px-5 text-sm font-medium text-white disabled:opacity-40"
                 >
                   <IconX className="h-4 w-4" stroke={1.6} />
                   {cancel.isPending ? 'Cancelling…' : 'Confirm cancellation'}
@@ -214,7 +313,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => setShowCancel(false)}
-                  className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-black/15 bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-alt)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ink)]"
+                  className="inline-flex min-h-11 items-center rounded-full border border-black/15 bg-white px-4 text-sm font-medium"
                 >
                   Keep request
                 </button>
@@ -223,63 +322,76 @@ export default function TextileCollectionDetailPage(): JSX.Element {
           ) : (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-sm font-medium">Need to cancel this pickup?</h2>
+                <h2 className="text-sm font-medium">
+                  {isDropoff ? 'Need to cancel this drop-off?' : 'Need to cancel this pickup?'}
+                </h2>
                 <p className="mt-1 max-w-prose text-xs text-[var(--color-text-secondary)]">
-                  We will tell the collection partner you no longer need this visit. A cancelled
-                  request cannot be reopened — you would have to book a new one.
+                  We will tell the collection partner you no longer need this. A cancelled request
+                  cannot be reopened.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowCancel(true)}
-                className="inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center gap-2 self-start rounded-full border border-red-300 bg-white px-4 text-sm font-medium text-red-800 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 sm:self-auto"
+                className="inline-flex min-h-11 shrink-0 items-center gap-2 self-start rounded-full border border-red-300 bg-white px-4 text-sm font-medium text-red-800 sm:self-auto"
               >
                 <IconX className="h-4 w-4" stroke={1.6} />
-                Cancel this pickup request
+                {isDropoff ? 'Cancel this drop-off plan' : 'Cancel this pickup request'}
               </button>
             </div>
           )}
         </section>
       ) : null}
+      {item.status === 'missed' ? (
+        <div className="flex gap-2">
+          <Link
+            to="/citizen/textile-collections/new"
+            className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white"
+          >
+            Rebook
+          </Link>
+        </div>
+      ) : null}
     </div>
   );
 }
-
 function Detail({
   icon: Icon,
   label,
   value,
+  hint,
 }: {
   icon: typeof IconMapPin;
   label: string;
   value: string;
+  hint?: string;
 }): JSX.Element {
   return (
     <div className="min-w-0 rounded-xl border border-black/10 bg-white p-4">
       <div className="flex items-center gap-2 text-xs text-[var(--color-text-tertiary)]">
         <Icon className="h-4 w-4 shrink-0" />
         {label}
+        {hint ? <span className="sr-only">({hint})</span> : null}
       </div>
       <p className="mt-2 break-words text-sm leading-5">{value}</p>
+      {hint ? <p className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">{hint}</p> : null}
     </div>
   );
 }
-
 function PhotoTrustView({
   photos,
   reportId,
   onPhotoChanged,
+  isDropoff,
 }: {
   photos?: TextileCollectionPhoto[];
   reportId: string;
   onPhotoChanged: () => void;
+  isDropoff: boolean;
 }): JSX.Element | null {
   if (!photos || photos.length === 0) return null;
-
   const evidence = photos.find((p) => p.role === 'evidence');
   const proof = photos.find((p) => p.role === 'proof');
-
-  // If only the citizen's photo exists, show it alone with a note.
   if (evidence && !proof) {
     return (
       <section className="rounded-xl border border-black/10 bg-white p-5">
@@ -291,15 +403,15 @@ function PhotoTrustView({
           </div>
           <div className="flex items-center justify-center rounded-lg border border-dashed border-black/15 bg-[var(--color-bg-faint,#f9f8f6)] p-5">
             <p className="text-center text-xs text-[var(--color-text-secondary)]">
-              Collection proof will appear here after pickup.
+              {isDropoff
+                ? "The centre's receipt photo will appear here."
+                : 'Collection proof will appear here after pickup.'}
             </p>
           </div>
         </div>
       </section>
     );
   }
-
-  // If both (or only proof) exist, render the available cards.
   if (evidence || proof) {
     return (
       <section className="rounded-xl border border-black/10 bg-white p-5">
@@ -318,10 +430,8 @@ function PhotoTrustView({
       </section>
     );
   }
-
   return null;
 }
-
 function PhotoCard({
   heading,
   url,
