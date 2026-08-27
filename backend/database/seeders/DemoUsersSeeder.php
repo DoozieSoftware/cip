@@ -20,6 +20,7 @@ use Illuminate\Database\Seeder;
  *   +919999900003  — Department officer (BBMP Roads + BTP)
  *   +919999900004  — Super admin
  *   +919999900005  — Department admin (BBMP Roads + BBMP SWM)
+ *   +919999900006  — Dr. Linen collection officer
  *
  * The OTP in dev is deterministic and printed in the
  * `auth/send-otp` response (see docs/11 §21 and the
@@ -68,6 +69,14 @@ class DemoUsersSeeder extends Seeder
             'email' => 'anita@cip.demo',
             'password' => 'demo1234',
         ],
+        [
+            'mobile' => '9999900006',
+            'name' => 'Dr. Linen Officer',
+            'role' => 'department_officer',
+            'department_codes' => ['DR_LINEN'],
+            'email' => 'linen@cip.demo',
+            'password' => 'demo1234',
+        ],
     ];
 
     public function run(): void
@@ -102,6 +111,18 @@ class DemoUsersSeeder extends Seeder
             $user->syncRoles([$row['role']]);
 
             if (isset($row['department_codes'])) {
+                if ($row['mobile'] === '9999900006') {
+                    // Keep the dedicated Dr. Linen fixture isolated if a
+                    // previous local seed attached this number elsewhere.
+                    $user->departments()->detach();
+                } else {
+                    $linenId = Department::query()->where('code', 'DR_LINEN')->value('id');
+
+                    if (is_string($linenId)) {
+                        $user->departments()->detach($linenId);
+                    }
+                }
+
                 $departments = Department::query()
                     ->whereIn('code', $row['department_codes'])
                     ->get();

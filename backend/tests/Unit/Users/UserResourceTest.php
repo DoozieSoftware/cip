@@ -9,7 +9,9 @@ use Illuminate\Support\Carbon;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\TestCase;
 
+uses(TestCase::class);
 beforeEach(function (): void {
     // Clean Spatie's tables so cached roles/permissions don't bleed
     // between tests.

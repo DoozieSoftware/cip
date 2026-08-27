@@ -82,7 +82,27 @@ it('belongs to a city and a zone', function (): void {
 it('round-trips a WKT boundary polygon through the model', function (): void {
     $wkt = 'POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))';
 
-    $ward = Ward::factory()->create(['boundary_polygon' => $wkt]);
+    // Create with the factory default (driver-aware), then set the WKT
+    // per driver: MySQL's POLYGON column cannot accept a bound WKT string
+    // (error 1416), so the write goes through ST_GeomFromText.
+    $ward = Ward::factory()->create();
+
+    if (DB::connection()->getDriverName() === 'mysql') {
+        DB::table('wards')
+            ->where('id', $ward->id)
+            ->update(['boundary_polygon' => DB::raw("ST_GeomFromText('{$wkt}', 4326)")]);
+
+        $stored = (string) DB::table('wards')
+            ->where('id', $ward->id)
+            ->value(DB::raw('ST_AsText(boundary_polygon)'));
+        // ST_AsText returns canonical WKT (no space after commas).
+        expect(preg_replace('/\s+/', '', $stored))
+            ->toBe((string) preg_replace('/\s+/', '', $wkt));
+
+        return;
+    }
+
+    $ward->update(['boundary_polygon' => $wkt]);
 
     $stored = DB::table('wards')->where('id', $ward->id)->value('boundary_polygon');
     expect($stored)->toBe($wkt);

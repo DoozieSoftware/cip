@@ -7,6 +7,7 @@ use App\Modules\Departments\Providers\DepartmentServiceProvider;
 use App\Modules\Media\Providers\MediaServiceProvider;
 use App\Modules\Moderation\Providers\ModerationServiceProvider;
 use App\Modules\Notifications\Providers\NotificationsServiceProvider;
+use App\Modules\TextileCollections\Providers\TextileCollectionsServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\RouteServiceProvider;
 
@@ -17,5 +18,6 @@ return [
     MediaServiceProvider::class,
     ModerationServiceProvider::class,
     NotificationsServiceProvider::class,
+    TextileCollectionsServiceProvider::class,
     RouteServiceProvider::class,
 ];

@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Modules\Users\Models\User;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('boots the user model with a UUID primary key', function (): void {
     $user = new User;
     expect($user->getKeyType())->toBe('string');

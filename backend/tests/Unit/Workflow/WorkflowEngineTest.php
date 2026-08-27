@@ -12,7 +12,9 @@ use App\Modules\Workflow\Services\ConditionEvaluator;
 use App\Modules\Workflow\Services\TransitionGuard;
 use App\Modules\Workflow\Services\WorkflowEngine;
 use Spatie\Permission\Models\Role;
+use Tests\TestCase;
 
+uses(TestCase::class);
 beforeEach(function (): void {
     $this->engine = new WorkflowEngine(new TransitionGuard(new ConditionEvaluator));
 

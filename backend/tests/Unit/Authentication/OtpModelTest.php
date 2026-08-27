@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Modules\Authentication\Models\Otp;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('boots the Otp model with a uuid PK and no updated_at', function (): void {
     $otp = new Otp;
 

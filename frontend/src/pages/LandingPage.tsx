@@ -105,7 +105,7 @@ export function LandingPage(): JSX.Element {
             </span>
             <div>
               <div className="text-sm font-semibold tracking-[-0.01em] text-[#1d1d1b]">
-                CIP Karnataka
+                CIP India
               </div>
               <div className="text-[11px] text-[#777670]">Citizen services</div>
             </div>

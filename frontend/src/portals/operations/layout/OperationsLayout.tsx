@@ -3,15 +3,19 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   IconBuildingCommunity,
+  IconCalendarStats,
   IconChartBar,
+  IconClipboardCheck,
   IconClipboardList,
   IconDatabaseExport,
   IconFileAnalytics,
+  IconHistory,
   IconHome,
   IconLock,
   IconLogout,
   IconMap,
   IconShield,
+  IconTruck,
   IconUser,
   IconUsers,
 } from '@tabler/icons-react';
@@ -25,6 +29,7 @@ interface NavItem {
   end?: boolean;
   allowedRoles?: Role[];
   mobile?: boolean;
+  departmentCode?: string;
 }
 
 const AUDIT_SECURITY_ROLES: Role[] = ['super_admin', 'system', 'auditor', 'department_admin'];
@@ -34,6 +39,30 @@ const NAV: NavItem[] = [
   { to: '/operations', label: 'Dashboard', end: true, icon: IconHome, mobile: true },
   { to: '/operations/reports', label: 'Assigned', icon: IconClipboardList, mobile: true },
   { to: '/operations/tasks', label: 'Cross Agency', icon: IconFileAnalytics, mobile: true },
+  {
+    to: '/operations/textile-collections/review',
+    label: 'Pickup reviews',
+    icon: IconClipboardCheck,
+    departmentCode: 'DR_LINEN',
+  },
+  {
+    to: '/operations/textile-collections/schedule',
+    label: 'Trip scheduling',
+    icon: IconCalendarStats,
+    departmentCode: 'DR_LINEN',
+  },
+  {
+    to: '/operations/textile-collections/dispatch',
+    label: 'Dispatch board',
+    icon: IconTruck,
+    departmentCode: 'DR_LINEN',
+  },
+  {
+    to: '/operations/textile-collections/completed',
+    label: 'Pickup history',
+    icon: IconHistory,
+    departmentCode: 'DR_LINEN',
+  },
   { to: '/operations/analytics', label: 'Analytics', icon: IconChartBar },
   { to: '/operations/map', label: 'GIS Map', icon: IconMap },
   { to: '/operations/reports/export', label: 'Export', icon: IconDatabaseExport },
@@ -67,14 +96,29 @@ const MOBILE_NAV: NavItem[] = [
   },
 ];
 
+const DR_LINEN_NAV: NavItem[] = [
+  { to: '/operations/textile-collections/review', label: 'Reviews', icon: IconClipboardCheck },
+  { to: '/operations/textile-collections/schedule', label: 'Trips', icon: IconCalendarStats },
+  { to: '/operations/textile-collections/dispatch', label: 'Dispatch', icon: IconTruck },
+  { to: '/operations/textile-collections/completed', label: 'History', icon: IconHistory },
+  { to: '/operations/profile', label: 'Profile', icon: IconUser },
+];
+
 export function OperationsLayout(): JSX.Element {
   const { user, hasAnyRole, logout } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isDrLinen =
+    user?.departments?.some((department) => department.code === 'DR_LINEN') ?? false;
 
   const nav = useMemo(
-    () => NAV.filter((item) => item.allowedRoles === undefined || hasAnyRole(item.allowedRoles)),
-    [hasAnyRole],
+    () =>
+      (isDrLinen ? DR_LINEN_NAV : NAV).filter(
+        (item) =>
+          (item.allowedRoles === undefined || hasAnyRole(item.allowedRoles)) &&
+          (item.departmentCode === undefined || (item.departmentCode === 'DR_LINEN' && isDrLinen)),
+      ),
+    [hasAnyRole, isDrLinen],
   );
 
   const portalRole = (
@@ -99,7 +143,7 @@ export function OperationsLayout(): JSX.Element {
             </span>
             <div className="min-w-0">
               <div className="truncate text-sm font-semibold tracking-[-0.01em] text-white">
-                CIP Karnataka
+                CIP India
               </div>
               <div className="truncate text-xs text-white/50">Operations</div>
             </div>
@@ -166,7 +210,7 @@ export function OperationsLayout(): JSX.Element {
             </span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
-                CIP Karnataka
+                CIP India
               </div>
               <div className="truncate text-[11px] text-[var(--color-text-tertiary)]">
                 Operations
@@ -206,36 +250,38 @@ export function OperationsLayout(): JSX.Element {
           aria-label="Operations sections"
           className="fixed inset-x-3 bottom-3 z-30 rounded-2xl border border-black/10 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_12px_40px_rgba(29,29,27,0.16)] backdrop-blur-xl lg:hidden"
         >
-          <ul className="grid grid-cols-5 items-stretch px-1">
-            {MOBILE_NAV.filter(
-              (item) => item.allowedRoles === undefined || hasAnyRole(item.allowedRoles),
-            ).map((item) => {
-              const Icon = item.icon;
-              return (
-                <li key={item.to}>
-                  <NavLink
-                    to={item.to}
-                    end={item.end}
-                    className={({ isActive }) =>
-                      [
-                        'relative flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium transition-colors',
-                        isActive ? 'text-[var(--color-ink)]' : 'text-[var(--color-text-tertiary)]',
-                      ].join(' ')
-                    }
-                  >
-                    {({ isActive }) => (
-                      <>
-                        <Icon className="h-5 w-5" stroke={isActive ? 2.1 : 1.6} />
-                        <span className="max-w-full truncate leading-tight">{item.label}</span>
-                        {isActive && (
-                          <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[var(--color-ink)]" />
-                        )}
-                      </>
-                    )}
-                  </NavLink>
-                </li>
-              );
-            })}
+          <ul className={`grid items-stretch px-1 ${isDrLinen ? 'grid-cols-2' : 'grid-cols-5'}`}>
+            {(isDrLinen ? DR_LINEN_NAV : MOBILE_NAV)
+              .filter((item) => item.allowedRoles === undefined || hasAnyRole(item.allowedRoles))
+              .map((item) => {
+                const Icon = item.icon;
+                return (
+                  <li key={item.to}>
+                    <NavLink
+                      to={item.to}
+                      end={item.end}
+                      className={({ isActive }) =>
+                        [
+                          'relative flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium transition-colors',
+                          isActive
+                            ? 'text-[var(--color-ink)]'
+                            : 'text-[var(--color-text-tertiary)]',
+                        ].join(' ')
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          <Icon className="h-5 w-5" stroke={isActive ? 2.1 : 1.6} />
+                          <span className="max-w-full truncate leading-tight">{item.label}</span>
+                          {isActive && (
+                            <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[var(--color-ink)]" />
+                          )}
+                        </>
+                      )}
+                    </NavLink>
+                  </li>
+                );
+              })}
           </ul>
         </nav>
       </div>

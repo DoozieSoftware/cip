@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Modules\Security\Services\DeviceFingerprintService;
 use Illuminate\Http\Request;
+use Tests\TestCase;
 
+uses(TestCase::class);
 /**
  * Unit coverage for DeviceFingerprintService (T-M2-018).
  *

@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Modules\Workflow\ValueObjects\WorkflowDecision;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('builds a positive decision with the required fields', function (): void {
     $d = WorkflowDecision::allow(
         toStateId: 'state-2',

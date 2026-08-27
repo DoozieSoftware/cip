@@ -18,8 +18,11 @@ use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Tests\TestCase;
 
+uses(TestCase::class);
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
@@ -55,15 +58,21 @@ beforeEach(function (): void {
         'code' => 'BLR',
         'active' => true,
     ]);
-    $this->ward = Ward::query()->create([
-        'id' => (string) Str::uuid(),
+    // boundary_polygon is a MySQL POLYGON SRID 4326 column: the WKT string
+    // must go through ST_GeomFromText (same as GeographySeeder), so this
+    // uses a raw insert instead of Eloquent's parameterised create().
+    $wardId = (string) Str::uuid();
+    DB::table('wards')->insert([
+        'id' => $wardId,
         'city_id' => $this->city->id,
         'zone_id' => null,
         'ward_number' => 112,
         'name' => 'Ward 112',
         'municipality' => 'BBMP',
+        'boundary_polygon' => DB::raw("ST_GeomFromText('POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))', 4326)"),
         'active' => true,
     ]);
+    $this->ward = Ward::query()->findOrFail($wardId);
 
     $this->garbage = ReportType::query()->where('code', 'garbage')->firstOrFail();
     $this->pothole = ReportType::query()->where('code', 'roads')->firstOrFail();

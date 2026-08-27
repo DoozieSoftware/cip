@@ -59,7 +59,14 @@ function installStubs(
     pushManager: { subscribe: pushSubscribe, getSubscription: () => Promise.resolve(null) },
   } as unknown as ServiceWorkerRegistration;
   const serviceWorkerRegister = vi.fn().mockResolvedValue(registration);
+  // Spread the original navigator so platform properties (userAgent, vendor,
+  // platform…) survive stubbing. Leaflet evaluates Browser.js from
+  // `navigator.userAgent` at module load; a bare stub without userAgent
+  // crashes any Leaflet-importing test file that runs later in the same
+  // Vitest fork ("Cannot read properties of undefined (reading
+  // 'toLowerCase')" in leaflet/src/core/Browser.js).
   globalThis.navigator = {
+    ...(originalNavigator as unknown as Record<string, unknown>),
     serviceWorker: {
       ready: Promise.resolve(registration),
       getRegistration: () => Promise.resolve(registration),

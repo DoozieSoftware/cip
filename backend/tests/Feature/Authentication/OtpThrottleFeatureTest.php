@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Security\Models\SecurityPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
@@ -26,6 +27,21 @@ beforeEach(function (): void {
     // driver in phpunit.xml is not transactional — it needs an
     // explicit flush.
     Cache::flush();
+
+    // The pilot rate-limit migration (2026_07_09_130000) inserts this
+    // policy at 1000/hour in every migrated environment, including the
+    // test database — the limiter then never trips and every 429
+    // assertion below receives a 200. These tests specify the
+    // documented 5/hour limit (docs/11 §21), so pin the row for the
+    // suite regardless of the pilot cap.
+    SecurityPolicy::query()->updateOrCreate(
+        ['key' => 'ratelimit.otp_per_hour'],
+        [
+            'value' => ['per_hour' => 5],
+            'type' => 'array',
+            'description' => 'Maximum OTP requests per phone per hour.',
+        ],
+    );
 });
 
 it('allows 5 successful requests from the same IP with different mobiles', function (): void {

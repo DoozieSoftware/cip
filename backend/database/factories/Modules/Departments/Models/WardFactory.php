@@ -8,6 +8,7 @@ use App\Modules\Departments\Models\City;
 use App\Modules\Departments\Models\Ward;
 use App\Modules\Departments\Models\Zone;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @extends Factory<Ward>
@@ -30,7 +31,12 @@ class WardFactory extends Factory
             'active' => true,
             // A trivial closed polygon (square) in WKT. Real boundary
             // data lands via the seeder / Super Admin Portal.
-            'boundary_polygon' => 'POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))',
+            // MySQL stores a real POLYGON column, which cannot accept a
+            // bound WKT string — it must go through ST_GeomFromText;
+            // SQLite stores the WKT text directly.
+            'boundary_polygon' => DB::connection()->getDriverName() === 'mysql'
+                ? DB::raw("ST_GeomFromText('POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))', 4326)")
+                : 'POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))',
         ];
     }
 }

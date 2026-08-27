@@ -15,7 +15,9 @@ use Database\Seeders\ReportTypesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Tests\TestCase;
 
+uses(TestCase::class);
 beforeEach(function (): void {
     (new RolesAndPermissionsSeeder)->run();
     (new ReportStatusesSeeder)->run();

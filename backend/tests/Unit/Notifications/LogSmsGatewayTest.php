@@ -6,7 +6,9 @@ use App\Modules\Notifications\Contracts\SmsGatewayInterface;
 use App\Modules\Notifications\Drivers\LogSmsGateway;
 use App\Modules\Notifications\Providers\NotificationsServiceProvider;
 use Illuminate\Support\Facades\Log;
+use Tests\TestCase;
 
+uses(TestCase::class);
 /**
  * Validates the LogSmsGateway and the service-container binding
  * introduced in T-M2-012.

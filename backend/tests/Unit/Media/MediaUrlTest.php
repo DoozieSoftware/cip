@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Support\MediaUrl;
 use Illuminate\Support\Facades\URL;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('returns a temporary signed route URL when the disk has no temporaryUrl() — falls back to Laravel signed route (acceptance: URL is verifiable by Laravel signed-route middleware)', function (): void {
     $media = Media::factory()->create([
         'storage_disk' => 'local',

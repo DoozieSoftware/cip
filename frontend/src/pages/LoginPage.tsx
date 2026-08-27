@@ -52,6 +52,12 @@ const DEMO_ACCOUNTS: {
     icon: IconClipboardList,
   },
   {
+    label: 'Dr. Linen Officer',
+    mobile: '9999900006',
+    description: 'Review, schedule, and record textile collection requests.',
+    icon: IconBuildingCommunity,
+  },
+  {
     label: 'Super Admin',
     mobile: '9999900004',
     description: 'Configure report types, security policies, feature flags, audit log.',
@@ -257,9 +263,7 @@ export function LoginPage(): JSX.Element {
           <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[#1d1d1b] text-white">
             <IconBuildingCommunity className="h-5 w-5" stroke={1.7} />
           </span>
-          <span className="text-sm font-semibold tracking-[-0.01em] text-[#1d1d1b]">
-            CIP Karnataka
-          </span>
+          <span className="text-sm font-semibold tracking-[-0.01em] text-[#1d1d1b]">CIP India</span>
         </Link>
 
         <div className="mt-10 grid flex-1 grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">

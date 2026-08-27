@@ -7,7 +7,9 @@ use App\Modules\Users\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Auth\GenericUser;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Tests\TestCase;
 
+uses(TestCase::class);
 /**
  * Unit coverage for BasePolicy (T-M2-019). Uses a tiny in-test
  * concrete subclass to exercise the `before()` rules in isolation,

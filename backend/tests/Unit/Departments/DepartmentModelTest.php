@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Modules\Departments\Models\Department;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('uses a UUID primary key, soft deletes, and the departments table', function (): void {
     $dept = new Department;
     expect($dept->getTable())->toBe('departments')

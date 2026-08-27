@@ -164,6 +164,7 @@ class DepartmentsSeeder extends Seeder
      * @var list<array<string, int|string>>
      */
     private const EXTERNAL_AGENCIES = [
+        ['code' => 'DR_LINEN', 'name' => 'Dr. Linen Textile Collection', 'sla' => 4320, 'phone' => ''],
         ['code' => 'KSPCB', 'name' => 'Karnataka State Pollution Control Board', 'sla' => 2880, 'phone' => '080-25589112'],
         ['code' => 'BMTC', 'name' => 'Bangalore Metropolitan Transport Corporation Limited', 'sla' => 1440, 'phone' => '1800-425-1663'],
         ['code' => 'PWD', 'name' => 'Public Works Department, Government of Karnataka', 'sla' => 2880, 'phone' => '080-22211283'],

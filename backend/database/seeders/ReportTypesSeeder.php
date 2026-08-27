@@ -51,6 +51,12 @@ class ReportTypesSeeder extends Seeder
      * Kannada localizations (`localizations`) and citizen search terms
      * (`aliases`).
      *
+     * All three are collection streams handled by the Dr. Linen partner
+     * service at /citizen -> "Request pickup", not complaint categories, so
+     * they are deactivated (kept for historical reports) to keep a single
+     * entry point. Illegal dumping of these materials remains reportable
+     * under "Garbage & Dumping", which still routes to BBMP SWM.
+     *
      * @var list<array<string, mixed>>
      */
     private const WASTE_STREAM_TYPES = [
@@ -60,6 +66,9 @@ class ReportTypesSeeder extends Seeder
             'icon' => 'hanger',
             'color' => '#00897B',
             'sort_order' => 9,
+            'requires_photo' => false,
+            'min_photos' => 0,
+            'active' => false,
             'localizations' => ['kn-IN' => 'ಬಟ್ಟೆಗಳು ಮತ್ತು ಜವಳಿ'],
             'aliases' => ['old clothes', 'clothes donation', 'textiles', 'ಬಟ್ಟೆ'],
         ],
@@ -69,6 +78,7 @@ class ReportTypesSeeder extends Seeder
             'icon' => 'scrap',
             'color' => '#607D8B',
             'sort_order' => 10,
+            'active' => false,
             'localizations' => ['kn-IN' => 'ಲೋಹದ ಸ್ಕ್ರ್ಯಾಪ್'],
             'aliases' => ['scrap metal', 'loha', 'ಸ್ಕ್ರ್ಯಾಪ್'],
         ],
@@ -78,6 +88,7 @@ class ReportTypesSeeder extends Seeder
             'icon' => 'device',
             'color' => '#C62828',
             'sort_order' => 11,
+            'active' => false,
             'localizations' => ['kn-IN' => 'ಎಲೆಕ್ಟ್ರಾನಿಕ್ ತ್ಯಾಜ್ಯ (ಇ-ವೇಸ್ಟ್)'],
             'aliases' => ['e-waste', 'ewaste', 'electronics', 'computer'],
         ],
@@ -118,6 +129,18 @@ class ReportTypesSeeder extends Seeder
 
             if (array_key_exists('aliases', $row)) {
                 $attributes['aliases'] = $row['aliases'];
+            }
+
+            if (array_key_exists('requires_photo', $row)) {
+                $attributes['requires_photo'] = $row['requires_photo'];
+            }
+
+            if (array_key_exists('min_photos', $row)) {
+                $attributes['min_photos'] = $row['min_photos'];
+            }
+
+            if (array_key_exists('active', $row)) {
+                $attributes['active'] = $row['active'];
             }
 
             ReportType::query()->updateOrCreate(

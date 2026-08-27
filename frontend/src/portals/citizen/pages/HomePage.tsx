@@ -11,6 +11,7 @@ import {
   IconMapPin,
   IconPlus,
   IconRefresh,
+  IconRecycle,
   IconShieldCheck,
   IconWifiOff,
 } from '@tabler/icons-react';
@@ -316,6 +317,39 @@ export default function HomePage(): JSX.Element {
             {t('home.viewMyReports')}
             <IconChevronRight className="h-4 w-4" stroke={1.6} />
           </Link>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-4">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+              <IconRecycle className="h-5 w-5" stroke={1.6} />
+            </span>
+            <div className="min-w-0">
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+                Pickup service
+              </p>
+              <h2 className="mt-1 text-lg font-medium">Clothes, scrap & e-waste pickup</h2>
+              <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+                Book a scheduled collection with a verified local partner.
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Link
+              to="/citizen/textile-collections"
+              className="inline-flex min-h-11 items-center rounded-full border border-black/15 px-4 text-sm font-medium"
+            >
+              My pickups
+            </Link>
+            <Link
+              to="/citizen/textile-collections/new"
+              className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-ink)] px-4 text-sm font-medium text-white"
+            >
+              Request pickup
+            </Link>
+          </div>
         </div>
       </section>
 

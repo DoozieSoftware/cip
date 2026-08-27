@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Modules\AI\Contracts\AIProviderInterface;
 use App\Modules\AI\ValueObjects\AiRequest;
 use App\Modules\AI\ValueObjects\AiResponse;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('declares the four required methods every provider must implement', function (): void {
     $reflection = new ReflectionClass(AIProviderInterface::class);
     $methods = array_map(fn (ReflectionMethod $m) => $m->getName(), $reflection->getMethods());

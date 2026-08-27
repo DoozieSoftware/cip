@@ -7,7 +7,9 @@ use App\Modules\Notifications\Exceptions\TemplateNotFoundException;
 use App\Modules\Notifications\Models\NotificationTemplate;
 use App\Modules\Notifications\Services\TemplateEngine;
 use Illuminate\Support\Str;
+use Tests\TestCase;
 
+uses(TestCase::class);
 beforeEach(function (): void {
     $this->engine = app(TemplateEngine::class);
 });

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Modules\AI\Services\FraudScorer;
 use App\Modules\Reports\Models\Report;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('returns 0 when no security events are provided', function (): void {
     $report = new Report;
     expect((new FraudScorer)->score($report, []))->toBe(0);

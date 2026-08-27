@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Modules\Moderation\DTO\ReviewReportDto;
 use App\Modules\Shared\Exceptions\ApiException;
+use Tests\TestCase;
 
+uses(TestCase::class);
 /**
  * The DTO is the single contract between the Form Request and
  * the ModerationService. The tests guard the wire-shape contract

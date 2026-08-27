@@ -16,6 +16,14 @@ use App\Modules\Security\Models\SecurityEvent;
 use App\Modules\Security\Services\SecurityPolicyService;
 use App\Modules\Shared\Services\PlatformHeartbeatService;
 use App\Modules\Shared\Support\TraceContext;
+use App\Modules\TextileCollections\Events\TextileCollectionAcknowledged;
+use App\Modules\TextileCollections\Events\TextileCollectionCollected;
+use App\Modules\TextileCollections\Events\TextileCollectionRejected;
+use App\Modules\TextileCollections\Events\TextileCollectionScheduled;
+use App\Modules\TextileCollections\Listeners\SendTextileAcknowledgmentOnCollection;
+use App\Modules\TextileCollections\Listeners\SendTextileCollectedNotification;
+use App\Modules\TextileCollections\Listeners\SendTextileRejectionNotification;
+use App\Modules\TextileCollections\Listeners\SendTextileScheduledNotification;
 use App\Modules\Workflow\Listeners\RefreshSlaDueAt;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobProcessed;
@@ -57,6 +65,13 @@ class AppServiceProvider extends ServiceProvider
         // NotificationsServiceProvider. Keep only the cross-cutting
         // security listener here to avoid duplicate delivery.
         Event::listen(SecurityEvent::class, SecurityEventListener::class);
+
+        // Dr. Linen partner service: acknowledge standalone pickup requests,
+        // notify citizens when a trip is scheduled, and confirm collection.
+        Event::listen(TextileCollectionAcknowledged::class, SendTextileAcknowledgmentOnCollection::class);
+        Event::listen(TextileCollectionScheduled::class, SendTextileScheduledNotification::class);
+        Event::listen(TextileCollectionCollected::class, SendTextileCollectedNotification::class);
+        Event::listen(TextileCollectionRejected::class, SendTextileRejectionNotification::class);
 
         // A reachable queue broker does not prove that a worker is alive.
         // Queue::looping fires for every daemon iteration, including workers

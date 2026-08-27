@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Modules\Shared\Http\Middleware\RequestId;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('generates a UUID when no header is provided', function (): void {
     $middleware = new RequestId;
     $request = Request::create('/api/v1/health', 'GET');

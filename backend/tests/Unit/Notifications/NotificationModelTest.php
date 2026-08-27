@@ -6,7 +6,9 @@ use App\Modules\Notifications\Models\Notification;
 use App\Modules\Notifications\Models\NotificationLog;
 use App\Modules\Notifications\Models\NotificationTemplate;
 use App\Modules\Users\Models\User;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('Notification::user() belongs to a User', function (): void {
     $user = User::factory()->create();
     $notification = Notification::create([

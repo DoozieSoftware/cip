@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Modules\Media\Exceptions\InvalidMediaException;
 use App\Modules\Media\Services\MimeValidator;
 use Illuminate\Http\UploadedFile;
+use Tests\TestCase;
 
+uses(TestCase::class);
 /**
  * Real-world test fixtures:
  *  - TINY_JPEG  : 1x1 white pixel JPEG (finfo sniffs as image/jpeg)

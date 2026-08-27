@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Modules\Reports\Models\Report;
 use App\Modules\Users\Models\User;
 use App\Modules\Workflow\Services\ConditionEvaluator;
+use Tests\TestCase;
 
+uses(TestCase::class);
 beforeEach(function (): void {
     $this->evaluator = new ConditionEvaluator;
     $this->report = Report::factory()->make([

@@ -6,7 +6,9 @@ use App\Modules\Shared\Support\TraceContext;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Tests\TestCase;
 
+uses(TestCase::class);
 it('uses the inbound request id for queue payloads and connector headers', function (): void {
     $request = Request::create('/api/v1/health', 'GET');
     $request->attributes->set('trace_id', 'trace-from-http');
