@@ -156,3 +156,76 @@ export async function uploadTextileCollectionPhoto(
     { signal },
   );
 }
+
+export interface TextileAvailability {
+  service_zone_id: string;
+  collection_method: TextileCollectionMethod;
+  unavailable_dates: string[];
+  next_available_date: string | null;
+  cutoff_hours: number | null;
+  reason: string | null;
+  windows: { window_start: string; window_end: string; available: boolean }[];
+}
+
+export function useTextileAvailability(
+  serviceZoneId: string | null,
+  method: TextileCollectionMethod | null,
+) {
+  return useQuery({
+    queryKey: ['textile-availability', serviceZoneId, method],
+    queryFn: () =>
+      request<TextileAvailability>('/textile-collection/availability', {
+        query: {
+          service_zone_id: serviceZoneId ?? '',
+          collection_method: method ?? '',
+        },
+      }),
+    enabled: Boolean(serviceZoneId && method === 'premises'),
+    staleTime: 2 * 60_000,
+    retry: false,
+  });
+}
+
+export interface RescheduleTextileInput {
+  requested_date: string;
+  window_start?: string | null;
+  window_end?: string | null;
+  reason?: string | null;
+}
+
+export function useRescheduleTextileCollection(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: RescheduleTextileInput) =>
+      request<TextileCollectionRequest>(`/citizen/textile-collections/${id}/reschedule`, {
+        method: 'POST',
+        body: payload,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['citizen', 'textile-collections', id] });
+      void queryClient.invalidateQueries({ queryKey: ['citizen', 'textile-collections'] });
+    },
+  });
+}
+
+export interface UpdateTextileInstructionsInput {
+  readiness_instructions?: string | null;
+  contact_phone?: string;
+  contact_email?: string;
+  pickup_address?: string;
+}
+
+export function useUpdateTextileInstructions(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UpdateTextileInstructionsInput) =>
+      request<TextileCollectionRequest>(`/citizen/textile-collections/${id}/instructions`, {
+        method: 'PATCH',
+        body: payload,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['citizen', 'textile-collections', id] });
+      void queryClient.invalidateQueries({ queryKey: ['citizen', 'textile-collections'] });
+    },
+  });
+}

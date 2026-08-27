@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents -- string fallback intentionally broadens known trip states */
 export type TextileMethod = 'dropoff' | 'premises';
 export type TextileTripStatus =
   | 'planned'
@@ -6,6 +7,24 @@ export type TextileTripStatus =
   | 'completed'
   | 'cancelled'
   | string;
+/**
+ * Phase 3: human-readable explanation for why rescheduling is blocked or requires fallback.
+ */
+export function rescheduleBlockedReason(tripStatus: string | null | undefined): string | null {
+  if (tripStatus === 'in_progress') return 'Crew is already on the route — rescheduling is paused. Contact support for help.';
+  if (tripStatus === 'completed') return 'This trip is already completed and cannot be rescheduled.';
+  return null;
+}
+export function unavailableCopy(unavailableDates: string[], nextAvailable: string | null): string {
+  if (unavailableDates.length === 0) return 'Pickups are available on upcoming dates.';
+  const base = `No pickup on ${unavailableDates.slice(0, 3).join(', ')}${unavailableDates.length > 3 ? ` and ${unavailableDates.length - 3} more` : ''}.`;
+  return nextAvailable ? `${base} Next available: ${nextAvailable}.` : base;
+}
+export function slotUnavailableFallback(method: TextileMethod): string {
+  return method === 'premises'
+    ? 'That slot is no longer available. Pick another date, or drop bags at the centre instead — no slot needed.'
+    : 'That centre slot is full. Try another date or contact support.';
+}
 export function tripStatusLabel(tripStatus: string | null | undefined): string | null {
   if (!tripStatus) return null;
   const map: Record<string, string> = {
