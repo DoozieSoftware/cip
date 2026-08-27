@@ -33,7 +33,7 @@ export default function TextileCompletedPage(): JSX.Element {
   const [page, setPage] = useState(1);
 
   const queue = useTextileQueue({
-    status: 'picked_up,missed,rejected,cancelled',
+    status: statusFilter,
     search,
     page,
     zoneId: zoneId || undefined,

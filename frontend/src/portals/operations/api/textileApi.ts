@@ -57,6 +57,7 @@ export function fetchTextileQueue(params: {
   status?: string;
   service_zone_id?: string;
   category?: string;
+  collection_method?: string;
   search?: string;
   per_page?: number;
   page?: number;

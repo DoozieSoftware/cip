@@ -33,11 +33,16 @@ export default function TextileSchedulePage(): JSX.Element {
     page,
     zoneId: zoneId || undefined,
     categoryId: categoryId || undefined,
+    collectionMethod: 'premises',
     autoRefresh: selected.length === 0,
     enabled: desk.ready && desk.isDrLinen,
     departmentId: desk.departmentId,
   });
-  const rows = queue.data?.data ?? [];
+  const allRows = queue.data?.data ?? [];
+  // Hide drop-off rows that leak through without backend method filter; show note
+  const rows = allRows.filter((r) => r.collection_method !== 'dropoff');
+  const hiddenDropoffCount = allRows.length - rows.length;
+  const [manifestOrder, setManifestOrder] = useState<string[]>([]);
 
   const groups = useMemo(() => {
     const map = new Map<
@@ -52,6 +57,9 @@ export default function TextileSchedulePage(): JSX.Element {
     }
     return [...map.values()];
   }, [rows]);
+  const orderedSelected = manifestOrder
+    .filter((id) => selected.includes(id))
+    .concat(selected.filter((id) => !manifestOrder.includes(id)));
 
   const selectedItems = rows.filter((r) => selected.includes(r.id));
   const selectedZoneIds = new Set(selectedItems.map((r) => r.service_zone?.id).filter(Boolean));
@@ -125,7 +133,9 @@ export default function TextileSchedulePage(): JSX.Element {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">
                     New trip · {selected.length} request{selected.length === 1 ? '' : 's'} ·{' '}
-                    {selectedItems.reduce((s, r) => s + (r.estimated_bags ?? 0), 0)} bags
+                    {selectedItems.reduce((s, r) => s + (r.estimated_bags ?? 0), 0)} bags ·{' '}
+                    {selectedItems.reduce((s, r) => s + (r.estimated_weight_kg ?? 0), 0).toFixed(1)}{' '}
+                    kg · {selected.length} stops
                   </p>
                   <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
                     Zone: {selectedItems[0]?.service_zone?.name ?? '—'}
@@ -256,6 +266,64 @@ export default function TextileSchedulePage(): JSX.Element {
               </section>
             );
           })}
+          {hiddenDropoffCount > 0 ? (
+            <p className="text-xs text-[var(--color-text-secondary)]">
+              {hiddenDropoffCount} drop-off booking(s) hidden — use Centre receipt.
+            </p>
+          ) : null}
+          {orderedSelected.length > 0 ? (
+            <section className="rounded-xl border border-black/10 bg-white p-4">
+              <h3 className="text-sm font-semibold">Manifest order</h3>
+              <ol className="mt-2 space-y-1">
+                {orderedSelected.map((id, idx) => {
+                  const it = selectedItems.find((r) => r.id === id)!;
+                  return (
+                    <li key={id} className="flex items-center gap-2 text-sm">
+                      <span className="grid h-6 w-6 place-items-center rounded-full bg-[var(--color-ink)] text-[11px] text-white">
+                        {idx + 1}
+                      </span>
+                      <span className="font-mono text-xs">{it.reference}</span>
+                      <span className="flex-1 truncate text-xs text-[var(--color-text-secondary)]">
+                        {it.pickup_address}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={idx === 0}
+                        onClick={() =>
+                          setManifestOrder(() => {
+                            const a = [...orderedSelected];
+                            const t = a[idx];
+                            a[idx] = a[idx - 1];
+                            a[idx - 1] = t;
+                            return a;
+                          })
+                        }
+                        className="rounded-full border px-2 py-1 text-xs disabled:opacity-30"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        disabled={idx === orderedSelected.length - 1}
+                        onClick={() =>
+                          setManifestOrder(() => {
+                            const a = [...orderedSelected];
+                            const t = a[idx];
+                            a[idx] = a[idx + 1];
+                            a[idx + 1] = t;
+                            return a;
+                          })
+                        }
+                        className="rounded-full border px-2 py-1 text-xs disabled:opacity-30"
+                      >
+                        ↓
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          ) : null}
           {selectedZoneIds.size > 1 ? (
             <p className="text-xs text-red-700">
               Requests from multiple zones selected — deselect until one zone remains.

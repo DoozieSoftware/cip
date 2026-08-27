@@ -21,6 +21,7 @@ const TextileSchedulePage = lazy(() => import('./pages/textile/TextileSchedulePa
 const TextileDispatchPage = lazy(() => import('./pages/textile/TextileDispatchPage'));
 const TextileCompletedPage = lazy(() => import('./pages/textile/TextileCompletedPage'));
 const TextileStaffDetailPage = lazy(() => import('./pages/textile/TextileStaffDetailPage'));
+const TextileReceiptPage = lazy(() => import('./pages/textile/TextileReceiptPage'));
 
 function Fallback() {
   return (
@@ -57,6 +58,7 @@ export function OperationsApp() {
             />
             <Route path="textile-collections/review" element={<TextileReviewPage />} />
             <Route path="textile-collections/schedule" element={<TextileSchedulePage />} />
+            <Route path="textile-collections/receipt" element={<TextileReceiptPage />} />
             <Route path="textile-collections/dispatch" element={<TextileDispatchPage />} />
             <Route path="textile-collections/completed" element={<TextileCompletedPage />} />
             <Route path="textile-collections/:id" element={<TextileStaffDetailPage />} />
