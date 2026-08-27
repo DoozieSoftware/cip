@@ -1,10 +1,35 @@
 # Textile Collection Service — Next-Phase Implementation Plan
 
-> **Status:** Draft for manager and partner approval
+> **Status:** Phase 0 audits and Phase 1 design + isolated code complete — awaiting manager approval on D-01..D-08 and integration merge (see §0).
 >
 > **Purpose:** Extend the deployed multi-partner collection service from booking and basic dispatch into a complete, operationally sound service.
 >
 > **Scope:** Citizen collection booking, partner review/scheduling/dispatch, proof media, notifications, and operational reporting. Complaint reporting remains separate.
+
+## 0. Progress as of 2026-08-27 — what is now complete
+
+**Branch:** `codex/textile-phase-0` @ `8fb4ffa2` — all work below is on this integration branch and its 4 isolated code branches; nothing has been merged to `main` or deployed.
+
+| Phase          | What                                                    | Where                                                            | Status                                                             |
+| -------------- | ------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Phase 0        | Decision register (D-01..D-08)                          | `plans/textile-phase-0-decision-register.md`                     | **Done — decisions still OPEN, awaiting manager/partner sign-off** |
+| Phase 0        | Flow audit (status machine, guards, routes, migrations) | `plans/phase0/flow-audit.md` (16K)                               | **Done** — 5 parallel read-only agents on Muse Spark               |
+| Phase 0        | Citizen journey audit                                   | `plans/phase0/citizen-journey-audit.md` (11K)                    | **Done**                                                           |
+| Phase 0        | Ops queue audit                                         | `plans/phase0/ops-queue-audit.md` (13K)                          | **Done**                                                           |
+| Phase 0        | Metrics audit                                           | `plans/phase0/metrics-audit.md` (13K)                            | **Done**                                                           |
+| Phase 0        | Security/media/notification/concurrency audit           | `plans/phase0/security-audit.md` (12K)                           | **Done**                                                           |
+| Phase 1 design | Backend spec (statuses, schema, API, authZ, audit)      | `plans/phase1/01-backend-spec.md` (20K)                          | **Done** — 4 parallel design agents on Muse Spark                  |
+| Phase 1 design | Citizen UX spec                                         | `plans/phase1/02-citizen-ux.md` (16K)                            | **Done**                                                           |
+| Phase 1 design | Ops UX spec (receipt + trip manifest)                   | `plans/phase1/03-ops-ux.md` (15K)                                | **Done**                                                           |
+| Phase 1 design | QA matrix                                               | `plans/phase1/04-qa-matrix.md` (11K)                             | **Done**                                                           |
+| Phase 1 code   | Backend (migrations, models, services)                  | `codex/textile-phase1-backend` @ `1d8e3573` — 25 files +798/-26  | **Done — isolated branch, not merged**                             |
+| Phase 1 code   | Citizen UI (CentreCard, Progress, Receipt)              | `codex/textile-phase1-citizen` @ `a126fadc` — 15 files +699/-267 | **Done — isolated branch**                                         |
+| Phase 1 code   | Ops UI (ReceiptPage, Schedule, Dispatch)                | `codex/textile-phase1-ops` @ `6d5ae96a` — 12 files +779/-261     | **Done — isolated branch**                                         |
+| Phase 1 code   | Tests (Pest + Vitest + Playwright, many `todo` for D-*) | `codex/textile-phase1-qa` @ `28a1c510` — 8 files +551            | **Done — isolated branch**                                         |
+
+**No file overlap** across the 4 code branches — safe to merge in any order. Recommended: `backend` → `citizen` + `ops` (parallel) → `qa` last. Each merge will run `pint`/`phpstan`/`eslint`/`build` and is gated on D-01..D-08 `TODO`s where business decisions are still open.
+
+**Not done / blocked:** D-01..D-08 remain `Status: Open` in the register; code marks them as `TODO`/`it.todo`/`fixme`. No schema/state is approved until the Phase 0 sign-off in §3. No push to `main` has occurred.
 
 ## 1. Current baseline
 
