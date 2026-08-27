@@ -81,6 +81,16 @@ final class TextileTripService
             throw ApiException::validation('Cannot reorder after trip has started.');
         }
 
+        $existingIds = DB::table('textile_collection_requests')->where('batch_id', $batch->id)->pluck('id')->all();
+        $sortedExisting = $existingIds;
+        sort($sortedExisting);
+        $sortedOrdered = $orderedIds;
+        sort($sortedOrdered);
+        if ($sortedExisting !== $sortedOrdered) {
+            throw ApiException::validation('Ordered ids must exactly match batch requests.');
+        }
+        // TODO D-05/D-06 OPEN: per-stop idempotency and post-start override rules pending decision.
+
         DB::transaction(function () use ($batch, $orderedIds): void {
             foreach ($orderedIds as $idx => $id) {
                 DB::table('textile_collection_requests')->where('id', $id)->where('batch_id', $batch->id)->update(['stop_order' => $idx + 1]);

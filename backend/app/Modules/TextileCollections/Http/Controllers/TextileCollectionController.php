@@ -207,7 +207,8 @@ final class TextileCollectionController extends BaseController
 
     public function assignTrip(TextileCollectionBatch $batch, AssignTextileBatchRequest $request): JsonResponse
     {
-        $this->assertCollectionPartner($request);
+        $dept = $this->assertCollectionPartner($request);
+        $this->assertBatchOwnership($batch, $dept->id);
         $data = $request->validated();
         $updated = $this->trips->assign($batch, $this->authenticatedUser($request), $data['assigned_team_id'] ?? null, $data['assigned_user_id'] ?? null, $data['vehicle_label'] ?? null, $data['reason'] ?? null);
         return $this->respond(['id' => $updated->id, 'status' => $updated->status], 'Trip assigned.');
@@ -215,21 +216,24 @@ final class TextileCollectionController extends BaseController
 
     public function startTrip(TextileCollectionBatch $batch, Request $request): JsonResponse
     {
-        $this->assertCollectionPartner($request);
+        $dept = $this->assertCollectionPartner($request);
+        $this->assertBatchOwnership($batch, $dept->id);
         $updated = $this->trips->start($batch, $this->authenticatedUser($request));
         return $this->respond(['id' => $updated->id, 'status' => $updated->status], 'Trip started.');
     }
 
     public function completeTrip(TextileCollectionBatch $batch, Request $request): JsonResponse
     {
-        $this->assertCollectionPartner($request);
+        $dept = $this->assertCollectionPartner($request);
+        $this->assertBatchOwnership($batch, $dept->id);
         $updated = $this->trips->complete($batch, $this->authenticatedUser($request));
         return $this->respond(['id' => $updated->id, 'status' => $updated->status], 'Trip completed.');
     }
 
     public function reorderStops(TextileCollectionBatch $batch, ReorderTextileBatchStopsRequest $request): JsonResponse
     {
-        $this->assertCollectionPartner($request);
+        $dept = $this->assertCollectionPartner($request);
+        $this->assertBatchOwnership($batch, $dept->id);
         $data = $request->validated();
         $updated = $this->trips->reorder($batch, $this->authenticatedUser($request), $data['ordered_ids']);
         return $this->respond(['id' => $updated->id], 'Stops reordered.');
@@ -497,6 +501,16 @@ final class TextileCollectionController extends BaseController
      * Resolve the working department, verify it is a collection partner,
      * and optionally verify a request belongs to it.
      */
+    private function assertBatchOwnership(TextileCollectionBatch $batch, string $departmentId): void
+    {
+        $batch->loadMissing('serviceZone');
+        $zoneDept = $batch->serviceZone?->department_id;
+        if ($zoneDept !== null && (string) $zoneDept !== $departmentId) {
+            throw ApiException::forbidden('This trip belongs to another partner.');
+        }
+        // TODO D-05/D-06 OPEN: zone-ownership + capacity override rules pending decision.
+    }
+
     private function assertCollectionPartner(Request $request, ?TextileCollectionRequest $collection = null): Department
     {
         $user = $this->authenticatedUser($request);
