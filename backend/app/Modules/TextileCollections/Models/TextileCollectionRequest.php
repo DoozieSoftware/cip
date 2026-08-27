@@ -93,7 +93,9 @@ final class TextileCollectionRequest extends Model
         'scheduled_window_start', 'scheduled_window_end', 'readiness_instructions',
         'actual_bags', 'actual_weight_kg', 'rejection_reason',
         'cancellation_reason', 'missed_pickup_reason', 'picked_up_at', 'submitted_at',
-    ];
+        'rescheduled_at', 'reminder_sent_at', 'reschedule_count',
+        'previous_scheduled_date', 'previous_window_start', 'previous_window_end', 'previous_batch_id',
+    ]; // TODO D-05/D-06 OPEN: cutoff window + reminder timing pending partner decision.
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -103,14 +105,18 @@ final class TextileCollectionRequest extends Model
             'estimated_weight_kg' => 'float',
             'actual_bags' => 'integer',
             'actual_weight_kg' => 'float',
+            'reschedule_count' => 'integer',
             'dropoff_confirmed_at' => 'datetime',
-        'dropoff_valid_from' => 'date',
-        'dropoff_valid_until' => 'date',
-        'latitude' => 'float',
+            'dropoff_valid_from' => 'date',
+            'dropoff_valid_until' => 'date',
+            'latitude' => 'float',
             'longitude' => 'float',
             'scheduled_date' => 'date',
+            'previous_scheduled_date' => 'date',
             'picked_up_at' => 'datetime',
             'submitted_at' => 'datetime',
+            'rescheduled_at' => 'datetime',
+            'reminder_sent_at' => 'datetime',
         ];
     }
 

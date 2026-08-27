@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\TextileCollections\Providers;
 
+use App\Modules\TextileCollections\Events\TextileCollectionRescheduled;
+use App\Modules\TextileCollections\Events\TextileTripStarted;
+use App\Modules\TextileCollections\Listeners\SendTextileOnTheWayNotification;
+use App\Modules\TextileCollections\Listeners\SendTextileRescheduledNotification;
 use App\Modules\TextileCollections\Policies\TextileCollectionPolicy;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -31,5 +36,15 @@ final class TextileCollectionsServiceProvider extends ServiceProvider
         Gate::define('textile.manage_centre', [TextileCollectionPolicy::class, 'manageCentre']);
         Gate::define('textile.assign_trip', [TextileCollectionPolicy::class, 'assignTrip']);
         Gate::define('textile.operate_trip', [TextileCollectionPolicy::class, 'operateTrip']);
+        Gate::define('textile.reschedule', [TextileCollectionPolicy::class, 'reschedule']);
+        Gate::define('textile.update_instructions', [TextileCollectionPolicy::class, 'updateInstructions']);
+        Gate::define('textile.view_unavailability', [TextileCollectionPolicy::class, 'viewUnavailability']);
+        Gate::define('textile.manage_unavailability', [TextileCollectionPolicy::class, 'manageUnavailability']);
+        Gate::define('textile.reschedule_override', [TextileCollectionPolicy::class, 'rescheduleOverride']);
+
+        // Phase 3: reschedule + on-the-way notifications (suppression for cancelled enforced in listeners).
+        // TODO D-06 OPEN: reminder channel/timing pending partner decision — listener is SMS by default.
+        Event::listen(TextileCollectionRescheduled::class, SendTextileRescheduledNotification::class);
+        Event::listen(TextileTripStarted::class, SendTextileOnTheWayNotification::class);
     }
 }

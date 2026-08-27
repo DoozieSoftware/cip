@@ -427,6 +427,16 @@ Route::prefix('v1')->group(function (): void {
         Route::post('textile-collections/{collection}/proof', [TextileCollectionController::class, 'uploadStaffProof'])
             ->middleware('can:textile.record_outcome')
             ->name('textile-collections.proof');
+        // Phase 3: reschedule (partner override), unavailability management
+        Route::post('textile-collections/{collection}/reschedule', [TextileCollectionController::class, 'partnerReschedule'])
+            ->middleware('can:textile.reschedule,collection')
+            ->name('textile-collections.reschedule');
+        Route::get('textile-zones/{zone}/unavailability', [TextileCollectionController::class, 'zoneUnavailability'])
+            ->middleware('can:textile.view_unavailability')
+            ->name('textile-zones.unavailability.index');
+        Route::post('textile-zones/{zone}/unavailability', [TextileCollectionController::class, 'storeUnavailability'])
+            ->middleware('can:textile.manage_unavailability')
+            ->name('textile-zones.unavailability.store');
     });
 
     // Citizen PWA — report submission and read-back (M4)
@@ -467,6 +477,15 @@ Route::prefix('v1')->group(function (): void {
         Route::post('citizen/textile-collections/{collection}/photo', [TextileCollectionController::class, 'uploadCitizenPhoto'])
             ->middleware('can:textile.view,collection')
             ->name('api.v1.citizen.textile-collections.photo');
+        // Phase 3: citizen reschedule (before cutoff), instructions update, unavailability view
+        Route::post('citizen/textile-collections/{collection}/reschedule', [TextileCollectionController::class, 'citizenReschedule'])
+            ->middleware('can:textile.reschedule,collection')
+            ->name('api.v1.citizen.textile-collections.reschedule');
+        Route::patch('citizen/textile-collections/{collection}/instructions', [TextileCollectionController::class, 'updateInstructions'])
+            ->middleware('can:textile.update_instructions,collection')
+            ->name('api.v1.citizen.textile-collections.instructions');
+        Route::get('textile-collection/zones/{zone}/unavailability', [TextileCollectionController::class, 'zoneUnavailability'])
+            ->name('api.v1.textile-collection.zones.unavailability');
         Route::post('citizen/reports/{report}/verify', [CitizenReportActionsController::class, 'verify'])
             ->name('api.v1.citizen.reports.verify');
         Route::post('citizen/reports/{report}/dispute', [CitizenReportActionsController::class, 'dispute'])

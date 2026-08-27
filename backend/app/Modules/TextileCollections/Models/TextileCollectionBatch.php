@@ -40,7 +40,8 @@ final class TextileCollectionBatch extends Model
         'window_end', 'status', 'trip_reference', 'instructions', 'created_by',
         'assigned_team_id', 'assigned_user_id', 'vehicle_label', 'assignment_reason',
         'assigned_by', 'assigned_at', 'started_at', 'completed_at', 'row_version',
-    ];
+        'reminder_sent_at', 'on_the_way_sent_at',
+    ]; // TODO D-06 OPEN: reminder channel/timing per partner pending decision.
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -50,6 +51,8 @@ final class TextileCollectionBatch extends Model
             'assigned_at' => 'datetime',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
+            'reminder_sent_at' => 'datetime',
+            'on_the_way_sent_at' => 'datetime',
             'row_version' => 'integer',
         ];
     }
