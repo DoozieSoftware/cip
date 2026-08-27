@@ -34,19 +34,26 @@ it('seeds the 5 priority levels with sensible SLAs', function (): void {
         ->and($low->sla_minutes)->toBeGreaterThanOrEqual(7 * 24 * 60);
 });
 
-it('seeds the 11 Bengaluru report types with a required photo and optional video', function (): void {
+it('seeds the 8 active Bengaluru complaint categories with a required photo and optional video', function (): void {
     (new ReportTypesSeeder)->run();
 
-    expect(ReportType::query()->where('active', true)->count())->toBe(11);
+    // The three waste streams are collected through the Dr. Linen partner
+    // service (/citizen -> "Request pickup"), so they are seeded inactive and
+    // are never offered as complaint categories. The rows are kept, not
+    // deleted, so historical reports retain their category.
+    expect(ReportType::query()->where('active', true)->count())->toBe(8);
     expect(ReportType::query()->where('active', true)->where('code', 'roads')->exists())->toBeTrue()
         ->and(ReportType::query()->where('active', true)->where('code', 'garbage')->exists())->toBeTrue()
         ->and(ReportType::query()->where('active', true)->where('code', 'traffic_violation')->exists())->toBeTrue()
-        ->and(ReportType::query()->where('active', true)->where('code', 'clothes_waste')->exists())->toBeTrue()
-        ->and(ReportType::query()->where('active', true)->where('code', 'metal_scrap')->exists())->toBeTrue()
-        ->and(ReportType::query()->where('active', true)->where('code', 'e_waste')->exists())->toBeTrue()
         ->and(ReportType::query()->where('active', true)->where('code', 'pothole')->exists())->toBeFalse();
 
-    ReportType::query()->each(function (ReportType $type): void {
+    foreach (['clothes_waste', 'metal_scrap', 'e_waste'] as $code) {
+        expect(ReportType::query()->where('code', $code)->exists())->toBeTrue("missing retired stream: {$code}")
+            ->and(ReportType::query()->where('active', true)->where('code', $code)->exists())
+            ->toBeFalse("retired collection stream is still an active category: {$code}");
+    }
+
+    ReportType::query()->where('active', true)->each(function (ReportType $type): void {
         expect($type->requires_photo)->toBeTrue()
             ->and($type->requires_video)->toBeFalse()
             ->and($type->min_photos)->toBeGreaterThanOrEqual(1)

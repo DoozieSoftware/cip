@@ -51,6 +51,12 @@ class ReportTypesSeeder extends Seeder
      * Kannada localizations (`localizations`) and citizen search terms
      * (`aliases`).
      *
+     * All three are collection streams handled by the Dr. Linen partner
+     * service at /citizen -> "Request pickup", not complaint categories, so
+     * they are deactivated (kept for historical reports) to keep a single
+     * entry point. Illegal dumping of these materials remains reportable
+     * under "Garbage & Dumping", which still routes to BBMP SWM.
+     *
      * @var list<array<string, mixed>>
      */
     private const WASTE_STREAM_TYPES = [
@@ -72,6 +78,7 @@ class ReportTypesSeeder extends Seeder
             'icon' => 'scrap',
             'color' => '#607D8B',
             'sort_order' => 10,
+            'active' => false,
             'localizations' => ['kn-IN' => 'ಲೋಹದ ಸ್ಕ್ರ್ಯಾಪ್'],
             'aliases' => ['scrap metal', 'loha', 'ಸ್ಕ್ರ್ಯಾಪ್'],
         ],
@@ -81,6 +88,7 @@ class ReportTypesSeeder extends Seeder
             'icon' => 'device',
             'color' => '#C62828',
             'sort_order' => 11,
+            'active' => false,
             'localizations' => ['kn-IN' => 'ಎಲೆಕ್ಟ್ರಾನಿಕ್ ತ್ಯಾಜ್ಯ (ಇ-ವೇಸ್ಟ್)'],
             'aliases' => ['e-waste', 'ewaste', 'electronics', 'computer'],
         ],
