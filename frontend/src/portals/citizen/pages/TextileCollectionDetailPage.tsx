@@ -16,8 +16,14 @@ import {
   useTextileAvailability,
   useUpdateTextileInstructions,
   uploadTextileCollectionPhoto,
+  isTextileNetworkFailure,
   type TextileCollectionPhoto,
 } from '../api/textileZones';
+import { TextileOfflineBanner } from '../components/TextileOfflineBanner';
+import { getQueue } from '../offline/queue';
+import { requestBackgroundSync } from '../offline/swBridge';
+import { readSession } from '../../../auth/storage';
+import { useToast } from '../components/Toast';
 import { CentreCard } from '../components/CentreCard';
 import { ReferencePass } from '../components/ReferencePass';
 import { CollectionProgress } from '../components/CollectionProgress';
@@ -76,6 +82,7 @@ function ReplacePhotoButton({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const toast = useToast();
   async function handleChange(e: React.ChangeEvent<HTMLInputElement>): Promise<void> {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -92,8 +99,24 @@ function ReplacePhotoButton({
     try {
       await uploadTextileCollectionPhoto(reportId, file);
       onReplaced();
-    } catch {
-      setError('Upload failed. Please try again.');
+    } catch (err) {
+      if (isTextileNetworkFailure(err)) {
+        const ownerId = readSession()?.user.id ?? null;
+        const idempotencyKey =
+          typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : `photo-${Date.now()}`;
+        await getQueue(ownerId).enqueue({
+          kind: 'textile.request.photo',
+          payload: { collectionId: reportId, file, idempotency_key: idempotencyKey },
+          id: idempotencyKey,
+        });
+        void requestBackgroundSync();
+        toast.show('You are offline — photo saved locally and will upload when online. See pending uploads.', 'info', 5000);
+        setError('Photo queued for offline upload — will retry when online.');
+      } else {
+        setError('Upload failed. Please try again.');
+      }
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = '';
@@ -194,6 +217,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
     isScheduledPremises && tripStatus !== 'in_progress' && tripStatus !== 'completed';
   return (
     <div className="mx-auto min-w-0 max-w-3xl space-y-5">
+      <TextileOfflineBanner />
       <Link
         to="/citizen/textile-collections"
         className="inline-flex min-h-11 items-center gap-2 text-sm text-[var(--color-text-secondary)]"

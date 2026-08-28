@@ -1,10 +1,19 @@
-import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { OperationsLayout } from './layout/OperationsLayout';
 import { DepartmentSelectionProvider } from './context/DepartmentSelectionContext';
 import { Spinner } from '../../shared/ui';
 import { ProtectedRoute } from '../../auth/ProtectedRoute';
 import { useAuth } from '../../auth/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { readSession } from '../../auth/storage';
+import { getQueue, stopAndClearQueue } from '../citizen/offline/queue';
+import { registerOfflineQueueRetry } from '../citizen/offline/registerQueueRetry';
+import {
+  requestBackgroundSync,
+  onQueueDrain,
+} from '../citizen/offline/swBridge';
+import { clearDraft } from '../citizen/offline/drafts';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ReportListPage = lazy(() => import('./pages/ReportListPage'));
@@ -38,9 +47,45 @@ function OperationsHome() {
   return isDrLinen ? <Navigate to="/operations/textile-collections" replace /> : <DashboardPage />;
 }
 
+function OperationsOfflineBridge(): null {
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const ownerId = readSession()?.user.id ?? null;
+  useEffect(() => {
+    registerOfflineQueueRetry(ownerId);
+    const queue = getQueue(ownerId);
+    function drainAndRefresh(): void {
+      void queue.drain().then(() => {
+        void qc.invalidateQueries({ queryKey: ['textile'] });
+        void qc.invalidateQueries({ queryKey: ['department'] });
+      });
+    }
+    drainAndRefresh();
+    void requestBackgroundSync();
+    const offDrain = onQueueDrain(drainAndRefresh);
+    const offOnline = () => drainAndRefresh();
+    window.addEventListener('online', offOnline);
+    const offLogout = (event: Event) => {
+      const detail = (event as CustomEvent<{ ownerId?: string }>).detail;
+      if (detail?.ownerId) {
+        void stopAndClearQueue(detail.ownerId);
+        void clearDraft(detail.ownerId);
+      }
+    };
+    window.addEventListener('cip:auth-logout', offLogout);
+    return () => {
+      offDrain();
+      window.removeEventListener('online', offOnline);
+      window.removeEventListener('cip:auth-logout', offLogout);
+    };
+  }, [qc, navigate, ownerId]);
+  return null;
+}
+
 export function OperationsApp() {
   return (
     <DepartmentSelectionProvider>
+      <OperationsOfflineBridge />
       <Suspense fallback={<Fallback />}>
         <Routes>
           <Route element={<OperationsLayout />}>

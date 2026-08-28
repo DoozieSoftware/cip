@@ -143,6 +143,49 @@ export function useCancelTextileCollection(id: string) {
   });
 }
 
+export function isTextileNetworkFailure(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message.toLowerCase() : '';
+  if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('load failed')) return true;
+  const anyErr = err as { status?: number; code?: string };
+  if (anyErr?.status === 0 || anyErr?.code === 'OFFLINE' || anyErr?.code === 'NETWORK_ERROR') return true;
+  // Treat anything that is not a structured ApiError response as offline.
+  // ApiError always has a numeric status >=400.
+  if (anyErr?.status !== undefined && anyErr.status >= 400) return false;
+  if (err instanceof Error && msg.includes('http_')) return false;
+  return !(err instanceof Error && (err as unknown as { name?: string })?.name === 'ApiError');
+}
+
+export async function submitTextileRequestPayload(
+  input: CreateTextileCollectionInput & { idempotency_key?: string; photo_file?: File | null },
+): Promise<TextileCollectionRequest> {
+  const idempotencyKey =
+    input.idempotency_key ??
+    (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `textile-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const { idempotency_key: _ignored, photo_file: _photo, ...body } = input as CreateTextileCollectionInput & {
+    idempotency_key?: string;
+    photo_file?: File | null;
+  };
+  const created = await request<TextileCollectionRequest>('/textile-collection/requests', {
+    method: 'POST',
+    headers: { 'Idempotency-Key': idempotencyKey },
+    body,
+  });
+  if (_photo) {
+    const fd = new FormData();
+    fd.append('photo', _photo);
+    await upload<{ photo: { id: string; role: string; url: string } }>(
+      `/citizen/textile-collections/${created.id}/photo`,
+      fd,
+      { headers: { 'Idempotency-Key': idempotencyKey } },
+    ).catch(() => {
+      // Photo failure is non-fatal — detail page offers "add photo later".
+    });
+  }
+  return created;
+}
+
 export async function uploadTextileCollectionPhoto(
   collectionId: string,
   file: File,

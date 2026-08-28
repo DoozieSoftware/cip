@@ -8,6 +8,19 @@ import {
   uploadTextileProofPhoto,
   type TextileCollectionListItem,
 } from '../../api/textileApi';
+import { getQueue } from '../../../citizen/offline/queue';
+import { requestBackgroundSync } from '../../../citizen/offline/swBridge';
+import { readSession } from '../../../../auth/storage';
+import { TextileFieldOfflineBanner } from '../../components/TextileFieldOfflineBanner';
+
+function isOfflineError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message.toLowerCase() : '';
+  if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('load failed')) return true;
+  const anyErr = err as { status?: number; code?: string };
+  if (anyErr?.status === 0 || anyErr?.code === 'OFFLINE') return true;
+  if (anyErr?.status !== undefined && anyErr.status >= 400) return false;
+  return !(err instanceof ApiError);
+}
 import {
   CategoryBadge,
   DeskPage,
@@ -93,15 +106,72 @@ export default function TextileDispatchPage(): JSX.Element {
     },
   });
 
+  async function handleMissed(item: TextileCollectionListItem, reason: string): Promise<void> {
+    setServerError(null);
+    const idempotencyKey =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `field-missed-${item.id}-${Date.now()}`;
+    try {
+      await outcome.mutateAsync({ id: item.id, kind: 'missed', reason });
+    } catch (e) {
+      if (isOfflineError(e)) {
+        const ownerId = readSession()?.user.id ?? null;
+        await getQueue(ownerId).enqueue({
+          kind: 'textile.field.outcome',
+          id: idempotencyKey,
+          payload: {
+            collectionId: item.id,
+            outcome: 'missed',
+            reason,
+            department_id: desk.departmentId,
+          },
+        });
+        void requestBackgroundSync();
+        setServerError(`Missed pickup saved offline — pending upload. Will retry automatically. (id ${idempotencyKey.slice(0, 8)}…)`);
+        setMissedTarget(null);
+        return;
+      }
+      if (e instanceof ApiError) setServerError(e.message);
+      else setServerError('Failed to record missed pickup');
+    }
+  }
+
   async function handleCollect(
     item: TextileCollectionListItem,
     p: { bags: number; weight: number; file: File },
   ) {
     setServerError(null);
+    const idempotencyKey =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `field-${item.id}-${Date.now()}`;
     try {
       await uploadTextileProofPhoto(item.id, p.file, desk.departmentId);
       await outcome.mutateAsync({ id: item.id, kind: 'collected', bags: p.bags, weight: p.weight });
     } catch (e) {
+      if (isOfflineError(e)) {
+        const ownerId = readSession()?.user.id ?? null;
+        // Queue outcome + proof locally — tied to authenticated user/session.
+        // Retry is idempotent via Idempotency-Key (queue item id).
+        // Cleared after confirmed upload; never silently discarded.
+        await getQueue(ownerId).enqueue({
+          kind: 'textile.field.outcome',
+          id: idempotencyKey,
+          payload: {
+            collectionId: item.id,
+            outcome: 'collected',
+            actual_bags: p.bags,
+            actual_weight_kg: p.weight,
+            photo: p.file,
+            department_id: desk.departmentId,
+          },
+        });
+        void requestBackgroundSync();
+        setServerError(`Saved offline — pending upload. Will retry automatically. No proof discarded. (id ${idempotencyKey.slice(0, 8)}…)`);
+        setExpandedId(null);
+        return;
+      }
       if (e instanceof ApiError) setServerError(e.message);
       else setServerError('Failed to record collection');
     }
@@ -158,6 +228,14 @@ export default function TextileDispatchPage(): JSX.Element {
         </div>
       }
     >
+      <div className="mb-4">
+        <TextileFieldOfflineBanner />
+        {serverError ? (
+          <p role="alert" className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            {serverError}
+          </p>
+        ) : null}
+      </div>
       <DeskStates
         loading={queue.isLoading}
         error={queue.isError}
@@ -363,8 +441,7 @@ export default function TextileDispatchPage(): JSX.Element {
             busy={outcome.isPending}
             onClose={() => setMissedTarget(null)}
             onConfirm={(note) => {
-              if (missedTarget && note)
-                void outcome.mutateAsync({ id: missedTarget.id, kind: 'missed', reason: note });
+              if (missedTarget && note) void handleMissed(missedTarget, note);
             }}
           />
           <ConfirmActionDialog

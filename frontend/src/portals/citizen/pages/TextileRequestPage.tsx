@@ -22,10 +22,16 @@ import {
   useCreateTextileCollection,
   useTextileAvailability,
   uploadTextileCollectionPhoto,
+  isTextileNetworkFailure,
   type TextileCollectionCategory,
   type TextileCollectionPayload,
 } from '../api/textileZones';
 import { slotUnavailableFallback } from './textileStatusCopy';
+import { getQueue } from '../offline/queue';
+import { requestBackgroundSync } from '../offline/swBridge';
+import { readSession } from '../../../auth/storage';
+import { useToast } from '../components/Toast';
+import { TextileOfflineBanner } from '../components/TextileOfflineBanner';
 
 const MAX_PHOTO_SIZE_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -150,28 +156,67 @@ export default function TextileRequestPage(): JSX.Element {
       { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 },
     );
   }
+  const toast = useToast();
   async function submit(): Promise<void> {
     if (!details || !detailsValid || title.trim().length < 5) return;
-    const created = await create.mutateAsync({
+    const ownerId = readSession()?.user.id ?? null;
+    const idempotencyKey =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `textile-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const payload = {
       ...details,
       title: title.trim(),
       notes: notes.trim() || null,
       latitude: location?.latitude ?? null,
       longitude: location?.longitude ?? null,
-    });
-    if (photoFile) {
-      setUploadingPhoto(true);
-      try {
-        await uploadTextileCollectionPhoto(created.id, photoFile);
-      } catch {
-        setPhotoUploadWarning(
-          'Request created, but the photo could not be uploaded. You can add it later from the request page.',
-        );
-      } finally {
-        setUploadingPhoto(false);
+      idempotency_key: idempotencyKey,
+      photo_file: photoFile,
+    } as Parameters<typeof create.mutateAsync>[0] & { idempotency_key?: string; photo_file?: File | null };
+    try {
+      const created = await create.mutateAsync(payload as never);
+      if (photoFile) {
+        setUploadingPhoto(true);
+        try {
+          await uploadTextileCollectionPhoto(created.id, photoFile);
+        } catch (err) {
+          if (isTextileNetworkFailure(err)) {
+            await getQueue(ownerId).enqueue({
+              kind: 'textile.request.photo',
+              payload: { collectionId: created.id, file: photoFile, idempotency_key: idempotencyKey },
+              id: `${idempotencyKey}-photo`,
+            });
+            void requestBackgroundSync();
+            toast.show('Photo queued — will upload when back online. It stays on this device only.', 'info', 5000);
+          } else {
+            setPhotoUploadWarning(
+              'Request created, but the photo could not be uploaded. You can add it later from the request page.',
+            );
+          }
+        } finally {
+          setUploadingPhoto(false);
+        }
       }
+      void navigate(`/citizen/textile-collections/${created.id}`);
+    } catch (err) {
+      if (isTextileNetworkFailure(err)) {
+        await getQueue(ownerId).enqueue({
+          kind: 'textile.request.create',
+          payload,
+          id: idempotencyKey,
+        });
+        void requestBackgroundSync();
+        toast.show(
+          'You are offline — request saved on this device and will send automatically when online. Check pending uploads below.',
+          'info',
+          6000,
+        );
+        void navigate('/citizen/textile-collections');
+        return;
+      }
+      // Non-network error — create.error (ApiError) drives the existing error banner.
+      return;
     }
-    void navigate(`/citizen/textile-collections/${created.id}`);
   }
   const apiError =
     create.error instanceof ApiError
@@ -192,6 +237,7 @@ export default function TextileRequestPage(): JSX.Element {
   const dropoffActive = dropoffInfo !== null;
   return (
     <div className="mx-auto min-w-0 max-w-3xl space-y-6">
+      <TextileOfflineBanner />
       <header className="border-b border-[var(--color-border-faint)] pb-6">
         <Link
           to="/citizen"
