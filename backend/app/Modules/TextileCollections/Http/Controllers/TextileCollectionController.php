@@ -28,10 +28,10 @@ use App\Modules\TextileCollections\Http\Resources\TextileCollectionResource;
 use App\Modules\TextileCollections\Http\Resources\TextileServiceZoneResource;
 use App\Modules\TextileCollections\Models\TextileCollectionBatch;
 use App\Modules\TextileCollections\Models\TextileCollectionRequest;
+use App\Modules\TextileCollections\Models\TextileOfflineRecoveryItem;
 use App\Modules\TextileCollections\Models\TextileOfflineSubmission;
 use App\Modules\TextileCollections\Models\TextileServiceZone;
 use App\Modules\TextileCollections\Models\TextileZoneUnavailability;
-use App\Modules\TextileCollections\Models\TextileOfflineRecoveryItem;
 use App\Modules\TextileCollections\Services\TextileCollectionMediaService;
 use App\Modules\TextileCollections\Services\TextileCollectionOperationsService;
 use App\Modules\TextileCollections\Services\TextileCollectionService;
@@ -186,7 +186,7 @@ final class TextileCollectionController extends BaseController
         $updated = $this->reschedules->reschedule(
             collection: $collection,
             actor: $user,
-            newDate: (string) $data['scheduled_date'],
+            newDate: $this->stringValue($data, 'scheduled_date'),
             newWindowStart: isset($data['scheduled_window_start']) && is_string($data['scheduled_window_start']) ? $data['scheduled_window_start'] : null,
             newWindowEnd: isset($data['scheduled_window_end']) && is_string($data['scheduled_window_end']) ? $data['scheduled_window_end'] : null,
             reason: isset($data['reason']) && is_string($data['reason']) ? $data['reason'] : null,
@@ -213,7 +213,7 @@ final class TextileCollectionController extends BaseController
         $updated = $this->reschedules->reschedule(
             collection: $collection,
             actor: $this->authenticatedUser($request),
-            newDate: (string) $data['scheduled_date'],
+            newDate: $this->stringValue($data, 'scheduled_date'),
             newWindowStart: isset($data['scheduled_window_start']) && is_string($data['scheduled_window_start']) ? $data['scheduled_window_start'] : null,
             newWindowEnd: isset($data['scheduled_window_end']) && is_string($data['scheduled_window_end']) ? $data['scheduled_window_end'] : null,
             reason: isset($data['reason']) && is_string($data['reason']) ? $data['reason'] : null,
@@ -389,9 +389,18 @@ final class TextileCollectionController extends BaseController
     {
         $this->assertCollectionPartner($request);
         $data = $request->validated();
-        $collectionId = (string) $request->input('collection_request_id', '');
+        $collectionId = $request->string('collection_request_id')->toString();
         $collection = TextileCollectionRequest::query()->findOrFail($collectionId);
-        $receipt = $this->receipts->record($collection, $this->authenticatedUser($request), $data['actual_bags'] ?? null, isset($data['actual_weight_kg']) ? (float) $data['actual_weight_kg'] : null, $data['proof_media_id'] ?? null, $data['exception_code'] ?? null, $data['exception_reason'] ?? null, $request->header('Idempotency-Key'));
+        $receipt = $this->receipts->record(
+            $collection,
+            $this->authenticatedUser($request),
+            $this->optionalInt($data, 'actual_bags'),
+            $this->optionalFloat($data, 'actual_weight_kg'),
+            $this->optionalString($data, 'proof_media_id'),
+            $this->optionalString($data, 'exception_code'),
+            $this->optionalString($data, 'exception_reason'),
+            $request->header('Idempotency-Key'),
+        );
 
         return $this->respond(['id' => $receipt->id, 'collection_request_id' => $receipt->collection_request_id], 'Receipt recorded.', 201);
     }
@@ -401,7 +410,14 @@ final class TextileCollectionController extends BaseController
         $dept = $this->assertCollectionPartner($request);
         $this->assertBatchOwnership($batch, $dept->id);
         $data = $request->validated();
-        $updated = $this->trips->assign($batch, $this->authenticatedUser($request), $data['assigned_team_id'] ?? null, $data['assigned_user_id'] ?? null, $data['vehicle_label'] ?? null, $data['reason'] ?? null);
+        $updated = $this->trips->assign(
+            $batch,
+            $this->authenticatedUser($request),
+            $this->optionalString($data, 'assigned_team_id'),
+            $this->optionalString($data, 'assigned_user_id'),
+            $this->optionalString($data, 'vehicle_label'),
+            $this->optionalString($data, 'reason'),
+        );
 
         return $this->respond(['id' => $updated->id, 'status' => $updated->status], 'Trip assigned.');
     }
@@ -429,7 +445,9 @@ final class TextileCollectionController extends BaseController
         $dept = $this->assertCollectionPartner($request);
         $this->assertBatchOwnership($batch, $dept->id);
         $data = $request->validated();
-        $updated = $this->trips->reorder($batch, $this->authenticatedUser($request), $data['ordered_ids']);
+        /** @var list<string> $orderedIds */
+        $orderedIds = array_values(array_filter(is_array($data['ordered_ids'] ?? null) ? $data['ordered_ids'] : [], 'is_string'));
+        $updated = $this->trips->reorder($batch, $this->authenticatedUser($request), $orderedIds);
 
         return $this->respond(['id' => $updated->id], 'Stops reordered.');
     }
@@ -499,8 +517,8 @@ final class TextileCollectionController extends BaseController
         $updated = $this->operations->recordCollectedWithProof(
             collection: $collection,
             actor: $user,
-            actualBags: (int) $data['actual_bags'],
-            actualWeightKg: (float) $data['actual_weight_kg'],
+            actualBags: (int) $this->optionalInt($data, 'actual_bags'),
+            actualWeightKg: (float) $this->optionalFloat($data, 'actual_weight_kg'),
             photo: $request->file('photo'),
             reason: isset($data['reason']) && is_string($data['reason']) ? $data['reason'] : null,
         );
@@ -697,12 +715,18 @@ final class TextileCollectionController extends BaseController
             'failure_reason' => ['nullable', 'string', 'max:500'],
             'payload_snapshot' => ['nullable', 'array'],
         ]);
+        $payload = null;
+
+        if (isset($data['payload_snapshot']) && is_array($data['payload_snapshot'])) {
+            /** @var array<string, mixed> $payload */
+            $payload = $data['payload_snapshot'];
+        }
         $item = $this->offlineRecovery->report(
             collectionId: $collection->id,
             reporter: $user,
             idempotencyKey: isset($data['idempotency_key']) && is_string($data['idempotency_key']) ? $data['idempotency_key'] : $request->header('Idempotency-Key'),
             failureReason: isset($data['failure_reason']) && is_string($data['failure_reason']) ? $data['failure_reason'] : null,
-            payload: isset($data['payload_snapshot']) && is_array($data['payload_snapshot']) ? $data['payload_snapshot'] : null,
+            payload: $payload,
         );
 
         return $this->respond(['id' => $item->id, 'status' => $item->status], 'Offline failure reported.', 201);
@@ -730,6 +754,7 @@ final class TextileCollectionController extends BaseController
     {
         $dept = $this->assertCollectionPartner($request);
         $recoveryItem->loadMissing('collection');
+
         if ($recoveryItem->collection === null || (string) $recoveryItem->collection->department_id !== (string) $dept->id) {
             throw ApiException::forbidden('This recovery item belongs to another partner.');
         }
@@ -958,7 +983,13 @@ final class TextileCollectionController extends BaseController
         $this->assertCollectionPartner($request, $collection);
         $user = $this->authenticatedUser($request);
         $data = $request->validated();
-        $idempotencyKey = (string) ($request->header('Idempotency-Key') ?? $request->header('idempotency-key') ?? $request->input('idempotency_key', ''));
+        $keyHeader = $request->header('Idempotency-Key') ?? $request->header('idempotency-key');
+        $idempotencyKey = is_string($keyHeader) ? $keyHeader : '';
+
+        if ($idempotencyKey === '') {
+            $keyInput = $request->input('idempotency_key', '');
+            $idempotencyKey = is_string($keyInput) ? $keyInput : '';
+        }
 
         if ($idempotencyKey === '' && isset($data['idempotency_key']) && is_string($data['idempotency_key'])) {
             $idempotencyKey = $data['idempotency_key'];
@@ -971,7 +1002,7 @@ final class TextileCollectionController extends BaseController
             collection: $collection,
             actor: $user,
             idempotencyKey: $idempotencyKey,
-            outcome: (string) $data['outcome'],
+            outcome: $this->stringValue($data, 'outcome'),
             actualBags: isset($data['actual_bags']) && is_numeric($data['actual_bags']) ? (int) $data['actual_bags'] : null,
             actualWeightKg: isset($data['actual_weight_kg']) && is_numeric($data['actual_weight_kg']) ? (float) $data['actual_weight_kg'] : null,
             reason: isset($data['reason']) && is_string($data['reason']) ? $data['reason'] : null,
@@ -1012,7 +1043,9 @@ final class TextileCollectionController extends BaseController
 
         $paginator = $this->offline->listForActor($user, $status, $zoneId, $perPage);
 
-        $items = collect($paginator->items())->map(fn (TextileOfflineSubmission $s): array => [
+        /** @var array<int, TextileOfflineSubmission> $offlineItems */
+        $offlineItems = $paginator->items();
+        $items = collect($offlineItems)->map(fn (TextileOfflineSubmission $s): array => [
             'id' => $s->id,
             'collection_request_id' => $s->collection_request_id,
             'service_zone_id' => $s->service_zone_id,
@@ -1125,8 +1158,8 @@ final class TextileCollectionController extends BaseController
             'action' => 'textile.update_zone',
             'before' => $before,
             'after' => [
-                'dropoff_name' => $zone->fresh()->dropoff_name,
-                'dropoff_address' => $zone->fresh()->dropoff_address,
+                'dropoff_name' => $zone->fresh()?->dropoff_name,
+                'dropoff_address' => $zone->fresh()?->dropoff_address,
             ],
             'ip' => $request->ip(),
             'device_fingerprint' => null,

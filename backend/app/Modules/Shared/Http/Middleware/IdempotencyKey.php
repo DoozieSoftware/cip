@@ -11,6 +11,7 @@ use Closure;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -204,19 +205,23 @@ class IdempotencyKey
             $input = $request->except(['photo', 'file']);
             ksort($input);
             $parts[] = json_encode($input, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
             foreach (['photo', 'file'] as $key) {
                 $file = $request->file($key);
+
                 if ($file === null) {
                     continue;
                 }
                 $files = is_array($file) ? $file : [$file];
+
                 foreach ($files as $f) {
-                    if ($f instanceof \Illuminate\Http\UploadedFile) {
+                    if ($f instanceof UploadedFile) {
                         $hash = @hash_file('sha256', (string) $f->getRealPath());
                         $parts[] = $key.':'.($hash ?: $f->getClientOriginalName().':'.$f->getSize());
                     }
                 }
             }
+
             return hash('sha256', implode('|', $parts));
         }
 

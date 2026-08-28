@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\TextileCollections\Services;
 
+use App\Modules\Media\Enums\MediaScanStatus;
+use App\Modules\Media\Jobs\ComputeHashesJob;
+use App\Modules\Media\Jobs\GenerateThumbnailJob;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Services\ChainOfCustodyWriter;
-use App\Modules\Media\Enums\MediaScanStatus;
 use App\Modules\Security\Models\AuditLog;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\TextileCollections\Events\TextileCollectionCollected;
@@ -16,14 +18,18 @@ use App\Modules\TextileCollections\Events\TextileCollectionScheduled;
 use App\Modules\TextileCollections\Models\TextileCollectionBatch;
 use App\Modules\TextileCollections\Models\TextileCollectionRequest;
 use App\Modules\Users\Models\User;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 final class TextileCollectionOperationsService
 {
     public function __construct(
-        private readonly ChainOfCustodyWriter $chainOfCustody = new ChainOfCustodyWriter(),
+        private readonly ChainOfCustodyWriter $chainOfCustody = new ChainOfCustodyWriter,
     ) {}
+
     public function approve(TextileCollectionRequest $collection, User $actor): TextileCollectionRequest
     {
         // Lane-aware approve: dropoff -> dropoff_awaiting_drop, premises -> ready_to_group
@@ -218,7 +224,7 @@ final class TextileCollectionOperationsService
         // Guard against concurrent outcome overwrite via row-level idempotency check.
         $affected = DB::table('textile_collection_requests')
             ->where('id', $collection->id)
-            ->where(function ($q) use ($collection): void {
+            ->where(function (Builder $q) use ($collection): void {
                 // Only allow transition from the status we validated above.
                 $q->where('status', $collection->status);
             })
@@ -227,9 +233,11 @@ final class TextileCollectionOperationsService
         if ($affected === 0) {
             // Concurrent update — check if idempotency now matches (retry won).
             $fresh = TextileCollectionRequest::query()->find($collection->id);
+
             if ($fresh !== null && $idempotencyKey !== null && $fresh->outcome_idempotency_key === $idempotencyKey) {
                 return $fresh->load(['serviceZone', 'batch']);
             }
+
             throw ApiException::validation('Concurrent outcome conflict; please retry.');
         }
         $collection->refresh();
@@ -306,7 +314,7 @@ final class TextileCollectionOperationsService
         User $actor,
         int $actualBags,
         float $actualWeightKg,
-        \Illuminate\Http\UploadedFile $photo,
+        UploadedFile $photo,
         ?string $reason = null,
     ): TextileCollectionRequest {
         if ($collection->collection_method === 'dropoff') {
@@ -325,9 +333,11 @@ final class TextileCollectionOperationsService
 
         return DB::transaction(function () use ($collection, $actor, $actualBags, $actualWeightKg, $photo, $reason): TextileCollectionRequest {
             $locked = TextileCollectionRequest::query()->whereKey($collection->id)->lockForUpdate()->firstOrFail();
+
             if ($locked->status === TextileCollectionRequest::STATUS_PICKED_UP) {
                 return $locked->load(['serviceZone', 'batch', 'photos']);
             }
+
             if ($locked->status !== TextileCollectionRequest::STATUS_SCHEDULED) {
                 throw ApiException::validation('This action is not available at the current collection stage.');
             }
@@ -360,9 +370,9 @@ final class TextileCollectionOperationsService
         });
     }
 
-    private function storeProofMedia(string $collectionId, \Illuminate\Http\UploadedFile $file, string $uploaderId): Media
+    private function storeProofMedia(string $collectionId, UploadedFile $file, string $uploaderId): Media
     {
-        $id = (string) \Illuminate\Support\Str::uuid();
+        $id = (string) Str::uuid();
         $extension = strtolower((string) $file->getClientOriginalExtension()) ?: match (strtolower((string) $file->getMimeType())) {
             'image/jpeg' => 'jpg',
             'image/png' => 'png',
@@ -373,22 +383,27 @@ final class TextileCollectionOperationsService
         $diskName = config('cip.media.disk', 'local');
         $storagePath = sprintf('proof/textile/%s/photo/%s.%s', $collectionId, $id, $extension);
         $sourcePath = $file->getRealPath();
+
         if (! is_string($sourcePath) || $sourcePath === '' || ! is_file($sourcePath)) {
             throw ApiException::serverError('Unable to stage the uploaded photo.');
         }
         $sha256 = hash_file('sha256', $sourcePath);
+
         if (! is_string($sha256) || preg_match('/^[a-f0-9]{64}$/', $sha256) !== 1) {
             throw ApiException::serverError('Unable to establish uploaded photo integrity.');
         }
         $stream = fopen($sourcePath, 'rb');
+
         if ($stream === false) {
             throw ApiException::serverError('Unable to read uploaded photo.');
         }
+
         try {
-            $written = \Illuminate\Support\Facades\Storage::disk($diskName)->put($storagePath, $stream);
+            $written = Storage::disk($diskName)->put($storagePath, $stream);
         } finally {
             fclose($stream);
         }
+
         if (! $written) {
             throw ApiException::serverError('Failed to store uploaded photo.');
         }
@@ -423,8 +438,8 @@ final class TextileCollectionOperationsService
             'context' => 'textile_collect',
         ]);
 
-        \App\Modules\Media\Jobs\ComputeHashesJob::dispatch($media->id);
-        \App\Modules\Media\Jobs\GenerateThumbnailJob::dispatch($media->id);
+        ComputeHashesJob::dispatch($media->id);
+        GenerateThumbnailJob::dispatch($media->id);
 
         return $media;
     }
