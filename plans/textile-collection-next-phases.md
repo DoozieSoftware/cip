@@ -8,7 +8,7 @@
 
 ## 0. Progress as of 2026-08-28 — what is now complete
 
-**Branch:** `codex/textile-phase-0` @ `3273231b` (pushed).
+**Branch:** `codex/textile-phase-0` @ `47fff3b2` (pushed).
 
 | Phase          | What                                                     | Where                                                            | Status |
 | -------------- | -------------------------------------------------------- | ---------------------------------------------------------------- | ------ |
@@ -42,6 +42,10 @@
 | Phase 4 fix    | Lint: operations                                        | `39077013` — 2 files +15/-9                                     | ✅     |
 | Phase 4 fix    | Test: dispatch page wraps in AuthProvider                | `3273231b` — 1 file +4/-1                                       | ✅     |
 | Phase 4 verify | backend pint/phpstan/routes clean; frontend lint clean; vitest 2/2 pass; `npm run build` green | — | ✅ |
+| Phase 4 fix    | Backend Pint/PHPStan fixes                              | `98ec0ead` — 4 files +83/-27                                    | ✅     |
+| Phase 5 code   | Capacity rules, batch evaluation, stop suggestions, human exception approvals, audit, citizen minimum guidance | `47fff3b2` — migration + backend + citizen/ops UI | ✅ |
+| Phase 6 code   | Partner-scoped reporting dashboard, definitions, data-quality state, CSV export, audit | `47fff3b2` — `TextileReportingService` + Capacity and performance page | ✅ |
+| Phase 5/6 verify | backend Pint and route boot clean; frontend ESLint/build green; five pre-existing PHPStan resource annotation errors remain | — | ✅ |
 
 ## 1. Current baseline
 
