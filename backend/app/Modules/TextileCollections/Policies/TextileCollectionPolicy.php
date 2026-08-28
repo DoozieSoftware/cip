@@ -125,6 +125,32 @@ final class TextileCollectionPolicy extends BasePolicy
         return $this->isCollectionPartner($user);
     }
 
+    public function configureCapacity(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
+
+    public function viewCapacity(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
+
+    public function requestException(User $user): bool
+    {
+        // Citizen may request below-minimum exception; partner may request capacity override.
+        return true;
+    }
+
+    public function decideException(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
+
+    public function viewReports(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
+
     /**
      * Check if the user is a member of a department that has ≥1
      * textile_partner_capabilities row (optionally matching the

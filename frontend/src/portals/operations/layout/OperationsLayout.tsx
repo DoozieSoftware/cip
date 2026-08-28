@@ -103,6 +103,7 @@ const DR_LINEN_NAV: NavItem[] = [
   { to: '/operations/textile-collections/dispatch', label: 'Dispatch', icon: IconTruck },
   { to: '/operations/textile-collections/completed', label: 'History', icon: IconHistory },
   { to: '/operations/textile-collections/recovery', label: 'Recovery', icon: IconShield },
+  { to: '/operations/textile-collections/capacity', label: 'Capacity', icon: IconChartBar },
   { to: '/operations/profile', label: 'Profile', icon: IconUser },
 ];
 
@@ -139,7 +140,9 @@ export function OperationsLayout(): JSX.Element {
     const onLogout = (e: Event) => {
       const ownerId = (e as CustomEvent<{ ownerId: string }>).detail?.ownerId;
       if (ownerId) {
-        void import('../offline/queue').then(({ stopAndClearOpsQueue }) => stopAndClearOpsQueue(ownerId));
+        void import('../offline/queue').then(({ stopAndClearOpsQueue }) =>
+          stopAndClearOpsQueue(ownerId),
+        );
       }
     };
     window.addEventListener('cip:auth-logout', onLogout);

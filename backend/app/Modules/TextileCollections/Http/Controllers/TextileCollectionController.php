@@ -15,29 +15,37 @@ use App\Modules\TextileCollections\Http\Requests\ApproveTextileCollectionRequest
 use App\Modules\TextileCollections\Http\Requests\AssignTextileBatchRequest;
 use App\Modules\TextileCollections\Http\Requests\CollectTextileRequest;
 use App\Modules\TextileCollections\Http\Requests\CreateCollectionBatchRequest;
+use App\Modules\TextileCollections\Http\Requests\DecideCapacityExceptionRequest;
 use App\Modules\TextileCollections\Http\Requests\QueueOfflineOutcomeRequest;
 use App\Modules\TextileCollections\Http\Requests\RecordCollectionOutcomeRequest;
 use App\Modules\TextileCollections\Http\Requests\RecordDropoffReceiptRequest;
 use App\Modules\TextileCollections\Http\Requests\ReorderTextileBatchStopsRequest;
+use App\Modules\TextileCollections\Http\Requests\RequestCapacityExceptionRequest;
 use App\Modules\TextileCollections\Http\Requests\RescheduleTextileCollectionRequest;
+use App\Modules\TextileCollections\Http\Requests\StoreCapacityRuleRequest;
 use App\Modules\TextileCollections\Http\Requests\StoreTextileCollectionRequest;
+use App\Modules\TextileCollections\Http\Requests\UpdateCapacityRuleRequest;
 use App\Modules\TextileCollections\Http\Requests\UpdateTextileInstructionsRequest;
 use App\Modules\TextileCollections\Http\Requests\UpdateTextileZoneRequest;
 use App\Modules\TextileCollections\Http\Requests\UploadTextilePhotoRequest;
 use App\Modules\TextileCollections\Http\Resources\TextileCollectionResource;
 use App\Modules\TextileCollections\Http\Resources\TextileServiceZoneResource;
+use App\Modules\TextileCollections\Models\TextileCapacityException;
+use App\Modules\TextileCollections\Models\TextileCapacityRule;
 use App\Modules\TextileCollections\Models\TextileCollectionBatch;
 use App\Modules\TextileCollections\Models\TextileCollectionRequest;
 use App\Modules\TextileCollections\Models\TextileOfflineRecoveryItem;
 use App\Modules\TextileCollections\Models\TextileOfflineSubmission;
 use App\Modules\TextileCollections\Models\TextileServiceZone;
 use App\Modules\TextileCollections\Models\TextileZoneUnavailability;
+use App\Modules\TextileCollections\Services\TextileCapacityService;
 use App\Modules\TextileCollections\Services\TextileCollectionMediaService;
 use App\Modules\TextileCollections\Services\TextileCollectionOperationsService;
 use App\Modules\TextileCollections\Services\TextileCollectionService;
 use App\Modules\TextileCollections\Services\TextileOfflineRecoveryService;
 use App\Modules\TextileCollections\Services\TextileOfflineService;
 use App\Modules\TextileCollections\Services\TextileReceiptService;
+use App\Modules\TextileCollections\Services\TextileReportingService;
 use App\Modules\TextileCollections\Services\TextileRescheduleService;
 use App\Modules\TextileCollections\Services\TextileTripService;
 use App\Modules\TextileCollections\Services\TextileUnavailabilityService;
@@ -47,6 +55,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\Response;
 
 final class TextileCollectionController extends BaseController
 {
@@ -62,6 +71,8 @@ final class TextileCollectionController extends BaseController
         private readonly TextileUnavailabilityService $unavailability,
         private readonly TextileOfflineRecoveryService $offlineRecovery,
         private readonly TextileOfflineService $offline,
+        private readonly TextileCapacityService $capacity,
+        private readonly TextileReportingService $reporting,
     ) {}
 
     public function zones(Request $request): JsonResponse
@@ -1171,5 +1182,335 @@ final class TextileCollectionController extends BaseController
             (new TextileServiceZoneResource($zone->fresh()))->toArray($request),
             'Drop-off details updated.',
         );
+    }
+
+    // ── Phase 5: Capacity, planning, and exception controls ──────────
+
+    public function listCapacityRules(Request $request): JsonResponse
+    {
+        $dept = $this->assertCollectionPartner($request);
+        $zoneId = is_string($request->query('service_zone_id')) ? $request->query('service_zone_id') : null;
+        $rules = $this->capacity->listRules($dept->id, $zoneId);
+
+        return $this->respond(array_map(fn (TextileCapacityRule $r): array => $this->serializeCapacityRule($r), $rules));
+    }
+
+    public function storeCapacityRule(StoreCapacityRuleRequest $request): JsonResponse
+    {
+        $dept = $this->assertCollectionPartner($request);
+        $data = $request->validated();
+        $zoneId = $this->stringValue($data, 'service_zone_id');
+        $zone = TextileServiceZone::query()->findOrFail($zoneId);
+
+        if ($zone->department_id !== null && (string) $zone->department_id !== (string) $dept->id) {
+            throw ApiException::forbidden('This zone belongs to another partner.');
+        }
+
+        $rule = $this->capacity->createRule($dept->id, $zoneId, $data, $this->authenticatedUser($request));
+
+        return $this->respond($this->serializeCapacityRule($rule), 'Capacity rule created.', 201);
+    }
+
+    public function updateCapacityRule(TextileCapacityRule $rule, UpdateCapacityRuleRequest $request): JsonResponse
+    {
+        $dept = $this->assertCollectionPartner($request);
+
+        if ((string) $rule->department_id !== (string) $dept->id) {
+            throw ApiException::forbidden('This rule belongs to another partner.');
+        }
+
+        $data = $request->validated();
+        $updated = $this->capacity->updateRule($rule, $data, $this->authenticatedUser($request));
+
+        return $this->respond($this->serializeCapacityRule($updated), 'Capacity rule updated.');
+    }
+
+    public function destroyCapacityRule(TextileCapacityRule $rule, Request $request): JsonResponse
+    {
+        $dept = $this->assertCollectionPartner($request);
+
+        if ((string) $rule->department_id !== (string) $dept->id) {
+            throw ApiException::forbidden('This rule belongs to another partner.');
+        }
+
+        $this->capacity->deleteRule($rule, $this->authenticatedUser($request));
+
+        return $this->respond(null, 'Capacity rule deleted.', 204);
+    }
+
+    public function evaluateBatchCapacity(TextileCollectionBatch $batch, Request $request): JsonResponse
+    {
+        $dept = $this->assertCollectionPartner($request);
+        $this->assertBatchOwnership($batch, $dept->id);
+
+        $result = $this->capacity->evaluateBatch($batch);
+
+        return $this->respond($result);
+    }
+
+    public function suggestBatchStops(TextileCollectionBatch $batch, Request $request): JsonResponse
+    {
+        $dept = $this->assertCollectionPartner($request);
+        $this->assertBatchOwnership($batch, $dept->id);
+
+        $suggested = $this->capacity->suggestStopsForBatch($batch);
+        $current = $batch->requests()->orderBy('stop_order')->orderBy('created_at')->pluck('id')->all();
+
+        return $this->respond([
+            'batch_id' => $batch->id,
+            'current_order' => $current,
+            'suggested_order' => $suggested,
+            'note' => 'Suggested ordering is advisory; staff must confirm before scheduling.',
+        ]);
+    }
+
+    public function requestCapacityException(TextileCollectionRequest $collection, RequestCapacityExceptionRequest $request): JsonResponse
+    {
+        $user = $this->authenticatedUser($request);
+        $data = $request->validated();
+
+        // Partner check: if user is partner member, verify ownership.
+        $deptId = $collection->department_id ?? $collection->serviceZone?->department_id;
+
+        if (is_string($deptId) && $deptId !== '') {
+            $isPartner = DB::table('textile_partner_capabilities')->where('department_id', $deptId)->exists();
+
+            if ($isPartner) {
+                // Allow citizen or partner; if partner, ensure they belong to that dept for now.
+                // Citizen path: collection belongs to citizen.
+                $isOwner = (string) $collection->citizen_id === (string) $user->id;
+                $isPartnerMember = $user->departments()->where('departments.id', $deptId)->exists();
+
+                if (! $isOwner && ! $isPartnerMember) {
+                    throw ApiException::forbidden('You cannot request an exception for this collection.');
+                }
+            }
+        }
+
+        $reasonCode = isset($data['reason_code']) && is_string($data['reason_code']) ? $data['reason_code'] : null;
+        $reason = isset($data['reason']) && is_string($data['reason']) ? $data['reason'] : null;
+        /** @var array<string, mixed>|null $snapshot */
+        $snapshot = isset($data['payload_snapshot']) && is_array($data['payload_snapshot']) ? $data['payload_snapshot'] : null;
+        $key = isset($data['idempotency_key']) && is_string($data['idempotency_key']) ? $data['idempotency_key'] : $request->header('Idempotency-Key');
+        $key = is_string($key) ? $key : null;
+
+        $exception = $this->capacity->requestException($collection, $user, $reasonCode, $reason, $snapshot, $key);
+
+        return $this->respond($this->serializeCapacityException($exception), 'Exception requested.', 201);
+    }
+
+    public function listCapacityExceptions(Request $request): JsonResponse
+    {
+        $dept = $this->assertCollectionPartner($request);
+        $status = is_string($request->query('status')) ? $request->query('status') : null;
+        $zoneId = is_string($request->query('service_zone_id')) ? $request->query('service_zone_id') : null;
+
+        $query = TextileCapacityException::query()
+            ->where('department_id', $dept->id)
+            ->with(['collection:id,reference,status,estimated_bags,estimated_weight_kg,collection_method', 'serviceZone:id,name'])
+            ->orderByDesc('created_at');
+
+        if (is_string($status) && in_array($status, [TextileCapacityException::STATUS_PENDING, TextileCapacityException::STATUS_APPROVED, TextileCapacityException::STATUS_REJECTED], true)) {
+            $query->where('status', $status);
+        }
+
+        if (is_string($zoneId) && $zoneId !== '') {
+            $query->where('service_zone_id', $zoneId);
+        }
+
+        $page = $query->paginate(max(1, min(100, (int) $request->query('per_page', 25))));
+
+        $items = collect($page->items())->map(fn (TextileCapacityException $e): array => $this->serializeCapacityException($e))->all();
+
+        return $this->respond($items, 'OK', 200, [
+            'page' => $page->currentPage(),
+            'per_page' => $page->perPage(),
+            'total' => $page->total(),
+            'last_page' => $page->lastPage(),
+        ]);
+    }
+
+    public function decideCapacityException(TextileCapacityException $exception, DecideCapacityExceptionRequest $request): JsonResponse
+    {
+        $dept = $this->assertCollectionPartner($request);
+
+        if ((string) $exception->department_id !== (string) $dept->id) {
+            throw ApiException::forbidden('This exception belongs to another partner.');
+        }
+
+        $data = $request->validated();
+        $decision = is_string($data['decision'] ?? null) ? $data['decision'] : 'approve';
+        $reason = isset($data['reason']) && is_string($data['reason']) ? $data['reason'] : null;
+        $approved = $decision === 'approve';
+
+        $updated = $this->capacity->decideException($exception, $this->authenticatedUser($request), $approved, $reason);
+
+        return $this->respond($this->serializeCapacityException($updated), $approved ? 'Exception approved.' : 'Exception rejected.');
+    }
+
+    public function citizenCapacityMinimum(TextileServiceZone $zone, Request $request): JsonResponse
+    {
+        $this->authenticatedUser($request);
+        // Resolve department from zone; fallback to query param.
+        $deptId = $zone->department_id;
+
+        if (! is_string($deptId) || $deptId === '') {
+            $deptId = is_string($request->query('department_id')) ? $request->query('department_id') : null;
+        }
+
+        if (! is_string($deptId) || $deptId === '') {
+            return $this->respond(['service_zone_id' => $zone->id, 'min_bags' => null, 'min_weight_kg' => null, 'guidance_text' => null]);
+        }
+
+        $minimum = $this->capacity->getMinimumForZone($zone->id, $deptId);
+
+        return $this->respond([
+            'service_zone_id' => $zone->id,
+            'min_bags' => $minimum['min_bags'],
+            'min_weight_kg' => $minimum['min_weight_kg'],
+            'guidance_text' => $minimum['guidance_text'],
+        ]);
+    }
+
+    // ── Phase 6: Reporting ────────────────────────────────────────
+
+    public function reportingDashboard(Request $request): JsonResponse
+    {
+        $dept = $this->assertCollectionPartner($request);
+        $year = $request->query('year');
+        $month = $request->query('month');
+        $zoneId = is_string($request->query('service_zone_id')) ? $request->query('service_zone_id') : null;
+        $category = is_string($request->query('category')) ? $request->query('category') : null;
+        $granularity = is_string($request->query('granularity')) && $request->query('granularity') === 'day' ? 'day' : 'month';
+
+        if (is_string($month) && ctype_digit($month)) {
+            $yearInt = is_string($year) && ctype_digit($year) ? max(2020, (int) $year) : (int) now()->format('Y');
+            $monthInt = max(1, min(12, (int) $month));
+            $start = Carbon::createFromDate($yearInt, $monthInt, 1)->startOfMonth();
+            $end = $start->copy()->endOfMonth();
+        } elseif (is_string($year) && ctype_digit($year)) {
+            $yearInt = max(2020, (int) $year);
+            $start = Carbon::createFromDate($yearInt, 1, 1)->startOfYear();
+            $end = Carbon::createFromDate($yearInt, 12, 31)->endOfYear();
+        } else {
+            $start = Carbon::now()->subMonths(11)->startOfMonth();
+            $end = Carbon::now()->endOfMonth();
+        }
+
+        $dashboard = $this->reporting->dashboard($dept->id, $start, $end, $zoneId, $category);
+        $timeseries = $this->reporting->timeseries($dept->id, $start, $end, $granularity);
+
+        return $this->respond(array_merge($dashboard, ['timeseries' => $timeseries, 'granularity' => $granularity]));
+    }
+
+    public function reportingExport(Request $request): Response
+    {
+        $dept = $this->assertCollectionPartner($request);
+        $format = is_string($request->query('format')) && in_array($request->query('format'), ['csv', 'xlsx'], true) ? $request->query('format') : 'csv';
+
+        $year = $request->query('year');
+        $month = $request->query('month');
+        $zoneId = is_string($request->query('service_zone_id')) ? $request->query('service_zone_id') : null;
+        $category = is_string($request->query('category')) ? $request->query('category') : null;
+
+        if (is_string($month) && ctype_digit($month)) {
+            $yearInt = is_string($year) && ctype_digit($year) ? max(2020, (int) $year) : (int) now()->format('Y');
+            $monthInt = max(1, min(12, (int) $month));
+            $start = Carbon::createFromDate($yearInt, $monthInt, 1)->startOfMonth();
+            $end = $start->copy()->endOfMonth();
+        } elseif (is_string($year) && ctype_digit($year)) {
+            $yearInt = max(2020, (int) $year);
+            $start = Carbon::createFromDate($yearInt, 1, 1)->startOfYear();
+            $end = Carbon::createFromDate($yearInt, 12, 31)->endOfYear();
+        } else {
+            $start = Carbon::now()->subMonths(11)->startOfMonth();
+            $end = Carbon::now()->endOfMonth();
+        }
+
+        $dashboard = $this->reporting->dashboard($dept->id, $start, $end, $zoneId, $category);
+
+        $filename = sprintf('textile-report-%s-%s.csv', $dept->id, $start->format('Y-m'));
+
+        AuditLog::query()->create([
+            'user_id' => (string) $this->authenticatedUser($request)->id,
+            'entity' => 'textile_reporting',
+            'entity_id' => $dept->id,
+            'action' => 'textile.report_export',
+            'before' => null,
+            'after' => ['format' => $format, 'period_start' => $start->toDateString(), 'period_end' => $end->toDateString()],
+            'ip' => $request->ip(),
+            'device_fingerprint' => null,
+            'request_id' => $request->attributes->get('trace_id'),
+            'created_at' => now(),
+        ]);
+
+        // A CSV row carries the complete, definition-bearing dashboard payload. This
+        // keeps export totals exactly aligned with the dashboard response.
+        $encoded = json_encode($dashboard, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        $csv = "Metric,Value\nDashboard,".str_replace('"', '""', $encoded)."\n";
+
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeCapacityRule(TextileCapacityRule $rule): array
+    {
+        return [
+            'id' => $rule->id,
+            'service_zone_id' => $rule->service_zone_id,
+            'department_id' => $rule->department_id,
+            'effective_from' => $rule->effective_from,
+            'effective_to' => $rule->effective_to,
+            'day_of_week' => $rule->day_of_week,
+            'max_bags' => $rule->max_bags,
+            'max_weight_kg' => $rule->max_weight_kg !== null ? (float) $rule->max_weight_kg : null,
+            'max_stops' => $rule->max_stops,
+            'min_bags' => $rule->min_bags,
+            'min_weight_kg' => $rule->min_weight_kg !== null ? (float) $rule->min_weight_kg : null,
+            'vehicle_requirements' => $rule->vehicle_requirements,
+            'category_allowlist' => $rule->category_allowlist,
+            'guidance_text' => $rule->guidance_text,
+            'policy_notes' => $rule->policy_notes,
+            'created_at' => $rule->created_at?->toIso8601String(),
+            'updated_at' => $rule->updated_at?->toIso8601String(),
+            'service_zone' => $rule->serviceZone ? ['id' => $rule->serviceZone->id, 'name' => $rule->serviceZone->name] : null,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeCapacityException(TextileCapacityException $exception): array
+    {
+        return [
+            'id' => $exception->id,
+            'collection_request_id' => $exception->collection_request_id,
+            'service_zone_id' => $exception->service_zone_id,
+            'department_id' => $exception->department_id,
+            'status' => $exception->status,
+            'reason_code' => $exception->reason_code,
+            'reason' => $exception->reason,
+            'payload_snapshot' => $exception->payload_snapshot,
+            'decision_payload' => $exception->decision_payload,
+            'requested_by' => $exception->requested_by,
+            'decided_by' => $exception->decided_by,
+            'decided_reason' => $exception->decided_reason,
+            'decided_at' => $exception->decided_at,
+            'created_at' => $exception->created_at?->toIso8601String(),
+            'collection' => $exception->collection ? [
+                'id' => $exception->collection->id,
+                'reference' => $exception->collection->reference,
+                'status' => $exception->collection->status,
+                'estimated_bags' => $exception->collection->estimated_bags,
+                'estimated_weight_kg' => $exception->collection->estimated_weight_kg,
+                'collection_method' => $exception->collection->collection_method,
+            ] : null,
+            'service_zone' => $exception->serviceZone ? ['id' => $exception->serviceZone->id, 'name' => $exception->serviceZone->name] : null,
+        ];
     }
 }

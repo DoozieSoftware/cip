@@ -81,6 +81,13 @@ export interface TextileCollectionRequest extends TextileCollectionPayload {
   photos?: TextileCollectionPhoto[];
 }
 
+export interface TextileCapacityMinimum {
+  service_zone_id: string;
+  min_bags: number | null;
+  min_weight_kg: number | null;
+  guidance_text: string | null;
+}
+
 export interface CreateTextileCollectionInput extends TextileCollectionPayload {
   title: string;
   notes?: string | null;
@@ -111,6 +118,16 @@ export function useCitizenTextileCollection(id: string) {
     queryKey: ['citizen', 'textile-collections', id],
     queryFn: () => request<TextileCollectionRequest>(`/citizen/textile-collections/${id}`),
     enabled: id !== '',
+  });
+}
+
+export function useTextileCapacityMinimum(zoneId: string) {
+  return useQuery({
+    queryKey: ['textile-capacity-minimum', zoneId],
+    queryFn: () =>
+      request<TextileCapacityMinimum>(`/textile-collection/zones/${zoneId}/capacity-minimum`),
+    enabled: zoneId !== '',
+    staleTime: 5 * 60_000,
   });
 }
 
@@ -145,9 +162,15 @@ export function useCancelTextileCollection(id: string) {
 
 export function isTextileNetworkFailure(err: unknown): boolean {
   const msg = err instanceof Error ? err.message.toLowerCase() : '';
-  if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('load failed')) return true;
+  if (
+    msg.includes('failed to fetch') ||
+    msg.includes('networkerror') ||
+    msg.includes('load failed')
+  )
+    return true;
   const anyErr = err as { status?: number; code?: string };
-  if (anyErr?.status === 0 || anyErr?.code === 'OFFLINE' || anyErr?.code === 'NETWORK_ERROR') return true;
+  if (anyErr?.status === 0 || anyErr?.code === 'OFFLINE' || anyErr?.code === 'NETWORK_ERROR')
+    return true;
   // Treat anything that is not a structured ApiError response as offline.
   // ApiError always has a numeric status >=400.
   if (anyErr?.status !== undefined && anyErr.status >= 400) return false;

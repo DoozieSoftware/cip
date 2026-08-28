@@ -59,6 +59,9 @@ final class TextileCollectionResource extends JsonResource
             'previous_window_start' => $this->resource->previous_window_start,
             'previous_window_end' => $this->resource->previous_window_end,
             'previous_batch_id' => $this->resource->previous_batch_id,
+            'capacity_exception_id' => $this->resource->capacity_exception_id,
+            'capacity_checked_at' => $this->resource->capacity_checked_at?->toIso8601String(),
+            'capacity_context' => $this->resource->capacity_context,
             'next_step' => $this->nextStep(),
             'service_zone' => $zone === null ? null : [
                 'id' => $zone->id,

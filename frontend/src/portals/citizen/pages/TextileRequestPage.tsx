@@ -20,6 +20,7 @@ import { TextileCollectionFields } from '../components/TextileCollectionFields';
 import { CentreCard } from '../components/CentreCard';
 import {
   useCreateTextileCollection,
+  useTextileCapacityMinimum,
   useTextileAvailability,
   uploadTextileCollectionPhoto,
   isTextileNetworkFailure,
@@ -73,6 +74,8 @@ export default function TextileRequestPage(): JSX.Element {
   const [photoUploadWarning, setPhotoUploadWarning] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [showCamera, setShowCamera] = useState(false);
+  const capacityMinimum = useTextileCapacityMinimum(details?.service_zone_id ?? '');
+  const minimum = capacityMinimum.data;
   useEffect(() => {
     return () => {
       if (photoPreview) URL.revokeObjectURL(photoPreview);
@@ -172,7 +175,10 @@ export default function TextileRequestPage(): JSX.Element {
       longitude: location?.longitude ?? null,
       idempotency_key: idempotencyKey,
       photo_file: photoFile,
-    } as Parameters<typeof create.mutateAsync>[0] & { idempotency_key?: string; photo_file?: File | null };
+    } as Parameters<typeof create.mutateAsync>[0] & {
+      idempotency_key?: string;
+      photo_file?: File | null;
+    };
     try {
       const created = await create.mutateAsync(payload);
       if (photoFile) {
@@ -183,11 +189,19 @@ export default function TextileRequestPage(): JSX.Element {
           if (isTextileNetworkFailure(err)) {
             await getQueue(ownerId).enqueue({
               kind: 'textile.request.photo',
-              payload: { collectionId: created.id, file: photoFile, idempotency_key: idempotencyKey },
+              payload: {
+                collectionId: created.id,
+                file: photoFile,
+                idempotency_key: idempotencyKey,
+              },
               id: `${idempotencyKey}-photo`,
             });
             void requestBackgroundSync();
-            toast.show('Photo queued — will upload when back online. It stays on this device only.', 'info', 5000);
+            toast.show(
+              'Photo queued — will upload when back online. It stays on this device only.',
+              'info',
+              5000,
+            );
           } else {
             setPhotoUploadWarning(
               'Request created, but the photo could not be uploaded. You can add it later from the request page.',
@@ -229,7 +243,8 @@ export default function TextileRequestPage(): JSX.Element {
       ? apiError.message
       : null;
   const slotUnavailableError =
-    apiError instanceof ApiError && (apiError.code === 'SLOT_UNAVAILABLE' || apiError.status === 409)
+    apiError instanceof ApiError &&
+    (apiError.code === 'SLOT_UNAVAILABLE' || apiError.status === 409)
       ? apiError
       : null;
   const generalError = categoryError || slotUnavailableError ? null : apiError?.message;
@@ -329,11 +344,24 @@ export default function TextileRequestPage(): JSX.Element {
         ) : (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
             <p className="font-medium">Minimum quantities for a collection route:</p>
-            <ul className="mt-1 space-y-0.5 pl-4" style={{ listStyleType: 'disc' }}>
-              <li>Clothes &amp; Textiles — about 5 kg</li>
-              <li>Metal Scrap — about 5 kg</li>
-              <li>E-Waste — about 2 kg</li>
-            </ul>
+            {capacityMinimum.isLoading ? (
+              <p className="mt-1">Loading this partner&apos;s guidance…</p>
+            ) : minimum && (minimum.min_bags !== null || minimum.min_weight_kg !== null) ? (
+              <p className="mt-1">
+                This partner&apos;s guidance:{' '}
+                {minimum.min_bags !== null ? `${minimum.min_bags} bags` : ''}
+                {minimum.min_bags !== null && minimum.min_weight_kg !== null ? ' or ' : ''}
+                {minimum.min_weight_kg !== null ? `${minimum.min_weight_kg} kg` : ''}.
+                {minimum.guidance_text
+                  ? ` ${minimum.guidance_text}`
+                  : ' Below-minimum requests can be reviewed as exceptions; they are never silently rejected.'}
+              </p>
+            ) : (
+              <p className="mt-1">
+                This partner has not configured a minimum. Your request will be reviewed before it
+                is scheduled.
+              </p>
+            )}
           </div>
         )}
         {categoryError ? (
@@ -350,27 +378,51 @@ export default function TextileRequestPage(): JSX.Element {
         onDropoffChange={setDropoffInfo}
       />
       {isPremises && details ? (
-        <section aria-label="Availability" className="rounded-xl border border-black/10 bg-white p-5">
+        <section
+          aria-label="Availability"
+          className="rounded-xl border border-black/10 bg-white p-5"
+        >
           <h2 className="text-sm font-medium">Pickup availability</h2>
           {availability.isLoading ? (
             <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Checking dates…</p>
           ) : unavailableDates.length > 0 ? (
             <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
               <p className="text-xs font-medium text-amber-800">Unavailable dates</p>
-              <p className="mt-1 text-xs leading-5 text-amber-800">{unavailableDates.slice(0, 8).join(', ')}{unavailableDates.length > 8 ? ` +${unavailableDates.length - 8} more` : ''}</p>
-              {nextAvailableDate ? <p className="mt-1 text-xs text-amber-700">Next available: <span className="font-medium">{nextAvailableDate}</span> — your request will be grouped for then.</p> : null}
-              {availability.data?.reason ? <p className="mt-1 text-[11px] text-amber-700">{availability.data.reason}</p> : null}
+              <p className="mt-1 text-xs leading-5 text-amber-800">
+                {unavailableDates.slice(0, 8).join(', ')}
+                {unavailableDates.length > 8 ? ` +${unavailableDates.length - 8} more` : ''}
+              </p>
+              {nextAvailableDate ? (
+                <p className="mt-1 text-xs text-amber-700">
+                  Next available: <span className="font-medium">{nextAvailableDate}</span> — your
+                  request will be grouped for then.
+                </p>
+              ) : null}
+              {availability.data?.reason ? (
+                <p className="mt-1 text-[11px] text-amber-700">{availability.data.reason}</p>
+              ) : null}
             </div>
           ) : nextAvailableDate ? (
-            <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">Next available pickup: <span className="font-medium text-[var(--color-ink)]">{nextAvailableDate}</span>. Submit now and we will schedule for the next open window.</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
+              Next available pickup:{' '}
+              <span className="font-medium text-[var(--color-ink)]">{nextAvailableDate}</span>.
+              Submit now and we will schedule for the next open window.
+            </p>
           ) : (
-            <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">Pickups are available on upcoming dates. We group nearby requests into the next trip window.</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
+              Pickups are available on upcoming dates. We group nearby requests into the next trip
+              window.
+            </p>
           )}
           {availability.data && availability.data.windows?.length ? (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {availability.data.windows.map((w) => (
-                <span key={`${w.window_start}-${w.window_end}`} className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${w.available ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-zinc-100 text-zinc-500 border border-black/10 line-through'}`}>
-                  {w.window_start}–{w.window_end}{w.available ? '' : ' unavailable'}
+                <span
+                  key={`${w.window_start}-${w.window_end}`}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${w.available ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-zinc-100 text-zinc-500 border border-black/10 line-through'}`}
+                >
+                  {w.window_start}–{w.window_end}
+                  {w.available ? '' : ' unavailable'}
                 </span>
               ))}
             </div>
@@ -379,7 +431,9 @@ export default function TextileRequestPage(): JSX.Element {
             <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs leading-5 text-blue-800">
               <p className="font-medium">No pickup window available right now</p>
               <p className="mt-1">{slotUnavailableFallback('premises')}</p>
-              <p className="mt-2 text-[11px]">You can still submit for the next open slot, or switch to drop-off above.</p>
+              <p className="mt-2 text-[11px]">
+                You can still submit for the next open slot, or switch to drop-off above.
+              </p>
             </div>
           ) : null}
         </section>
@@ -541,8 +595,19 @@ export default function TextileRequestPage(): JSX.Element {
       {slotUnavailableError ? (
         <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4">
           <p className="text-sm font-medium text-amber-800">Slot no longer available</p>
-          <p className="mt-1 text-sm leading-5 text-amber-800">{slotUnavailableError.message || slotUnavailableFallback('premises')}</p>
-          {nextAvailableDate ? <p className="mt-2 text-xs text-amber-700">Next open pickup: <span className="font-medium">{nextAvailableDate}</span>. Try resubmitting, or switch to drop-off — no slot needed.</p> : <p className="mt-2 text-xs text-amber-700">Try a different zone or switch to drop-off — no slot needed.</p>}
+          <p className="mt-1 text-sm leading-5 text-amber-800">
+            {slotUnavailableError.message || slotUnavailableFallback('premises')}
+          </p>
+          {nextAvailableDate ? (
+            <p className="mt-2 text-xs text-amber-700">
+              Next open pickup: <span className="font-medium">{nextAvailableDate}</span>. Try
+              resubmitting, or switch to drop-off — no slot needed.
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-amber-700">
+              Try a different zone or switch to drop-off — no slot needed.
+            </p>
+          )}
         </div>
       ) : null}
       {generalError ? (

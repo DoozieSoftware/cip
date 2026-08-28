@@ -47,6 +47,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $missed_pickup_reason
  * @property Carbon|null $picked_up_at
  * @property Carbon|null $submitted_at
+ * @property Carbon|null $capacity_checked_at
  * @property-read Report|null $report
  * @property-read User|null $citizen
  * @property-read TextileServiceZone|null $serviceZone
@@ -84,7 +85,7 @@ final class TextileCollectionRequest extends Model
 
     /** @var list<string> */
     protected $fillable = [
-        'dropoff_confirmed_at', 'dropoff_valid_from', 'dropoff_valid_until', 'receipt_id', 'stop_order', 'outcome_idempotency_key', 'offline_queued_at',
+        'dropoff_confirmed_at', 'dropoff_valid_from', 'dropoff_valid_until', 'receipt_id', 'capacity_exception_id', 'capacity_checked_at', 'capacity_context', 'stop_order', 'outcome_idempotency_key', 'offline_queued_at',
         'report_id', 'citizen_id', 'reference', 'title', 'notes',
         'category', 'service_zone_id', 'department_id', 'batch_id', 'requester_type',
         'requester_name', 'rwa_name', 'contact_email', 'contact_phone',
@@ -118,6 +119,8 @@ final class TextileCollectionRequest extends Model
             'rescheduled_at' => 'datetime',
             'reminder_sent_at' => 'datetime',
             'offline_queued_at' => 'datetime',
+            'capacity_checked_at' => 'datetime',
+            'capacity_context' => 'array',
         ];
     }
 

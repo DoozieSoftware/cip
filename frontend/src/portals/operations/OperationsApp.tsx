@@ -9,10 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { readSession } from '../../auth/storage';
 import { getQueue, stopAndClearQueue } from '../citizen/offline/queue';
 import { registerOfflineQueueRetry } from '../citizen/offline/registerQueueRetry';
-import {
-  requestBackgroundSync,
-  onQueueDrain,
-} from '../citizen/offline/swBridge';
+import { requestBackgroundSync, onQueueDrain } from '../citizen/offline/swBridge';
 import { clearDraft } from '../citizen/offline/drafts';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -33,6 +30,7 @@ const TextileStaffDetailPage = lazy(() => import('./pages/textile/TextileStaffDe
 const TextileReceiptPage = lazy(() => import('./pages/textile/TextileReceiptPage'));
 const TextileRecoveryPage = lazy(() => import('./pages/textile/TextileRecoveryPage'));
 const TextileOfflineRecoveryPage = lazy(() => import('./pages/textile/TextileOfflineRecoveryPage'));
+const TextileCapacityPage = lazy(() => import('./pages/textile/TextileCapacityPage'));
 
 function Fallback() {
   return (
@@ -108,7 +106,11 @@ export function OperationsApp() {
             <Route path="textile-collections/receipt" element={<TextileReceiptPage />} />
             <Route path="textile-collections/dispatch" element={<TextileDispatchPage />} />
             <Route path="textile-collections/recovery" element={<TextileRecoveryPage />} />
-            <Route path="textile-collections/offline-recovery" element={<TextileOfflineRecoveryPage />} />
+            <Route
+              path="textile-collections/offline-recovery"
+              element={<TextileOfflineRecoveryPage />}
+            />
+            <Route path="textile-collections/capacity" element={<TextileCapacityPage />} />
             <Route path="textile-collections/completed" element={<TextileCompletedPage />} />
             <Route path="textile-collections/:id" element={<TextileStaffDetailPage />} />
             <Route path="audit" element={<AuditLogPage />} />

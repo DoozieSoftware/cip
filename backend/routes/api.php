@@ -463,6 +463,41 @@ Route::prefix('v1')->group(function (): void {
         Route::post('textile-offline/submissions/{submission}/retry', [TextileCollectionController::class, 'retryOfflineSubmission'])
             ->middleware('can:textile.retry_offline')
             ->name('textile-offline.submissions.retry');
+        // Phase 5: Capacity, planning, and exception controls
+        Route::get('textile-capacity/rules', [TextileCollectionController::class, 'listCapacityRules'])
+            ->middleware('can:textile.view_capacity')
+            ->name('textile-capacity.rules.index');
+        Route::post('textile-capacity/rules', [TextileCollectionController::class, 'storeCapacityRule'])
+            ->middleware('can:textile.configure_capacity')
+            ->name('textile-capacity.rules.store');
+        Route::put('textile-capacity/rules/{rule}', [TextileCollectionController::class, 'updateCapacityRule'])
+            ->middleware('can:textile.configure_capacity')
+            ->name('textile-capacity.rules.update');
+        Route::delete('textile-capacity/rules/{rule}', [TextileCollectionController::class, 'destroyCapacityRule'])
+            ->middleware('can:textile.configure_capacity')
+            ->name('textile-capacity.rules.destroy');
+        Route::post('textile-batches/{batch}/evaluate-capacity', [TextileCollectionController::class, 'evaluateBatchCapacity'])
+            ->middleware('can:textile.schedule_batch')
+            ->name('textile-batches.evaluate-capacity');
+        Route::post('textile-batches/{batch}/suggest-stops', [TextileCollectionController::class, 'suggestBatchStops'])
+            ->middleware('can:textile.schedule_batch')
+            ->name('textile-batches.suggest-stops');
+        Route::get('textile-capacity/exceptions', [TextileCollectionController::class, 'listCapacityExceptions'])
+            ->middleware('can:textile.view_capacity')
+            ->name('textile-capacity.exceptions.index');
+        Route::post('textile-collections/{collection}/capacity-exception', [TextileCollectionController::class, 'requestCapacityException'])
+            ->middleware('can:textile.request_exception')
+            ->name('textile-collections.capacity-exception');
+        Route::post('textile-capacity/exceptions/{exception}/decide', [TextileCollectionController::class, 'decideCapacityException'])
+            ->middleware('can:textile.decide_exception')
+            ->name('textile-capacity.exceptions.decide');
+        // Phase 6: Reporting — dashboard and export (partner-scoped)
+        Route::get('textile-collections/report/dashboard', [TextileCollectionController::class, 'reportingDashboard'])
+            ->middleware('can:textile.view_reports')
+            ->name('textile-collections.report.dashboard');
+        Route::get('textile-collections/report/export', [TextileCollectionController::class, 'reportingExport'])
+            ->middleware('can:textile.view_reports')
+            ->name('textile-collections.report.export');
     });
 
     // Citizen PWA — report submission and read-back (M4)
@@ -512,6 +547,11 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.citizen.textile-collections.instructions');
         Route::get('textile-collection/zones/{zone}/unavailability', [TextileCollectionController::class, 'zoneUnavailability'])
             ->name('api.v1.textile-collection.zones.unavailability');
+        Route::get('textile-collection/zones/{zone}/capacity-minimum', [TextileCollectionController::class, 'citizenCapacityMinimum'])
+            ->name('api.v1.textile-collection.zones.capacity-minimum');
+        Route::post('citizen/textile-collections/{collection}/capacity-exception', [TextileCollectionController::class, 'requestCapacityException'])
+            ->middleware('can:textile.request_exception')
+            ->name('api.v1.citizen.textile-collections.capacity-exception');
         Route::post('citizen/reports/{report}/verify', [CitizenReportActionsController::class, 'verify'])
             ->name('api.v1.citizen.reports.verify');
         Route::post('citizen/reports/{report}/dispute', [CitizenReportActionsController::class, 'dispute'])
