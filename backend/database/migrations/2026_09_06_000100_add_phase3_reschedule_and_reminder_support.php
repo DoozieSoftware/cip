@@ -6,6 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 return new class extends Migration
 {
@@ -24,7 +25,7 @@ return new class extends Migration
 
             $table->foreign('service_zone_id')->references('id')->on('textile_service_zones')->cascadeOnDelete();
             $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
-            $table->index(['service_zone_id', 'unavailable_date']);
+            $table->index(['service_zone_id', 'unavailable_date'], 'tzu_zone_date_idx');
             $table->unique(['service_zone_id', 'unavailable_date', 'window_start', 'window_end'], 'unq_zone_date_window');
         });
 
@@ -92,7 +93,7 @@ return new class extends Migration
             }
 
             DB::table('notification_templates')->insert([
-                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'code' => $row['code'],
                 'name' => $row['name'],
                 'channel' => $row['channel'],
@@ -101,7 +102,7 @@ return new class extends Migration
                 'subject' => $row['subject'],
                 'body' => $row['body'],
                 'variables' => $row['variables'],
-                'is_active' => true,
+                'active' => true,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);

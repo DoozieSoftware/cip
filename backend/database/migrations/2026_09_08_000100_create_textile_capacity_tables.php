@@ -36,7 +36,7 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
             $table->index(['service_zone_id', 'department_id']);
-            $table->index(['department_id', 'effective_from', 'effective_to']);
+            $table->index(['department_id', 'effective_from', 'effective_to'], 'tcrule_dept_effective_idx');
             $table->index('day_of_week');
         });
 
@@ -45,7 +45,7 @@ return new class extends Migration
             $table->uuid('collection_request_id');
             $table->uuid('service_zone_id')->nullable();
             $table->uuid('department_id');
-            $table->uuid('requested_by');
+            $table->uuid('requested_by')->nullable();
             $table->string('status', 20)->default('pending')->comment('pending, approved, rejected');
             $table->string('reason_code', 32)->nullable()->comment('below_minimum, high_value, urgent, vehicle_mismatch, capacity_override');
             $table->text('reason')->nullable();

@@ -30,7 +30,7 @@ return new class extends Migration
             $table->foreign('collection_request_id')->references('id')->on('textile_collection_requests')->cascadeOnDelete();
             $table->foreign('reported_by')->references('id')->on('users')->cascadeOnDelete();
             $table->index(['reported_by', 'status']);
-            $table->index(['collection_request_id', 'status']);
+            $table->index(['collection_request_id', 'status'], 'tori_request_status_idx');
         });
     }
 

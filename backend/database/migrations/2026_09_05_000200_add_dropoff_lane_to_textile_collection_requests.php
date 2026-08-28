@@ -17,17 +17,19 @@ return new class extends Migration
             $table->uuid('receipt_id')->nullable()->after('dropoff_valid_until');
             $table->unsignedSmallInteger('stop_order')->nullable()->after('receipt_id');
             // TODO D-04 stop_order option (a) vs textile_batch_stops (b); keeping column for now
-            $table->index(['service_zone_id','status','collection_method']);
-            $table->index(['batch_id','stop_order']);
+            // Explicit names: MySQL identifiers are capped at 64 chars and the
+            // Laravel-generated names for these column sets exceed that limit.
+            $table->index(['service_zone_id', 'status', 'collection_method'], 'tcr_zone_status_method_idx');
+            $table->index(['batch_id', 'stop_order'], 'tcr_batch_stop_order_idx');
         });
     }
 
     public function down(): void
     {
         Schema::table('textile_collection_requests', function (Blueprint $table): void {
-            $table->dropIndex(['batch_id','stop_order']);
-            $table->dropIndex(['service_zone_id','status','collection_method']);
-            $table->dropColumn(['dropoff_confirmed_at','dropoff_valid_from','dropoff_valid_until','receipt_id','stop_order']);
+            $table->dropIndex('tcr_batch_stop_order_idx');
+            $table->dropIndex('tcr_zone_status_method_idx');
+            $table->dropColumn(['dropoff_confirmed_at', 'dropoff_valid_from', 'dropoff_valid_until', 'receipt_id', 'stop_order']);
         });
     }
 };

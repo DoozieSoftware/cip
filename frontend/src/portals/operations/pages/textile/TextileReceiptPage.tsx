@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { IconCamera, IconSearch } from '@tabler/icons-react';
 import { ApiError } from '../../../../shared/api/errors';
 import {
-  recordTextileOutcome,
+  recordDropoffReceipt,
   uploadTextileProofPhoto,
   type TextileCollectionListItem,
 } from '../../api/textileApi';
@@ -50,7 +50,9 @@ export default function TextileReceiptPage(): JSX.Element {
   );
 
   const queue = useTextileQueue({
-    status: 'ready_to_group',
+    // Phase 1 lane-aware approve sends drop-offs to `dropoff_awaiting_drop`;
+    // `ready_to_group` kept for pre-lane records so the counter can still find them.
+    status: 'dropoff_awaiting_drop,ready_to_group',
     search,
     page: 1,
     collectionMethod: 'dropoff',
@@ -104,16 +106,30 @@ export default function TextileReceiptPage(): JSX.Element {
 
   async function confirm() {
     if (!selected || !canConfirm) return;
+    const zoneId = selected.service_zone?.id;
+    if (!zoneId) {
+      setServerError('This booking has no service zone; configure the centre before receipt.');
+      return;
+    }
     setBusy(true);
     setServerError(null);
     try {
       if (!photoFile) return;
-      await uploadTextileProofPhoto(selected.id, photoFile, desk.departmentId);
-      await recordTextileOutcome(selected.id, {
-        outcome: 'collected',
+      // One key per receipt attempt so a retry after a network failure cannot
+      // double-record the receipt (docs/11 idempotency requirement).
+      const idempotencyKey =
+        typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? `receipt-${crypto.randomUUID()}`
+          : `receipt-${Date.now()}`;
+      const proof = await uploadTextileProofPhoto(selected.id, photoFile, desk.departmentId);
+      await recordDropoffReceipt(zoneId, {
+        collection_request_id: selected.id,
         actual_bags: Number(bags),
         actual_weight_kg: Number(weight),
-        reason: reason ? `${reason}${note ? ': ' + note : ''}` : undefined,
+        proof_media_id: proof.photo.id,
+        exception_code: reason || undefined,
+        exception_reason: reason ? `${reason}${note ? ': ' + note : ''}` : undefined,
+        idempotencyKey,
         department_id: desk.departmentId,
       });
       setSuccess(`Receipt confirmed for ${selected.reference} — ${bags} bags, ${weight} kg`);

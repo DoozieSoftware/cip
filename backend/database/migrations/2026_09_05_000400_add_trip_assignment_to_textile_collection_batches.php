@@ -23,8 +23,9 @@ return new class extends Migration
             $table->foreign('assigned_team_id')->references('id')->on('departments')->nullOnDelete();
             $table->foreign('assigned_user_id')->references('id')->on('users')->nullOnDelete();
             $table->foreign('assigned_by')->references('id')->on('users')->nullOnDelete();
-            $table->index(['assigned_user_id','status','collection_date']);
-            $table->index(['assigned_team_id','collection_date']);
+            // Explicit names: MySQL identifiers are capped at 64 chars.
+            $table->index(['assigned_user_id', 'status', 'collection_date'], 'tcb_assigned_user_status_date_idx');
+            $table->index(['assigned_team_id', 'collection_date'], 'tcb_assigned_team_date_idx');
             // TODO D-04: textile_batch_stops option (b) pending decision
         });
     }
@@ -32,12 +33,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('textile_collection_batches', function (Blueprint $table): void {
-            $table->dropIndex(['assigned_team_id','collection_date']);
-            $table->dropIndex(['assigned_user_id','status','collection_date']);
+            $table->dropIndex('tcb_assigned_team_date_idx');
+            $table->dropIndex('tcb_assigned_user_status_date_idx');
             $table->dropForeign(['assigned_team_id']);
             $table->dropForeign(['assigned_user_id']);
             $table->dropForeign(['assigned_by']);
-            $table->dropColumn(['assigned_team_id','assigned_user_id','vehicle_label','assignment_reason','assigned_by','assigned_at','started_at','completed_at','row_version']);
+            $table->dropColumn(['assigned_team_id', 'assigned_user_id', 'vehicle_label', 'assignment_reason', 'assigned_by', 'assigned_at', 'started_at', 'completed_at', 'row_version']);
         });
     }
 };

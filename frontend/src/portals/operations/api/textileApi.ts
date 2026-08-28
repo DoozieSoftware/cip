@@ -175,6 +175,34 @@ export interface TextileProofPhoto {
   photo: { id: string; role: 'proof'; url: string };
 }
 
+/** Phase 1 — centre counter receipt. Distinct from driver pickup outcomes:
+ *  authorization is `textile.record_receipt` and the lane must not be able
+ *  to complete a doorstep pickup (and vice versa). */
+export function recordDropoffReceipt(
+  zoneId: string,
+  payload: {
+    collection_request_id: string;
+    actual_bags?: number;
+    actual_weight_kg?: number;
+    proof_media_id?: string;
+    exception_code?: string;
+    exception_reason?: string;
+    idempotencyKey: string;
+    department_id?: string;
+  },
+) {
+  const { department_id, idempotencyKey, ...body } = payload;
+  return request<{ id: string; collection_request_id: string }>(
+    `/department/dropoff-centres/${zoneId}/receipts`,
+    {
+      method: 'POST',
+      body,
+      query: department_id ? { department_id } : {},
+      headers: { 'Idempotency-Key': idempotencyKey },
+    },
+  );
+}
+
 export function uploadTextileProofPhoto(
   collectionId: string,
   file: File,
