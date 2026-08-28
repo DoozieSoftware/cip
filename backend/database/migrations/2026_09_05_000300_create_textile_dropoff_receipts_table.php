@@ -27,8 +27,8 @@ return new class extends Migration
             $table->foreign('received_by')->references('id')->on('users')->restrictOnDelete();
             $table->foreign('service_zone_id')->references('id')->on('textile_service_zones')->restrictOnDelete();
             $table->foreign('proof_media_id')->references('id')->on('media')->nullOnDelete();
-            $table->index(['service_zone_id','received_at']);
-            $table->index(['received_by','received_at']);
+            $table->index(['service_zone_id', 'received_at']);
+            $table->index(['received_by', 'received_at']);
             // TODO D-02: signature_captured, captured_lat/lng, staff_device_id pending D-08/D-02
         });
     }
