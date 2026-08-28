@@ -6,9 +6,9 @@
 >
 > **Scope:** Citizen collection booking, partner review/scheduling/dispatch, proof media, notifications, and operational reporting. Complaint reporting remains separate.
 
-## 0. Progress as of 2026-08-27 — what is now complete
+## 0. Progress as of 2026-08-28 — what is now complete
 
-**Branch:** `codex/textile-phase-0` @ `f99cdffb`.
+**Branch:** `codex/textile-phase-0` @ `3273231b` (pushed).
 
 | Phase          | What                                                     | Where                                                            | Status |
 | -------------- | -------------------------------------------------------- | ---------------------------------------------------------------- | ------ |
@@ -30,6 +30,18 @@
 | Phase 2 code   | Citizen (trip status, contact)                           | `codex/textile-phase2-citizen` @ `d4772437` — 4 files +189/-10   | ✅     |
 | Phase 2 code   | Ops (trip manifest, assignment, schedule)                | `codex/textile-phase2-ops` @ `ff7199bc` — 5 files +134/-20       | ✅     |
 | Phase 2 code   | Tests (trip execution, concurrency, manifest)            | `codex/textile-phase2-qa` @ `f6f66117` — 3 files +498/-16        | ✅     |
+| Phase 3 code   | Backend (reschedule, unavailability, freeze guards)      | `codex/textile-phase3-backend` @ `6f9e12fc` — 6 files +156/-12  | ✅     |
+| Phase 3 code   | Citizen (reschedule, cancellation, readiness, SLA)       | `codex/textile-phase3-citizen` @ `33d4b504` — 7 files +432/-18  | ✅     |
+| Phase 3 code   | Ops (reschedule, dispatch UX, override flow)             | `codex/textile-phase3-ops` @ `5b8640a8` — 9 files +511/-22      | ✅     |
+| Phase 3 code   | Tests + lint fixes                                       | `codex/textile-phase3-qa` @ `946e1bec` + `f63bc4ea`              | ✅     |
+| Phase 4 code   | Backend (offline submissions, idempotency, recovery)     | `codex/textile-phase4-backend` @ `8ccaefdd` — 8 files +760      | ✅     |
+| Phase 4 code   | Citizen (offline banner, queue, swBridge retry)          | `codex/textile-phase4-citizen` @ `e9b51af5` — 10 files +607/-19| ✅     |
+| Phase 4 code   | Ops (field banner, dispatch offline, ops queue)          | `codex/textile-phase4-ops` @ `489d9d7a` — 14 files +862/-6     | ✅     |
+| Phase 4 code   | QA (offline-recovery page, useOfflineQueue hook, banner) | `codex/textile-phase4-qa` @ `28b7137a` — 15 files +1052/-5     | ✅     |
+| Phase 4 fix    | Lint: citizen+shared                                     | `c43bd556` — 6 files +46/-31                                    | ✅     |
+| Phase 4 fix    | Lint: operations                                        | `39077013` — 2 files +15/-9                                     | ✅     |
+| Phase 4 fix    | Test: dispatch page wraps in AuthProvider                | `3273231b` — 1 file +4/-1                                       | ✅     |
+| Phase 4 verify | backend pint/phpstan/routes clean; frontend lint clean; vitest 2/2 pass; `npm run build` green | — | ✅ |
 
 ## 1. Current baseline
 
