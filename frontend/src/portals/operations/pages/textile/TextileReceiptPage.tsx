@@ -16,13 +16,13 @@ import {
 } from './shared';
 import { validatePhotoFile } from './photoCapture';
 
-const REASONS = [
-  'quantity_mismatch',
-  'wrong_material',
-  'outside_zone',
-  'damaged_wet',
-  'no_show_at_centre',
-  'other',
+const REASONS: Array<{ value: string; label: string }> = [
+  { value: 'quantity_mismatch', label: 'Wrong quantity' },
+  { value: 'wrong_material', label: 'Wrong material' },
+  { value: 'outside_zone', label: 'Outside service area' },
+  { value: 'damaged_wet', label: 'Damaged or wet' },
+  { value: 'no_show_at_centre', label: 'No show at centre' },
+  { value: 'other', label: 'Other' },
 ];
 
 export default function TextileReceiptPage(): JSX.Element {
@@ -164,7 +164,7 @@ export default function TextileReceiptPage(): JSX.Element {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Scan QR or type DL-… / phone"
                 aria-label="Search by reference or phone"
-                className="min-h-12 w-full rounded-xl border border-black/15 bg-white pl-9 pr-3 text-sm"
+                className="min-h-12 w-full rounded-xl border border-[var(--color-border)] bg-white pl-9 pr-3 text-sm"
               />
             </div>
             <button
@@ -183,12 +183,12 @@ export default function TextileReceiptPage(): JSX.Element {
             <p className="text-sm text-[var(--color-text-secondary)]">Searching…</p>
           ) : null}
           {search && !queue.isLoading && rows.length === 0 ? (
-            <div className="rounded-xl border border-black/10 bg-white p-4 text-sm">
+            <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5 text-sm">
               No booking found for “{search}”.
             </div>
           ) : null}
           {rows.length > 1 && !selected ? (
-            <ul className="divide-y divide-black/5 rounded-xl border border-black/10 bg-white">
+            <ul className="divide-y divide-[var(--color-border-subtle)] rounded-xl border border-[var(--color-border-subtle)] bg-white">
               {rows.map((r) => (
                 <li key={r.id}>
                   <button
@@ -203,7 +203,7 @@ export default function TextileReceiptPage(): JSX.Element {
             </ul>
           ) : null}
           {selected ? (
-            <div className="rounded-xl border border-black/10 bg-white p-4 text-sm">
+            <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5 text-sm">
               <div className="flex items-center justify-between">
                 <span className="font-mono text-xs font-medium">{selected.reference}</span>
                 <StatusBadge status={selected.status} />
@@ -235,7 +235,7 @@ export default function TextileReceiptPage(): JSX.Element {
           ) : null}
         </div>
 
-        <div className="rounded-xl border border-black/10 bg-white p-4">
+        <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
           {!selected ? (
             <DeskStates
               loading={false}
@@ -258,7 +258,7 @@ export default function TextileReceiptPage(): JSX.Element {
                     min={1}
                     value={bags}
                     onChange={(e) => setBags(e.target.value)}
-                    className="mt-1 block min-h-12 w-28 rounded-lg border border-black/15 bg-white px-3 text-sm"
+                    className="mt-1 block min-h-12 w-28 rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm"
                   />
                 </label>
                 <label className="text-xs font-medium">
@@ -269,7 +269,7 @@ export default function TextileReceiptPage(): JSX.Element {
                     step={0.1}
                     value={weight}
                     onChange={(e) => setWeight(e.target.value)}
-                    className="mt-1 block min-h-12 w-32 rounded-lg border border-black/15 bg-white px-3 text-sm"
+                    className="mt-1 block min-h-12 w-32 rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm"
                   />
                 </label>
               </div>
@@ -300,7 +300,7 @@ export default function TextileReceiptPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => photoRef.current?.click()}
-                  className="mt-1 inline-flex min-h-11 items-center gap-2 rounded-full border border-black/15 bg-white px-4 text-sm font-medium"
+                  className="mt-1 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium"
                 >
                   {photoFile ? 'Replace photo' : 'Choose photo'}
                   <IconCamera className="h-4 w-4" />
@@ -330,12 +330,12 @@ export default function TextileReceiptPage(): JSX.Element {
                   <select
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    className="mt-1 block w-full min-h-11 rounded-lg border border-black/15 bg-white px-3 text-sm"
+                    className="mt-1 block w-full min-h-11 rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm"
                   >
                     <option value="">Select reason</option>
                     {REASONS.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
+                      <option key={r.value} value={r.value}>
+                        {r.label}
                       </option>
                     ))}
                   </select>
@@ -345,7 +345,7 @@ export default function TextileReceiptPage(): JSX.Element {
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Optional note"
                   rows={2}
-                  className="block w-full rounded-lg border border-black/15 bg-white p-3 text-sm"
+                  className="block w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm"
                 />
               </div>
 
@@ -379,7 +379,7 @@ export default function TextileReceiptPage(): JSX.Element {
                     setSearch('');
                     setQuery('');
                   }}
-                  className="min-h-11 rounded-full border border-black/15 bg-white px-4 text-sm"
+                  className="min-h-11 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm"
                 >
                   Clear
                 </button>

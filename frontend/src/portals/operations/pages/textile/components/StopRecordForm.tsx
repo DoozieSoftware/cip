@@ -31,7 +31,11 @@ export function StopRecordForm({
   const varianceKg = Number(weight || 0) - estKg;
   const variancePct = estKg ? (varianceKg / estKg) * 100 : 0;
   const needsReason = Math.abs(variancePct) >= 25 || Number(bags) !== estBags;
-  const can = Number(bags) > 0 && Number(weight) > 0 && file !== null && (!needsReason || reason.trim().length > 0);
+  const can =
+    Number(bags) > 0 &&
+    Number(weight) > 0 &&
+    file !== null &&
+    (!needsReason || reason.trim().length > 0);
 
   function handle(f: File | null) {
     if (preview) URL.revokeObjectURL(preview);
@@ -55,19 +59,23 @@ export function StopRecordForm({
   const evidencePhoto = item.photos?.find((p) => p.role === 'evidence');
 
   return (
-    <div className="rounded-lg bg-[var(--color-surface-alt)] p-3">
+    <div className="rounded-xl border border-black/10 bg-white p-4 shadow-sm">
       {item.readiness_instructions ? (
-        <p className="mb-2 rounded bg-white px-2 py-1 text-xs text-[var(--color-text-secondary)]">
+        <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
           Instructions: {item.readiness_instructions}
         </p>
       ) : null}
       {evidencePhoto ? (
         <div className="mb-2 flex items-center gap-2">
-          <img src={evidencePhoto.url} alt="citizen evidence" className="h-12 w-12 rounded object-cover" />
+          <img
+            src={evidencePhoto.url}
+            alt="citizen evidence"
+            className="h-12 w-12 rounded object-cover"
+          />
           <span className="text-xs text-[var(--color-text-secondary)]">Citizen evidence photo</span>
         </div>
       ) : null}
-      <p className="mb-2 text-xs text-[var(--color-text-secondary)]">
+      <p className="mb-2 text-xs font-medium text-[var(--color-text-secondary)]">
         Est. {item.estimated_bags ?? '—'} bags · {item.estimated_weight_kg ?? '—'} kg
       </p>
       <div className="flex flex-wrap gap-3">
@@ -116,30 +124,61 @@ export function StopRecordForm({
           </button>
         </div>
       </div>
-      <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">JPG, PNG or WebP, up to 10 MB.</p>
+      <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+        JPG, PNG or WebP, up to 10 MB.
+      </p>
       {weight && estKg ? (
-        <p className={`mt-1 text-xs ${Math.abs(variancePct) >= 50 ? 'text-rose-600' : Math.abs(variancePct) >= 25 ? 'text-amber-700' : 'text-[var(--color-text-secondary)]'}`}>
-          Variance: {varianceBags > 0 ? `+${varianceBags}` : `${varianceBags}`} bags, {varianceKg > 0 ? '+' : ''}{varianceKg.toFixed(1)} kg ({variancePct.toFixed(0)}%) {needsReason ? '— reason required' : ''}
+        <p
+          className={`mt-2 rounded-lg px-2 py-1 text-xs font-medium ${Math.abs(variancePct) >= 50 ? 'bg-rose-50 text-rose-700' : Math.abs(variancePct) >= 25 ? 'bg-amber-50 text-amber-800' : 'text-[var(--color-text-secondary)]'}`}
+        >
+          Variance: {varianceBags > 0 ? `+${varianceBags}` : `${varianceBags}`} bags,{' '}
+          {varianceKg > 0 ? '+' : ''}
+          {varianceKg.toFixed(1)} kg ({variancePct.toFixed(0)}%){' '}
+          {needsReason ? '— reason required' : ''}
         </p>
       ) : null}
       {needsReason ? (
-        <label className="mt-2 block text-xs font-medium">
+        <label className="mt-3 block text-xs font-semibold">
           Reason <span className="text-red-700">*</span>
-          <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for variance" className="mt-1 block w-full min-h-11 rounded-lg border border-black/15 bg-white px-3 text-sm" />
+          <input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Why the actual differs"
+            className="mt-1 block w-full min-h-11 rounded-lg border border-black/20 bg-white px-3 text-sm"
+          />
         </label>
       ) : null}
-      {preview ? <img src={preview} alt="preview" className="mt-2 h-16 w-16 rounded object-cover" /> : null}
-      {err ? <p role="alert" className="mt-1 text-xs text-red-600">{err}</p> : null}
-      <div className="mt-3 flex gap-2">
+      {preview ? (
+        <img src={preview} alt="preview" className="mt-2 h-16 w-16 rounded object-cover" />
+      ) : null}
+      {err ? (
+        <p role="alert" className="mt-1 text-xs text-red-600">
+          {err}
+        </p>
+      ) : null}
+      <div className="sticky bottom-0 -mx-1 mt-4 flex gap-2 border-t border-black/5 bg-white px-1 pb-[env(safe-area-inset-bottom)] pt-3">
         <button
           type="button"
           disabled={!can || busy}
-          onClick={() => file && onSubmit({ bags: Number(bags), weight: Number(weight), file, reason: reason || undefined })}
-          className="min-h-10 rounded-full bg-[var(--color-ink)] px-4 text-sm font-medium text-white disabled:opacity-40"
+          onClick={() =>
+            file &&
+            onSubmit({
+              bags: Number(bags),
+              weight: Number(weight),
+              file,
+              reason: reason || undefined,
+            })
+          }
+          className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-[var(--color-ink)] px-5 text-sm font-semibold text-white disabled:opacity-40"
         >
           {busy ? 'Uploading…' : 'Confirm collected'}
         </button>
       </div>
+      {!can ? (
+        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+          Enter bags, weight, photo{needsReason ? ' and reason' : ''} to confirm.
+        </p>
+      ) : null}
     </div>
   );
 }

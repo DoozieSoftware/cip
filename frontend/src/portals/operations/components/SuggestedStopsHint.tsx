@@ -27,7 +27,7 @@ export function SuggestedStopsHint({
     suggestedOrder.length === currentOrder.length &&
     suggestedOrder.every((id, idx) => id === currentOrder[idx]);
 
-  if (items.length === 0) return null;
+  if (items.length <= 1) return null;
 
   return (
     <div className={`rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 ${className ?? ''}`}>
@@ -38,26 +38,30 @@ export function SuggestedStopsHint({
         className="flex w-full items-center justify-between gap-2 text-left"
       >
         <span className="flex items-center gap-1.5 text-xs font-semibold text-sky-900">
-          <IconArrowsSort className="h-4 w-4" />
-          Suggested stop order
+          <IconArrowsSort className="h-4 w-4" stroke={1.65} />
+          Faster route available
           {isAlreadyOptimal ? (
             <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-sky-700">
-              Already optimal
+              Already in best order
             </span>
-          ) : null}
+          ) : (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800 ring-1 ring-inset ring-amber-200">
+              Saves time
+            </span>
+          )}
         </span>
         <span className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-medium text-sky-800">
           {open ? (
-            <IconChevronUp className="h-3.5 w-3.5" />
+            <IconChevronUp className="h-3.5 w-3.5" stroke={1.65} />
           ) : (
-            <IconChevronDown className="h-3.5 w-3.5" />
+            <IconChevronDown className="h-3.5 w-3.5" stroke={1.65} />
           )}
-          {open ? 'Hide' : 'Show'}
+          {open ? 'Hide' : 'See route'}
         </span>
       </button>
       <p className="mt-1 text-[11px] leading-4 text-sky-700">
         {note ??
-          'Suggested ordering groups nearby stops to shorten the route. Staff must confirm before scheduling.'}
+          'We grouped nearby addresses to shorten the drive. You decide — this is just a suggestion.'}
       </p>
       {open ? (
         <div className="mt-3 space-y-2">
@@ -98,7 +102,7 @@ export function SuggestedStopsHint({
             </button>
           ) : null}
           <p className="text-[11px] text-sky-700">
-            Ordering is advisory — confirm the manifest before you schedule the trip.
+            Tap a stop number to compare — tap “Apply” only if the new order looks right.
           </p>
         </div>
       ) : null}

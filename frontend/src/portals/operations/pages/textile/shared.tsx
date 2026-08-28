@@ -197,13 +197,16 @@ export function SearchBox({
 }): JSX.Element {
   return (
     <div className="relative w-full max-w-xs">
-      <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+      <IconSearch
+        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)]"
+        stroke={1.65}
+      />
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         aria-label="Search pickup requests"
-        className="min-h-10 w-full rounded-full border border-black/15 bg-white pl-9 pr-8 text-sm"
+        className="min-h-10 w-full rounded-full border border-[var(--color-border)] bg-white pl-9 pr-8 text-sm"
       />
       {value ? (
         <button
@@ -232,7 +235,7 @@ export function ZoneFilter({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       aria-label="Filter by service zone"
-      className="min-h-10 rounded-full border border-black/15 bg-white px-4 text-sm"
+      className="min-h-10 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm"
     >
       <option value="">All zones</option>
       {(zones.data ?? []).map((zone) => (
@@ -256,7 +259,7 @@ export function CategoryFilter({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       aria-label="Filter by category"
-      className="min-h-10 rounded-full border border-black/15 bg-white px-4 text-sm"
+      className="min-h-10 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm"
     >
       <option value="">All categories</option>
       {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
@@ -316,7 +319,7 @@ export function MethodFilter({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label="Filter by collection method"
-      className="min-h-10 rounded-full border border-black/15 bg-white px-4 text-sm"
+      className="min-h-10 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm"
     >
       <option value="">All methods</option>
       <option value="dropoff">Drop-off</option>
@@ -334,14 +337,14 @@ export function TableShell({
   children: ReactNode;
 }): JSX.Element {
   return (
-    <div className="overflow-x-auto rounded-xl border border-black/10 bg-white">
+    <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-black/5">
       <table className="w-full min-w-[820px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-black/10 bg-[var(--color-surface-alt)] text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+          <tr className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             {head}
           </tr>
         </thead>
-        <tbody className="divide-y divide-black/5">{children}</tbody>
+        <tbody className="divide-y divide-[var(--color-border-subtle)]">{children}</tbody>
       </table>
     </div>
   );
@@ -379,7 +382,7 @@ export function DeskStates({
           <button
             type="button"
             onClick={onRetry}
-            className="rounded-full border border-black/15 px-4 py-2 text-sm"
+            className="rounded-full border border-[var(--color-border)] px-4 py-2 text-sm"
           >
             Retry
           </button>
@@ -411,17 +414,17 @@ export function Pager({
           type="button"
           disabled={meta.page <= 1}
           onClick={() => onPage(Math.max(1, meta.page - 1))}
-          className="inline-flex min-h-9 items-center gap-1 rounded-full border border-black/15 bg-white px-3 text-sm disabled:opacity-40"
+          className="inline-flex min-h-9 items-center gap-1 rounded-full border border-[var(--color-border)] bg-white px-3 text-sm disabled:opacity-40"
         >
-          <IconChevronLeft className="h-4 w-4" /> Prev
+          <IconChevronLeft className="h-4 w-4" stroke={1.65} /> Prev
         </button>
         <button
           type="button"
           disabled={meta.page >= meta.last_page}
           onClick={() => onPage(meta.page + 1)}
-          className="inline-flex min-h-9 items-center gap-1 rounded-full border border-black/15 bg-white px-3 text-sm disabled:opacity-40"
+          className="inline-flex min-h-9 items-center gap-1 rounded-full border border-[var(--color-border)] bg-white px-3 text-sm disabled:opacity-40"
         >
-          Next <IconChevronRight className="h-4 w-4" />
+          Next <IconChevronRight className="h-4 w-4" stroke={1.65} />
         </button>
       </div>
     </nav>
@@ -526,21 +529,27 @@ export function RescheduleDetail({
   const hasReschedule = !!(item.reschedule_reason || prev);
   const hasUnavailable = !!item.unavailable_reason;
   const hasMissedReschedule =
-    item.status === 'missed' && !!item.missed_pickup_reason && prev === null && hasReschedule === false;
+    item.status === 'missed' &&
+    !!item.missed_pickup_reason &&
+    prev === null &&
+    hasReschedule === false;
   if (!hasReschedule && !hasUnavailable && !hasMissedReschedule) return null;
   return (
     <div className="mt-1.5 space-y-1">
       {hasReschedule ? (
         <p className="text-[11px] leading-4 text-amber-800">
           <span className="font-medium">Rescheduled</span>
-          {item.reschedule_reason ? `: ${RESCHEDULE_REASON_LABELS[item.reschedule_reason] ?? item.reschedule_reason}` : ''}
+          {item.reschedule_reason
+            ? `: ${RESCHEDULE_REASON_LABELS[item.reschedule_reason] ?? item.reschedule_reason}`
+            : ''}
           {prev ? ` — previously ${prev}` : ''}
           {item.rescheduled_at ? ` · ${new Date(item.rescheduled_at).toLocaleDateString()}` : ''}
         </p>
       ) : null}
       {hasUnavailable ? (
         <p className="text-[11px] leading-4 text-rose-700">
-          <span className="font-medium">Unavailable</span>: {UNAVAILABLE_REASON_LABELS[item.unavailable_reason!] ?? item.unavailable_reason}
+          <span className="font-medium">Unavailable</span>:{' '}
+          {UNAVAILABLE_REASON_LABELS[item.unavailable_reason!] ?? item.unavailable_reason}
           {item.unavailable_until ? ` · until ${item.unavailable_until}` : ''}
         </p>
       ) : null}
@@ -571,7 +580,8 @@ export function UnavailableBanner({
       {reason ? <p className="mt-1 text-xs text-amber-700">{reason}</p> : null}
       {unavailableDates.length > 0 ? (
         <p className="mt-1 text-xs text-amber-700">
-          Unavailable: {unavailableDates.join(', ')}. Choose the next available slot; an override requires a reason.
+          Unavailable: {unavailableDates.join(', ')}. Choose the next available slot; an override
+          requires a reason.
         </p>
       ) : null}
     </div>
@@ -592,7 +602,7 @@ export function TripProgressBar({
   total: number;
 }): JSX.Element {
   const pct = total > 0 ? Math.round((collected / total) * 100) : 0;
-  const label =
+  const statusLabel =
     batchStatus === 'completed'
       ? 'Completed'
       : batchStatus === 'in_progress'
@@ -600,22 +610,28 @@ export function TripProgressBar({
         : batchStatus === 'assigned'
           ? 'Assigned'
           : 'Unstarted';
+  const doneLabel = `${collected} of ${total} done`;
   return (
-    <div className="flex items-center gap-3" aria-label={`Trip progress ${label}`}>
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/10">
+    <div
+      className="flex items-center gap-3"
+      aria-label={`Trip progress ${statusLabel}, ${doneLabel}`}
+    >
+      <div className="h-3 flex-1 overflow-hidden rounded-full bg-black/15">
         <div
-          className="h-full rounded-full bg-emerald-500 transition-all"
+          className="h-full rounded-full bg-emerald-600 transition-all"
           style={{ width: `${pct}%` }}
           role="progressbar"
           aria-valuenow={pct}
           aria-valuemin={0}
           aria-valuemax={100}
+          aria-label={doneLabel}
         />
       </div>
-      <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium">
-        {label} · {collected}/{total} collected
+      <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-semibold">
+        {doneLabel}
         {missed > 0 ? ` · ${missed} missed` : ''}
-        {pending > 0 ? ` · ${pending} pending` : ''}
+        {pending > 0 ? ` · ${pending} left` : ''}
+        <span className="ml-1 font-normal text-[var(--color-text-secondary)]">· {statusLabel}</span>
       </span>
     </div>
   );
@@ -650,7 +666,9 @@ export function RescheduleOverrideNotice({
   if (!frozen) return null;
   return (
     <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-      <p className="text-xs font-medium text-amber-800">Rescheduling is frozen — crew is on the route</p>
+      <p className="text-xs font-medium text-amber-800">
+        Rescheduling is frozen — crew is on the route
+      </p>
       <p className="mt-1 text-[11px] text-amber-700">
         A partner override is required. Add a reason to reschedule or reassign.
       </p>
@@ -668,4 +686,3 @@ export function RescheduleOverrideNotice({
     </div>
   );
 }
-

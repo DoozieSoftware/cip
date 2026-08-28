@@ -99,19 +99,23 @@ function BatchCapacityNotice({
 
   const data = evaluation.data;
   const hasCapacityData = !!data && (data.blockers.length > 0 || data.warnings.length > 0);
-  const showHint = !!data && data.suggested_order.length > 1;
+  // Single-stop trips have nothing to reorder — showing the hint adds noise
+  // (your screenshot: every 1-stop trip repeated the blue banner).
+  const showHint = !!data && data.suggested_order.length > 1 && items.length > 1;
 
   if (!hasCapacityData && !showHint && !evaluation.isLoading && !evaluation.isError) return null;
 
   return (
-    <div className="space-y-2 border-b border-black/5 bg-[var(--color-surface-alt)] px-4 py-3">
-      <CapacityWarningBanner
-        evaluation={data ?? undefined}
-        isLoading={evaluation.isLoading}
-        isError={evaluation.isError}
-        errorMessage={evaluation.error instanceof Error ? evaluation.error.message : undefined}
-        onRetry={() => void evaluation.refetch()}
-      />
+    <div className="space-y-2 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-4 py-3">
+      {hasCapacityData ? (
+        <CapacityWarningBanner
+          evaluation={data ?? undefined}
+          isLoading={evaluation.isLoading}
+          isError={evaluation.isError}
+          errorMessage={evaluation.error instanceof Error ? evaluation.error.message : undefined}
+          onRetry={() => void evaluation.refetch()}
+        />
+      ) : null}
       {showHint && data ? (
         <SuggestedStopsHint
           suggestedOrder={data.suggested_order}
@@ -294,8 +298,8 @@ export default function TextileDispatchPage(): JSX.Element {
   return (
     <DeskPage
       desk={desk}
-      title="Dispatch board"
-      description="Today's trips and their stops. Log what was actually collected, or mark a stop missed with the reason."
+      title="Today's pickup trips"
+      description="Each card is one trip. Open a trip to see its stops — call the resident, get directions, then record what you collected or mark it missed."
       toolbar={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <SearchBox
@@ -372,16 +376,19 @@ export default function TextileDispatchPage(): JSX.Element {
             return (
               <section
                 key={trip.id}
-                className="overflow-hidden rounded-xl border border-black/10 bg-white"
+                className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5"
               >
                 <BatchCapacityNotice
                   batchId={trip.id}
                   departmentId={desk.departmentId}
                   items={trip.items}
                 />
-                <header className="flex flex-col gap-2 border-b border-black/5 bg-[var(--color-surface-alt)] px-4 py-3">
+                <header className="flex flex-col gap-2 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-4 py-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <IconCalendar className="h-4 w-4 text-[var(--color-text-tertiary)]" />
+                    <IconCalendar
+                      className="h-4 w-4 text-[var(--color-text-tertiary)]"
+                      stroke={1.65}
+                    />
                     <h2 className="text-sm font-semibold">{trip.label}</h2>
                     <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium">
                       {trip.items.length} stops
@@ -405,11 +412,33 @@ export default function TextileDispatchPage(): JSX.Element {
                       </span>
                     ) : null}
                     {frozen ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
-                        <IconAlertTriangle className="h-3 w-3" /> Reschedule frozen
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800 ring-1 ring-inset ring-amber-200">
+                        <IconAlertTriangle className="h-3 w-3" stroke={1.65} /> Reschedule frozen
                       </span>
                     ) : null}
                   </div>
+                  {(trip.items[0]?.batch?.driver_name ||
+                    trip.items[0]?.batch?.team_name ||
+                    trip.items[0]?.batch?.vehicle_label) && (
+                    <p className="text-xs font-medium text-[var(--color-ink)]">
+                      {trip.items[0]?.batch?.driver_name
+                        ? `Driver ${trip.items[0].batch.driver_name}`
+                        : null}
+                      {trip.items[0]?.batch?.driver_name && trip.items[0]?.batch?.team_name
+                        ? ' · '
+                        : null}
+                      {trip.items[0]?.batch?.team_name
+                        ? `Team ${trip.items[0].batch.team_name}`
+                        : null}
+                      {(trip.items[0]?.batch?.driver_name || trip.items[0]?.batch?.team_name) &&
+                      trip.items[0]?.batch?.vehicle_label
+                        ? ' · '
+                        : null}
+                      {trip.items[0]?.batch?.vehicle_label
+                        ? `Vehicle ${trip.items[0].batch.vehicle_label}`
+                        : null}
+                    </p>
+                  )}
                   <TripProgressBar
                     batchStatus={batchStatus}
                     collected={progress.collected}
@@ -418,7 +447,7 @@ export default function TextileDispatchPage(): JSX.Element {
                     total={progress.total}
                   />
                   {hasRescheduledStops || hasUnavailableStops ? (
-                    <p className="text-[11px] text-[var(--color-text-secondary)]">
+                    <p className="text-xs text-[var(--color-text-secondary)]">
                       {hasRescheduledStops ? 'Rescheduled stops show previous slot and why. ' : ''}
                       {hasUnavailableStops
                         ? 'Unavailable reason shown per stop — choose fallback or override.'
@@ -426,7 +455,7 @@ export default function TextileDispatchPage(): JSX.Element {
                     </p>
                   ) : null}
                 </header>
-                <ul className="divide-y divide-black/5">
+                <ul className="divide-y divide-[var(--color-border-subtle)]">
                   {trip.items.map((item, idx) => {
                     const evidencePhoto = item.photos?.find((p) => p.role === 'evidence');
                     const queued = offline.items.find(
@@ -438,10 +467,14 @@ export default function TextileDispatchPage(): JSX.Element {
                       item.previous_window_end,
                     );
                     const itemFrozen = isRescheduleFrozen(item.batch?.status);
+                    const isNext = idx === 0 && item.status === 'scheduled';
                     return (
-                      <li key={item.id} className="px-4 py-3">
+                      <li
+                        key={item.id}
+                        className={isNext ? 'bg-amber-50/30 px-4 py-4' : 'px-4 py-4'}
+                      >
                         <div className="flex flex-wrap items-start gap-3 text-sm">
-                          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--color-ink)] text-[11px] text-white">
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--color-ink)] text-xs font-bold text-white">
                             {idx + 1}
                           </span>
                           {evidencePhoto ? (
@@ -453,12 +486,19 @@ export default function TextileDispatchPage(): JSX.Element {
                           ) : null}
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-mono text-[11px]">{item.reference}</span>
+                              <span className="font-mono text-xs font-medium">
+                                {item.reference}
+                              </span>
                               {queued ? (
                                 <span
-                                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${queued.status === 'failed' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800'}`}
+                                  className={`rounded-full px-2 py-0.5 text-xs font-semibold ${queued.status === 'failed' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800'}`}
                                 >
                                   {queued.status === 'failed' ? 'Upload failed' : 'Pending upload'}
+                                </span>
+                              ) : null}
+                              {isNext ? (
+                                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 ring-1 ring-inset ring-amber-200">
+                                  Next stop
                                 </span>
                               ) : null}
                               <CategoryBadge category={item.category} />
@@ -471,7 +511,7 @@ export default function TextileDispatchPage(): JSX.Element {
                               {item.unavailable_reason ? (
                                 <UnavailableBadge reason={item.unavailable_reason} />
                               ) : null}
-                              <span className="text-xs text-[var(--color-text-secondary)]">
+                              <span className="text-xs font-medium text-[var(--color-text-secondary)]">
                                 Est. {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
                               </span>
                               {itemFrozen ? (
@@ -480,13 +520,8 @@ export default function TextileDispatchPage(): JSX.Element {
                                 </span>
                               ) : null}
                             </div>
-                            <p className="mt-0.5 line-clamp-2 text-xs text-[var(--color-text-secondary)]">
-                              {item.requester_name} · {item.pickup_address}{' '}
-                              {idx === 0 ? (
-                                <span className="ml-1 rounded bg-amber-100 px-1 py-0.5 text-[10px] font-medium text-amber-800">
-                                  Next stop
-                                </span>
-                              ) : null}
+                            <p className="mt-1 line-clamp-2 text-sm font-medium leading-5 text-[var(--color-ink)]">
+                              {item.requester_name} · {item.pickup_address}
                             </p>
                             <RescheduleDetail item={item} />
                             {item.readiness_instructions ? (
@@ -494,20 +529,20 @@ export default function TextileDispatchPage(): JSX.Element {
                                 {item.readiness_instructions}
                               </p>
                             ) : null}
-                            <div className="mt-2 flex flex-wrap gap-2">
+                            <div className="mt-3 flex flex-wrap gap-2">
                               <a
                                 href={telHref(item.contact_phone)}
-                                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-black/15 px-3.5 text-xs font-medium"
+                                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[var(--color-border)] px-3.5 text-xs font-medium"
                               >
-                                <IconPhone className="h-4 w-4" /> Call
+                                <IconPhone className="h-4 w-4" stroke={1.65} /> Call
                               </a>
                               <a
                                 href={mapsHref(item.pickup_address)}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-black/15 px-3.5 text-xs font-medium"
+                                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[var(--color-border)] px-3.5 text-xs font-medium"
                               >
-                                <IconNavigation className="h-4 w-4" /> Navigate
+                                <IconNavigation className="h-4 w-4" stroke={1.65} /> Navigate
                               </a>
                               {itemFrozen ? (
                                 <button
@@ -516,7 +551,7 @@ export default function TextileDispatchPage(): JSX.Element {
                                     setOverrideTarget(item);
                                     setOverrideReason('');
                                   }}
-                                  className="inline-flex min-h-9 items-center rounded-full border border-amber-300 bg-amber-50 px-3.5 text-xs font-medium text-amber-800"
+                                  className="inline-flex min-h-11 items-center rounded-full border border-amber-300 bg-amber-50 px-4 text-xs font-semibold text-amber-800"
                                   aria-label={`Override reschedule for ${item.reference}`}
                                 >
                                   Override reschedule
@@ -524,13 +559,13 @@ export default function TextileDispatchPage(): JSX.Element {
                               ) : null}
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex shrink-0 gap-2">
                             <button
                               type="button"
                               aria-label="Record collection"
                               disabled={outcome.isPending}
                               onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
-                              className="min-h-9 rounded-full bg-[var(--color-ink)] px-3.5 text-xs font-medium text-white disabled:opacity-40"
+                              className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-ink)] px-5 text-xs font-semibold text-white disabled:opacity-40"
                             >
                               {expandedId === item.id ? 'Close' : 'Record collection'}
                             </button>
@@ -538,7 +573,7 @@ export default function TextileDispatchPage(): JSX.Element {
                               type="button"
                               disabled={outcome.isPending}
                               onClick={() => setMissedTarget(item)}
-                              className="min-h-9 rounded-full border border-black/15 px-3.5 text-xs disabled:opacity-40"
+                              className="min-h-9 rounded-full border border-[var(--color-border)] px-3.5 text-xs disabled:opacity-40"
                             >
                               Mark missed
                             </button>

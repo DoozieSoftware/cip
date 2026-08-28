@@ -94,7 +94,7 @@ export default function TextileCapacityPage(): JSX.Element {
           </p>
         ) : null}
 
-        <section className="rounded-xl border border-black/10 bg-white p-4">
+        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold">Zone capacity rules</h2>
@@ -106,7 +106,7 @@ export default function TextileCapacityPage(): JSX.Element {
             {report ? (
               <a
                 href={textileReportingExportUrl({ department_id: desk.departmentId })}
-                className="rounded-full border border-black/15 px-3 py-2 text-xs font-medium"
+                className="rounded-full border border-[var(--color-border)] px-3 py-2 text-xs font-medium"
               >
                 Export CSV
               </a>
@@ -116,7 +116,7 @@ export default function TextileCapacityPage(): JSX.Element {
             <div className="mt-4 overflow-x-auto">
               <table className="w-full min-w-[640px] text-left text-xs">
                 <thead>
-                  <tr className="border-b border-black/10 text-[var(--color-text-secondary)]">
+                  <tr className="border-b border-[var(--color-border-subtle)] text-[var(--color-text-secondary)]">
                     <th className="px-2 py-2">Zone</th>
                     <th>Max bags</th>
                     <th>Max kg</th>
@@ -127,7 +127,7 @@ export default function TextileCapacityPage(): JSX.Element {
                 </thead>
                 <tbody>
                   {rules.data.map((rule) => (
-                    <tr key={rule.id} className="border-b border-black/5">
+                    <tr key={rule.id} className="border-b border-[var(--color-border-subtle)]">
                       <td className="px-2 py-2 font-medium">
                         {rule.service_zone?.name ?? rule.service_zone_id}
                       </td>
@@ -152,7 +152,7 @@ export default function TextileCapacityPage(): JSX.Element {
           )}
         </section>
 
-        <section className="rounded-xl border border-black/10 bg-white p-4">
+        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
           <h2 className="text-sm font-semibold">Pending capacity exceptions</h2>
           <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
             A human decision and audit reason are required before a capacity policy is overridden.
@@ -173,7 +173,7 @@ export default function TextileCapacityPage(): JSX.Element {
               {exceptions.data.map((exception) => (
                 <li
                   key={exception.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-black/10 p-3 text-xs"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--color-border-subtle)] p-3 text-xs"
                 >
                   <div>
                     <p className="font-medium">
@@ -211,7 +211,7 @@ export default function TextileCapacityPage(): JSX.Element {
         </section>
 
         {report ? (
-          <section className="rounded-xl border border-black/10 bg-white p-4">
+          <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
             <h2 className="text-sm font-semibold">Metric definitions</h2>
             <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
               {Object.entries(report.definitions).map(([name, definition]) => (
@@ -238,7 +238,7 @@ function Metric({
   note: string;
 }): JSX.Element {
   return (
-    <div className="rounded-xl border border-black/10 bg-white p-4">
+    <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
       <p className="text-xs text-[var(--color-text-secondary)]">{label}</p>
       <p className="mt-1 text-2xl font-semibold">{value}</p>
       <p className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">{note}</p>
