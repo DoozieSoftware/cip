@@ -8,7 +8,7 @@
 
 ## 0. Progress as of 2026-08-28 — what is now complete
 
-**Branch:** `codex/textile-phase-0` @ `47fff3b2` (pushed).
+**Branch:** `codex/textile-phase-0` @ `f171ea83` (pushed).
 
 | Phase          | What                                                     | Where                                                            | Status |
 | -------------- | -------------------------------------------------------- | ---------------------------------------------------------------- | ------ |
@@ -46,6 +46,10 @@
 | Phase 5 code   | Capacity rules, batch evaluation, stop suggestions, human exception approvals, audit, citizen minimum guidance | `47fff3b2` — migration + backend + citizen/ops UI | ✅ |
 | Phase 6 code   | Partner-scoped reporting dashboard, definitions, data-quality state, CSV export, audit | `47fff3b2` — `TextileReportingService` + Capacity and performance page | ✅ |
 | Phase 5/6 verify | backend Pint and route boot clean; frontend ESLint/build green; five pre-existing PHPStan resource annotation errors remain | — | ✅ |
+| Phase 5/6 backend tests | Pest: `TextileCapacityTest` 23 + `TextileReportingTest` 11; partner isolation, idempotency, audit, export reconcile | `47ae016b` — 2 files +1,247 | ✅ |
+| Phase 5/6 ops UX | Dispatch/schedule warning banners, explainable blockers, suggested stops hint, exception CTA (Idempotency-Key, silent-reject forbidden) | `49f20fb0` — 5 files +832/-35 | ✅ |
+| Phase 5/6 citizen + e2e | Minimum notice, below-minimum exception flow (never silent), detail-page exception state, Vitest 26/26, build green, Playwright 7 journeys | `f171ea83` — 7 files +1,412/-2 | ✅ |
+| Phase 5/6 re-verify | backend Pint pass; PHPStan 5 pre-existing TextileCollectionResource; 46 textile routes; frontend ESLint 0 errors; Vitest 28/28; `npm run build` green | — | ✅ |
 
 ## 1. Current baseline
 
