@@ -327,10 +327,11 @@ A scheduled batch currently contains a zone, date/window, reference, and instruc
 
 ## 12. Immediate next action
 
-Run a manager/partner decision session for Phase 0, starting with these three questions:
+Run a partner/zone pilot before wider rollout:
 
-1. Should a drop-off booking require a reservation and QR/reference, or be walk-in?
-2. Who records receipt at a drop-off centre, and what proof is mandatory?
-3. Who is assigned to a pickup trip, and what must a field worker see/do at each stop?
+1. Configure a real partner-owned capacity rule for one zone and verify its minimum guidance, warning, exception, and audit flows.
+2. Reconcile the reporting dashboard and CSV export against collection records, receipts, media, and audit logs for a closed period.
+3. Exercise offline capture, session expiry, and recovery with field staff on supported mobile devices.
+4. Resolve the five pre-existing `TextileCollectionResource` PHPStan date-cast annotations before enabling CI for this branch.
 
-No Phase 1 schema, endpoint, or state implementation should begin until those answers are approved.
+Do not use the dashboard as a performance KPI until the data-quality indicator reports a baseline volume. Roll out one partner/zone at a time and preserve collection/media records in every rollback plan.
