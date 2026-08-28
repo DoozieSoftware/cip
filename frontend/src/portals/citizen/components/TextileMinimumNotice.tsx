@@ -53,37 +53,39 @@ export function TextileMinimumNotice({
 
   if (isDropoff) {
     return (
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800">
-        No minimum — drop off any amount during centre hours.
+      <div className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-3 text-xs leading-5 text-[var(--color-text-secondary)]">
+        <p className="font-medium text-[var(--color-ink)]">No minimum for drop-off</p>
+        <p className="mt-1">Take any amount to the centre — open during centre hours.</p>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-        <p className="font-medium">Minimum quantities for a collection route:</p>
-        <p className="mt-1">Loading this partner&apos;s guidance…</p>
+      <div className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-3 text-xs leading-5 text-[var(--color-text-secondary)]">
+        <p className="font-medium text-[var(--color-ink)]">How much is needed for a home pickup?</p>
+        <p className="mt-1">Checking what’s needed in your area…</p>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+      <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-700">
         <p role="alert" className="font-medium">
-          Could not load minimum guidance.
+          Could not check the minimum right now.
         </p>
-        <p className="mt-1 text-[11px] text-red-600">
-          Your request can still be submitted — it will be reviewed before scheduling.
+        <p className="mt-1 text-[11px] leading-4 text-red-600">
+          You can still send your request — a person will review it before scheduling. We never
+          reject silently.
         </p>
         {onRetry ? (
           <button
             type="button"
             onClick={onRetry}
-            className="mt-2 rounded-full border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-800"
+            className="mt-2 inline-flex min-h-11 items-center rounded-full border border-red-300 bg-white px-4 text-xs font-medium text-red-800"
           >
-            Retry
+            Try again
           </button>
         ) : null}
       </div>
@@ -97,11 +99,13 @@ export function TextileMinimumNotice({
 
   if (!hasMinimum) {
     return (
-      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-700">
-        <p className="font-medium">Minimum quantities for a collection route:</p>
+      <div className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-3 text-xs leading-5 text-[var(--color-text-secondary)]">
+        <p className="font-medium text-[var(--color-ink)]">How much is needed for a home pickup?</p>
         <p className="mt-1">
-          This partner has not configured a minimum. Your request will be reviewed before it is
-          scheduled.
+          No minimum in your area — send any amount. We will review and schedule.
+        </p>
+        <p className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">
+          We never reject silently — a person checks every request.
         </p>
       </div>
     );
@@ -116,38 +120,41 @@ export function TextileMinimumNotice({
 
   return (
     <div
-      className={`rounded-lg border p-3 text-xs ${belowMinimum ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-amber-200 bg-amber-50 text-amber-800'}`}
+      className={`rounded-lg border p-3 text-xs leading-5 ${belowMinimum ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'}`}
     >
-      <p className="font-medium">Minimum quantities for a collection route:</p>
+      <p className="font-medium text-[var(--color-ink)]">How much is needed for a home pickup?</p>
       <p className="mt-1">
-        This partner&apos;s guidance: {minText}.
-        {minimum.guidance_text
-          ? ` ${minimum.guidance_text}`
-          : ' Below-minimum requests can be reviewed as exceptions; they are never silently rejected.'}
+        In your area: <span className="font-semibold text-[var(--color-ink)]">{minText}</span> for a
+        pickup trip.
+        {minimum.guidance_text ? ` ${minimum.guidance_text}` : null}
       </p>
+      {!minimum.guidance_text ? (
+        <p className="mt-1 text-[11px] leading-4 text-[var(--color-text-secondary)]">
+          Fill bags or kg — either one is enough. For drop-off at a centre, any amount is OK.
+        </p>
+      ) : null}
       {belowMinimum ? (
         <div className="mt-3 rounded-md border border-amber-200 bg-white p-3">
-          <p className="text-xs font-medium text-amber-900">
-            Your estimate is below the partner minimum.
+          <p className="text-xs font-semibold text-amber-900">
+            You have less than the usual minimum — that is OK
           </p>
           <p className="mt-1 text-[11px] leading-4 text-[var(--color-text-secondary)]">
-            We never silently reject a below-minimum request. Submit your request and include a
-            short note — for example, high-value items, urgency, or a nearby pickup window — so a
-            human can approve an exception.
+            We never reject silently. Add a short note and a person will review. For example:
+            urgent, valuable clothes, or you can wait for the next nearby pickup.
           </p>
           {onRequestException ? (
             <button
               type="button"
               onClick={onRequestException}
-              className="mt-3 inline-flex min-h-9 items-center rounded-full border border-amber-600 bg-amber-600 px-4 text-xs font-medium text-white"
+              className="mt-3 inline-flex min-h-11 items-center rounded-full bg-[var(--color-ink)] px-5 text-xs font-medium text-white"
             >
-              Request exception
+              Add a short note for review
             </button>
           ) : null}
         </div>
       ) : (
-        <p className="mt-2 text-[11px] text-amber-700">
-          Your estimate meets the guidance. No exception is needed.
+        <p className="mt-2 text-[11px] text-[var(--color-text-secondary)]">
+          Your estimate meets the guidance. No extra note needed.
         </p>
       )}
     </div>

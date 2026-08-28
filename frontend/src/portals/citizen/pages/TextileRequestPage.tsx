@@ -379,7 +379,7 @@ export default function TextileRequestPage(): JSX.Element {
   return (
     <div className="mx-auto min-w-0 max-w-3xl space-y-6">
       <TextileOfflineBanner />
-      <header className="border-b border-[var(--color-border-faint)] pb-6">
+      <header className="border-b border-[var(--color-border-faint)] pb-5">
         <Link
           to="/citizen"
           className="inline-flex min-h-11 items-center gap-2 text-sm text-[var(--color-text-secondary)]"
@@ -396,43 +396,71 @@ export default function TextileRequestPage(): JSX.Element {
             </p>
             <h1 className="mt-1 text-3xl font-normal tracking-[-0.035em]">Request a collection</h1>
             <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-              Send items to a verified local partner for pickup or drop-off.
+              Pickup at home or drop-off at a centre — you choose.
+            </p>
+            <p className="mt-2 text-xs leading-5 text-[var(--color-text-secondary)]">
+              Every request is reviewed by a person. We never reject silently.
             </p>
           </div>
         </div>
+        <ol className="mt-4 flex gap-1.5 text-[11px]" aria-label="Steps">
+          <li className="flex-1 rounded-full bg-[var(--color-ink)] px-3 py-1.5 text-center font-medium text-white">
+            1. What to collect
+          </li>
+          <li className="flex-1 rounded-full bg-white px-3 py-1.5 text-center font-medium text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)]">
+            2. How much & where
+          </li>
+          <li className="flex-1 rounded-full bg-white px-3 py-1.5 text-center font-medium text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)]">
+            3. Photo & send
+          </li>
+        </ol>
       </header>
-      <section className="space-y-4 rounded-xl bg-white p-5 shadow-sm">
+      <section className="space-y-4 rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
+          Step 1 — What is it?
+        </p>
         <div>
           <label htmlFor="textile-title" className="text-sm font-medium">
-            Request title
+            Short title for your request
           </label>
+          <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+            Helps the team know what’s inside — you can keep it short.
+          </p>
           <input
             id="textile-title"
             value={title}
-            placeholder="e.g. Wardrobe cleanout"
+            placeholder="e.g. Old clothes from house shifting"
             onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 block min-h-11 w-full rounded-lg border border-[#d8d6cf] px-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            aria-describedby="textile-title-help"
+            className="mt-1 block min-h-11 w-full rounded-lg border border-[var(--color-border)] px-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
+          <p id="textile-title-help" className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">
+            At least 5 letters — e.g. “2 bags of old clothes” is fine.
+          </p>
         </div>
         <div>
           <label htmlFor="textile-notes" className="text-sm font-medium">
-            What should be collected?
+            What’s inside?{' '}
+            <span className="font-normal text-[var(--color-text-secondary)]">(optional)</span>
           </label>
           <textarea
             id="textile-notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            placeholder="For example: wearable clothes, bedsheets and curtains"
-            className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            placeholder="e.g. Wearable clothes, 2 bedsheets, some torn curtains for recycling"
+            className="mt-1 block w-full rounded-lg border border-[var(--color-border)] p-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
+          <p className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">
+            Torn or wearable — both OK. Just help the team handle it right.
+          </p>
         </div>
       </section>
-      <section className="space-y-3 rounded-xl bg-white p-5 shadow-sm">
+      <section className="space-y-3 rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm">
         <div>
-          <h2 className="text-sm font-medium">What are we collecting?</h2>
+          <h2 className="text-sm font-medium">What kind of material?</h2>
           <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
-            Choose the material type so we can route your request to the right partner.
+            Pick one — we’ll send it to the right local team. Tap the card.
           </p>
         </div>
         <div
@@ -447,7 +475,7 @@ export default function TextileRequestPage(): JSX.Element {
                 'flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border px-2 py-3 text-center text-sm min-h-11',
                 category === value
                   ? 'border-[var(--color-ink)] bg-[var(--color-surface-alt)] font-medium'
-                  : 'border-[#d8d6cf] bg-white',
+                  : 'border-[var(--color-border)] bg-white',
               )}
             >
               <input
@@ -489,7 +517,7 @@ export default function TextileRequestPage(): JSX.Element {
       {isPremises && details ? (
         <section
           aria-label="Availability"
-          className="rounded-xl border border-black/10 bg-white p-5"
+          className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm"
         >
           <h2 className="text-sm font-medium">Pickup availability</h2>
           {availability.isLoading ? (
@@ -528,7 +556,7 @@ export default function TextileRequestPage(): JSX.Element {
               {availability.data.windows.map((w) => (
                 <span
                   key={`${w.window_start}-${w.window_end}`}
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${w.available ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-zinc-100 text-zinc-500 border border-black/10 line-through'}`}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${w.available ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-zinc-100 text-zinc-500 border border-[var(--color-border-subtle)] line-through'}`}
                 >
                   {w.window_start}–{w.window_end}
                   {w.available ? '' : ' unavailable'}
@@ -548,7 +576,7 @@ export default function TextileRequestPage(): JSX.Element {
         </section>
       ) : null}
       {dropoffActive ? (
-        <section className="rounded-xl border border-black/10 bg-white p-5">
+        <section className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm">
           <h2 className="text-sm font-medium">Drop-off location</h2>
           <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
             Take your items to the collection point below. No pickup is arranged.
@@ -562,7 +590,7 @@ export default function TextileRequestPage(): JSX.Element {
           </div>
         </section>
       ) : (
-        <section className="rounded-xl border border-black/10 bg-white p-5">
+        <section className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm">
           <h2 className="text-sm font-medium">Pickup location</h2>
           <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
             Optional. Add your exact location so the collection team finds you easily.
@@ -612,27 +640,38 @@ export default function TextileRequestPage(): JSX.Element {
             <button
               type="button"
               onClick={captureLocation}
-              className="mt-3 inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-black/15 px-5 text-sm font-medium"
+              className="mt-3 inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] px-5 text-sm font-medium"
             >
               <IconMapPin className="h-4 w-4" stroke={1.6} /> Use current location
             </button>
           )}
         </section>
       )}
-      <section className="rounded-xl border border-black/10 bg-white p-5">
-        <h2 className="text-sm font-medium">Add a photo of your bags (optional)</h2>
+      <section className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm">
+        <h2 className="text-sm font-medium">
+          Add a photo of your bags{' '}
+          <span className="font-normal text-[var(--color-text-secondary)]">(optional)</span>
+        </h2>
         <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
           {dropoffActive
-            ? 'A photo helps centre staff recognise your bags. You can also add one later.'
-            : 'A photo helps the collection team identify your items. You can also add one later.'}
+            ? 'A photo helps centre staff recognise your bags. You can also add one later — not required to send.'
+            : 'A photo helps the team find and count your bags. You can also add one later — not required to send.'}
         </p>
+        <div className="mt-3 rounded-xl border border-black/5 bg-[var(--color-surface-alt)] p-3">
+          <p className="text-xs font-medium text-[var(--color-ink)]">Tips for a good photo</p>
+          <ul className="mt-1.5 list-disc space-y-1 pl-4 text-xs leading-4 text-[var(--color-text-secondary)]">
+            <li>Put all bags together in daylight</li>
+            <li>One clear photo is enough</li>
+            <li>Max 10 MB — JPEG, PNG or WebP</li>
+          </ul>
+        </div>
         {photoPreview ? (
           <div className="mt-3 inline-block">
             <div className="relative">
               <img
                 src={photoPreview}
                 alt="Preview of your bags"
-                className="h-40 rounded-lg border border-black/10 object-cover"
+                className="h-40 rounded-lg border border-[var(--color-border-subtle)] object-cover"
               />
               <button
                 type="button"
@@ -661,7 +700,7 @@ export default function TextileRequestPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => setShowCamera(false)}
-                  className="mt-2 inline-flex min-h-10 items-center rounded-full border border-black/15 px-5 text-sm font-medium"
+                  className="mt-2 inline-flex min-h-10 items-center rounded-full border border-[var(--color-border)] px-5 text-sm font-medium"
                 >
                   Cancel
                 </button>
@@ -671,14 +710,14 @@ export default function TextileRequestPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => setShowCamera(true)}
-                  className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-black/15 px-5 text-sm font-medium"
+                  className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-[var(--color-border)] px-5 text-sm font-medium"
                 >
                   <IconCamera className="h-4 w-4" stroke={1.6} />
                   Take photo
                 </button>
                 <label
                   htmlFor="textile-photo-input"
-                  className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-black/15 px-5 text-sm font-medium"
+                  className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-[var(--color-border)] px-5 text-sm font-medium"
                 >
                   <IconPhoto className="h-4 w-4" stroke={1.6} />
                   Choose photo
@@ -750,16 +789,20 @@ export default function TextileRequestPage(): JSX.Element {
               : 'Send pickup request'}
       </button>
       {belowMinimum && allowExceptions && !dropoffActive ? (
-        <div className="rounded-xl border border-amber-200 bg-white p-4">
+        <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
           {showExceptionForm ? (
             <div className="space-y-3">
-              <label htmlFor="textile-exception-reason" className="block text-sm font-medium">
-                Exception reason
+              <label
+                htmlFor="textile-exception-reason"
+                className="block text-sm font-medium text-[var(--color-ink)]"
+              >
+                Why should we collect this?{' '}
+                <span className="font-normal text-[var(--color-text-secondary)]">(short note)</span>
               </label>
               <p className="text-xs leading-5 text-[var(--color-text-secondary)]">
-                Tell the partner why this request should be collected despite being below the
-                minimum. For example: high-value materials, urgent clearance, or a nearby pickup
-                window.
+                You have less than the usual minimum. A short note helps the local team decide — for
+                example: urgent hostel clearance, valuable clothes, or you can wait for the next
+                nearby pickup.
               </p>
               <textarea
                 id="textile-exception-reason"
@@ -769,15 +812,15 @@ export default function TextileRequestPage(): JSX.Element {
                   if (exceptionError) setExceptionError(null);
                 }}
                 rows={3}
-                placeholder="We have 2 bags of wearable clothes for urgent hostel clearance; willing to combine with nearby pickup."
-                className="block w-full rounded-lg border border-[#d8d6cf] p-3 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+                placeholder="e.g. 2 bags of wearable clothes, hostel is closing this week. Can wait for next pickup nearby."
+                className="block w-full rounded-xl border border-[var(--color-border)] p-3 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
                 aria-describedby="textile-exception-hint"
               />
               <p
                 id="textile-exception-hint"
                 className="text-[11px] text-[var(--color-text-tertiary)]"
               >
-                At least 10 characters. The partner will review this note before approving.
+                At least 10 letters. We never reject silently — a person reviews this.
               </p>
               {exceptionError ? (
                 <p role="alert" className="text-xs font-medium text-red-600">
@@ -794,9 +837,9 @@ export default function TextileRequestPage(): JSX.Element {
                     isSubmitting
                   }
                   onClick={() => void submitWithException()}
-                  className="inline-flex min-h-11 items-center rounded-full bg-amber-600 px-5 text-sm font-medium text-white disabled:opacity-40"
+                  className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white disabled:opacity-40"
                 >
-                  {isExceptionSubmitting ? 'Submitting…' : 'Submit with exception note'}
+                  {isExceptionSubmitting ? 'Submitting…' : 'Send with note'}
                 </button>
                 <button
                   type="button"
@@ -804,32 +847,32 @@ export default function TextileRequestPage(): JSX.Element {
                     setShowExceptionForm(false);
                     setExceptionError(null);
                   }}
-                  className="inline-flex min-h-11 items-center rounded-full border border-black/15 bg-white px-4 text-sm font-medium"
+                  className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium"
                 >
                   Cancel
                 </button>
               </div>
-              <p className="text-[11px] text-[var(--color-text-tertiary)]">
-                Submitting creates the collection request first, then attaches your exception note
-                with an idempotency key. Nothing is silently rejected.
+              <p className="text-[11px] leading-4 text-[var(--color-text-tertiary)]">
+                Your request is sent first, then the note is attached. You will be notified when the
+                team responds.
               </p>
             </div>
           ) : (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-sm font-medium text-amber-900">Below the partner minimum</h3>
-                <p className="mt-1 max-w-prose text-xs leading-5 text-[var(--color-text-secondary)]">
-                  This request is below the partner&apos;s recommended minimum, but it will not be
-                  silently rejected. Add a short note and we will attach it as an exception for
-                  human review.
+                <h3 className="text-sm font-semibold text-[var(--color-ink)]">
+                  Below the usual minimum
+                </h3>
+                <p className="mt-1 max-w-prose text-sm leading-5 text-[var(--color-text-secondary)]">
+                  That is OK. Add a short note and a person will review. We never reject silently.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowExceptionForm(true)}
-                className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-amber-600 bg-white px-5 text-sm font-medium text-amber-700"
+                className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-black/15 bg-white px-5 text-sm font-medium"
               >
-                Request exception
+                Add a short note
               </button>
             </div>
           )}

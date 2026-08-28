@@ -30,29 +30,25 @@ export function CentreCard({
   const muted = state === 'muted';
   return (
     <div
-      className={`rounded-lg border p-4 ${muted ? 'border-black/10 bg-[#faf9f6]' : 'border-blue-200 bg-blue-50'}`}
+      className={`rounded-2xl border bg-white p-5 shadow-sm ${muted ? 'border-black/10 bg-[#faf9f6]' : 'border-black/10'}`}
     >
-      <p
-        className={`text-xs font-medium ${muted ? 'text-[var(--color-text-secondary)]' : 'text-blue-800'}`}
-      >
-        📍 Drop-off centre
+      <p className="text-xs font-medium tracking-wide text-[var(--color-text-secondary)]">
+        Drop-off centre
       </p>
-      <h3
-        className={`mt-0.5 text-base font-semibold ${muted ? 'text-[var(--color-ink)]' : 'text-blue-900'}`}
-      >
-        {name}
-      </h3>
-      <address className="mt-0.5 not-italic text-sm text-blue-700">{address}</address>
+      <h3 className="mt-1 text-base font-semibold text-[var(--color-ink)]">{name}</h3>
+      <address className="mt-1 not-italic text-sm leading-5 text-[var(--color-text-secondary)]">
+        {address}
+      </address>
       <p className="mt-2 flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
         <IconClock className="h-4 w-4" stroke={1.6} />
         {hours ? hours : 'Hours not published'}
       </p>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-2">
         <a
           href={googleMapsUrl({ name, address, center: center ?? null })}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-blue-300 bg-white px-5 text-sm font-medium text-blue-700 hover:bg-blue-50"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white hover:opacity-90"
         >
           <IconMapPin className="h-4 w-4" stroke={1.6} />
           Open in Google Maps
@@ -70,7 +66,7 @@ export function CentreCard({
         <div
           role="img"
           aria-label="Map showing the collection point area"
-          className="mt-3 overflow-hidden rounded-lg border border-blue-200"
+          className="mt-4 overflow-hidden rounded-xl border border-black/10"
           style={{ height: 190 }}
         >
           <MapContainer
@@ -95,7 +91,7 @@ export function CentreCard({
 
 export function CentreCardSkeleton(): JSX.Element {
   return (
-    <div className="animate-pulse rounded-lg border border-black/10 bg-white p-4">
+    <div className="animate-pulse rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
       <div className="h-3 w-24 rounded bg-black/10" />
       <div className="mt-2 h-4 w-40 rounded bg-black/10" />
       <div className="mt-1 h-3 w-64 rounded bg-black/10" />
