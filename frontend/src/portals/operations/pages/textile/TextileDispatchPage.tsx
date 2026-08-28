@@ -1,19 +1,25 @@
 import { useMemo, useState, type JSX } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { IconAlertTriangle, IconCalendar, IconNavigation, IconPhone } from '@tabler/icons-react';
 import { ApiError } from '../../../../shared/api/errors';
 import { readSession } from '../../../../auth/storage';
 import { ConfirmActionDialog } from '../../components/ConfirmActionDialog';
 import {
   collectTextileWithProof,
+  evaluateBatchCapacity,
   recordTextileOutcome,
   type TextileCollectionListItem,
 } from '../../api/textileApi';
+import { CapacityWarningBanner } from '../../components/CapacityWarningBanner';
+import { SuggestedStopsHint } from '../../components/SuggestedStopsHint';
 import { getQueue } from '../../../citizen/offline/queue';
 import { requestBackgroundSync } from '../../../citizen/offline/swBridge';
 import { TextileFieldOfflineBanner } from '../../components/TextileFieldOfflineBanner';
 import { getOpsQueue } from '../../offline/queue';
-import { registerTextileOfflineRetry, type CollectPayload } from '../../offline/textileOfflineQueue';
+import {
+  registerTextileOfflineRetry,
+  type CollectPayload,
+} from '../../offline/textileOfflineQueue';
 import { OfflineBanner } from '../../offline/OfflineBanner';
 import { useAuth } from '../../../../auth/AuthContext';
 import { useOpsQueue } from '../../offline/useOpsQueue';
@@ -21,7 +27,12 @@ import { useOfflineQueue } from './hooks/useOfflineQueue';
 
 function isOfflineError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message.toLowerCase() : '';
-  if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('load failed')) return true;
+  if (
+    msg.includes('failed to fetch') ||
+    msg.includes('networkerror') ||
+    msg.includes('load failed')
+  )
+    return true;
   const anyErr = err as { status?: number; code?: string };
   if (anyErr?.status === 0 || anyErr?.code === 'OFFLINE') return true;
   if (anyErr?.status !== undefined && anyErr.status >= 400) return false;
@@ -59,10 +70,59 @@ function mapsHref(address: string) {
 }
 
 function newIdempotencyKey(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
+    return crypto.randomUUID();
   return `collect-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
-function isNetworkFailure(err: unknown): boolean { return !(err instanceof ApiError); }
+function isNetworkFailure(err: unknown): boolean {
+  return !(err instanceof ApiError);
+}
+
+function BatchCapacityNotice({
+  batchId,
+  departmentId,
+  items,
+}: {
+  batchId: string;
+  departmentId?: string;
+  items: TextileCollectionListItem[];
+}): JSX.Element | null {
+  const evaluation = useQuery({
+    queryKey: ['textile', 'batch-capacity', batchId, departmentId],
+    queryFn: () => evaluateBatchCapacity(batchId, departmentId),
+    enabled: !!departmentId && !!batchId && batchId !== 'unassigned',
+    staleTime: 30_000,
+    retry: false,
+  });
+
+  if (batchId === 'unassigned' || !departmentId) return null;
+
+  const data = evaluation.data;
+  const hasCapacityData = !!data && (data.blockers.length > 0 || data.warnings.length > 0);
+  const showHint = !!data && data.suggested_order.length > 1;
+
+  if (!hasCapacityData && !showHint && !evaluation.isLoading && !evaluation.isError) return null;
+
+  return (
+    <div className="space-y-2 border-b border-black/5 bg-[var(--color-surface-alt)] px-4 py-3">
+      <CapacityWarningBanner
+        evaluation={data ?? undefined}
+        isLoading={evaluation.isLoading}
+        isError={evaluation.isError}
+        errorMessage={evaluation.error instanceof Error ? evaluation.error.message : undefined}
+        onRetry={() => void evaluation.refetch()}
+      />
+      {showHint && data ? (
+        <SuggestedStopsHint
+          suggestedOrder={data.suggested_order}
+          currentOrder={items.map((it) => it.id)}
+          items={items}
+          note="Suggested stop order groups nearby addresses to shorten the route. Staff confirms before driving — advisory only."
+        />
+      ) : null}
+    </div>
+  );
+}
 
 export default function TextileDispatchPage(): JSX.Element {
   const desk = useDesk();
@@ -87,7 +147,8 @@ export default function TextileDispatchPage(): JSX.Element {
     zoneId: zoneId || undefined,
     categoryId: categoryId || undefined,
     collectionMethod: 'premises',
-    autoRefresh: expandedId === null && missedTarget === null && !assignmentOpen && overrideTarget === null,
+    autoRefresh:
+      expandedId === null && missedTarget === null && !assignmentOpen && overrideTarget === null,
     enabled: desk.ready && desk.isDrLinen,
     departmentId: desk.departmentId,
   });
@@ -148,7 +209,9 @@ export default function TextileDispatchPage(): JSX.Element {
           },
         });
         void requestBackgroundSync();
-        setServerError(`Missed pickup saved offline — pending upload. Will retry automatically. (id ${idempotencyKey.slice(0, 8)}…)`);
+        setServerError(
+          `Missed pickup saved offline — pending upload. Will retry automatically. (id ${idempotencyKey.slice(0, 8)}…)`,
+        );
         setMissedTarget(null);
         return;
       }
@@ -165,7 +228,17 @@ export default function TextileDispatchPage(): JSX.Element {
     setQueuedNotice(null);
     const idempotencyKey = newIdempotencyKey();
     try {
-      await collectTextileWithProof(item.id, { actual_bags: p.bags, actual_weight_kg: p.weight, photo: p.file, reason: p.reason, idempotencyKey }, desk.departmentId);
+      await collectTextileWithProof(
+        item.id,
+        {
+          actual_bags: p.bags,
+          actual_weight_kg: p.weight,
+          photo: p.file,
+          reason: p.reason,
+          idempotencyKey,
+        },
+        desk.departmentId,
+      );
       setExpandedId(null);
       void queue.refetch();
     } catch (e) {
@@ -184,7 +257,11 @@ export default function TextileDispatchPage(): JSX.Element {
           departmentId: desk.departmentId,
           reference: item.reference,
         };
-        await getOpsQueue(user?.id ?? null).enqueue({ kind: 'textile.collect', payload, id: idempotencyKey });
+        await getOpsQueue(user?.id ?? null).enqueue({
+          kind: 'textile.collect',
+          payload,
+          id: idempotencyKey,
+        });
         setQueuedNotice(`Queued offline — ${item.reference} will upload when you are back online.`);
         setExpandedId(null);
         return;
@@ -248,10 +325,25 @@ export default function TextileDispatchPage(): JSX.Element {
       <OfflineBanner />
       <div className="mb-4">
         <TextileFieldOfflineBanner />
-        {queuedNotice ? <p role="status" className="mt-2 rounded-lg bg-sky-50 px-4 py-2 text-xs text-sky-800">{queuedNotice}</p> : null}
-        {opsQueue.pending.length > 0 ? <p aria-label={`${opsQueue.pending.length} pending uploads`} className="mt-2 text-xs text-sky-700">{opsQueue.pending.length} pending upload{opsQueue.pending.length === 1 ? '' : 's'} queued for this account — retry is automatic and idempotent.</p> : null}
+        {queuedNotice ? (
+          <p role="status" className="mt-2 rounded-lg bg-sky-50 px-4 py-2 text-xs text-sky-800">
+            {queuedNotice}
+          </p>
+        ) : null}
+        {opsQueue.pending.length > 0 ? (
+          <p
+            aria-label={`${opsQueue.pending.length} pending uploads`}
+            className="mt-2 text-xs text-sky-700"
+          >
+            {opsQueue.pending.length} pending upload{opsQueue.pending.length === 1 ? '' : 's'}{' '}
+            queued for this account — retry is automatic and idempotent.
+          </p>
+        ) : null}
         {serverError ? (
-          <p role="alert" className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <p
+            role="alert"
+            className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+          >
             {serverError}
           </p>
         ) : null}
@@ -273,13 +365,20 @@ export default function TextileDispatchPage(): JSX.Element {
             const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
             const progress = trip.items[0]?.batch?.progress ?? getTripProgress(trip.items);
             const frozen = isRescheduleFrozen(batchStatus);
-            const hasRescheduledStops = trip.items.some((i) => !!i.reschedule_reason || !!i.previous_scheduled_date);
+            const hasRescheduledStops = trip.items.some(
+              (i) => !!i.reschedule_reason || !!i.previous_scheduled_date,
+            );
             const hasUnavailableStops = trip.items.some((i) => !!i.unavailable_reason);
             return (
               <section
                 key={trip.id}
                 className="overflow-hidden rounded-xl border border-black/10 bg-white"
               >
+                <BatchCapacityNotice
+                  batchId={trip.id}
+                  departmentId={desk.departmentId}
+                  items={trip.items}
+                />
                 <header className="flex flex-col gap-2 border-b border-black/5 bg-[var(--color-surface-alt)] px-4 py-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <IconCalendar className="h-4 w-4 text-[var(--color-text-tertiary)]" />
@@ -318,17 +417,21 @@ export default function TextileDispatchPage(): JSX.Element {
                     pending={progress.pending}
                     total={progress.total}
                   />
-                  {(hasRescheduledStops || hasUnavailableStops) ? (
+                  {hasRescheduledStops || hasUnavailableStops ? (
                     <p className="text-[11px] text-[var(--color-text-secondary)]">
                       {hasRescheduledStops ? 'Rescheduled stops show previous slot and why. ' : ''}
-                      {hasUnavailableStops ? 'Unavailable reason shown per stop — choose fallback or override.' : ''}
+                      {hasUnavailableStops
+                        ? 'Unavailable reason shown per stop — choose fallback or override.'
+                        : ''}
                     </p>
                   ) : null}
                 </header>
                 <ul className="divide-y divide-black/5">
                   {trip.items.map((item, idx) => {
                     const evidencePhoto = item.photos?.find((p) => p.role === 'evidence');
-                    const queued = offline.items.find((q) => q.collectionId === item.id && q.status !== 'completed');
+                    const queued = offline.items.find(
+                      (q) => q.collectionId === item.id && q.status !== 'completed',
+                    );
                     const prev = formatPreviousWindow(
                       item.previous_scheduled_date,
                       item.previous_window_start,
@@ -360,7 +463,10 @@ export default function TextileDispatchPage(): JSX.Element {
                               ) : null}
                               <CategoryBadge category={item.category} />
                               {item.reschedule_reason || prev ? (
-                                <RescheduleBadge reason={item.reschedule_reason ?? null} previous={prev} />
+                                <RescheduleBadge
+                                  reason={item.reschedule_reason ?? null}
+                                  previous={prev}
+                                />
                               ) : null}
                               {item.unavailable_reason ? (
                                 <UnavailableBadge reason={item.unavailable_reason} />
@@ -491,14 +597,22 @@ export default function TextileDispatchPage(): JSX.Element {
                 // For now, treat as missed+reschedule cue and close dialog
                 setServerError(null);
                 void outcome
-                  .mutateAsync({ id: overrideTarget.id, kind: 'missed', reason: `Override: ${reason}` })
+                  .mutateAsync({
+                    id: overrideTarget.id,
+                    kind: 'missed',
+                    reason: `Override: ${reason}`,
+                  })
                   .catch(() => setServerError('Override failed — check permissions.'));
               }
             }}
           />
           {overrideTarget ? (
             <div className="mx-auto max-w-xl">
-              <RescheduleOverrideNotice frozen={true} reason={overrideReason} onReasonChange={setOverrideReason} />
+              <RescheduleOverrideNotice
+                frozen={true}
+                reason={overrideReason}
+                onReasonChange={setOverrideReason}
+              />
             </div>
           ) : null}
         </div>

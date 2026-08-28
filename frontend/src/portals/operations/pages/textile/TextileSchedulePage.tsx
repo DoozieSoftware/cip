@@ -1,7 +1,18 @@
 import { useMemo, useState, type JSX } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { IconAlertTriangle, IconMapPin } from '@tabler/icons-react';
-import { assignTextileTrip, scheduleTextileBatch, type TextileCollectionListItem } from '../../api/textileApi';
+import {
+  assignTextileTrip,
+  fetchCapacityRules,
+  requestCapacityException,
+  scheduleTextileBatch,
+  type TextileCapacityEvaluation,
+  type TextileCapacityRule,
+  type TextileCollectionListItem,
+} from '../../api/textileApi';
+import { ConfirmActionDialog } from '../../components/ConfirmActionDialog';
+import { CapacityWarningBanner } from '../../components/CapacityWarningBanner';
+import { SuggestedStopsHint } from '../../components/SuggestedStopsHint';
 import {
   CategoryBadge,
   CategoryFilter,
@@ -22,6 +33,101 @@ import {
   formatVolume,
 } from './shared';
 
+function buildProspectiveEvaluation(
+  items: TextileCollectionListItem[],
+  rule: TextileCapacityRule | null,
+): TextileCapacityEvaluation {
+  const totalBags = items.reduce((s, r) => s + (r.estimated_bags ?? 0), 0);
+  const totalWeight = items.reduce((s, r) => s + (r.estimated_weight_kg ?? 0), 0);
+  const stops = items.length;
+  const categories = new Set(items.map((r) => r.category).filter(Boolean));
+
+  const warnings: TextileCapacityEvaluation['warnings'] = [];
+  const blockers: TextileCapacityEvaluation['blockers'] = [];
+
+  if (rule) {
+    if (rule.max_bags !== null && totalBags > rule.max_bags) {
+      blockers.push({
+        code: 'exceeds_max_bags',
+        message: `Trip has ${totalBags} bags but zone limit is ${rule.max_bags} bags for this day. Remove stops or request a capacity override.`,
+      });
+    } else if (rule.max_bags !== null && totalBags >= Math.ceil(rule.max_bags * 0.85)) {
+      warnings.push({
+        code: 'near_max_bags',
+        message: `Trip has ${totalBags} bags — near the zone limit of ${rule.max_bags} bags (${Math.round((totalBags / rule.max_bags) * 100)}% of capacity).`,
+        severity: 'amber',
+      });
+    }
+
+    if (rule.max_weight_kg !== null && totalWeight > rule.max_weight_kg) {
+      blockers.push({
+        code: 'exceeds_max_weight',
+        message: `Trip weight ${totalWeight.toFixed(1)} kg exceeds zone limit ${rule.max_weight_kg} kg. Adjust load or request an override.`,
+      });
+    } else if (rule.max_weight_kg !== null && totalWeight >= rule.max_weight_kg * 0.85) {
+      warnings.push({
+        code: 'near_max_weight',
+        message: `Trip weight ${totalWeight.toFixed(1)} kg is near the zone limit ${rule.max_weight_kg} kg.`,
+        severity: 'amber',
+      });
+    }
+
+    if (rule.max_stops !== null && stops > rule.max_stops) {
+      blockers.push({
+        code: 'exceeds_max_stops',
+        message: `Trip has ${stops} stops but limit is ${rule.max_stops}. Split the trip or request an override.`,
+      });
+    }
+
+    if (Array.isArray(rule.category_allowlist) && rule.category_allowlist.length > 0) {
+      const allowed = rule.category_allowlist.filter((c): c is string => typeof c === 'string');
+      const incompatible = [...categories].filter((cat) => !allowed.includes(cat));
+      if (incompatible.length > 0) {
+        blockers.push({
+          code: 'incompatible_category',
+          message: `Trip mixes categories not allowed together for this zone: ${incompatible.join(', ')}. Review vehicle/material requirements.`,
+        });
+      }
+    }
+
+    const belowMinBags = rule.min_bags !== null && totalBags < rule.min_bags && totalBags > 0;
+    const belowMinWeight =
+      rule.min_weight_kg !== null && totalWeight < rule.min_weight_kg && totalWeight > 0;
+    if (belowMinBags || belowMinWeight) {
+      const parts: string[] = [];
+      if (belowMinBags) parts.push(`${totalBags} bags below minimum ${rule.min_bags}`);
+      if (belowMinWeight)
+        parts.push(`${totalWeight.toFixed(1)} kg below minimum ${rule.min_weight_kg} kg`);
+      const guidance = rule.guidance_text ? ` ${rule.guidance_text}` : '';
+      warnings.push({
+        code: 'below_minimum',
+        message: `Trip is ${parts.join(' and ')}.${guidance} An approved exception is required to proceed.`,
+        severity: 'amber',
+      });
+    }
+  }
+
+  return {
+    ok: blockers.length === 0,
+    warnings,
+    blockers,
+    totals: { bags: totalBags, weight_kg: Number(totalWeight.toFixed(2)), stops },
+    effective_rule: rule
+      ? {
+          id: rule.id,
+          max_bags: rule.max_bags,
+          max_weight_kg: rule.max_weight_kg,
+          max_stops: rule.max_stops,
+          min_bags: rule.min_bags,
+          min_weight_kg: rule.min_weight_kg,
+          guidance_text: rule.guidance_text,
+          category_allowlist: rule.category_allowlist,
+        }
+      : null,
+    suggested_order: [],
+  };
+}
+
 export default function TextileSchedulePage(): JSX.Element {
   const desk = useDesk();
   const [search, setSearch] = useState('');
@@ -39,6 +145,9 @@ export default function TextileSchedulePage(): JSX.Element {
   const [vehicleLabel, setVehicleLabel] = useState('');
   const [instructions, setInstructions] = useState('');
   const [overrideReason, setOverrideReason] = useState('');
+  const [exceptionSuccess, setExceptionSuccess] = useState<string | null>(null);
+  const [exceptionError, setExceptionError] = useState<string | null>(null);
+  const [showExceptionDialog, setShowExceptionDialog] = useState(false);
 
   const queue = useTextileQueue({
     status: 'ready_to_group',
@@ -78,6 +187,48 @@ export default function TextileSchedulePage(): JSX.Element {
   const selectedZoneIds = new Set(selectedItems.map((r) => r.service_zone?.id).filter(Boolean));
   const lockedZoneId = selectedZoneIds.size === 1 ? ([...selectedZoneIds][0] ?? null) : null;
 
+  const capacityRulesQuery = useQuery({
+    queryKey: ['textile', 'capacity-rules', desk.departmentId],
+    queryFn: () => fetchCapacityRules(desk.departmentId),
+    enabled: desk.ready && desk.isDrLinen && selected.length > 0 && !!lockedZoneId,
+    staleTime: 60_000,
+  });
+
+  const prospectiveEvaluation = useMemo(() => {
+    if (!lockedZoneId || selectedItems.length === 0) return null;
+    if (capacityRulesQuery.isLoading || capacityRulesQuery.isError) return null;
+    const rules = capacityRulesQuery.data ?? [];
+    // Effective rule: match zone; backend picks most recent covering date/day. Approximate with most recent updated rule for zone.
+    const ruleForZone =
+      rules
+        .filter((r) => r.service_zone_id === lockedZoneId)
+        .sort((a, b) => {
+          const ta = a.service_zone?.name ?? '';
+          const tb = b.service_zone?.name ?? '';
+          return tb.localeCompare(ta);
+        })[0] ?? null;
+    // Prefer the first matching rule; if multiple, the backend would pick last updated_at desc, we approximate by first.
+    // If no rule for zone, treat as no limits.
+    return buildProspectiveEvaluation(selectedItems, ruleForZone);
+  }, [
+    lockedZoneId,
+    selectedItems,
+    capacityRulesQuery.data,
+    capacityRulesQuery.isLoading,
+    capacityRulesQuery.isError,
+  ]);
+
+  const suggestedOrderForSelection = useMemo(() => {
+    if (selectedItems.length < 2) return [];
+    // Suggest ordering by proximity heuristic: sort by pickup_address alphabetically as stable deterministic suggestion.
+    // This mirrors the backend's distance-based suggestion fallback (no geo) which sorts by bags; we use address for readability.
+    return [...selectedItems]
+      .sort((a, b) => a.pickup_address.localeCompare(b.pickup_address))
+      .map((r) => r.id);
+  }, [selectedItems]);
+
+  const showSuggestedHint = selected.length >= 2 && suggestedOrderForSelection.length > 1;
+
   // Phase 3: derive unavailable/rescheduled signals from scheduled queue + missed buffer
   const unavailableDates = useMemo(() => {
     const dates = new Set<string>();
@@ -88,10 +239,64 @@ export default function TextileSchedulePage(): JSX.Element {
     return [...dates].sort();
   }, [rows]);
   const hasUnavailableItems = rows.some((r) => !!r.unavailable_reason);
-  const hasRescheduledItems = rows.some((r) => !!r.reschedule_reason || !!r.previous_scheduled_date);
+  const hasRescheduledItems = rows.some(
+    (r) => !!r.reschedule_reason || !!r.previous_scheduled_date,
+  );
   const frozen = selectedItems.some((r) => isRescheduleFrozen(r.batch?.status));
-  const canSchedule = selected.length > 0 && selectedZoneIds.size === 1 && date !== '' && (!frozen || overrideReason.trim().length >= 5);
+  const hasCapacityBlockers = (prospectiveEvaluation?.blockers.length ?? 0) > 0;
+  const hasCapacityWarnings = (prospectiveEvaluation?.warnings.length ?? 0) > 0;
+  const canSchedule =
+    selected.length > 0 &&
+    selectedZoneIds.size === 1 &&
+    date !== '' &&
+    (!frozen || overrideReason.trim().length >= 5) &&
+    !hasCapacityBlockers;
+  const canScheduleDespiteWarnings =
+    selected.length > 0 &&
+    selectedZoneIds.size === 1 &&
+    date !== '' &&
+    hasCapacityWarnings &&
+    !hasCapacityBlockers;
   const requestedSlotUnavailable = date !== '' && unavailableDates.includes(date);
+
+  const exceptionMutation = useMutation({
+    mutationFn: async (reason: string) => {
+      const target = selectedItems[0];
+      if (!target) throw new Error('Select at least one request');
+      const firstIssue =
+        prospectiveEvaluation?.blockers[0]?.code ??
+        prospectiveEvaluation?.warnings[0]?.code ??
+        'capacity_override';
+      const codeMap: Record<string, string> = {
+        exceeds_max_bags: 'capacity_override',
+        exceeds_max_weight: 'capacity_override',
+        exceeds_max_stops: 'capacity_override',
+        incompatible_category: 'vehicle_mismatch',
+        below_minimum: 'below_minimum',
+        near_max_bags: 'capacity_override',
+        near_max_weight: 'capacity_override',
+      };
+      const reason_code = codeMap[firstIssue] ?? 'capacity_override';
+      return requestCapacityException({
+        collectionId: target.id,
+        reason,
+        reason_code,
+        department_id: desk.departmentId,
+      });
+    },
+    onSuccess: () => {
+      setExceptionSuccess(
+        'Exception request submitted — a partner approver must decide before this policy is overridden. Track it on the Capacity page.',
+      );
+      setExceptionError(null);
+      setShowExceptionDialog(false);
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Failed to request exception';
+      setExceptionError(msg);
+      setExceptionSuccess(null);
+    },
+  });
 
   const schedule = useMutation({
     mutationFn: async () => {
@@ -135,6 +340,8 @@ export default function TextileSchedulePage(): JSX.Element {
       setInstructions('');
       setOverrideReason('');
       setScheduleError(false);
+      setExceptionSuccess(null);
+      setExceptionError(null);
       void queue.refetch();
     },
     onError: () => setScheduleError(true),
@@ -181,7 +388,7 @@ export default function TextileSchedulePage(): JSX.Element {
       >
         <div className="space-y-4">
           {/* Phase 3: surface why slots are unavailable and why items were rescheduled */}
-          {(hasUnavailableItems || hasRescheduledItems || unavailableDates.length > 0) ? (
+          {hasUnavailableItems || hasRescheduledItems || unavailableDates.length > 0 ? (
             <UnavailableBanner
               unavailableDates={unavailableDates}
               reason={
@@ -209,7 +416,12 @@ export default function TextileSchedulePage(): JSX.Element {
                   </p>
                   {selectedItems.some((r) => r.reschedule_reason || r.previous_scheduled_date) ? (
                     <p className="mt-1 text-xs text-amber-800">
-                      {selectedItems.filter((r) => r.reschedule_reason || r.previous_scheduled_date).length} rescheduled — previous slot shown per request below.
+                      {
+                        selectedItems.filter(
+                          (r) => r.reschedule_reason || r.previous_scheduled_date,
+                        ).length
+                      }{' '}
+                      rescheduled — previous slot shown per request below.
                     </p>
                   ) : null}
                 </div>
@@ -257,6 +469,8 @@ export default function TextileSchedulePage(): JSX.Element {
                       setSelected([]);
                       setManifestOrder([]);
                       setOverrideReason('');
+                      setExceptionSuccess(null);
+                      setExceptionError(null);
                     }}
                     className="min-h-10 rounded-full border border-black/15 bg-white px-4 text-sm"
                   >
@@ -264,16 +478,101 @@ export default function TextileSchedulePage(): JSX.Element {
                   </button>
                 </div>
               </div>
+
+              {/* Capacity evaluation before partner confirms a batch */}
+              <div className="mt-4 space-y-3">
+                {capacityRulesQuery.isLoading ? (
+                  <div
+                    role="status"
+                    className="flex items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3 text-xs text-[var(--color-text-secondary)]"
+                  >
+                    Checking capacity…
+                  </div>
+                ) : null}
+                {capacityRulesQuery.isError ? (
+                  <div
+                    role="alert"
+                    className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800"
+                  >
+                    Could not load capacity rules — trip checks are unavailable.{' '}
+                    <button
+                      type="button"
+                      onClick={() => void capacityRulesQuery.refetch()}
+                      className="ml-2 underline"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : null}
+                {prospectiveEvaluation ? (
+                  <CapacityWarningBanner
+                    evaluation={prospectiveEvaluation}
+                    onRequestException={() => setShowExceptionDialog(true)}
+                    isRequestingException={exceptionMutation.isPending}
+                    requestExceptionLabel={
+                      hasCapacityBlockers
+                        ? 'Request exception for blocked trip'
+                        : 'Request exception'
+                    }
+                  />
+                ) : null}
+                {hasCapacityBlockers ? (
+                  <p
+                    role="alert"
+                    className="flex items-center gap-1.5 text-xs font-medium text-rose-700"
+                  >
+                    <IconAlertTriangle className="h-3.5 w-3.5" />
+                    Scheduling is blocked by capacity limits above. Request an approved exception or
+                    reduce the load before confirming.
+                  </p>
+                ) : canScheduleDespiteWarnings ? (
+                  <p role="status" className="text-xs text-amber-700">
+                    Warnings above require review, but you may still schedule — or request an
+                    exception so a partner approver can audit the override.
+                  </p>
+                ) : null}
+                {exceptionSuccess ? (
+                  <p
+                    role="status"
+                    className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800"
+                  >
+                    {exceptionSuccess}
+                  </p>
+                ) : null}
+                {exceptionError ? (
+                  <p
+                    role="alert"
+                    className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700"
+                  >
+                    {exceptionError}
+                  </p>
+                ) : null}
+                {showSuggestedHint ? (
+                  <SuggestedStopsHint
+                    suggestedOrder={suggestedOrderForSelection}
+                    currentOrder={orderedSelected.length ? orderedSelected : selected}
+                    items={selectedItems}
+                    note="Suggested grouping keeps the same zone together; ordering sorts by address to shorten driving. Apply and then confirm the manifest order."
+                    onApply={() => setManifestOrder(suggestedOrderForSelection)}
+                  />
+                ) : null}
+              </div>
+
               {/* Phase 3: frozen reschedule override */}
               {frozen ? (
                 <div className="mt-3">
-                  <RescheduleOverrideNotice frozen={frozen} reason={overrideReason} onReasonChange={setOverrideReason} />
+                  <RescheduleOverrideNotice
+                    frozen={frozen}
+                    reason={overrideReason}
+                    onReasonChange={setOverrideReason}
+                  />
                 </div>
               ) : null}
               {requestedSlotUnavailable ? (
                 <p role="alert" className="mt-2 flex items-center gap-1.5 text-xs text-rose-700">
                   <IconAlertTriangle className="h-3.5 w-3.5" />
-                  Requested date {date} is unavailable. Next available slots are outside {unavailableDates.join(', ')} — choose a different date or add an override reason.
+                  Requested date {date} is unavailable. Next available slots are outside{' '}
+                  {unavailableDates.join(', ')} — choose a different date or add an override reason.
                 </p>
               ) : null}
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -325,7 +624,7 @@ export default function TextileSchedulePage(): JSX.Element {
                 />
               </label>
               {scheduleError ? (
-                <p className="mt-2 text-xs text-red-700">
+                <p role="alert" className="mt-2 text-xs text-red-700">
                   Could not schedule the trip. Check the date and try again.
                 </p>
               ) : null}
@@ -382,10 +681,7 @@ export default function TextileSchedulePage(): JSX.Element {
                       item.previous_window_end,
                     );
                     return (
-                      <li
-                        key={item.id}
-                        className="flex flex-col gap-1 px-4 py-2.5 text-sm"
-                      >
+                      <li key={item.id} className="flex flex-col gap-1 px-4 py-2.5 text-sm">
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                           <input
                             type="checkbox"
@@ -404,9 +700,14 @@ export default function TextileSchedulePage(): JSX.Element {
                           <span className="font-mono text-xs">{item.reference}</span>
                           <CategoryBadge category={item.category} />
                           {item.reschedule_reason || prev ? (
-                            <RescheduleBadge reason={item.reschedule_reason ?? null} previous={prev} />
+                            <RescheduleBadge
+                              reason={item.reschedule_reason ?? null}
+                              previous={prev}
+                            />
                           ) : null}
-                          {item.unavailable_reason ? <UnavailableBadge reason={item.unavailable_reason} /> : null}
+                          {item.unavailable_reason ? (
+                            <UnavailableBadge reason={item.unavailable_reason} />
+                          ) : null}
                           <span className="min-w-0 flex-1 truncate">
                             {item.requester_name} · {item.pickup_address}
                           </span>
@@ -482,7 +783,7 @@ export default function TextileSchedulePage(): JSX.Element {
             </section>
           ) : null}
           {selectedZoneIds.size > 1 ? (
-            <p className="text-xs text-red-700">
+            <p role="alert" className="text-xs text-red-700">
               Requests from multiple zones selected — deselect until one zone remains.
             </p>
           ) : null}
@@ -490,6 +791,19 @@ export default function TextileSchedulePage(): JSX.Element {
       </DeskStates>
 
       <Pager meta={queue.data?.meta} onPage={setPage} />
+      <ConfirmActionDialog
+        open={showExceptionDialog}
+        title="Request capacity exception"
+        description="This trip has capacity warnings or blocks. A partner approver must review your reason before the policy is overridden — the trip will not be auto-approved."
+        confirmLabel="Submit exception request"
+        confirmVariant="primary"
+        requiresNote
+        busy={exceptionMutation.isPending}
+        onClose={() => setShowExceptionDialog(false)}
+        onConfirm={(note) => {
+          if (note && note.trim().length >= 10) void exceptionMutation.mutateAsync(note);
+        }}
+      />
     </DeskPage>
   );
 }

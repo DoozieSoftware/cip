@@ -372,6 +372,91 @@ export function decideCapacityException(
   );
 }
 
+export interface TextileCapacityWarning {
+  code: string;
+  message: string;
+  severity: string;
+}
+
+export interface TextileCapacityBlocker {
+  code: string;
+  message: string;
+}
+
+export interface TextileCapacityEvaluation {
+  ok: boolean;
+  warnings: TextileCapacityWarning[];
+  blockers: TextileCapacityBlocker[];
+  totals: { bags: number; weight_kg: number; stops: number };
+  effective_rule: {
+    id: string;
+    max_bags: number | null;
+    max_weight_kg: number | null;
+    max_stops: number | null;
+    min_bags: number | null;
+    min_weight_kg: number | null;
+    guidance_text: string | null;
+    category_allowlist: string[] | null;
+  } | null;
+  suggested_order: string[];
+}
+
+export interface TextileSuggestStopsResponse {
+  batch_id: string;
+  current_order: string[];
+  suggested_order: string[];
+  note: string;
+}
+
+function newCapacityIdempotencyKey(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
+    return crypto.randomUUID();
+  return `cap-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+export function evaluateBatchCapacity(batchId: string, departmentId?: string) {
+  return request<TextileCapacityEvaluation>(
+    `/department/textile-batches/${batchId}/evaluate-capacity`,
+    {
+      method: 'POST',
+      query: departmentId ? { department_id: departmentId } : {},
+    },
+  );
+}
+
+export function suggestBatchStops(batchId: string, departmentId?: string) {
+  return request<TextileSuggestStopsResponse>(
+    `/department/textile-batches/${batchId}/suggest-stops`,
+    {
+      method: 'POST',
+      query: departmentId ? { department_id: departmentId } : {},
+    },
+  );
+}
+
+export function requestCapacityException(payload: {
+  collectionId: string;
+  reason: string;
+  reason_code?: string;
+  department_id?: string;
+  idempotencyKey?: string;
+}) {
+  const { collectionId, reason, reason_code, department_id, idempotencyKey } = payload;
+  const key = idempotencyKey ?? newCapacityIdempotencyKey();
+  return request<TextileCapacityException>(
+    `/department/textile-collections/${collectionId}/capacity-exception`,
+    {
+      method: 'POST',
+      body: {
+        reason,
+        ...(reason_code ? { reason_code } : {}),
+      },
+      query: department_id ? { department_id } : {},
+      headers: { 'Idempotency-Key': key },
+    },
+  );
+}
+
 export function fetchTextileReportingDashboard(params: {
   department_id?: string;
   year?: string;
