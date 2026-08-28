@@ -375,10 +375,9 @@ final class TextileCapacityService
             return $row;
         });
 
-        $this->audit($actor, $exception->id, 'textile.capacity_exception_requested', null, [
+        $this->audit($actor, $exception->id, 'textile.capacity_exc_requested', null, [
             'collection_request_id' => $collection->id,
             'reason_code' => $code,
-            'reason' => $reason,
         ]);
 
         return $exception->load(['collection', 'serviceZone']);
@@ -418,7 +417,7 @@ final class TextileCapacityService
             }
         }
 
-        $this->audit($actor, $exception->id, $approved ? 'textile.capacity_exception_approved' : 'textile.capacity_exception_rejected', ['status' => TextileCapacityException::STATUS_PENDING], [
+        $this->audit($actor, $exception->id, $approved ? 'textile.capacity_exc_approved' : 'textile.capacity_exc_rejected', ['status' => TextileCapacityException::STATUS_PENDING], [
             'status' => $newStatus,
             'decided_reason' => $decisionReason,
         ]);
