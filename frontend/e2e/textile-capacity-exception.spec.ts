@@ -132,12 +132,17 @@ test.describe('textile capacity exception — citizen below-minimum journey', ()
       await route.continue();
     });
 
+    const capacityMinimumResponse = page.waitForResponse(
+      (resp) => resp.url().includes('/capacity-minimum') && resp.status() === 200,
+    );
     await page.goto('/citizen/textile-collections/new');
     await expect(page.locator('body')).toBeVisible();
-    // Title input
+    // Title input — guidance should load without extra user action when single zone exists
     await page.getByLabel('Request title').fill('Wardrobe cleanout below minimum');
+    await capacityMinimumResponse;
     // Wait for zones and capacity minimum to load — guidance should appear
     await expect(page.getByText(/Minimum quantities for a collection route/)).toBeVisible();
+    await expect(page.getByText(/This partner's guidance:\s*5\s*bags\s*or\s*10\s*kg/)).toBeVisible();
     await expect(page.getByText(/Please combine with neighbours/)).toBeVisible();
 
     // Fill required collection fields — service zone defaults to South Zone
@@ -468,7 +473,7 @@ test.describe('textile capacity exception — citizen below-minimum journey', ()
     await expect(page.getByText('Detail exception view')).toBeVisible();
     await expect(page.getByLabel('Capacity exception')).toBeVisible();
     await expect(page.getByText(/Exception approved/)).toBeVisible();
-    await expect(page.getByText(/exc-detail-1/)).toBeVisible();
+    await expect(page.getByText('Reference: exc-detail-1')).toBeVisible();
   });
 
   test('detail without exception does not show capacity banner but history evidence states remain', async ({

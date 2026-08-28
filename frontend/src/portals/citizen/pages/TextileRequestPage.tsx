@@ -22,6 +22,7 @@ import {
   useCreateTextileCollection,
   useTextileCapacityMinimum,
   useTextileAvailability,
+  useTextileServiceZones,
   uploadTextileCollectionPhoto,
   isTextileNetworkFailure,
   requestCapacityException,
@@ -76,8 +77,11 @@ export default function TextileRequestPage(): JSX.Element {
   const [photoUploadWarning, setPhotoUploadWarning] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [showCamera, setShowCamera] = useState(false);
-  const capacityMinimum = useTextileCapacityMinimum(details?.service_zone_id ?? '');
+  const serviceZonesForMinimum = useTextileServiceZones(category);
+  const zoneIdForMinimum = details?.service_zone_id ?? serviceZonesForMinimum.data?.[0]?.id ?? '';
+  const capacityMinimum = useTextileCapacityMinimum(zoneIdForMinimum);
   const minimum = capacityMinimum.data;
+  const minimumIsLoading = serviceZonesForMinimum.isLoading || capacityMinimum.isLoading;
   const [exceptionReason, setExceptionReason] = useState('');
   const [exceptionError, setExceptionError] = useState<string | null>(null);
   const [isExceptionSubmitting, setIsExceptionSubmitting] = useState(false);
@@ -463,7 +467,7 @@ export default function TextileRequestPage(): JSX.Element {
           minimum={minimum}
           estimatedBags={details?.estimated_bags ?? null}
           estimatedWeightKg={details?.estimated_weight_kg ?? null}
-          isLoading={capacityMinimum.isLoading}
+          isLoading={minimumIsLoading}
           isError={capacityMinimum.isError}
           collectionMethod={dropoffActive ? 'dropoff' : (details?.collection_method ?? null)}
           onRequestException={() => setShowExceptionForm(true)}
