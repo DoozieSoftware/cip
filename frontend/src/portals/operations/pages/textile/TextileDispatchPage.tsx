@@ -17,6 +17,7 @@ import { registerTextileOfflineRetry, type CollectPayload } from '../../offline/
 import { OfflineBanner } from '../../offline/OfflineBanner';
 import { useAuth } from '../../../../auth/AuthContext';
 import { useOpsQueue } from '../../offline/useOpsQueue';
+import { useOfflineQueue } from './hooks/useOfflineQueue';
 
 function isOfflineError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message.toLowerCase() : '';

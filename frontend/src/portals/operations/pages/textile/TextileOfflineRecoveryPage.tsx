@@ -5,6 +5,11 @@ import { DeskPage, useDesk } from './shared';
 import { fetchOfflineRecovery, resolveOfflineRecovery } from '../../api/textileApi';
 import { ApiError } from '../../../../shared/api/errors';
 
+/** Narrow an `unknown` value to a display string, mirroring the previous `String(x ?? '')`. */
+function asString(value: unknown): string {
+  return typeof value === 'string' ? value : String(value);
+}
+
 export default function TextileOfflineRecoveryPage(): JSX.Element {
   const desk = useDesk();
   const qc = useQueryClient();
@@ -74,28 +79,28 @@ export default function TextileOfflineRecoveryPage(): JSX.Element {
       ) : (
         <ul className="space-y-3">
           {(query.data as Array<Record<string, unknown>>).map((raw) => {
-            const item = raw as Record<string, unknown>;
-            const id = String(item['id'] ?? '');
+            const item = raw;
+            const id = asString(item['id'] ?? '');
             const col = (item['collection'] ?? {}) as Record<string, unknown>;
             const snapshot = (item['payload_snapshot'] ?? {}) as Record<string, unknown>;
             return (
               <li key={id} className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-xs">{String(col['reference'] ?? item['collection_request_id'] ?? id)}</span>
+                  <span className="font-mono text-xs">{asString(col['reference'] ?? item['collection_request_id'] ?? id)}</span>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[11px] ${String(item['status']) === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}
+                    className={`rounded-full px-2 py-0.5 text-[11px] ${asString(item['status']) === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}
                   >
-                    {String(item['status'] ?? '')}
+                    {asString(item['status'] ?? '')}
                   </span>
                   <span className="text-xs text-[var(--color-text-secondary)]">
-                    {String(col['pickup_address'] ?? '')}
+                    {asString(col['pickup_address'] ?? '')}
                   </span>
                   <span className="text-xs text-[var(--color-text-tertiary)]">
-                    {item['created_at'] ? new Date(String(item['created_at'])).toLocaleString() : ''}
+                    {item['created_at'] ? new Date(asString(item['created_at'])).toLocaleString() : ''}
                   </span>
                 </div>
                 {item['failure_reason'] ? (
-                  <p className="mt-1 text-xs text-rose-700">{String(item['failure_reason'])}</p>
+                  <p className="mt-1 text-xs text-rose-700">{asString(item['failure_reason'])}</p>
                 ) : null}
                 {snapshot && Object.keys(snapshot).length > 0 ? (
                   <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
@@ -104,7 +109,7 @@ export default function TextileOfflineRecoveryPage(): JSX.Element {
                 ) : null}
                 {item['idempotency_key'] ? (
                   <p className="mt-1 font-mono text-[11px] text-[var(--color-text-tertiary)]">
-                    Idempotency-Key: {String(item['idempotency_key'])}
+                    Idempotency-Key: {asString(item['idempotency_key'])}
                   </p>
                 ) : null}
                 {String(item['status']) === 'pending' ? (
