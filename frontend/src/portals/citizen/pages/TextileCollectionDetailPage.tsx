@@ -112,7 +112,11 @@ function ReplacePhotoButton({
           id: idempotencyKey,
         });
         void requestBackgroundSync();
-        toast.show('You are offline — photo saved locally and will upload when online. See pending uploads.', 'info', 5000);
+        toast.show(
+          'You are offline — photo saved locally and will upload when online. See pending uploads.',
+          'info',
+          5000,
+        );
         setError('Photo queued for offline upload — will retry when online.');
       } else {
         setError('Upload failed. Please try again.');
@@ -247,6 +251,64 @@ export default function TextileCollectionDetailPage(): JSX.Element {
           <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
             {item.cancellation_reason}
           </p>
+        ) : null}
+        {item.capacity_exception_id ? (
+          <div
+            aria-label="Capacity exception"
+            className={`mt-3 rounded-lg border p-3 text-xs leading-5 ${(() => {
+              const ctx = item.capacity_context;
+              if (ctx && typeof ctx['exception_approved_at'] === 'string') {
+                return 'border-green-200 bg-green-50 text-green-800';
+              }
+              if (
+                ctx &&
+                (typeof ctx['exception_rejected_at'] === 'string' ||
+                  ctx['exception_status'] === 'rejected')
+              ) {
+                return 'border-red-200 bg-red-50 text-red-700';
+              }
+              return 'border-amber-200 bg-amber-50 text-amber-900';
+            })()}`}
+          >
+            {(() => {
+              const ctx = item.capacity_context;
+              const approved = Boolean(ctx && typeof ctx['exception_approved_at'] === 'string');
+              const rejected = Boolean(
+                ctx &&
+                (typeof ctx['exception_rejected_at'] === 'string' ||
+                  ctx['exception_status'] === 'rejected'),
+              );
+              const statusLabel = approved
+                ? 'Exception approved'
+                : rejected
+                  ? 'Exception rejected'
+                  : 'Exception requested';
+              const sub = approved
+                ? 'A partner approved this below-minimum request. It will be grouped for collection.'
+                : rejected
+                  ? 'A partner reviewed this exception and did not approve it. Contact support if you need to update your request.'
+                  : 'Your below-minimum request was sent for human review. You will be notified when a partner responds.';
+              return (
+                <>
+                  <p className="text-sm font-medium">{statusLabel}</p>
+                  <p className="mt-1">{sub}</p>
+                  {ctx && Object.keys(ctx).length > 0 ? (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-[11px] font-medium underline">
+                        View exception context
+                      </summary>
+                      <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded bg-white p-2 text-[11px] text-[var(--color-text-secondary)]">
+                        {JSON.stringify(ctx, null, 2)}
+                      </pre>
+                    </details>
+                  ) : null}
+                  <p className="mt-2 text-[11px] opacity-80">
+                    Reference: {item.capacity_exception_id}
+                  </p>
+                </>
+              );
+            })()}
+          </div>
         ) : null}
         <p className="mt-3 text-sm text-[var(--color-text-secondary)]">{nextStep}</p>
         <CollectionProgress
@@ -511,7 +573,9 @@ function RescheduleSection({
         window_start: wStart || null,
         window_end: wEnd || null,
       });
-      setSuccess(`Rescheduled to ${date}${wStart && wEnd ? ` · ${wStart}–${wEnd}` : ''}. Old assignment was removed atomically.`);
+      setSuccess(
+        `Rescheduled to ${date}${wStart && wEnd ? ` · ${wStart}–${wEnd}` : ''}. Old assignment was removed atomically.`,
+      );
       setOpen(false);
       onRescheduled();
     } catch (e) {
@@ -522,16 +586,29 @@ function RescheduleSection({
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- mutate.error is unknown
-  const apiError = mutate.error instanceof ApiError ? mutate.error : mutate.error ? new Error((mutate.error as Error).message) : null;
-  const isSlotUnavailable = apiError instanceof ApiError && (apiError.code === 'SLOT_UNAVAILABLE' || apiError.status === 409);
+  const apiError =
+    mutate.error instanceof ApiError
+      ? mutate.error
+      : mutate.error
+        ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- mutate.error is unknown
+          new Error((mutate.error as Error).message)
+        : null;
+  const isSlotUnavailable =
+    apiError instanceof ApiError &&
+    (apiError.code === 'SLOT_UNAVAILABLE' || apiError.status === 409);
 
   if (!canReschedule) {
     return (
       <section aria-label="Reschedule" className="rounded-xl border border-black/10 bg-white p-5">
         <h2 className="text-sm font-medium">Need a different date?</h2>
-        <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">{blocked ?? 'Rescheduling is paused while the crew is on the route. Please contact support if you need help.'}</p>
-        <p className="mt-2 text-[11px] text-[var(--color-text-tertiary)]">No staff contact is shown here. Use Contact support above. Rescheduling removes the old trip assignment atomically.</p>
+        <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
+          {blocked ??
+            'Rescheduling is paused while the crew is on the route. Please contact support if you need help.'}
+        </p>
+        <p className="mt-2 text-[11px] text-[var(--color-text-tertiary)]">
+          No staff contact is shown here. Use Contact support above. Rescheduling removes the old
+          trip assignment atomically.
+        </p>
       </section>
     );
   }
@@ -540,50 +617,141 @@ function RescheduleSection({
     <section aria-label="Reschedule" className="rounded-xl border border-black/10 bg-white p-5">
       <h2 className="text-sm font-medium">Need a different date?</h2>
       {currentDate ? (
-        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Current: <span className="font-medium text-[var(--color-ink)]">{currentDate}{currentWindow ? ` · ${currentWindow}` : ''}</span></p>
+        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+          Current:{' '}
+          <span className="font-medium text-[var(--color-ink)]">
+            {currentDate}
+            {currentWindow ? ` · ${currentWindow}` : ''}
+          </span>
+        </p>
       ) : null}
       {unavailableDates.length > 0 ? (
         <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
           <p className="text-xs font-medium text-amber-800">Unavailable dates</p>
-          <p className="mt-1 text-xs leading-5 text-amber-800">{unavailableDates.slice(0, 6).join(', ')}{unavailableDates.length > 6 ? ` +${unavailableDates.length - 6} more` : ''}</p>
-          {nextAvailable ? <p className="mt-1 text-xs text-amber-700">Next available: <span className="font-medium">{nextAvailable}</span></p> : null}
-          {availability.data?.reason ? <p className="mt-1 text-[11px] text-amber-700">{availability.data.reason}</p> : null}
+          <p className="mt-1 text-xs leading-5 text-amber-800">
+            {unavailableDates.slice(0, 6).join(', ')}
+            {unavailableDates.length > 6 ? ` +${unavailableDates.length - 6} more` : ''}
+          </p>
+          {nextAvailable ? (
+            <p className="mt-1 text-xs text-amber-700">
+              Next available: <span className="font-medium">{nextAvailable}</span>
+            </p>
+          ) : null}
+          {availability.data?.reason ? (
+            <p className="mt-1 text-[11px] text-amber-700">{availability.data.reason}</p>
+          ) : null}
         </div>
       ) : null}
       {!open ? (
-        <button type="button" onClick={() => setOpen(true)} className="mt-3 inline-flex min-h-11 items-center rounded-full border border-black/15 bg-white px-4 text-xs font-medium">Reschedule pickup</button>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="mt-3 inline-flex min-h-11 items-center rounded-full border border-black/15 bg-white px-4 text-xs font-medium"
+        >
+          Reschedule pickup
+        </button>
       ) : (
         <div className="mt-3 space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="text-xs font-medium">New date</span>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-invalid={isUnavailablePicked} className={`mt-1 block w-full rounded-lg border p-2.5 text-sm ${isUnavailablePicked ? 'border-amber-500 bg-amber-50' : 'border-[#d8d6cf]'}`} />
-              {isUnavailablePicked ? <span className="mt-1 block text-[11px] font-medium text-amber-700">This date is unavailable — pick another or see fallback below.</span> : null}
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                aria-invalid={isUnavailablePicked}
+                className={`mt-1 block w-full rounded-lg border p-2.5 text-sm ${isUnavailablePicked ? 'border-amber-500 bg-amber-50' : 'border-[#d8d6cf]'}`}
+              />
+              {isUnavailablePicked ? (
+                <span className="mt-1 block text-[11px] font-medium text-amber-700">
+                  This date is unavailable — pick another or see fallback below.
+                </span>
+              ) : null}
             </label>
             <div className="grid grid-cols-2 gap-2">
-              <label className="block"><span className="text-xs font-medium">From</span><input type="time" value={wStart} onChange={(e) => setWStart(e.target.value)} className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-2.5 text-sm" /></label>
-              <label className="block"><span className="text-xs font-medium">To</span><input type="time" value={wEnd} onChange={(e) => setWEnd(e.target.value)} className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-2.5 text-sm" /></label>
+              <label className="block">
+                <span className="text-xs font-medium">From</span>
+                <input
+                  type="time"
+                  value={wStart}
+                  onChange={(e) => setWStart(e.target.value)}
+                  className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-2.5 text-sm"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-medium">To</span>
+                <input
+                  type="time"
+                  value={wEnd}
+                  onChange={(e) => setWEnd(e.target.value)}
+                  className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-2.5 text-sm"
+                />
+              </label>
             </div>
           </div>
           {isSlotUnavailable ? (
-            <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">
+            <div
+              role="alert"
+              className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800"
+            >
               <p className="font-medium">Slot no longer available</p>
               <p className="mt-1">{fallback}</p>
-              {nextAvailable ? <p className="mt-2">Try <span className="font-medium">{nextAvailable}</span> next, or switch to drop-off — no slot needed.</p> : null}
-              <p className="mt-2 text-[11px]">{apiError?.message ?? 'The partner removed this window. Your old schedule stays visible in history until confirmed.'}</p>
+              {nextAvailable ? (
+                <p className="mt-2">
+                  Try <span className="font-medium">{nextAvailable}</span> next, or switch to
+                  drop-off — no slot needed.
+                </p>
+              ) : null}
+              <p className="mt-2 text-[11px]">
+                {apiError?.message ??
+                  'The partner removed this window. Your old schedule stays visible in history until confirmed.'}
+              </p>
             </div>
           ) : apiError ? (
-            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">{apiError.message}</p>
+            <p
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700"
+            >
+              {apiError.message}
+            </p>
           ) : null}
           <div className="flex flex-wrap gap-2">
-            <button type="button" disabled={!date || mutate.isPending || isUnavailablePicked} onClick={() => void handleSubmit()} className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-ink)] px-5 text-xs font-medium text-white disabled:opacity-40">{mutate.isPending ? 'Rescheduling…' : 'Confirm new slot'}</button>
-            <button type="button" onClick={() => { setOpen(false); mutate.reset(); }} className="inline-flex min-h-11 items-center rounded-full border border-black/15 px-4 text-xs font-medium">Cancel</button>
+            <button
+              type="button"
+              disabled={!date || mutate.isPending || isUnavailablePicked}
+              onClick={() => void handleSubmit()}
+              className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-ink)] px-5 text-xs font-medium text-white disabled:opacity-40"
+            >
+              {mutate.isPending ? 'Rescheduling…' : 'Confirm new slot'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                mutate.reset();
+              }}
+              className="inline-flex min-h-11 items-center rounded-full border border-black/15 px-4 text-xs font-medium"
+            >
+              Cancel
+            </button>
           </div>
-          <p className="text-[11px] leading-4 text-[var(--color-text-tertiary)]">Rescheduling replaces the old trip assignment atomically. No duplicate booking is created. Old and new schedules remain in history.</p>
+          <p className="text-[11px] leading-4 text-[var(--color-text-tertiary)]">
+            Rescheduling replaces the old trip assignment atomically. No duplicate booking is
+            created. Old and new schedules remain in history.
+          </p>
         </div>
       )}
-      {success ? <p role="status" className="mt-3 rounded-lg bg-green-50 p-3 text-xs font-medium text-green-700">{success}</p> : null}
-      <p className="mt-3 text-[11px] text-[var(--color-text-tertiary)]">No staff contact is shown here. Use Contact support above.</p>
+      {success ? (
+        <p
+          role="status"
+          className="mt-3 rounded-lg bg-green-50 p-3 text-xs font-medium text-green-700"
+        >
+          {success}
+        </p>
+      ) : null}
+      <p className="mt-3 text-[11px] text-[var(--color-text-tertiary)]">
+        No staff contact is shown here. Use Contact support above.
+      </p>
     </section>
   );
 }
@@ -610,7 +778,10 @@ function ReadinessContactSection({
   const [draftAddress, setDraftAddress] = useState(pickupAddress);
   const [localSuccess, setLocalSuccess] = useState<string | null>(null);
   const mutate = useUpdateTextileInstructions(collectionId);
-  const canSave = draftPhone.trim().length >= 8 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draftEmail) && draftAddress.trim().length >= 10;
+  const canSave =
+    draftPhone.trim().length >= 8 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draftEmail) &&
+    draftAddress.trim().length >= 10;
 
   async function handleSave(): Promise<void> {
     setLocalSuccess(null);
@@ -629,40 +800,143 @@ function ReadinessContactSection({
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- mutate.error is unknown
-  const apiError = mutate.error instanceof ApiError ? mutate.error.message : mutate.error ? (mutate.error as Error).message : null;
+  const apiError =
+    mutate.error instanceof ApiError
+      ? mutate.error.message
+      : mutate.error
+        ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- mutate.error is unknown
+          (mutate.error as Error).message
+        : null;
 
   return (
-    <section aria-label="Readiness and contact" className="rounded-xl border border-black/10 bg-white p-5">
+    <section
+      aria-label="Readiness and contact"
+      className="rounded-xl border border-black/10 bg-white p-5"
+    >
       <h2 className="text-sm font-medium">Readiness & contact</h2>
-      <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">Update where to leave bags and how to reach you. This does not change old photos or history.</p>
+      <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
+        Update where to leave bags and how to reach you. This does not change old photos or history.
+      </p>
       {!editing ? (
         <>
           <dl className="mt-3 space-y-2 text-xs">
-            <div><dt className="font-medium text-[var(--color-text-tertiary)]">Readiness instructions</dt><dd className="mt-0.5 text-[var(--color-ink)]">{readiness || '— no instructions yet'}</dd></div>
-            <div><dt className="font-medium text-[var(--color-text-tertiary)]">Pickup address</dt><dd className="mt-0.5">{pickupAddress}</dd></div>
-            <div><dt className="font-medium text-[var(--color-text-tertiary)]">Phone</dt><dd className="mt-0.5">{contactPhone}</dd></div>
-            <div><dt className="font-medium text-[var(--color-text-tertiary)]">Email</dt><dd className="mt-0.5">{contactEmail}</dd></div>
+            <div>
+              <dt className="font-medium text-[var(--color-text-tertiary)]">
+                Readiness instructions
+              </dt>
+              <dd className="mt-0.5 text-[var(--color-ink)]">
+                {readiness || '— no instructions yet'}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium text-[var(--color-text-tertiary)]">Pickup address</dt>
+              <dd className="mt-0.5">{pickupAddress}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-[var(--color-text-tertiary)]">Phone</dt>
+              <dd className="mt-0.5">{contactPhone}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-[var(--color-text-tertiary)]">Email</dt>
+              <dd className="mt-0.5">{contactEmail}</dd>
+            </div>
           </dl>
-          <button type="button" onClick={() => setEditing(true)} className="mt-3 inline-flex min-h-11 items-center rounded-full border border-black/15 bg-white px-4 text-xs font-medium">Update instructions</button>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="mt-3 inline-flex min-h-11 items-center rounded-full border border-black/15 bg-white px-4 text-xs font-medium"
+          >
+            Update instructions
+          </button>
         </>
       ) : (
         <div className="mt-3 space-y-3">
-          <label className="block"><span className="text-xs font-medium">Readiness instructions (e.g. leave at gate, call on arrival)</span><textarea rows={2} value={draftReadiness} onChange={(e) => setDraftReadiness(e.target.value)} placeholder="Leave bags at the gate, call on arrival" className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-2.5 text-sm" /></label>
-          <label className="block"><span className="text-xs font-medium">Pickup address</span><textarea rows={2} value={draftAddress} onChange={(e) => setDraftAddress(e.target.value)} className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-2.5 text-sm" /></label>
+          <label className="block">
+            <span className="text-xs font-medium">
+              Readiness instructions (e.g. leave at gate, call on arrival)
+            </span>
+            <textarea
+              rows={2}
+              value={draftReadiness}
+              onChange={(e) => setDraftReadiness(e.target.value)}
+              placeholder="Leave bags at the gate, call on arrival"
+              className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-2.5 text-sm"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-medium">Pickup address</span>
+            <textarea
+              rows={2}
+              value={draftAddress}
+              onChange={(e) => setDraftAddress(e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-2.5 text-sm"
+            />
+          </label>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block"><span className="text-xs font-medium">Contact phone</span><input type="tel" value={draftPhone} onChange={(e) => setDraftPhone(e.target.value)} className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-2.5 text-sm" /></label>
-            <label className="block"><span className="text-xs font-medium">Contact email</span><input type="email" value={draftEmail} onChange={(e) => setDraftEmail(e.target.value)} className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-2.5 text-sm" /></label>
+            <label className="block">
+              <span className="text-xs font-medium">Contact phone</span>
+              <input
+                type="tel"
+                value={draftPhone}
+                onChange={(e) => setDraftPhone(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-2.5 text-sm"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-medium">Contact email</span>
+              <input
+                type="email"
+                value={draftEmail}
+                onChange={(e) => setDraftEmail(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-2.5 text-sm"
+              />
+            </label>
           </div>
-          {apiError ? <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">{apiError}</p> : null}
+          {apiError ? (
+            <p
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700"
+            >
+              {apiError}
+            </p>
+          ) : null}
           <div className="flex gap-2">
-            <button type="button" disabled={!canSave || mutate.isPending} onClick={() => void handleSave()} className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-ink)] px-5 text-xs font-medium text-white disabled:opacity-40">{mutate.isPending ? 'Saving…' : 'Save'}</button>
-            <button type="button" onClick={() => { setEditing(false); mutate.reset(); setDraftReadiness(readiness ?? ''); setDraftPhone(contactPhone); setDraftEmail(contactEmail); setDraftAddress(pickupAddress); }} className="inline-flex min-h-11 items-center rounded-full border border-black/15 px-4 text-xs font-medium">Cancel</button>
+            <button
+              type="button"
+              disabled={!canSave || mutate.isPending}
+              onClick={() => void handleSave()}
+              className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-ink)] px-5 text-xs font-medium text-white disabled:opacity-40"
+            >
+              {mutate.isPending ? 'Saving…' : 'Save'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(false);
+                mutate.reset();
+                setDraftReadiness(readiness ?? '');
+                setDraftPhone(contactPhone);
+                setDraftEmail(contactEmail);
+                setDraftAddress(pickupAddress);
+              }}
+              className="inline-flex min-h-11 items-center rounded-full border border-black/15 px-4 text-xs font-medium"
+            >
+              Cancel
+            </button>
           </div>
-          <p className="text-[11px] text-[var(--color-text-tertiary)]">Updates are audit-logged. Past collection evidence stays unchanged.</p>
+          <p className="text-[11px] text-[var(--color-text-tertiary)]">
+            Updates are audit-logged. Past collection evidence stays unchanged.
+          </p>
         </div>
       )}
-      {localSuccess ? <p role="status" className="mt-3 rounded-lg bg-green-50 p-3 text-xs font-medium text-green-700">{localSuccess}</p> : null}
+      {localSuccess ? (
+        <p
+          role="status"
+          className="mt-3 rounded-lg bg-green-50 p-3 text-xs font-medium text-green-700"
+        >
+          {localSuccess}
+        </p>
+      ) : null}
     </section>
   );
 }

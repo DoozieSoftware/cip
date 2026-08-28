@@ -60,6 +60,9 @@ export interface TextileCollectionRequest extends TextileCollectionPayload {
   missed_pickup_reason: string | null;
   picked_up_at: string | null;
   submitted_at: string | null;
+  capacity_exception_id?: string | null;
+  capacity_checked_at?: string | null;
+  capacity_context?: Record<string, unknown> | null;
   service_zone: {
     id: string;
     code: string;
@@ -288,6 +291,66 @@ export function useUpdateTextileInstructions(id: string) {
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['citizen', 'textile-collections', id] });
+      void queryClient.invalidateQueries({ queryKey: ['citizen', 'textile-collections'] });
+    },
+  });
+}
+
+export interface RequestCapacityExceptionInput {
+  collectionId: string;
+  reason: string;
+  reason_code?: string | null;
+  idempotency_key?: string;
+}
+
+export interface TextileCapacityException {
+  id: string;
+  collection_request_id: string;
+  service_zone_id: string | null;
+  department_id: string;
+  status: string;
+  reason_code: string | null;
+  reason: string | null;
+  payload_snapshot?: unknown;
+  decision_payload?: unknown;
+  requested_by?: string;
+  decided_by?: string | null;
+  decided_reason?: string | null;
+  decided_at?: string | null;
+  created_at?: string;
+}
+
+export async function requestCapacityException(
+  input: RequestCapacityExceptionInput,
+): Promise<TextileCapacityException> {
+  const idempotencyKey =
+    input.idempotency_key ??
+    (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `textile-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const body: Record<string, unknown> = {
+    reason: input.reason,
+    idempotency_key: idempotencyKey,
+  };
+  if (input.reason_code) body.reason_code = input.reason_code;
+  return request<TextileCapacityException>(
+    `/citizen/textile-collections/${input.collectionId}/capacity-exception`,
+    {
+      method: 'POST',
+      headers: { 'Idempotency-Key': idempotencyKey },
+      body,
+    },
+  );
+}
+
+export function useRequestCapacityException() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: RequestCapacityExceptionInput) => requestCapacityException(input),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['citizen', 'textile-collections', variables.collectionId],
+      });
       void queryClient.invalidateQueries({ queryKey: ['citizen', 'textile-collections'] });
     },
   });
