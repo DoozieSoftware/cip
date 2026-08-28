@@ -142,8 +142,8 @@ export function OperationsLayout(): JSX.Element {
         void import('../offline/queue').then(({ stopAndClearOpsQueue }) => stopAndClearOpsQueue(ownerId));
       }
     };
-    window.addEventListener('cip:auth-logout', onLogout as EventListener);
-    return () => window.removeEventListener('cip:auth-logout', onLogout as EventListener);
+    window.addEventListener('cip:auth-logout', onLogout);
+    return () => window.removeEventListener('cip:auth-logout', onLogout);
   }, []);
 
   return (

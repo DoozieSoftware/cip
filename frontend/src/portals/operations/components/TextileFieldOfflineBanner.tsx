@@ -68,14 +68,16 @@ export function TextileFieldOfflineBanner(): JSX.Element | null {
             <button
               type="button"
               disabled={busy}
-              onClick={async () => {
-                setBusy(true);
-                try {
-                  await getQueue(ownerId).drain();
-                  await refresh();
-                } finally {
-                  setBusy(false);
-                }
+              onClick={() => {
+                void (async () => {
+                  setBusy(true);
+                  try {
+                    await getQueue(ownerId).drain();
+                    await refresh();
+                  } finally {
+                    setBusy(false);
+                  }
+                })();
               }}
               className="mt-3 inline-flex min-h-9 items-center gap-1.5 rounded-full bg-amber-900 px-3.5 text-xs font-medium text-white disabled:opacity-50"
             >
@@ -103,9 +105,11 @@ export function TextileFieldOfflineBanner(): JSX.Element | null {
                 <span className="flex shrink-0 gap-1">
                   <button
                     type="button"
-                    onClick={async () => {
-                      await getQueue(ownerId).drain();
-                      await refresh();
+                    onClick={() => {
+                      void (async () => {
+                        await getQueue(ownerId).drain();
+                        await refresh();
+                      })();
                     }}
                     className="rounded-full border border-black/15 bg-white px-2 py-1 text-[11px] font-medium"
                   >
@@ -113,9 +117,11 @@ export function TextileFieldOfflineBanner(): JSX.Element | null {
                   </button>
                   <button
                     type="button"
-                    onClick={async () => {
-                      await getQueue(ownerId).remove(item.id);
-                      await refresh();
+                    onClick={() => {
+                      void (async () => {
+                        await getQueue(ownerId).remove(item.id);
+                        await refresh();
+                      })();
                     }}
                     className="inline-flex items-center gap-1 rounded-full border border-black/15 bg-white px-2 py-1 text-[11px] font-medium"
                     aria-label="Dismiss failed upload"

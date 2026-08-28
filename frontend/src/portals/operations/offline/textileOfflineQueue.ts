@@ -17,7 +17,15 @@ export interface CollectPayload {
 function buildUrl(path: string, query?: Record<string, unknown>): string {
   const base = (import.meta.env['VITE_API_BASE'] as string | undefined) ?? '/api/v1';
   const url = new URL(base + path, window.location.origin);
-  if (query) for (const [k, v] of Object.entries(query)) if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
+  if (query)
+    for (const [k, v] of Object.entries(query))
+      if (v !== undefined && v !== null && v !== '') {
+        const serialized =
+          typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean'
+            ? String(v)
+            : JSON.stringify(v);
+        url.searchParams.set(k, serialized);
+      }
   return url.toString();
 }
 
@@ -52,12 +60,13 @@ export async function deliverCollect(item: OpsQueueItem): Promise<void> {
   const url = buildUrl(`/department/textile-collections/${payload.collectionId}/collect`, query);
 
   const res = await fetch(url, { method: 'POST', headers, body: form, credentials: 'same-origin' });
-  const body = await res.json().catch(() => ({}));
+  const body: { message?: string; code?: string; errors?: unknown; trace_id?: string } =
+    (await res.json().catch(() => ({}))) as { message?: string; code?: string; errors?: unknown; trace_id?: string };
 
   if (!res.ok) {
-    const msg = (body as { message?: string; code?: string }).message ?? `Collect failed ${res.status}`;
-    const code = (body as { code?: string }).code ?? '';
-    throw new ApiError(res.status, code || `HTTP_${res.status}`, msg, (body as { errors?: unknown }).errors ?? null, (body as { trace_id?: string }).trace_id ?? 'unknown');
+    const msg = body.message ?? `Collect failed ${res.status}`;
+    const code = body.code ?? '';
+    throw new ApiError(res.status, code || `HTTP_${res.status}`, msg, body.errors ?? null, body.trace_id ?? 'unknown');
   }
 }
 
@@ -82,12 +91,12 @@ export function registerTextileOfflineRetry(ownerId?: string | null): void {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch(url.toString(), { method: 'POST', headers, body: JSON.stringify({ outcome: 'missed', reason: p.reason }), credentials: 'same-origin' });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        const msg = (body as { message?: string }).message ?? `Missed failed ${res.status}`;
+        const body: { message?: string } = (await res.json().catch(() => ({}))) as { message?: string };
+        const msg = body.message ?? `Missed failed ${res.status}`;
         throw new Error(msg);
       }
       return;
     }
-    throw new Error(`No delivery handler for ops queue kind "${item.kind}".`);
+    throw new Error(`No delivery handler for ops queue kind "${String(item.kind)}".`);
   });
 }

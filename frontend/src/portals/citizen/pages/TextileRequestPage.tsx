@@ -174,7 +174,7 @@ export default function TextileRequestPage(): JSX.Element {
       photo_file: photoFile,
     } as Parameters<typeof create.mutateAsync>[0] & { idempotency_key?: string; photo_file?: File | null };
     try {
-      const created = await create.mutateAsync(payload as never);
+      const created = await create.mutateAsync(payload);
       if (photoFile) {
         setUploadingPhoto(true);
         try {

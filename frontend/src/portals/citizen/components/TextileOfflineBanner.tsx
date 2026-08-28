@@ -34,11 +34,14 @@ export function TextileOfflineBanner(): JSX.Element | null {
     void refresh();
     const q = getQueue(ownerId);
     const off = q.subscribe(() => void refresh());
-    window.addEventListener('online', refresh);
+    const onOnline = (): void => {
+      void refresh();
+    };
+    window.addEventListener('online', onOnline);
     const t = window.setInterval(() => void refresh(), 2500);
     return () => {
       off();
-      window.removeEventListener('online', refresh);
+      window.removeEventListener('online', onOnline);
       window.clearInterval(t);
     };
   }, [ownerId]);

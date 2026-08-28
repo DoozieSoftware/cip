@@ -163,10 +163,7 @@ export async function submitTextileRequestPayload(
     (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
       ? crypto.randomUUID()
       : `textile-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-  const { idempotency_key: _ignored, photo_file: _photo, ...body } = input as CreateTextileCollectionInput & {
-    idempotency_key?: string;
-    photo_file?: File | null;
-  };
+  const { photo_file: _photo, ...body } = input;
   const created = await request<TextileCollectionRequest>('/textile-collection/requests', {
     method: 'POST',
     headers: { 'Idempotency-Key': idempotencyKey },
