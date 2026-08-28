@@ -148,6 +148,12 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
 
     if (typeof window !== 'undefined' && ownerId) {
       window.dispatchEvent(new CustomEvent('cip:auth-logout', { detail: { ownerId } }));
+      // Phase 4: clear device-local offline queue tied to this user/session per retention policy
+      try {
+        window.localStorage.removeItem(`cip_offline_queue:${ownerId}`);
+      } catch {
+        // ignore storage errors
+      }
     }
     setToken(null);
     setUser(null);

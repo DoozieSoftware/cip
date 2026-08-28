@@ -2,6 +2,7 @@ import { useMemo, useState, type JSX } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { IconAlertTriangle, IconCalendar, IconNavigation, IconPhone } from '@tabler/icons-react';
 import { ApiError } from '../../../../shared/api/errors';
+import { readSession } from '../../../../auth/storage';
 import { ConfirmActionDialog } from '../../components/ConfirmActionDialog';
 import {
   collectTextileWithProof,
@@ -10,7 +11,6 @@ import {
 } from '../../api/textileApi';
 import { getQueue } from '../../../citizen/offline/queue';
 import { requestBackgroundSync } from '../../../citizen/offline/swBridge';
-import { readSession } from '../../../../auth/storage';
 import { TextileFieldOfflineBanner } from '../../components/TextileFieldOfflineBanner';
 import { getOpsQueue } from '../../offline/queue';
 import { registerTextileOfflineRetry, type CollectPayload } from '../../offline/textileOfflineQueue';
@@ -91,6 +91,8 @@ export default function TextileDispatchPage(): JSX.Element {
     departmentId: desk.departmentId,
   });
   const rows = useMemo(() => queue.data?.data ?? [], [queue.data?.data]);
+  const userId = readSession()?.user?.id;
+  const offline = useOfflineQueue(userId, desk.departmentId);
 
   const outcome = useMutation({
     mutationFn: ({
@@ -99,16 +101,19 @@ export default function TextileDispatchPage(): JSX.Element {
       bags,
       weight,
       reason,
+      idempotencyKey,
     }: {
       id: string;
       kind: 'collected' | 'missed';
       bags?: number;
       weight?: number;
       reason?: string;
+      idempotencyKey?: string;
     }) =>
       recordTextileOutcome(id, {
         outcome: kind,
         department_id: desk.departmentId,
+        idempotencyKey,
         ...(kind === 'collected' ? { actual_bags: bags, actual_weight_kg: weight } : { reason }),
       }),
     onSuccess: () => {
@@ -322,6 +327,7 @@ export default function TextileDispatchPage(): JSX.Element {
                 <ul className="divide-y divide-black/5">
                   {trip.items.map((item, idx) => {
                     const evidencePhoto = item.photos?.find((p) => p.role === 'evidence');
+                    const queued = offline.items.find((q) => q.collectionId === item.id && q.status !== 'completed');
                     const prev = formatPreviousWindow(
                       item.previous_scheduled_date,
                       item.previous_window_start,
@@ -344,6 +350,13 @@ export default function TextileDispatchPage(): JSX.Element {
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="font-mono text-[11px]">{item.reference}</span>
+                              {queued ? (
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${queued.status === 'failed' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800'}`}
+                                >
+                                  {queued.status === 'failed' ? 'Upload failed' : 'Pending upload'}
+                                </span>
+                              ) : null}
                               <CategoryBadge category={item.category} />
                               {item.reschedule_reason || prev ? (
                                 <RescheduleBadge reason={item.reschedule_reason ?? null} previous={prev} />
