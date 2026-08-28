@@ -424,6 +424,9 @@ Route::prefix('v1')->group(function (): void {
         Route::post('textile-collections/{collection}/outcome', [TextileCollectionController::class, 'recordOutcome'])
             ->middleware('can:textile.record_outcome')
             ->name('textile-collections.outcome');
+        Route::post('textile-collections/{collection}/collect', [TextileCollectionController::class, 'collect'])
+            ->middleware('can:textile.record_outcome')
+            ->name('textile-collections.collect');
         Route::post('textile-collections/{collection}/proof', [TextileCollectionController::class, 'uploadStaffProof'])
             ->middleware('can:textile.record_outcome')
             ->name('textile-collections.proof');

@@ -4,14 +4,19 @@ import { IconAlertTriangle, IconCalendar, IconNavigation, IconPhone } from '@tab
 import { ApiError } from '../../../../shared/api/errors';
 import { ConfirmActionDialog } from '../../components/ConfirmActionDialog';
 import {
+  collectTextileWithProof,
   recordTextileOutcome,
-  uploadTextileProofPhoto,
   type TextileCollectionListItem,
 } from '../../api/textileApi';
 import { getQueue } from '../../../citizen/offline/queue';
 import { requestBackgroundSync } from '../../../citizen/offline/swBridge';
 import { readSession } from '../../../../auth/storage';
 import { TextileFieldOfflineBanner } from '../../components/TextileFieldOfflineBanner';
+import { getOpsQueue } from '../../offline/queue';
+import { registerTextileOfflineRetry, type CollectPayload } from '../../offline/textileOfflineQueue';
+import { OfflineBanner } from '../../offline/OfflineBanner';
+import { useAuth } from '../../../../auth/AuthContext';
+import { useOpsQueue } from '../../offline/useOpsQueue';
 
 function isOfflineError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message.toLowerCase() : '';
@@ -52,8 +57,15 @@ function mapsHref(address: string) {
   return isIOS ? `maps://?q=${q}` : `https://www.google.com/maps/search/?api=1&query=${q}`;
 }
 
+function newIdempotencyKey(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return `collect-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+function isNetworkFailure(err: unknown): boolean { return !(err instanceof ApiError); }
+
 export default function TextileDispatchPage(): JSX.Element {
   const desk = useDesk();
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [zoneId, setZoneId] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -64,6 +76,8 @@ export default function TextileDispatchPage(): JSX.Element {
   const [overrideReason, setOverrideReason] = useState('');
   const [assignmentOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [queuedNotice, setQueuedNotice] = useState<string | null>(null);
+  const opsQueue = useOpsQueue();
 
   const queue = useTextileQueue({
     status: 'scheduled',
@@ -139,36 +153,33 @@ export default function TextileDispatchPage(): JSX.Element {
 
   async function handleCollect(
     item: TextileCollectionListItem,
-    p: { bags: number; weight: number; file: File },
+    p: { bags: number; weight: number; file: File; reason?: string },
   ) {
     setServerError(null);
-    const idempotencyKey =
-      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-        ? crypto.randomUUID()
-        : `field-${item.id}-${Date.now()}`;
+    setQueuedNotice(null);
+    const idempotencyKey = newIdempotencyKey();
     try {
-      await uploadTextileProofPhoto(item.id, p.file, desk.departmentId);
-      await outcome.mutateAsync({ id: item.id, kind: 'collected', bags: p.bags, weight: p.weight });
+      await collectTextileWithProof(item.id, { actual_bags: p.bags, actual_weight_kg: p.weight, photo: p.file, reason: p.reason, idempotencyKey }, desk.departmentId);
+      setExpandedId(null);
+      void queue.refetch();
     } catch (e) {
-      if (isOfflineError(e)) {
-        const ownerId = readSession()?.user.id ?? null;
-        // Queue outcome + proof locally — tied to authenticated user/session.
-        // Retry is idempotent via Idempotency-Key (queue item id).
-        // Cleared after confirmed upload; never silently discarded.
-        await getQueue(ownerId).enqueue({
-          kind: 'textile.field.outcome',
-          id: idempotencyKey,
-          payload: {
-            collectionId: item.id,
-            outcome: 'collected',
-            actual_bags: p.bags,
-            actual_weight_kg: p.weight,
-            photo: p.file,
-            department_id: desk.departmentId,
-          },
-        });
-        void requestBackgroundSync();
-        setServerError(`Saved offline — pending upload. Will retry automatically. No proof discarded. (id ${idempotencyKey.slice(0, 8)}…)`);
+      if (isNetworkFailure(e)) {
+        // Offline — queue locally and show explicit pending state
+        registerTextileOfflineRetry(user?.id ?? null);
+        const payload: CollectPayload = {
+          collectionId: item.id,
+          actualBags: p.bags,
+          actualWeightKg: p.weight,
+          reason: p.reason,
+          photoName: p.file.name,
+          photoType: p.file.type,
+          photoBlob: p.file,
+          idempotencyKey,
+          departmentId: desk.departmentId,
+          reference: item.reference,
+        };
+        await getOpsQueue(user?.id ?? null).enqueue({ kind: 'textile.collect', payload, id: idempotencyKey });
+        setQueuedNotice(`Queued offline — ${item.reference} will upload when you are back online.`);
         setExpandedId(null);
         return;
       }
@@ -228,8 +239,11 @@ export default function TextileDispatchPage(): JSX.Element {
         </div>
       }
     >
+      <OfflineBanner />
       <div className="mb-4">
         <TextileFieldOfflineBanner />
+        {queuedNotice ? <p role="status" className="mt-2 rounded-lg bg-sky-50 px-4 py-2 text-xs text-sky-800">{queuedNotice}</p> : null}
+        {opsQueue.pending.length > 0 ? <p aria-label={`${opsQueue.pending.length} pending uploads`} className="mt-2 text-xs text-sky-700">{opsQueue.pending.length} pending upload{opsQueue.pending.length === 1 ? '' : 's'} queued for this account — retry is automatic and idempotent.</p> : null}
         {serverError ? (
           <p role="alert" className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
             {serverError}
