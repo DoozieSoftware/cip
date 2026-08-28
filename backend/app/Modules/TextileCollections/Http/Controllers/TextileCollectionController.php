@@ -14,6 +14,7 @@ use App\Modules\TextileCollections\DTO\TextileCollectionInput;
 use App\Modules\TextileCollections\Http\Requests\ApproveTextileCollectionRequest;
 use App\Modules\TextileCollections\Http\Requests\AssignTextileBatchRequest;
 use App\Modules\TextileCollections\Http\Requests\CreateCollectionBatchRequest;
+use App\Modules\TextileCollections\Http\Requests\QueueOfflineOutcomeRequest;
 use App\Modules\TextileCollections\Http\Requests\RecordCollectionOutcomeRequest;
 use App\Modules\TextileCollections\Http\Requests\RecordDropoffReceiptRequest;
 use App\Modules\TextileCollections\Http\Requests\ReorderTextileBatchStopsRequest;
@@ -26,11 +27,13 @@ use App\Modules\TextileCollections\Http\Resources\TextileCollectionResource;
 use App\Modules\TextileCollections\Http\Resources\TextileServiceZoneResource;
 use App\Modules\TextileCollections\Models\TextileCollectionBatch;
 use App\Modules\TextileCollections\Models\TextileCollectionRequest;
+use App\Modules\TextileCollections\Models\TextileOfflineSubmission;
 use App\Modules\TextileCollections\Models\TextileServiceZone;
 use App\Modules\TextileCollections\Models\TextileZoneUnavailability;
 use App\Modules\TextileCollections\Services\TextileCollectionMediaService;
 use App\Modules\TextileCollections\Services\TextileCollectionOperationsService;
 use App\Modules\TextileCollections\Services\TextileCollectionService;
+use App\Modules\TextileCollections\Services\TextileOfflineService;
 use App\Modules\TextileCollections\Services\TextileReceiptService;
 use App\Modules\TextileCollections\Services\TextileRescheduleService;
 use App\Modules\TextileCollections\Services\TextileTripService;
@@ -54,6 +57,7 @@ final class TextileCollectionController extends BaseController
         private readonly TextileTripService $trips,
         private readonly TextileRescheduleService $reschedules,
         private readonly TextileUnavailabilityService $unavailability,
+        private readonly TextileOfflineService $offline,
     ) {}
 
     public function zones(Request $request): JsonResponse
@@ -481,6 +485,43 @@ final class TextileCollectionController extends BaseController
         $user = $this->authenticatedUser($request);
 
         $data = $request->validated();
+        $idempotencyKey = $request->header('Idempotency-Key') ?? $request->header('idempotency-key');
+
+        // If an idempotency key is supplied, route through the offline-safe
+        // idempotent path so retry (including after a network drop) produces
+        // exactly one collection outcome and one authoritative proof chain.
+        if (is_string($idempotencyKey) && trim($idempotencyKey) !== '') {
+            $outcome = $this->stringValue($data, 'outcome');
+
+            // Only collected/missed are queued offline; other outcomes fall through to normal path.
+            if (in_array($outcome, ['collected', 'missed'], true)) {
+                $submission = $this->offline->submit(
+                    collection: $collection,
+                    actor: $user,
+                    idempotencyKey: trim($idempotencyKey),
+                    outcome: $outcome,
+                    actualBags: $this->optionalInt($data, 'actual_bags'),
+                    actualWeightKg: $this->optionalFloat($data, 'actual_weight_kg'),
+                    reason: $this->optionalString($data, 'reason'),
+                    existingProofMediaId: null,
+                    proofFile: null,
+                );
+
+                $fresh = $collection->refresh()->load(['photos', 'department', 'serviceZone', 'batch']);
+
+                return $this->respond(
+                    array_merge(
+                        (new TextileCollectionResource($fresh))->toArray($request),
+                        ['offline_submission' => [
+                            'id' => $submission->id,
+                            'status' => $submission->status,
+                            'idempotency_key' => $submission->idempotency_key,
+                        ]],
+                    ),
+                    'Outcome recorded.',
+                );
+            }
+        }
 
         $updated = $this->operations->recordOutcome(
             collection: $collection,
@@ -804,6 +845,157 @@ final class TextileCollectionController extends BaseController
         }
 
         return $out;
+    }
+
+    // ── Phase 4: Offline-safe field collection ────────────────────
+
+    /**
+     * Idempotent offline outcome submission.
+     *
+     * The client queues this payload locally when offline and retries when
+     * connectivity returns. The Idempotency-Key header guarantees exactly-one
+     * outcome even if the request is retried multiple times or from a
+     * different device. Proof photo may be sent inline as `photo` multipart
+     * or referenced as an already-uploaded `proof_media_id`. Server-side
+     * validation, media checksum, authorization, and audit are never bypassed.
+     *
+     * Pending state is explicit: the returned `status` is `pending`,
+     * `completed`, or `failed`. A failed submission remains visible in the
+     * recovery view and is never silently discarded.
+     */
+    public function queueOfflineOutcome(
+        TextileCollectionRequest $collection,
+        QueueOfflineOutcomeRequest $request,
+    ): JsonResponse {
+        $this->assertCollectionPartner($request, $collection);
+        $user = $this->authenticatedUser($request);
+        $data = $request->validated();
+        $idempotencyKey = (string) ($request->header('Idempotency-Key') ?? $request->header('idempotency-key') ?? $request->input('idempotency_key', ''));
+
+        if ($idempotencyKey === '' && isset($data['idempotency_key']) && is_string($data['idempotency_key'])) {
+            $idempotencyKey = $data['idempotency_key'];
+        }
+
+        /** @var UploadedFile|null $file */
+        $file = $request->file('photo');
+
+        $submission = $this->offline->submit(
+            collection: $collection,
+            actor: $user,
+            idempotencyKey: $idempotencyKey,
+            outcome: (string) $data['outcome'],
+            actualBags: isset($data['actual_bags']) && is_numeric($data['actual_bags']) ? (int) $data['actual_bags'] : null,
+            actualWeightKg: isset($data['actual_weight_kg']) && is_numeric($data['actual_weight_kg']) ? (float) $data['actual_weight_kg'] : null,
+            reason: isset($data['reason']) && is_string($data['reason']) ? $data['reason'] : null,
+            existingProofMediaId: isset($data['proof_media_id']) && is_string($data['proof_media_id']) ? $data['proof_media_id'] : null,
+            proofFile: $file instanceof UploadedFile ? $file : null,
+        );
+
+        $statusCode = $submission->status === TextileOfflineSubmission::STATUS_COMPLETED ? 200 : 202;
+
+        return $this->respond([
+            'id' => $submission->id,
+            'collection_request_id' => $submission->collection_request_id,
+            'idempotency_key' => $submission->idempotency_key,
+            'outcome' => $submission->outcome,
+            'status' => $submission->status,
+            'error_code' => $submission->error_code,
+            'error_message' => $submission->error_message,
+            'retry_count' => $submission->retry_count,
+            'completed_at' => $submission->completed_at?->toIso8601String(),
+            'created_at' => $submission->created_at?->toIso8601String(),
+        ], $submission->status === TextileOfflineSubmission::STATUS_COMPLETED ? 'Offline outcome completed.' : 'Offline outcome queued.', $statusCode);
+    }
+
+    /**
+     * Recovery / pending-upload view: list offline submissions for the actor.
+     *
+     * Authorised partner members see their own queued evidence; entries are
+     * tied to the authenticated user/session per D-08 and are not silently
+     * discarded. Use `?status=failed` to surface permanently-failed uploads.
+     */
+    public function listOfflineSubmissions(Request $request): JsonResponse
+    {
+        $this->assertCollectionPartner($request);
+        $user = $this->authenticatedUser($request);
+        $status = is_string($request->query('status')) ? $request->query('status') : null;
+        $zoneId = is_string($request->query('service_zone_id')) ? $request->query('service_zone_id') : null;
+        $perPage = (int) ($request->query('per_page', 25));
+
+        $paginator = $this->offline->listForActor($user, $status, $zoneId, $perPage);
+
+        $items = collect($paginator->items())->map(fn (TextileOfflineSubmission $s): array => [
+            'id' => $s->id,
+            'collection_request_id' => $s->collection_request_id,
+            'service_zone_id' => $s->service_zone_id,
+            'idempotency_key' => $s->idempotency_key,
+            'outcome' => $s->outcome,
+            'actual_bags' => $s->actual_bags,
+            'actual_weight_kg' => $s->actual_weight_kg !== null ? (float) $s->actual_weight_kg : null,
+            'reason' => $s->reason,
+            'proof_media_id' => $s->proof_media_id,
+            'status' => $s->status,
+            'error_code' => $s->error_code,
+            'error_message' => $s->error_message,
+            'retry_count' => $s->retry_count,
+            'completed_at' => $s->completed_at?->toIso8601String(),
+            'created_at' => $s->created_at?->toIso8601String(),
+            'updated_at' => $s->updated_at?->toIso8601String(),
+        ])->all();
+
+        return $this->respond($items, 'OK', 200, [
+            'page' => $paginator->currentPage(),
+            'per_page' => $paginator->perPage(),
+            'total' => $paginator->total(),
+            'last_page' => $paginator->lastPage(),
+        ]);
+    }
+
+    public function showOfflineSubmission(TextileOfflineSubmission $submission, Request $request): JsonResponse
+    {
+        $this->assertCollectionPartner($request);
+        $user = $this->authenticatedUser($request);
+
+        if ((string) $submission->submitted_by !== (string) $user->id) {
+            throw ApiException::forbidden('You cannot view a submission owned by another user.');
+        }
+
+        $submission->load(['collectionRequest', 'proofMedia']);
+
+        return $this->respond([
+            'id' => $submission->id,
+            'collection_request_id' => $submission->collection_request_id,
+            'service_zone_id' => $submission->service_zone_id,
+            'idempotency_key' => $submission->idempotency_key,
+            'outcome' => $submission->outcome,
+            'actual_bags' => $submission->actual_bags,
+            'actual_weight_kg' => $submission->actual_weight_kg !== null ? (float) $submission->actual_weight_kg : null,
+            'reason' => $submission->reason,
+            'proof_media_id' => $submission->proof_media_id,
+            'status' => $submission->status,
+            'error_code' => $submission->error_code,
+            'error_message' => $submission->error_message,
+            'retry_count' => $submission->retry_count,
+            'completed_at' => $submission->completed_at?->toIso8601String(),
+            'created_at' => $submission->created_at?->toIso8601String(),
+            'updated_at' => $submission->updated_at?->toIso8601String(),
+        ]);
+    }
+
+    public function retryOfflineSubmission(TextileOfflineSubmission $submission, Request $request): JsonResponse
+    {
+        $this->assertCollectionPartner($request);
+        $user = $this->authenticatedUser($request);
+        $retried = $this->offline->retry($submission, $user);
+
+        return $this->respond([
+            'id' => $retried->id,
+            'status' => $retried->status,
+            'error_code' => $retried->error_code,
+            'error_message' => $retried->error_message,
+            'retry_count' => $retried->retry_count,
+            'completed_at' => $retried->completed_at?->toIso8601String(),
+        ], $retried->status === TextileOfflineSubmission::STATUS_COMPLETED ? 'Retry succeeded.' : 'Retry failed.');
     }
 
     /**

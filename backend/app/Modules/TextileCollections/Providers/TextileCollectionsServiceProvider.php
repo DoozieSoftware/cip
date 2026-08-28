@@ -41,6 +41,9 @@ final class TextileCollectionsServiceProvider extends ServiceProvider
         Gate::define('textile.view_unavailability', [TextileCollectionPolicy::class, 'viewUnavailability']);
         Gate::define('textile.manage_unavailability', [TextileCollectionPolicy::class, 'manageUnavailability']);
         Gate::define('textile.reschedule_override', [TextileCollectionPolicy::class, 'rescheduleOverride']);
+        Gate::define('textile.queue_offline', [TextileCollectionPolicy::class, 'queueOffline']);
+        Gate::define('textile.view_offline_queue', [TextileCollectionPolicy::class, 'viewOfflineQueue']);
+        Gate::define('textile.retry_offline', [TextileCollectionPolicy::class, 'retryOffline']);
 
         // Phase 3: reschedule + on-the-way notifications (suppression for cancelled enforced in listeners).
         // TODO D-06 OPEN: reminder channel/timing pending partner decision — listener is SMS by default.

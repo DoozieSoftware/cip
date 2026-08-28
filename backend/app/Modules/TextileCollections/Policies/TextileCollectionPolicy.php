@@ -110,6 +110,21 @@ final class TextileCollectionPolicy extends BasePolicy
         return $this->isCollectionPartner($user);
     }
 
+    public function queueOffline(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
+
+    public function viewOfflineQueue(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
+
+    public function retryOffline(User $user): bool
+    {
+        return $this->isCollectionPartner($user);
+    }
+
     /**
      * Check if the user is a member of a department that has ≥1
      * textile_partner_capabilities row (optionally matching the

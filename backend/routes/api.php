@@ -437,6 +437,19 @@ Route::prefix('v1')->group(function (): void {
         Route::post('textile-zones/{zone}/unavailability', [TextileCollectionController::class, 'storeUnavailability'])
             ->middleware('can:textile.manage_unavailability')
             ->name('textile-zones.unavailability.store');
+        // Phase 4: Offline-safe field collection — idempotent queue + recovery view
+        Route::post('textile-collections/{collection}/offline-outcome', [TextileCollectionController::class, 'queueOfflineOutcome'])
+            ->middleware('can:textile.queue_offline')
+            ->name('textile-collections.offline-outcome');
+        Route::get('textile-offline/submissions', [TextileCollectionController::class, 'listOfflineSubmissions'])
+            ->middleware('can:textile.view_offline_queue')
+            ->name('textile-offline.submissions.index');
+        Route::get('textile-offline/submissions/{submission}', [TextileCollectionController::class, 'showOfflineSubmission'])
+            ->middleware('can:textile.view_offline_queue')
+            ->name('textile-offline.submissions.show');
+        Route::post('textile-offline/submissions/{submission}/retry', [TextileCollectionController::class, 'retryOfflineSubmission'])
+            ->middleware('can:textile.retry_offline')
+            ->name('textile-offline.submissions.retry');
     });
 
     // Citizen PWA — report submission and read-back (M4)
