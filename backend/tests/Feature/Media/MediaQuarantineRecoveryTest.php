@@ -13,6 +13,7 @@ use App\Modules\Media\Jobs\RecoverQuarantinedMediaJob;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Models\MediaAccessLog;
 use App\Modules\Media\Services\MediaDeliveryService;
+use App\Modules\Media\Services\MediaQuarantineService;
 use App\Modules\Media\Services\MediaService;
 use App\Modules\Media\Services\MimeValidator;
 use App\Modules\Reports\Models\Report;
@@ -74,12 +75,22 @@ it('releases only clean digest-verified bytes and records scanner custody', func
     Bus::fake([ComputeHashesJob::class, GenerateThumbnailJob::class, ExtractVideoMetadataJob::class]);
     $report = Report::factory()->create();
     $uploader = User::factory()->create();
-    $service = new MediaService(app(MimeValidator::class), mqrScanner(fn (): bool => true));
+    $scannedPath = null;
+    $service = new MediaService(app(MimeValidator::class), mqrScanner(function (string $path) use (&$scannedPath): bool {
+        $scannedPath = $path;
+
+        expect($path)->toStartWith(storage_path('framework').DIRECTORY_SEPARATOR)
+            ->and(is_file($path))->toBeTrue();
+
+        return true;
+    }));
 
     $media = $service->uploadPhoto($report->id, mqrJpeg(), $uploader->id);
     $quarantine = $media->quarantine()->firstOrFail();
 
-    expect($media->scan_status)->toBe(MediaScanStatus::CLEAN)
+    expect($scannedPath)->not->toBeNull()
+        ->and(is_file($scannedPath))->toBeFalse()
+        ->and($media->scan_status)->toBe(MediaScanStatus::CLEAN)
         ->and($media->storage_path)->toStartWith("evidence/{$report->id}/photo/")
         ->and(Storage::disk('local')->exists($media->storage_path))->toBeTrue()
         ->and(Storage::disk('local')->exists("quarantine/{$report->id}/photo/{$media->id}.jpg"))->toBeFalse()
@@ -119,8 +130,8 @@ it('keeps infected uploads isolated and never queues post-processing', function 
     Bus::assertNotDispatched(GenerateThumbnailJob::class);
 });
 
-it('retains scanner infrastructure failures and safely releases them on recovery', function (): void {
-    Bus::fake([ComputeHashesJob::class, GenerateThumbnailJob::class, ExtractVideoMetadataJob::class]);
+it('queues scanner infrastructure failures and safely releases them on recovery', function (): void {
+    Bus::fake();
     $report = Report::factory()->create();
     $uploader = User::factory()->create();
     $failing = new MediaService(
@@ -128,16 +139,7 @@ it('retains scanner infrastructure failures and safely releases them on recovery
         mqrScanner(fn (): never => throw new RuntimeException('scanner socket unavailable')),
     );
 
-    try {
-        $failing->uploadPhoto($report->id, mqrJpeg(), $uploader->id);
-        $this->fail('Expected the scanner infrastructure failure.');
-    } catch (ApiException $e) {
-        expect($e->errorCode)->toBe('MEDIA_SCAN_UNAVAILABLE')
-            ->and($e->httpStatus)->toBe(503)
-            ->and($e->details['retryable'])->toBeTrue();
-    }
-
-    $media = Media::query()->where('report_id', $report->id)->firstOrFail();
+    $media = $failing->uploadPhoto($report->id, mqrJpeg(), $uploader->id);
     $quarantine = $media->quarantine()->firstOrFail();
 
     expect($media->scan_status)->toBe(MediaScanStatus::UNKNOWN)
@@ -145,8 +147,13 @@ it('retains scanner infrastructure failures and safely releases them on recovery
         ->and($quarantine->reason)->toBe(MediaQuarantineReason::SCANNER_ERROR)
         ->and(Storage::disk('local')->exists($media->storage_path))->toBeTrue();
 
+    Bus::assertDispatched(
+        RecoverQuarantinedMediaJob::class,
+        fn (RecoverQuarantinedMediaJob $job): bool => $job->quarantineId === $quarantine->id,
+    );
+
     $this->app->instance(VirusScanServiceInterface::class, mqrScanner(fn (): bool => true));
-    RecoverQuarantinedMediaJob::dispatchSync($quarantine->id);
+    app(MediaQuarantineService::class)->recover($quarantine->id);
 
     expect($media->refresh()->scan_status)->toBe(MediaScanStatus::CLEAN)
         ->and($media->storage_path)->toStartWith("evidence/{$report->id}/photo/")

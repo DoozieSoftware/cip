@@ -9,6 +9,16 @@ use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 uses(TestCase::class);
+
+function clamavFixtureScript(string $body): string
+{
+    $path = tempnam(sys_get_temp_dir(), 'cip-clamav-');
+    file_put_contents($path, "#!/bin/sh\n".$body);
+    chmod($path, 0700);
+
+    return $path;
+}
+
 it('LogScanner always returns true (verdict CLEAN)', function (): void {
     $tmp = tempnam(sys_get_temp_dir(), 'cip-vs-');
     file_put_contents($tmp, 'whatever');
@@ -67,4 +77,31 @@ it('falls back to LogScanner for an unknown driver name', function (): void {
     $resolved = app(VirusScanServiceInterface::class);
 
     expect($resolved)->toBeInstanceOf(LogScanner::class);
+});
+
+it('accepts ClamAV version output only when a signature serial is loaded', function (): void {
+    $healthy = clamavFixtureScript("printf 'ClamAV 1.4.3/28110/Tue Sep 1 00:00:00 2026\\n'\n");
+    $missingSignatures = clamavFixtureScript("printf 'ClamAV 1.4.3\\n'\n");
+
+    try {
+        expect((new ClamAvScanner($healthy))->healthCheck())->toBeTrue()
+            ->and((new ClamAvScanner($missingSignatures))->healthCheck())->toBeFalse();
+    } finally {
+        @unlink($healthy);
+        @unlink($missingSignatures);
+    }
+});
+
+it('includes ClamAV stderr when a scan fails', function (): void {
+    $binary = clamavFixtureScript("printf 'database unavailable\\n' >&2\nexit 2\n");
+    $sample = tempnam(sys_get_temp_dir(), 'cip-clamav-sample-');
+    file_put_contents($sample, 'harmless sample');
+
+    try {
+        expect(fn (): bool => (new ClamAvScanner($binary))->scan($sample))
+            ->toThrow(RuntimeException::class, 'database unavailable');
+    } finally {
+        @unlink($binary);
+        @unlink($sample);
+    }
 });

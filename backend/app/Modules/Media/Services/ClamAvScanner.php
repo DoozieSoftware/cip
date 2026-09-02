@@ -39,11 +39,11 @@ class ClamAvScanner implements VirusScanServiceInterface
             throw new RuntimeException("ClamAvScanner: file not found at {$path}");
         }
 
-        $binary = $this->binary;
-        $command = escapeshellcmd($binary).' --no-summary --infected --stdout '.escapeshellarg($path);
-        $output = [];
-        $exit = 1;
-        @exec($command, $output, $exit);
+        $process = new Process([$this->binary, '--no-summary', '--infected', '--stdout', $path]);
+        $process->setTimeout(60);
+        $process->run();
+        $exit = $process->getExitCode();
+        $output = trim($process->getOutput()."\n".$process->getErrorOutput());
 
         if ($exit === 0) {
             Log::info('media.virus_scan.clamav', [
@@ -60,15 +60,20 @@ class ClamAvScanner implements VirusScanServiceInterface
                 'scanner' => $this->name(),
                 'path' => $path,
                 'verdict' => 'INFECTED',
-                'output' => $output,
+                'output' => $output === '' ? [] : explode("\n", $output),
             ]);
 
             return false;
         }
 
         throw new RuntimeException(
-            "ClamAvScanner: clamscan failed (exit {$exit}) on {$path}: ".
-            implode("\n", $output)
+            sprintf(
+                'ClamAvScanner: clamscan failed (exit %s%s) on %s: %s',
+                $exit === null ? 'unknown' : (string) $exit,
+                $process->hasBeenSignaled() ? ', signal '.$process->getTermSignal() : '',
+                $path,
+                $output,
+            )
         );
     }
 
@@ -80,9 +85,10 @@ class ClamAvScanner implements VirusScanServiceInterface
     public function healthCheck(): bool
     {
         try {
-            // `--version` proves the binary is executable. A no-op scan of
-            // /dev/null additionally proves that the signature database can
-            // be opened; a missing/invalid database exits non-zero.
+            // ClamAV includes the loaded official signature serial in its
+            // version output (for example `ClamAV 1.4.3/28110/...`). Scanning
+            // `/dev/null` is not a valid health probe: cPanel's build rejects
+            // device files even when regular-file scanning is healthy.
             $version = new Process([$this->binary, '--version']);
             $version->setTimeout(5);
             $version->run();
@@ -91,11 +97,7 @@ class ClamAvScanner implements VirusScanServiceInterface
                 return false;
             }
 
-            $probe = new Process([$this->binary, '--no-summary', '--stdout', '/dev/null']);
-            $probe->setTimeout(10);
-            $probe->run();
-
-            return $probe->getExitCode() === 0;
+            return preg_match('/^ClamAV\s+[^\s\/]+\/\d+\//', trim($version->getOutput())) === 1;
         } catch (Throwable) {
             return false;
         }

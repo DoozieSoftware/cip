@@ -12,6 +12,7 @@ use App\Modules\Media\Exceptions\MediaIntegrityException;
 use App\Modules\Media\Jobs\ComputeHashesJob;
 use App\Modules\Media\Jobs\ExtractVideoMetadataJob;
 use App\Modules\Media\Jobs\GenerateThumbnailJob;
+use App\Modules\Media\Jobs\RecoverQuarantinedMediaJob;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Models\MediaQuarantine;
 use App\Modules\Media\Repositories\MediaQuarantineRepository;
@@ -191,11 +192,27 @@ final class MediaQuarantineService
         [$media, $quarantine] = $created;
 
         try {
-            $clean = $this->scanner->scan($sourcePath);
+            $localPath = $this->materializeForScan($media, $quarantine);
+        } catch (MediaIntegrityException $e) {
+            $this->markIntegrityFailed($media, $quarantine, $e);
+
+            throw $this->unavailableException($media, $e);
         } catch (Throwable $e) {
             $this->markUnknown($media, $quarantine, MediaQuarantineReason::SCANNER_ERROR, $e);
 
-            throw $this->unavailableException($media, $e);
+            return $this->deferRecovery($media, $quarantine);
+        }
+
+        try {
+            try {
+                $clean = $this->scanner->scan($localPath);
+            } catch (Throwable $e) {
+                $this->markUnknown($media, $quarantine, MediaQuarantineReason::SCANNER_ERROR, $e);
+
+                return $this->deferRecovery($media, $quarantine);
+            }
+        } finally {
+            @unlink($localPath);
         }
 
         if (! $clean) {
@@ -221,7 +238,7 @@ final class MediaQuarantineService
         } catch (Throwable $e) {
             $this->markUnknown($media, $quarantine, MediaQuarantineReason::RELEASE_ERROR, $e);
 
-            throw $this->unavailableException($media, $e);
+            return $this->deferRecovery($media, $quarantine);
         }
     }
 
@@ -623,7 +640,10 @@ final class MediaQuarantineService
             throw new RuntimeException('Unable to read quarantined media from storage.');
         }
 
-        $temporaryPath = tempnam(sys_get_temp_dir(), 'cip-quarantine-');
+        // cPanel's ClamAV wrapper terminates scans of paths under the shared
+        // system /tmp directory. Keep the integrity-checked scan copy inside
+        // Laravel's private framework storage instead.
+        $temporaryPath = tempnam(storage_path('framework'), 'cip-quarantine-');
 
         if ($temporaryPath === false) {
             fclose($input);
@@ -762,6 +782,19 @@ final class MediaQuarantineService
             ],
             $error,
         );
+    }
+
+    private function deferRecovery(Media $media, MediaQuarantine $quarantine): Media
+    {
+        RecoverQuarantinedMediaJob::dispatch($quarantine->id);
+
+        Log::info('media.quarantine.recovery_queued', [
+            'media_id' => $media->id,
+            'quarantine_id' => $quarantine->id,
+            'scanner' => $this->scanner->name(),
+        ]);
+
+        return $media;
     }
 
     private function safeError(Throwable $error): string
