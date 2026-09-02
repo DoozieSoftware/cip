@@ -51,7 +51,7 @@ export interface AuthContextValue {
   loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -193,4 +193,8 @@ export function useAuth(): AuthContextValue {
     throw new Error('useAuth must be used within AuthProvider');
   }
   return ctx;
+}
+
+export function useOptionalAuth(): AuthContextValue | null {
+  return useContext(AuthContext);
 }

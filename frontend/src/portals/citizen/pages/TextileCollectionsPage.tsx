@@ -38,7 +38,7 @@ function MethodBadge({ method }: { method: string }): JSX.Element {
   const isDropoff = method === 'dropoff';
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${isDropoff ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}`}
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${isDropoff ? 'border-[var(--color-info-muted)] bg-[var(--color-info)]/10 text-[var(--color-info)]' : 'border-[var(--color-warning-muted)] bg-[var(--color-warning)]/10 text-[var(--color-warning)]'}`}
     >
       {isDropoff ? 'Drop-off' : 'Pickup'}
     </span>
@@ -59,12 +59,12 @@ export default function TextileCollectionsPage(): JSX.Element {
         <header className="border-b border-[var(--color-border-faint)] pb-6">
           <h1 className="text-3xl">Textile collections</h1>
         </header>
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-xl border border-[var(--color-danger-muted)] bg-[var(--color-danger)]/10 p-4 text-sm text-[var(--color-danger)]">
           Could not load textile collections.{' '}
           <button
             type="button"
             onClick={() => void query.refetch()}
-            className="ml-2 rounded-full border border-red-300 px-4 py-1.5 text-sm"
+            className="ml-2 rounded-full border border-[var(--color-danger-muted)] px-4 py-1.5 text-sm"
           >
             Retry
           </button>
@@ -173,7 +173,7 @@ export default function TextileCollectionsPage(): JSX.Element {
             <Link
               key={item.id}
               to={`/citizen/textile-collections/${item.id}`}
-              className="flex min-w-0 items-center gap-4 rounded-xl border border-black/10 bg-white p-4 transition hover:border-black/20"
+              className="flex min-w-0 items-center gap-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-[var(--color-border-subtle)] transition hover:ring-[var(--color-border)]"
             >
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
                 <IconRecycle className="h-5 w-5" stroke={1.6} />
@@ -187,7 +187,7 @@ export default function TextileCollectionsPage(): JSX.Element {
                   <MethodBadge method={item.collection_method} />
                   <span>{label}</span>
                   {tripChip ? (
-                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium">
+                    <span className="rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-text-secondary)]">
                       {tripChip}
                     </span>
                   ) : null}

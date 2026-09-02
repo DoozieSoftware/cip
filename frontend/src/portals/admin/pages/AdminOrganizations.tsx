@@ -7,7 +7,16 @@ import {
   useDeleteOrganization,
   useUpdateOrganization,
 } from '../api/client';
-import { Button, Dialog, EmptyState, Spinner, Card, CardBody } from '../../../shared/ui';
+import {
+  Button,
+  Dialog,
+  EmptyState,
+  ErrorState,
+  Spinner,
+  Card,
+  CardBody,
+  Badge,
+} from '../../../shared/ui';
 import { IconBuilding, IconPlus, IconPencil, IconTrash } from '@tabler/icons-react';
 
 const blank: AdminOrganizationInput = {
@@ -43,8 +52,8 @@ function OrganizationForm({
     });
   };
   return (
-    <form onSubmit={submit} className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
+    <form onSubmit={submit} className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field
           label="Name"
           value={draft.name}
@@ -119,7 +128,7 @@ function Field({
         value={value}
         required={required}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+        className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
       />
     </label>
   );
@@ -132,6 +141,7 @@ export default function AdminOrganizations(): JSX.Element {
   const remove = useDeleteOrganization();
   const [editing, setEditing] = useState<AdminOrganization | null>(null);
   const [open, setOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<AdminOrganization | null>(null);
   const rows = list.data ?? [];
 
   const submit = (input: AdminOrganizationInput): void => {
@@ -144,11 +154,16 @@ export default function AdminOrganizations(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+    <div className="mx-auto max-w-6xl space-y-6">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">Organizations</h1>
-          <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Platform / Tenants
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+            Organizations
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             Manage tenant identity, domains, quotas, and activation.
           </p>
         </div>
@@ -165,21 +180,37 @@ export default function AdminOrganizations(): JSX.Element {
       </header>
 
       {list.isLoading ? (
-        <Spinner label="Loading organizations" />
+        <div className="flex min-h-[200px] items-center justify-center py-16">
+          <Spinner label="Loading organizations" />
+        </div>
+      ) : list.isError ? (
+        <ErrorState
+          title="Failed to load organizations"
+          description="There was a problem fetching organizations."
+          error={list.error instanceof Error ? list.error : null}
+          action={
+            <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
+              Retry
+            </Button>
+          }
+        />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No organizations"
           description="Create an organization to prepare multi-tenant isolation."
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           {rows.map((item) => (
             <Card key={item.id}>
               <CardBody>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
-                      <IconBuilding className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.7} />
+                      <IconBuilding
+                        className="h-4 w-4 text-[var(--color-text-secondary)]"
+                        stroke={1.7}
+                      />
                     </span>
                     <div>
                       <h2 className="text-sm font-semibold text-[var(--color-ink)]">{item.name}</h2>
@@ -189,11 +220,16 @@ export default function AdminOrganizations(): JSX.Element {
                       </p>
                     </div>
                   </div>
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${item.active ? 'bg-[#edf7f0] text-[var(--color-success)]' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'}`}
+                  <Badge
+                    tone={item.active ? 'success' : 'neutral'}
+                    className={
+                      item.active
+                        ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
+                        : undefined
+                    }
                   >
                     {item.active ? 'Active' : 'Inactive'}
-                  </span>
+                  </Badge>
                 </div>
                 <p className="mt-3 text-sm text-[var(--color-text-secondary)]">
                   Storage quota: {item.storage_quota_mb.toLocaleString()} MB
@@ -214,9 +250,7 @@ export default function AdminOrganizations(): JSX.Element {
                     size="sm"
                     variant="danger"
                     leftIcon={<IconTrash className="h-3.5 w-3.5" stroke={1.7} />}
-                    onClick={() => {
-                      if (confirm(`Delete ${item.name}?`)) remove.mutate(item.id);
-                    }}
+                    onClick={() => setDeleteTarget(item)}
                   >
                     Delete
                   </Button>
@@ -240,6 +274,33 @@ export default function AdminOrganizations(): JSX.Element {
           onCancel={() => setOpen(false)}
           onSubmit={submit}
         />
+      </Dialog>
+
+      <Dialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title={deleteTarget ? `Delete ${deleteTarget.name}?` : 'Delete organization'}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              loading={remove.isPending}
+              onClick={() => {
+                if (deleteTarget)
+                  remove.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) });
+              }}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          This action cannot be undone. The organization will be removed permanently.
+        </p>
       </Dialog>
     </div>
   );

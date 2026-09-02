@@ -498,7 +498,7 @@ export default function SubmitPage(): JSX.Element {
             <button
               type="button"
               onClick={() => void navigate('/citizen')}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d6cf] bg-[#faf9f6] text-[var(--color-text-secondary)] transition hover:bg-white"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] transition hover:bg-white"
               aria-label="Back to citizen home"
             >
               <IconArrowLeft className="h-5 w-5" stroke={1.6} />
@@ -521,7 +521,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => void discardSavedDraft()}
-                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-red-200 bg-white px-4 text-sm font-medium text-red-700 transition hover:bg-red-50"
+                className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-danger)]/20 bg-white px-4 text-sm font-medium text-[var(--color-danger)] transition hover:bg-[var(--color-danger)]/5"
               >
                 <IconTrash className="h-4 w-4" stroke={1.6} />
                 {t('submit.discard.button')}
@@ -545,7 +545,7 @@ export default function SubmitPage(): JSX.Element {
                   }}
                   disabled={i > FORM_STEPS.indexOf(activeStep) && !completedSteps.includes(step)}
                   className={cx(
-                    'group flex min-h-[44px] flex-1 items-center gap-1.5 rounded-full py-1 transition',
+                    'group flex min-h-11 flex-1 items-center gap-2 rounded-full py-1 transition',
                     isActive || isComplete ? 'cursor-pointer' : 'cursor-not-allowed opacity-40',
                   )}
                   aria-label={`${t('submit.stepCount', { current: i + 1, total: FORM_STEPS.length })}: ${stepLabel(step)}${isComplete ? ` (${t('detail.current')})` : ''}`}
@@ -608,18 +608,26 @@ export default function SubmitPage(): JSX.Element {
               </p>
             </div>
 
-            <aside className="rounded-xl border border-amber-200 bg-amber-50 p-4" role="note">
-              <p className="text-sm font-semibold text-amber-950">
+            <aside
+              className="rounded-xl border border-[var(--color-warning)]/20 bg-white p-4"
+              role="note"
+            >
+              <p className="text-sm font-semibold text-[var(--color-warning)]">
                 {t('submit.category.emergencyTitle')}
               </p>
-              <p className="mt-1 text-sm text-amber-900">{t('submit.category.emergencyBody')}</p>
+              <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+                {t('submit.category.emergencyBody')}
+              </p>
             </aside>
 
-            <aside className="rounded-xl border border-sky-200 bg-sky-50 p-4" role="note">
-              <p className="text-sm font-semibold text-sky-950">
+            <aside
+              className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4"
+              role="note"
+            >
+              <p className="text-sm font-semibold text-[var(--color-ink)]">
                 {t('submit.category.agencyTitle')}
               </p>
-              <p className="mt-1 text-sm leading-6 text-sky-900">
+              <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
                 {t('submit.category.agencyBody')}
               </p>
             </aside>
@@ -640,7 +648,7 @@ export default function SubmitPage(): JSX.Element {
                   <button
                     type="button"
                     onClick={() => void types.refetch()}
-                    className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white transition hover:bg-black active:scale-[0.98]"
+                    className="mt-3 inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white transition hover:bg-black active:scale-[0.98]"
                   >
                     <IconRefresh className="h-4 w-4" stroke={1.6} />
                     {t('common.retry')}
@@ -655,7 +663,7 @@ export default function SubmitPage(): JSX.Element {
                   <button
                     type="button"
                     onClick={() => void types.refetch()}
-                    className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-5 text-sm font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
+                    className="mt-3 inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-5 text-sm font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
                   >
                     <IconRefresh className="h-4 w-4" stroke={1.6} />
                     {t('common.retry')}
@@ -671,8 +679,8 @@ export default function SubmitPage(): JSX.Element {
                       'flex cursor-pointer items-center gap-4 p-4 transition',
                       typeId === reportType.id
                         ? 'bg-[var(--color-surface-alt)]'
-                        : 'hover:bg-[#faf9f6]',
-                      fieldErrors.type && !typeId ? 'bg-red-50' : '',
+                        : 'hover:bg-[var(--color-surface-alt)]',
+                      fieldErrors.type && !typeId ? 'bg-[var(--color-danger)]/5' : '',
                     )}
                   >
                     <input
@@ -720,7 +728,7 @@ export default function SubmitPage(): JSX.Element {
               </div>
             )}
             {fieldErrors.type ? (
-              <p role="alert" className="text-sm font-medium text-red-600 px-1">
+              <p role="alert" className="text-sm font-medium text-[var(--color-danger)] px-1">
                 {fieldErrors.type}
               </p>
             ) : null}
@@ -728,7 +736,7 @@ export default function SubmitPage(): JSX.Element {
             <button
               type="button"
               onClick={handleCategoryNext}
-              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
             >
               {t('common.continue')}
               <IconArrowRight className="h-4 w-4" stroke={1.6} />
@@ -759,7 +767,8 @@ export default function SubmitPage(): JSX.Element {
                   htmlFor="report-title"
                   className="text-sm font-medium text-[var(--color-ink)]"
                 >
-                  {t('submit.details.titleLabel')} <span className="text-red-500">*</span>
+                  {t('submit.details.titleLabel')}{' '}
+                  <span className="text-[var(--color-danger)]">*</span>
                 </label>
                 <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
                   {t('submit.details.titleHint')}
@@ -772,8 +781,10 @@ export default function SubmitPage(): JSX.Element {
                   aria-invalid={fieldErrors.title ? true : undefined}
                   aria-describedby={fieldErrors.title ? 'title-error' : undefined}
                   className={cx(
-                    'mt-2 block w-full rounded-lg border border-[#d8d6cf] bg-[#faf9f6] px-4 py-3.5 min-h-12 text-base placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]',
-                    fieldErrors.title ? 'border-red-400 bg-red-50' : '',
+                    'mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-4 py-3.5 min-h-12 text-base placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]',
+                    fieldErrors.title
+                      ? 'border-[var(--color-danger)]/30 bg-[var(--color-danger)]/5'
+                      : '',
                   )}
                   required
                 />
@@ -781,7 +792,7 @@ export default function SubmitPage(): JSX.Element {
                   <p
                     id="title-error"
                     role="alert"
-                    className="mt-2 text-sm font-medium text-red-600"
+                    className="mt-2 text-sm font-medium text-[var(--color-danger)]"
                   >
                     {fieldErrors.title}
                   </p>
@@ -808,13 +819,19 @@ export default function SubmitPage(): JSX.Element {
                   aria-invalid={fieldErrors.description ? true : undefined}
                   aria-describedby={fieldErrors.description ? 'desc-error' : undefined}
                   className={cx(
-                    'mt-2 block w-full resize-y rounded-lg border border-[#d8d6cf] bg-[#faf9f6] px-4 py-3.5 min-h-24 text-base placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]',
-                    fieldErrors.description ? 'border-red-400 bg-red-50' : '',
+                    'mt-2 block w-full resize-y rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-4 py-3.5 min-h-24 text-base placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]',
+                    fieldErrors.description
+                      ? 'border-[var(--color-danger)]/30 bg-[var(--color-danger)]/5'
+                      : '',
                   )}
                   required
                 />
                 {fieldErrors.description ? (
-                  <p id="desc-error" role="alert" className="mt-2 text-sm font-medium text-red-600">
+                  <p
+                    id="desc-error"
+                    role="alert"
+                    className="mt-2 text-sm font-medium text-[var(--color-danger)]"
+                  >
                     {fieldErrors.description}
                   </p>
                 ) : null}
@@ -825,7 +842,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => goToStep('Category')}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
+                className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconArrowLeft className="h-4 w-4" stroke={1.6} />
                 {t('common.back')}
@@ -833,7 +850,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={handleDetailsNext}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
+                className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
               >
                 {t('common.continue')}
                 <IconArrowRight className="h-4 w-4" stroke={1.6} />
@@ -902,27 +919,27 @@ export default function SubmitPage(): JSX.Element {
             </div>
 
             {fieldErrors.location ? (
-              <p role="alert" className="text-sm font-medium text-red-600 px-1">
+              <p role="alert" className="text-sm font-medium text-[var(--color-danger)] px-1">
                 {fieldErrors.location}
               </p>
             ) : null}
 
             {location !== null ? (
-              <div className="rounded-xl bg-emerald-50 p-4 ring-1 ring-emerald-200">
+              <div className="rounded-xl bg-white p-4 border border-[var(--color-success)]/20">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-success)]">
                     <IconCheck className="h-5 w-5 text-white" stroke={1.8} />
                   </div>
                   <div className="text-sm">
-                    <p className="font-semibold text-emerald-900">
+                    <p className="font-semibold text-[var(--color-ink)]">
                       {t('submit.location.captured')}
                     </p>
-                    <p className="mt-1 text-sm text-emerald-700">
+                    <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
                       {placeName
                         ? t('submit.location.detectedPlace', { place: placeName })
                         : t('submit.location.detectingPlace')}
                     </p>
-                    <p className="mt-1 text-xs text-emerald-800">
+                    <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
                       {location.accuracy_m !== null
                         ? t('submit.location.detectedAccuracy', {
                             accuracy: Math.round(location.accuracy_m),
@@ -932,12 +949,12 @@ export default function SubmitPage(): JSX.Element {
                   </div>
                 </div>
                 {location.accuracy_m !== null && location.accuracy_m > MAX_GPS_ACCURACY_M ? (
-                  <p className="mt-3 rounded-lg bg-amber-100 px-4 py-2.5 text-sm font-medium text-amber-800">
+                  <p className="mt-3 rounded-lg border border-[var(--color-warning)]/20 bg-white px-4 py-2.5 text-sm font-medium text-[var(--color-warning)]">
                     {t('submit.location.coarseWarning')}
                   </p>
                 ) : null}
                 {location.mock_heuristic.likely ? (
-                  <p className="mt-3 rounded-lg bg-amber-100 px-4 py-2.5 text-sm font-medium text-amber-800">
+                  <p className="mt-3 rounded-lg border border-[var(--color-warning)]/20 bg-white px-4 py-2.5 text-sm font-medium text-[var(--color-warning)]">
                     {t('submit.location.suspiciousWarning', {
                       reasons: location.mock_heuristic.reasons.join('; '),
                     })}
@@ -965,7 +982,7 @@ export default function SubmitPage(): JSX.Element {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder={t('submit.location.addressPlaceholder')}
-                className="mt-2 block w-full rounded-lg border border-[#d8d6cf] bg-[#faf9f6] px-4 py-3.5 min-h-12 text-base placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+                className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-4 py-3.5 min-h-12 text-base placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
               />
             </div>
 
@@ -973,7 +990,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => goToStep('Details')}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
+                className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconArrowLeft className="h-4 w-4" stroke={1.6} />
                 {t('common.back')}
@@ -981,7 +998,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={handleLocationNext}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
+                className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
               >
                 {t('common.continue')}
                 <IconArrowRight className="h-4 w-4" stroke={1.6} />
@@ -1012,7 +1029,7 @@ export default function SubmitPage(): JSX.Element {
                   className={cx(
                     'shrink-0 rounded-full px-3 py-1 text-xs font-semibold',
                     evidenceRequired
-                      ? 'bg-red-100 text-red-700'
+                      ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)] border border-[var(--color-danger)]/20'
                       : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]',
                   )}
                 >
@@ -1022,21 +1039,23 @@ export default function SubmitPage(): JSX.Element {
             </div>
 
             {/* Safety advisory */}
-            <div className="rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200">
+            <div className="rounded-xl bg-white p-4 border border-[var(--color-warning)]/20">
               <div className="flex items-start gap-3">
                 <IconAlertTriangle
-                  className="mt-0.5 h-5 w-5 shrink-0 text-amber-600"
+                  className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-warning)]"
                   stroke={1.6}
                 />
-                <div className="text-sm leading-relaxed text-amber-800">
-                  <p className="font-semibold text-amber-900">{t('submit.evidence.safetyFirst')}</p>
+                <div className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                  <p className="font-semibold text-[var(--color-ink)]">
+                    {t('submit.evidence.safetyFirst')}
+                  </p>
                   <p className="mt-0.5">{t('submit.evidence.safetyBody')}</p>
                 </div>
               </div>
             </div>
 
             {fieldErrors.evidence ? (
-              <p role="alert" className="text-sm font-medium text-red-600 px-1">
+              <p role="alert" className="text-sm font-medium text-[var(--color-danger)] px-1">
                 {fieldErrors.evidence}
               </p>
             ) : null}
@@ -1058,17 +1077,17 @@ export default function SubmitPage(): JSX.Element {
               </div>
               <CameraCapture mode="photo" onCapture={addPhoto} onError={onCameraError} />
               {localTestUploadEnabled ? (
-                <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 px-3 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-amber-900">
+                <div className="rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface-alt)] px-3 py-3">
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
                     Local testing only
                   </p>
-                  <p className="mt-1 text-xs leading-5 text-amber-800">
+                  <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
                     Choose an existing photo to test the report workflow. This option is hidden in
                     production.
                   </p>
                   <label
                     htmlFor="local-test-photo"
-                    className="mt-3 inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-amber-300 bg-white px-4 text-sm font-medium text-amber-900 transition hover:bg-amber-100"
+                    className="mt-3 inline-flex h-11 cursor-pointer items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)]"
                   >
                     <IconUpload className="mr-2 h-4 w-4" stroke={1.6} />
                     Upload test photo
@@ -1085,7 +1104,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => setShowVideo((v) => !v)}
-                className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-4 text-sm font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-4 text-sm font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconCamera className="h-4 w-4" stroke={1.6} />
                 {showVideo
@@ -1138,7 +1157,7 @@ export default function SubmitPage(): JSX.Element {
                       <button
                         type="button"
                         onClick={() => removeFile(i)}
-                        className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-ink)] text-xs font-medium text-white transition hover:bg-red-600"
+                        className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-ink)] text-xs font-medium text-white transition hover:bg-[var(--color-danger)]"
                         aria-label={t('submit.evidence.removeFile', { name: f.name })}
                       >
                         ×
@@ -1153,7 +1172,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => goToStep('Location')}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
+                className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
               >
                 <IconArrowLeft className="h-4 w-4" stroke={1.6} />
                 {t('common.back')}
@@ -1161,7 +1180,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="button"
                 onClick={handleEvidenceNext}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
+                className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98]"
               >
                 {t('submit.review.title')}
                 <IconArrowRight className="h-4 w-4" stroke={1.6} />
@@ -1201,7 +1220,7 @@ export default function SubmitPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => goToStep('Category')}
-                  className="ml-2 inline-flex min-h-[44px] shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+                  className="ml-2 inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
                   {t('common.edit')}
@@ -1220,7 +1239,7 @@ export default function SubmitPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => goToStep('Details')}
-                  className="ml-2 inline-flex min-h-[44px] shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+                  className="ml-2 inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
                   {t('common.edit')}
@@ -1235,7 +1254,7 @@ export default function SubmitPage(): JSX.Element {
                   <button
                     type="button"
                     onClick={() => goToStep('Details')}
-                    className="ml-2 inline-flex min-h-[44px] shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+                    className="ml-2 inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                   >
                     <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
                     {t('common.edit')}
@@ -1260,7 +1279,7 @@ export default function SubmitPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => goToStep('Location')}
-                  className="ml-2 inline-flex min-h-[44px] shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+                  className="ml-2 inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
                   {t('common.edit')}
@@ -1282,7 +1301,7 @@ export default function SubmitPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => goToStep('Evidence')}
-                  className="ml-2 inline-flex min-h-[44px] shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+                  className="ml-2 inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                 >
                   <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
                   {t('common.edit')}
@@ -1304,7 +1323,7 @@ export default function SubmitPage(): JSX.Element {
                   <button
                     type="button"
                     onClick={() => goToStep('Evidence')}
-                    className="inline-flex min-h-[44px] shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+                    className="inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
                   >
                     <IconPencil className="h-3.5 w-3.5" stroke={1.6} />
                     {t('common.edit')}
@@ -1345,19 +1364,19 @@ export default function SubmitPage(): JSX.Element {
 
             {/* Error summary */}
             {error !== null ? (
-              <div className="rounded-xl bg-red-50 p-4 ring-1 ring-red-200">
+              <div className="rounded-xl bg-white p-4 border border-[var(--color-danger)]/20">
                 <div className="flex items-start gap-3">
                   <IconAlertTriangle
-                    className="mt-0.5 h-5 w-5 shrink-0 text-red-500"
+                    className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-danger)]"
                     stroke={1.6}
                   />
-                  <p className="text-sm font-medium text-red-800">{error}</p>
+                  <p className="text-sm font-medium text-[var(--color-danger)]">{error}</p>
                 </div>
                 {error.toLowerCase().includes('idempotency-key') && ownerId ? (
                   <button
                     type="button"
                     onClick={() => void discardSavedDraft()}
-                    className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-red-300 bg-white px-4 text-sm font-medium text-red-800 transition hover:bg-red-100"
+                    className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-full border border-[var(--color-danger)]/20 bg-white px-4 text-sm font-medium text-[var(--color-danger)] transition hover:bg-[var(--color-danger)]/5"
                   >
                     {t('submit.discard.conflictAction')}
                   </button>
@@ -1373,7 +1392,7 @@ export default function SubmitPage(): JSX.Element {
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[var(--color-text-tertiary)]"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 text-base font-medium text-white transition hover:bg-black active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[var(--color-text-tertiary)]"
               >
                 <IconFileText className="h-5 w-5" stroke={1.6} />
                 {submitting ? t('submit.review.submitting') : t('submit.review.submitButton')}
@@ -1383,7 +1402,7 @@ export default function SubmitPage(): JSX.Element {
             <button
               type="button"
               onClick={() => goToStep('Evidence')}
-              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-6 text-base font-medium text-[var(--color-ink)] transition hover:bg-white active:scale-[0.98]"
             >
               <IconArrowLeft className="h-4 w-4" stroke={1.6} />
               {t('submit.review.backToEvidence')}

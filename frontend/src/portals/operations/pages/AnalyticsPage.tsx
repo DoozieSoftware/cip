@@ -8,7 +8,7 @@ import {
   IconAlertTriangle,
   IconChecklist,
 } from '@tabler/icons-react';
-import { Spinner } from '../../../shared/ui';
+import { Button, Card, CardBody, ErrorState, Spinner } from '../../../shared/ui';
 import { departmentApi } from '../api/operations';
 import { statusLabel } from '../components/statusMeta';
 import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
@@ -32,27 +32,29 @@ function StatCard({
 }) {
   const tones = {
     default: 'bg-[var(--color-canvas)] text-[var(--color-ink)]',
-    danger: 'bg-red-50 text-red-700',
-    warning: 'bg-amber-50 text-amber-700',
+    danger: 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]',
+    warning: 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]',
   };
   const valueColors = {
     default: 'text-[var(--color-ink)]',
-    danger: 'text-red-700',
-    warning: 'text-amber-700',
+    danger: 'text-[var(--color-danger)]',
+    warning: 'text-[var(--color-warning)]',
   };
 
   return (
-    <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          {label}
-        </span>
-        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${tones[tone]}`}>
-          <Icon className="h-4 w-4" stroke={1.6} />
+    <Card>
+      <CardBody className="p-5">
+        <div className="flex items-center justify-between">
+          <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            {label}
+          </span>
+          <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${tones[tone]}`}>
+            <Icon className="h-4 w-4" stroke={1.6} />
+          </div>
         </div>
-      </div>
-      <p className={`mt-3 text-3xl font-semibold ${valueColors[tone]}`}>{value}</p>
-    </div>
+        <p className={`mt-3 text-3xl font-semibold ${valueColors[tone]}`}>{value}</p>
+      </CardBody>
+    </Card>
   );
 }
 
@@ -68,18 +70,22 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-      <div className="mb-4 flex items-center gap-2.5">
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--color-canvas)]">
-          <Icon className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
+    <Card>
+      <CardBody className="p-5">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--color-canvas)]">
+            <Icon className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-[var(--color-ink)]">{title}</h3>
+            {subtitle && (
+              <p className="text-[11px] text-[var(--color-text-tertiary)]">{subtitle}</p>
+            )}
+          </div>
         </div>
-        <div>
-          <h3 className="text-sm font-semibold text-[var(--color-ink)]">{title}</h3>
-          {subtitle && <p className="text-[11px] text-[var(--color-text-tertiary)]">{subtitle}</p>}
-        </div>
-      </div>
-      {children}
-    </div>
+        {children}
+      </CardBody>
+    </Card>
   );
 }
 
@@ -110,17 +116,21 @@ export default function AnalyticsPage() {
   }
   if (dashboard.error || recent.error) {
     return (
-      <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-black/5">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-          <IconAlertTriangle className="h-6 w-6 text-red-500" stroke={1.6} />
-        </div>
-        <h3 className="text-base font-semibold text-[var(--color-ink)]">
-          Could not load analytics
-        </h3>
-        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-          The dashboard or complaints endpoint did not respond.
-        </p>
-      </div>
+      <ErrorState
+        title="Could not load analytics"
+        description="The dashboard or complaints endpoint did not respond."
+        action={
+          <Button
+            variant="primary"
+            onClick={() => {
+              void dashboard.refetch();
+              void recent.refetch();
+            }}
+          >
+            Retry
+          </Button>
+        }
+      />
     );
   }
 
@@ -153,7 +163,7 @@ export default function AnalyticsPage() {
   const daySeries = dayKeys.map((k) => [k, byDay[k]]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <header className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-ink)]">
           <IconChartBar className="h-5 w-5 text-white" stroke={1.6} />

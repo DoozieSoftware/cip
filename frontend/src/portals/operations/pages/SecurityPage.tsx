@@ -1,19 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+import { IconShield } from '@tabler/icons-react';
 import {
+  Badge,
+  Button,
   Card,
   CardBody,
   CardHeader,
   CardTitle,
-  Spinner,
   EmptyState,
-  Badge,
+  ErrorState,
+  Spinner,
   Table,
-  THead,
   TBody,
-  TR,
-  TH,
   TD,
+  TH,
+  THead,
+  TR,
 } from '../../../shared/ui';
 import {
   securityApi,
@@ -39,29 +42,38 @@ function WidgetCard({ title, count, children, tone, hint }: WidgetCardProps) {
         <Badge tone={tone}>{count}</Badge>
       </CardHeader>
       <CardBody className="space-y-2">{children}</CardBody>
-      {hint && <p className="px-4 pb-3 text-xs text-slate-500">{hint}</p>}
+      {hint && (
+        <p className="px-5 pb-4 font-mono text-[11px] text-[var(--color-text-secondary)]">{hint}</p>
+      )}
     </Card>
   );
 }
 
 function FailedLoginsList({ rows }: { rows: SecurityFailedLogin[] }) {
   if (rows.length === 0) {
-    return <p className="text-xs text-slate-500">No failed logins in the last 24h.</p>;
+    return (
+      <p className="text-xs text-[var(--color-text-secondary)]">
+        No failed logins in the last 24h.
+      </p>
+    );
   }
   return (
     <ul className="space-y-2 text-sm" aria-label="Recent failed logins">
       {rows.map((r) => (
         <li
           key={r.id}
-          className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2 last:border-0"
+          className="flex items-start justify-between gap-2 border-b border-[var(--color-border-subtle)] pb-2 last:border-0"
         >
           <div>
-            <div className="font-medium text-slate-900">{r.user_name ?? r.mobile}</div>
-            <div className="text-xs text-slate-500">
+            <div className="font-medium text-[var(--color-ink)]">{r.user_name ?? r.mobile}</div>
+            <div className="text-xs text-[var(--color-text-secondary)]">
               {r.ip ?? '—'} · {r.failure_reason ?? 'unknown reason'}
             </div>
           </div>
-          <time className="whitespace-nowrap text-xs text-slate-500" dateTime={r.login_at}>
+          <time
+            className="whitespace-nowrap text-xs text-[var(--color-text-secondary)]"
+            dateTime={r.login_at}
+          >
             {new Date(r.login_at).toLocaleTimeString()}
           </time>
         </li>
@@ -72,7 +84,7 @@ function FailedLoginsList({ rows }: { rows: SecurityFailedLogin[] }) {
 
 function UserList({ rows, statusLabel }: { rows: SecurityUserRecord[]; statusLabel: string }) {
   if (rows.length === 0) {
-    return <p className="text-xs text-slate-500">None.</p>;
+    return <p className="text-xs text-[var(--color-text-secondary)]">None.</p>;
   }
   return (
     <ul className="space-y-1 text-sm" aria-label={`${statusLabel} users`}>
@@ -80,8 +92,8 @@ function UserList({ rows, statusLabel }: { rows: SecurityUserRecord[]; statusLab
         <li key={u.id} className="flex items-center justify-between gap-2">
           {/* `truncate` only bites once the flex child may shrink below its
               content width. */}
-          <span className="min-w-0 truncate">{u.name ?? u.mobile}</span>
-          <span className="text-xs text-slate-500">{u.status}</span>
+          <span className="min-w-0 truncate text-[var(--color-ink)]">{u.name ?? u.mobile}</span>
+          <span className="text-xs text-[var(--color-text-secondary)]">{u.status}</span>
         </li>
       ))}
     </ul>
@@ -90,24 +102,27 @@ function UserList({ rows, statusLabel }: { rows: SecurityUserRecord[]; statusLab
 
 function EventList({ rows }: { rows: SecurityEventRow[] }) {
   if (rows.length === 0) {
-    return <p className="text-xs text-slate-500">No recent events.</p>;
+    return <p className="text-xs text-[var(--color-text-secondary)]">No recent events.</p>;
   }
   return (
     <ul className="space-y-2 text-sm" aria-label="Recent security events">
       {rows.map((r) => (
         <li
           key={r.id}
-          className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2 last:border-0"
+          className="flex items-start justify-between gap-2 border-b border-[var(--color-border-subtle)] pb-2 last:border-0"
         >
           <div className="min-w-0">
             {/* Event codes are one unbroken token (`device.fingerprint_mismatch`)
                 and are wider than the widget card on a phone. */}
-            <div className="break-all font-mono text-xs text-slate-900">{r.event}</div>
-            <div className="text-xs text-slate-500">
+            <div className="break-all font-mono text-xs text-[var(--color-ink)]">{r.event}</div>
+            <div className="text-xs text-[var(--color-text-secondary)]">
               {r.ip ?? '—'} · {r.severity}
             </div>
           </div>
-          <time className="whitespace-nowrap text-xs text-slate-500" dateTime={r.created_at ?? ''}>
+          <time
+            className="whitespace-nowrap text-xs text-[var(--color-text-secondary)]"
+            dateTime={r.created_at ?? ''}
+          >
             {r.created_at ? new Date(r.created_at).toLocaleTimeString() : '—'}
           </time>
         </li>
@@ -133,20 +148,20 @@ export default function SecurityPage() {
 
   if (query.error) {
     return (
-      <EmptyState
+      <ErrorState
         title="Could not load security dashboard"
         description="The dashboard endpoint did not respond."
         action={
-          <button
-            type="button"
+          <Button
+            variant="primary"
             onClick={() => {
               void query.refetch();
             }}
-            className="text-sm font-medium text-emerald-600 hover:underline"
           >
             Retry
-          </button>
+          </Button>
         }
+        error={query.error instanceof Error ? query.error : null}
       />
     );
   }
@@ -158,14 +173,27 @@ export default function SecurityPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Security dashboard</h1>
-          <p className="text-sm text-slate-500">
-            Read-only summary of security events. Window: last 24 hours. Auto-refreshes every 60s.
-          </p>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-ink)]">
+            <IconShield className="h-5 w-5 text-white" stroke={1.6} />
+          </div>
+          <div>
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+              Operations · Security
+            </p>
+            <h1 className="text-lg font-semibold tracking-tight text-[var(--color-ink)]">
+              Security dashboard
+            </h1>
+            <p className="text-xs text-[var(--color-text-secondary)]">
+              Read-only summary of security events. Window: last 24 hours. Auto-refreshes every 60s.
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-slate-500" aria-live="polite">
+        <p
+          className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm ring-1 ring-[var(--color-border-subtle)]"
+          aria-live="polite"
+        >
           Last fetched {new Date(snap.generated_at).toLocaleString()}
         </p>
       </header>
@@ -250,7 +278,9 @@ export default function SecurityPage() {
         </CardHeader>
         <CardBody className="p-0">
           {snap.security_alerts.recent.length === 0 ? (
-            <p className="p-4 text-sm text-slate-500">No critical alerts in the last 24 hours.</p>
+            <p className="p-4 text-sm text-[var(--color-text-secondary)]">
+              No critical alerts in the last 24 hours.
+            </p>
           ) : (
             /* Five columns with a full timestamp and a uuid overflow a phone;
                scroll the table instead of clipping it inside the card. */
@@ -267,15 +297,17 @@ export default function SecurityPage() {
               <TBody>
                 {snap.security_alerts.recent.map((r) => (
                   <TR key={r.id}>
-                    <TD className="whitespace-nowrap text-xs text-slate-500">
+                    <TD className="whitespace-nowrap text-xs text-[var(--color-text-secondary)]">
                       {r.created_at ? new Date(r.created_at).toLocaleString() : '—'}
                     </TD>
-                    <TD className="font-mono text-xs">{r.event}</TD>
+                    <TD className="font-mono text-xs text-[var(--color-ink)]">{r.event}</TD>
                     <TD>
                       <Badge tone="danger">{r.severity}</Badge>
                     </TD>
-                    <TD className="text-xs text-slate-600">{r.user_id ?? '—'}</TD>
-                    <TD className="text-xs text-slate-600">{r.ip ?? '—'}</TD>
+                    <TD className="text-xs text-[var(--color-text-secondary)]">
+                      {r.user_id ?? '—'}
+                    </TD>
+                    <TD className="text-xs text-[var(--color-text-secondary)]">{r.ip ?? '—'}</TD>
                   </TR>
                 ))}
               </TBody>

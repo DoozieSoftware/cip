@@ -59,25 +59,38 @@ export default function DashboardPage(): JSX.Element {
 
     if (!online) {
       return (
-        <div className="space-y-6">
-          <header>
-            <h1 className="text-2xl font-bold text-slate-900">
-              {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
-            </h1>
+        <div className="min-w-0 space-y-6">
+          <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-subtle)]">
+                {t('citizenServices')}
+              </p>
+              <h1 className="mt-2 text-[2rem] font-normal leading-[1.05] tracking-[-0.035em] text-[var(--color-ink)] sm:text-4xl">
+                {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
+              </h1>
+            </div>
           </header>
           <div className="flex items-center justify-center py-16">
             <div className="flex flex-col items-center px-6 text-center">
-              <span className="grid h-14 w-14 place-items-center rounded-full bg-slate-100">
-                <IconWifiOff className="h-7 w-7 text-slate-500" stroke={1.5} aria-hidden />
+              <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+                <IconWifiOff
+                  className="h-7 w-7 text-[var(--color-text-subtle)]"
+                  stroke={1.5}
+                  aria-hidden
+                />
               </span>
-              <p className="mt-4 text-base font-medium text-slate-900">{t('home.offline.title')}</p>
-              <p className="mt-1 text-sm text-slate-500">{t('home.offline.detail')}</p>
+              <p className="mt-4 text-base font-medium text-[var(--color-ink)]">
+                {t('home.offline.title')}
+              </p>
+              <p className="mt-1 text-sm text-[var(--color-text-subtle)]">
+                {t('home.offline.detail')}
+              </p>
               <button
                 type="button"
                 onClick={() => {
                   void reports.refetch();
                 }}
-                className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium text-[var(--color-ink)] transition hover:border-[var(--color-border-strong)] hover:bg-[var(--color-canvas)]"
               >
                 <IconRefresh className="h-4 w-4" stroke={1.6} aria-hidden />
                 {t('home.offline.action')}
@@ -90,22 +103,35 @@ export default function DashboardPage(): JSX.Element {
 
     if (isAuthError) {
       return (
-        <div className="space-y-6">
-          <header>
-            <h1 className="text-2xl font-bold text-slate-900">
-              {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
-            </h1>
+        <div className="min-w-0 space-y-6">
+          <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-subtle)]">
+                {t('citizenServices')}
+              </p>
+              <h1 className="mt-2 text-[2rem] font-normal leading-[1.05] tracking-[-0.035em] text-[var(--color-ink)] sm:text-4xl">
+                {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
+              </h1>
+            </div>
           </header>
           <div className="flex items-center justify-center py-16">
             <div className="flex flex-col items-center px-6 text-center">
-              <span className="grid h-14 w-14 place-items-center rounded-full bg-slate-100">
-                <IconAlertCircle className="h-7 w-7 text-slate-500" stroke={1.5} aria-hidden />
+              <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+                <IconAlertCircle
+                  className="h-7 w-7 text-[var(--color-text-subtle)]"
+                  stroke={1.5}
+                  aria-hidden
+                />
               </span>
-              <p className="mt-4 text-base font-medium text-slate-900">{t('home.session.title')}</p>
-              <p className="mt-1 text-sm text-slate-500">{t('home.session.detail')}</p>
+              <p className="mt-4 text-base font-medium text-[var(--color-ink)]">
+                {t('home.session.title')}
+              </p>
+              <p className="mt-1 text-sm text-[var(--color-text-subtle)]">
+                {t('home.session.detail')}
+              </p>
               <Link
                 to="/citizen/login"
-                className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium text-[var(--color-ink)] transition hover:border-[var(--color-border-strong)] hover:bg-[var(--color-canvas)]"
               >
                 {t('home.session.action')}
               </Link>
@@ -116,11 +142,16 @@ export default function DashboardPage(): JSX.Element {
     }
 
     return (
-      <div className="space-y-6">
-        <header>
-          <h1 className="text-2xl font-bold text-slate-900">
-            {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
-          </h1>
+      <div className="min-w-0 space-y-6">
+        <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-subtle)]">
+              {t('citizenServices')}
+            </p>
+            <h1 className="mt-2 text-[2rem] font-normal leading-[1.05] tracking-[-0.035em] text-[var(--color-ink)] sm:text-4xl">
+              {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
+            </h1>
+          </div>
         </header>
         <div className="flex items-center justify-center py-16">
           <ErrorState
@@ -133,7 +164,7 @@ export default function DashboardPage(): JSX.Element {
                 onClick={() => {
                   void reports.refetch();
                 }}
-                className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium text-[var(--color-ink)] transition hover:border-[var(--color-border-strong)] hover:bg-[var(--color-canvas)]"
               >
                 <IconRefresh className="h-4 w-4" stroke={1.6} aria-hidden />
                 {t('home.error.action')}
@@ -147,17 +178,26 @@ export default function DashboardPage(): JSX.Element {
 
   if (reports.isLoading && !reports.data) {
     return (
-      <div className="space-y-6">
-        <header>
-          <h1 className="text-2xl font-bold text-slate-900">
-            {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">{t('home.tagline')}</p>
+      <div className="min-w-0 space-y-6">
+        <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-subtle)]">
+              {t('citizenServices')}
+            </p>
+            <h1 className="mt-2 text-[2rem] font-normal leading-[1.05] tracking-[-0.035em] text-[var(--color-ink)] sm:text-4xl">
+              {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
+            </h1>
+            <p className="mt-3 max-w-2xl text-[15px] leading-6 text-[var(--color-text-secondary)]">
+              {t('home.tagline')}
+            </p>
+          </div>
         </header>
         <div className="flex min-h-[40vh] items-center justify-center py-16">
           <div className="flex flex-col items-center gap-4 text-center">
             <Spinner label={t('spinner.loadingYourDashboard')} />
-            <p className="text-sm text-slate-500">{t('spinner.loadingYourDashboard')}</p>
+            <p className="text-sm text-[var(--color-text-subtle)]">
+              {t('spinner.loadingYourDashboard')}
+            </p>
           </div>
         </div>
       </div>
@@ -168,98 +208,117 @@ export default function DashboardPage(): JSX.Element {
   const queueSize = queue.data ?? 0;
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-900">
-          {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
-        </h1>
-        <p className="mt-1 text-sm text-slate-600">{t('home.tagline')}</p>
+    <div className="min-w-0 space-y-6">
+      <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-subtle)]">
+            {t('citizenServices')}
+          </p>
+          <h1 className="mt-2 text-[2rem] font-normal leading-[1.05] tracking-[-0.035em] text-[var(--color-ink)] sm:text-4xl">
+            {user?.name ? t('home.greeting', { name: user.name }) : t('home.greetingFallback')}
+          </h1>
+          <p className="mt-3 max-w-2xl text-[15px] leading-6 text-[var(--color-text-secondary)]">
+            {t('home.tagline')}
+          </p>
+        </div>
       </header>
 
       {reports.isError && reports.data && (
         <div
           role="alert"
-          className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+          className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
         >
-          <div className="flex items-center gap-2">
-            <IconAlertCircle className="h-4 w-4 shrink-0" stroke={1.6} aria-hidden />
-            <span className="flex-1">{t('home.stale.message')}</span>
-            <button
-              type="button"
-              onClick={() => {
-                void reports.refetch();
-              }}
-              className="inline-flex min-h-[44px] shrink-0 items-center gap-1 font-medium underline-offset-2 hover:underline"
-            >
-              <IconRefresh className="h-4 w-4" stroke={1.6} aria-hidden />
-              {t('home.stale.retry')}
-            </button>
-          </div>
+          <IconAlertCircle className="h-5 w-5 shrink-0" stroke={1.6} aria-hidden />
+          <span className="flex-1">{t('home.stale.message')}</span>
+          <button
+            type="button"
+            onClick={() => {
+              void reports.refetch();
+            }}
+            className="inline-flex min-h-11 shrink-0 items-center gap-1 font-medium underline-offset-2 hover:underline"
+          >
+            <IconRefresh className="h-4 w-4" stroke={1.6} aria-hidden />
+            {t('home.stale.retry')}
+          </button>
         </div>
       )}
 
       {queueSize > 0 ? (
         <div
           role="status"
-          className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+          className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
         >
-          {t('home.offlineSync', { count: queueSize, plural: queueSize === 1 ? '' : 's' })}.{' '}
-          {t('home.offlineSyncDetail')}
+          <IconWifiOff className="h-5 w-5 shrink-0" stroke={1.6} aria-hidden />
+          <span className="flex-1">
+            {t('home.offlineSync', { count: queueSize, plural: queueSize === 1 ? '' : 's' })}.{' '}
+            {t('home.offlineSyncDetail')}
+          </span>
         </div>
       ) : null}
 
       <Link
         to="/citizen/submit"
-        className="block rounded-lg bg-blue-600 px-5 py-4 text-center text-base font-semibold text-white shadow-sm transition hover:bg-blue-700"
+        className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-5 py-4 text-center text-sm font-medium text-white shadow-sm transition hover:bg-black"
       >
-        + {t('home.fileNewReport')}
+        <span aria-hidden>+</span> {t('home.fileNewReport')}
       </Link>
 
-      <section aria-labelledby="recent-reports">
-        <h2 id="recent-reports" className="text-sm font-semibold text-slate-700">
-          {t('home.recentActivity')}
-        </h2>
-        <div className="mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white">
-          {reports.isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Spinner label={t('home.loadingReports')} />
-            </div>
-          ) : list.length === 0 ? (
-            <div className="p-4">
-              <EmptyState
-                title={t('home.dashboardEmptyTitle')}
-                description={t('home.empty.description')}
-                action={
-                  <Link
-                    to="/citizen/submit"
-                    className="mt-2 inline-flex min-h-[44px] items-center rounded-md bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700"
-                  >
-                    {t('home.empty.action')}
-                  </Link>
-                }
-              />
-            </div>
-          ) : (
-            <ul className="divide-y divide-slate-200">
-              {list.map((r) => (
-                <li key={r.id} className="flex items-center justify-between gap-3 p-4">
-                  <div className="min-w-0">
-                    <Link
-                      to={`/citizen/reports/${r.id}`}
-                      className="block truncate text-sm font-medium text-slate-900 hover:underline"
-                    >
-                      {r.title}
-                    </Link>
-                    <div className="mt-0.5 text-xs text-slate-500">
-                      {r.created_at ? new Date(r.created_at).toLocaleString(locale) : '—'}
-                    </div>
-                  </div>
-                  <StatusBadge status={r.status} className="shrink-0" />
-                </li>
-              ))}
-            </ul>
-          )}
+      <section
+        aria-labelledby="recent-reports"
+        className="rounded-xl bg-white shadow-sm ring-1 ring-black/5"
+      >
+        <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] px-5 py-4">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+              {t('home.recentActivity')}
+            </p>
+            <h2
+              id="recent-reports"
+              className="mt-1 text-lg font-medium tracking-[-0.015em] text-[var(--color-ink)]"
+            >
+              {t('home.yourLatestReports')}
+            </h2>
+          </div>
         </div>
+        {reports.isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Spinner label={t('home.loadingReports')} />
+          </div>
+        ) : list.length === 0 ? (
+          <div className="p-6">
+            <EmptyState
+              title={t('home.dashboardEmptyTitle')}
+              description={t('home.empty.description')}
+              action={
+                <Link
+                  to="/citizen/submit"
+                  className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white transition hover:bg-black"
+                >
+                  {t('home.empty.action')}
+                </Link>
+              }
+            />
+          </div>
+        ) : (
+          <ul className="divide-y divide-[var(--color-border-subtle)]">
+            {list.map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-4 p-4">
+                <div className="min-w-0">
+                  <Link
+                    to={`/citizen/reports/${r.id}`}
+                    className="block truncate text-sm font-medium text-[var(--color-ink)] hover:underline"
+                  >
+                    {r.title}
+                  </Link>
+                  <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+                    {r.created_at ? new Date(r.created_at).toLocaleString(locale) : '—'}
+                  </div>
+                </div>
+                <StatusBadge status={r.status} className="shrink-0" />
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );

@@ -42,10 +42,10 @@ export default function TextileStaffDetailPage(): JSX.Element {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 px-4 py-6">
+    <div className="mx-auto max-w-3xl space-y-6 px-4 py-6">
       <Link
         to="/operations/textile-collections/review"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-ink)]"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 rounded-md"
       >
         <IconArrowLeft className="h-4 w-4" /> Back to reviews
       </Link>
@@ -61,17 +61,19 @@ export default function TextileStaffDetailPage(): JSX.Element {
         {item && (
           <>
             {/* Header */}
-            <header className="rounded-xl bg-white p-5 shadow-sm">
+            <header className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     {item.reference}
                   </p>
-                  <h1 className="mt-1 text-xl font-medium">
+                  <h1 className="mt-2 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
                     {item.title || 'Textile pickup request'}
                   </h1>
                   {item.notes ? (
-                    <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{item.notes}</p>
+                    <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                      {item.notes}
+                    </p>
                   ) : null}
                 </div>
                 <StatusBadge status={item.status} />
@@ -84,7 +86,7 @@ export default function TextileStaffDetailPage(): JSX.Element {
             </header>
 
             {/* Details grid */}
-            <section className="rounded-xl bg-white p-5 shadow-sm">
+            <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
               <h2 className="text-sm font-medium text-[var(--color-ink)]">Request details</h2>
               <div className="mt-3 grid gap-4 sm:grid-cols-2">
                 <Detail label="Requester" value={item.requester_name} />
@@ -133,9 +135,11 @@ export default function TextileStaffDetailPage(): JSX.Element {
 
             {/* Photos */}
             {evidencePhoto || proofPhoto ? (
-              <section className="rounded-xl bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-medium text-[var(--color-ink)]">Photos</h2>
-                <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
+                <h2 className="text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+                  Photos
+                </h2>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   {evidencePhoto ? (
                     <div>
                       <p className="mb-2 text-xs font-medium text-[var(--color-text-secondary)]">
@@ -143,7 +147,7 @@ export default function TextileStaffDetailPage(): JSX.Element {
                       </p>
                       <img
                         src={evidencePhoto.url}
-                        alt="Citizen photo"
+                        alt="Items before collection"
                         className="w-full rounded-lg border border-[var(--color-border-subtle)] object-cover"
                         loading="lazy"
                       />
@@ -183,9 +187,11 @@ export default function TextileStaffDetailPage(): JSX.Element {
 
             {/* Actions */}
             {item.status === 'pending_review' ? (
-              <section className="rounded-xl bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-medium text-[var(--color-ink)]">Actions</h2>
-                <div className="mt-3 flex gap-3">
+              <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
+                <h2 className="text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+                  Actions
+                </h2>
+                <div className="mt-4 flex gap-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -193,14 +199,14 @@ export default function TextileStaffDetailPage(): JSX.Element {
                         () => void detail.refetch(),
                       );
                     }}
-                    className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white transition hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
                   >
                     Approve request
                   </button>
                   <button
                     type="button"
                     onClick={() => setRejectOpen(true)}
-                    className="inline-flex min-h-10 items-center gap-2 rounded-full border border-rose-300 px-5 text-sm font-medium text-rose-700"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-danger)]/30 bg-white px-5 text-sm font-medium text-[var(--color-danger)] transition hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)] focus-visible:ring-offset-2"
                   >
                     Reject
                   </button>
@@ -237,7 +243,7 @@ export default function TextileStaffDetailPage(): JSX.Element {
 function Detail({ label, value }: { label: string; value: string }): JSX.Element {
   return (
     <div>
-      <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+      <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
         {label}
       </p>
       <p className="mt-0.5 text-sm text-[var(--color-ink)]">{value || '—'}</p>
@@ -282,25 +288,27 @@ function DropoffEditSection({
   }
 
   return (
-    <section className="rounded-xl bg-white p-5 shadow-sm">
-      <h2 className="text-sm font-medium text-[var(--color-ink)]">Drop-off point</h2>
+    <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
+      <h2 className="text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+        Drop-off point
+      </h2>
       {editing ? (
-        <div className="mt-3 space-y-3">
-          <label className="block text-xs font-medium">
+        <div className="mt-4 space-y-4">
+          <label className="block font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             Drop-off name
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-sm"
+              className="mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
             />
           </label>
-          <label className="block text-xs font-medium">
+          <label className="block font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             Drop-off address
             <textarea
               rows={2}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-black/15 bg-white p-3 text-sm"
+              className="mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
             />
           </label>
           <div className="flex gap-2">
@@ -308,7 +316,7 @@ function DropoffEditSection({
               type="button"
               disabled={saving}
               onClick={() => void save()}
-              className="min-h-10 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white disabled:opacity-40"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white transition hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 disabled:opacity-40"
             >
               {saving ? 'Saving…' : 'Save'}
             </button>
@@ -319,17 +327,19 @@ function DropoffEditSection({
                 setName(dropoffName);
                 setAddress(dropoffAddress);
               }}
-              className="min-h-10 rounded-full border border-black/15 bg-white px-4 text-sm"
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
             >
               Cancel
             </button>
           </div>
-          {error ? <p className="text-xs text-red-600">{error}</p> : null}
+          {error ? <p className="text-xs text-[var(--color-danger)]">{error}</p> : null}
         </div>
       ) : (
-        <div className="mt-2 flex items-center justify-between">
+        <div className="mt-4 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium">{dropoffName || 'Not set'}</p>
+            <p className="text-sm font-medium text-[var(--color-ink)]">
+              {dropoffName || 'Not set'}
+            </p>
             <p className="text-xs text-[var(--color-text-secondary)]">{dropoffAddress || '—'}</p>
           </div>
           <button
@@ -339,7 +349,7 @@ function DropoffEditSection({
               setName(dropoffName);
               setAddress(dropoffAddress);
             }}
-            className="min-h-9 rounded-full border border-black/15 px-4 text-xs font-medium"
+            className="inline-flex min-h-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-4 text-xs font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
           >
             Edit
           </button>

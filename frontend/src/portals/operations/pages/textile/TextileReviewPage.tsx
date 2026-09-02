@@ -82,7 +82,13 @@ export default function TextileReviewPage(): JSX.Element {
               setPage(1);
             }}
           />
-          <MethodFilter value={method} onChange={(next) => { setMethod(next); setPage(1); }} />
+          <MethodFilter
+            value={method}
+            onChange={(next) => {
+              setMethod(next);
+              setPage(1);
+            }}
+          />
           <CategoryFilter
             value={categoryId}
             onChange={(next) => {
@@ -103,7 +109,7 @@ export default function TextileReviewPage(): JSX.Element {
       >
         <div className="space-y-3">
           {selected.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-black/10 bg-[#f1efe8] px-4 py-3">
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-4 py-3">
               <p className="text-sm font-medium">
                 {selected.length} selected · {selectedBags} bags
               </p>
@@ -111,7 +117,7 @@ export default function TextileReviewPage(): JSX.Element {
                 type="button"
                 disabled={approve.isPending}
                 onClick={() => setApproveTarget(selected)}
-                className="inline-flex min-h-9 items-center gap-2 rounded-full bg-[var(--color-ink)] px-4 text-sm font-medium text-white disabled:opacity-40"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-4 text-sm font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 disabled:opacity-40"
               >
                 <IconCheck className="h-4 w-4" />
                 Approve selected ({selected.length})
@@ -119,7 +125,7 @@ export default function TextileReviewPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => setSelected([])}
-                className="text-sm text-[var(--color-text-secondary)] underline-offset-2 hover:underline"
+                className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
               >
                 Clear selection
               </button>
@@ -153,7 +159,7 @@ export default function TextileReviewPage(): JSX.Element {
             {rows.map((item) => (
               <tr
                 key={item.id}
-                className={`hover:bg-[var(--color-surface-alt)] ${selected.includes(item.id) ? 'bg-blue-50/50' : ''}`}
+                className={`hover:bg-[var(--color-surface-alt)] ${selected.includes(item.id) ? 'bg-[var(--color-info)]/[0.06]' : ''}`}
               >
                 <td className="px-3 py-2.5">
                   <input
@@ -184,7 +190,11 @@ export default function TextileReviewPage(): JSX.Element {
                     <CategoryBadge category={item.category} />
                     <MethodBadge method={item.collection_method} />
                   </div>
-                  {item.service_zone?.dropoff_name ? <p className="mt-0.5 text-[10px] text-[var(--color-text-tertiary)]">{item.service_zone.dropoff_name}</p> : null}
+                  {item.service_zone?.dropoff_name ? (
+                    <p className="mt-0.5 text-[10px] text-[var(--color-text-tertiary)]">
+                      {item.service_zone.dropoff_name}
+                    </p>
+                  ) : null}
                 </td>
                 <td className="px-3 py-2.5">
                   <p className="font-medium">{item.requester_name}</p>
@@ -204,7 +214,7 @@ export default function TextileReviewPage(): JSX.Element {
                   <div className="flex justify-end">
                     <Link
                       to={`/operations/textile-collections/${item.id}`}
-                      className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-black/15 px-3.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ink)]"
+                      className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-white px-3.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
                     >
                       View
                     </Link>

@@ -14,8 +14,12 @@ export function CollectionProgress({
   tone?: 'ok' | 'warn' | 'bad';
 }): JSX.Element {
   const color =
-    tone === 'bad' ? 'bg-red-600' : tone === 'warn' ? 'bg-amber-500' : 'bg-[var(--color-ink)]';
-  const bg = 'bg-[var(--color-border-strong,#c8c6bf)]';
+    tone === 'bad'
+      ? 'bg-[var(--color-danger)]'
+      : tone === 'warn'
+        ? 'bg-[var(--color-warning)]'
+        : 'bg-[var(--color-ink)]';
+  const bg = 'bg-[var(--color-border)]';
   return (
     <ol
       aria-label="Collection progress"

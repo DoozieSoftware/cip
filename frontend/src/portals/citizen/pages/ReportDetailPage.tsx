@@ -118,7 +118,7 @@ function EvidencePreview({
     return (
       <div className="grid h-full w-full place-items-center px-3 text-center">
         <div className="flex flex-col items-center gap-2">
-          <IconCamera className="h-6 w-6 text-[#bfbbb2]" />
+          <IconCamera className="h-6 w-6 text-[var(--color-text-quaternary)]" />
           <span className="text-[11px] text-[var(--color-text-tertiary)]">
             {t('detail.unavailable')}
           </span>
@@ -250,7 +250,7 @@ export default function ReportDetailPage(): JSX.Element {
         <div className="flex items-center gap-3">
           <Link
             to="/citizen/reports"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#d8d6cf] bg-[#faf9f6] text-[var(--color-ink)] hover:bg-white"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-ink)] hover:bg-white"
             aria-label={t('detail.backToReports')}
           >
             <IconArrowLeft className="h-5 w-5" stroke={1.6} />
@@ -285,9 +285,9 @@ export default function ReportDetailPage(): JSX.Element {
                 : null
           }
         />
-        {/* Title Section */}
-        <section className="rounded-xl bg-white p-4">
-          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+        {/* Title Section — primary reference card: stronger hierarchy */}
+        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             <IconFileText className="h-3.5 w-3.5" stroke={1.6} />
             {t('detail.officialReference')}
           </div>
@@ -296,22 +296,22 @@ export default function ReportDetailPage(): JSX.Element {
           </p>
           <div className="mt-3 flex items-center gap-2">
             {lifecycleGroup(r.status.code) === 'closed' ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-success-muted)] bg-[var(--color-success)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--color-success)]">
                 <IconCircleCheck className="h-3.5 w-3.5" stroke={1.6} />
                 {citizenReportStatusLabel(r.status.code)}
               </span>
             ) : lifecycleGroup(r.status.code) === 'rejected' ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-danger-muted)] bg-[var(--color-danger)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--color-danger)]">
                 <IconAlertTriangle className="h-3.5 w-3.5" stroke={1.6} />
                 {citizenReportStatusLabel(r.status.code)}
               </span>
             ) : lifecycleGroup(r.status.code) === 'merged' ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2.5 py-1 text-xs font-semibold text-[var(--color-ink-soft)]">
                 <IconAlertTriangle className="h-3.5 w-3.5" stroke={1.6} />
                 {citizenReportStatusLabel(r.status.code)}
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-warning-muted)] bg-[var(--color-warning)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--color-warning)]">
                 <IconAlertTriangle className="h-3.5 w-3.5" stroke={1.6} />
                 {citizenReportStatusLabel(r.status.code)}
               </span>
@@ -323,17 +323,19 @@ export default function ReportDetailPage(): JSX.Element {
             </p>
           ) : null}
           {lifecycleGroup(r.status.code) === 'merged' && r.canonical_report ? (
-            <div className="mt-3 rounded-lg border border-violet-200 bg-violet-50 p-3">
-              <p className="text-xs font-medium text-violet-800">
+            <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-3">
+              <p className="text-xs font-medium text-[var(--color-ink-soft)]">
                 {t('detail.mergedInto')}{' '}
                 <Link
                   to={r.canonical_report.link}
-                  className="break-all font-mono font-semibold text-violet-900 underline hover:text-violet-700"
+                  className="break-all font-mono font-semibold text-[var(--color-ink)] underline hover:text-[var(--color-ink-soft)]"
                 >
                   {r.canonical_report.tracking_number}
                 </Link>
               </p>
-              <p className="mt-1 text-xs text-violet-700">{t('detail.mergedIntoHint')}</p>
+              <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                {t('detail.mergedIntoHint')}
+              </p>
             </div>
           ) : null}
           {lifecycleGroup(r.status.code) === 'merged' ? (
@@ -344,7 +346,9 @@ export default function ReportDetailPage(): JSX.Element {
             />
           ) : null}
           <div className="mt-4 border-t border-[var(--color-border-subtle)] pt-4">
-            <h1 className="text-xl font-bold leading-tight text-[var(--color-ink)]">{r.title}</h1>
+            <h1 className="text-2xl font-bold leading-tight tracking-[-0.015em] text-[var(--color-ink)]">
+              {r.title}
+            </h1>
             {r.description ? (
               <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[var(--color-text-secondary)]">
                 {r.description}
@@ -358,7 +362,7 @@ export default function ReportDetailPage(): JSX.Element {
         </section>
 
         {/* Quick Details */}
-        <div className="rounded-xl bg-white p-4">
+        <div className="rounded-xl bg-white p-4 ring-1 ring-[var(--color-border-subtle)]">
           <div className="grid grid-cols-2 gap-3">
             <DetailBlock
               icon={<IconFileText className="h-3.5 w-3.5" stroke={1.6} />}
@@ -385,7 +389,7 @@ export default function ReportDetailPage(): JSX.Element {
         </div>
 
         {/* Status Timeline */}
-        <section className="rounded-xl bg-white p-4">
+        <section className="rounded-xl bg-white p-6 ring-1 ring-[var(--color-border-subtle)]">
           <h2 className="flex items-center gap-2 text-sm font-medium text-[var(--color-ink)]">
             <span className="grid h-7 w-7 place-items-center rounded-full bg-[var(--color-surface-alt)]">
               <IconClock className="h-3.5 w-3.5 text-[var(--color-ink)]" stroke={1.7} />
@@ -423,7 +427,7 @@ export default function ReportDetailPage(): JSX.Element {
                         aria-hidden
                         className={`relative z-10 grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full ${
                           isLatest
-                            ? 'bg-emerald-500 ring-[3px] ring-emerald-100'
+                            ? 'bg-[var(--color-success)] ring-[3px] ring-[var(--color-success-muted)]/30'
                             : 'bg-[var(--color-border-subtle)] ring-[3px] ring-white'
                         }`}
                       >
@@ -440,7 +444,7 @@ export default function ReportDetailPage(): JSX.Element {
                               {milestone.label}
                             </span>
                             {isLatest ? (
-                              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                              <span className="rounded-full border border-[var(--color-success-muted)] bg-[var(--color-success)]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-success)]">
                                 {t('detail.current')}
                               </span>
                             ) : null}
@@ -486,7 +490,7 @@ export default function ReportDetailPage(): JSX.Element {
 
         {/* Department Card */}
         {r.assigned_department || r.department ? (
-          <section className="rounded-xl bg-white p-4">
+          <section className="rounded-xl bg-white p-4 ring-1 ring-[var(--color-border-subtle)]">
             <h2 className="flex items-center gap-2 text-sm font-medium text-[var(--color-ink)]">
               <span className="grid h-7 w-7 place-items-center rounded-full bg-[var(--color-surface-alt)]">
                 <IconBuilding className="h-3.5 w-3.5 text-[var(--color-ink)]" stroke={1.7} />
@@ -511,7 +515,7 @@ export default function ReportDetailPage(): JSX.Element {
 
         {/* Location Card */}
         {r.location ? (
-          <section className="rounded-xl bg-white p-4">
+          <section className="rounded-xl bg-white p-4 ring-1 ring-[var(--color-border-subtle)]">
             <h2 className="flex items-center gap-2 text-sm font-medium text-[var(--color-ink)]">
               <span className="grid h-7 w-7 place-items-center rounded-full bg-[var(--color-surface-alt)]">
                 <IconMapPin className="h-3.5 w-3.5 text-[var(--color-ink)]" stroke={1.7} />
@@ -537,9 +541,9 @@ export default function ReportDetailPage(): JSX.Element {
                 </span>
               </p>
             </div>
-            <div className="mt-2 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
-              <IconCircleCheck className="h-4 w-4 text-emerald-600" stroke={1.7} />
-              <span className="text-xs font-medium text-emerald-700">
+            <div className="mt-2 flex items-center gap-2 rounded-lg border border-[var(--color-success-muted)] bg-[var(--color-success)]/10 px-3 py-2">
+              <IconCircleCheck className="h-4 w-4 text-[var(--color-success)]" stroke={1.7} />
+              <span className="text-xs font-medium text-[var(--color-success)]">
                 {t('detail.locationCaptured')}
               </span>
             </div>
@@ -548,7 +552,7 @@ export default function ReportDetailPage(): JSX.Element {
 
         {/* Evidence Grid */}
         {r.media && r.media.length > 0 ? (
-          <section className="rounded-xl bg-white p-4">
+          <section className="rounded-xl bg-white p-4 ring-1 ring-[var(--color-border-subtle)]">
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-sm font-medium text-[var(--color-ink)]">
                 <span className="grid h-7 w-7 place-items-center rounded-full bg-[var(--color-surface-alt)]">
@@ -570,7 +574,7 @@ export default function ReportDetailPage(): JSX.Element {
               {r.media.map((m, i) => (
                 <div
                   key={m.id}
-                  className="group relative aspect-square overflow-hidden rounded-lg border border-[var(--color-border-subtle)] bg-[#faf9f6]"
+                  className="group relative aspect-square overflow-hidden rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)]"
                 >
                   <EvidencePreview media={m} />
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5">
@@ -590,7 +594,7 @@ export default function ReportDetailPage(): JSX.Element {
             </div>
           </section>
         ) : (
-          <section className="flex flex-col items-center gap-2 rounded-xl bg-white p-8 text-center">
+          <section className="flex flex-col items-center gap-2 rounded-xl bg-white p-8 text-center ring-1 ring-[var(--color-border-subtle)]">
             <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--color-surface-alt)]">
               <IconCamera className="h-5 w-5 text-[var(--color-text-tertiary)]" stroke={1.6} />
             </span>
@@ -602,11 +606,11 @@ export default function ReportDetailPage(): JSX.Element {
         )}
 
         {/* Audit History - Collapsible */}
-        <section className="overflow-hidden rounded-xl bg-white">
+        <section className="overflow-hidden rounded-xl bg-white ring-1 ring-[var(--color-border-subtle)]">
           <button
             type="button"
             onClick={() => setAuditExpanded(!auditExpanded)}
-            className="flex w-full items-center justify-between gap-2 border-b border-[var(--color-border-subtle)] px-4 py-3.5 text-left active:bg-[#faf9f6]"
+            className="flex w-full items-center justify-between gap-2 border-b border-[var(--color-border-subtle)] px-4 py-3.5 text-left active:bg-[var(--color-surface-alt)]"
             aria-expanded={auditExpanded}
           >
             <h2 className="flex items-center gap-2 text-sm font-medium text-[var(--color-ink)]">
@@ -636,7 +640,7 @@ export default function ReportDetailPage(): JSX.Element {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="border-b border-[var(--color-border-subtle)] font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                      <tr className="border-b border-[var(--color-border-subtle)] text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                         <th className="pb-2.5 pr-3 font-semibold">{t('detail.auditEvent')}</th>
                         <th className="pb-2.5 pr-3 font-semibold">{t('detail.auditDate')}</th>
                         <th className="pb-2.5 font-semibold">{t('detail.auditActor')}</th>
@@ -675,7 +679,7 @@ export default function ReportDetailPage(): JSX.Element {
         </section>
 
         {/* Footer Notice */}
-        <div className="rounded-xl bg-white p-4">
+        <div className="rounded-xl bg-[var(--color-surface-alt)] p-4 ring-1 ring-[var(--color-border-subtle)]">
           <p className="text-center text-xs leading-relaxed text-[var(--color-text-secondary)]">
             {t('detail.officialRecordNotice', { reference: r.tracking_number })}
           </p>
@@ -695,8 +699,8 @@ function DetailBlock({
   value: string;
 }): JSX.Element {
   return (
-    <div className="rounded-lg border border-[var(--color-border-subtle)] bg-[#faf9f6] p-3">
-      <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+    <div className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-3">
+      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
         {icon}
         {label}
       </div>

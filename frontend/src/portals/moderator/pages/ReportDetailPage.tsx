@@ -64,20 +64,20 @@ export function ModeratorReportHeader({
     <header>
       <Link
         to="/moderator/queue"
-        className="inline-flex min-h-[44px] items-center gap-2 text-sm text-[#6f6e69] transition hover:text-[#1d1d1b]"
+        className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
       >
         <IconArrowLeft className="h-4 w-4" stroke={1.6} />
         Back to review complaints
       </Link>
       <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="w-full min-w-0 sm:flex-1">
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#85847f]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             {data.tracking_number}
           </p>
-          <h1 className="mt-2 w-full break-words text-2xl font-medium tracking-[-0.02em] text-[#1d1d1b]">
+          <h1 className="mt-2 w-full break-words text-2xl font-medium tracking-[-0.02em] text-[var(--color-ink)]">
             {data.title}
           </h1>
-          <p className="mt-2 text-sm text-[#6f6e69]">
+          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
             Submitted {new Date(data.submitted_at).toLocaleString()}
           </p>
         </div>
@@ -92,13 +92,13 @@ export function ModeratorReportHeader({
                     ? 'bg-emerald-50 text-emerald-700'
                     : reportStatusTone(data.status_code) === 'info'
                       ? 'bg-sky-50 text-sky-700'
-                      : 'bg-slate-50 text-slate-700'
+                      : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'
             }`}
           >
             {staffReportStatusLabel(data.status_code)}
           </span>
           {data.evidence_count > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs text-[#6f6e69] ring-1 ring-[#d8d6cf]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs text-[var(--color-text-secondary)] ring-1 ring-[var(--color-border)]">
               <IconPhoto className="h-3.5 w-3.5" stroke={1.6} />
               {data.evidence_count} evidence
             </span>
@@ -232,7 +232,7 @@ function ActionFooter({
         </Button>
       </div>
       {!decisionsEnabled && !proofReviewEnabled && (
-        <p className="text-sm text-[#6f6e69]" role="status">
+        <p className="text-sm text-[var(--color-text-secondary)]" role="status">
           {moderatorActionMessage(statusCode)}
         </p>
       )}
@@ -247,9 +247,14 @@ export function ModeratorActionError({ error }: { error: unknown }): JSX.Element
     error instanceof Error ? error.message : 'The action could not be completed. Please try again.';
 
   return (
-    <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4" role="alert">
-      <p className="text-sm font-medium text-red-800">Action could not be completed</p>
-      <p className="mt-1 text-sm leading-5 text-red-700">{message}</p>
+    <div
+      className="mb-4 rounded-xl border border-[var(--color-danger)]/20 bg-[var(--color-danger)]/5 p-4"
+      role="alert"
+    >
+      <p className="text-sm font-medium text-[var(--color-danger)]">
+        Action could not be completed
+      </p>
+      <p className="mt-1 text-sm leading-5 text-[var(--color-ink)]">{message}</p>
     </div>
   );
 }
@@ -409,7 +414,7 @@ export default function ReportDetailPage() {
   if (isLoading) {
     return (
       <div
-        className="flex min-h-screen items-center justify-center bg-[#f3f2ed]"
+        className="flex min-h-screen items-center justify-center bg-[var(--color-canvas)]"
         aria-live="polite"
       >
         <Spinner label="Loading complaint" />
@@ -425,7 +430,7 @@ export default function ReportDetailPage() {
           action={
             <Link
               to="/moderator/queue"
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#1d1d1b] px-5 text-sm text-white transition hover:bg-black"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white transition hover:bg-black"
             >
               <IconArrowLeft className="h-4 w-4" stroke={1.6} />
               Back to review complaints
@@ -441,45 +446,54 @@ export default function ReportDetailPage() {
       <div className="mx-auto max-w-6xl space-y-6">
         <ModeratorReportHeader data={data} />
 
-        <Card>
+        <Card className="shadow-sm">
           <CardBody>
-            <p className="whitespace-pre-line text-sm leading-6 text-[#1d1d1b]">
+            <p className="whitespace-pre-line text-sm leading-6 text-[var(--color-ink)]">
               {data.description}
             </p>
             {/* Submitted-at is already in the header, so it is not
                 repeated here. Location carries a full geocoded address
                 and gets its own wider column rather than forcing every
                 field to the tallest one's height. */}
-            <dl className="mt-5 grid grid-cols-1 gap-x-6 gap-y-4 border-t border-[#e4e2dc] pt-5 sm:grid-cols-2 lg:grid-cols-4">
+            <dl className="mt-5 grid grid-cols-1 gap-x-6 gap-y-4 border-t border-[var(--color-border-subtle)] pt-5 sm:grid-cols-2 lg:grid-cols-4">
               <div className="flex items-center gap-2.5">
-                <IconCategory className="h-4 w-4 shrink-0 text-[#85847f]" stroke={1.6} />
+                <IconCategory
+                  className="h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]"
+                  stroke={1.6}
+                />
                 <div className="min-w-0">
-                  <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Category
                   </dt>
-                  <dd className="mt-0.5 truncate text-sm text-[#1d1d1b]">
+                  <dd className="mt-0.5 truncate text-sm text-[var(--color-ink)]">
                     {data.category?.name ?? '—'}
                   </dd>
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
-                <IconBuilding className="h-4 w-4 shrink-0 text-[#85847f]" stroke={1.6} />
+                <IconBuilding
+                  className="h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]"
+                  stroke={1.6}
+                />
                 <div className="min-w-0">
-                  <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Department
                   </dt>
-                  <dd className="mt-0.5 truncate text-sm text-[#1d1d1b]">
+                  <dd className="mt-0.5 truncate text-sm text-[var(--color-ink)]">
                     {data.department?.name ?? 'Not routed yet'}
                   </dd>
                 </div>
               </div>
               <div className="flex items-start gap-2.5 sm:col-span-2">
-                <IconMapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#85847f]" stroke={1.6} />
+                <IconMapPin
+                  className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]"
+                  stroke={1.6}
+                />
                 <div className="min-w-0">
-                  <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Location
                   </dt>
-                  <dd className="mt-0.5 text-sm leading-5 text-[#1d1d1b]">
+                  <dd className="mt-0.5 text-sm leading-5 text-[var(--color-ink)]">
                     {data.location ? (
                       <LocationText lat={data.location.lat} lng={data.location.lng} />
                     ) : (
@@ -493,10 +507,10 @@ export default function ReportDetailPage() {
           </CardBody>
         </Card>
 
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <IconClock className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+              <IconClock className="h-5 w-5 text-[var(--color-text-secondary)]" stroke={1.6} />
               <CardTitle>Status timeline</CardTitle>
             </div>
           </CardHeader>
@@ -520,27 +534,30 @@ export default function ReportDetailPage() {
               <EvidenceViewer media={data.media} />
             </div>
 
-            <Card className="order-3">
+            <Card className="order-3 shadow-sm">
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <IconClipboardCheck className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+                  <IconClipboardCheck
+                    className="h-5 w-5 text-[var(--color-text-secondary)]"
+                    stroke={1.6}
+                  />
                   <CardTitle>Moderation actions</CardTitle>
                 </div>
-                <span className="hidden text-xs text-[#85847f] sm:inline">
+                <span className="hidden text-xs text-[var(--color-text-tertiary)] sm:inline">
                   Shortcuts:{' '}
-                  <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
+                  <kbd className="rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-ink)]">
                     A
                   </kbd>{' '}
-                  <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
+                  <kbd className="rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-ink)]">
                     R
                   </kbd>{' '}
-                  <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
+                  <kbd className="rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-ink)]">
                     M
                   </kbd>{' '}
-                  <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
+                  <kbd className="rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-ink)]">
                     E
                   </kbd>{' '}
-                  <kbd className="rounded bg-[#efeee9] px-1.5 py-0.5 font-mono text-[10px] text-[#1d1d1b]">
+                  <kbd className="rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-ink)]">
                     N
                   </kbd>
                 </span>
@@ -576,7 +593,7 @@ export default function ReportDetailPage() {
                 mockGpsScore={data.mock_gps_score}
               />
             </div>
-            <Card className="order-4">
+            <Card className="order-4 shadow-sm">
               <button
                 type="button"
                 onClick={() => setAuditExpanded((v) => !v)}
@@ -584,40 +601,42 @@ export default function ReportDetailPage() {
                 aria-expanded={auditExpanded}
               >
                 <div className="flex items-center gap-2">
-                  <IconClock className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+                  <IconClock className="h-5 w-5 text-[var(--color-text-secondary)]" stroke={1.6} />
                   <CardTitle>Audit history</CardTitle>
-                  <span className="rounded-full bg-[#efeee9] px-2 py-0.5 text-xs text-[#6f6e69]">
+                  <span className="rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 text-xs text-[var(--color-text-secondary)]">
                     {data.status_history.length}
                   </span>
                 </div>
                 <IconChevronDown
-                  className={`h-5 w-5 shrink-0 text-[#85847f] transition-transform duration-200 ${auditExpanded ? 'rotate-180' : ''}`}
+                  className={`h-5 w-5 shrink-0 text-[var(--color-text-tertiary)] transition-transform duration-200 ${auditExpanded ? 'rotate-180' : ''}`}
                   stroke={1.6}
                 />
               </button>
               {auditExpanded ? (
-                <CardBody className="border-t border-[#e4e2dc] pt-4">
+                <CardBody className="border-t border-[var(--color-border-subtle)] pt-4">
                   {data.status_history.length === 0 ? (
-                    <p className="text-sm text-[#85847f]">No status changes yet.</p>
+                    <p className="text-sm text-[var(--color-text-tertiary)]">
+                      No status changes yet.
+                    </p>
                   ) : (
-                    <ol className="relative ml-3 border-l-2 border-[#e4e2dc] pl-6">
+                    <ol className="relative ml-3 border-l-2 border-[var(--color-border-subtle)] pl-6">
                       {[...data.status_history].reverse().map((h, i) => (
                         <li
                           key={`${h.to_code}-${h.created_at}-${i}`}
                           className="relative pb-6 last:pb-0"
                         >
-                          <span className="absolute -left-[31px] top-1 grid h-5 w-5 place-items-center rounded-full bg-[#f3f2ed] ring-2 ring-[#e4e2dc]">
-                            <span className="h-2 w-2 rounded-full bg-[#85847f]" />
+                          <span className="absolute -left-[31px] top-1 grid h-5 w-5 place-items-center rounded-full bg-[var(--color-canvas)] ring-2 ring-[var(--color-border-subtle)]">
+                            <span className="h-2 w-2 rounded-full bg-[var(--color-text-tertiary)]" />
                           </span>
-                          <p className="text-sm font-medium text-[#1d1d1b]">
+                          <p className="text-sm font-medium text-[var(--color-ink)]">
                             {h.from_code
                               ? `${staffReportStatusLabel(h.from_code)} → ${staffReportStatusLabel(h.to_code)}`
                               : staffReportStatusLabel(h.to_code)}
                           </p>
-                          <p className="mt-0.5 text-xs text-[#6f6e69]">
+                          <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
                             {h.actor_name ?? 'System'}
                           </p>
-                          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[#85847f]">
+                          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                             {new Date(h.created_at).toLocaleString()}
                           </p>
                         </li>
@@ -663,9 +682,9 @@ export default function ReportDetailPage() {
             </>
           }
         >
-          <div className="space-y-3">
+          <div className="space-y-4">
             <ModeratorActionError error={review.error} />
-            <p className="text-sm text-[#6f6e69]">
+            <p className="text-sm leading-6 text-[var(--color-text-secondary)]">
               Approving moves the complaint to the next review step. Tick the override box if you
               are correcting the AI recommendation.
             </p>
@@ -677,7 +696,7 @@ export default function ReportDetailPage() {
               onChange={(e) => setRemarks(e.target.value)}
               placeholder="Briefly note the rationale for the audit trail."
             />
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Select
                 label="Category override (optional)"
                 name="category_id"
@@ -695,10 +714,10 @@ export default function ReportDetailPage() {
                 options={departmentOptions}
               />
             </div>
-            <label className="flex items-center gap-2 text-sm text-[#1d1d1b]">
+            <label className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
               <input
                 type="checkbox"
-                className="h-4 w-4 rounded border-[#d8d6cf] text-[#1d1d1b] focus:ring-[#1d1d1b]"
+                className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-ink)] focus:ring-[var(--color-ink)]"
                 checked={overrideAi}
                 onChange={(e) => setOverrideAi(e.target.checked)}
               />
@@ -736,16 +755,16 @@ export default function ReportDetailPage() {
             </>
           }
         >
-          <div className="space-y-3">
+          <div className="space-y-4">
             <ModeratorActionError error={review.error} />
-            <p className="text-sm text-[#6f6e69]">
+            <p className="text-sm leading-6 text-[var(--color-text-secondary)]">
               This closes the complaint after you review the completion proof. The citizen will see
               that the proof was handled by a moderator.
             </p>
             {data.proof_review ? (
-              <div className="rounded-lg border border-[#e4e2dc] bg-[#faf9f6] p-3 text-sm">
-                <p className="font-medium text-[#1d1d1b]">{data.proof_review.summary}</p>
-                <p className="mt-1 text-xs text-[#6f6e69]">
+              <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-4 text-sm">
+                <p className="font-medium text-[var(--color-ink)]">{data.proof_review.summary}</p>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
                   {data.proof_review.overall_confidence}% overall confidence
                   {data.proof_review.distance_meters !== null
                     ? ` · ${Math.round(data.proof_review.distance_meters)} m from complaint location`
@@ -794,7 +813,7 @@ export default function ReportDetailPage() {
             </>
           }
         >
-          <div className="space-y-3">
+          <div className="space-y-4">
             <Select
               label="Reason"
               name="reason_code"
@@ -847,8 +866,8 @@ export default function ReportDetailPage() {
             </>
           }
         >
-          <div className="space-y-3">
-            <p className="text-sm text-[#6f6e69]">
+          <div className="space-y-4">
+            <p className="text-sm leading-6 text-[var(--color-text-secondary)]">
               This complaint (<span className="font-mono">{data.tracking_number}</span>) becomes the
               canonical complaint; the ids below are folded into it and marked as merged.
             </p>
@@ -910,7 +929,7 @@ export default function ReportDetailPage() {
             </>
           }
         >
-          <div className="space-y-3">
+          <div className="space-y-4">
             <Select
               label="Reason"
               name="reason_code"

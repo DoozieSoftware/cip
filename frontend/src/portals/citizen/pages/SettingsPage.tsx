@@ -6,22 +6,8 @@ import { pushSupport, subscribeToPush, unsubscribeFromPush } from '../push/subsc
 import { useMessages, type Locale } from '../messages';
 import { trackProductEvent } from '../../../shared/analytics';
 
-// The VAPID public key is fetched from the backend at subscribe time
-// (see push/subscribe.ts) so it always matches the server signing pair.
 const PUSH_SUBSCRIBE_URL = '/notifications/push/subscriptions';
 
-/**
- * T-M13-016 — Citizen settings.
- *
- * The settings page is read-only for the citizen's profile
- * (it lives in `ProfilePage`) and writeable for:
- *  - Notification preferences (delegated to the M9 backend
- *    `/notifications/preferences` endpoints; this page is
- *    just a thin wrapper).
- *  - Push subscription toggle.
- *  - Theme (light only for now — dark mode is T-M15+).
- *  - Sign out.
- */
 export default function SettingsPage(): JSX.Element {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -36,9 +22,6 @@ export default function SettingsPage(): JSX.Element {
       setPushOn(false);
       return;
     }
-    // Reflect the *actual* push subscription, not just the browser
-    // permission — permission can be "granted" while no subscription
-    // exists, which made the toggle look stuck "on".
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
       setPushOn(false);
       return;
@@ -99,69 +82,98 @@ export default function SettingsPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-900">{t('settings.title')}</h1>
-        <p className="mt-1 text-sm text-slate-600">{t('settings.subtitle')}</p>
+      <header className="border-b border-[var(--color-border-faint)] pb-6">
+        <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+          {t('citizenServices')}
+        </p>
+        <h1 className="mt-2 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          {t('settings.title')}
+        </h1>
+        <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+          {t('settings.subtitle')}
+        </p>
       </header>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-700">{t('settings.account')}</h2>
-        <dl className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-xs uppercase text-slate-500">{t('settings.name')}</dt>
-            <dd className="text-slate-900">{user?.name ?? '—'}</dd>
+      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+        <h2 className="text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          {t('settings.account')}
+        </h2>
+        <dl className="mt-4 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+          <div className="rounded-lg bg-[var(--color-surface-alt)] px-4 py-3">
+            <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+              {t('settings.name')}
+            </dt>
+            <dd className="mt-1 text-sm font-medium text-[var(--color-ink)]">
+              {user?.name ?? '—'}
+            </dd>
           </div>
-          <div>
-            <dt className="text-xs uppercase text-slate-500">{t('settings.mobile')}</dt>
-            <dd className="text-slate-900">{user?.mobile ?? '—'}</dd>
+          <div className="rounded-lg bg-[var(--color-surface-alt)] px-4 py-3">
+            <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+              {t('settings.mobile')}
+            </dt>
+            <dd className="mt-1 text-sm font-medium text-[var(--color-ink)]">
+              {user?.mobile ?? '—'}
+            </dd>
           </div>
         </dl>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-700">{t('settings.pushNotifications')}</h2>
-        <p className="mt-1 text-xs text-slate-500">{t('settings.pushDetail')}</p>
-        <div className="mt-3 flex items-center gap-2">
+      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+        <h2 className="text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          {t('settings.pushNotifications')}
+        </h2>
+        <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+          {t('settings.pushDetail')}
+        </p>
+        <div className="mt-4 flex items-center justify-between gap-4 rounded-lg bg-[var(--color-surface-alt)] px-4 py-3">
+          <span className="text-sm font-medium text-[var(--color-ink)]">
+            {pushOn ? t('settings.pushOn') : t('settings.pushOff')}
+          </span>
           <button
             type="button"
             disabled={busy}
             onClick={() => void togglePush()}
             aria-pressed={pushOn}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${pushOn ? 'bg-blue-600' : 'bg-slate-300'} disabled:opacity-50`}
+            aria-label={t('settings.pushNotifications')}
+            className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 ${pushOn ? 'bg-[var(--color-ink)]' : 'bg-[var(--color-border)]'} disabled:cursor-not-allowed disabled:opacity-50`}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${pushOn ? 'translate-x-6' : 'translate-x-1'}`}
+              className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${pushOn ? 'translate-x-6' : 'translate-x-1'}`}
             />
           </button>
-          <span className="text-sm text-slate-700">
-            {pushOn ? t('settings.pushOn') : t('settings.pushOff')}
-          </span>
         </div>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <label htmlFor="citizen-language" className="text-sm font-semibold text-slate-700">
+      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+        <label
+          htmlFor="citizen-language"
+          className="text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
+        >
           {t('settings.language')}
         </label>
-        <p className="mt-1 text-xs text-slate-500">{t('settings.languageDetail')}</p>
+        <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+          {t('settings.languageDetail')}
+        </p>
         <select
           id="citizen-language"
           value={locale}
           onChange={(event) => onLocaleChange(event.target.value as Locale)}
-          className="mt-3 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 sm:max-w-xs"
+          className="mt-4 min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)] sm:max-w-xs"
         >
           <option value="en-IN">{t('settings.languageEnglish')}</option>
           <option value="kn-IN">{t('settings.languageKannada')}</option>
         </select>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-700">{t('settings.privacyLegal')}</h2>
-        <ul className="mt-2 space-y-1 text-sm text-blue-700">
+      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+        <h2 className="text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          {t('settings.privacyLegal')}
+        </h2>
+        <ul className="mt-3 flex flex-wrap gap-2">
           <li>
             <Link
               to="/citizen/legal/privacy"
-              className="inline-flex min-h-[44px] items-center underline"
+              className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition hover:border-[var(--color-border-strong)] hover:bg-[var(--color-canvas)]"
             >
               {t('settings.privacyPolicy')}
             </Link>
@@ -169,7 +181,7 @@ export default function SettingsPage(): JSX.Element {
           <li>
             <Link
               to="/citizen/legal/terms"
-              className="inline-flex min-h-[44px] items-center underline"
+              className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium text-[var(--color-ink)] transition hover:border-[var(--color-border-strong)] hover:bg-[var(--color-canvas)]"
             >
               {t('settings.termsOfUse')}
             </Link>
@@ -177,13 +189,17 @@ export default function SettingsPage(): JSX.Element {
         </ul>
       </section>
 
-      <section className="rounded-lg border border-rose-200 bg-rose-50 p-4">
-        <h2 className="text-sm font-semibold text-rose-700">{t('settings.signOut')}</h2>
-        <p className="mt-1 text-xs text-rose-600">{t('settings.signOutDetail')}</p>
+      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+        <h2 className="text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          {t('settings.signOut')}
+        </h2>
+        <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+          {t('settings.signOutDetail')}
+        </p>
         <button
           type="button"
           onClick={onSignOut}
-          className="mt-3 inline-flex min-h-[44px] items-center rounded-md border border-rose-300 bg-white px-3 text-sm font-medium text-rose-700 hover:bg-rose-100"
+          className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium text-[var(--color-ink)] transition hover:border-[var(--color-border-strong)] hover:bg-[var(--color-canvas)]"
         >
           {t('settings.signOut')}
         </button>

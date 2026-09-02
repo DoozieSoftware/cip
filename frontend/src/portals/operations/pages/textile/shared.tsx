@@ -172,13 +172,17 @@ export function DeskPage({
   }
 
   return (
-    <div className="min-w-0 space-y-5">
-      <header className="border-b border-[var(--color-border-faint)] pb-5">
+    <div className="min-w-0 space-y-4">
+      <header className="border-b border-[var(--color-border-faint)] pb-3.5">
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
           Dr. Linen operations
         </p>
-        <h1 className="mt-1 text-2xl font-normal tracking-[-0.03em]">{title}</h1>
-        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{description}</p>
+        <h1 className="mt-0.5 text-[22px] font-semibold tracking-[-0.025em] leading-none text-[var(--color-ink)]">
+          {title}
+        </h1>
+        <p className="mt-1 text-[13px] leading-4 text-[var(--color-text-secondary)]">
+          {description}
+        </p>
       </header>
       {toolbar}
       {children}
@@ -186,6 +190,11 @@ export function DeskPage({
   );
 }
 
+/**
+ * Ops desk uses pill (rounded-full) controls intentionally — desk is a high-density
+ * filter bar, not a form. Spec 8px (rounded-lg) applies to cards/inputs; pills stay
+ * for Search/Zone/Category/Method/Pager but must have focus rings (a11y). Keep.
+ */
 export function SearchBox({
   value,
   onChange,
@@ -196,7 +205,7 @@ export function SearchBox({
   placeholder?: string;
 }): JSX.Element {
   return (
-    <div className="relative w-full max-w-xs">
+    <div className="relative w-full max-w-md">
       <IconSearch
         className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)]"
         stroke={1.65}
@@ -206,14 +215,14 @@ export function SearchBox({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         aria-label="Search pickup requests"
-        className="min-h-10 w-full rounded-full border border-[var(--color-border)] bg-white pl-9 pr-8 text-sm"
+        className="min-h-10 w-full rounded-full border border-[var(--color-border)] bg-white pl-9 pr-8 text-sm focus-visible:border-[var(--color-border-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
       />
       {value ? (
         <button
           type="button"
           aria-label="Clear search"
           onClick={() => onChange('')}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-[var(--color-surface-alt)]"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
         >
           <IconX className="h-3.5 w-3.5" />
         </button>
@@ -235,7 +244,7 @@ export function ZoneFilter({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       aria-label="Filter by service zone"
-      className="min-h-10 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm"
+      className="min-h-10 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
     >
       <option value="">All zones</option>
       {(zones.data ?? []).map((zone) => (
@@ -259,7 +268,7 @@ export function CategoryFilter({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       aria-label="Filter by category"
-      className="min-h-10 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm"
+      className="min-h-10 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
     >
       <option value="">All categories</option>
       {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
@@ -319,7 +328,7 @@ export function MethodFilter({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label="Filter by collection method"
-      className="min-h-10 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm"
+      className="min-h-10 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
     >
       <option value="">All methods</option>
       <option value="dropoff">Drop-off</option>
@@ -382,7 +391,7 @@ export function DeskStates({
           <button
             type="button"
             onClick={onRetry}
-            className="rounded-full border border-[var(--color-border)] px-4 py-2 text-sm"
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
           >
             Retry
           </button>
@@ -414,7 +423,7 @@ export function Pager({
           type="button"
           disabled={meta.page <= 1}
           onClick={() => onPage(Math.max(1, meta.page - 1))}
-          className="inline-flex min-h-9 items-center gap-1 rounded-full border border-[var(--color-border)] bg-white px-3 text-sm disabled:opacity-40"
+          className="inline-flex min-h-11 items-center gap-1 rounded-full border border-[var(--color-border)] bg-white px-3 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 disabled:opacity-40"
         >
           <IconChevronLeft className="h-4 w-4" stroke={1.65} /> Prev
         </button>
@@ -422,7 +431,7 @@ export function Pager({
           type="button"
           disabled={meta.page >= meta.last_page}
           onClick={() => onPage(meta.page + 1)}
-          className="inline-flex min-h-9 items-center gap-1 rounded-full border border-[var(--color-border)] bg-white px-3 text-sm disabled:opacity-40"
+          className="inline-flex min-h-11 items-center gap-1 rounded-full border border-[var(--color-border)] bg-white px-3 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 disabled:opacity-40"
         >
           Next <IconChevronRight className="h-4 w-4" stroke={1.65} />
         </button>
@@ -609,16 +618,16 @@ export function TripProgressBar({
         ? 'In progress'
         : batchStatus === 'assigned'
           ? 'Assigned'
-          : 'Unstarted';
-  const doneLabel = `${collected} of ${total} done`;
+          : 'Planned';
+  const doneLabel = `${collected} of ${total} collected`;
   return (
     <div
-      className="flex items-center gap-3"
+      className="flex items-center gap-2.5"
       aria-label={`Trip progress ${statusLabel}, ${doneLabel}`}
     >
-      <div className="h-3 flex-1 overflow-hidden rounded-full bg-black/15">
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--color-border-subtle)]">
         <div
-          className="h-full rounded-full bg-emerald-600 transition-all"
+          className="h-full rounded-full bg-[var(--color-success)] transition-all"
           style={{ width: `${pct}%` }}
           role="progressbar"
           aria-valuenow={pct}
@@ -627,11 +636,13 @@ export function TripProgressBar({
           aria-label={doneLabel}
         />
       </div>
-      <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-semibold">
-        {doneLabel}
-        {missed > 0 ? ` · ${missed} missed` : ''}
+      <span className="shrink-0 text-xs leading-none text-[var(--color-text-secondary)]">
+        <span className="font-semibold tabular-nums text-[var(--color-ink)]">
+          {collected} of {total}
+        </span>{' '}
+        collected
         {pending > 0 ? ` · ${pending} left` : ''}
-        <span className="ml-1 font-normal text-[var(--color-text-secondary)]">· {statusLabel}</span>
+        {missed > 0 ? ` · ${missed} missed` : ''}
       </span>
     </div>
   );

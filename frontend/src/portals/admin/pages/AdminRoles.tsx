@@ -9,7 +9,17 @@ import {
   type AdminPermission,
   type AdminRoleInput,
 } from '../api/client';
-import { Spinner, EmptyState, Dialog, Button } from '../../../shared/ui';
+import {
+  Spinner,
+  EmptyState,
+  Dialog,
+  Button,
+  Card,
+  CardHeader,
+  CardTitle,
+  Badge,
+  ErrorState,
+} from '../../../shared/ui';
 
 interface RoleDraft {
   id?: string | number;
@@ -56,31 +66,31 @@ function RoleForm({
   };
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="space-y-6">
       <label className="block text-sm">
-        <span className="font-medium text-slate-700">
-          Name <span className="text-rose-600">*</span>
+        <span className="font-medium text-[var(--color-ink)]">
+          Name <span className="text-[var(--color-danger)]">*</span>
         </span>
         <input
           value={draft.name}
           onChange={(e) => setDraft({ ...draft, name: e.target.value })}
           required
-          className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+          className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </label>
       <label className="block text-sm">
-        <span className="font-medium text-slate-700">Guard</span>
+        <span className="font-medium text-[var(--color-ink)]">Guard</span>
         <input
           value={draft.guard_name}
           onChange={(e) => setDraft({ ...draft, guard_name: e.target.value })}
-          className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+          className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </label>
       <fieldset className="text-sm">
-        <legend className="font-medium text-slate-700">
+        <legend className="font-medium text-[var(--color-ink)]">
           Permissions (subset enforced — see note)
         </legend>
-        <div className="mt-1 max-h-48 overflow-y-auto rounded-md border border-slate-200 p-2">
+        <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-3">
           <div className="flex flex-wrap gap-1.5">
             {allPerms.map((p) => {
               const checked = draft.permissions.includes(p.name);
@@ -90,9 +100,9 @@ function RoleForm({
                     type="checkbox"
                     checked={checked}
                     onChange={() => togglePerm(p.name)}
-                    className="h-4 w-4 rounded border-slate-300"
+                    className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-ink)] focus:ring-[var(--color-ink)]"
                   />
-                  <span className="font-mono">{p.name}</span>
+                  <span className="font-mono text-[var(--color-ink)]">{p.name}</span>
                 </label>
               );
             })}
@@ -159,18 +169,25 @@ export default function AdminRoles(): JSX.Element {
   const busy = create.isPending || update.isPending || sync.isPending;
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+    <div className="mx-auto max-w-6xl space-y-6">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Roles &amp; permissions</h1>
-          <p className="text-sm text-slate-600">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Access control
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+            Roles &amp; permissions
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             Define roles and which permission strings they carry.
           </p>
         </div>
-        <Button onClick={openNew}>+ New role</Button>
+        <Button onClick={openNew} leftIcon={<span aria-hidden>+</span>}>
+          New role
+        </Button>
       </header>
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+      <div className="rounded-lg border border-[var(--color-warning)]/20 bg-[var(--color-warning)]/10 p-4 text-xs text-[var(--color-warning)]">
         <span className="font-semibold">Partially enforced.</span> Permissions assigned here grant
         access to platform-wide screens (moderation &amp; analytics views, dashboards, report lists,
         audit log, security). Report- and department-specific actions — approve, accept, resolve,
@@ -178,9 +195,38 @@ export default function AdminRoles(): JSX.Element {
         assigning those permissions here does not yet affect them.
       </div>
 
+      {(roles.isError || perms.isError) && (
+        <ErrorState
+          title="Failed to load roles"
+          description="Could not load roles or permissions."
+          error={roles.error ?? perms.error ?? null}
+          action={
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  void roles.refetch();
+                  void perms.refetch();
+                }}
+              >
+                Retry
+              </Button>
+            </div>
+          }
+        />
+      )}
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Roles</h2>
+        <Card className="p-5">
+          <CardHeader className="-mx-5 -mt-5 mb-3">
+            <CardTitle className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+              Roles
+            </CardTitle>
+            <span className="text-xs text-[var(--color-text-tertiary)]">
+              {(roles.data ?? []).length} total
+            </span>
+          </CardHeader>
           {roles.isLoading ? (
             <Spinner label="Loading roles" />
           ) : (roles.data ?? []).length === 0 ? (
@@ -188,34 +234,40 @@ export default function AdminRoles(): JSX.Element {
           ) : (
             <ul className="mt-3 space-y-2">
               {(roles.data ?? []).map((r: AdminRole) => (
-                <li key={String(r.id)} className="rounded-lg border border-slate-200 p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-slate-900">{r.name}</span>
+                <li
+                  key={String(r.id)}
+                  className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-4"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-sm font-semibold text-[var(--color-ink)]">{r.name}</span>
                     <div className="flex items-center gap-2">
                       {r.protected && (
-                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">
+                        <Badge
+                          tone="warning"
+                          className="bg-[var(--color-warning)]/10 text-[var(--color-warning)]"
+                        >
                           protected
-                        </span>
+                        </Badge>
                       )}
                       <Button variant="ghost" size="sm" onClick={() => openEdit(r)}>
                         Edit
                       </Button>
                     </div>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
                     {r.permissions.length} permission(s) · guard: {r.guard_name}
                   </p>
-                  <div className="mt-2 flex flex-wrap gap-1">
+                  <div className="mt-3 flex flex-wrap gap-1.5">
                     {r.permissions.slice(0, 6).map((p) => (
                       <span
                         key={p}
-                        className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-700"
+                        className="rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-ink)]"
                       >
                         {p}
                       </span>
                     ))}
                     {r.permissions.length > 6 && (
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-[var(--color-text-tertiary)]">
                         + {r.permissions.length - 6} more
                       </span>
                     )}
@@ -224,12 +276,17 @@ export default function AdminRoles(): JSX.Element {
               ))}
             </ul>
           )}
-        </section>
+        </Card>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-            Permissions
-          </h2>
+        <Card className="p-5">
+          <CardHeader className="-mx-5 -mt-5 mb-3">
+            <CardTitle className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+              Permissions
+            </CardTitle>
+            <span className="text-xs text-[var(--color-text-tertiary)]">
+              {(perms.data ?? []).length} total
+            </span>
+          </CardHeader>
           {perms.isLoading ? (
             <Spinner label="Loading permissions" />
           ) : (perms.data ?? []).length === 0 ? (
@@ -239,14 +296,14 @@ export default function AdminRoles(): JSX.Element {
               {(perms.data ?? []).map((p) => (
                 <li
                   key={String(p.id)}
-                  className="rounded bg-slate-50 px-2 py-1 font-mono text-[11px] text-slate-700"
+                  className="rounded bg-[var(--color-surface-alt)] px-2 py-1 font-mono text-[11px] text-[var(--color-ink)]"
                 >
                   {p.name}
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </Card>
       </div>
 
       <Dialog
@@ -263,12 +320,12 @@ export default function AdminRoles(): JSX.Element {
           busy={busy}
         />
         {create.isError ? (
-          <p role="alert" className="mt-2 text-sm text-rose-700">
+          <p role="alert" className="mt-3 text-sm text-[var(--color-danger)]">
             {create.error?.message}
           </p>
         ) : null}
         {update.isError || sync.isError ? (
-          <p role="alert" className="mt-2 text-sm text-rose-700">
+          <p role="alert" className="mt-3 text-sm text-[var(--color-danger)]">
             {update.error?.message ?? sync.error?.message}
           </p>
         ) : null}

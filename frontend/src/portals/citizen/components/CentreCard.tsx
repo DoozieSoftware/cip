@@ -30,7 +30,7 @@ export function CentreCard({
   const muted = state === 'muted';
   return (
     <div
-      className={`rounded-2xl border bg-white p-5 shadow-sm ${muted ? 'border-black/10 bg-[#faf9f6]' : 'border-black/10'}`}
+      className={`rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)] ${muted ? 'bg-[var(--color-surface-alt)]' : ''}`}
     >
       <p className="text-xs font-medium tracking-wide text-[var(--color-text-secondary)]">
         Drop-off centre
@@ -56,7 +56,7 @@ export function CentreCard({
         <button
           type="button"
           onClick={() => void navigator.clipboard.writeText(address)}
-          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-black/15 bg-white px-4 text-sm font-medium"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium"
         >
           <IconCopy className="h-4 w-4" stroke={1.6} />
           Copy address
@@ -66,7 +66,7 @@ export function CentreCard({
         <div
           role="img"
           aria-label="Map showing the collection point area"
-          className="mt-4 overflow-hidden rounded-xl border border-black/10"
+          className="mt-4 overflow-hidden rounded-xl border border-[var(--color-border-subtle)]"
           style={{ height: 190 }}
         >
           <MapContainer
@@ -91,7 +91,7 @@ export function CentreCard({
 
 export function CentreCardSkeleton(): JSX.Element {
   return (
-    <div className="animate-pulse rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
+    <div className="animate-pulse rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
       <div className="h-3 w-24 rounded bg-black/10" />
       <div className="mt-2 h-4 w-40 rounded bg-black/10" />
       <div className="mt-1 h-3 w-64 rounded bg-black/10" />

@@ -25,6 +25,8 @@ export default function AdminSecurityPolicies(): JSX.Element {
     setDraftValue(JSON.stringify(p.value ?? {}, null, 2));
   }
 
+  const [formError, setFormError] = useState<string | null>(null);
+
   async function save(): Promise<void> {
     if (editing === null) return;
     let parsed: Record<string, unknown>;
@@ -32,9 +34,10 @@ export default function AdminSecurityPolicies(): JSX.Element {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       parsed = JSON.parse(draftValue);
     } catch {
-      alert('Value must be valid JSON.');
+      setFormError('Value must be valid JSON.');
       return;
     }
+    setFormError(null);
     try {
       await upsert.mutateAsync({
         key: editing.key,
@@ -44,15 +47,18 @@ export default function AdminSecurityPolicies(): JSX.Element {
       });
       setEditing(null);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Save failed');
+      setFormError(err instanceof Error ? err.message : 'Save failed');
     }
   }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Security / Policies
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
             Security policies
           </h1>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
@@ -67,7 +73,18 @@ export default function AdminSecurityPolicies(): JSX.Element {
             <Spinner label="Loading policies" />
           </div>
         ) : list.isError ? (
-          <ErrorState title="Failed to load policies" error={list.error} />
+          <div className="p-6">
+            <ErrorState
+              title="Failed to load policies"
+              description="There was a problem fetching security policies."
+              error={list.error instanceof Error ? list.error : null}
+              action={
+                <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
+                  Retry
+                </Button>
+              }
+            />
+          </div>
         ) : (list.data ?? []).length === 0 ? (
           <EmptyState
             title="No policies"
@@ -136,10 +153,23 @@ export default function AdminSecurityPolicies(): JSX.Element {
         </p>
         <textarea
           value={draftValue}
-          onChange={(e) => setDraftValue(e.target.value)}
+          onChange={(e) => {
+            setDraftValue(e.target.value);
+            if (formError) setFormError(null);
+          }}
           rows={8}
-          className="mt-3 w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 font-mono text-xs focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="mt-3 w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 font-mono text-xs focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
+        {formError ? (
+          <p role="alert" className="mt-2 text-sm text-[var(--color-danger)]">
+            {formError}
+          </p>
+        ) : null}
+        {upsert.isError && !formError ? (
+          <p role="alert" className="mt-2 text-sm text-[var(--color-danger)]">
+            {upsert.error instanceof Error ? upsert.error.message : 'Save failed'}
+          </p>
+        ) : null}
       </Dialog>
     </div>
   );

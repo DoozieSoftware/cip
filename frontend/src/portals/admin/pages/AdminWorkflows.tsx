@@ -141,7 +141,7 @@ function WorkflowForm({
   return (
     <form
       onSubmit={handle}
-      className="space-y-4 rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5"
+      className="space-y-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5"
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm">
@@ -151,7 +151,7 @@ function WorkflowForm({
             value={code}
             onChange={(e) => setCode(e.target.value)}
             required
-            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm font-mono focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm font-mono focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="text-sm">
@@ -161,7 +161,7 @@ function WorkflowForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="text-sm sm:col-span-2">
@@ -170,7 +170,7 @@ function WorkflowForm({
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="flex items-center gap-2 text-sm">
@@ -180,7 +180,7 @@ function WorkflowForm({
             onChange={(e) => setActive(e.target.checked)}
             className="h-4 w-4 rounded border-[var(--color-border)]"
           />
-          <span className="font-medium text-[var(--color-ink)]">active</span>
+          <span className="font-medium text-[var(--color-ink)]">Active</span>
         </label>
       </div>
 
@@ -193,7 +193,7 @@ function WorkflowForm({
             value={statesJson}
             onChange={(e) => setStatesFromJson(e.target.value)}
             rows={5}
-            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 font-mono text-xs focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 font-mono text-xs focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="text-sm">
@@ -204,7 +204,7 @@ function WorkflowForm({
             value={transitionsJson}
             onChange={(e) => setTransitionsFromJson(e.target.value)}
             rows={5}
-            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 font-mono text-xs focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 font-mono text-xs focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
       </div>
@@ -235,9 +235,12 @@ export default function AdminWorkflows(): JSX.Element {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Process configuration
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
             Workflow builder
           </h1>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
@@ -328,6 +331,11 @@ export default function AdminWorkflows(): JSX.Element {
             <ErrorState
               title="Failed to load workflows"
               description="There was a problem fetching workflow definitions."
+              action={
+                <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
+                  Retry
+                </Button>
+              }
             />
           </div>
         ) : rows.length === 0 ? (
@@ -389,7 +397,7 @@ export default function AdminWorkflows(): JSX.Element {
                         tone={w.active ? 'success' : 'neutral'}
                         className={
                           w.active
-                            ? 'bg-[#edf7f0] text-[var(--color-success)]'
+                            ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
                             : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'
                         }
                       >
@@ -425,7 +433,7 @@ export default function AdminWorkflows(): JSX.Element {
                           onClick={() => {
                             if (confirm(`Delete ${w.code}?`)) remove.mutate(w.id);
                           }}
-                          className="text-[var(--color-danger)] hover:bg-[#fbeeed] hover:text-[var(--color-danger-hover)]"
+                          className="text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger-hover)]"
                         >
                           Delete
                         </Button>
@@ -498,7 +506,7 @@ function TransitionMatrix({ wf }: { wf: WorkflowDefinition }): JSX.Element {
                   return (
                     <td
                       key={col.id}
-                      className={`px-3 py-2 text-xs ${has ? 'bg-[#edf7f0] text-[var(--color-success)]' : 'text-[var(--color-border)]'}`}
+                      className={`px-3 py-2 text-xs ${has ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]' : 'text-[var(--color-border)]'}`}
                     >
                       {has ? '✓' : '·'}
                     </td>

@@ -86,7 +86,7 @@ export default function TextileCapacityPage(): JSX.Element {
         ) : null}
 
         {report ? (
-          <p className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+          <p className="rounded-lg border border-[var(--color-info)]/20 bg-[var(--color-info)]/[0.06] px-3 py-2 text-xs text-[var(--color-ink)]">
             Data quality: {report.data_quality.note}{' '}
             {report.data_quality.missing_estimates > 0
               ? `${report.data_quality.missing_estimates} request(s) are missing estimates.`
@@ -94,7 +94,7 @@ export default function TextileCapacityPage(): JSX.Element {
           </p>
         ) : null}
 
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+        <section className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-black/5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold">Zone capacity rules</h2>
@@ -106,7 +106,7 @@ export default function TextileCapacityPage(): JSX.Element {
             {report ? (
               <a
                 href={textileReportingExportUrl({ department_id: desk.departmentId })}
-                className="rounded-full border border-[var(--color-border)] px-3 py-2 text-xs font-medium"
+                className="inline-flex min-h-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-3 py-2 text-xs font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
               >
                 Export CSV
               </a>
@@ -152,16 +152,25 @@ export default function TextileCapacityPage(): JSX.Element {
           )}
         </section>
 
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+        <section className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-black/5">
           <h2 className="text-sm font-semibold">Pending capacity exceptions</h2>
           <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
             A human decision and audit reason are required before a capacity policy is overridden.
           </p>
           {exceptions.isLoading ? <p className="mt-3 text-sm">Loading exceptions…</p> : null}
           {exceptions.isError ? (
-            <p role="alert" className="mt-3 text-sm text-red-700">
-              Could not load capacity exceptions.
-            </p>
+            <div role="alert" className="mt-3 flex flex-wrap items-center gap-2">
+              <p className="text-sm text-[var(--color-danger)]">
+                Could not load capacity exceptions.
+              </p>
+              <button
+                type="button"
+                onClick={() => void exceptions.refetch()}
+                className="inline-flex min-h-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-3 py-1.5 text-xs font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+              >
+                Retry
+              </button>
+            </div>
           ) : null}
           {exceptions.data?.length === 0 ? (
             <p className="mt-3 text-sm text-[var(--color-text-secondary)]">
@@ -189,7 +198,7 @@ export default function TextileCapacityPage(): JSX.Element {
                       onClick={() =>
                         decideException.mutate({ id: exception.id, decision: 'approve' })
                       }
-                      className="rounded-full bg-emerald-700 px-3 py-1.5 text-white disabled:opacity-40"
+                      className="inline-flex min-h-9 items-center justify-center rounded-full bg-[var(--color-success)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-success-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-success)] focus-visible:ring-offset-1 disabled:opacity-40"
                     >
                       Approve
                     </button>
@@ -199,7 +208,7 @@ export default function TextileCapacityPage(): JSX.Element {
                       onClick={() =>
                         decideException.mutate({ id: exception.id, decision: 'reject' })
                       }
-                      className="rounded-full border border-rose-300 px-3 py-1.5 text-rose-700 disabled:opacity-40"
+                      className="inline-flex min-h-9 items-center justify-center rounded-full border border-[var(--color-danger)]/30 bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-danger)] hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)] focus-visible:ring-offset-1 disabled:opacity-40"
                     >
                       Reject
                     </button>
@@ -211,7 +220,7 @@ export default function TextileCapacityPage(): JSX.Element {
         </section>
 
         {report ? (
-          <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+          <section className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-black/5">
             <h2 className="text-sm font-semibold">Metric definitions</h2>
             <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
               {Object.entries(report.definitions).map(([name, definition]) => (
@@ -238,7 +247,7 @@ function Metric({
   note: string;
 }): JSX.Element {
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+    <div className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-black/5">
       <p className="text-xs text-[var(--color-text-secondary)]">{label}</p>
       <p className="mt-1 text-2xl font-semibold">{value}</p>
       <p className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">{note}</p>

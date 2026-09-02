@@ -157,19 +157,22 @@ export default function TextileReceiptPage(): JSX.Element {
             className="flex gap-2"
           >
             <div className="relative flex-1">
-              <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+              <IconSearch
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)]"
+                stroke={1.65}
+              />
               <input
                 inputMode="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Scan QR or type DL-… / phone"
                 aria-label="Search by reference or phone"
-                className="min-h-12 w-full rounded-xl border border-[var(--color-border)] bg-white pl-9 pr-3 text-sm"
+                className="min-h-12 w-full rounded-lg border border-[var(--color-border)] bg-white pl-9 pr-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 focus-visible:border-[var(--color-border-strong)]"
               />
             </div>
             <button
               type="submit"
-              className="min-h-12 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white"
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
             >
               Find
             </button>
@@ -182,13 +185,28 @@ export default function TextileReceiptPage(): JSX.Element {
           {search && queue.isLoading ? (
             <p className="text-sm text-[var(--color-text-secondary)]">Searching…</p>
           ) : null}
-          {search && !queue.isLoading && rows.length === 0 ? (
-            <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5 text-sm">
+          {search && queue.isError ? (
+            <div
+              role="alert"
+              className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--color-danger)]/20 bg-rose-50 px-4 py-3 text-sm text-[var(--color-danger)]"
+            >
+              <span>Could not search bookings.</span>
+              <button
+                type="button"
+                onClick={() => void queue.refetch()}
+                className="inline-flex min-h-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+              >
+                Retry
+              </button>
+            </div>
+          ) : null}
+          {search && !queue.isLoading && !queue.isError && rows.length === 0 ? (
+            <div className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-black/5 text-sm">
               No booking found for “{search}”.
             </div>
           ) : null}
           {rows.length > 1 && !selected ? (
-            <ul className="divide-y divide-[var(--color-border-subtle)] rounded-xl border border-[var(--color-border-subtle)] bg-white">
+            <ul className="divide-y divide-[var(--color-border-subtle)] rounded-lg border border-[var(--color-border-subtle)] bg-white">
               {rows.map((r) => (
                 <li key={r.id}>
                   <button
@@ -203,7 +221,7 @@ export default function TextileReceiptPage(): JSX.Element {
             </ul>
           ) : null}
           {selected ? (
-            <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5 text-sm">
+            <div className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-black/5 text-sm">
               <div className="flex items-center justify-between">
                 <span className="font-mono text-xs font-medium">{selected.reference}</span>
                 <StatusBadge status={selected.status} />
@@ -227,7 +245,7 @@ export default function TextileReceiptPage(): JSX.Element {
                 Est. {formatVolume(selected.estimated_bags, selected.estimated_weight_kg)}
               </p>
               {selected.status === 'picked_up' ? (
-                <p className="mt-2 text-xs text-amber-700">
+                <p className="mt-2 text-xs text-[var(--color-warning)]">
                   Already received at {selected.picked_up_at ?? '—'}
                 </p>
               ) : null}
@@ -235,7 +253,7 @@ export default function TextileReceiptPage(): JSX.Element {
           ) : null}
         </div>
 
-        <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+        <div className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-black/5">
           {!selected ? (
             <DeskStates
               loading={false}
@@ -258,7 +276,7 @@ export default function TextileReceiptPage(): JSX.Element {
                     min={1}
                     value={bags}
                     onChange={(e) => setBags(e.target.value)}
-                    className="mt-1 block min-h-12 w-28 rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm"
+                    className="mt-1 block min-h-12 w-28 rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 focus-visible:border-[var(--color-border-strong)]"
                   />
                 </label>
                 <label className="text-xs font-medium">
@@ -269,13 +287,13 @@ export default function TextileReceiptPage(): JSX.Element {
                     step={0.1}
                     value={weight}
                     onChange={(e) => setWeight(e.target.value)}
-                    className="mt-1 block min-h-12 w-32 rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm"
+                    className="mt-1 block min-h-12 w-32 rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 focus-visible:border-[var(--color-border-strong)]"
                   />
                 </label>
               </div>
               {weight && selected.estimated_weight_kg !== null ? (
                 <p
-                  className={`text-xs ${Math.abs(variancePct) >= 50 ? 'text-rose-600' : Math.abs(variancePct) >= 25 ? 'text-amber-700' : 'text-[var(--color-text-secondary)]'}`}
+                  className={`text-xs ${Math.abs(variancePct) >= 50 ? 'text-[var(--color-danger)]' : Math.abs(variancePct) >= 25 ? 'text-[var(--color-warning)]' : 'text-[var(--color-text-secondary)]'}`}
                 >
                   Variance: {variance > 0 ? '+' : ''}
                   {variance.toFixed(1)} kg ({variancePct.toFixed(0)}%){' '}
@@ -285,7 +303,7 @@ export default function TextileReceiptPage(): JSX.Element {
 
               <div>
                 <p className="text-xs font-medium">
-                  Proof photo <span className="text-red-700">(required)</span>
+                  Proof photo <span className="text-[var(--color-danger)]">(required)</span>
                 </p>
                 <input
                   ref={photoRef}
@@ -300,7 +318,7 @@ export default function TextileReceiptPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => photoRef.current?.click()}
-                  className="mt-1 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium"
+                  className="mt-1 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
                 >
                   {photoFile ? 'Replace photo' : 'Choose photo'}
                   <IconCamera className="h-4 w-4" />
@@ -313,7 +331,7 @@ export default function TextileReceiptPage(): JSX.Element {
                   />
                 ) : null}
                 {photoError ? (
-                  <p role="alert" className="mt-1 text-xs text-red-600">
+                  <p role="alert" className="mt-1 text-xs text-[var(--color-danger)]">
                     {photoError}
                   </p>
                 ) : null}
@@ -323,14 +341,14 @@ export default function TextileReceiptPage(): JSX.Element {
                 <label className="text-xs font-medium">
                   Reason{' '}
                   {needsReason ? (
-                    <span className="text-red-700">*</span>
+                    <span className="text-[var(--color-danger)]">*</span>
                   ) : (
                     <span className="text-[var(--color-text-tertiary)]">(optional)</span>
                   )}
                   <select
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    className="mt-1 block w-full min-h-11 rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm"
+                    className="mt-1 block w-full min-h-11 rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 focus-visible:border-[var(--color-border-strong)]"
                   >
                     <option value="">Select reason</option>
                     {REASONS.map((r) => (
@@ -345,19 +363,19 @@ export default function TextileReceiptPage(): JSX.Element {
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Optional note"
                   rows={2}
-                  className="block w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm"
+                  className="block w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 focus-visible:border-[var(--color-border-strong)]"
                 />
               </div>
 
               {serverError ? (
-                <p role="alert" className="text-xs text-red-600">
+                <p role="alert" className="text-xs text-[var(--color-danger)]">
                   {serverError}
                 </p>
               ) : null}
               {success ? (
                 <p
                   role="status"
-                  className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800"
+                  className="rounded-lg border border-[var(--color-success)]/20 bg-[var(--color-success)]/[0.08] px-3 py-2 text-xs text-[var(--color-success)]"
                 >
                   {success}
                 </p>
@@ -368,7 +386,7 @@ export default function TextileReceiptPage(): JSX.Element {
                   type="button"
                   disabled={!canConfirm || busy}
                   onClick={() => void confirm()}
-                  className="min-h-11 rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white disabled:opacity-40"
+                  className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 disabled:opacity-40"
                 >
                   {busy ? 'Confirming…' : 'Confirm receipt'}
                 </button>
@@ -379,7 +397,7 @@ export default function TextileReceiptPage(): JSX.Element {
                     setSearch('');
                     setQuery('');
                   }}
-                  className="min-h-11 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm"
+                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
                 >
                   Clear
                 </button>

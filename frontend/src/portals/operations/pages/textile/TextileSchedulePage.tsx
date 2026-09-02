@@ -33,6 +33,13 @@ import {
   formatVolume,
 } from './shared';
 
+// Shared field input — single source for date/time + driver/team/vehicle/ref/instructions
+// (rounded-lg per spec, token border, focus ring). Keeps ops desk consistent.
+const FIELD_INPUT =
+  'mt-1 block min-h-10 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 focus-visible:border-[var(--color-border-strong)]';
+const FIELD_TEXTAREA =
+  'mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 focus-visible:border-[var(--color-border-strong)]';
+
 function buildProspectiveEvaluation(
   items: TextileCollectionListItem[],
   rule: TextileCapacityRule | null,
@@ -402,7 +409,7 @@ export default function TextileSchedulePage(): JSX.Element {
           ) : null}
 
           {selected.length > 0 ? (
-            <section className="rounded-xl border border-black/10 bg-[#f1efe8] p-4">
+            <section className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">
@@ -433,7 +440,7 @@ export default function TextileSchedulePage(): JSX.Element {
                     min={new Date().toISOString().slice(0, 10)}
                     onChange={(event) => setDate(event.target.value)}
                     aria-label="Pickup date"
-                    className="mt-1 block min-h-10 rounded-lg border border-black/15 bg-white px-3 text-sm"
+                    className={FIELD_INPUT}
                   />
                 </label>
                 <label className="text-xs font-medium">
@@ -442,7 +449,7 @@ export default function TextileSchedulePage(): JSX.Element {
                     type="time"
                     value={windowStart}
                     onChange={(event) => setWindowStart(event.target.value)}
-                    className="mt-1 block min-h-10 rounded-lg border border-black/15 bg-white px-3 text-sm"
+                    className={FIELD_INPUT}
                   />
                 </label>
                 <label className="text-xs font-medium">
@@ -451,7 +458,7 @@ export default function TextileSchedulePage(): JSX.Element {
                     type="time"
                     value={windowEnd}
                     onChange={(event) => setWindowEnd(event.target.value)}
-                    className="mt-1 block min-h-10 rounded-lg border border-black/15 bg-white px-3 text-sm"
+                    className={FIELD_INPUT}
                   />
                 </label>
                 <div className="flex gap-2">
@@ -459,7 +466,7 @@ export default function TextileSchedulePage(): JSX.Element {
                     type="button"
                     disabled={!canSchedule || schedule.isPending}
                     onClick={() => void schedule.mutateAsync()}
-                    className="min-h-10 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white disabled:opacity-40"
+                    className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 disabled:opacity-40"
                   >
                     {schedule.isPending ? 'Scheduling…' : 'Schedule trip'}
                   </button>
@@ -472,7 +479,7 @@ export default function TextileSchedulePage(): JSX.Element {
                       setExceptionSuccess(null);
                       setExceptionError(null);
                     }}
-                    className="min-h-10 rounded-full border border-black/15 bg-white px-4 text-sm"
+                    className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
                   >
                     Clear
                   </button>
@@ -484,7 +491,7 @@ export default function TextileSchedulePage(): JSX.Element {
                 {capacityRulesQuery.isLoading ? (
                   <div
                     role="status"
-                    className="flex items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3 text-xs text-[var(--color-text-secondary)]"
+                    className="flex items-center gap-2 rounded-lg border border-[var(--color-border-subtle)] bg-white px-4 py-3 text-xs text-[var(--color-text-secondary)]"
                   >
                     Checking capacity…
                   </div>
@@ -492,13 +499,13 @@ export default function TextileSchedulePage(): JSX.Element {
                 {capacityRulesQuery.isError ? (
                   <div
                     role="alert"
-                    className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800"
+                    className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800"
                   >
                     Could not load capacity rules — trip checks are unavailable.{' '}
                     <button
                       type="button"
                       onClick={() => void capacityRulesQuery.refetch()}
-                      className="ml-2 underline"
+                      className="ml-2 inline-flex min-h-7 items-center rounded-full border border-amber-300 bg-white px-3 text-[11px] font-medium text-amber-800 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-warning)] focus-visible:ring-offset-1"
                     >
                       Retry
                     </button>
@@ -519,14 +526,14 @@ export default function TextileSchedulePage(): JSX.Element {
                 {hasCapacityBlockers ? (
                   <p
                     role="alert"
-                    className="flex items-center gap-1.5 text-xs font-medium text-rose-700"
+                    className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-danger)]"
                   >
                     <IconAlertTriangle className="h-3.5 w-3.5" />
                     Scheduling is blocked by capacity limits above. Request an approved exception or
                     reduce the load before confirming.
                   </p>
                 ) : canScheduleDespiteWarnings ? (
-                  <p role="status" className="text-xs text-amber-700">
+                  <p role="status" className="text-xs text-[var(--color-warning)]">
                     Warnings above require review, but you may still schedule — or request an
                     exception so a partner approver can audit the override.
                   </p>
@@ -569,7 +576,10 @@ export default function TextileSchedulePage(): JSX.Element {
                 </div>
               ) : null}
               {requestedSlotUnavailable ? (
-                <p role="alert" className="mt-2 flex items-center gap-1.5 text-xs text-rose-700">
+                <p
+                  role="alert"
+                  className="mt-2 flex items-center gap-1.5 text-xs text-[var(--color-danger)]"
+                >
                   <IconAlertTriangle className="h-3.5 w-3.5" />
                   Requested date {date} is unavailable. Next available slots are outside{' '}
                   {unavailableDates.join(', ')} — choose a different date or add an override reason.
@@ -582,7 +592,7 @@ export default function TextileSchedulePage(): JSX.Element {
                     value={driverName}
                     onChange={(e) => setDriverName(e.target.value)}
                     placeholder="Driver name"
-                    className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm"
+                    className={FIELD_INPUT}
                   />
                 </label>
                 <label className="text-xs font-medium">
@@ -591,7 +601,7 @@ export default function TextileSchedulePage(): JSX.Element {
                     value={teamName}
                     onChange={(e) => setTeamName(e.target.value)}
                     placeholder="Team (optional)"
-                    className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm"
+                    className={FIELD_INPUT}
                   />
                 </label>
                 <label className="text-xs font-medium">
@@ -600,7 +610,7 @@ export default function TextileSchedulePage(): JSX.Element {
                     value={vehicleLabel}
                     onChange={(e) => setVehicleLabel(e.target.value)}
                     placeholder="Vehicle reg / label"
-                    className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm"
+                    className={FIELD_INPUT}
                   />
                 </label>
                 <label className="text-xs font-medium">
@@ -609,7 +619,7 @@ export default function TextileSchedulePage(): JSX.Element {
                     value={tripReference}
                     onChange={(e) => setTripReference(e.target.value)}
                     placeholder="DRL-… (optional)"
-                    className="mt-1 block min-h-10 w-full rounded-lg border border-black/15 bg-white px-3 text-sm"
+                    className={FIELD_INPUT}
                   />
                 </label>
               </div>
@@ -620,7 +630,7 @@ export default function TextileSchedulePage(): JSX.Element {
                   onChange={(e) => setInstructions(e.target.value)}
                   placeholder="Collection instructions for crew"
                   rows={2}
-                  className="mt-1 block w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm"
+                  className={FIELD_TEXTAREA}
                 />
               </label>
               {scheduleError ? (
@@ -638,9 +648,9 @@ export default function TextileSchedulePage(): JSX.Element {
             return (
               <section
                 key={zone?.id ?? 'none'}
-                className={`rounded-xl border bg-white ${zoneLocked ? 'border-black/5 opacity-50' : 'border-black/10'}`}
+                className={`rounded-lg border bg-white shadow-sm ${zoneLocked ? 'border-[var(--color-border-subtle)] opacity-50' : 'border-[var(--color-border-subtle)]'}`}
               >
-                <header className="flex flex-wrap items-center justify-between gap-2 border-b border-black/5 px-4 py-3">
+                <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-border-subtle)] px-4 py-3">
                   <div className="flex items-center gap-2">
                     <IconMapPin className="h-4 w-4 text-[var(--color-text-tertiary)]" />
                     <h2 className="text-sm font-semibold">{zone?.name ?? 'No zone'}</h2>
@@ -673,7 +683,7 @@ export default function TextileSchedulePage(): JSX.Element {
                     Select all
                   </label>
                 </header>
-                <ul className="divide-y divide-black/5">
+                <ul className="divide-y divide-[var(--color-border-subtle)]">
                   {items.map((item) => {
                     const prev = formatPreviousWindow(
                       item.previous_scheduled_date,
@@ -730,7 +740,7 @@ export default function TextileSchedulePage(): JSX.Element {
             </p>
           ) : null}
           {orderedSelected.length > 0 ? (
-            <section className="rounded-xl border border-black/10 bg-white p-4">
+            <section className="rounded-lg border border-[var(--color-border-subtle)] bg-white p-4 shadow-sm">
               <h3 className="text-sm font-semibold">Manifest order</h3>
               <ol className="mt-2 space-y-1">
                 {orderedSelected.map((id, idx) => {
@@ -756,7 +766,7 @@ export default function TextileSchedulePage(): JSX.Element {
                             return a;
                           })
                         }
-                        className="rounded-full border px-2 py-1 text-xs disabled:opacity-30"
+                        className="inline-flex min-h-7 min-w-7 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-2 py-1 text-xs hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 disabled:opacity-30"
                       >
                         ↑
                       </button>
@@ -772,7 +782,7 @@ export default function TextileSchedulePage(): JSX.Element {
                             return a;
                           })
                         }
-                        className="rounded-full border px-2 py-1 text-xs disabled:opacity-30"
+                        className="inline-flex min-h-7 min-w-7 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-2 py-1 text-xs hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 disabled:opacity-30"
                       >
                         ↓
                       </button>
@@ -783,7 +793,7 @@ export default function TextileSchedulePage(): JSX.Element {
             </section>
           ) : null}
           {selectedZoneIds.size > 1 ? (
-            <p role="alert" className="text-xs text-red-700">
+            <p role="alert" className="text-xs text-[var(--color-danger)]">
               Requests from multiple zones selected — deselect until one zone remains.
             </p>
           ) : null}

@@ -29,7 +29,7 @@ export function ReferencePass({ reference }: { reference: string }): JSX.Element
   }
 
   return (
-    <div className="rounded-xl border border-black/10 bg-white p-5">
+    <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
       <h2 className="text-sm font-medium">Your drop-off pass</h2>
       <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Show this at the counter</p>
       <p className="mt-3 font-mono text-2xl font-semibold tracking-widest">{reference}</p>
@@ -38,21 +38,21 @@ export function ReferencePass({ reference }: { reference: string }): JSX.Element
           ref={canvasRef}
           role="img"
           aria-label={`QR code for reference ${reference}`}
-          className="rounded border border-black/10"
+          className="rounded border border-[var(--color-border-subtle)]"
         />
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <button
           type="button"
           onClick={copy}
-          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-black/15 px-4 text-sm font-medium"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] px-4 text-sm font-medium"
         >
           <IconCopy className="h-4 w-4" /> {copied ? 'Copied' : 'Copy'}
         </button>
         <button
           type="button"
           onClick={save}
-          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-black/15 px-4 text-sm font-medium"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] px-4 text-sm font-medium"
         >
           <IconDownload className="h-4 w-4" /> Save as image
         </button>

@@ -148,7 +148,7 @@ function ReplacePhotoButton({
         aria-hidden="true"
       />
       {error ? (
-        <p role="alert" className="mt-2 text-xs font-medium text-red-600">
+        <p role="alert" className="mt-2 text-xs font-medium text-[var(--color-danger)]">
           {error}
         </p>
       ) : null}
@@ -228,7 +228,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
       >
         <IconArrowLeft className="h-4 w-4" /> Textile collections
       </Link>
-      <header className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5 sm:p-7">
+      <header className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)] sm:p-7">
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
           {item.reference}
         </p>
@@ -238,12 +238,12 @@ export default function TextileCollectionDetailPage(): JSX.Element {
         </p>
         <p className="mt-3 text-sm font-medium">{heading}</p>
         {item.rejection_reason ? (
-          <p className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          <p className="mt-2 rounded-lg border border-[var(--color-danger-muted)] bg-[var(--color-danger)]/10 p-3 text-sm text-[var(--color-danger)]">
             {item.rejection_reason}
           </p>
         ) : null}
         {item.missed_pickup_reason ? (
-          <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+          <p className="mt-2 rounded-lg border border-[var(--color-warning-muted)] bg-[var(--color-warning)]/10 p-3 text-sm text-[var(--color-warning)]">
             {item.missed_pickup_reason}
           </p>
         ) : null}
@@ -258,16 +258,16 @@ export default function TextileCollectionDetailPage(): JSX.Element {
             className={`mt-4 rounded-xl border p-4 text-sm leading-5 ${(() => {
               const ctx = item.capacity_context;
               if (ctx && typeof ctx['exception_approved_at'] === 'string') {
-                return 'border-green-200 bg-green-50 text-green-800';
+                return 'border-[var(--color-success-muted)] bg-[var(--color-success)]/10 text-[var(--color-success)]';
               }
               if (
                 ctx &&
                 (typeof ctx['exception_rejected_at'] === 'string' ||
                   ctx['exception_status'] === 'rejected')
               ) {
-                return 'border-red-200 bg-red-50 text-red-700';
+                return 'border-[var(--color-danger-muted)] bg-[var(--color-danger)]/10 text-[var(--color-danger)]';
               }
-              return 'border-amber-200 bg-amber-50 text-amber-900';
+              return 'border-[var(--color-warning-muted)] bg-[var(--color-warning)]/10 text-[var(--color-warning)]';
             })()}`}
           >
             {(() => {
@@ -332,7 +332,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
       {isScheduledPremises ? (
         <section
           aria-label="Pickup schedule"
-          className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm"
+          className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]"
         >
           <h2 className="text-sm font-medium">Confirmed pickup</h2>
           <p className="mt-2 text-sm">
@@ -362,7 +362,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
       {!isDropoff ? (
         <section
           aria-label="Service contact"
-          className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm"
+          className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]"
         >
           <h2 className="text-sm font-medium">Service contact</h2>
           <p className="mt-2 text-xs leading-5 text-[var(--color-text-secondary)]">
@@ -442,7 +442,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
       ) : null}
 
       {item.notes ? (
-        <section className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm">
+        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
           <h2 className="text-sm font-medium">Collection notes</h2>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--color-text-secondary)]">
             {item.notes}
@@ -456,7 +456,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
         isDropoff={isDropoff}
       />
       {canCancel ? (
-        <section className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm">
+        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
           {showCancel ? (
             <div className="space-y-3">
               <label htmlFor="cancel-reason" className="text-sm font-medium">
@@ -479,7 +479,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
                   type="button"
                   disabled={reason.trim().length < 5 || cancel.isPending}
                   onClick={() => void cancel.mutateAsync(reason.trim())}
-                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-red-600 bg-red-600 px-5 text-sm font-medium text-white disabled:opacity-40"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-danger)] bg-[var(--color-danger)] px-5 text-sm font-medium text-white disabled:opacity-40"
                 >
                   <IconX className="h-4 w-4" stroke={1.6} />
                   {cancel.isPending ? 'Cancelling…' : 'Confirm cancellation'}
@@ -507,7 +507,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => setShowCancel(true)}
-                className="inline-flex min-h-11 shrink-0 items-center gap-2 self-start rounded-full border border-red-300 bg-white px-4 text-sm font-medium text-red-800 sm:self-auto"
+                className="inline-flex min-h-11 shrink-0 items-center gap-2 self-start rounded-full border border-[var(--color-danger-muted)] bg-white px-4 text-sm font-medium text-[var(--color-danger)] sm:self-auto"
               >
                 <IconX className="h-4 w-4" stroke={1.6} />
                 {isDropoff ? 'Cancel this drop-off plan' : 'Cancel this pickup request'}
@@ -596,7 +596,7 @@ function RescheduleSection({
     return (
       <section
         aria-label="Reschedule"
-        className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm"
+        className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]"
       >
         <h2 className="text-sm font-medium">Need a different date?</h2>
         <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
@@ -614,7 +614,7 @@ function RescheduleSection({
   return (
     <section
       aria-label="Reschedule"
-      className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm"
+      className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]"
     >
       <h2 className="text-sm font-medium">Need a different date?</h2>
       {currentDate ? (
@@ -627,19 +627,21 @@ function RescheduleSection({
         </p>
       ) : null}
       {unavailableDates.length > 0 ? (
-        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
-          <p className="text-xs font-medium text-amber-800">Unavailable dates</p>
-          <p className="mt-1 text-xs leading-5 text-amber-800">
+        <div className="mt-3 rounded-lg border border-[var(--color-warning-muted)] bg-[var(--color-warning)]/10 p-3">
+          <p className="text-xs font-medium text-[var(--color-warning)]">Unavailable dates</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--color-warning)]">
             {unavailableDates.slice(0, 6).join(', ')}
             {unavailableDates.length > 6 ? ` +${unavailableDates.length - 6} more` : ''}
           </p>
           {nextAvailable ? (
-            <p className="mt-1 text-xs text-amber-700">
+            <p className="mt-1 text-xs text-[var(--color-warning)]">
               Next available: <span className="font-medium">{nextAvailable}</span>
             </p>
           ) : null}
           {availability.data?.reason ? (
-            <p className="mt-1 text-[11px] text-amber-700">{availability.data.reason}</p>
+            <p className="mt-1 text-[11px] text-[var(--color-warning)]">
+              {availability.data.reason}
+            </p>
           ) : null}
         </div>
       ) : null}
@@ -661,10 +663,10 @@ function RescheduleSection({
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 aria-invalid={isUnavailablePicked}
-                className={`mt-1 block w-full rounded-lg border p-2.5 text-sm ${isUnavailablePicked ? 'border-amber-500 bg-amber-50' : 'border-[var(--color-border)]'}`}
+                className={`mt-1 block w-full rounded-lg border p-2.5 text-sm ${isUnavailablePicked ? 'border-[var(--color-warning)] bg-[var(--color-warning)]/10' : 'border-[var(--color-border)]'}`}
               />
               {isUnavailablePicked ? (
-                <span className="mt-1 block text-[11px] font-medium text-amber-700">
+                <span className="mt-1 block text-[11px] font-medium text-[var(--color-warning)]">
                   This date is unavailable — pick another or see fallback below.
                 </span>
               ) : null}
@@ -693,7 +695,7 @@ function RescheduleSection({
           {isSlotUnavailable ? (
             <div
               role="alert"
-              className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800"
+              className="rounded-lg border border-[var(--color-warning-muted)] bg-[var(--color-warning)]/10 p-3 text-xs leading-5 text-[var(--color-warning)]"
             >
               <p className="font-medium">Slot no longer available</p>
               <p className="mt-1">{fallback}</p>
@@ -711,7 +713,7 @@ function RescheduleSection({
           ) : apiError ? (
             <p
               role="alert"
-              className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700"
+              className="rounded-lg border border-[var(--color-danger-muted)] bg-[var(--color-danger)]/10 p-3 text-xs text-[var(--color-danger)]"
             >
               {apiError.message}
             </p>
@@ -745,7 +747,7 @@ function RescheduleSection({
       {success ? (
         <p
           role="status"
-          className="mt-3 rounded-lg bg-green-50 p-3 text-xs font-medium text-green-700"
+          className="mt-3 rounded-lg border border-[var(--color-success-muted)] bg-[var(--color-success)]/10 p-3 text-xs font-medium text-[var(--color-success)]"
         >
           {success}
         </p>
@@ -812,7 +814,7 @@ function ReadinessContactSection({
   return (
     <section
       aria-label="Readiness and contact"
-      className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm"
+      className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]"
     >
       <h2 className="text-sm font-medium">Readiness & contact</h2>
       <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
@@ -896,7 +898,7 @@ function ReadinessContactSection({
           {apiError ? (
             <p
               role="alert"
-              className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700"
+              className="rounded-lg border border-[var(--color-danger-muted)] bg-[var(--color-danger)]/10 p-3 text-xs text-[var(--color-danger)]"
             >
               {apiError}
             </p>
@@ -933,7 +935,7 @@ function ReadinessContactSection({
       {localSuccess ? (
         <p
           role="status"
-          className="mt-3 rounded-lg bg-green-50 p-3 text-xs font-medium text-green-700"
+          className="mt-3 rounded-lg border border-[var(--color-success-muted)] bg-[var(--color-success)]/10 p-3 text-xs font-medium text-[var(--color-success)]"
         >
           {localSuccess}
         </p>
@@ -954,7 +956,7 @@ function Detail({
   hint?: string;
 }): JSX.Element {
   return (
-    <div className="min-w-0 rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+    <div className="min-w-0 rounded-xl bg-white p-4 ring-1 ring-[var(--color-border-subtle)]">
       <div className="flex items-center gap-2 text-xs text-[var(--color-text-tertiary)]">
         <Icon className="h-4 w-4 shrink-0" />
         {label}
@@ -981,14 +983,14 @@ function PhotoTrustView({
   const proof = photos.find((p) => p.role === 'proof');
   if (evidence && !proof) {
     return (
-      <section className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm">
+      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
         <h2 className="text-sm font-medium">Photos</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div>
             <PhotoCard heading="Your photo" url={evidence.url} alt="Photo of your bags" />
             <ReplacePhotoButton reportId={reportId} onReplaced={onPhotoChanged} />
           </div>
-          <div className="flex items-center justify-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-bg-faint,#f9f8f6)] p-5">
+          <div className="flex items-center justify-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface-alt)] p-5">
             <p className="text-center text-xs text-[var(--color-text-secondary)]">
               {isDropoff
                 ? "The centre's receipt photo will appear here."
@@ -1001,7 +1003,7 @@ function PhotoTrustView({
   }
   if (evidence || proof) {
     return (
-      <section className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6 shadow-sm">
+      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
         <h2 className="text-sm font-medium">Photos</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {evidence ? (

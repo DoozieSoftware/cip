@@ -15,6 +15,7 @@ import {
   CardTitle,
   Button,
   Badge,
+  Dialog,
   EmptyState,
   ErrorState,
 } from '../../../shared/ui';
@@ -82,7 +83,7 @@ function RuleForm({
   return (
     <form
       onSubmit={handle}
-      className="space-y-4 rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5"
+      className="space-y-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5"
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm">
@@ -92,7 +93,7 @@ function RuleForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="text-sm">
@@ -101,7 +102,7 @@ function RuleForm({
             type="number"
             value={priority}
             onChange={(e) => setPriority(Number(e.target.value))}
-            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="text-sm sm:col-span-2">
@@ -110,7 +111,7 @@ function RuleForm({
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="text-sm sm:col-span-2">
@@ -121,7 +122,7 @@ function RuleForm({
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
             required
-            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           >
             <option value="">Select a department</option>
             {options.departments.map((item) => (
@@ -139,7 +140,7 @@ function RuleForm({
             value={defaultPriority}
             onChange={(e) => setDefaultPriority(e.target.value)}
             required
-            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           >
             <option value="">Select a priority</option>
             {options.priorities.map((item) => (
@@ -160,7 +161,7 @@ function RuleForm({
             onChange={(e) => setDefaultSla(e.target.value)}
             required
             placeholder="e.g. 1440"
-            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="text-sm sm:col-span-2">
@@ -169,7 +170,7 @@ function RuleForm({
             value={conditionsJson}
             onChange={(e) => setConditionsJson(e.target.value)}
             rows={4}
-            className="mt-1.5 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 font-mono text-xs focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 font-mono text-xs focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="flex items-center gap-2 text-sm">
@@ -177,9 +178,9 @@ function RuleForm({
             type="checkbox"
             checked={active}
             onChange={(e) => setActive(e.target.checked)}
-            className="h-4 w-4 rounded border-[var(--color-border)]"
+            className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-ink)] focus:ring-[var(--color-ink)]"
           />
-          <span className="font-medium text-[var(--color-ink)]">active</span>
+          <span className="font-medium text-[var(--color-ink)]">Active</span>
         </label>
       </div>
       <div className="flex flex-wrap justify-end gap-2 pt-2">
@@ -197,6 +198,7 @@ function RuleForm({
 export default function AdminRoutingRules(): JSX.Element {
   const [editing, setEditing] = useState<RoutingRule | null>(null);
   const [creating, setCreating] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<RoutingRule | null>(null);
   const list = useRoutingRules();
   const options = useRoutingFormOptions();
   const create = useCreateRoutingRule();
@@ -207,9 +209,12 @@ export default function AdminRoutingRules(): JSX.Element {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Routing / Dispatch
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
             Routing rules
           </h1>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
@@ -269,10 +274,16 @@ export default function AdminRoutingRules(): JSX.Element {
             <Spinner label="Loading rules" />
           </div>
         ) : list.isError ? (
-          <div className="p-5">
+          <div className="p-6">
             <ErrorState
               title="Failed to load rules"
               description="There was a problem fetching routing rules."
+              error={list.error instanceof Error ? list.error : null}
+              action={
+                <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
+                  Retry
+                </Button>
+              }
             />
           </div>
         ) : rows.length === 0 ? (
@@ -341,7 +352,7 @@ export default function AdminRoutingRules(): JSX.Element {
                         tone={r.active ? 'success' : 'neutral'}
                         className={
                           r.active
-                            ? 'bg-[#edf7f0] text-[var(--color-success)]'
+                            ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
                             : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'
                         }
                       >
@@ -366,10 +377,8 @@ export default function AdminRoutingRules(): JSX.Element {
                           size="sm"
                           leftIcon={<IconTrash className="h-3.5 w-3.5" stroke={1.6} />}
                           disabled={remove.isPending}
-                          onClick={() => {
-                            if (confirm(`Delete ${r.name}?`)) remove.mutate(r.id);
-                          }}
-                          className="text-[var(--color-danger)] hover:bg-[#fbeeed] hover:text-[var(--color-danger-hover)]"
+                          onClick={() => setDeleteTarget(r)}
+                          className="text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger-hover)]"
                         >
                           Delete
                         </Button>
@@ -382,6 +391,33 @@ export default function AdminRoutingRules(): JSX.Element {
           </div>
         )}
       </Card>
+
+      <Dialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title={deleteTarget ? `Delete ${deleteTarget.name}?` : 'Delete rule'}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              loading={remove.isPending}
+              onClick={() => {
+                if (deleteTarget)
+                  remove.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) });
+              }}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          This action cannot be undone. The routing rule will be removed permanently.
+        </p>
+      </Dialog>
     </div>
   );
 }

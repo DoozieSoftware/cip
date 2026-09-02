@@ -1,6 +1,6 @@
 import { type JSX } from 'react';
 import { usePublicStats } from '../api/client';
-import { Spinner, EmptyState } from '../../../shared/ui';
+import { Card, EmptyState, Spinner } from '../../../shared/ui';
 
 function formatDuration(seconds: number | null): string {
   if (seconds === null) return '—';
@@ -16,8 +16,10 @@ export default function OverviewPage(): JSX.Element {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold text-slate-900">Platform overview</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          Platform overview
+        </h1>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           Live, aggregate statistics for public complaints. Values are cached for five minutes and
           exclude drafts, rejected complaints, and merged duplicates.
         </p>
@@ -30,13 +32,13 @@ export default function OverviewPage(): JSX.Element {
       ) : stats.isError || !stats.data ? (
         <EmptyState title="Statistics unavailable" description="Please try again shortly." />
       ) : (
-        <div className="grid grid-cols-1 gap-6 rounded-3xl border border-slate-200 bg-white p-8 sm:grid-cols-3">
+        <Card className="grid grid-cols-1 gap-6 p-8 sm:grid-cols-3">
           <Stat
             label="Complaints processed"
             value={stats.data.total_reports.toLocaleString()}
             sub="all time"
           />
-          <p className="col-span-full text-center text-xs text-slate-500">
+          <p className="col-span-full text-center text-xs text-[var(--color-text-secondary)]">
             {stats.data.generated_at
               ? `Generated ${new Date(stats.data.generated_at).toLocaleString()}`
               : 'Freshness timestamp unavailable'}
@@ -51,7 +53,7 @@ export default function OverviewPage(): JSX.Element {
             value={formatDuration(stats.data.median_assign_seconds)}
             sub="submit → department"
           />
-        </div>
+        </Card>
       )}
     </div>
   );
@@ -60,9 +62,11 @@ export default function OverviewPage(): JSX.Element {
 function Stat({ label, value, sub }: { label: string; value: string; sub: string }): JSX.Element {
   return (
     <div className="text-center">
-      <div className="text-3xl font-bold tracking-tight text-brand-700 sm:text-4xl">{value}</div>
-      <div className="mt-1 text-sm font-semibold text-slate-900">{label}</div>
-      <div className="text-xs text-slate-500">{sub}</div>
+      <div className="text-3xl font-bold tracking-tight text-[var(--color-ink)] sm:text-4xl">
+        {value}
+      </div>
+      <div className="mt-1 text-sm font-semibold text-[var(--color-ink)]">{label}</div>
+      <div className="text-xs text-[var(--color-text-secondary)]">{sub}</div>
     </div>
   );
 }

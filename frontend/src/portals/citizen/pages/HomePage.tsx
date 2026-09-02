@@ -55,9 +55,9 @@ export default function HomePage(): JSX.Element {
   if (!online && !reports.data) {
     return (
       <div className="min-w-0 space-y-8">
-        <header className="flex items-start justify-between gap-5 border-b border-[var(--color-border-faint)] pb-7">
+        <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
+            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-subtle)]">
               {t('citizenServices')}
             </p>
             <h1 className="mt-2 text-[2rem] font-normal leading-[1.05] tracking-[-0.035em] sm:text-4xl">
@@ -85,7 +85,7 @@ export default function HomePage(): JSX.Element {
               onClick={() => {
                 void reports.refetch();
               }}
-              className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium transition hover:border-black/30"
+              className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium transition hover:border-[var(--color-border-strong)]"
             >
               <IconRefresh className="h-4 w-4" stroke={1.6} aria-hidden />
               {t('home.offline.action')}
@@ -103,9 +103,9 @@ export default function HomePage(): JSX.Element {
     if (isAuthError) {
       return (
         <div className="min-w-0 space-y-8">
-          <header className="flex items-start justify-between gap-5 border-b border-[var(--color-border-faint)] pb-7">
+          <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
+              <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-subtle)]">
                 {t('citizenServices')}
               </p>
               <h1 className="mt-2 text-[2rem] font-normal leading-[1.05] tracking-[-0.035em] sm:text-4xl">
@@ -133,7 +133,7 @@ export default function HomePage(): JSX.Element {
                 onClick={() => {
                   window.location.assign('/citizen/login');
                 }}
-                className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium transition hover:border-black/30"
+                className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium transition hover:border-[var(--color-border-strong)]"
               >
                 {t('home.session.action')}
               </button>
@@ -145,9 +145,9 @@ export default function HomePage(): JSX.Element {
 
     return (
       <div className="min-w-0 space-y-8">
-        <header className="flex items-start justify-between gap-5 border-b border-[var(--color-border-faint)] pb-7">
+        <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
+            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-subtle)]">
               {t('citizenServices')}
             </p>
             <h1 className="mt-2 text-[2rem] font-normal leading-[1.05] tracking-[-0.035em] sm:text-4xl">
@@ -166,7 +166,7 @@ export default function HomePage(): JSX.Element {
                 onClick={() => {
                   void reports.refetch();
                 }}
-                className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium transition hover:border-black/30"
+                className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium transition hover:border-[var(--color-border-strong)]"
               >
                 <IconRefresh className="h-4 w-4" stroke={1.6} aria-hidden />
                 {t('home.error.action')}
@@ -181,9 +181,9 @@ export default function HomePage(): JSX.Element {
   if (reports.isLoading && !reports.data) {
     return (
       <div className="min-w-0 space-y-8">
-        <header className="flex items-start justify-between gap-5 border-b border-[var(--color-border-faint)] pb-7">
+        <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
+            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-subtle)]">
               {t('citizenServices')}
             </p>
             <h1 className="mt-2 text-[2rem] font-normal leading-[1.05] tracking-[-0.035em] sm:text-4xl">
@@ -217,9 +217,9 @@ export default function HomePage(): JSX.Element {
 
   return (
     <div className="min-w-0 space-y-8">
-      <header className="flex items-start justify-between gap-5 border-b border-[var(--color-border-faint)] pb-7">
+      <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
+          <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-subtle)]">
             {t('citizenServices')}
           </p>
           <h1 className="mt-2 text-[2rem] font-normal leading-[1.05] tracking-[-0.035em] sm:text-4xl">
@@ -231,7 +231,7 @@ export default function HomePage(): JSX.Element {
         </div>
         <Link
           to="/citizen/notifications"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#d8d6cf] bg-[#faf9f6] transition hover:bg-white"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] transition hover:bg-white"
           aria-label={t('nav.notifications')}
         >
           <IconBell className="h-5 w-5" stroke={1.6} />
@@ -240,7 +240,7 @@ export default function HomePage(): JSX.Element {
 
       {reports.isError && reports.data && (
         <div
-          className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
           role="alert"
         >
           <IconAlertCircle className="h-5 w-5 shrink-0" stroke={1.6} aria-hidden />
@@ -259,10 +259,10 @@ export default function HomePage(): JSX.Element {
       )}
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
-        <div className="overflow-hidden rounded-2xl border border-black/10 bg-white">
+        <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5">
           <Link
             to="/citizen/submit"
-            className="group flex min-h-36 items-end justify-between gap-5 bg-white p-6 text-[var(--color-ink)] transition-colors hover:bg-[var(--color-ink-soft)] hover:text-white sm:p-7"
+            className="group flex min-h-36 items-end justify-between gap-4 bg-white p-6 text-[var(--color-ink)] transition-colors hover:bg-[var(--color-ink-soft)] hover:text-white sm:p-6"
           >
             <div>
               <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--color-ink)] text-white transition-colors group-hover:bg-white group-hover:text-[var(--color-ink)]">
@@ -300,8 +300,8 @@ export default function HomePage(): JSX.Element {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-black/10 bg-[#e9e8e2] p-6">
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
+        <div className="rounded-xl bg-[var(--color-surface-alt)] p-6 shadow-sm ring-1 ring-black/5">
+          <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-subtle)]">
             {t('home.servicePromise')}
           </p>
           <h2 className="mt-4 text-2xl font-normal leading-tight tracking-[-0.025em]">
@@ -312,7 +312,7 @@ export default function HomePage(): JSX.Element {
           </p>
           <Link
             to="/citizen/reports"
-            className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium transition hover:border-black/30"
+            className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium transition hover:border-[var(--color-border-strong)]"
           >
             {t('home.viewMyReports')}
             <IconChevronRight className="h-4 w-4" stroke={1.6} />
@@ -320,14 +320,14 @@ export default function HomePage(): JSX.Element {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-black/10 bg-white p-5 sm:p-6">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <section className="rounded-xl bg-white shadow-sm ring-1 ring-black/5 p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-start gap-4">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
               <IconRecycle className="h-5 w-5" stroke={1.6} />
             </span>
             <div className="min-w-0">
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                 Collection service
               </p>
               <h2 className="mt-1 text-lg font-medium">Clothes, scrap & e-waste</h2>
@@ -339,7 +339,7 @@ export default function HomePage(): JSX.Element {
           <div className="flex shrink-0 flex-wrap gap-2">
             <Link
               to="/citizen/textile-collections"
-              className="inline-flex min-h-11 items-center rounded-full border border-black/15 px-4 text-sm font-medium"
+              className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] px-4 text-sm font-medium"
             >
               My collections
             </Link>
@@ -354,22 +354,22 @@ export default function HomePage(): JSX.Element {
       </section>
 
       {queueSize > 0 && (
-        <div className="flex items-center gap-3 rounded-2xl border border-[#d8cfae] bg-[#f1ead4] px-5 py-4">
+        <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
           <IconWifiOff className="h-5 w-5 shrink-0" stroke={1.6} />
           <div className="flex-1">
             <p className="text-sm font-medium">
               {t('home.offlineSync', { count: queueSize, plural: queueSize > 1 ? 's' : '' })}
             </p>
-            <p className="text-xs text-[#746f5e]">{t('home.offlineSyncDetail')}</p>
+            <p className="text-xs text-amber-800/70">{t('home.offlineSyncDetail')}</p>
           </div>
         </div>
       )}
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <div className="min-w-0 rounded-2xl border border-black/10 bg-white">
+        <div className="min-w-0 rounded-xl bg-white shadow-sm ring-1 ring-black/5">
           <div className="flex min-w-0 items-center justify-between border-b border-[var(--color-border-subtle)] px-5 py-4">
             <div className="min-w-0">
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                 {t('home.recentActivity')}
               </p>
               <h2 className="mt-1 text-lg font-medium tracking-[-0.015em]">
@@ -390,7 +390,7 @@ export default function HomePage(): JSX.Element {
                 action={
                   <Link
                     to="/citizen/submit"
-                    className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium transition hover:border-black/30"
+                    className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium transition hover:border-[var(--color-border-strong)]"
                   >
                     <IconPlus className="h-4 w-4" stroke={1.7} />
                     {t('home.empty.action')}
@@ -404,7 +404,7 @@ export default function HomePage(): JSX.Element {
                 <Link
                   key={report.id}
                   to={`/citizen/reports/${report.id}`}
-                  className="group flex min-h-16 min-w-0 items-center gap-3 px-5 py-3 transition hover:bg-[#faf9f6]"
+                  className="group flex min-h-16 min-w-0 items-center gap-3 px-5 py-3 transition hover:bg-[var(--color-canvas)]"
                 >
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
                     {['resolved', 'verified', 'closed'].includes(report.status.code) ? (
@@ -429,9 +429,9 @@ export default function HomePage(): JSX.Element {
           )}
         </div>
 
-        <div className="min-w-0 rounded-2xl border border-black/10 bg-white">
+        <div className="min-w-0 rounded-xl bg-white shadow-sm ring-1 ring-black/5">
           <div className="border-b border-[var(--color-border-subtle)] px-5 py-4">
-            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
               {t('home.fromReportToResolution')}
             </p>
             <h2 className="mt-1 text-lg font-medium tracking-[-0.015em]">
@@ -477,7 +477,7 @@ export default function HomePage(): JSX.Element {
       </section>
 
       {me.isLoading ? null : me.data ? (
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border-faint)] pt-5 text-xs text-[var(--color-text-subtle)]">
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border-faint)] pt-6 text-xs text-[var(--color-text-subtle)]">
           <span>{t('home.signedInAs', { name: me.data.name ?? t('common.citizen') })}</span>
           <span className="font-mono">{me.data.mobile ?? ''}</span>
         </footer>

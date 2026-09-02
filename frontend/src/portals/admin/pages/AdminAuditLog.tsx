@@ -1,6 +1,14 @@
 import { useState, type JSX } from 'react';
 import { useAuditLogs, type AuditLog } from '../api/client';
-import { Spinner, ErrorState, Card, CardHeader, CardTitle, CardBody } from '../../../shared/ui';
+import {
+  Spinner,
+  ErrorState,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardBody,
+  Button,
+} from '../../../shared/ui';
 import { auditActionLabel } from '../../../shared/auditActionLabel';
 import {
   IconSearch,
@@ -54,10 +62,7 @@ export default function AdminAuditLog(): JSX.Element {
 
   if (list.isLoading) {
     return (
-      <div
-        className="flex min-h-screen items-center justify-center bg-[var(--color-canvas)]"
-        aria-live="polite"
-      >
+      <div className="flex min-h-[200px] items-center justify-center py-16" aria-live="polite">
         <Spinner label="Loading audit log" />
       </div>
     );
@@ -69,14 +74,11 @@ export default function AdminAuditLog(): JSX.Element {
         <ErrorState
           title="Failed to load audit log"
           description="An error occurred while fetching entries. Try refreshing the page."
+          error={list.error instanceof Error ? list.error : null}
           action={
-            <button
-              type="button"
-              onClick={() => void list.refetch()}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm text-white transition hover:bg-black"
-            >
+            <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
               Retry
-            </button>
+            </Button>
           }
         />
       </div>
@@ -85,42 +87,41 @@ export default function AdminAuditLog(): JSX.Element {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Ops / Audit
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
             Audit log
           </h1>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             Search who-did-what across the platform.
           </p>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => setFiltersOpen((v) => !v)}
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-5 text-sm font-medium text-[var(--color-ink)] ring-1 ring-[var(--color-border)] transition hover:bg-[var(--color-canvas)]"
+          leftIcon={<IconFilter className="h-4 w-4" stroke={1.6} />}
         >
-          <IconFilter className="h-4 w-4" stroke={1.6} />
           Filters
           {hasFilters && (
             <span className="grid h-5 w-5 place-items-center rounded-full bg-[var(--color-ink)] text-[10px] text-white">
               !
             </span>
           )}
-        </button>
-      </div>
+        </Button>
+      </header>
 
       {filtersOpen && (
         <Card>
           <CardHeader>
             <CardTitle>Filters</CardTitle>
             {hasFilters && (
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="text-xs text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
-              >
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
                 Clear all
-              </button>
+              </Button>
             )}
           </CardHeader>
           <CardBody>
@@ -142,7 +143,7 @@ export default function AdminAuditLog(): JSX.Element {
                     value={action}
                     onChange={(e) => setAction(e.target.value)}
                     placeholder="e.g. report.update"
-                    className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+                    className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
                   />
                 </div>
               </div>
@@ -163,7 +164,7 @@ export default function AdminAuditLog(): JSX.Element {
                     value={entity}
                     onChange={(e) => setEntity(e.target.value)}
                     placeholder="e.g. Report"
-                    className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+                    className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
                   />
                 </div>
               </div>
@@ -179,7 +180,7 @@ export default function AdminAuditLog(): JSX.Element {
                   type="datetime-local"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+                  className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
                 />
               </div>
               <div>
@@ -194,7 +195,7 @@ export default function AdminAuditLog(): JSX.Element {
                   type="datetime-local"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+                  className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
                 />
               </div>
             </div>
@@ -203,7 +204,7 @@ export default function AdminAuditLog(): JSX.Element {
       )}
 
       {(list.data ?? []).length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-white p-10 text-center">
+        <div className="rounded-lg border border-dashed border-[var(--color-border)] bg-white p-10 text-center">
           <IconCalendarUser
             className="mx-auto h-8 w-8 text-[var(--color-text-tertiary)]"
             stroke={1.4}

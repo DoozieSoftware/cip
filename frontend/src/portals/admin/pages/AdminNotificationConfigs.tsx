@@ -73,14 +73,14 @@ function ConfigForm({
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submit} className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm">
           <span className="font-medium text-[var(--color-ink)]">Channel</span>
           <select
             value={channel}
             onChange={(event) => setChannel(event.target.value as NotificationConfig['channel'])}
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           >
             {CHANNELS.map((item) => (
               <option key={item} value={item}>
@@ -96,7 +96,7 @@ function ConfigForm({
             onChange={(event) => setCode(event.target.value)}
             required
             pattern="[a-z0-9_-]+"
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
@@ -105,7 +105,7 @@ function ConfigForm({
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
             required
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
@@ -116,7 +116,7 @@ function ConfigForm({
             max={10}
             value={tries}
             onChange={(event) => setTries(Number(event.target.value))}
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
       </div>
@@ -126,7 +126,7 @@ function ConfigForm({
           value={credentials}
           onChange={(event) => setCredentials(event.target.value)}
           rows={6}
-          className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 font-mono text-xs focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 font-mono text-xs focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </label>
       {error ? (
@@ -150,6 +150,7 @@ export default function AdminNotificationConfigs(): JSX.Element {
   const [channel, setChannel] = useState<string>('');
   const [activeOnly, setActiveOnly] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<NotificationConfig | null>(null);
   const list = useNotificationConfigs({
     channel: channel || undefined,
     active: activeOnly || undefined,
@@ -195,9 +196,12 @@ export default function AdminNotificationConfigs(): JSX.Element {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Platform / Notifications
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
             Notification configs
           </h1>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
@@ -227,7 +231,7 @@ export default function AdminNotificationConfigs(): JSX.Element {
               <select
                 value={channel}
                 onChange={(e) => setChannel(e.target.value)}
-                className="mt-1 block rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+                className="mt-2 block rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
               >
                 <option value="">all</option>
                 {CHANNELS.map((c) => (
@@ -335,9 +339,7 @@ export default function AdminNotificationConfigs(): JSX.Element {
                           variant="ghost"
                           size="sm"
                           disabled={remove.isPending}
-                          onClick={() => {
-                            if (confirm(`Delete ${c.code}?`)) remove.mutate(c.id);
-                          }}
+                          onClick={() => setDeleteTarget(c)}
                           leftIcon={<IconTrash className="h-3.5 w-3.5" stroke={1.6} />}
                         >
                           Delete
@@ -359,10 +361,37 @@ export default function AdminNotificationConfigs(): JSX.Element {
           onSubmit={(input) => upsert.mutate(input, { onSuccess: () => setCreating(false) })}
         />
         {upsert.isError ? (
-          <p role="alert" className="mt-2 text-sm text-[var(--color-danger)]">
+          <p role="alert" className="mt-3 text-sm text-[var(--color-danger)]">
             {upsert.error.message}
           </p>
         ) : null}
+      </Dialog>
+
+      <Dialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title={deleteTarget ? `Delete ${deleteTarget.code}?` : 'Delete config'}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              loading={remove.isPending}
+              onClick={() => {
+                if (deleteTarget)
+                  remove.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) });
+              }}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          This action cannot be undone. The notification config will be removed permanently.
+        </p>
       </Dialog>
     </div>
   );

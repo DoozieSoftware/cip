@@ -14,7 +14,7 @@ export function ReceiptCard({
   proofUrl?: string;
 }): JSX.Element {
   return (
-    <div className="rounded-xl border border-black/10 bg-white p-5 print:border-black">
+    <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)] print:border-black">
       <h2 className="text-sm font-medium">Drop-off receipt</h2>
       <dl className="mt-3 grid gap-2 text-sm">
         <div className="flex justify-between">
@@ -46,7 +46,7 @@ export function ReceiptCard({
       <button
         type="button"
         onClick={() => window.print()}
-        className="mt-3 inline-flex min-h-11 items-center rounded-full border border-black/15 px-4 text-sm font-medium print:hidden"
+        className="mt-3 inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] px-4 text-sm font-medium print:hidden"
       >
         Print / Save
       </button>

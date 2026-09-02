@@ -24,6 +24,7 @@ import {
   Button,
   Card,
   CardBody,
+  Badge,
 } from '../../../shared/ui';
 
 interface UserDraft {
@@ -84,13 +85,13 @@ function UserForm({
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submit} className="space-y-6">
       <label className="block text-sm">
         <span className="font-medium text-[var(--color-ink)]">Name</span>
         <input
           value={draft.name}
           onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-          className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </label>
       <label className="block text-sm">
@@ -101,7 +102,7 @@ function UserForm({
           value={draft.mobile}
           onChange={(e) => setDraft({ ...draft, mobile: e.target.value })}
           required
-          className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </label>
       <label className="block text-sm">
@@ -110,7 +111,7 @@ function UserForm({
           type="email"
           value={draft.email}
           onChange={(e) => setDraft({ ...draft, email: e.target.value })}
-          className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </label>
       <label className="block text-sm">
@@ -123,7 +124,7 @@ function UserForm({
           value={draft.password}
           onChange={(e) => setDraft({ ...draft, password: e.target.value })}
           required={!initial.id}
-          className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </label>
       <label className="block text-sm">
@@ -131,7 +132,7 @@ function UserForm({
         <select
           value={draft.status}
           onChange={(e) => setDraft({ ...draft, status: e.target.value })}
-          className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -235,26 +236,25 @@ export default function AdminUsers(): JSX.Element {
     }
   };
 
-  const onDelete = (u: AdminUser): void => {
-    if (window.confirm(`Delete user ${u.name ?? u.mobile}? This cannot be undone.`)) {
-      remove.mutate(u.id);
-    }
-  };
+  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
 
   const busy = create.isPending || update.isPending;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Platform / Users
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
             Users
           </h1>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             Every account in the platform.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-4">
           <div className="relative w-full sm:w-auto">
             <IconSearch
               className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)]"
@@ -264,7 +264,7 @@ export default function AdminUsers(): JSX.Element {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search by name, mobile, or email…"
-              className="w-full sm:w-72 rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+              className="w-full sm:w-72 rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
             />
           </div>
           <Button onClick={openNew} leftIcon={<IconUserPlus className="h-4 w-4" stroke={1.6} />}>
@@ -274,13 +274,19 @@ export default function AdminUsers(): JSX.Element {
       </header>
 
       {users.isLoading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-16">
           <Spinner label="Loading users" />
         </div>
       ) : users.isError ? (
         <ErrorState
           title="Failed to load users"
           description="Something went wrong while loading the user list."
+          error={users.error instanceof Error ? users.error : null}
+          action={
+            <Button variant="secondary" size="sm" onClick={() => void users.refetch()}>
+              Retry
+            </Button>
+          }
         />
       ) : (users.data ?? []).length === 0 ? (
         <EmptyState
@@ -335,27 +341,28 @@ export default function AdminUsers(): JSX.Element {
                         {u.email ?? '—'}
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                        <Badge
+                          tone={
                             u.status === 'active'
-                              ? 'bg-[#edf7f0] text-[var(--color-success)]'
+                              ? 'success'
                               : u.status === 'suspended'
-                                ? 'bg-[#fbeeed] text-[var(--color-danger)]'
-                                : 'bg-[#fff6e4] text-[#805913]'
-                          }`}
+                                ? 'danger'
+                                : 'warning'
+                          }
                         >
                           {u.status ?? 'active'}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-1.5">
                           {u.roles.map((r) => (
-                            <span
+                            <Badge
                               key={r}
-                              className="inline-flex items-center rounded-full bg-[#f3eef6] px-2 py-0.5 text-xs font-medium text-[#6b4593]"
+                              tone="purple"
+                              className="bg-[var(--color-info)]/10 text-[var(--color-info)]"
                             >
                               {r}
-                            </span>
+                            </Badge>
                           ))}
                         </div>
                       </td>
@@ -363,7 +370,7 @@ export default function AdminUsers(): JSX.Element {
                         {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex flex-wrap justify-end gap-1">
+                        <div className="flex flex-wrap justify-end gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -375,7 +382,7 @@ export default function AdminUsers(): JSX.Element {
                           <Button
                             variant="danger"
                             size="sm"
-                            onClick={() => onDelete(u)}
+                            onClick={() => setDeleteTarget(u)}
                             leftIcon={<IconTrash className="h-3.5 w-3.5" stroke={1.6} />}
                           >
                             Delete
@@ -415,6 +422,33 @@ export default function AdminUsers(): JSX.Element {
             {update.error?.message}
           </p>
         ) : null}
+      </Dialog>
+
+      <Dialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title={deleteTarget ? `Delete ${deleteTarget.name ?? deleteTarget.mobile}?` : 'Delete user'}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              loading={remove.isPending}
+              onClick={() => {
+                if (deleteTarget)
+                  remove.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) });
+              }}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          This action cannot be undone. The user will be removed permanently.
+        </p>
       </Dialog>
     </div>
   );

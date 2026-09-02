@@ -40,8 +40,10 @@ export default function AiPerformancePage() {
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold text-slate-900">AI performance</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+            AI performance
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             Override rate per provider — drives M8 prompt tuning.
           </p>
         </div>
@@ -61,22 +63,30 @@ export default function AiPerformancePage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card>
           <CardBody>
-            <p className="text-xs uppercase tracking-wide text-slate-500">AI decisions</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900">{a.total_ai_decisions}</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+              AI decisions
+            </p>
+            <p className="mt-1 text-2xl font-semibold text-[var(--color-ink)]">
+              {a.total_ai_decisions}
+            </p>
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <p className="text-xs uppercase tracking-wide text-slate-500">Overridden</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900">
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+              Overridden
+            </p>
+            <p className="mt-1 text-2xl font-semibold text-[var(--color-ink)]">
               {a.overridden_by_moderator}
             </p>
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <p className="text-xs uppercase tracking-wide text-slate-500">Override rate</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900">
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+              Override rate
+            </p>
+            <p className="mt-1 text-2xl font-semibold text-[var(--color-ink)]">
               {a.override_rate_pct.toFixed(1)}%
             </p>
             <Badge
@@ -104,27 +114,31 @@ export default function AiPerformancePage() {
         </CardHeader>
         <CardBody className="overflow-x-auto p-0">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="bg-[var(--color-surface-alt)] font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
               <tr>
-                <th className="px-3 py-2">Provider</th>
-                <th className="px-3 py-2">Decisions</th>
-                <th className="px-3 py-2">Overridden</th>
-                <th className="px-3 py-2">Avg confidence</th>
+                <th className="px-3 py-2.5">Provider</th>
+                <th className="px-3 py-2.5">Decisions</th>
+                <th className="px-3 py-2.5">Overridden</th>
+                <th className="px-3 py-2.5">Avg confidence</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
+            <tbody className="divide-y divide-[var(--color-border-subtle)] bg-white">
               {a.per_provider.map((p) => (
-                <tr key={p.provider_code}>
-                  <td className="px-3 py-2">
-                    <p className="font-medium text-slate-900">{p.provider_name}</p>
-                    <p className="font-mono text-[11px] text-slate-400">{p.provider_code}</p>
+                <tr key={p.provider_code} className="hover:bg-[var(--color-surface-alt)]/50">
+                  <td className="px-3 py-2.5">
+                    <p className="font-medium text-[var(--color-ink)]">{p.provider_name}</p>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+                      {p.provider_code}
+                    </p>
                   </td>
-                  <td className="px-3 py-2">{p.total}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2.5 text-[var(--color-ink)]">{p.total}</td>
+                  <td className="px-3 py-2.5 text-[var(--color-ink)]">
                     {p.overridden} ({p.total > 0 ? ((p.overridden / p.total) * 100).toFixed(0) : 0}
                     %)
                   </td>
-                  <td className="px-3 py-2">{p.avg_confidence.toFixed(1)}%</td>
+                  <td className="px-3 py-2.5 text-[var(--color-ink)]">
+                    {p.avg_confidence.toFixed(1)}%
+                  </td>
                 </tr>
               ))}
             </tbody>
