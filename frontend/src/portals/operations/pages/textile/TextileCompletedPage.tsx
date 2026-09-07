@@ -1,4 +1,5 @@
 import { useState, type JSX } from 'react';
+import { Link } from 'react-router-dom';
 import { cx } from '../../../../shared/ui';
 import type { TextileCollectionListItem } from '../../api/textileApi';
 import {
@@ -118,7 +119,12 @@ export default function TextileCompletedPage(): JSX.Element {
           {rows.map((item) => (
             <tr key={item.id} className="hover:bg-[var(--color-surface-alt)]">
               <td className="px-3 py-2.5">
-                <p className="font-mono text-xs font-medium">{item.reference}</p>
+                <Link
+                  to={`/operations/textile-collections/${item.id}`}
+                  className="font-mono text-xs font-medium text-[var(--color-ink)] underline decoration-[var(--color-border)] underline-offset-2 hover:decoration-[var(--color-ink)]"
+                >
+                  {item.reference}
+                </Link>
                 <p className="mt-0.5 max-w-[200px] truncate text-xs text-[var(--color-text-secondary)]">
                   {item.title}
                 </p>

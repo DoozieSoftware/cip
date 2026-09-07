@@ -90,6 +90,8 @@ interface QueueArgs {
   departmentId?: string;
   /** Pause updates while an officer has selections or a form in progress. */
   autoRefresh?: boolean;
+  /** Page size override (default PER_PAGE). Dispatch uses a larger page so trip grouping stays whole. */
+  perPage?: number;
 }
 
 export function useTextileQueue(args: QueueArgs): UseQueryResult<{
@@ -106,6 +108,7 @@ export function useTextileQueue(args: QueueArgs): UseQueryResult<{
     enabled,
     departmentId,
     autoRefresh = true,
+    perPage,
   } = args;
   return useQuery({
     queryKey: [
@@ -118,6 +121,7 @@ export function useTextileQueue(args: QueueArgs): UseQueryResult<{
       collectionMethod,
       search,
       page,
+      perPage ?? PER_PAGE,
     ],
     queryFn: () =>
       fetchTextileQueue({
@@ -127,7 +131,7 @@ export function useTextileQueue(args: QueueArgs): UseQueryResult<{
         service_zone_id: zoneId || undefined,
         category: categoryId || undefined,
         collection_method: collectionMethod || undefined,
-        per_page: PER_PAGE,
+        per_page: perPage ?? PER_PAGE,
         page,
       }),
     enabled,

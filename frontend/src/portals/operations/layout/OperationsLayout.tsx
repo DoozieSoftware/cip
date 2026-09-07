@@ -2,6 +2,7 @@ import { useEffect, useMemo, type JSX } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  IconAlertTriangle,
   IconBuildingCommunity,
   IconCalendarStats,
   IconChartBar,
@@ -102,7 +103,12 @@ const DR_LINEN_NAV: NavItem[] = [
   { to: '/operations/textile-collections/receipt', label: 'Receipt', icon: IconClipboardList },
   { to: '/operations/textile-collections/dispatch', label: 'Dispatch', icon: IconTruck },
   { to: '/operations/textile-collections/completed', label: 'History', icon: IconHistory },
-  { to: '/operations/textile-collections/recovery', label: 'Recovery', icon: IconShield },
+  { to: '/operations/textile-collections/recovery', label: 'Device uploads', icon: IconShield },
+  {
+    to: '/operations/textile-collections/offline-recovery',
+    label: 'Server failures',
+    icon: IconAlertTriangle,
+  },
   { to: '/operations/textile-collections/capacity', label: 'Capacity', icon: IconChartBar },
   { to: '/operations/profile', label: 'Profile', icon: IconUser },
 ];

@@ -44,6 +44,13 @@ import { useOptionalAuth } from '../../../../auth/AuthContext';
 import { useOpsQueue } from '../../offline/useOpsQueue';
 import { useOfflineQueue } from './hooks/useOfflineQueue';
 
+function toISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function isOfflineError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message.toLowerCase() : '';
   if (
@@ -186,6 +193,7 @@ export default function TextileDispatchPage(): JSX.Element {
   const [zoneId, setZoneId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [page, setPage] = useState(1);
+  const [dateFilter, setDateFilter] = useState('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [missedTarget, setMissedTarget] = useState<TextileCollectionListItem | null>(null);
   const [overrideTarget, setOverrideTarget] = useState<TextileCollectionListItem | null>(null);
@@ -202,6 +210,8 @@ export default function TextileDispatchPage(): JSX.Element {
     zoneId: zoneId || undefined,
     categoryId: categoryId || undefined,
     collectionMethod: 'premises',
+    // Large page so trip groups never split across pages and counts stay whole.
+    perPage: 200,
     autoRefresh:
       expandedId === null && missedTarget === null && !assignmentOpen && overrideTarget === null,
     enabled: desk.ready && desk.isDrLinen,
@@ -332,6 +342,11 @@ export default function TextileDispatchPage(): JSX.Element {
       { label: string; id: string; items: TextileCollectionListItem[]; ref: string; date: string }
     >();
     for (const row of rows) {
+      // Date filter defaults to today: server has no trip-date param, so the
+      // board loads the scheduled queue and scopes client-side. 'All dates'
+      // clears it for audits.
+      const tripDate = row.batch?.collection_date ?? '';
+      if (dateFilter !== 'all' && tripDate !== dateFilter) continue;
       const key = row.batch?.id ?? 'unassigned';
       const entry = map.get(key) ?? {
         label: row.batch
@@ -351,7 +366,7 @@ export default function TextileDispatchPage(): JSX.Element {
       map.set(key, entry);
     }
     return [...map.values()];
-  }, [rows]);
+  }, [rows, dateFilter]);
 
   // Summary strip — derived metrics only
   const summary = useMemo(() => {
@@ -385,6 +400,42 @@ export default function TextileDispatchPage(): JSX.Element {
             />
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+            <label className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
+              Trip date
+              <input
+                type="date"
+                value={dateFilter === 'all' ? '' : dateFilter}
+                onChange={(e) => {
+                  setDateFilter(e.target.value || 'all');
+                  setPage(1);
+                }}
+                aria-label="Filter trips by date"
+                className="min-h-11 rounded-lg border border-[var(--color-border)] bg-white px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+              />
+            </label>
+            {dateFilter !== 'all' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setDateFilter('all');
+                  setPage(1);
+                }}
+                className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-3 text-xs font-medium hover:bg-[var(--color-surface-alt)]"
+              >
+                All dates
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setDateFilter(toISODate(new Date()));
+                  setPage(1);
+                }}
+                className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-3 text-xs font-medium hover:bg-[var(--color-surface-alt)]"
+              >
+                Today
+              </button>
+            )}
             <ZoneFilter
               value={zoneId}
               onChange={(n) => {
@@ -461,8 +512,8 @@ export default function TextileDispatchPage(): JSX.Element {
         loading={queue.isLoading}
         error={queue.isError}
         onRetry={() => void queue.refetch()}
-        hasRows={rows.length > 0}
-        emptyTitle="No scheduled pickups"
+        hasRows={trips.length > 0}
+        emptyTitle={dateFilter === 'all' ? 'No scheduled pickups' : `No trips on ${dateFilter}`}
         emptyBody="Schedule a trip on the Trip scheduling page and it will appear here for dispatch."
       >
         {/* Hidden affordance for Phase 2 manifest tests expecting anchored "Record" */}
@@ -489,11 +540,14 @@ export default function TextileDispatchPage(): JSX.Element {
                 key={trip.id}
                 className="overflow-hidden rounded-lg border border-[var(--color-border-subtle)] bg-white shadow-sm"
               >
-                {/* Trip header — manifest line: mono ref as anchor, meta secondary */}
+                {/* Trip header — human label first, trip code secondary */}
                 <header className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-4 py-3 sm:px-5">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <h2 className="font-mono text-[13px] font-bold tracking-tight text-[var(--color-ink)]">
-                      {tripRef}
+                    <h2 className="text-[13px] font-bold tracking-tight text-[var(--color-ink)]">
+                      Trip{' '}
+                      <span className="font-mono font-medium text-[var(--color-text-secondary)]">
+                        {tripRef}
+                      </span>
                     </h2>
                     {formattedDate ? (
                       <span className="inline-flex items-center gap-1 text-[13px] leading-none text-[var(--color-text-secondary)]">
@@ -629,10 +683,11 @@ export default function TextileDispatchPage(): JSX.Element {
                         ) : null}
 
                         <div className="min-w-0 flex-1">
-                          {/* reference + outcome: one line, secondary hierarchy */}
+                          {/* pickup ref + outcome: human label first, code secondary */}
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-mono text-xs tracking-wide text-[var(--color-text-tertiary)]">
-                              {item.reference}
+                            <span className="text-xs text-[var(--color-text-tertiary)]">
+                              Pickup{' '}
+                              <span className="font-mono tracking-wide">{item.reference}</span>
                             </span>
                             {isCollected ? (
                               <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold leading-none text-emerald-800 ring-1 ring-inset ring-emerald-200">

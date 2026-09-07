@@ -1,6 +1,6 @@
 import { useState, type JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { ConfirmActionDialog } from '../../components/ConfirmActionDialog';
 import {
@@ -13,6 +13,7 @@ import { DeskStates, StatusBadge, useDesk } from './shared';
 
 export default function TextileStaffDetailPage(): JSX.Element {
   const desk = useDesk();
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [rejectOpen, setRejectOpen] = useState(false);
 
@@ -43,12 +44,13 @@ export default function TextileStaffDetailPage(): JSX.Element {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-6">
-      <Link
-        to="/operations/textile-collections/review"
+      <button
+        type="button"
+        onClick={() => void navigate(-1)}
         className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 rounded-md"
       >
-        <IconArrowLeft className="h-4 w-4" /> Back to reviews
-      </Link>
+        <IconArrowLeft className="h-4 w-4" /> Back
+      </button>
 
       <DeskStates
         loading={detail.isLoading}
