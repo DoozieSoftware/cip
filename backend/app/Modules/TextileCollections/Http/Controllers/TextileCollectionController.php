@@ -903,6 +903,24 @@ final class TextileCollectionController extends BaseController
     }
 
     /**
+     * @param  array<mixed, mixed>  $row
+     */
+    private function csvCell(array $row, string $key): string|int|float
+    {
+        $value = $row[$key] ?? '';
+
+        if (is_int($value) || is_float($value) || is_string($value)) {
+            return $value;
+        }
+
+        if (is_bool($value)) {
+            return $value ? '1' : '';
+        }
+
+        return '';
+    }
+
+    /**
      * @param  array<mixed, mixed>  $data
      */
     private function stringValue(array $data, string $key): string
@@ -1428,6 +1446,7 @@ final class TextileCollectionController extends BaseController
         }
 
         $dashboard = $this->reporting->dashboard($dept->id, $start, $end, $zoneId, $category);
+        $rows = $this->reporting->exportRows($dept->id, $start, $end, $zoneId, $category);
 
         $filename = sprintf('textile-report-%s-%s.csv', $dept->id, $start->format('Y-m'));
 
@@ -1437,17 +1456,48 @@ final class TextileCollectionController extends BaseController
             'entity_id' => $dept->id,
             'action' => 'textile.report_export',
             'before' => null,
-            'after' => ['format' => $format, 'period_start' => $start->toDateString(), 'period_end' => $end->toDateString()],
+            'after' => ['format' => $format, 'period_start' => $start->toDateString(), 'period_end' => $end->toDateString(), 'rows' => count($rows)],
             'ip' => $request->ip(),
             'device_fingerprint' => null,
             'request_id' => $request->attributes->get('trace_id'),
             'created_at' => now(),
         ]);
 
-        // A CSV row carries the complete, definition-bearing dashboard payload. This
-        // keeps export totals exactly aligned with the dashboard response.
-        $encoded = json_encode($dashboard, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-        $csv = "Metric,Value\nDashboard,".str_replace('"', '""', $encoded)."\n";
+        // Per-collection rows so the file reconciles with the dashboard
+        // and the completed archive. Totals below match dashboard['totals'].
+        $header = ['reference', 'category', 'collection_method', 'status', 'service_zone', 'estimated_bags', 'estimated_weight_kg', 'actual_bags', 'actual_weight_kg', 'scheduled_date', 'picked_up_at', 'submitted_at', 'created_at', 'updated_at'];
+        $handle = fopen('php://temp', 'r+');
+
+        if ($handle === false) {
+            throw ApiException::serverError('Could not build the export file.');
+        }
+        fputcsv($handle, $header);
+
+        foreach ($rows as $row) {
+            fputcsv($handle, [
+                $this->csvCell($row, 'reference'),
+                $this->csvCell($row, 'category'),
+                $this->csvCell($row, 'collection_method'),
+                $this->csvCell($row, 'status'),
+                $this->csvCell($row, 'service_zone'),
+                $this->csvCell($row, 'estimated_bags'),
+                $this->csvCell($row, 'estimated_weight_kg'),
+                $this->csvCell($row, 'actual_bags'),
+                $this->csvCell($row, 'actual_weight_kg'),
+                $this->csvCell($row, 'scheduled_date'),
+                $this->csvCell($row, 'picked_up_at'),
+                $this->csvCell($row, 'submitted_at'),
+                $this->csvCell($row, 'created_at'),
+                $this->csvCell($row, 'updated_at'),
+            ]);
+        }
+        rewind($handle);
+        $csv = stream_get_contents($handle);
+
+        if ($csv === false) {
+            $csv = '';
+        }
+        fclose($handle);
 
         return response($csv, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',

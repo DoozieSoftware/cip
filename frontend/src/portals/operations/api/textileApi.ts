@@ -1,4 +1,10 @@
-import { request, requestPaginated, upload, type UploadOptions } from '../../../shared/api/client';
+import {
+  download,
+  request,
+  requestPaginated,
+  upload,
+  type UploadOptions,
+} from '../../../shared/api/client';
 
 export interface TextileCollectionListItem {
   id: string;
@@ -435,16 +441,26 @@ export function fetchTextileReportingDashboard(params: {
   });
 }
 
-export function textileReportingExportUrl(params: {
+/**
+ * Authenticated CSV download. Do NOT turn this into a plain <a href>
+ * — the export endpoint needs the bearer Authorization header, which
+ * plain navigation cannot supply (opens as Unauthenticated).
+ */
+export function downloadTextileReportingExport(params: {
   department_id?: string;
   year?: string;
   month?: string;
-}): string {
-  const search = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (typeof value === 'string') search.set(key, value);
-  });
-  return `/api/v1/department/textile-collections/report/export?${search.toString()}`;
+}): Promise<void> {
+  const period = params.year
+    ? params.month
+      ? `${params.year}-${params.month}`
+      : params.year
+    : new Date().toISOString().slice(0, 7);
+  return download(
+    '/department/textile-collections/report/export',
+    { ...params, format: 'csv' },
+    `textile-report-${period}.csv`,
+  );
 }
 
 export function assignTextileTrip(

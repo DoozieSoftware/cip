@@ -356,8 +356,13 @@ it('export CSV contains expected headers and is audited', function (): void {
         ->and($disposition)->toContain('.csv"');
 
     $content = (string) $res->getContent();
-    expect($content)->toContain('Metric,Value')
-        ->and($content)->toContain('Dashboard');
+    $lines = array_values(array_filter(explode("\n", $content), fn (string $line): bool => trim($line) !== ''));
+    expect($lines[0] ?? '')->toContain('reference')
+        ->and($lines[0] ?? '')->toContain('collection_method')
+        ->and($lines[0] ?? '')->toContain('estimated_bags')
+        ->and($lines[0] ?? '')->toContain('actual_bags')
+        ->and($lines[0] ?? '')->toContain('service_zone')
+        ->and(count($lines))->toBeGreaterThan(1);
 
     // Audited
     expect(AuditLog::query()->where('entity', 'textile_reporting')->where('entity_id', $dept->id)->where('action', 'textile.report_export')->exists())->toBeTrue();
@@ -375,22 +380,28 @@ it('export CSV totals reconcile with dashboard totals', function (): void {
 
     Sanctum::actingAs($staff);
     $dashboard = $this->getJson("/api/v1/department/textile-collections/report/dashboard?year={$year}")->assertOk()->json('data');
-    $export = $this->getJson("/api/v1/department/textile-collections/report/export?year={$year}&format=csv")->assertOk()->getContent();
+    $export = (string) $this->getJson("/api/v1/department/textile-collections/report/export?year={$year}&format=csv")->assertOk()->getContent();
 
-    // Export contains JSON-encoded dashboard; extract JSON payload after "Dashboard,"
-    $payload = (string) $export;
-    // The CSV is: Metric,Value\nDashboard,"<json>"\n — json is escaped by doubling quotes
-    // Decode: take the part after first newline, remove prefix, unescape
-    $lines = explode("\n", $payload);
-    $dashboardLine = $lines[1] ?? '';
-    // Remove leading "Dashboard," and surrounding quotes
-    $jsonEscaped = substr($dashboardLine, strlen('Dashboard,'));
-    // The JSON was encoded with str_replace('"','""', $encoded) and wrapped in CSV quoting
-    // Our controller writes: "Metric,Value\nDashboard,".str_replace('"','""',$encoded)."\n"
-    // So the line is Dashboard,{"..."} with doubled quotes, not quoted field? Actually it writes without outer quotes: Dashboard,"json with ""quotes"""
-    // But the json itself contains quotes doubled. Let's just verify export contains dashboard totals.
-    expect($payload)->toContain((string) $dashboard['totals']['requests'])
-        ->and($payload)->toContain((string) $dashboard['totals']['estimated_bags']);
+    // Parse per-collection CSV rows and reconcile against dashboard totals.
+    $lines = array_values(array_filter(explode("\n", $export), fn (string $line): bool => trim($line) !== ''));
+    $parsedHeader = str_getcsv($lines[0] ?? '');
+    $refIndex = array_search('reference', $parsedHeader, true);
+    $bagsIndex = array_search('estimated_bags', $parsedHeader, true);
+    expect($refIndex)->not->toBeFalse()
+        ->and($bagsIndex)->not->toBeFalse();
+
+    $dataLines = array_slice($lines, 1);
+    $rowCount = count($dataLines);
+    $bagTotal = 0;
+
+    foreach ($dataLines as $line) {
+        $cells = str_getcsv($line);
+        $bagTotal += (int) ($cells[$bagsIndex] ?? 0);
+        expect($cells[$refIndex] ?? '')->toContain('DLN-');
+    }
+
+    expect($rowCount)->toBe($dashboard['totals']['requests'])
+        ->and($bagTotal)->toBe($dashboard['totals']['estimated_bags']);
 });
 
 it('dashboard requires partner authorization', function (): void {

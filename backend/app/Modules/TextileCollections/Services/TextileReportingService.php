@@ -169,6 +169,41 @@ final class TextileReportingService
     /**
      * @return array<int, array<string, mixed>>
      */
+    public function exportRows(string $departmentId, ?Carbon $start, ?Carbon $end, ?string $zoneId = null, ?string $category = null): array
+    {
+        $start ??= Carbon::now()->startOfYear();
+        $end ??= Carbon::now()->endOfYear();
+
+        $rows = TextileCollectionRequest::query()
+            ->where('textile_collection_requests.department_id', $departmentId)
+            ->whereBetween('textile_collection_requests.created_at', [$start, $end])
+            ->when(is_string($zoneId) && $zoneId !== '', fn ($q) => $q->where('textile_collection_requests.service_zone_id', $zoneId))
+            ->when(is_string($category) && $category !== '' && in_array($category, TextileCollectionRequest::VALID_CATEGORIES, true), fn ($q) => $q->where('textile_collection_requests.category', $category))
+            ->with(['serviceZone:id,name'])
+            ->orderBy('textile_collection_requests.created_at')
+            ->get();
+
+        return $rows->map(fn (TextileCollectionRequest $row): array => [
+            'reference' => $row->reference,
+            'category' => $row->category,
+            'collection_method' => $row->collection_method,
+            'status' => $row->status,
+            'service_zone' => $row->serviceZone !== null ? $row->serviceZone->name : '',
+            'estimated_bags' => $row->estimated_bags,
+            'estimated_weight_kg' => $row->estimated_weight_kg,
+            'actual_bags' => $row->actual_bags,
+            'actual_weight_kg' => $row->actual_weight_kg,
+            'scheduled_date' => $row->scheduled_date?->toDateString() ?? '',
+            'picked_up_at' => $row->picked_up_at?->toIso8601String() ?? '',
+            'submitted_at' => $row->submitted_at?->toIso8601String() ?? '',
+            'created_at' => $row->created_at?->toIso8601String() ?? '',
+            'updated_at' => $row->updated_at?->toIso8601String() ?? '',
+        ])->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function timeseries(string $departmentId, Carbon $start, Carbon $end, string $granularity = 'month'): array
     {
         $format = $granularity === 'day' ? '%Y-%m-%d' : '%Y-%m';

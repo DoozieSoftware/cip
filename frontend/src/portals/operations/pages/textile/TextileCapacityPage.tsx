@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { type JSX } from 'react';
 import {
+  downloadTextileReportingExport,
   fetchCapacityRules,
   fetchTextileReportingDashboard,
-  textileReportingExportUrl,
 } from '../../api/textileApi';
 import { DeskPage, DeskStates, useDesk } from './shared';
 
@@ -20,6 +21,20 @@ export default function TextileCapacityPage(): JSX.Element {
     enabled: desk.ready && desk.isDrLinen,
   });
   const report = dashboard.data;
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  async function handleExport(): Promise<void> {
+    setExportBusy(true);
+    setExportError(null);
+    try {
+      await downloadTextileReportingExport({ department_id: desk.departmentId });
+    } catch {
+      setExportError('Export failed. Check your session and try again.');
+    } finally {
+      setExportBusy(false);
+    }
+  }
 
   return (
     <DeskPage
@@ -85,12 +100,21 @@ export default function TextileCapacityPage(): JSX.Element {
               </p>
             </div>
             {report ? (
-              <a
-                href={textileReportingExportUrl({ department_id: desk.departmentId })}
-                className="inline-flex min-h-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-3 py-2 text-xs font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
-              >
-                Export CSV
-              </a>
+              <div className="flex flex-col items-end gap-1">
+                <button
+                  type="button"
+                  disabled={exportBusy}
+                  onClick={() => void handleExport()}
+                  className="inline-flex min-h-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-3 py-2 text-xs font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 disabled:opacity-40"
+                >
+                  {exportBusy ? 'Exporting…' : 'Export CSV'}
+                </button>
+                {exportError ? (
+                  <p role="alert" className="text-xs text-[var(--color-danger)]">
+                    {exportError}
+                  </p>
+                ) : null}
+              </div>
             ) : null}
           </div>
           {rules.data && rules.data.length > 0 ? (
