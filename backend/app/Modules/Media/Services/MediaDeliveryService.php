@@ -82,12 +82,19 @@ class MediaDeliveryService
 
     private function hasValidProofScope(Media $media): bool
     {
-        $assignment = request()->query('assignment');
-        $department = request()->query('department');
+        // Empty scope params arrive as null: the global
+        // ConvertEmptyStringsToNull middleware turns ?assignment=&department=
+        // (emitted by MediaUrl for scope-less textile proofs) into nulls.
+        // Treat missing as empty so scope-less proofs verify; a real scope
+        // mismatch still fails the timing-safe comparison below.
+        $assignment = request()->query('assignment') ?? '';
+        $department = request()->query('department') ?? '';
 
-        return is_string($assignment)
-            && is_string($department)
-            && hash_equals((string) ($media->assignment_id ?? ''), $assignment)
+        if (! is_string($assignment) || ! is_string($department)) {
+            return false;
+        }
+
+        return hash_equals((string) ($media->assignment_id ?? ''), $assignment)
             && hash_equals((string) ($media->department_id ?? ''), $department);
     }
 }

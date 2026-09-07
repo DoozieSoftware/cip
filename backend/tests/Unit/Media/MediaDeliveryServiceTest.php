@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Departments\Models\Department;
 use App\Modules\Media\Models\Media;
 use App\Modules\Media\Services\ChainOfCustodyWriter;
 use App\Modules\Media\Services\MediaDeliveryService;
@@ -68,4 +69,51 @@ it('serves file with correct content type when bytes exist', function (): void {
     $response = $service->serve($media->id);
 
     expect($response->getStatusCode())->toBe(200);
+});
+
+it('serves scope-less textile proof when scope params are missing (empty-string-to-null)', function (): void {
+    $user = User::factory()->create();
+    Sanctum::actingAs($user);
+
+    $media = Media::factory()->create([
+        'report_id' => null,
+        'role' => 'proof',
+        'assignment_id' => null,
+        'department_id' => null,
+        'storage_disk' => 'local',
+        'storage_path' => 'proof/textile/abc/photo.jpg',
+        'mime' => 'image/jpeg',
+    ]);
+
+    Storage::disk('local')->put($media->storage_path, 'fake-proof-bytes');
+
+    // No query params: mirrors ?assignment=&department= after the global
+    // ConvertEmptyStringsToNull middleware. Previously 403 MEDIA_SCOPE_MISMATCH.
+    $service = new MediaDeliveryService(new ChainOfCustodyWriter);
+    $response = $service->serve($media->id);
+
+    expect($response->getStatusCode())->toBe(200);
+});
+
+it('still rejects proof when a real scope does not match', function (): void {
+    $user = User::factory()->create();
+    Sanctum::actingAs($user);
+    $dept = Department::factory()->create();
+
+    $media = Media::factory()->create([
+        'report_id' => null,
+        'role' => 'proof',
+        'assignment_id' => null,
+        'department_id' => $dept->id,
+        'storage_disk' => 'local',
+        'storage_path' => 'proof/textile/def/photo.jpg',
+        'mime' => 'image/jpeg',
+    ]);
+
+    Storage::disk('local')->put($media->storage_path, 'fake-proof-bytes');
+
+    $service = new MediaDeliveryService(new ChainOfCustodyWriter);
+    $response = $service->serve($media->id);
+
+    expect($response->getStatusCode())->toBe(403);
 });
