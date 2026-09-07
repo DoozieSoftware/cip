@@ -7,9 +7,9 @@ import TextileCollectionDetailPage from '../TextileCollectionDetailPage';
 import type { TextileCollectionRequest } from '../../api/textileZones';
 
 const mockCollectionData = vi.fn<() => TextileCollectionRequest | null>();
-const mockCancel = vi.fn();
+const mockCancel = vi.fn<(...args: unknown[]) => Promise<unknown>>();
 const mockCreate = vi.fn();
-const mockUploadPhoto = vi.fn();
+const mockUploadPhoto = vi.fn<(...args: unknown[]) => Promise<unknown>>();
 
 vi.mock('../../api/textileZones', () => ({
   useCreateTextileCollection: () => ({
@@ -71,7 +71,8 @@ const BASE: TextileCollectionRequest = {
   batch: {
     id: 'batch-1',
     reference: 'DRL-260827-RS1',
-    collection_date: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0] ?? '2026-08-29',
+    collection_date:
+      new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0] ?? '2026-08-29',
     status: 'planned',
     window_start: '09:00',
     window_end: '12:00',
@@ -139,7 +140,9 @@ describe('TextileCollectionDetailPage — reschedule surface (Phase 3)', () => {
     renderDetail();
     const btn = screen.getByRole('button', { name: /Reschedule — coming soon/i });
     expect(btn).toBeDisabled();
-    expect(screen.getByText(/Rescheduling will be available before the crew starts the trip/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Rescheduling will be available before the crew starts the trip/),
+    ).toBeInTheDocument();
     expect(screen.getByText(/No staff contact is shown here/)).toBeInTheDocument();
   });
 
@@ -179,7 +182,9 @@ describe('TextileCollectionDetailPage — reschedule surface (Phase 3)', () => {
 
   it('explicitly states that staff contact is not shown and links to Contact support', () => {
     renderDetail();
-    expect(screen.getByText(/Staff contact details are not shared for privacy/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Staff contact details are not shared for privacy/),
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Contact support/i })).toHaveAttribute(
       'href',
       '/citizen/reports',
@@ -188,12 +193,24 @@ describe('TextileCollectionDetailPage — reschedule surface (Phase 3)', () => {
 
   // ── OPEN D-04 — full reschedule picker (requires product) ────────────────
 
-  it.todo('FE-RS1 [OPEN D-04] reschedule picker shows available dates and disables unavailable windows');
-  it.todo('FE-RS2 [OPEN D-04] unavailable slot shows fallback: why it became unavailable and next available slot');
-  it.todo('FE-RS3 [OPEN D-04] cutoff guard: within cutoff window the picker is disabled with cutoff hint and staff-override note');
-  it.todo('FE-RS4 [OPEN D-04] duplicate-booking guard: repeated reschedule keeps single active card, shows one confirmation');
-  it.todo('FE-RS5 [OPEN D-04] reminder preference note: shows whether a reminder will be sent for the new slot');
-  it.todo('FE-RS6 [OPEN D-04] readiness/contact inline edit allowed before cutoff without rewriting proof evidence');
+  it.todo(
+    'FE-RS1 [OPEN D-04] reschedule picker shows available dates and disables unavailable windows',
+  );
+  it.todo(
+    'FE-RS2 [OPEN D-04] unavailable slot shows fallback: why it became unavailable and next available slot',
+  );
+  it.todo(
+    'FE-RS3 [OPEN D-04] cutoff guard: within cutoff window the picker is disabled with cutoff hint and staff-override note',
+  );
+  it.todo(
+    'FE-RS4 [OPEN D-04] duplicate-booking guard: repeated reschedule keeps single active card, shows one confirmation',
+  );
+  it.todo(
+    'FE-RS5 [OPEN D-04] reminder preference note: shows whether a reminder will be sent for the new slot',
+  );
+  it.todo(
+    'FE-RS6 [OPEN D-04] readiness/contact inline edit allowed before cutoff without rewriting proof evidence',
+  );
   it.todo('FE-RS7 [OPEN D-04] optimistic update reverts on 409/422 and shows conflict copy');
 
   // Loading / error states (AGENTS.md frontend rule — every screen needs them)
@@ -204,7 +221,9 @@ describe('TextileCollectionDetailPage — reschedule surface (Phase 3)', () => {
     expect(DetailPage).toBeDefined();
   });
 
-  it.todo('FE-RS loading/empty/error: reschedule picker shows loading, empty (no alternative slots), and error states');
+  it.todo(
+    'FE-RS loading/empty/error: reschedule picker shows loading, empty (no alternative slots), and error states',
+  );
 
   it('double-clicking the placeholder reschedule button does not fire a request', () => {
     renderDetail();
