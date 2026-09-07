@@ -97,10 +97,7 @@ export function TextileMinimumNotice({
       <div className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-3 text-xs leading-5 text-[var(--color-text-secondary)]">
         <p className="font-medium text-[var(--color-ink)]">How much is needed for a home pickup?</p>
         <p className="mt-1">
-          No minimum in your area — send any amount. We will review and schedule.
-        </p>
-        <p className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">
-          We never reject silently — a person checks every request.
+          No pickup minimum is set for your area right now — send any amount for home pickup.
         </p>
       </div>
     );

@@ -35,7 +35,7 @@ describe('TextileMinimumNotice', () => {
         }}
       />,
     );
-    expect(screen.getByText(/No minimum in your area/)).toBeInTheDocument();
+    expect(screen.getByText(/No pickup minimum is set for your area/)).toBeInTheDocument();
   });
 
   it('renders minimum with bags and guidance text', () => {

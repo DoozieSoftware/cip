@@ -22,10 +22,16 @@ final class TextileCollectionsSeeder extends Seeder
             return;
         }
 
-        // ── 2. Ensure DR_LINEN has clothes_waste capability ─────────
-        TextilePartnerCapability::query()->updateOrCreate(
-            ['department_id' => $drLinen->id, 'category' => 'clothes_waste'],
-        );
+        // ── 2. Ensure DR_LINEN capabilities for every material ────
+        // The citizen zone list only shows zones whose owner-partner holds
+        // a capability row for the selected material. A missing row reads as
+        // "No collection partner is serving your area yet", so all three
+        // materials are ensured here (idempotent).
+        foreach (['clothes_waste', 'metal_scrap', 'e_waste'] as $category) {
+            TextilePartnerCapability::query()->updateOrCreate(
+                ['department_id' => $drLinen->id, 'category' => $category],
+            );
+        }
 
         // ── 3. Create/upgrade DEMO second partner for testing ────────
         $demoDept = Department::query()->where('code', 'DEMO_EWASTE')->first();
@@ -48,32 +54,60 @@ final class TextileCollectionsSeeder extends Seeder
 
         // ── 4. Local/demo service areas ─────────────────────────────
         // Local/demo service areas only. Production zones are operational
-        // configuration and are not invented by this seeder.
-        foreach ([
-            ['code' => 'DRL-KENGERI', 'name' => 'Kengeri', 'lat' => 12.9141, 'lng' => 77.4820],
-            ['code' => 'DRL-JAYANAGAR', 'name' => 'Jayanagar', 'lat' => 12.9250, 'lng' => 77.5938],
-            ['code' => 'DRL-WHITEFIELD', 'name' => 'Whitefield', 'lat' => 12.9698, 'lng' => 77.7500],
-        ] as $zone) {
-            $serviceZone = TextileServiceZone::query()->updateOrCreate(
-                ['code' => $zone['code']],
-                [
-                    'name' => $zone['name'],
-                    'department_id' => $drLinen->id,
-                    'center_latitude' => $zone['lat'],
-                    'center_longitude' => $zone['lng'],
-                    'service_radius_km' => 12,
-                    'dropoff_enabled' => true,
-                    'premises_pickup_enabled' => true,
-                    'dropoff_name' => 'Dr. Linen '.$zone['name'].' collection point',
-                    'dropoff_address' => 'Demo collection point — configure the verified address before production use.',
-                    'readiness_instructions' => 'Keep textiles dry and packed in bags. Separate wet or hazardous waste.',
-                    'active' => true,
-                ],
-            );
+        // configuration and are not invented by this seeder: demo zone rows
+        // are skipped entirely when running in production.
+        if (! app()->isProduction()) {
+            foreach ([
+                ['code' => 'DRL-KENGERI', 'name' => 'Kengeri', 'lat' => 12.9141, 'lng' => 77.4820],
+                ['code' => 'DRL-JAYANAGAR', 'name' => 'Jayanagar', 'lat' => 12.9250, 'lng' => 77.5938],
+                ['code' => 'DRL-WHITEFIELD', 'name' => 'Whitefield', 'lat' => 12.9698, 'lng' => 77.7500],
+            ] as $zone) {
+                $serviceZone = TextileServiceZone::query()->updateOrCreate(
+                    ['code' => $zone['code']],
+                    [
+                        'name' => $zone['name'],
+                        'department_id' => $drLinen->id,
+                        'center_latitude' => $zone['lat'],
+                        'center_longitude' => $zone['lng'],
+                        'service_radius_km' => 12,
+                        'dropoff_enabled' => true,
+                        'premises_pickup_enabled' => true,
+                        'dropoff_name' => 'Dr. Linen '.$zone['name'].' collection point',
+                        'dropoff_address' => 'Demo collection point — configure the verified address before production use.',
+                        'readiness_instructions' => 'Keep textiles dry and packed in bags. Separate wet or hazardous waste.',
+                        'active' => true,
+                    ],
+                );
 
-            TextileCapacityRule::query()->updateOrCreate(
+                TextileCapacityRule::query()->updateOrCreate(
+                    [
+                        'service_zone_id' => $serviceZone->id,
+                        'department_id' => $drLinen->id,
+                        'effective_from' => null,
+                        'effective_to' => null,
+                        'day_of_week' => null,
+                    ],
+                    [
+                        'min_bags' => 2,
+                        'min_weight_kg' => 4,
+                        'guidance_text' => 'Home pickup requires at least 2 bags or 4 kg. Drop-off accepts any amount.',
+                    ],
+                );
+            }
+        }
+
+        // ── 4b. Backfill the default pickup-minimum rule for every active
+        // DR_LINEN zone that has none (e.g. production zones created via the
+        // admin UI). firstOrCreate: never overwrites partner-tuned policy.
+        $activeZones = TextileServiceZone::query()
+            ->where('department_id', $drLinen->id)
+            ->where('active', true)
+            ->get(['id']);
+
+        foreach ($activeZones as $activeZone) {
+            TextileCapacityRule::query()->firstOrCreate(
                 [
-                    'service_zone_id' => $serviceZone->id,
+                    'service_zone_id' => $activeZone->id,
                     'department_id' => $drLinen->id,
                     'effective_from' => null,
                     'effective_to' => null,
@@ -88,22 +122,24 @@ final class TextileCollectionsSeeder extends Seeder
         }
 
         // ── 5. DEMO partner zone (fixture for multi-partner testing) ─
-        // This is a demo fixture for multi-partner testing, not production config.
-        TextileServiceZone::query()->updateOrCreate(
-            ['code' => 'DEMO-EW-1'],
-            [
-                'name' => 'Demo E-Waste Zone',
-                'department_id' => $demoDept->id,
-                'center_latitude' => 12.9716,
-                'center_longitude' => 77.5946,
-                'service_radius_km' => 10,
-                'dropoff_enabled' => true,
-                'premises_pickup_enabled' => true,
-                'dropoff_name' => 'Demo E-Waste drop point',
-                'dropoff_address' => 'Demo collection point — not for production use.',
-                'readiness_instructions' => 'Separate metals from e-waste. Do not mix with household waste.',
-                'active' => true,
-            ],
-        );
+        // Demo-only fixture. Never created in production.
+        if (! app()->isProduction()) {
+            TextileServiceZone::query()->updateOrCreate(
+                ['code' => 'DEMO-EW-1'],
+                [
+                    'name' => 'Demo E-Waste Zone',
+                    'department_id' => $demoDept->id,
+                    'center_latitude' => 12.9716,
+                    'center_longitude' => 77.5946,
+                    'service_radius_km' => 10,
+                    'dropoff_enabled' => true,
+                    'premises_pickup_enabled' => true,
+                    'dropoff_name' => 'Demo E-Waste drop point',
+                    'dropoff_address' => 'Demo collection point — not for production use.',
+                    'readiness_instructions' => 'Separate metals from e-waste. Do not mix with household waste.',
+                    'active' => true,
+                ],
+            );
+        }
     }
 }

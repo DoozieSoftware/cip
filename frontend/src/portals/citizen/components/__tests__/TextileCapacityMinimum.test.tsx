@@ -62,7 +62,7 @@ describe('TextileMinimumNotice — citizen journey (TextileCapacityMinimum.test)
     expect(screen.getByText(/2 bags/)).toBeInTheDocument();
   });
 
-  it('empty state is calm and mentions review', () => {
+  it('empty state explains no minimum is configured', () => {
     render(
       <TextileMinimumNotice
         minimum={{
@@ -74,7 +74,6 @@ describe('TextileMinimumNotice — citizen journey (TextileCapacityMinimum.test)
       />,
       { wrapper: qcWrapper },
     );
-    expect(screen.getByText(/No minimum in your area/)).toBeInTheDocument();
-    expect(screen.getByText(/We will review and schedule/)).toBeInTheDocument();
+    expect(screen.getByText(/No pickup minimum is set for your area/)).toBeInTheDocument();
   });
 });
