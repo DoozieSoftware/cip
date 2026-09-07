@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- dispatch-board primitives (hooks, filters, pager) are intentionally colocated as one portal pattern */
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { JSX, ReactNode } from 'react';
 import { IconChevronLeft, IconChevronRight, IconSearch, IconX } from '@tabler/icons-react';

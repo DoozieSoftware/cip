@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- auth context, provider, and hook are intentionally colocated as one portal pattern */
 import {
   createContext,
   useCallback,

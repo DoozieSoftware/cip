@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react';
+import { useCallback, useEffect, useState, type JSX } from 'react';
 import { IconWifiOff, IconRefresh, IconAlertTriangle, IconTrash } from '@tabler/icons-react';
 import { getQueue, type QueueItem } from '../../citizen/offline/queue';
 import { readSession } from '../../../auth/storage';
@@ -9,13 +9,13 @@ export function TextileFieldOfflineBanner(): JSX.Element | null {
   const [dead, setDead] = useState<QueueItem[]>([]);
   const [busy, setBusy] = useState(false);
 
-  async function refresh(): Promise<void> {
+  const refresh = useCallback(async (): Promise<void> => {
     const q = getQueue(ownerId);
     const p = await q.pending();
     const d = await q.dead();
     setPending(p.filter((i) => i.kind === 'textile.field.outcome'));
     setDead(d.filter((i) => i.kind === 'textile.field.outcome'));
-  }
+  }, [ownerId]);
 
   useEffect(() => {
     void refresh();
@@ -29,7 +29,7 @@ export function TextileFieldOfflineBanner(): JSX.Element | null {
       window.removeEventListener('online', onOnline);
       window.clearInterval(id);
     };
-  }, [ownerId]);
+  }, [refresh, ownerId]);
 
   if (pending.length === 0 && dead.length === 0) return null;
 
