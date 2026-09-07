@@ -1,5 +1,8 @@
 # Requesting a home pickup (citizens)
 
+> **Where to find it:** sidebar **Collections** → **New request**
+> (`/citizen/textile-collections/new`)
+
 ## Before you start
 
 Have ready: your name, phone number, email, pickup address, and a rough idea of how much you have — bag count or weight. Either one is enough; you do not need a weighing machine.

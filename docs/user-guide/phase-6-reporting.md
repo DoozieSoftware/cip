@@ -1,6 +1,20 @@
 # Phase 6 — Reports and improvement
 
+> **Where to find it:** sidebar **Capacity** for the dashboard and Export CSV
+> (`/operations/textile-collections/capacity`); sidebar **History** for the archive
+> (`/operations/textile-collections/completed`)
+
 **What it is:** partner visibility into service quality and economics.
+
+## Flow
+
+```mermaid
+flowchart LR
+    A[Collections<br/>happen] --> B[Dashboard<br/>totals]
+    B --> C[Export CSV<br/>per-collection rows]
+    C --> D[Reconcile with<br/>History archive]
+    D --> E[Partner review &<br/>baseline targets]
+```
 
 ## Dashboard (Capacity page)
 

@@ -1,5 +1,8 @@
 # Phase 1 — Drop-off service
 
+> **Citizens:** sidebar **Collections → New request**, choose “I’ll go to the centre.”
+> **Staff:** sidebar **Receipt** (`/operations/textile-collections/receipt`).
+
 **What it is:** citizens bring bags to a Dr. Linen collection centre instead of waiting for a truck.
 
 ## How it works
@@ -9,6 +12,18 @@
 3. Staff approve the booking, which confirms the drop-off window.
 4. The citizen brings the bags; counter staff record the actual quantity with a proof photo.
 5. The citizen’s page updates to **received**.
+
+## Flow
+
+```mermaid
+flowchart TD
+    A[Citizen books drop-off] --> B[Staff approve]
+    B --> C[Citizen takes bags to centre]
+    C --> D[Staff find booking by<br/>reference or phone]
+    D --> E[Weigh bags + proof photo]
+    E --> F[Confirm receipt]
+    F --> G[Citizen page: received]
+```
 
 ## Rules
 

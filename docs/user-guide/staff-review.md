@@ -1,5 +1,8 @@
 # Reviewing requests (staff)
 
+> **Where to find it:** sidebar **Reviews**
+> (`/operations/textile-collections/review`); tap a request for its detail page
+
 ## Opening the queue
 
 Log in as the department officer and open **Reviews**. New citizen bookings arrive with status **pending review**, newest first. Use search, zone, and category filters to work through the list.

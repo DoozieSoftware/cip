@@ -1,5 +1,8 @@
 # Running dispatch and recording collections (staff)
 
+> **Where to find it:** sidebar **Dispatch**
+> (`/operations/textile-collections/dispatch`); tap a trip for its manifest
+
 ## The manifest
 
 Open the trip in **Dispatch**. Each stop shows, in order:

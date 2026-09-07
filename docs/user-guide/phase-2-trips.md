@@ -1,5 +1,9 @@
 # Phase 2 — Driver trips
 
+> **Staff:** sidebar **Trips** to schedule (`/operations/textile-collections/schedule`),
+> sidebar **Dispatch** to run the trip (`/operations/textile-collections/dispatch`).
+> **Citizens:** sidebar **Collections** to track the booking.
+
 **What it is:** approved home pickups grouped into executable driver trips.
 
 ## How it works
@@ -9,6 +13,20 @@
 3. The driver opens the mobile-friendly manifest: next stop, address, maps link, call action, estimates, instructions, and citizen photo.
 4. Each stop is recorded **collected** (actual bags, kg, proof photo) or **missed** (reason).
 5. Citizens see their confirmed date and window, then the final outcome.
+
+## Flow
+
+```mermaid
+flowchart TD
+    A[Approved pickups<br/>ready to group] --> B[Staff select one<br/>zone's requests]
+    B --> C[Set date, window,<br/>driver, vehicle]
+    C --> D[Apply suggested<br/>stop order]
+    D --> E[Schedule trip DRL-]
+    E --> F[Driver works manifest<br/>stop by stop]
+    F --> G{Each stop}
+    G -->|Collected| H[Actual qty + photo]
+    G -->|Missed| I[Reason + later trip]
+```
 
 ## Rules
 

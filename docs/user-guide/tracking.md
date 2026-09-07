@@ -1,5 +1,9 @@
 # Tracking your request (citizens)
 
+> **Where to find it:** sidebar **Collections** → your requests list
+> (`/citizen/textile-collections`), tap any booking for its detail page
+> (`/citizen/textile-collections/:id`)
+
 ## Finding your booking
 
 - Open **Textile Collection → My requests** and look for your **`DLN-`** reference.

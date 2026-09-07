@@ -1,5 +1,8 @@
 # Confirming centre receipts (staff)
 
+> **Where to find it:** sidebar **Receipt**
+> (`/operations/textile-collections/receipt`)
+
 For citizens who bring bags to the centre themselves.
 
 ## Step by step

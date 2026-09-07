@@ -1,5 +1,8 @@
 # Using centre drop-off (citizens)
 
+> **Where to find it:** sidebar **Collections** → **New request**, then choose “I’ll go to the centre”
+> (`/citizen/textile-collections/new`)
+
 Drop-off is the right choice for any amount — one bag or twenty.
 
 ## Step by step

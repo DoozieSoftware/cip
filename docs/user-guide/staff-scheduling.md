@@ -1,5 +1,8 @@
 # Planning and scheduling trips (staff)
 
+> **Where to find it:** sidebar **Trips**
+> (`/operations/textile-collections/schedule`)
+
 ## Ground rules
 
 - One trip = **one service zone**. Requests from two zones cannot share a trip.

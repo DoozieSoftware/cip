@@ -15,6 +15,34 @@ Welcome. This guide explains how the collection service works and how to use it 
 
 ## Guide pages
 
+### End-to-end flow
+
+```mermaid
+flowchart LR
+    A[Citizen books<br/>pickup or drop-off] --> B{Staff review}
+    B -->|Approve pickup| C[Schedule trip<br/>DRL-]
+    B -->|Approve drop-off| D[Centre receipt]
+    C --> E[Dispatch &<br/>collect]
+    E --> F[History &<br/>reports]
+    D --> F
+    B -->|Reject| G[Reason shown<br/>to citizen]
+```
+
+### Where is everything? (sidebar → page)
+
+| Sidebar | Page |
+|---|---|
+| Collections (citizen) → New request | `/citizen/textile-collections/new` |
+| Collections (citizen) → list / detail | `/citizen/textile-collections`, `/citizen/textile-collections/:id` |
+| Reviews | `/operations/textile-collections/review` |
+| Trips | `/operations/textile-collections/schedule` |
+| Receipt | `/operations/textile-collections/receipt` |
+| Dispatch | `/operations/textile-collections/dispatch` |
+| History | `/operations/textile-collections/completed` |
+| Device uploads | `/operations/textile-collections/recovery` |
+| Server failures | `/operations/textile-collections/offline-recovery` |
+| Capacity | `/operations/textile-collections/capacity` |
+
 ### Citizens
 
 - [Requesting a home pickup](citizen-pickup.md)
