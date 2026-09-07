@@ -7,6 +7,7 @@ import {
   CategoryFilter,
   DeskPage,
   DeskStates,
+  MethodBadge,
   Pager,
   SearchBox,
   StatusBadge,
@@ -18,8 +19,9 @@ import {
 } from './shared';
 
 const HISTORY_FILTERS: Array<{ value: string; label: string }> = [
-  { value: 'picked_up,missed,rejected,cancelled', label: 'All' },
+  { value: 'picked_up,received_at_centre,missed,rejected,cancelled', label: 'All' },
   { value: 'picked_up', label: 'Collected' },
+  { value: 'received_at_centre', label: 'Drop-off received' },
   { value: 'missed', label: 'Missed' },
   { value: 'rejected', label: 'Rejected' },
   { value: 'cancelled', label: 'Cancelled' },
@@ -30,8 +32,11 @@ export default function TextileCompletedPage(): JSX.Element {
   const [search, setSearch] = useState('');
   const [zoneId, setZoneId] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [statusFilter, setStatusFilter] = useState('picked_up,missed,rejected,cancelled');
+  const [statusFilter, setStatusFilter] = useState(
+    'picked_up,received_at_centre,missed,rejected,cancelled',
+  );
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
 
   const queue = useTextileQueue({
     status: statusFilter,
@@ -39,6 +44,7 @@ export default function TextileCompletedPage(): JSX.Element {
     page,
     zoneId: zoneId || undefined,
     categoryId: categoryId || undefined,
+    perPage,
     autoRefresh: true,
     enabled: desk.ready && desk.isDrLinen,
     departmentId: desk.departmentId,
@@ -110,6 +116,7 @@ export default function TextileCompletedPage(): JSX.Element {
               <th className="px-3 py-2.5">Reference</th>
               <th className="px-3 py-2.5">Requester</th>
               <th className="px-3 py-2.5">Zone</th>
+              <th className="px-3 py-2.5">Method</th>
               <th className="px-3 py-2.5">Est. volume</th>
               <th className="px-3 py-2.5">Collected</th>
               <th className="px-3 py-2.5">Status</th>
@@ -134,6 +141,9 @@ export default function TextileCompletedPage(): JSX.Element {
               </td>
               <td className="px-3 py-2.5">{item.requester_name}</td>
               <td className="px-3 py-2.5">{item.service_zone?.name ?? '—'}</td>
+              <td className="px-3 py-2.5">
+                <MethodBadge method={item.collection_method} />
+              </td>
               <td className="whitespace-nowrap px-3 py-2.5 text-xs">
                 {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
               </td>
@@ -158,7 +168,15 @@ export default function TextileCompletedPage(): JSX.Element {
         </TableShell>
       </DeskStates>
 
-      <Pager meta={queue.data?.meta} onPage={setPage} />
+      <Pager
+        meta={queue.data?.meta}
+        onPage={setPage}
+        perPage={perPage}
+        onPerPageChange={(size) => {
+          setPerPage(size);
+          setPage(1);
+        }}
+      />
     </DeskPage>
   );
 }

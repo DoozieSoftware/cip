@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- dispatch-board primitives (hooks, filters, pager) are intentionally colocated as one portal pattern */
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import type { JSX, ReactNode } from 'react';
+import { useEffect, useState, type JSX, type ReactNode } from 'react';
 import { IconChevronLeft, IconChevronRight, IconSearch, IconX } from '@tabler/icons-react';
 import { EmptyState, ErrorState, Spinner, cx } from '../../../../shared/ui';
 import { useDepartmentSelection } from '../../context/DepartmentSelectionContext';
@@ -18,6 +18,7 @@ export const STATUS_LABELS: Record<string, string> = {
   ready_to_group: 'Ready to schedule',
   scheduled: 'Scheduled',
   picked_up: 'Collected',
+  received_at_centre: 'Drop-off received',
   missed: 'Missed',
   rejected: 'Rejected',
   cancelled: 'Cancelled',
@@ -34,6 +35,7 @@ export const STATUS_STYLES: Record<string, string> = {
   ready_to_group: 'bg-blue-50 text-blue-800',
   scheduled: 'bg-indigo-50 text-indigo-800',
   picked_up: 'bg-emerald-50 text-emerald-800',
+  received_at_centre: 'bg-teal-50 text-teal-800',
   missed: 'bg-orange-50 text-orange-800',
   rejected: 'bg-rose-50 text-rose-800',
   cancelled: 'bg-neutral-100 text-neutral-600',
@@ -154,7 +156,7 @@ export function DeskPage({
   children,
   desk,
 }: {
-  title: string;
+  title: ReactNode;
   description: string;
   toolbar?: ReactNode;
   children: ReactNode;
@@ -182,7 +184,7 @@ export function DeskPage({
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
           Dr. Linen operations
         </p>
-        <h1 className="mt-0.5 text-[22px] font-semibold tracking-[-0.025em] leading-none text-[var(--color-ink)]">
+        <h1 className="mt-0.5 flex flex-wrap items-center gap-2.5 text-[22px] font-semibold tracking-[-0.025em] leading-tight text-[var(--color-ink)]">
           {title}
         </h1>
         <p className="mt-1 text-[13px] leading-4 text-[var(--color-text-secondary)]">
@@ -209,6 +211,21 @@ export function SearchBox({
   onChange: (next: string) => void;
   placeholder?: string;
 }): JSX.Element {
+  const [localValue, setLocalValue] = useState(value);
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localValue !== value) {
+        onChange(localValue);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [localValue, onChange, value]);
+
   return (
     <div className="relative w-full max-w-md">
       <IconSearch
@@ -216,17 +233,20 @@ export function SearchBox({
         stroke={1.65}
       />
       <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
+        value={localValue}
+        onChange={(event) => setLocalValue(event.target.value)}
         placeholder={placeholder}
         aria-label="Search pickup requests"
         className="min-h-10 w-full rounded-full border border-[var(--color-border)] bg-white pl-9 pr-8 text-sm focus-visible:border-[var(--color-border-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
       />
-      {value ? (
+      {localValue ? (
         <button
           type="button"
           aria-label="Clear search"
-          onClick={() => onChange('')}
+          onClick={() => {
+            setLocalValue('');
+            onChange('');
+          }}
           className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
         >
           <IconX className="h-3.5 w-3.5" />
@@ -407,36 +427,72 @@ export function DeskStates({
   return <>{children}</>;
 }
 
+export const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
+
 export function Pager({
   meta,
   onPage,
+  perPage = PER_PAGE,
+  onPerPageChange,
 }: {
-  meta: { page: number; total: number; last_page: number } | undefined;
+  meta: { page: number; total: number; last_page: number; per_page?: number } | undefined;
   onPage: (page: number) => void;
+  perPage?: number;
+  onPerPageChange?: (size: number) => void;
 }): JSX.Element | null {
-  if (!meta || meta.total <= PER_PAGE) return null;
+  if (!meta || meta.total <= 0) return null;
+  if (meta.total <= perPage && !onPerPageChange) return null;
+
   return (
     <nav
-      className="flex items-center justify-between border-t border-[var(--color-border-faint)] pt-4"
+      className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-[var(--color-border-faint)] pt-4"
       aria-label="Pagination"
     >
-      <p className="text-xs text-[var(--color-text-secondary)]">
-        {meta.total} request{meta.total === 1 ? '' : 's'} · page {meta.page} of {meta.last_page}
-      </p>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--color-text-secondary)]">
+        <p>
+          {meta.total} request{meta.total === 1 ? '' : 's'} · page {meta.page} of {meta.last_page}
+        </p>
+        {onPerPageChange ? (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[var(--color-text-tertiary)]">|</span>
+            <span>Show:</span>
+            <div className="inline-flex rounded-lg border border-[var(--color-border)] bg-white p-0.5">
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => onPerPageChange(size)}
+                  className={cx(
+                    'rounded-md px-2 py-0.5 text-xs font-medium transition',
+                    perPage === size
+                      ? 'bg-[var(--color-ink)] text-white'
+                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-ink)]',
+                  )}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+      <div className="flex items-center gap-2">
         <button
           type="button"
           disabled={meta.page <= 1}
           onClick={() => onPage(Math.max(1, meta.page - 1))}
-          className="inline-flex min-h-11 items-center gap-1 rounded-full border border-[var(--color-border)] bg-white px-3 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 disabled:opacity-40"
+          className="inline-flex min-h-10 items-center gap-1 rounded-full border border-[var(--color-border)] bg-white px-3 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 disabled:opacity-40"
         >
           <IconChevronLeft className="h-4 w-4" stroke={1.65} /> Prev
         </button>
+        <span className="text-xs font-medium text-[var(--color-ink)]">
+          {meta.page} / {meta.last_page}
+        </span>
         <button
           type="button"
           disabled={meta.page >= meta.last_page}
           onClick={() => onPage(meta.page + 1)}
-          className="inline-flex min-h-11 items-center gap-1 rounded-full border border-[var(--color-border)] bg-white px-3 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 disabled:opacity-40"
+          className="inline-flex min-h-10 items-center gap-1 rounded-full border border-[var(--color-border)] bg-white px-3 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 disabled:opacity-40"
         >
           Next <IconChevronRight className="h-4 w-4" stroke={1.65} />
         </button>

@@ -45,3 +45,35 @@ describe('useTextileQueue', () => {
     );
   });
 });
+
+describe('StatusBadge', () => {
+  it('renders received_at_centre status with clear drop-off label', async () => {
+    const { render, screen } = await import('@testing-library/react');
+    const { StatusBadge } = await import('./shared');
+
+    render(<StatusBadge status="received_at_centre" />);
+    expect(screen.getByText('Drop-off received')).toBeDefined();
+  });
+});
+
+describe('Pager', () => {
+  it('renders per-page size options when onPerPageChange is provided', async () => {
+    const { render, screen, fireEvent } = await import('@testing-library/react');
+    const { Pager } = await import('./shared');
+    const onPerPageChange = vi.fn();
+
+    render(
+      <Pager
+        meta={{ page: 1, total: 80, last_page: 4, per_page: 25 }}
+        onPage={vi.fn()}
+        perPage={25}
+        onPerPageChange={onPerPageChange}
+      />,
+    );
+
+    expect(screen.getByText('Show:')).toBeDefined();
+    const btn50 = screen.getByRole('button', { name: '50' });
+    fireEvent.click(btn50);
+    expect(onPerPageChange).toHaveBeenCalledWith(50);
+  });
+});

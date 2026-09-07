@@ -96,7 +96,11 @@ export default function TextileStaffDetailPage(): JSX.Element {
                 <Detail label="Email" value={item.contact_email} />
                 <Detail
                   label="Requester type"
-                  value={item.requester_type === 'rwa' ? `RWA — ${''}` : 'Individual'}
+                  value={
+                    item.requester_type === 'rwa'
+                      ? `RWA — ${item.rwa_name || 'Community'}`
+                      : 'Individual'
+                  }
                 />
                 <Detail label="Pickup address" value={item.pickup_address} />
                 <Detail label="Zone" value={item.service_zone?.name ?? '—'} />
@@ -211,6 +215,71 @@ export default function TextileStaffDetailPage(): JSX.Element {
                     className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-danger)]/30 bg-white px-5 text-sm font-medium text-[var(--color-danger)] transition hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)] focus-visible:ring-offset-2"
                   >
                     Reject
+                  </button>
+                </div>
+              </section>
+            ) : null}
+
+            {item.status === 'ready_to_group' && item.collection_method !== 'dropoff' ? (
+              <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
+                <h2 className="text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+                  Trip scheduling
+                </h2>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                  This request has been approved and is ready to be scheduled into a collection
+                  trip.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void navigate('/operations/textile-collections/schedule')}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white transition hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
+                  >
+                    Open trip scheduling desk
+                  </button>
+                </div>
+              </section>
+            ) : null}
+
+            {item.collection_method === 'dropoff' &&
+            (item.status === 'ready_to_group' || item.status === 'dropoff_awaiting_drop') ? (
+              <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
+                <h2 className="text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+                  Drop-off receipt
+                </h2>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                  Citizen can bring textiles to the designated centre. Record bags, weight, and
+                  photo proof upon arrival.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void navigate('/operations/textile-collections/receipt')}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white transition hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
+                  >
+                    Open centre receipt desk
+                  </button>
+                </div>
+              </section>
+            ) : null}
+
+            {item.status === 'scheduled' ? (
+              <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
+                <h2 className="text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+                  Active trip
+                </h2>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                  Scheduled for {item.scheduled_date ?? 'upcoming collection'}
+                  {item.batch?.reference ? ` · Trip ${item.batch.reference}` : ''}
+                  {item.batch?.driver_name ? ` · Driver: ${item.batch.driver_name}` : ''}.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void navigate('/operations/textile-collections/dispatch')}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white transition hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
+                  >
+                    Open dispatch board
                   </button>
                 </div>
               </section>

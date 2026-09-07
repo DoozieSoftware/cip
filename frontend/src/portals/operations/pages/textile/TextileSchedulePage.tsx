@@ -142,6 +142,7 @@ export default function TextileSchedulePage(): JSX.Element {
   const [zoneId, setZoneId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
   const [selected, setSelected] = useState<string[]>([]);
   const [date, setDate] = useState('');
   const [windowStart, setWindowStart] = useState('');
@@ -161,6 +162,7 @@ export default function TextileSchedulePage(): JSX.Element {
     zoneId: zoneId || undefined,
     categoryId: categoryId || undefined,
     collectionMethod: 'premises',
+    perPage,
     autoRefresh: selected.length === 0,
     enabled: desk.ready && desk.isDrLinen,
     departmentId: desk.departmentId,
@@ -314,7 +316,16 @@ export default function TextileSchedulePage(): JSX.Element {
   return (
     <DeskPage
       desk={desk}
-      title="Trip scheduling"
+      title={
+        <>
+          <span>Trip scheduling</span>
+          {queue.data?.meta?.total !== undefined ? (
+            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-800 border border-blue-200">
+              {queue.data.meta.total} ready
+            </span>
+          ) : null}
+        </>
+      }
       description="Approved requests grouped by area. Pick a zone, set a date and window, then schedule the trip."
       toolbar={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -390,7 +401,29 @@ export default function TextileSchedulePage(): JSX.Element {
                   ) : null}
                 </div>
                 <label className="text-xs font-medium">
-                  Pickup date
+                  <div className="flex items-center justify-between">
+                    <span>Pickup date</span>
+                    <span className="flex gap-1 font-normal">
+                      <button
+                        type="button"
+                        onClick={() => setDate(new Date().toISOString().slice(0, 10))}
+                        className="rounded px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
+                      >
+                        Today
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const tomorrow = new Date();
+                          tomorrow.setDate(tomorrow.getDate() + 1);
+                          setDate(tomorrow.toISOString().slice(0, 10));
+                        }}
+                        className="rounded px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
+                      >
+                        Tomorrow
+                      </button>
+                    </span>
+                  </div>
                   <input
                     type="date"
                     value={date}
@@ -729,7 +762,15 @@ export default function TextileSchedulePage(): JSX.Element {
         </div>
       </DeskStates>
 
-      <Pager meta={queue.data?.meta} onPage={setPage} />
+      <Pager
+        meta={queue.data?.meta}
+        onPage={setPage}
+        perPage={perPage}
+        onPerPageChange={(size) => {
+          setPerPage(size);
+          setPage(1);
+        }}
+      />
     </DeskPage>
   );
 }

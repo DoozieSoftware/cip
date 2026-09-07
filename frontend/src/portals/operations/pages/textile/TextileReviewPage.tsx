@@ -27,6 +27,7 @@ export default function TextileReviewPage(): JSX.Element {
   const [categoryId, setCategoryId] = useState('');
   const [method, setMethod] = useState('');
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
   const [selected, setSelected] = useState<string[]>([]);
   const [approveTarget, setApproveTarget] = useState<string[] | null>(null);
 
@@ -37,11 +38,13 @@ export default function TextileReviewPage(): JSX.Element {
     zoneId: zoneId || undefined,
     categoryId: categoryId || undefined,
     collectionMethod: method || undefined,
+    perPage,
     autoRefresh: selected.length === 0 && approveTarget === null,
     enabled: desk.ready && desk.isDrLinen,
     departmentId: desk.departmentId,
   });
   const rows = queue.data?.data ?? [];
+  const totalWaiting = queue.data?.meta?.total;
   const onChanged = () => {
     setSelected([]);
     void queue.refetch();
@@ -57,14 +60,23 @@ export default function TextileReviewPage(): JSX.Element {
   });
 
   const allSelected = rows.length > 0 && rows.every((r) => selected.includes(r.id));
-  const selectedBags = rows
-    .filter((r) => selected.includes(r.id))
-    .reduce((sum, r) => sum + (r.estimated_bags ?? 0), 0);
+  const selectedItems = rows.filter((r) => selected.includes(r.id));
+  const selectedBags = selectedItems.reduce((sum, r) => sum + (r.estimated_bags ?? 0), 0);
+  const selectedWeight = selectedItems.reduce((sum, r) => sum + (r.estimated_weight_kg ?? 0), 0);
 
   return (
     <DeskPage
       desk={desk}
-      title="Pickup reviews"
+      title={
+        <>
+          <span>Pickup reviews</span>
+          {totalWaiting !== undefined ? (
+            <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800 border border-amber-200">
+              {totalWaiting} waiting
+            </span>
+          ) : null}
+        </>
+      }
       description="Select requests to approve in a batch, or open a row to decide individually. Rejecting always needs a reason the requester will see, so it lives in the detail view."
       toolbar={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -112,6 +124,7 @@ export default function TextileReviewPage(): JSX.Element {
             <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-4 py-3">
               <p className="text-sm font-medium">
                 {selected.length} selected · {selectedBags} bags
+                {selectedWeight > 0 ? ` · ~${selectedWeight.toFixed(1)} kg` : ''}
               </p>
               <button
                 type="button"
@@ -226,7 +239,15 @@ export default function TextileReviewPage(): JSX.Element {
         </div>
       </DeskStates>
 
-      <Pager meta={queue.data?.meta} onPage={setPage} />
+      <Pager
+        meta={queue.data?.meta}
+        onPage={setPage}
+        perPage={perPage}
+        onPerPageChange={(size) => {
+          setPerPage(size);
+          setPage(1);
+        }}
+      />
 
       <ConfirmActionDialog
         open={approveTarget !== null}
