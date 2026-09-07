@@ -206,7 +206,10 @@ final class TextileRescheduleService
         return $collection->refresh()->load(['serviceZone', 'batch', 'department']);
     }
 
-    /** @param array<string,mixed>|null $before @param array<string,mixed> $after */
+    /**
+     * @param  array<string,mixed>|null  $before
+     * @param  array<string,mixed>  $after
+     */
     private function audit(User $actor, string $entityId, string $action, ?array $before, array $after): void
     {
         $request = request();

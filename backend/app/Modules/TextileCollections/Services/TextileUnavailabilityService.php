@@ -13,7 +13,7 @@ final class TextileUnavailabilityService
     /**
      * Return unavailable slots for a zone intersecting the range.
      *
-     * @return list<array<string,mixed>>
+     * @return array<int,array<string,mixed>>
      */
     public function listForZone(string $zoneId, ?string $from = null, ?string $to = null): array
     {

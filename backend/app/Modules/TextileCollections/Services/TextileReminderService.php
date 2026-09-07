@@ -69,7 +69,7 @@ final class TextileReminderService
                         'date' => $collection->scheduled_date?->toDateString() ?? '',
                         'window' => $this->formatWindow($collection->scheduled_window_start, $collection->scheduled_window_end),
                         'tracking_number' => $collection->reference,
-                        'partner' => $collection->department?->name ?? 'Dr. Linen',
+                        'partner' => $collection->department !== null ? $collection->department->name : 'Dr. Linen',
                     ],
                     null,
                     ['channel' => 'sms'],

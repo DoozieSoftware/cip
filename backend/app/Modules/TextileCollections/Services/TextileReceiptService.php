@@ -83,6 +83,10 @@ final class TextileReceiptService
         });
     }
 
+    /**
+     * @param  array<string,mixed>|null  $before
+     * @param  array<string,mixed>  $after
+     */
     private function audit(User $actor, string $entityId, string $action, ?array $before, array $after): void
     {
         $requestId = request()->attributes->get('trace_id');

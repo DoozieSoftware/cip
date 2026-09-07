@@ -45,9 +45,11 @@ final class SendTextileRescheduledNotification
         }
 
         $date = $event->newSchedule['scheduled_date'] ?? $collection->scheduled_date?->toDateString() ?? '';
+        $windowStart = $event->newSchedule['scheduled_window_start'] ?? $collection->scheduled_window_start;
+        $windowEnd = $event->newSchedule['scheduled_window_end'] ?? $collection->scheduled_window_end;
         $window = $this->formatWindow(
-            $event->newSchedule['scheduled_window_start'] ?? $collection->scheduled_window_start,
-            $event->newSchedule['scheduled_window_end'] ?? $collection->scheduled_window_end,
+            is_string($windowStart) ? $windowStart : null,
+            is_string($windowEnd) ? $windowEnd : null,
         );
         $partnerName = $collection->department !== null ? $collection->department->name : 'Dr. Linen';
 

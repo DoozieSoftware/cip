@@ -47,6 +47,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $missed_pickup_reason
  * @property Carbon|null $picked_up_at
  * @property Carbon|null $submitted_at
+ * @property Carbon|null $dropoff_confirmed_at
+ * @property Carbon|null $dropoff_valid_from
+ * @property Carbon|null $dropoff_valid_until
+ * @property Carbon|null $previous_scheduled_date
+ * @property Carbon|null $rescheduled_at
+ * @property Carbon|null $reminder_sent_at
+ * @property Carbon|null $offline_queued_at
  * @property Carbon|null $capacity_checked_at
  * @property-read Report|null $report
  * @property-read User|null $citizen
