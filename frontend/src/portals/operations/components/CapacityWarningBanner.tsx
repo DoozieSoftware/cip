@@ -9,9 +9,6 @@ export type CapacityWarningBannerProps = {
   isError?: boolean;
   errorMessage?: string;
   onRetry?: () => void;
-  onRequestException?: () => void;
-  requestExceptionLabel?: string;
-  isRequestingException?: boolean;
   className?: string;
 };
 
@@ -21,9 +18,6 @@ export function CapacityWarningBanner({
   isError,
   errorMessage,
   onRetry,
-  onRequestException,
-  requestExceptionLabel = 'Request exception',
-  isRequestingException,
   className,
 }: CapacityWarningBannerProps): JSX.Element | null {
   if (isLoading) {
@@ -104,21 +98,6 @@ export function CapacityWarningBanner({
               {evaluation.effective_rule.guidance_text}
             </p>
           ) : null}
-          {onRequestException ? (
-            <div className="mt-2">
-              <button
-                type="button"
-                disabled={!!isRequestingException}
-                onClick={onRequestException}
-                className="inline-flex h-7 items-center rounded-full bg-rose-700 px-3.5 text-[11px] font-medium text-white disabled:opacity-40"
-              >
-                {isRequestingException ? 'Requesting…' : requestExceptionLabel}
-              </button>
-              <p className="mt-1 text-[11px] text-rose-700">
-                A reason is required — an authorised partner must approve the override.
-              </p>
-            </div>
-          ) : null}
         </div>
       ) : null}
 
@@ -148,21 +127,6 @@ export function CapacityWarningBanner({
             <p className="mt-1 text-[11px] text-amber-700">
               {evaluation.effective_rule.guidance_text}
             </p>
-          ) : null}
-          {onRequestException ? (
-            <div className="mt-2">
-              <button
-                type="button"
-                disabled={!!isRequestingException}
-                onClick={onRequestException}
-                className="inline-flex h-7 items-center rounded-full border border-amber-300 bg-white px-3.5 text-[11px] font-medium text-amber-800 disabled:opacity-40"
-              >
-                {isRequestingException ? 'Requesting…' : requestExceptionLabel}
-              </button>
-              <p className="mt-1 text-[11px] text-amber-700">
-                Explain why this trip needs an exception — a partner approver will decide.
-              </p>
-            </div>
           ) : null}
         </div>
       ) : null}

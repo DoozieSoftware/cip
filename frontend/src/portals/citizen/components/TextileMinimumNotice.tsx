@@ -9,7 +9,6 @@ export interface TextileMinimumNoticeProps {
   isLoading?: boolean;
   isError?: boolean;
   collectionMethod?: TextileCollectionMethod | null;
-  onRequestException?: () => void;
   onRetry?: () => void;
 }
 
@@ -25,18 +24,16 @@ export const isBelowMinimum = (
   const hasMinWeight = minimum.min_weight_kg !== null && minimum.min_weight_kg !== undefined;
   if (!hasMinBags && !hasMinWeight) return false;
 
-  const bagBelow =
-    hasMinBags &&
-    estimatedBags !== null &&
-    estimatedBags !== undefined &&
-    estimatedBags < (minimum.min_bags as number);
-  const weightBelow =
-    hasMinWeight &&
-    estimatedWeightKg !== null &&
-    estimatedWeightKg !== undefined &&
-    estimatedWeightKg < (minimum.min_weight_kg as number);
+  const checks = [
+    hasMinBags && estimatedBags !== null && estimatedBags !== undefined
+      ? estimatedBags >= (minimum.min_bags as number)
+      : null,
+    hasMinWeight && estimatedWeightKg !== null && estimatedWeightKg !== undefined
+      ? estimatedWeightKg >= (minimum.min_weight_kg as number)
+      : null,
+  ].filter((check): check is boolean => check !== null);
 
-  return Boolean(bagBelow || weightBelow);
+  return checks.length > 0 && !checks.some(Boolean);
 };
 
 export function TextileMinimumNotice({
@@ -46,7 +43,6 @@ export function TextileMinimumNotice({
   isLoading = false,
   isError = false,
   collectionMethod = null,
-  onRequestException,
   onRetry,
 }: TextileMinimumNoticeProps): JSX.Element {
   const isDropoff = collectionMethod === 'dropoff';
@@ -76,8 +72,7 @@ export function TextileMinimumNotice({
           Could not check the minimum right now.
         </p>
         <p className="mt-1 text-[11px] leading-4 text-red-600">
-          You can still send your request — a person will review it before scheduling. We never
-          reject silently.
+          Retry before sending a home-pickup request. Drop-off accepts any amount.
         </p>
         {onRetry ? (
           <button
@@ -136,21 +131,12 @@ export function TextileMinimumNotice({
       {belowMinimum ? (
         <div className="mt-3 rounded-md border border-amber-200 bg-white p-3">
           <p className="text-xs font-semibold text-amber-900">
-            You have less than the usual minimum — that is OK
+            Below the pickup minimum - home pickup needs {minText}
           </p>
           <p className="mt-1 text-[11px] leading-4 text-[var(--color-text-secondary)]">
-            We never reject silently. Add a short note and a person will review. For example:
-            urgent, valuable clothes, or you can wait for the next nearby pickup.
+            Small loads waste a trip. Add more bags, or choose drop-off - any amount is accepted at
+            the centre.
           </p>
-          {onRequestException ? (
-            <button
-              type="button"
-              onClick={onRequestException}
-              className="mt-3 inline-flex min-h-11 items-center rounded-full bg-[var(--color-ink)] px-5 text-xs font-medium text-white"
-            >
-              Add a short note for review
-            </button>
-          ) : null}
         </div>
       ) : (
         <p className="mt-2 text-[11px] text-[var(--color-text-secondary)]">

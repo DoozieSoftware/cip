@@ -130,10 +130,14 @@ final class TextileCapacityService
         $totalWeight = 0.0;
         $stops = $requests->count();
         $categories = [];
+        $hasBagEstimate = false;
+        $hasWeightEstimate = false;
 
         foreach ($requests as $req) {
             $totalBags += (int) ($req->estimated_bags ?? 0);
             $totalWeight += (float) ($req->estimated_weight_kg ?? 0);
+            $hasBagEstimate = $hasBagEstimate || $req->estimated_bags !== null;
+            $hasWeightEstimate = $hasWeightEstimate || $req->estimated_weight_kg !== null;
 
             if (is_string($req->category) && $req->category !== '') {
                 $categories[$req->category] = true;
@@ -147,7 +151,7 @@ final class TextileCapacityService
             if ($effectiveRule->max_bags !== null && $totalBags > $effectiveRule->max_bags) {
                 $blockers[] = [
                     'code' => 'exceeds_max_bags',
-                    'message' => "Trip has {$totalBags} bags but zone limit is {$effectiveRule->max_bags} bags for this day. Remove stops or request a capacity override.",
+                    'message' => "Trip has {$totalBags} bags but zone limit is {$effectiveRule->max_bags} bags for this day. Remove stops or split the trip.",
                 ];
             } elseif ($effectiveRule->max_bags !== null && $totalBags >= (int) ($effectiveRule->max_bags * 0.85)) {
                 $warnings[] = [
@@ -160,7 +164,7 @@ final class TextileCapacityService
             if ($effectiveRule->max_weight_kg !== null && $totalWeight > $effectiveRule->max_weight_kg) {
                 $blockers[] = [
                     'code' => 'exceeds_max_weight',
-                    'message' => "Trip weight {$totalWeight} kg exceeds zone limit {$effectiveRule->max_weight_kg} kg. Adjust load or request an override.",
+                    'message' => "Trip weight {$totalWeight} kg exceeds zone limit {$effectiveRule->max_weight_kg} kg. Adjust the load or split the trip.",
                 ];
             } elseif ($effectiveRule->max_weight_kg !== null && $totalWeight >= $effectiveRule->max_weight_kg * 0.85) {
                 $warnings[] = [
@@ -173,7 +177,7 @@ final class TextileCapacityService
             if ($effectiveRule->max_stops !== null && $stops > $effectiveRule->max_stops) {
                 $blockers[] = [
                     'code' => 'exceeds_max_stops',
-                    'message' => "Trip has {$stops} stops but limit is {$effectiveRule->max_stops}. Split the trip or request an override.",
+                    'message' => "Trip has {$stops} stops but limit is {$effectiveRule->max_stops}. Split the trip.",
                 ];
             }
 
@@ -189,27 +193,31 @@ final class TextileCapacityService
                 }
             }
 
-            // Under minimum is a warning, not a blocker — requires exception workflow.
             if ($effectiveRule->min_bags !== null || $effectiveRule->min_weight_kg !== null) {
-                $belowMin = false;
+                $minimumChecks = [];
                 $minMsgParts = [];
 
-                if ($effectiveRule->min_bags !== null && $totalBags < $effectiveRule->min_bags && $totalBags > 0) {
-                    $belowMin = true;
-                    $minMsgParts[] = "{$totalBags} bags below minimum {$effectiveRule->min_bags}";
+                if ($effectiveRule->min_bags !== null && $hasBagEstimate) {
+                    $minimumChecks[] = $totalBags >= $effectiveRule->min_bags;
+
+                    if ($totalBags < $effectiveRule->min_bags) {
+                        $minMsgParts[] = "{$totalBags} bags below minimum {$effectiveRule->min_bags}";
+                    }
                 }
 
-                if ($effectiveRule->min_weight_kg !== null && $totalWeight < $effectiveRule->min_weight_kg && $totalWeight > 0) {
-                    $belowMin = true;
-                    $minMsgParts[] = "{$totalWeight} kg below minimum {$effectiveRule->min_weight_kg} kg";
+                if ($effectiveRule->min_weight_kg !== null && $hasWeightEstimate) {
+                    $minimumChecks[] = $totalWeight >= $effectiveRule->min_weight_kg;
+
+                    if ($totalWeight < $effectiveRule->min_weight_kg) {
+                        $minMsgParts[] = "{$totalWeight} kg below minimum {$effectiveRule->min_weight_kg} kg";
+                    }
                 }
 
-                if ($belowMin) {
+                if ($minimumChecks !== [] && ! in_array(true, $minimumChecks, true)) {
                     $guidance = is_string($effectiveRule->guidance_text) && $effectiveRule->guidance_text !== '' ? " {$effectiveRule->guidance_text}" : '';
-                    $warnings[] = [
+                    $blockers[] = [
                         'code' => 'below_minimum',
-                        'message' => 'Trip is '.implode(' and ', $minMsgParts).'.'.$guidance.' An approved exception is required to proceed.',
-                        'severity' => 'amber',
+                        'message' => 'Trip is '.implode(' and ', $minMsgParts).'.'.$guidance,
                     ];
                 }
             }
@@ -315,6 +323,47 @@ final class TextileCapacityService
         }
 
         return $query->orderByDesc('updated_at')->first();
+    }
+
+    public function assertPickupMinimum(
+        string $serviceZoneId,
+        string $departmentId,
+        ?int $estimatedBags,
+        ?float $estimatedWeightKg,
+        ?string $date = null,
+    ): void {
+        $rule = $this->getEffectiveRule($serviceZoneId, $departmentId, $date ?? now()->toDateString());
+
+        if (! $rule instanceof TextileCapacityRule) {
+            return;
+        }
+
+        $checks = [];
+        $minimums = [];
+
+        if ($rule->min_bags !== null && $estimatedBags !== null) {
+            $checks[] = $estimatedBags >= $rule->min_bags;
+            $minimums[] = "{$rule->min_bags} bags";
+        }
+
+        if ($rule->min_weight_kg !== null && $estimatedWeightKg !== null) {
+            $checks[] = $estimatedWeightKg >= $rule->min_weight_kg;
+            $minimums[] = "{$rule->min_weight_kg} kg";
+        }
+
+        if ($checks === [] || in_array(true, $checks, true)) {
+            return;
+        }
+
+        throw new ApiException(
+            'PICKUP_MINIMUM_NOT_MET',
+            'Home pickup requires at least '.implode(' or ', $minimums).'. Add more material or choose drop-off.',
+            422,
+            [
+                'min_bags' => $rule->min_bags,
+                'min_weight_kg' => $rule->min_weight_kg !== null ? (float) $rule->min_weight_kg : null,
+            ],
+        );
     }
 
     /**

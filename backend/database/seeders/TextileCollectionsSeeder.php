@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Modules\Departments\Models\Department;
+use App\Modules\TextileCollections\Models\TextileCapacityRule;
 use App\Modules\TextileCollections\Models\TextilePartnerCapability;
 use App\Modules\TextileCollections\Models\TextileServiceZone;
 use Illuminate\Database\Seeder;
@@ -53,7 +54,7 @@ final class TextileCollectionsSeeder extends Seeder
             ['code' => 'DRL-JAYANAGAR', 'name' => 'Jayanagar', 'lat' => 12.9250, 'lng' => 77.5938],
             ['code' => 'DRL-WHITEFIELD', 'name' => 'Whitefield', 'lat' => 12.9698, 'lng' => 77.7500],
         ] as $zone) {
-            TextileServiceZone::query()->updateOrCreate(
+            $serviceZone = TextileServiceZone::query()->updateOrCreate(
                 ['code' => $zone['code']],
                 [
                     'name' => $zone['name'],
@@ -67,6 +68,21 @@ final class TextileCollectionsSeeder extends Seeder
                     'dropoff_address' => 'Demo collection point — configure the verified address before production use.',
                     'readiness_instructions' => 'Keep textiles dry and packed in bags. Separate wet or hazardous waste.',
                     'active' => true,
+                ],
+            );
+
+            TextileCapacityRule::query()->updateOrCreate(
+                [
+                    'service_zone_id' => $serviceZone->id,
+                    'department_id' => $drLinen->id,
+                    'effective_from' => null,
+                    'effective_to' => null,
+                    'day_of_week' => null,
+                ],
+                [
+                    'min_bags' => 2,
+                    'min_weight_kg' => 4,
+                    'guidance_text' => 'Home pickup requires at least 2 bags or 4 kg. Drop-off accepts any amount.',
                 ],
             );
         }

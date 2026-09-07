@@ -135,7 +135,7 @@ function capacityRulePayload(TextileServiceZone $zone, array $overrides = []): a
         'max_weight_kg' => 50.0,
         'max_stops' => 8,
         'min_bags' => 2,
-        'min_weight_kg' => 5.0,
+        'min_weight_kg' => 4.0,
         'guidance_text' => 'Keep textiles dry and packed.',
         'category_allowlist' => ['clothes_waste'],
     ], $overrides);
@@ -292,10 +292,11 @@ it('evaluate batch over capacity returns blockers and ok false', function (): vo
         ->and(collect($eval['blockers'])->pluck('code')->contains('exceeds_max_bags'))->toBeTrue();
 });
 
-it('evaluate batch below minimum returns warning with guidance', function (): void {
+it('rejects a below-minimum home pickup while allowing drop-off', function (): void {
     $dept = capacityEnsurePartner('DR_LINEN');
     $zone = capacityZone($dept);
     $staff = capacityStaff($dept);
+    $citizen = capacityCitizen();
 
     Sanctum::actingAs($staff);
     $this->postJson('/api/v1/department/textile-capacity/rules', capacityRulePayload($zone, [
@@ -305,19 +306,70 @@ it('evaluate batch below minimum returns warning with guidance', function (): vo
         'guidance_text' => 'Please combine with neighbours.',
     ]))->assertCreated();
 
-    $req = capacityCreateRequest(capacityCitizen(), $zone, ['estimated_bags' => 1, 'estimated_weight_kg' => 2.0]);
-    $batch = capacityApproveAndSchedule($zone, $req, $staff, Carbon::tomorrow()->toDateString());
+    Sanctum::actingAs($citizen);
+    $this->postJson('/api/v1/textile-collection/requests', capacityPayload($zone, [
+        'estimated_bags' => 1,
+        'estimated_weight_kg' => 2.0,
+    ]))->assertUnprocessable()
+        ->assertJsonPath('code', 'PICKUP_MINIMUM_NOT_MET')
+        ->assertJsonPath('errors.min_bags', 5);
+
+    $this->postJson('/api/v1/textile-collection/requests', capacityPayload($zone, [
+        'collection_method' => 'dropoff',
+        'estimated_bags' => 1,
+        'estimated_weight_kg' => 2.0,
+    ]))->assertCreated();
+});
+
+it('blocks approval when an existing pickup is below the current minimum', function (): void {
+    $dept = capacityEnsurePartner('DR_LINEN');
+    $zone = capacityZone($dept);
+    $staff = capacityStaff($dept);
+    $request = capacityCreateRequest(capacityCitizen(), $zone, [
+        'estimated_bags' => 1,
+        'estimated_weight_kg' => 2.0,
+    ]);
 
     Sanctum::actingAs($staff);
-    $eval = $this->postJson("/api/v1/department/textile-batches/{$batch->id}/evaluate-capacity")->assertOk()->json('data');
+    $this->postJson('/api/v1/department/textile-capacity/rules', capacityRulePayload($zone, [
+        'min_bags' => 5,
+        'min_weight_kg' => 10,
+    ]))->assertCreated();
 
-    expect($eval['ok'])->toBeTrue()
-        ->and($eval['warnings'])->not->toBeEmpty();
+    $this->postJson("/api/v1/department/textile-collections/{$request->id}/approve")
+        ->assertUnprocessable()
+        ->assertJsonPath('code', 'PICKUP_MINIMUM_NOT_MET');
 
-    $below = collect($eval['warnings'])->firstWhere('code', 'below_minimum');
-    expect($below)->not->toBeNull()
-        ->and($below['message'])->toContain('below minimum')
-        ->and($below['message'])->toContain('Please combine');
+    expect($request->refresh()->status)->toBe(TextileCollectionRequest::STATUS_PENDING_REVIEW);
+});
+
+it('blocks scheduling when the trip date has a higher minimum', function (): void {
+    $dept = capacityEnsurePartner('DR_LINEN');
+    $zone = capacityZone($dept);
+    $staff = capacityStaff($dept);
+    $request = capacityCreateRequest(capacityCitizen(), $zone, [
+        'estimated_bags' => 1,
+        'estimated_weight_kg' => 2.0,
+    ]);
+
+    Sanctum::actingAs($staff);
+    $this->postJson("/api/v1/department/textile-collections/{$request->id}/approve")->assertOk();
+    $tomorrow = Carbon::tomorrow()->toDateString();
+    $this->postJson('/api/v1/department/textile-capacity/rules', capacityRulePayload($zone, [
+        'effective_from' => $tomorrow,
+        'min_bags' => 5,
+        'min_weight_kg' => 10,
+    ]))->assertCreated();
+
+    $this->postJson('/api/v1/department/textile-collections/schedule', [
+        'service_zone_id' => $zone->id,
+        'collection_request_ids' => [$request->id],
+        'collection_date' => $tomorrow,
+    ])->assertUnprocessable()
+        ->assertJsonPath('code', 'PICKUP_MINIMUM_NOT_MET');
+
+    expect($request->refresh()->status)->toBe(TextileCollectionRequest::STATUS_READY_TO_GROUP)
+        ->and(TextileCollectionBatch::query()->count())->toBe(0);
 });
 
 it('suggest stops returns ordered list and does not auto-apply', function (): void {

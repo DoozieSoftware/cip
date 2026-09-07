@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\DB;
 
 final class TextileCollectionService
 {
+    public function __construct(
+        private readonly TextileCapacityService $capacity,
+    ) {}
+
     public function create(
         User $citizen,
         TextileCollectionInput $input,
@@ -66,6 +70,15 @@ final class TextileCollectionService
                 'CATEGORY_NOT_SERVED',
                 'No collection partner serves this category at the selected zone.',
                 422,
+            );
+        }
+
+        if ($method === 'premises') {
+            $this->capacity->assertPickupMinimum(
+                serviceZoneId: $zone->id,
+                departmentId: (string) $departmentId,
+                estimatedBags: $input->estimatedBags,
+                estimatedWeightKg: $input->estimatedWeightKg,
             );
         }
 

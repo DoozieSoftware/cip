@@ -4,13 +4,11 @@ import { IconAlertTriangle, IconMapPin } from '@tabler/icons-react';
 import {
   assignTextileTrip,
   fetchCapacityRules,
-  requestCapacityException,
   scheduleTextileBatch,
   type TextileCapacityEvaluation,
   type TextileCapacityRule,
   type TextileCollectionListItem,
 } from '../../api/textileApi';
-import { ConfirmActionDialog } from '../../components/ConfirmActionDialog';
 import { CapacityWarningBanner } from '../../components/CapacityWarningBanner';
 import { SuggestedStopsHint } from '../../components/SuggestedStopsHint';
 import {
@@ -56,7 +54,7 @@ function buildProspectiveEvaluation(
     if (rule.max_bags !== null && totalBags > rule.max_bags) {
       blockers.push({
         code: 'exceeds_max_bags',
-        message: `Trip has ${totalBags} bags but zone limit is ${rule.max_bags} bags for this day. Remove stops or request a capacity override.`,
+        message: `Trip has ${totalBags} bags but zone limit is ${rule.max_bags} bags for this day. Remove stops or split the trip.`,
       });
     } else if (rule.max_bags !== null && totalBags >= Math.ceil(rule.max_bags * 0.85)) {
       warnings.push({
@@ -69,7 +67,7 @@ function buildProspectiveEvaluation(
     if (rule.max_weight_kg !== null && totalWeight > rule.max_weight_kg) {
       blockers.push({
         code: 'exceeds_max_weight',
-        message: `Trip weight ${totalWeight.toFixed(1)} kg exceeds zone limit ${rule.max_weight_kg} kg. Adjust load or request an override.`,
+        message: `Trip weight ${totalWeight.toFixed(1)} kg exceeds zone limit ${rule.max_weight_kg} kg. Adjust the load or split the trip.`,
       });
     } else if (rule.max_weight_kg !== null && totalWeight >= rule.max_weight_kg * 0.85) {
       warnings.push({
@@ -82,7 +80,7 @@ function buildProspectiveEvaluation(
     if (rule.max_stops !== null && stops > rule.max_stops) {
       blockers.push({
         code: 'exceeds_max_stops',
-        message: `Trip has ${stops} stops but limit is ${rule.max_stops}. Split the trip or request an override.`,
+        message: `Trip has ${stops} stops but limit is ${rule.max_stops}. Split the trip.`,
       });
     }
 
@@ -97,19 +95,22 @@ function buildProspectiveEvaluation(
       }
     }
 
-    const belowMinBags = rule.min_bags !== null && totalBags < rule.min_bags && totalBags > 0;
-    const belowMinWeight =
-      rule.min_weight_kg !== null && totalWeight < rule.min_weight_kg && totalWeight > 0;
-    if (belowMinBags || belowMinWeight) {
+    const hasBagEstimate = items.some((item) => item.estimated_bags !== null);
+    const hasWeightEstimate = items.some((item) => item.estimated_weight_kg !== null);
+    const minimumChecks = [
+      rule.min_bags !== null && hasBagEstimate ? totalBags >= rule.min_bags : null,
+      rule.min_weight_kg !== null && hasWeightEstimate ? totalWeight >= rule.min_weight_kg : null,
+    ].filter((check): check is boolean => check !== null);
+    if (minimumChecks.length > 0 && !minimumChecks.some(Boolean)) {
       const parts: string[] = [];
-      if (belowMinBags) parts.push(`${totalBags} bags below minimum ${rule.min_bags}`);
-      if (belowMinWeight)
+      if (rule.min_bags !== null && hasBagEstimate)
+        parts.push(`${totalBags} bags below minimum ${rule.min_bags}`);
+      if (rule.min_weight_kg !== null && hasWeightEstimate)
         parts.push(`${totalWeight.toFixed(1)} kg below minimum ${rule.min_weight_kg} kg`);
       const guidance = rule.guidance_text ? ` ${rule.guidance_text}` : '';
-      warnings.push({
+      blockers.push({
         code: 'below_minimum',
-        message: `Trip is ${parts.join(' and ')}.${guidance} An approved exception is required to proceed.`,
-        severity: 'amber',
+        message: `Trip is ${parts.join(' and ')}.${guidance}`,
       });
     }
   }
@@ -152,9 +153,6 @@ export default function TextileSchedulePage(): JSX.Element {
   const [vehicleLabel, setVehicleLabel] = useState('');
   const [instructions, setInstructions] = useState('');
   const [overrideReason, setOverrideReason] = useState('');
-  const [exceptionSuccess, setExceptionSuccess] = useState<string | null>(null);
-  const [exceptionError, setExceptionError] = useState<string | null>(null);
-  const [showExceptionDialog, setShowExceptionDialog] = useState(false);
 
   const queue = useTextileQueue({
     status: 'ready_to_group',
@@ -266,45 +264,6 @@ export default function TextileSchedulePage(): JSX.Element {
     !hasCapacityBlockers;
   const requestedSlotUnavailable = date !== '' && unavailableDates.includes(date);
 
-  const exceptionMutation = useMutation({
-    mutationFn: async (reason: string) => {
-      const target = selectedItems[0];
-      if (!target) throw new Error('Select at least one request');
-      const firstIssue =
-        prospectiveEvaluation?.blockers[0]?.code ??
-        prospectiveEvaluation?.warnings[0]?.code ??
-        'capacity_override';
-      const codeMap: Record<string, string> = {
-        exceeds_max_bags: 'capacity_override',
-        exceeds_max_weight: 'capacity_override',
-        exceeds_max_stops: 'capacity_override',
-        incompatible_category: 'vehicle_mismatch',
-        below_minimum: 'below_minimum',
-        near_max_bags: 'capacity_override',
-        near_max_weight: 'capacity_override',
-      };
-      const reason_code = codeMap[firstIssue] ?? 'capacity_override';
-      return requestCapacityException({
-        collectionId: target.id,
-        reason,
-        reason_code,
-        department_id: desk.departmentId,
-      });
-    },
-    onSuccess: () => {
-      setExceptionSuccess(
-        'Exception request submitted — a partner approver must decide before this policy is overridden. Track it on the Capacity page.',
-      );
-      setExceptionError(null);
-      setShowExceptionDialog(false);
-    },
-    onError: (err: unknown) => {
-      const msg = err instanceof Error ? err.message : 'Failed to request exception';
-      setExceptionError(msg);
-      setExceptionSuccess(null);
-    },
-  });
-
   const schedule = useMutation({
     mutationFn: async () => {
       const batch = await scheduleTextileBatch({
@@ -347,8 +306,6 @@ export default function TextileSchedulePage(): JSX.Element {
       setInstructions('');
       setOverrideReason('');
       setScheduleError(false);
-      setExceptionSuccess(null);
-      setExceptionError(null);
       void queue.refetch();
     },
     onError: () => setScheduleError(true),
@@ -476,8 +433,6 @@ export default function TextileSchedulePage(): JSX.Element {
                       setSelected([]);
                       setManifestOrder([]);
                       setOverrideReason('');
-                      setExceptionSuccess(null);
-                      setExceptionError(null);
                     }}
                     className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
                   >
@@ -512,16 +467,7 @@ export default function TextileSchedulePage(): JSX.Element {
                   </div>
                 ) : null}
                 {prospectiveEvaluation ? (
-                  <CapacityWarningBanner
-                    evaluation={prospectiveEvaluation}
-                    onRequestException={() => setShowExceptionDialog(true)}
-                    isRequestingException={exceptionMutation.isPending}
-                    requestExceptionLabel={
-                      hasCapacityBlockers
-                        ? 'Request exception for blocked trip'
-                        : 'Request exception'
-                    }
-                  />
+                  <CapacityWarningBanner evaluation={prospectiveEvaluation} />
                 ) : null}
                 {hasCapacityBlockers ? (
                   <p
@@ -529,29 +475,12 @@ export default function TextileSchedulePage(): JSX.Element {
                     className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-danger)]"
                   >
                     <IconAlertTriangle className="h-3.5 w-3.5" />
-                    Scheduling is blocked by capacity limits above. Request an approved exception or
-                    reduce the load before confirming.
+                    Scheduling is blocked by capacity limits above. Reduce the load before
+                    confirming.
                   </p>
                 ) : canScheduleDespiteWarnings ? (
                   <p role="status" className="text-xs text-[var(--color-warning)]">
-                    Warnings above require review, but you may still schedule — or request an
-                    exception so a partner approver can audit the override.
-                  </p>
-                ) : null}
-                {exceptionSuccess ? (
-                  <p
-                    role="status"
-                    className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800"
-                  >
-                    {exceptionSuccess}
-                  </p>
-                ) : null}
-                {exceptionError ? (
-                  <p
-                    role="alert"
-                    className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700"
-                  >
-                    {exceptionError}
+                    Warnings above require review, but you may still schedule.
                   </p>
                 ) : null}
                 {showSuggestedHint ? (
@@ -801,19 +730,6 @@ export default function TextileSchedulePage(): JSX.Element {
       </DeskStates>
 
       <Pager meta={queue.data?.meta} onPage={setPage} />
-      <ConfirmActionDialog
-        open={showExceptionDialog}
-        title="Request capacity exception"
-        description="This trip has capacity warnings or blocks. A partner approver must review your reason before the policy is overridden — the trip will not be auto-approved."
-        confirmLabel="Submit exception request"
-        confirmVariant="primary"
-        requiresNote
-        busy={exceptionMutation.isPending}
-        onClose={() => setShowExceptionDialog(false)}
-        onConfirm={(note) => {
-          if (note && note.trim().length >= 10) void exceptionMutation.mutateAsync(note);
-        }}
-      />
     </DeskPage>
   );
 }

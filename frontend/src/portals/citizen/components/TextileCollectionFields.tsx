@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, type JSX } from 'react';
-import { IconAlertTriangle } from '@tabler/icons-react';
 import { Spinner, cx } from '../../../shared/ui';
 import {
   useTextileServiceZones,
@@ -130,31 +129,6 @@ function buildInitial(
   };
 }
 
-function minimumWarning(
-  payload: TextileCollectionPayload | null,
-  category: TextileCollectionCategory,
-): string | null {
-  if (!payload) return null;
-  if (payload.collection_method === 'dropoff')
-    return 'No minimum for drop-off — take any amount to the centre.';
-  if (category === 'clothes_waste') {
-    const lowWeight = payload.estimated_weight_kg !== null && payload.estimated_weight_kg < 5;
-    if (lowWeight)
-      return 'Less than 5 kg — still OK to send. We’ll ask for a short note so a person can approve it.';
-  }
-  if (category === 'metal_scrap') {
-    const weight = payload.estimated_weight_kg;
-    if (weight !== null && weight < 5)
-      return 'Less than 5 kg — still OK to send. We’ll ask for a short note so a person can approve it.';
-  }
-  if (category === 'e_waste') {
-    const weight = payload.estimated_weight_kg;
-    if (weight !== null && weight < 2)
-      return 'Less than 2 kg — still OK to send. We’ll ask for a short note so a person can approve it.';
-  }
-  return null;
-}
-
 export function TextileCollectionFields({
   category,
   value,
@@ -241,7 +215,6 @@ function TextileCollectionFieldsInner({
   }, [dropoffView, onDropoffChange]);
 
   const errors = useMemo(() => validate(draft, selectedZone), [draft, selectedZone]);
-  const minWarn = minimumWarning(draft, category);
   const isValid = Object.keys(errors).length === 0 && draft.service_zone_id !== '';
 
   useEffect(() => {
@@ -526,13 +499,6 @@ function TextileCollectionFieldsInner({
           />
         </div>
       </div>
-
-      {minWarn ? (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-          <IconAlertTriangle className="mt-0.5 h-4 w-4 shrink-0" stroke={1.8} />
-          <span>{minWarn}</span>
-        </div>
-      ) : null}
     </div>
   );
 }

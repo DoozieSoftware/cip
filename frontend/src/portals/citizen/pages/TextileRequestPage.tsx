@@ -25,7 +25,6 @@ import {
   useTextileServiceZones,
   uploadTextileCollectionPhoto,
   isTextileNetworkFailure,
-  requestCapacityException,
   type TextileCollectionCategory,
   type TextileCollectionPayload,
 } from '../api/textileZones';
@@ -82,17 +81,12 @@ export default function TextileRequestPage(): JSX.Element {
   const capacityMinimum = useTextileCapacityMinimum(zoneIdForMinimum);
   const minimum = capacityMinimum.data;
   const minimumIsLoading = serviceZonesForMinimum.isLoading || capacityMinimum.isLoading;
-  const [exceptionReason, setExceptionReason] = useState('');
-  const [exceptionError, setExceptionError] = useState<string | null>(null);
-  const [isExceptionSubmitting, setIsExceptionSubmitting] = useState(false);
-  const [showExceptionForm, setShowExceptionForm] = useState(false);
   const belowMinimum = isBelowMinimum(
     minimum,
     details?.estimated_bags ?? null,
     details?.estimated_weight_kg ?? null,
     details?.collection_method ?? null,
   );
-  const allowExceptions = true;
   useEffect(() => {
     return () => {
       if (photoPreview) URL.revokeObjectURL(photoPreview);
@@ -139,6 +133,8 @@ export default function TextileRequestPage(): JSX.Element {
     details?.collection_method ?? null,
   );
   const isPremises = details?.collection_method === 'premises';
+  const pickupMinimumUnavailable =
+    isPremises && (minimumIsLoading || capacityMinimum.isError || !minimum);
   const unavailableDates = availability.data?.unavailable_dates ?? [];
   const nextAvailableDate = availability.data?.next_available_date ?? null;
   function handleCategoryChange(next: TextileCollectionCategory): void {
@@ -177,115 +173,6 @@ export default function TextileRequestPage(): JSX.Element {
     );
   }
   const toast = useToast();
-  async function submitWithException(): Promise<void> {
-    if (!details || !detailsValid || title.trim().length < 5) return;
-    if (!allowExceptions) return;
-    if (exceptionReason.trim().length < 10) {
-      setExceptionError(
-        'Please provide at least 10 characters explaining why an exception is needed.',
-      );
-      return;
-    }
-    setExceptionError(null);
-    setIsExceptionSubmitting(true);
-    const ownerId = readSession()?.user.id ?? null;
-    const idempotencyKey =
-      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-        ? crypto.randomUUID()
-        : `textile-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const payload = {
-      ...details,
-      title: title.trim(),
-      notes: notes.trim() || null,
-      latitude: location?.latitude ?? null,
-      longitude: location?.longitude ?? null,
-      idempotency_key: idempotencyKey,
-      photo_file: photoFile,
-    } as Parameters<typeof create.mutateAsync>[0] & {
-      idempotency_key?: string;
-      photo_file?: File | null;
-    };
-    try {
-      const created = await create.mutateAsync(payload);
-      if (photoFile) {
-        setUploadingPhoto(true);
-        try {
-          await uploadTextileCollectionPhoto(created.id, photoFile);
-        } catch (err) {
-          if (isTextileNetworkFailure(err)) {
-            await getQueue(ownerId).enqueue({
-              kind: 'textile.request.photo',
-              payload: {
-                collectionId: created.id,
-                file: photoFile,
-                idempotency_key: idempotencyKey,
-              },
-              id: `${idempotencyKey}-photo`,
-            });
-            void requestBackgroundSync();
-            toast.show(
-              'Photo queued — will upload when back online. It stays on this device only.',
-              'info',
-              5000,
-            );
-          } else {
-            setPhotoUploadWarning(
-              'Request created, but the photo could not be uploaded. You can add it later from the request page.',
-            );
-          }
-        } finally {
-          setUploadingPhoto(false);
-        }
-      }
-      try {
-        const exceptionIdempotencyKey =
-          typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-            ? crypto.randomUUID()
-            : `textile-exception-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        await requestCapacityException({
-          collectionId: created.id,
-          reason: exceptionReason.trim(),
-          reason_code: 'below_minimum',
-          idempotency_key: exceptionIdempotencyKey,
-        });
-        toast.show('Request submitted with exception note — a human will review it.', 'info', 5000);
-      } catch (err) {
-        const msg =
-          err instanceof ApiError
-            ? err.message
-            : err instanceof Error
-              ? err.message
-              : 'Exception request failed';
-        setExceptionError(msg);
-        toast.show(
-          'Request created, but the exception note could not be saved. You can add it from the detail page.',
-          'info',
-          6000,
-        );
-      }
-      void navigate(`/citizen/textile-collections/${created.id}`);
-    } catch (err) {
-      if (isTextileNetworkFailure(err)) {
-        await getQueue(ownerId).enqueue({
-          kind: 'textile.request.create',
-          payload,
-          id: idempotencyKey,
-        });
-        void requestBackgroundSync();
-        toast.show(
-          'You are offline — request saved on this device and will send automatically when online. Check pending uploads below.',
-          'info',
-          6000,
-        );
-        void navigate('/citizen/textile-collections');
-        return;
-      }
-      return;
-    } finally {
-      setIsExceptionSubmitting(false);
-    }
-  }
-
   async function submit(): Promise<void> {
     if (!details || !detailsValid || title.trim().length < 5) return;
     const ownerId = readSession()?.user.id ?? null;
@@ -498,7 +385,6 @@ export default function TextileRequestPage(): JSX.Element {
           isLoading={minimumIsLoading}
           isError={capacityMinimum.isError}
           collectionMethod={dropoffActive ? 'dropoff' : (details?.collection_method ?? null)}
-          onRequestException={() => setShowExceptionForm(true)}
           onRetry={() => void capacityMinimum.refetch()}
         />
         {categoryError ? (
@@ -783,7 +669,13 @@ export default function TextileRequestPage(): JSX.Element {
       ) : null}
       <button
         type="button"
-        disabled={!detailsValid || title.trim().length < 5 || isSubmitting || isExceptionSubmitting}
+        disabled={
+          !detailsValid ||
+          title.trim().length < 5 ||
+          isSubmitting ||
+          pickupMinimumUnavailable ||
+          (belowMinimum && !dropoffActive)
+        }
         onClick={() => void submit()}
         className="h-12 w-full rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-45"
       >
@@ -793,95 +685,10 @@ export default function TextileRequestPage(): JSX.Element {
             ? 'Sending request…'
             : dropoffActive
               ? 'Create drop-off plan'
-              : 'Send pickup request'}
+              : belowMinimum
+                ? 'Pickup minimum not met'
+                : 'Send pickup request'}
       </button>
-      {belowMinimum && allowExceptions && !dropoffActive ? (
-        <div className="rounded-xl border border-[var(--color-warning)]/20 bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
-          {showExceptionForm ? (
-            <div className="space-y-3">
-              <label
-                htmlFor="textile-exception-reason"
-                className="block text-sm font-medium text-[var(--color-ink)]"
-              >
-                Why should we collect this?{' '}
-                <span className="font-normal text-[var(--color-text-secondary)]">(short note)</span>
-              </label>
-              <p className="text-xs leading-5 text-[var(--color-text-secondary)]">
-                You have less than the usual minimum. A short note helps the local team decide — for
-                example: urgent hostel clearance, valuable clothes, or you can wait for the next
-                nearby pickup.
-              </p>
-              <textarea
-                id="textile-exception-reason"
-                value={exceptionReason}
-                onChange={(e) => {
-                  setExceptionReason(e.target.value);
-                  if (exceptionError) setExceptionError(null);
-                }}
-                rows={3}
-                placeholder="e.g. 2 bags of wearable clothes, hostel is closing this week. Can wait for next pickup nearby."
-                className="block w-full rounded-xl border border-[var(--color-border)] p-3 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
-                aria-describedby="textile-exception-hint"
-              />
-              <p id="textile-exception-hint" className="text-xs text-[var(--color-text-tertiary)]">
-                At least 10 letters. We never reject silently — a person reviews this.
-              </p>
-              {exceptionError ? (
-                <p role="alert" className="text-xs font-medium text-[var(--color-danger)]">
-                  {exceptionError}
-                </p>
-              ) : null}
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={
-                    !detailsValid ||
-                    title.trim().length < 5 ||
-                    isExceptionSubmitting ||
-                    isSubmitting
-                  }
-                  onClick={() => void submitWithException()}
-                  className="inline-flex h-11 items-center rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white disabled:opacity-40"
-                >
-                  {isExceptionSubmitting ? 'Submitting…' : 'Send with note'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowExceptionForm(false);
-                    setExceptionError(null);
-                  }}
-                  className="inline-flex h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium"
-                >
-                  Cancel
-                </button>
-              </div>
-              <p className="text-xs leading-4 text-[var(--color-text-tertiary)]">
-                Your request is sent first, then the note is attached. You will be notified when the
-                team responds.
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-[var(--color-ink)]">
-                  Below the usual minimum
-                </h3>
-                <p className="mt-1 max-w-prose text-sm leading-5 text-[var(--color-text-secondary)]">
-                  That is OK. Add a short note and a person will review. We never reject silently.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowExceptionForm(true)}
-                className="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium"
-              >
-                Add a short note
-              </button>
-            </div>
-          )}
-        </div>
-      ) : null}
     </div>
   );
 }

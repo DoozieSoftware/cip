@@ -252,59 +252,6 @@ export default function TextileCollectionDetailPage(): JSX.Element {
             {item.cancellation_reason}
           </p>
         ) : null}
-        {item.capacity_exception_id ? (
-          <div
-            aria-label="Capacity exception"
-            className={`mt-4 rounded-xl border p-4 text-sm leading-5 ${(() => {
-              const ctx = item.capacity_context;
-              if (ctx && typeof ctx['exception_approved_at'] === 'string') {
-                return 'border-[var(--color-success-muted)] bg-[var(--color-success)]/10 text-[var(--color-success)]';
-              }
-              if (
-                ctx &&
-                (typeof ctx['exception_rejected_at'] === 'string' ||
-                  ctx['exception_status'] === 'rejected')
-              ) {
-                return 'border-[var(--color-danger-muted)] bg-[var(--color-danger)]/10 text-[var(--color-danger)]';
-              }
-              return 'border-[var(--color-warning-muted)] bg-[var(--color-warning)]/10 text-[var(--color-warning)]';
-            })()}`}
-          >
-            {(() => {
-              const ctx = item.capacity_context;
-              const approved = Boolean(ctx && typeof ctx['exception_approved_at'] === 'string');
-              const rejected = Boolean(
-                ctx &&
-                (typeof ctx['exception_rejected_at'] === 'string' ||
-                  ctx['exception_status'] === 'rejected'),
-              );
-              const statusLabel = approved
-                ? 'Exception approved'
-                : rejected
-                  ? 'Exception not approved'
-                  : 'Sent for review';
-              const sub = approved
-                ? 'The local team approved this below-minimum request. It will be grouped for the next collection.'
-                : rejected
-                  ? 'The local team reviewed this and did not approve it. You can update your request or contact support for help.'
-                  : 'Your request was below the usual minimum. A person will review it and you will be notified. We never reject silently.';
-              return (
-                <>
-                  <p className="text-sm font-semibold">{statusLabel}</p>
-                  <p className="mt-1 text-sm leading-5 opacity-90">{sub}</p>
-                  <p className="mt-3 font-mono text-[11px] opacity-70">
-                    Ref: {item.capacity_exception_id}
-                  </p>
-                  {!approved && !rejected ? (
-                    <p className="mt-1 text-xs opacity-80">
-                      If you need help, share this reference with support.
-                    </p>
-                  ) : null}
-                </>
-              );
-            })()}
-          </div>
-        ) : null}
         <p className="mt-3 text-sm text-[var(--color-text-secondary)]">{nextStep}</p>
         <CollectionProgress
           steps={steps}

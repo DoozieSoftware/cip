@@ -369,37 +369,6 @@ export function deleteCapacityRule(ruleId: string, departmentId?: string) {
   });
 }
 
-export interface TextileCapacityException {
-  id: string;
-  collection_request_id: string;
-  status: 'pending' | 'approved' | 'rejected';
-  reason_code: string | null;
-  reason: string | null;
-  collection: { id: string; reference: string; status: string } | null;
-}
-
-export function fetchCapacityExceptions(params: { department_id?: string; status?: string }) {
-  return request<TextileCapacityException[]>('/department/textile-capacity/exceptions', {
-    query: params,
-  });
-}
-
-export function decideCapacityException(
-  exceptionId: string,
-  decision: 'approve' | 'reject',
-  reason: string,
-  departmentId?: string,
-) {
-  return request<TextileCapacityException>(
-    `/department/textile-capacity/exceptions/${exceptionId}/decide`,
-    {
-      method: 'POST',
-      body: { decision, reason },
-      query: departmentId ? { department_id: departmentId } : {},
-    },
-  );
-}
-
 export interface TextileCapacityWarning {
   code: string;
   message: string;
@@ -436,12 +405,6 @@ export interface TextileSuggestStopsResponse {
   note: string;
 }
 
-function newCapacityIdempotencyKey(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
-    return crypto.randomUUID();
-  return `cap-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
 export function evaluateBatchCapacity(batchId: string, departmentId?: string) {
   return request<TextileCapacityEvaluation>(
     `/department/textile-batches/${batchId}/evaluate-capacity`,
@@ -458,29 +421,6 @@ export function suggestBatchStops(batchId: string, departmentId?: string) {
     {
       method: 'POST',
       query: departmentId ? { department_id: departmentId } : {},
-    },
-  );
-}
-
-export function requestCapacityException(payload: {
-  collectionId: string;
-  reason: string;
-  reason_code?: string;
-  department_id?: string;
-  idempotencyKey?: string;
-}) {
-  const { collectionId, reason, reason_code, department_id, idempotencyKey } = payload;
-  const key = idempotencyKey ?? newCapacityIdempotencyKey();
-  return request<TextileCapacityException>(
-    `/department/textile-collections/${collectionId}/capacity-exception`,
-    {
-      method: 'POST',
-      body: {
-        reason,
-        ...(reason_code ? { reason_code } : {}),
-      },
-      query: department_id ? { department_id } : {},
-      headers: { 'Idempotency-Key': key },
     },
   );
 }

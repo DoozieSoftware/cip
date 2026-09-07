@@ -27,6 +27,7 @@ use Illuminate\Support\Str;
 final class TextileCollectionOperationsService
 {
     public function __construct(
+        private readonly TextileCapacityService $capacity,
         private readonly ChainOfCustodyWriter $chainOfCustody = new ChainOfCustodyWriter,
     ) {}
 
@@ -66,6 +67,14 @@ final class TextileCollectionOperationsService
         if ($collection->status !== TextileCollectionRequest::STATUS_PENDING_REVIEW) {
             throw ApiException::validation('Only requests awaiting review can be approved.');
         }
+
+        $this->capacity->assertPickupMinimum(
+            serviceZoneId: $collection->service_zone_id,
+            departmentId: (string) $collection->department_id,
+            estimatedBags: $collection->estimated_bags,
+            estimatedWeightKg: $collection->estimated_weight_kg !== null ? (float) $collection->estimated_weight_kg : null,
+        );
+
         $collection->update(['status' => TextileCollectionRequest::STATUS_READY_TO_GROUP]);
         $this->audit($actor, $collection->id, 'textile.approve', ['status' => TextileCollectionRequest::STATUS_PENDING_REVIEW], ['status' => TextileCollectionRequest::STATUS_READY_TO_GROUP]);
 
@@ -99,12 +108,22 @@ final class TextileCollectionOperationsService
                 ->whereIn('id', $collectionRequestIds)
                 ->lockForUpdate()
                 ->get();
+            $estimatedBags = null;
+            $estimatedWeightKg = null;
 
             if ($requests->count() !== count($collectionRequestIds)) {
                 throw ApiException::validation('One or more collection requests no longer exist.');
             }
 
             foreach ($requests as $collection) {
+                if ($collection->estimated_bags !== null) {
+                    $estimatedBags = ($estimatedBags ?? 0) + $collection->estimated_bags;
+                }
+
+                if ($collection->estimated_weight_kg !== null) {
+                    $estimatedWeightKg = ($estimatedWeightKg ?? 0.0) + (float) $collection->estimated_weight_kg;
+                }
+
                 if ($collection->service_zone_id !== $serviceZoneId) {
                     throw ApiException::validation('All requests in a trip must belong to the same service zone.');
                 }
@@ -119,6 +138,18 @@ final class TextileCollectionOperationsService
                 ], true)) {
                     throw ApiException::validation('Only approved or missed requests can be scheduled.');
                 }
+            }
+
+            $firstRequest = $requests->first();
+
+            if ($firstRequest instanceof TextileCollectionRequest) {
+                $this->capacity->assertPickupMinimum(
+                    serviceZoneId: $serviceZoneId,
+                    departmentId: (string) $firstRequest->department_id,
+                    estimatedBags: $estimatedBags,
+                    estimatedWeightKg: $estimatedWeightKg,
+                    date: $collectionDate,
+                );
             }
 
             $batch = TextileCollectionBatch::query()->create([
