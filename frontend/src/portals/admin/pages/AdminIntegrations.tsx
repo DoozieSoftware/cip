@@ -12,7 +12,9 @@ import {
   Button,
   Card,
   CardBody,
+  Dialog,
   EmptyState,
+  ErrorState,
   Input,
   Select,
   Spinner,
@@ -31,11 +33,11 @@ function StatusPill({ status }: { status: Integration['status'] }): JSX.Element 
       tone={STATUS_TONE[status] ?? 'neutral'}
       className={
         status === 'active'
-          ? 'bg-[#edf7f0] text-[var(--color-success)]'
+          ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
           : status === 'degraded'
-            ? 'bg-[#fff6e4] text-[#805913]'
+            ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]'
             : status === 'pending'
-              ? 'bg-[#f3eef6] text-[#6b4593]'
+              ? 'bg-[var(--color-info)]/10 text-[var(--color-info)]'
               : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'
       }
     >
@@ -74,8 +76,11 @@ function IntegrationForm({
   };
 
   return (
-    <form onSubmit={handle} className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-      <div className="grid gap-3 sm:grid-cols-2">
+    <form
+      onSubmit={handle}
+      className="space-y-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5"
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
         <Input
           label="Code"
           name="code"
@@ -84,7 +89,7 @@ function IntegrationForm({
           required
           disabled={!!initial?.id}
           placeholder="bbmp_311"
-          className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
         <Input
           label="Display name"
@@ -93,7 +98,7 @@ function IntegrationForm({
           onChange={(e) => setDisplayName(e.target.value)}
           required
           placeholder="BBMP 311"
-          className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
         <Input
           label="Provider"
@@ -102,7 +107,7 @@ function IntegrationForm({
           onChange={(e) => setProvider(e.target.value)}
           required
           placeholder="bbmp / btp / karnataka_uats"
-          className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
         <Input
           label="Base URL"
@@ -111,7 +116,7 @@ function IntegrationForm({
           value={baseUrl}
           onChange={(e) => setBaseUrl(e.target.value)}
           placeholder="https://api.bbmp.gov.in"
-          className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </div>
       <div className="mt-4 flex justify-end gap-2">
@@ -131,6 +136,7 @@ export default function AdminIntegrations(): JSX.Element {
   const [status, setStatus] = useState<string>('');
   const [editing, setEditing] = useState<Integration | null>(null);
   const [creating, setCreating] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Integration | null>(null);
 
   const list = useIntegrations({ q: q || undefined, status: status || undefined });
   const create = useCreateIntegration();
@@ -141,10 +147,13 @@ export default function AdminIntegrations(): JSX.Element {
   const rows = list.data ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Platform / Integrations
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
             Integrations
           </h1>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
@@ -165,7 +174,7 @@ export default function AdminIntegrations(): JSX.Element {
 
       <Card>
         <CardBody>
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-wrap items-end gap-4">
             <div className="flex-1">
               <Input
                 label="Search"
@@ -173,7 +182,7 @@ export default function AdminIntegrations(): JSX.Element {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="code, name, provider"
-                className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+                className="rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
               />
             </div>
             <div>
@@ -189,7 +198,7 @@ export default function AdminIntegrations(): JSX.Element {
                   { value: 'disabled', label: 'disabled' },
                   { value: 'pending', label: 'pending' },
                 ]}
-                className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+                className="rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
               />
             </div>
           </div>
@@ -221,6 +230,19 @@ export default function AdminIntegrations(): JSX.Element {
         {list.isLoading ? (
           <div className="flex items-center justify-center py-16">
             <Spinner label="Loading integrations" />
+          </div>
+        ) : list.isError ? (
+          <div className="p-6">
+            <ErrorState
+              title="Failed to load integrations"
+              description="There was a problem fetching integrations."
+              error={list.error instanceof Error ? list.error : null}
+              action={
+                <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
+                  Retry
+                </Button>
+              }
+            />
           </div>
         ) : rows.length === 0 ? (
           <CardBody>
@@ -291,9 +313,7 @@ export default function AdminIntegrations(): JSX.Element {
                           variant="danger"
                           size="sm"
                           disabled={remove.isPending}
-                          onClick={() => {
-                            if (confirm(`Delete ${i.code}?`)) remove.mutate(i.id);
-                          }}
+                          onClick={() => setDeleteTarget(i)}
                         >
                           Delete
                         </Button>
@@ -306,6 +326,33 @@ export default function AdminIntegrations(): JSX.Element {
           </div>
         )}
       </Card>
+
+      <Dialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title={deleteTarget ? `Delete ${deleteTarget.code}?` : 'Delete integration'}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              loading={remove.isPending}
+              onClick={() => {
+                if (deleteTarget)
+                  remove.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) });
+              }}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          This action cannot be undone. The integration will be removed permanently.
+        </p>
+      </Dialog>
     </div>
   );
 }

@@ -10,11 +10,10 @@ import {
   IconFilter,
   IconX,
   IconArrowRight,
-  IconAlertCircle,
   IconCategory,
   IconCalendar,
 } from '@tabler/icons-react';
-import { Spinner, Select, Badge } from '../../../shared/ui';
+import { Badge, Button, ErrorState, Select, Spinner } from '../../../shared/ui';
 import { departmentApi, type ReportListFilters } from '../api/operations';
 import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 import { statusLabel, statusTone } from '../components/statusMeta';
@@ -99,7 +98,13 @@ function clusterPoints(points: MapPoint[]): ReportCluster[] {
 
 function clusterIcon(count: number): L.DivIcon {
   const size = Math.min(64, Math.max(34, 30 + Math.sqrt(count) * 12));
-  const color = count >= 10 ? '#991b1b' : count >= 4 ? '#dc2626' : '#ef4444';
+  // Tokenized: use --color-danger for all cluster sizes; opacity variation via color-mix keeps the palette cohesive.
+  const color =
+    count >= 10
+      ? 'var(--color-danger)'
+      : count >= 4
+        ? 'color-mix(in srgb, var(--color-danger) 85%, white)'
+        : 'var(--color-danger)';
 
   return L.divIcon({
     className: 'cip-report-cluster',
@@ -174,57 +179,57 @@ export default function GisMapPage() {
 
   if (error) {
     return (
-      <div className="rounded-xl bg-white p-12 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-          <IconAlertCircle className="h-6 w-6 text-red-500" stroke={1.6} />
-        </div>
-        <h3 className="text-base font-semibold text-[var(--color-ink)]">
-          Could not load complaints
-        </h3>
-        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-          The complaints endpoint did not respond.
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            void refetch();
-          }}
-          className="mt-4 text-sm font-medium text-[var(--color-ink)] underline underline-offset-2 hover:text-[var(--color-text-secondary)]"
-        >
-          Retry
-        </button>
-      </div>
+      <ErrorState
+        title="Could not load complaints"
+        description="The complaints endpoint did not respond."
+        error={error instanceof Error ? error : null}
+        action={
+          <Button
+            variant="primary"
+            onClick={() => {
+              void refetch();
+            }}
+          >
+            Retry
+          </Button>
+        }
+      />
     );
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-ink)]">
             <IconMap className="h-5 w-5 text-white" stroke={1.6} />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-[var(--color-ink)]">GIS map</h1>
-            <p className="text-xs text-[var(--color-text-tertiary)]">
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+              Operations · Geospatial
+            </p>
+            <h1 className="text-lg font-semibold tracking-tight text-[var(--color-ink)]">
+              GIS map
+            </h1>
+            <p className="text-xs text-[var(--color-text-secondary)]">
               Geospatial view of department complaints
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm ring-1 ring-black/5">
+        <div className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm ring-1 ring-[var(--color-border-subtle)]">
           <IconMapPin className="h-3.5 w-3.5" stroke={1.6} />
           {points.length} complaint{points.length === 1 ? '' : 's'} on map
         </div>
       </header>
 
-      <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-        <div className="flex items-center gap-2 mb-3">
+      <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
+        <div className="mb-3 flex items-center gap-2">
           <IconFilter className="h-4 w-4 text-[var(--color-text-tertiary)]" stroke={1.6} />
-          <span className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
+          <span className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
             Filters
           </span>
         </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Select
             label="Status"
             name="status"
@@ -236,8 +241,8 @@ export default function GisMapPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-xl bg-white p-0 shadow-sm ring-1 ring-black/5 lg:col-span-2 overflow-hidden">
-          <div className="h-[520px] w-full">
+        <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-[var(--color-border-subtle)] lg:col-span-2">
+          <div className="h-128 w-full">
             <MapContainer
               center={center}
               zoom={12}
@@ -274,7 +279,7 @@ export default function GisMapPage() {
                         <Link
                           key={report.id}
                           to={`/operations/reports/${report.id}`}
-                          className="block rounded-md p-1 text-[var(--color-text-secondary)] hover:bg-[var(--color-canvas)]"
+                          className="block rounded-md p-1 text-[var(--color-text-secondary)] hover:bg-[var(--color-canvas)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
                         >
                           <span className="block font-mono font-semibold text-[var(--color-ink)]">
                             {report.tracking_number}
@@ -293,16 +298,18 @@ export default function GisMapPage() {
               ))}
             </MapContainer>
           </div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-black/5 px-4 py-2.5 text-[11px] text-[var(--color-text-secondary)]">
-            <span className="font-medium text-[var(--color-ink)]">Complaints by area</span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[var(--color-border-subtle)] px-4 py-2.5 text-[11px] text-[var(--color-text-secondary)]">
+            <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-ink)]">
+              Complaints by area
+            </span>
             <span className="flex items-center gap-1.5">
-              <i className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+              <i className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-[var(--color-danger)] px-1 text-[9px] font-bold text-white">
                 1
               </i>
               One complaint
             </span>
             <span className="flex items-center gap-1.5">
-              <i className="inline-grid h-5 min-w-5 place-items-center rounded-full bg-red-800 px-1 text-[9px] font-bold text-white">
+              <i className="inline-grid h-5 min-w-5 place-items-center rounded-full bg-[var(--color-danger)] px-1 text-[9px] font-bold text-white ring-2 ring-[var(--color-danger)]/20">
                 5+
               </i>
               More complaints
@@ -313,7 +320,7 @@ export default function GisMapPage() {
         {selected && (
           <aside
             aria-label="Selected complaint details"
-            className="fixed inset-x-0 bottom-0 z-10 max-h-[75vh] overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl ring-1 ring-black/10 lg:static lg:z-auto lg:col-span-1 lg:max-h-none lg:rounded-xl lg:ring-1 lg:ring-black/5"
+            className="fixed inset-x-0 bottom-0 z-10 max-h-[75vh] overflow-y-auto rounded-t-xl bg-white p-5 shadow-xl ring-1 ring-[var(--color-border)] lg:static lg:z-auto lg:col-span-1 lg:max-h-none lg:rounded-xl lg:shadow-sm lg:ring-[var(--color-border-subtle)]"
           >
             <div className="mb-4 flex items-start justify-between gap-2">
               <p className="font-mono text-xs text-[var(--color-text-tertiary)]">
@@ -323,7 +330,7 @@ export default function GisMapPage() {
                 type="button"
                 onClick={() => setSelectedId(null)}
                 aria-label="Close complaint details"
-                className="rounded-md p-1 text-[var(--color-text-tertiary)] hover:bg-[var(--color-canvas)] hover:text-[var(--color-ink)]"
+                className="rounded-md p-1 text-[var(--color-text-tertiary)] hover:bg-[var(--color-canvas)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
               >
                 <IconX className="h-4 w-4" stroke={1.6} />
               </button>
@@ -342,7 +349,7 @@ export default function GisMapPage() {
                     stroke={1.6}
                   />
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                    <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
                       Category
                     </span>
                     <span className="text-[var(--color-ink)]">
@@ -356,7 +363,7 @@ export default function GisMapPage() {
                     stroke={1.6}
                   />
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                    <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
                       Location
                     </span>
                     <span className="text-[var(--color-ink)]">
@@ -370,7 +377,7 @@ export default function GisMapPage() {
                     stroke={1.6}
                   />
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                    <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
                       Reference
                     </span>
                     <span className="font-mono text-xs text-[var(--color-ink)]">
@@ -382,7 +389,7 @@ export default function GisMapPage() {
             </div>
             <Link
               to={`/operations/reports/${selected.id}`}
-              className="mt-5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--color-ink)] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#2d2d28]"
+              className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full bg-[var(--color-ink)] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
             >
               Open complaint
               <IconArrowRight className="h-4 w-4" stroke={1.6} />
@@ -392,7 +399,7 @@ export default function GisMapPage() {
       </div>
 
       {points.length === 0 && (
-        <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-black/5">
+        <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-[var(--color-border-subtle)]">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-canvas)]">
             <IconMapPin className="h-6 w-6 text-[var(--color-text-tertiary)]" stroke={1.6} />
           </div>

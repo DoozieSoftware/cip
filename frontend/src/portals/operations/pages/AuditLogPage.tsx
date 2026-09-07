@@ -8,7 +8,7 @@ import {
   IconFilter,
   IconX,
 } from '@tabler/icons-react';
-import { Spinner, Input, Select, Button, Badge } from '../../../shared/ui';
+import { Badge, Button, ErrorState, Input, Select, Spinner } from '../../../shared/ui';
 import { auditActionLabel } from '../../../shared/auditActionLabel';
 import { auditApi, type AuditLogFilters, type AuditLogRow } from '../api/operations';
 import type { PaginationMeta } from '../types';
@@ -118,15 +118,20 @@ export default function AuditLogPage() {
   ].filter(Boolean).length;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-ink)]">
             <IconShield className="h-5 w-5 text-white" stroke={1.6} />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-[var(--color-ink)]">Audit log</h1>
-            <p className="text-xs text-[var(--color-text-tertiary)]">
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+              Operations · Audit
+            </p>
+            <h1 className="text-lg font-semibold tracking-tight text-[var(--color-ink)]">
+              Audit log
+            </h1>
+            <p className="text-xs text-[var(--color-text-secondary)]">
               Immutable record of security-relevant events
             </p>
           </div>
@@ -146,17 +151,18 @@ export default function AuditLogPage() {
               setExportedAt(new Date().toLocaleTimeString());
             }}
             leftIcon={<IconDownload className="h-3.5 w-3.5" stroke={1.6} />}
+            className="min-h-9 rounded-full"
           >
             Export CSV
           </Button>
         </div>
       </header>
 
-      <div className="rounded-xl bg-white shadow-sm ring-1 ring-black/5">
+      <div className="rounded-xl bg-white shadow-sm ring-1 ring-[var(--color-border-subtle)]">
         <button
           type="button"
           onClick={() => setShowFilters(!showFilters)}
-          className="flex w-full items-center justify-between px-4 py-3 text-left"
+          className="flex w-full items-center justify-between px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 rounded-xl"
         >
           <div className="flex items-center gap-2">
             <IconFilter className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
@@ -173,8 +179,8 @@ export default function AuditLogPage() {
           />
         </button>
         {showFilters && (
-          <div className="border-t border-black/5 px-4 py-4">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:grid-cols-4">
+          <div className="border-t border-[var(--color-border-subtle)] px-4 py-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
               <Input
                 label="User ID"
                 placeholder="uuid"
@@ -235,7 +241,7 @@ export default function AuditLogPage() {
               <button
                 type="button"
                 onClick={() => setFilters({ page: 1, per_page: 50 })}
-                className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-ink)]"
+                className="mt-3 inline-flex min-h-9 items-center gap-1 rounded-full px-3 text-xs font-medium text-[var(--color-text-secondary)] transition hover:bg-[var(--color-canvas)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
               >
                 <IconX className="h-3.5 w-3.5" stroke={1.6} />
                 Clear all filters
@@ -250,28 +256,23 @@ export default function AuditLogPage() {
           <Spinner label="Loading audit log" />
         </div>
       ) : query.error ? (
-        <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-black/5">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-            <IconShield className="h-6 w-6 text-red-500" stroke={1.6} />
-          </div>
-          <h3 className="text-base font-semibold text-[var(--color-ink)]">
-            Could not load audit log
-          </h3>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            The audit log endpoint did not respond.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              void query.refetch();
-            }}
-            className="mt-4 text-sm font-medium text-[var(--color-ink)] underline underline-offset-2 hover:text-[var(--color-text-secondary)]"
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorState
+          title="Could not load audit log"
+          description="The audit log endpoint did not respond."
+          error={query.error instanceof Error ? query.error : null}
+          action={
+            <Button
+              variant="primary"
+              onClick={() => {
+                void query.refetch();
+              }}
+            >
+              Retry
+            </Button>
+          }
+        />
       ) : rows.length === 0 ? (
-        <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-black/5">
+        <div className="rounded-xl bg-white p-12 text-center shadow-sm ring-1 ring-[var(--color-border-subtle)]">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-canvas)]">
             <IconFilter className="h-6 w-6 text-[var(--color-text-tertiary)]" stroke={1.6} />
           </div>
@@ -283,35 +284,35 @@ export default function AuditLogPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
+        <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-[var(--color-border-subtle)]">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-black/5 bg-[var(--color-canvas)]">
+              <thead className="border-b border-[var(--color-border-subtle)] bg-[var(--color-canvas)]">
                 <tr>
-                  <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  <th className="px-4 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     When
                   </th>
-                  <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  <th className="px-4 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     User
                   </th>
-                  <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  <th className="px-4 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Role
                   </th>
-                  <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  <th className="px-4 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Entity
                   </th>
-                  <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  <th className="px-4 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Action
                   </th>
-                  <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  <th className="px-4 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     IP
                   </th>
-                  <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  <th className="px-4 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Browser
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/5">
+              <tbody className="divide-y divide-[var(--color-border-subtle)]">
                 {rows.map((r) => (
                   <tr key={r.id} className="transition hover:bg-[var(--color-canvas)]/50">
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-[var(--color-text-secondary)]">
@@ -373,6 +374,7 @@ export default function AuditLogPage() {
               disabled={meta.current_page <= 1}
               onClick={() => setFilters((f) => ({ ...f, page: Math.max(1, (f.page ?? 1) - 1) }))}
               leftIcon={<IconChevronLeft className="h-3.5 w-3.5" stroke={1.6} />}
+              className="min-h-9 rounded-full"
             >
               Previous
             </Button>
@@ -384,6 +386,7 @@ export default function AuditLogPage() {
                 setFilters((f) => ({ ...f, page: Math.min(meta.last_page, (f.page ?? 1) + 1) }))
               }
               leftIcon={<IconChevronRight className="h-3.5 w-3.5" stroke={1.6} />}
+              className="min-h-9 rounded-full"
             >
               Next
             </Button>

@@ -1,6 +1,14 @@
 import { useFeatureFlags, useToggleFeatureFlag, type AppConfigFlag } from '../api/client';
 import { useState, type JSX } from 'react';
-import { Spinner, ErrorState, Card, CardHeader, CardTitle, Badge } from '../../../shared/ui';
+import {
+  Spinner,
+  ErrorState,
+  Card,
+  CardHeader,
+  CardTitle,
+  Badge,
+  Button,
+} from '../../../shared/ui';
 import { IconAdjustments, IconSearch } from '@tabler/icons-react';
 
 export default function AdminFeatureFlags(): JSX.Element {
@@ -17,10 +25,7 @@ export default function AdminFeatureFlags(): JSX.Element {
 
   if (list.isLoading) {
     return (
-      <div
-        className="flex min-h-screen items-center justify-center bg-[var(--color-canvas)]"
-        aria-live="polite"
-      >
+      <div className="flex min-h-[200px] items-center justify-center py-16" aria-live="polite">
         <Spinner label="Loading flags" />
       </div>
     );
@@ -32,14 +37,11 @@ export default function AdminFeatureFlags(): JSX.Element {
         <ErrorState
           title="Failed to load feature flags"
           description="An error occurred while fetching the flag list. Try refreshing the page."
+          error={list.error instanceof Error ? list.error : null}
           action={
-            <button
-              type="button"
-              onClick={() => void list.refetch()}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm text-white transition hover:bg-black"
-            >
+            <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
               Retry
-            </button>
+            </Button>
           }
         />
       </div>
@@ -50,7 +52,10 @@ export default function AdminFeatureFlags(): JSX.Element {
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Platform / Feature flags
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
             Feature flags
           </h1>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
@@ -67,13 +72,13 @@ export default function AdminFeatureFlags(): JSX.Element {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search flags…"
-            className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </div>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-white p-10 text-center">
+        <div className="rounded-lg border border-dashed border-[var(--color-border)] bg-white p-10 text-center">
           <IconAdjustments
             className="mx-auto h-8 w-8 text-[var(--color-text-tertiary)]"
             stroke={1.4}
@@ -131,7 +136,7 @@ export default function AdminFeatureFlags(): JSX.Element {
                   disabled={toggle.isPending}
                   className={
                     f.enabled
-                      ? 'rounded-full bg-[#edf7f0] px-3 py-1.5 text-xs font-semibold text-[var(--color-success)] transition hover:bg-[#d6ede0]'
+                      ? 'rounded-full bg-[var(--color-success)]/10 px-3 py-1.5 text-xs font-semibold text-[var(--color-success)] transition hover:bg-[var(--color-success)]/20'
                       : 'rounded-full bg-[var(--color-surface-alt)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-border-subtle)]'
                   }
                 >

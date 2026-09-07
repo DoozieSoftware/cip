@@ -23,8 +23,10 @@ export default function HeatmapPage(): JSX.Element {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold text-slate-900">Complaint density</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          Complaint density
+        </h1>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           Complaints grouped into a ~1.1 km grid — never an individual complaint&apos;s exact
           location.
         </p>
@@ -42,7 +44,10 @@ export default function HeatmapPage(): JSX.Element {
           description="The heat map will populate as complaints come in."
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200" style={{ height: 480 }}>
+        <div
+          className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5"
+          style={{ height: 480 }}
+        >
           <MapContainer
             center={BENGALURU_CENTER}
             zoom={11}
@@ -57,7 +62,11 @@ export default function HeatmapPage(): JSX.Element {
                 key={`${p.lat}-${p.lng}`}
                 center={[p.lat, p.lng]}
                 radius={6 + (p.count / maxCount) * 18}
-                pathOptions={{ color: '#4f46e5', fillColor: '#4f46e5', fillOpacity: 0.5 }}
+                pathOptions={{
+                  color: '#1d4ed8' /* var(--color-info) */,
+                  fillColor: '#1d4ed8' /* var(--color-info) */,
+                  fillOpacity: 0.5,
+                }}
               >
                 <Popup>
                   {p.count} complaint{p.count === 1 ? '' : 's'} in this area

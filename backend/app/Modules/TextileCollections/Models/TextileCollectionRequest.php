@@ -47,6 +47,14 @@ use Illuminate\Support\Carbon;
  * @property string|null $missed_pickup_reason
  * @property Carbon|null $picked_up_at
  * @property Carbon|null $submitted_at
+ * @property Carbon|null $dropoff_confirmed_at
+ * @property Carbon|null $dropoff_valid_from
+ * @property Carbon|null $dropoff_valid_until
+ * @property Carbon|null $previous_scheduled_date
+ * @property Carbon|null $rescheduled_at
+ * @property Carbon|null $reminder_sent_at
+ * @property Carbon|null $offline_queued_at
+ * @property Carbon|null $capacity_checked_at
  * @property-read Report|null $report
  * @property-read User|null $citizen
  * @property-read TextileServiceZone|null $serviceZone
@@ -71,6 +79,12 @@ final class TextileCollectionRequest extends Model
 
     public const STATUS_MISSED = 'missed';
 
+    public const STATUS_DROPOFF_AWAITING_DROP = 'dropoff_awaiting_drop';
+
+    public const STATUS_RECEIVED_AT_CENTRE = 'received_at_centre';
+
+    // TODO D-01/D-02: extra end states dropoff_expired / no_show pending decision.
+
     /** @var list<string> */
     public const VALID_CATEGORIES = ['clothes_waste', 'metal_scrap', 'e_waste'];
 
@@ -78,6 +92,7 @@ final class TextileCollectionRequest extends Model
 
     /** @var list<string> */
     protected $fillable = [
+        'dropoff_confirmed_at', 'dropoff_valid_from', 'dropoff_valid_until', 'receipt_id', 'capacity_exception_id', 'capacity_checked_at', 'capacity_context', 'stop_order', 'outcome_idempotency_key', 'offline_queued_at',
         'report_id', 'citizen_id', 'reference', 'title', 'notes',
         'category', 'service_zone_id', 'department_id', 'batch_id', 'requester_type',
         'requester_name', 'rwa_name', 'contact_email', 'contact_phone',
@@ -86,7 +101,9 @@ final class TextileCollectionRequest extends Model
         'scheduled_window_start', 'scheduled_window_end', 'readiness_instructions',
         'actual_bags', 'actual_weight_kg', 'rejection_reason',
         'cancellation_reason', 'missed_pickup_reason', 'picked_up_at', 'submitted_at',
-    ];
+        'rescheduled_at', 'reminder_sent_at', 'reschedule_count',
+        'previous_scheduled_date', 'previous_window_start', 'previous_window_end', 'previous_batch_id',
+    ]; // TODO D-05/D-06 OPEN: cutoff window + reminder timing pending partner decision.
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -96,11 +113,21 @@ final class TextileCollectionRequest extends Model
             'estimated_weight_kg' => 'float',
             'actual_bags' => 'integer',
             'actual_weight_kg' => 'float',
+            'reschedule_count' => 'integer',
+            'dropoff_confirmed_at' => 'datetime',
+            'dropoff_valid_from' => 'date',
+            'dropoff_valid_until' => 'date',
             'latitude' => 'float',
             'longitude' => 'float',
             'scheduled_date' => 'date',
+            'previous_scheduled_date' => 'date',
             'picked_up_at' => 'datetime',
             'submitted_at' => 'datetime',
+            'rescheduled_at' => 'datetime',
+            'reminder_sent_at' => 'datetime',
+            'offline_queued_at' => 'datetime',
+            'capacity_checked_at' => 'datetime',
+            'capacity_context' => 'array',
         ];
     }
 

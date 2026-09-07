@@ -66,7 +66,7 @@ describe('AdminRoles (T-M12-002 create/edit)', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     );
-    fireEvent.click(await screen.findByRole('button', { name: '+ New role' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'New role' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.change(within(dialog).getByLabelText(/Name/), { target: { value: 'supervisor' } });
     fireEvent.click(within(dialog).getByLabelText('audit.view'));

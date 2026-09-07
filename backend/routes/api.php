@@ -392,20 +392,112 @@ Route::prefix('v1')->group(function (): void {
             ->middleware('can:textile.report')
             ->name('textile-collections.report');
         Route::put('textile-zones/{zone}', [TextileCollectionController::class, 'updateZone'])
-            ->middleware('can:textile.schedule_batch')
+            ->middleware('can:textile.manage_centre')
             ->name('textile-zones.update');
+        Route::get('dropoff-centres/lookup', [TextileCollectionController::class, 'lookupByReference'])
+            ->middleware('can:textile.record_receipt')
+            ->name('dropoff-centres.lookup');
+        Route::post('dropoff-centres/{zone}/receipts', [TextileCollectionController::class, 'recordReceipt'])
+            ->middleware('can:textile.record_receipt')
+            ->name('dropoff-centres.receipts.store');
+        Route::post('textile-batches/{batch}/assignment', [TextileCollectionController::class, 'assignTrip'])
+            ->middleware('can:textile.assign_trip')
+            ->name('textile-batches.assignment');
+        Route::post('textile-batches/{batch}/start', [TextileCollectionController::class, 'startTrip'])
+            ->middleware('can:textile.operate_trip')
+            ->name('textile-batches.start');
+        Route::post('textile-batches/{batch}/complete', [TextileCollectionController::class, 'completeTrip'])
+            ->middleware('can:textile.operate_trip')
+            ->name('textile-batches.complete');
+        Route::put('textile-batches/{batch}/stops/order', [TextileCollectionController::class, 'reorderStops'])
+            ->middleware('can:textile.assign_trip')
+            ->name('textile-batches.stops.order');
+        Route::get('textile-trips/mine', [TextileCollectionController::class, 'myTrips'])
+            ->middleware('can:textile.operate_trip')
+            ->name('textile-trips.mine');
+        Route::get('textile-collections/offline-recovery', [TextileCollectionController::class, 'listOfflineRecovery'])
+            ->middleware('can:textile.record_outcome')
+            ->name('textile-collections.offline-recovery.index');
+        Route::post('textile-collections/offline-recovery/{recoveryItem}/resolve', [TextileCollectionController::class, 'resolveOfflineRecovery'])
+            ->middleware('can:textile.record_outcome')
+            ->name('textile-collections.offline-recovery.resolve');
         Route::get('textile-collections/{collection}', [TextileCollectionController::class, 'show'])
             ->middleware('can:textile.view,collection')
             ->name('textile-collections.show');
         Route::post('textile-collections/{collection}/approve', [TextileCollectionController::class, 'approve'])
-            ->middleware('can:textile.record_outcome')
+            ->middleware('can:textile.approve')
             ->name('textile-collections.approve');
         Route::post('textile-collections/{collection}/outcome', [TextileCollectionController::class, 'recordOutcome'])
             ->middleware('can:textile.record_outcome')
             ->name('textile-collections.outcome');
+        Route::post('textile-collections/{collection}/collect', [TextileCollectionController::class, 'collect'])
+            ->middleware('can:textile.record_outcome')
+            ->name('textile-collections.collect');
         Route::post('textile-collections/{collection}/proof', [TextileCollectionController::class, 'uploadStaffProof'])
             ->middleware('can:textile.record_outcome')
             ->name('textile-collections.proof');
+        // Phase 4: offline failure reporting (per-collection)
+        Route::post('textile-collections/{collection}/offline-failure', [TextileCollectionController::class, 'reportOfflineFailure'])
+            ->middleware('can:textile.record_outcome')
+            ->name('textile-collections.offline-failure');
+        // Phase 3: reschedule (partner override), unavailability management
+        Route::post('textile-collections/{collection}/reschedule', [TextileCollectionController::class, 'partnerReschedule'])
+            ->middleware('can:textile.reschedule,collection')
+            ->name('textile-collections.reschedule');
+        Route::get('textile-zones/{zone}/unavailability', [TextileCollectionController::class, 'zoneUnavailability'])
+            ->middleware('can:textile.view_unavailability')
+            ->name('textile-zones.unavailability.index');
+        Route::post('textile-zones/{zone}/unavailability', [TextileCollectionController::class, 'storeUnavailability'])
+            ->middleware('can:textile.manage_unavailability')
+            ->name('textile-zones.unavailability.store');
+        // Phase 4: Offline-safe field collection — idempotent queue + recovery view
+        Route::post('textile-collections/{collection}/offline-outcome', [TextileCollectionController::class, 'queueOfflineOutcome'])
+            ->middleware('can:textile.queue_offline')
+            ->name('textile-collections.offline-outcome');
+        Route::get('textile-offline/submissions', [TextileCollectionController::class, 'listOfflineSubmissions'])
+            ->middleware('can:textile.view_offline_queue')
+            ->name('textile-offline.submissions.index');
+        Route::get('textile-offline/submissions/{submission}', [TextileCollectionController::class, 'showOfflineSubmission'])
+            ->middleware('can:textile.view_offline_queue')
+            ->name('textile-offline.submissions.show');
+        Route::post('textile-offline/submissions/{submission}/retry', [TextileCollectionController::class, 'retryOfflineSubmission'])
+            ->middleware('can:textile.retry_offline')
+            ->name('textile-offline.submissions.retry');
+        // Phase 5: Capacity, planning, and exception controls
+        Route::get('textile-capacity/rules', [TextileCollectionController::class, 'listCapacityRules'])
+            ->middleware('can:textile.view_capacity')
+            ->name('textile-capacity.rules.index');
+        Route::post('textile-capacity/rules', [TextileCollectionController::class, 'storeCapacityRule'])
+            ->middleware('can:textile.configure_capacity')
+            ->name('textile-capacity.rules.store');
+        Route::put('textile-capacity/rules/{rule}', [TextileCollectionController::class, 'updateCapacityRule'])
+            ->middleware('can:textile.configure_capacity')
+            ->name('textile-capacity.rules.update');
+        Route::delete('textile-capacity/rules/{rule}', [TextileCollectionController::class, 'destroyCapacityRule'])
+            ->middleware('can:textile.configure_capacity')
+            ->name('textile-capacity.rules.destroy');
+        Route::post('textile-batches/{batch}/evaluate-capacity', [TextileCollectionController::class, 'evaluateBatchCapacity'])
+            ->middleware('can:textile.schedule_batch')
+            ->name('textile-batches.evaluate-capacity');
+        Route::post('textile-batches/{batch}/suggest-stops', [TextileCollectionController::class, 'suggestBatchStops'])
+            ->middleware('can:textile.schedule_batch')
+            ->name('textile-batches.suggest-stops');
+        Route::get('textile-capacity/exceptions', [TextileCollectionController::class, 'listCapacityExceptions'])
+            ->middleware('can:textile.view_capacity')
+            ->name('textile-capacity.exceptions.index');
+        Route::post('textile-collections/{collection}/capacity-exception', [TextileCollectionController::class, 'requestCapacityException'])
+            ->middleware('can:textile.request_exception')
+            ->name('textile-collections.capacity-exception');
+        Route::post('textile-capacity/exceptions/{exception}/decide', [TextileCollectionController::class, 'decideCapacityException'])
+            ->middleware('can:textile.decide_exception')
+            ->name('textile-capacity.exceptions.decide');
+        // Phase 6: Reporting — dashboard and export (partner-scoped)
+        Route::get('textile-collections/report/dashboard', [TextileCollectionController::class, 'reportingDashboard'])
+            ->middleware('can:textile.view_reports')
+            ->name('textile-collections.report.dashboard');
+        Route::get('textile-collections/report/export', [TextileCollectionController::class, 'reportingExport'])
+            ->middleware('can:textile.view_reports')
+            ->name('textile-collections.report.export');
     });
 
     // Citizen PWA — report submission and read-back (M4)
@@ -446,6 +538,20 @@ Route::prefix('v1')->group(function (): void {
         Route::post('citizen/textile-collections/{collection}/photo', [TextileCollectionController::class, 'uploadCitizenPhoto'])
             ->middleware('can:textile.view,collection')
             ->name('api.v1.citizen.textile-collections.photo');
+        // Phase 3: citizen reschedule (before cutoff), instructions update, unavailability view
+        Route::post('citizen/textile-collections/{collection}/reschedule', [TextileCollectionController::class, 'citizenReschedule'])
+            ->middleware('can:textile.reschedule,collection')
+            ->name('api.v1.citizen.textile-collections.reschedule');
+        Route::patch('citizen/textile-collections/{collection}/instructions', [TextileCollectionController::class, 'updateInstructions'])
+            ->middleware('can:textile.update_instructions,collection')
+            ->name('api.v1.citizen.textile-collections.instructions');
+        Route::get('textile-collection/zones/{zone}/unavailability', [TextileCollectionController::class, 'zoneUnavailability'])
+            ->name('api.v1.textile-collection.zones.unavailability');
+        Route::get('textile-collection/zones/{zone}/capacity-minimum', [TextileCollectionController::class, 'citizenCapacityMinimum'])
+            ->name('api.v1.textile-collection.zones.capacity-minimum');
+        Route::post('citizen/textile-collections/{collection}/capacity-exception', [TextileCollectionController::class, 'requestCapacityException'])
+            ->middleware('can:textile.request_exception')
+            ->name('api.v1.citizen.textile-collections.capacity-exception');
         Route::post('citizen/reports/{report}/verify', [CitizenReportActionsController::class, 'verify'])
             ->name('api.v1.citizen.reports.verify');
         Route::post('citizen/reports/{report}/dispute', [CitizenReportActionsController::class, 'dispute'])

@@ -21,6 +21,8 @@ import {
   CardTitle,
   CardBody,
   Badge,
+  Button,
+  Dialog,
   Spinner,
   EmptyState,
   ErrorState,
@@ -77,6 +79,8 @@ export default function AdminDataRetention(): JSX.Element {
   const [holdEntityId, setHoldEntityId] = useState('');
   const [holdReason, setHoldReason] = useState('');
   const [holdExpiry, setHoldExpiry] = useState('');
+  const [releaseTarget, setReleaseTarget] = useState<string | null>(null);
+  const [releaseReason, setReleaseReason] = useState('');
 
   const rows = useMemo(() => {
     const all = list.data ?? [];
@@ -116,24 +120,22 @@ export default function AdminDataRetention(): JSX.Element {
     );
   };
 
-  const release = (holdId: string): void => {
-    if (
-      !window.confirm('Release this legal hold? The release will be recorded in the audit trail.')
-    )
-      return;
-    const reason = window.prompt(
-      'Enter the approval or legal basis for release (at least 10 characters):',
+  const confirmRelease = (): void => {
+    if (releaseTarget === null || releaseReason.trim().length < 10) return;
+    releaseHold.mutate(
+      { id: releaseTarget, release_reason: releaseReason.trim() },
+      {
+        onSuccess: () => {
+          setReleaseTarget(null);
+          setReleaseReason('');
+        },
+      },
     );
-    if (reason === null || reason.trim().length < 10) return;
-    releaseHold.mutate({ id: holdId, release_reason: reason.trim() });
   };
 
   if (list.isLoading) {
     return (
-      <div
-        className="flex min-h-screen items-center justify-center bg-[var(--color-canvas)]"
-        aria-live="polite"
-      >
+      <div className="flex min-h-[200px] items-center justify-center py-16" aria-live="polite">
         <Spinner label="Loading retention settings" />
       </div>
     );
@@ -145,6 +147,12 @@ export default function AdminDataRetention(): JSX.Element {
         <ErrorState
           title="Failed to load settings"
           description="Retention settings could not be loaded. Please try again."
+          error={list.error instanceof Error ? list.error : null}
+          action={
+            <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
+              Retry
+            </Button>
+          }
         />
       </div>
     );
@@ -152,25 +160,28 @@ export default function AdminDataRetention(): JSX.Element {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header>
-        <div className="flex items-center gap-3">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-surface-alt)]">
             <IconDatabase className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
           </span>
           <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+              Data / Retention
+            </p>
+            <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
               Data retention &amp; backup
             </h1>
-            <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               How long the platform keeps media, audit rows, and notifications before purging.
             </p>
           </div>
         </div>
       </header>
 
-      <Card className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-start gap-3">
+      <Card className="p-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-start gap-4">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
               <IconShield className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
             </span>
@@ -199,14 +210,14 @@ export default function AdminDataRetention(): JSX.Element {
         </div>
       </Card>
 
-      <Card className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+      <Card className="p-4">
         <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#fff6e4]">
-            <IconAlertTriangle className="h-4 w-4 text-[#805913]" stroke={1.6} />
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-warning)]/10">
+            <IconAlertTriangle className="h-4 w-4 text-[var(--color-warning)]" stroke={1.6} />
           </span>
-          <div className="text-xs text-[#805913]">
+          <div className="text-xs text-[var(--color-warning)]">
             <p className="font-semibold">Partially enforced.</p>
-            <p className="mt-1 text-[#805913]">
+            <p className="mt-1 text-[var(--color-warning)]">
               The daily purge job reads <code className="rounded bg-white px-1 py-0.5">media</code>,{' '}
               <code className="rounded bg-white px-1 py-0.5">audit</code>,{' '}
               <code className="rounded bg-white px-1 py-0.5">notifications</code>,{' '}
@@ -221,7 +232,7 @@ export default function AdminDataRetention(): JSX.Element {
         </div>
       </Card>
 
-      <div className="flex flex-wrap items-end gap-2">
+      <div className="flex flex-wrap items-end gap-4">
         <label className="relative block">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]">
             <IconSearch className="h-4 w-4" stroke={1.6} />
@@ -231,12 +242,12 @@ export default function AdminDataRetention(): JSX.Element {
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Filter keys…"
-            className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
       </div>
 
-      <Card className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5">
+      <Card className="overflow-hidden">
         {rows.length === 0 ? (
           <div className="px-5 py-10">
             <EmptyState
@@ -283,7 +294,7 @@ export default function AdminDataRetention(): JSX.Element {
                           tone="neutral"
                           className={
                             enforced
-                              ? 'bg-[#edf7f0] text-[var(--color-success)]'
+                              ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
                               : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'
                           }
                         >
@@ -297,7 +308,7 @@ export default function AdminDataRetention(): JSX.Element {
                           value={days}
                           disabled={update.isPending}
                           onChange={(e) => handleChange(s, Number(e.target.value))}
-                          className="block w-24 rounded-xl border border-[var(--color-border)] bg-white px-3 py-1.5 text-sm tabular-nums text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+                          className="block w-24 rounded-lg border border-[var(--color-border)] bg-white px-3 py-1.5 text-sm tabular-nums text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
                         />
                       </td>
                       <td className="px-5 py-3 text-right text-sm tabular-nums text-[var(--color-text-secondary)]">
@@ -312,7 +323,7 @@ export default function AdminDataRetention(): JSX.Element {
         )}
       </Card>
 
-      <Card className="rounded-xl bg-white shadow-sm ring-1 ring-black/5">
+      <Card>
         <CardHeader className="flex items-center justify-between border-b border-[var(--color-border-subtle)] px-5 py-4">
           <div className="flex items-center gap-2">
             <IconClock className="h-5 w-5 text-[var(--color-text-secondary)]" stroke={1.6} />
@@ -340,7 +351,7 @@ export default function AdminDataRetention(): JSX.Element {
         </CardBody>
       </Card>
 
-      <Card className="rounded-xl bg-white shadow-sm ring-1 ring-black/5">
+      <Card>
         <CardHeader className="border-b border-[var(--color-border-subtle)] px-5 py-4">
           <div className="flex items-center gap-2">
             <IconShield className="h-5 w-5 text-[var(--color-text-secondary)]" stroke={1.6} />
@@ -354,10 +365,10 @@ export default function AdminDataRetention(): JSX.Element {
             </div>
           </div>
         </CardHeader>
-        <CardBody className="space-y-5">
+        <CardBody className="space-y-6">
           <form
             onSubmit={submitHold}
-            className="grid gap-3 rounded-xl bg-[var(--color-canvas)] p-4 sm:grid-cols-2"
+            className="grid gap-4 rounded-xl bg-[var(--color-canvas)] p-6 sm:grid-cols-2"
           >
             <label className="text-xs font-medium text-[var(--color-text-secondary)]">
               Entity type
@@ -365,7 +376,7 @@ export default function AdminDataRetention(): JSX.Element {
                 aria-label="Hold entity type"
                 value={holdType}
                 onChange={(event) => setHoldType(event.target.value as RetentionHoldEntityType)}
-                className="mt-1 block min-h-[44px] w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)]"
+                className="mt-1 block min-h-[44px] w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)]"
               >
                 {HOLD_ENTITY_TYPES.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -382,7 +393,7 @@ export default function AdminDataRetention(): JSX.Element {
                 value={holdEntityId}
                 onChange={(event) => setHoldEntityId(event.target.value)}
                 placeholder="UUID of the record to preserve"
-                className="mt-1 block min-h-[44px] w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)]"
+                className="mt-1 block min-h-[44px] w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)]"
               />
             </label>
             <label className="text-xs font-medium text-[var(--color-text-secondary)] sm:col-span-2">
@@ -394,7 +405,7 @@ export default function AdminDataRetention(): JSX.Element {
                 value={holdReason}
                 onChange={(event) => setHoldReason(event.target.value)}
                 rows={2}
-                className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm text-[var(--color-ink)]"
+                className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm text-[var(--color-ink)]"
               />
             </label>
             <label className="text-xs font-medium text-[var(--color-text-secondary)]">
@@ -404,21 +415,21 @@ export default function AdminDataRetention(): JSX.Element {
                 aria-label="Retention hold expiry"
                 value={holdExpiry}
                 onChange={(event) => setHoldExpiry(event.target.value)}
-                className="mt-1 block min-h-[44px] w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)]"
+                className="mt-1 block min-h-[44px] w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)]"
               />
             </label>
             <div className="flex items-end justify-end">
-              <button
+              <Button
                 type="submit"
                 disabled={
                   createHold.isPending ||
                   holdEntityId.trim() === '' ||
                   holdReason.trim().length < 10
                 }
-                className="min-h-[44px] rounded-full bg-[var(--color-ink)] px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                loading={createHold.isPending}
               >
-                {createHold.isPending ? 'Creating…' : 'Create hold'}
-              </button>
+                Create hold
+              </Button>
             </div>
           </form>
           {createHold.isError && (
@@ -429,9 +440,20 @@ export default function AdminDataRetention(): JSX.Element {
             </p>
           )}
           {holds.isLoading ? (
-            <Spinner label="Loading active legal holds" />
+            <div className="flex justify-center py-8">
+              <Spinner label="Loading active legal holds" />
+            </div>
           ) : holds.isError ? (
-            <ErrorState title="Failed to load legal holds" error={holds.error} />
+            <ErrorState
+              title="Failed to load legal holds"
+              description="Could not load legal holds. Please try again."
+              error={holds.error instanceof Error ? holds.error : null}
+              action={
+                <Button variant="secondary" size="sm" onClick={() => void holds.refetch()}>
+                  Retry
+                </Button>
+              }
+            />
           ) : (holds.data ?? []).length === 0 ? (
             <EmptyState title="No active legal holds" description="New holds will appear here." />
           ) : (
@@ -463,14 +485,14 @@ export default function AdminDataRetention(): JSX.Element {
                           : 'Indefinite'}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => release(hold.id)}
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           disabled={releaseHold.isPending}
-                          className="min-h-[44px] rounded-full border border-[var(--color-border)] px-4 text-xs font-semibold text-[var(--color-ink)] disabled:opacity-50"
+                          onClick={() => setReleaseTarget(hold.id)}
                         >
                           Release
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -480,6 +502,48 @@ export default function AdminDataRetention(): JSX.Element {
           )}
         </CardBody>
       </Card>
+
+      <Dialog
+        open={releaseTarget !== null}
+        onClose={() => {
+          setReleaseTarget(null);
+          setReleaseReason('');
+        }}
+        title="Release legal hold?"
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setReleaseTarget(null);
+                setReleaseReason('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              disabled={releaseReason.trim().length < 10}
+              loading={releaseHold.isPending}
+              onClick={confirmRelease}
+            >
+              Release
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          The release will be recorded in the audit trail. Enter the approval or legal basis (at
+          least 10 characters).
+        </p>
+        <textarea
+          value={releaseReason}
+          onChange={(e) => setReleaseReason(e.target.value)}
+          rows={3}
+          placeholder="Legal basis for release"
+          className="mt-3 block w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+        />
+      </Dialog>
     </div>
   );
 }

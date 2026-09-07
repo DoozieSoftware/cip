@@ -16,8 +16,8 @@ const NAV = [
  */
 export function PublicLayout(): JSX.Element {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
-      <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
+    <div className="min-h-screen bg-[var(--color-canvas)]">
+      <header className="border-b border-[var(--color-border-subtle)] bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link
             to="/"
@@ -26,15 +26,17 @@ export function PublicLayout(): JSX.Element {
           >
             <span
               aria-hidden
-              className="grid h-9 w-9 place-items-center rounded-xl bg-brand-600 text-sm font-bold text-white shadow-sm"
+              className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--color-ink)] text-sm font-bold text-white shadow-sm"
             >
               CIP
             </span>
             <div>
-              <div className="text-sm font-semibold text-slate-900">
+              <div className="text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
                 Civic Intelligence Platform
               </div>
-              <div className="text-xs text-slate-500">Public transparency portal</div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">
+                Public transparency portal
+              </div>
             </div>
           </Link>
           <nav aria-label="Public portal sections" className="flex flex-wrap gap-1">
@@ -45,8 +47,10 @@ export function PublicLayout(): JSX.Element {
                 end={n.end}
                 className={({ isActive }) =>
                   cx(
-                    'rounded-md px-3 py-1.5 text-sm font-medium transition',
-                    isActive ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100',
+                    'rounded-full px-3 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1',
+                    isActive
+                      ? 'bg-[var(--color-ink)] text-white'
+                      : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)]',
                   )
                 }
               >
@@ -61,7 +65,7 @@ export function PublicLayout(): JSX.Element {
         <Outlet />
       </main>
 
-      <footer className="mx-auto max-w-5xl px-6 py-8 text-center text-xs text-slate-500">
+      <footer className="mx-auto max-w-5xl px-6 py-8 text-center font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
         Aggregate, privacy-safe statistics only — no citizen identity, no exact locations, no
         evidence.
       </footer>

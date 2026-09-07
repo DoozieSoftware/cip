@@ -47,35 +47,43 @@ function OutcomesChart({ data }: { data: AnalyticsSummary }) {
     const chart = echarts.init(ref.current);
     chart.setOption({
       tooltip: { trigger: 'item' },
-      legend: { bottom: 0, textStyle: { color: '#6f6e69' } },
+      legend: { bottom: 0, textStyle: { color: 'var(--color-text-secondary)' } },
       series: [
         {
           name: 'Today',
           type: 'pie',
           radius: ['45%', '70%'],
           label: {
-            color: '#1d1d1b',
+            color: 'var(--color-ink)',
             // D9: show the raw count and share next to each slice, not
             // only on hover.
             formatter: (p: { name: string; value: number; percent: number }) =>
               `${p.name}: ${p.value} (${p.percent}%)`,
           },
           data: [
-            { name: 'Approved', value: data.approved_today, itemStyle: { color: '#16a34a' } },
+            {
+              name: 'Approved',
+              value: data.approved_today,
+              // var(--color-success) #226b46 — token for success
+              itemStyle: { color: '#226b46' },
+            },
             {
               name: staffReportStatusLabel('rejected'),
               value: data.rejected_today,
-              itemStyle: { color: '#dc2626' },
+              // var(--color-danger) #a42f29 — token for danger
+              itemStyle: { color: '#a42f29' },
             },
             {
               name: staffReportStatusLabel('merged'),
               value: data.merged_today,
+              // Badge purple (#7c3aed) — retained for merged duplicates, no direct --color- token
               itemStyle: { color: '#7c3aed' },
             },
             {
               name: staffReportStatusLabel('escalated'),
               value: data.escalated_today,
-              itemStyle: { color: '#d97706' },
+              // var(--color-warning) #b45309 — token for warning
+              itemStyle: { color: '#b45309' },
             },
           ],
         },
@@ -107,10 +115,10 @@ function StatCard({
   trendUp?: boolean;
 }) {
   return (
-    <div className="rounded-xl bg-white p-4">
+    <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
       <div className="flex items-start justify-between">
-        <div className="rounded-lg bg-[#f3f2ed] p-2">
-          <Icon className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+        <div className="rounded-lg bg-[var(--color-canvas)] p-2">
+          <Icon className="h-5 w-5 text-[var(--color-text-secondary)]" stroke={1.6} />
         </div>
         {trend && (
           <span
@@ -125,8 +133,10 @@ function StatCard({
           </span>
         )}
       </div>
-      <p className="mt-3 text-2xl font-semibold text-[#1d1d1b]">{value}</p>
-      <p className="mt-0.5 text-sm text-[#6f6e69]">{label}</p>
+      <p className="mt-3 text-2xl font-semibold text-[var(--color-ink)]">{value}</p>
+      <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+        {label}
+      </p>
     </div>
   );
 }
@@ -158,8 +168,8 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-xl font-semibold text-[#1d1d1b]">Moderator analytics</h1>
-        <p className="text-sm text-[#6f6e69]">
+        <h1 className="text-xl font-semibold text-[var(--color-ink)]">Moderator analytics</h1>
+        <p className="text-sm text-[var(--color-text-secondary)]">
           Throughput, review workload, and AI agreement for the last 24 h.
         </p>
       </header>
@@ -214,29 +224,41 @@ export default function AnalyticsPage() {
             </Badge>
           </CardHeader>
           <CardBody className="space-y-3">
-            <div className="flex items-center justify-between border-b border-[#f3f2ed] pb-3">
-              <span className="text-sm text-[#6f6e69]">
+            <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
+              <span className="text-sm text-[var(--color-text-secondary)]">
                 {staffReportStatusLabel('pending_moderator')}
               </span>
-              <span className="text-sm font-semibold text-[#1d1d1b]">{a.pending_moderator}</span>
+              <span className="text-sm font-semibold text-[var(--color-ink)]">
+                {a.pending_moderator}
+              </span>
             </div>
-            <div className="flex items-center justify-between border-b border-[#f3f2ed] pb-3">
-              <span className="text-sm text-[#6f6e69]">Duplicate candidates</span>
-              <span className="text-sm font-semibold text-[#1d1d1b]">{a.duplicates_pending}</span>
+            <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
+              <span className="text-sm text-[var(--color-text-secondary)]">
+                Duplicate candidates
+              </span>
+              <span className="text-sm font-semibold text-[var(--color-ink)]">
+                {a.duplicates_pending}
+              </span>
             </div>
-            <div className="flex items-center justify-between border-b border-[#f3f2ed] pb-3">
-              <span className="text-sm text-[#6f6e69]">Misrepresentation alerts</span>
-              <span className="text-sm font-semibold text-[#1d1d1b]">{a.fraud_pending}</span>
+            <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
+              <span className="text-sm text-[var(--color-text-secondary)]">
+                Misrepresentation alerts
+              </span>
+              <span className="text-sm font-semibold text-[var(--color-ink)]">
+                {a.fraud_pending}
+              </span>
             </div>
-            <div className="flex items-center justify-between border-b border-[#f3f2ed] pb-3">
-              <span className="text-sm text-[#6f6e69]">Average review time</span>
-              <span className="text-sm font-semibold text-[#1d1d1b]">
+            <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
+              <span className="text-sm text-[var(--color-text-secondary)]">
+                Average review time
+              </span>
+              <span className="text-sm font-semibold text-[var(--color-ink)]">
                 {a.avg_review_minutes} min
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-[#6f6e69]">AI accuracy (7d)</span>
-              <span className="text-sm font-semibold text-[#1d1d1b]">
+              <span className="text-sm text-[var(--color-text-secondary)]">AI accuracy (7d)</span>
+              <span className="text-sm font-semibold text-[var(--color-ink)]">
                 {a.ai_accuracy_pct.toFixed(1)}%
               </span>
             </div>

@@ -37,7 +37,7 @@ interface InfoRowProps {
 
 function InfoRow({ label, value }: InfoRowProps): JSX.Element {
   return (
-    <div className="flex min-h-[44px] items-center justify-between gap-4 py-3">
+    <div className="flex min-h-11 items-center justify-between gap-4 py-3">
       <dt className="text-sm text-[var(--color-text-secondary)]">{label}</dt>
       <dd className="text-sm font-medium text-[var(--color-ink)]">{value ?? '—'}</dd>
     </div>
@@ -52,7 +52,7 @@ interface SectionProps {
 
 function Section({ title, icon, children }: SectionProps): JSX.Element {
   return (
-    <div className="rounded-2xl border border-black/10 bg-white p-5">
+    <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
       <div className="flex items-center gap-3">
         <span
           className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)] text-[var(--color-text-subtle)]"
@@ -62,7 +62,7 @@ function Section({ title, icon, children }: SectionProps): JSX.Element {
         </span>
         <h2 className="text-sm font-medium text-[var(--color-ink)]">{title}</h2>
       </div>
-      <div className="mt-3 divide-y divide-[var(--color-border-subtle)]">{children}</div>
+      <div className="mt-4 divide-y divide-[var(--color-border-subtle)]">{children}</div>
     </div>
   );
 }
@@ -172,25 +172,25 @@ export default function ProfilePage(): JSX.Element {
   }
 
   return (
-    <div className="space-y-8">
-      <header className="flex items-start justify-between gap-5 border-b border-[var(--color-border-faint)] pb-7">
+    <div className="space-y-6">
+      <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             {t('citizenServices')}
           </p>
-          <h1 className="mt-2 text-[2rem] font-normal leading-[1.05] tracking-[-0.035em] sm:text-4xl">
+          <h1 className="mt-2 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
             {t('profile.title')}
           </h1>
-          <p className="mt-3 max-w-2xl text-[15px] leading-6 text-[var(--color-text-secondary)]">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-text-secondary)]">
             {t('profile.subtitle')}
           </p>
         </div>
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#d8d6cf] bg-[#faf9f6]">
-          <IconUser className="h-5 w-5" stroke={1.6} />
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)]">
+          <IconUser className="h-5 w-5 text-[var(--color-text-subtle)]" stroke={1.6} />
         </span>
       </header>
 
-      <div className="mx-auto max-w-3xl space-y-4">
+      <div className="mx-auto max-w-3xl space-y-6">
         {me.isLoading ? (
           <div className="flex justify-center py-20">
             <Spinner label={t('profile.loading')} />
@@ -209,7 +209,7 @@ export default function ProfilePage(): JSX.Element {
               onClick={() => {
                 void me.refetch();
               }}
-              className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium text-[var(--color-ink)] transition hover:border-black/30 active:bg-[#faf9f6]"
+              className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium text-[var(--color-ink)] transition hover:border-[var(--color-border-strong)] hover:bg-[var(--color-canvas)]"
             >
               {t('common.retry')}
             </button>
@@ -228,7 +228,7 @@ export default function ProfilePage(): JSX.Element {
               onClick={() => {
                 void me.refetch();
               }}
-              className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium text-[var(--color-ink)] transition hover:border-black/30 active:bg-[#faf9f6]"
+              className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium text-[var(--color-ink)] transition hover:border-[var(--color-border-strong)] hover:bg-[var(--color-canvas)]"
             >
               {t('common.retry')}
             </button>
@@ -237,12 +237,12 @@ export default function ProfilePage(): JSX.Element {
           <>
             <form
               onSubmit={(event) => void saveProfile(event)}
-              className="rounded-2xl border border-[var(--color-ink)]/15 bg-[var(--color-surface-alt)] p-5"
+              className="rounded-xl bg-[var(--color-surface-alt)] p-6 shadow-sm ring-1 ring-black/5"
               aria-labelledby="profile-completion-title"
             >
               <h2
                 id="profile-completion-title"
-                className="text-base font-semibold text-[var(--color-ink)]"
+                className="text-sm font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
               >
                 {profileNeedsCompletion ? t('profile.completeTitle') : t('profile.editTitle')}
               </h2>
@@ -257,7 +257,8 @@ export default function ProfilePage(): JSX.Element {
                     onChange={(event) => setPreferredName(event.target.value)}
                     autoComplete="nickname"
                     maxLength={120}
-                    className="mt-1 min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-base font-normal"
+                    placeholder={t('profile.preferredName')}
+                    className="mt-1 min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
                   />
                 </label>
                 <label className="text-sm font-medium text-[var(--color-ink)]">
@@ -270,7 +271,8 @@ export default function ProfilePage(): JSX.Element {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     autoComplete="email"
-                    className="mt-1 min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-base font-normal"
+                    placeholder="you@example.com"
+                    className="mt-1 min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
                   />
                 </label>
                 <label className="text-sm font-medium text-[var(--color-ink)]">
@@ -278,7 +280,7 @@ export default function ProfilePage(): JSX.Element {
                   <select
                     value={profileLocale}
                     onChange={(event) => setProfileLocale(event.target.value as 'en-IN' | 'kn-IN')}
-                    className="mt-1 min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-base font-normal"
+                    className="mt-1 min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
                   >
                     <option value="en-IN">{t('profile.languageEnglish')}</option>
                     <option value="kn-IN">{t('profile.languageKannada')}</option>
@@ -291,7 +293,7 @@ export default function ProfilePage(): JSX.Element {
                     onChange={(event) =>
                       setNotificationChannel(event.target.value as 'sms' | 'push' | 'email')
                     }
-                    className="mt-1 min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-base font-normal"
+                    className="mt-1 min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
                   >
                     <option value="sms">{t('profile.channelSms')}</option>
                     <option value="push">{t('profile.channelPush')}</option>
@@ -300,18 +302,14 @@ export default function ProfilePage(): JSX.Element {
                 </label>
               </div>
               {saveError ? (
-                <p role="alert" className="mt-3 text-sm text-red-700">
+                <p role="alert" className="mt-3 text-sm font-medium text-[var(--color-danger)]">
                   {saveError}
                 </p>
               ) : null}
               <button
                 type="submit"
-                // Language / notification-channel choices are saveable on
-                // their own; only `saving` disables the button. The backend
-                // accepts preferred_name: null (UpdateProfileRequest), and
-                // the completion banner above keeps nudging for a name.
                 disabled={saving}
-                className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? t('profile.saving') : t('profile.save')}
               </button>
@@ -377,7 +375,7 @@ export default function ProfilePage(): JSX.Element {
                   onClick={() => void togglePush()}
                   aria-label={t('settings.pushNotifications')}
                   aria-pressed={pushOn}
-                  className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 ${pushOn ? 'bg-[var(--color-ink)]' : 'bg-[#d8d6cf]'} disabled:cursor-not-allowed disabled:opacity-50`}
+                  className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 ${pushOn ? 'bg-[var(--color-ink)]' : 'bg-[var(--color-border)]'} disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   <span
                     className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${pushOn ? 'translate-x-6' : 'translate-x-1'}`}
@@ -393,23 +391,23 @@ export default function ProfilePage(): JSX.Element {
               <div className="flex flex-wrap gap-x-6 gap-y-1 py-2">
                 <Link
                   to="/citizen/legal/privacy"
-                  className="inline-flex min-h-11 items-center text-sm text-[var(--color-ink)] underline underline-offset-4"
+                  className="inline-flex min-h-11 items-center text-sm text-[var(--color-ink)] underline underline-offset-4 hover:text-[var(--color-ink-soft)]"
                 >
                   {t('settings.privacyPolicy')}
                 </Link>
                 <Link
                   to="/citizen/legal/terms"
-                  className="inline-flex min-h-11 items-center text-sm text-[var(--color-ink)] underline underline-offset-4"
+                  className="inline-flex min-h-11 items-center text-sm text-[var(--color-ink)] underline underline-offset-4 hover:text-[var(--color-ink-soft)]"
                 >
                   {t('settings.termsOfUse')}
                 </Link>
               </div>
             </Section>
 
-            <div className="rounded-2xl border border-[#d8cfae] bg-[#f1ead4] p-5">
+            <div className="rounded-xl bg-[var(--color-surface-alt)] p-6 shadow-sm ring-1 ring-black/5">
               <div className="flex items-start gap-4">
                 <span
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#e8dfc0] text-[#746f5e]"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-[var(--color-text-subtle)] ring-1 ring-black/5"
                   aria-hidden
                 >
                   <IconPhone className="h-4 w-4" stroke={1.6} />
@@ -418,7 +416,7 @@ export default function ProfilePage(): JSX.Element {
                   <p className="text-sm font-medium text-[var(--color-ink)]">
                     {t('profile.needToUpdate')}
                   </p>
-                  <p className="mt-1 text-sm leading-relaxed text-[var(--color-text-subtle)]">
+                  <p className="mt-1 text-sm leading-relaxed text-[var(--color-text-secondary)]">
                     {t('profile.updateDetail')}
                   </p>
                 </div>

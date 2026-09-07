@@ -4,30 +4,70 @@ declare(strict_types=1);
 
 namespace App\Modules\TextileCollections\Services;
 
+use App\Modules\Media\Enums\MediaScanStatus;
+use App\Modules\Media\Jobs\ComputeHashesJob;
+use App\Modules\Media\Jobs\GenerateThumbnailJob;
 use App\Modules\Media\Models\Media;
+use App\Modules\Media\Services\ChainOfCustodyWriter;
 use App\Modules\Security\Models\AuditLog;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\TextileCollections\Events\TextileCollectionCollected;
+use App\Modules\TextileCollections\Events\TextileCollectionDropoffConfirmed;
 use App\Modules\TextileCollections\Events\TextileCollectionRejected;
 use App\Modules\TextileCollections\Events\TextileCollectionScheduled;
 use App\Modules\TextileCollections\Models\TextileCollectionBatch;
 use App\Modules\TextileCollections\Models\TextileCollectionRequest;
 use App\Modules\Users\Models\User;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 final class TextileCollectionOperationsService
 {
+    public function __construct(
+        private readonly ChainOfCustodyWriter $chainOfCustody = new ChainOfCustodyWriter,
+    ) {}
+
     public function approve(TextileCollectionRequest $collection, User $actor): TextileCollectionRequest
+    {
+        // Lane-aware approve: dropoff -> dropoff_awaiting_drop, premises -> ready_to_group
+        if ($collection->collection_method === 'dropoff') {
+            return $this->confirmDropoff($collection, $actor);
+        }
+
+        return $this->approvePickup($collection, $actor);
+    }
+
+    public function confirmDropoff(TextileCollectionRequest $collection, User $actor, ?string $validFrom = null, ?string $validUntil = null): TextileCollectionRequest
     {
         if ($collection->status !== TextileCollectionRequest::STATUS_PENDING_REVIEW) {
             throw ApiException::validation('Only requests awaiting review can be approved.');
         }
 
-        $collection->update(['status' => TextileCollectionRequest::STATUS_READY_TO_GROUP]);
-        $this->audit($actor, $collection->id, 'textile.approve', ['status' => TextileCollectionRequest::STATUS_PENDING_REVIEW], [
-            'status' => TextileCollectionRequest::STATUS_READY_TO_GROUP,
+        if ($collection->collection_method !== 'dropoff') {
+            throw ApiException::validation('confirmDropoff only for dropoff method.');
+        }
+        $collection->update([
+            'status' => TextileCollectionRequest::STATUS_DROPOFF_AWAITING_DROP,
+            'dropoff_confirmed_at' => now(),
+            'dropoff_valid_from' => $validFrom,
+            'dropoff_valid_until' => $validUntil,
         ]);
+        $this->audit($actor, $collection->id, 'textile.approve_dropoff', ['status' => TextileCollectionRequest::STATUS_PENDING_REVIEW], ['status' => TextileCollectionRequest::STATUS_DROPOFF_AWAITING_DROP]);
+        TextileCollectionDropoffConfirmed::dispatch($collection->refresh());
+
+        return $collection->refresh()->load(['citizen', 'serviceZone', 'batch']);
+    }
+
+    public function approvePickup(TextileCollectionRequest $collection, User $actor): TextileCollectionRequest
+    {
+        if ($collection->status !== TextileCollectionRequest::STATUS_PENDING_REVIEW) {
+            throw ApiException::validation('Only requests awaiting review can be approved.');
+        }
+        $collection->update(['status' => TextileCollectionRequest::STATUS_READY_TO_GROUP]);
+        $this->audit($actor, $collection->id, 'textile.approve', ['status' => TextileCollectionRequest::STATUS_PENDING_REVIEW], ['status' => TextileCollectionRequest::STATUS_READY_TO_GROUP]);
 
         return $collection->refresh()->load(['citizen', 'serviceZone', 'batch']);
     }
@@ -69,6 +109,10 @@ final class TextileCollectionOperationsService
                     throw ApiException::validation('All requests in a trip must belong to the same service zone.');
                 }
 
+                if ($collection->collection_method === 'dropoff') {
+                    throw ApiException::validation('Drop-off requests must never enter a trip.');
+                }
+
                 if (! in_array($collection->status, [
                     TextileCollectionRequest::STATUS_READY_TO_GROUP,
                     TextileCollectionRequest::STATUS_MISSED,
@@ -83,7 +127,7 @@ final class TextileCollectionOperationsService
                 'collection_date' => $collectionDate,
                 'window_start' => $windowStart,
                 'window_end' => $windowEnd,
-                'status' => 'planned',
+                'status' => TextileCollectionBatch::STATUS_PLANNED,
                 'trip_reference' => $tripReference,
                 'instructions' => $instructions,
                 'created_by' => $actor->id,
@@ -122,7 +166,25 @@ final class TextileCollectionOperationsService
         ?float $actualWeightKg,
         ?string $reason,
         User $actor,
+        ?string $idempotencyKey = null,
     ): TextileCollectionRequest {
+        // Idempotency: retry with same key must not create a second outcome.
+        if ($idempotencyKey !== null && $idempotencyKey !== '' && $collection->outcome_idempotency_key === $idempotencyKey) {
+            // Already applied — return current state without duplicating audit/events.
+            return $collection->refresh()->load(['serviceZone', 'batch']);
+        }
+
+        // If already finalized, a different idempotency key is a conflict (prevents double outcome).
+        if (in_array($collection->status, [TextileCollectionRequest::STATUS_PICKED_UP, TextileCollectionRequest::STATUS_MISSED, TextileCollectionRequest::STATUS_REJECTED], true)
+            && $collection->outcome_idempotency_key !== null
+            && $idempotencyKey !== $collection->outcome_idempotency_key) {
+            // For already-terminal records, only the original idempotency key is idempotent.
+            // Without a matching key, treat as conflict to avoid overwriting a staff member's later outcome.
+            if ($collection->status === TextileCollectionRequest::STATUS_PICKED_UP) {
+                throw ApiException::validation('Collection outcome already recorded.');
+            }
+        }
+
         $this->assertOutcomeAllowed($collection, $outcome);
 
         if ($outcome === 'collected') {
@@ -136,26 +198,49 @@ final class TextileCollectionOperationsService
                 'actual_bags' => $actualBags,
                 'actual_weight_kg' => $actualWeightKg,
                 'picked_up_at' => now(),
+                'outcome_idempotency_key' => $idempotencyKey,
             ],
             'missed' => [
                 'status' => TextileCollectionRequest::STATUS_MISSED,
                 'missed_pickup_reason' => $reason,
                 'batch_id' => null,
+                'outcome_idempotency_key' => $idempotencyKey,
             ],
             'rejected' => [
                 'status' => TextileCollectionRequest::STATUS_REJECTED,
                 'rejection_reason' => $reason,
                 'batch_id' => null,
+                'outcome_idempotency_key' => $idempotencyKey,
             ],
             'cancelled' => [
                 'status' => TextileCollectionRequest::STATUS_CANCELLED,
                 'cancellation_reason' => $reason,
                 'batch_id' => null,
+                'outcome_idempotency_key' => $idempotencyKey,
             ],
             default => throw ApiException::validation('Unsupported collection outcome.'),
         };
 
-        $collection->update($updates);
+        // Guard against concurrent outcome overwrite via row-level idempotency check.
+        $affected = DB::table('textile_collection_requests')
+            ->where('id', $collection->id)
+            ->where(function (Builder $q) use ($collection): void {
+                // Only allow transition from the status we validated above.
+                $q->where('status', $collection->status);
+            })
+            ->update(array_merge($updates, ['updated_at' => now()]));
+
+        if ($affected === 0) {
+            // Concurrent update — check if idempotency now matches (retry won).
+            $fresh = TextileCollectionRequest::query()->find($collection->id);
+
+            if ($fresh !== null && $idempotencyKey !== null && $fresh->outcome_idempotency_key === $idempotencyKey) {
+                return $fresh->load(['serviceZone', 'batch']);
+            }
+
+            throw ApiException::validation('Concurrent outcome conflict; please retry.');
+        }
+        $collection->refresh();
         $this->audit($actor, $collection->id, 'textile.outcome', $before, [
             'status' => $collection->status,
             'actual_bags' => $collection->actual_bags,
@@ -178,12 +263,16 @@ final class TextileCollectionOperationsService
 
     private function assertOutcomeAllowed(TextileCollectionRequest $collection, string $outcome): void
     {
+        if ($outcome === 'collected' && $collection->collection_method === 'dropoff') {
+            throw ApiException::validation('Use receipt for drop-off collections.');
+        }
         $allowedStatuses = match ($outcome) {
             'collected', 'missed' => [TextileCollectionRequest::STATUS_SCHEDULED],
             'rejected' => [TextileCollectionRequest::STATUS_PENDING_REVIEW],
             'cancelled' => [
                 TextileCollectionRequest::STATUS_PENDING_REVIEW,
                 TextileCollectionRequest::STATUS_READY_TO_GROUP,
+                TextileCollectionRequest::STATUS_DROPOFF_AWAITING_DROP,
                 TextileCollectionRequest::STATUS_SCHEDULED,
                 TextileCollectionRequest::STATUS_MISSED,
             ],
@@ -210,6 +299,149 @@ final class TextileCollectionOperationsService
                 422,
             );
         }
+    }
+
+    /**
+     * Phase 4 offline-safe: atomic proof + outcome. Idempotent when
+     * the Idempotency-Key middleware replays the stored 2xx; within
+     * the handler we also guard against double-collect via status
+     * check so a retry that somehow re-enters (e.g. pending_expiry)
+     * returns the already-picked_up row instead of creating a second
+     * proof/media chain.
+     */
+    public function recordCollectedWithProof(
+        TextileCollectionRequest $collection,
+        User $actor,
+        int $actualBags,
+        float $actualWeightKg,
+        UploadedFile $photo,
+        ?string $reason = null,
+    ): TextileCollectionRequest {
+        if ($collection->collection_method === 'dropoff') {
+            throw ApiException::validation('Use receipt for drop-off collections.');
+        }
+
+        // If already collected, return idempotently — the proof chain
+        // is authoritative and we must not create a second media row.
+        if ($collection->status === TextileCollectionRequest::STATUS_PICKED_UP) {
+            return $collection->load(['serviceZone', 'batch', 'photos']);
+        }
+
+        if ($collection->status !== TextileCollectionRequest::STATUS_SCHEDULED) {
+            throw ApiException::validation('This action is not available at the current collection stage.');
+        }
+
+        return DB::transaction(function () use ($collection, $actor, $actualBags, $actualWeightKg, $photo, $reason): TextileCollectionRequest {
+            $locked = TextileCollectionRequest::query()->whereKey($collection->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->status === TextileCollectionRequest::STATUS_PICKED_UP) {
+                return $locked->load(['serviceZone', 'batch', 'photos']);
+            }
+
+            if ($locked->status !== TextileCollectionRequest::STATUS_SCHEDULED) {
+                throw ApiException::validation('This action is not available at the current collection stage.');
+            }
+
+            // Store proof via textile media pipeline (reuse same logic as TextileCollectionMediaService::store
+            // but inline to keep the whole collect atomic). We delegate to Media model creation directly
+            // to avoid duplicating storage logic — but we keep checksum/audit.
+            $media = $this->storeProofMedia($collection->id, $photo, (string) $actor->id);
+
+            $before = ['status' => $locked->status];
+            $locked->update([
+                'status' => TextileCollectionRequest::STATUS_PICKED_UP,
+                'actual_bags' => $actualBags,
+                'actual_weight_kg' => $actualWeightKg,
+                'picked_up_at' => now(),
+            ]);
+
+            $this->audit($actor, $locked->id, 'textile.outcome', $before, [
+                'status' => TextileCollectionRequest::STATUS_PICKED_UP,
+                'actual_bags' => $actualBags,
+                'actual_weight_kg' => $actualWeightKg,
+                'proof_media_id' => $media->id,
+                'reason' => $reason,
+            ]);
+
+            $refreshed = $locked->refresh()->load(['serviceZone', 'batch', 'photos']);
+            TextileCollectionCollected::dispatch($refreshed);
+
+            return $refreshed;
+        });
+    }
+
+    private function storeProofMedia(string $collectionId, UploadedFile $file, string $uploaderId): Media
+    {
+        $id = (string) Str::uuid();
+        $extension = strtolower((string) $file->getClientOriginalExtension()) ?: match (strtolower((string) $file->getMimeType())) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => 'bin',
+        };
+        /** @var string $diskName */
+        $diskName = config('cip.media.disk', 'local');
+        $storagePath = sprintf('proof/textile/%s/photo/%s.%s', $collectionId, $id, $extension);
+        $sourcePath = $file->getRealPath();
+
+        if (! is_string($sourcePath) || $sourcePath === '' || ! is_file($sourcePath)) {
+            throw ApiException::serverError('Unable to stage the uploaded photo.');
+        }
+        $sha256 = hash_file('sha256', $sourcePath);
+
+        if (! is_string($sha256) || preg_match('/^[a-f0-9]{64}$/', $sha256) !== 1) {
+            throw ApiException::serverError('Unable to establish uploaded photo integrity.');
+        }
+        $stream = fopen($sourcePath, 'rb');
+
+        if ($stream === false) {
+            throw ApiException::serverError('Unable to read uploaded photo.');
+        }
+
+        try {
+            $written = Storage::disk($diskName)->put($storagePath, $stream);
+        } finally {
+            fclose($stream);
+        }
+
+        if (! $written) {
+            throw ApiException::serverError('Failed to store uploaded photo.');
+        }
+        $dimensions = @getimagesize($sourcePath);
+        $width = is_array($dimensions) && $dimensions[0] > 0 ? $dimensions[0] : null;
+        $height = is_array($dimensions) && $dimensions[1] > 0 ? $dimensions[1] : null;
+
+        $media = Media::query()->create([
+            'id' => $id,
+            'report_id' => null,
+            'textile_collection_id' => $collectionId,
+            'type' => 'PHOTO',
+            'role' => 'proof',
+            'storage_disk' => $diskName,
+            'storage_path' => $storagePath,
+            'mime' => (string) $file->getMimeType(),
+            'size' => (int) $file->getSize(),
+            'width' => $width,
+            'height' => $height,
+            'checksum' => $sha256,
+            'scan_status' => MediaScanStatus::CLEAN,
+            'uploaded_at' => now(),
+            'uploaded_by' => $uploaderId,
+            'metadata' => ['source' => 'textile_collect_offline_safe'],
+            'version' => 1,
+            'is_replaced' => false,
+        ]);
+
+        $this->chainOfCustody->record($media, ChainOfCustodyWriter::EVENT_UPLOAD, metadata: [
+            'sha256' => $sha256,
+            'storage_path' => $storagePath,
+            'context' => 'textile_collect',
+        ]);
+
+        ComputeHashesJob::dispatch($media->id);
+        GenerateThumbnailJob::dispatch($media->id);
+
+        return $media;
     }
 
     /**

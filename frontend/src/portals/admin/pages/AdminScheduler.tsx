@@ -17,8 +17,8 @@ function StatusPill({ paused }: { paused: boolean }): JSX.Element {
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide ring-1 ring-inset ${
         paused
-          ? 'bg-[#fbeeed] text-[var(--color-danger)] ring-[#ecccc8]'
-          : 'bg-[#edf7f0] text-[var(--color-success)] ring-[#c8e6d2]'
+          ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)] ring-[var(--color-danger)]/20'
+          : 'bg-[var(--color-success)]/10 text-[var(--color-success)] ring-[var(--color-success)]/20'
       }`}
     >
       <span aria-hidden>{paused ? '⏸' : '▶'}</span>
@@ -112,6 +112,11 @@ export default function AdminScheduler(): JSX.Element {
           title="Failed to load scheduler"
           description="The scheduler jobs could not be loaded. Try again in a moment."
           error={jobs.error instanceof Error ? jobs.error : null}
+          action={
+            <Button variant="secondary" size="sm" onClick={() => void jobs.refetch()}>
+              Retry
+            </Button>
+          }
         />
       </div>
     );
@@ -119,9 +124,12 @@ export default function AdminScheduler(): JSX.Element {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Ops / Scheduler
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
             Scheduler
           </h1>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
@@ -225,7 +233,7 @@ export default function AdminScheduler(): JSX.Element {
       {action.isError ? (
         <div
           role="alert"
-          className="rounded-xl border border-[#ecccc8] bg-[#fbeeed] px-4 py-3 text-sm text-[var(--color-danger)]"
+          className="rounded-lg border border-[var(--color-danger)]/20 bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]"
         >
           Action failed: {action.error?.message ?? 'unknown error'}
         </div>

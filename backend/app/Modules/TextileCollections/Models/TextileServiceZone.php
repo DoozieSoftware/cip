@@ -25,7 +25,10 @@ final class TextileServiceZone extends Model
         'code', 'name', 'department_id', 'center_latitude', 'center_longitude', 'service_radius_km',
         'dropoff_enabled', 'premises_pickup_enabled', 'dropoff_name',
         'dropoff_address', 'readiness_instructions', 'active',
-    ];
+        'operating_hours', 'public_phone', 'centre_status', 'centre_closed_note',
+        'receipt_requires_photo', 'receipt_requires_bags', 'receipt_requires_weight',
+        'max_open_dropoffs_per_citizen',
+    ]; // TODO D-01..D-03,D-07 zone config; separate dropoff_centres pending D-01 option b
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -37,6 +40,10 @@ final class TextileServiceZone extends Model
             'dropoff_enabled' => 'boolean',
             'premises_pickup_enabled' => 'boolean',
             'active' => 'boolean',
+            'operating_hours' => 'array',
+            'receipt_requires_photo' => 'boolean',
+            'receipt_requires_bags' => 'boolean',
+            'receipt_requires_weight' => 'boolean',
         ];
     }
 

@@ -78,7 +78,7 @@ export default function AdminReports(): JSX.Element {
       <header>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
               Cross-department oversight
             </p>
             <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
@@ -119,14 +119,14 @@ export default function AdminReports(): JSX.Element {
                   updateFilter('q', event.target.value);
                 }}
                 placeholder="Title or tracking number"
-                className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+                className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 pl-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
               />
             </div>
             <Select
               options={[{ value: '', label: 'All departments' }, ...departmentOptions]}
               value={filters.department_id ?? ''}
               onChange={(event) => updateFilter('department_id', event.target.value)}
-              className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+              className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
             />
             <Select
               options={[
@@ -135,19 +135,19 @@ export default function AdminReports(): JSX.Element {
               ]}
               value={filters.status ?? ''}
               onChange={(event) => updateFilter('status', event.target.value)}
-              className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+              className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
             />
             <Select
               options={[{ value: '', label: 'All categories' }, ...categoryOptions]}
               value={filters.category ?? ''}
               onChange={(event) => updateFilter('category', event.target.value)}
-              className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+              className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
             />
             <Select
               options={[{ value: '', label: 'All officers' }, ...officerOptions]}
               value={filters.officer_id ?? ''}
               onChange={(event) => updateFilter('officer_id', event.target.value)}
-              className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+              className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
             />
             <Select
               options={[
@@ -157,7 +157,7 @@ export default function AdminReports(): JSX.Element {
               ]}
               value={filters.assignment_type ?? ''}
               onChange={(event) => updateFilter('assignment_type', event.target.value)}
-              className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+              className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
             />
             <label className="block">
               <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
@@ -167,7 +167,7 @@ export default function AdminReports(): JSX.Element {
                 type="date"
                 value={filters.date_from ?? ''}
                 onChange={(event) => updateFilter('date_from', event.target.value)}
-                className="mt-1 block h-10 w-full rounded-xl border border-[var(--color-border)] bg-white px-4 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+                className="mt-1 block h-10 w-full rounded-lg border border-[var(--color-border)] bg-white px-4 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
               />
             </label>
             <label className="block">
@@ -178,7 +178,7 @@ export default function AdminReports(): JSX.Element {
                 type="date"
                 value={filters.date_to ?? ''}
                 onChange={(event) => updateFilter('date_to', event.target.value)}
-                className="mt-1 block h-10 w-full rounded-xl border border-[var(--color-border)] bg-white px-4 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+                className="mt-1 block h-10 w-full rounded-lg border border-[var(--color-border)] bg-white px-4 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
               />
             </label>
           </div>
@@ -206,9 +206,15 @@ export default function AdminReports(): JSX.Element {
           }
         />
       ) : reports.data.reports.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-white p-10 text-center">
-          <EmptyState title="No complaints match" description="Try clearing one or more filters." />
-        </div>
+        <EmptyState
+          title="No complaints match"
+          description="Try clearing one or more filters."
+          action={
+            <Button variant="secondary" size="sm" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          }
+        />
       ) : (
         <>
           <Card>
@@ -262,13 +268,13 @@ export default function AdminReports(): JSX.Element {
                           tone={reportStatusTone(report.current_status_code)}
                           className={`bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] ring-0 ${
                             reportStatusTone(report.current_status_code) === 'success'
-                              ? '!bg-[#edf7f0] !text-[var(--color-success)]'
+                              ? '!bg-[var(--color-success)]/10 !text-[var(--color-success)]'
                               : reportStatusTone(report.current_status_code) === 'warning'
-                                ? '!bg-[#fff6e4] !text-[#805913]'
+                                ? '!bg-[var(--color-warning)]/10 !text-[var(--color-warning)]'
                                 : reportStatusTone(report.current_status_code) === 'danger'
-                                  ? '!bg-[#fbeeed] !text-[var(--color-danger)]'
+                                  ? '!bg-[var(--color-danger)]/10 !text-[var(--color-danger)]'
                                   : reportStatusTone(report.current_status_code) === 'info'
-                                    ? '!bg-[#eef2fb] !text-[#3b5b9f]'
+                                    ? '!bg-[var(--color-info)]/10 !text-[var(--color-info)]'
                                     : ''
                           }`}
                         >
@@ -314,8 +320,8 @@ export default function AdminReports(): JSX.Element {
                                 <span
                                   className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
                                     assignment.kind === 'secondary'
-                                      ? 'bg-[#fff6e4] text-[#805913]'
-                                      : 'bg-[#eef2fb] text-[#3b5b9f]'
+                                      ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]'
+                                      : 'bg-[var(--color-info)]/10 text-[var(--color-info)]'
                                   }`}
                                 >
                                   {assignment.kind}

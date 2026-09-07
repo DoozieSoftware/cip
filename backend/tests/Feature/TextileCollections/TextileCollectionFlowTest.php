@@ -108,6 +108,8 @@ it('keeps clothes collection out of the complaint submission API', function (): 
         'report_type_id' => $type->id,
         'title' => 'Collect old clothes',
         'description' => 'This must use the dedicated partner service.',
+        'latitude' => 12.9716,
+        'longitude' => 77.5946,
     ])->assertUnprocessable()
         ->assertJsonValidationErrors(['report_type_id']);
 });

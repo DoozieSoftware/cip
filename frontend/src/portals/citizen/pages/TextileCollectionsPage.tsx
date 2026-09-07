@@ -1,8 +1,9 @@
 import { type JSX } from 'react';
 import { Link } from 'react-router-dom';
 import { IconChevronRight, IconPlus, IconRecycle } from '@tabler/icons-react';
-import { EmptyState, ErrorState, Spinner } from '../../../shared/ui';
+import { EmptyState, Spinner } from '../../../shared/ui';
 import { useCitizenTextileCollections } from '../api/textileZones';
+import { TextileOfflineBanner } from '../components/TextileOfflineBanner';
 
 const LABELS: Record<string, string> = {
   pending_review: 'Awaiting Dr. Linen review',
@@ -13,18 +14,110 @@ const LABELS: Record<string, string> = {
   rejected: 'Could not accept',
   cancelled: 'Cancelled',
 };
+const DROPOFF_LABELS: Record<string, string> = {
+  ready_to_group: 'Ready to drop off',
+  scheduled: 'Pass active',
+  picked_up: 'Received at centre',
+};
+const TRIP_LABELS: Record<string, string> = {
+  planned: 'Scheduled',
+  assigned: 'Scheduled',
+  in_progress: 'In progress',
+  completed: 'Completed',
+};
+function formatListDate(d: string | null | undefined): string | null {
+  if (!d) return null;
+  try {
+    return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(d));
+  } catch {
+    return d;
+  }
+}
+
+function MethodBadge({ method }: { method: string }): JSX.Element {
+  const isDropoff = method === 'dropoff';
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${isDropoff ? 'border-[var(--color-info-muted)] bg-[var(--color-info)]/10 text-[var(--color-info)]' : 'border-[var(--color-warning-muted)] bg-[var(--color-warning)]/10 text-[var(--color-warning)]'}`}
+    >
+      {isDropoff ? 'Drop-off' : 'Pickup'}
+    </span>
+  );
+}
 
 export default function TextileCollectionsPage(): JSX.Element {
   const query = useCitizenTextileCollections();
+  if (query.isLoading)
+    return (
+      <div className="mx-auto max-w-4xl py-16">
+        <Spinner label="Loading textile collections" />
+      </div>
+    );
+  if (query.isError)
+    return (
+      <div className="mx-auto max-w-4xl space-y-6">
+        <header className="border-b border-[var(--color-border-faint)] pb-6">
+          <h1 className="text-3xl">Textile collections</h1>
+        </header>
+        <div className="rounded-xl border border-[var(--color-danger-muted)] bg-[var(--color-danger)]/10 p-4 text-sm text-[var(--color-danger)]">
+          Could not load textile collections.{' '}
+          <button
+            type="button"
+            onClick={() => void query.refetch()}
+            className="ml-2 rounded-full border border-[var(--color-danger-muted)] px-4 py-1.5 text-sm"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  const data = query.data ?? [];
+  if (data.length === 0) {
+    return (
+      <div className="mx-auto min-w-0 max-w-4xl space-y-6">
+        <TextileOfflineBanner />
+        <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+              Dr. Linen service
+            </p>
+            <h1 className="mt-2 text-3xl font-normal tracking-[-0.035em]">Textile collections</h1>
+            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+              Track collection requests separately from your civic complaints.
+            </p>
+          </div>
+          <Link
+            to="/citizen/textile-collections/new"
+            className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-[var(--color-ink)] px-4 text-sm font-medium text-white"
+          >
+            <IconPlus className="h-4 w-4" /> New request
+          </Link>
+        </header>
+        <EmptyState
+          title="No collection requests yet"
+          description="Send a request when you have clothes, scrap or e-waste ready — for pickup or drop-off."
+          action={
+            <Link
+              to="/citizen/textile-collections/new"
+              className="rounded-full bg-[var(--color-ink)] px-5 py-3 text-sm text-white"
+            >
+              New request
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto min-w-0 max-w-4xl space-y-6">
+      <TextileOfflineBanner />
       <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
             Dr. Linen service
           </p>
-          <h1 className="mt-2 text-3xl font-normal tracking-[-0.035em]">Textile pickups</h1>
+          <h1 className="mt-2 text-3xl font-normal tracking-[-0.035em]">Textile collections</h1>
           <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
             Track collection requests separately from your civic complaints.
           </p>
@@ -36,64 +129,80 @@ export default function TextileCollectionsPage(): JSX.Element {
           <IconPlus className="h-4 w-4" /> New request
         </Link>
       </header>
-
-      {query.isLoading ? (
-        <div className="py-16">
-          <Spinner label="Loading textile pickups" />
-        </div>
-      ) : null}
-      {query.isError ? (
-        <ErrorState
-          title="Could not load textile pickups"
-          description="Please retry in a moment."
-          action={
-            <button
-              type="button"
-              onClick={() => void query.refetch()}
-              className="rounded-full border border-black/15 px-4 py-2 text-sm"
-            >
-              Retry
-            </button>
-          }
-        />
-      ) : null}
-      {query.data?.length === 0 ? (
-        <EmptyState
-          title="No textile pickup requests"
-          description="Send a request when you have clothes or household textiles ready for collection."
-          action={
-            <Link
-              to="/citizen/textile-collections/new"
-              className="rounded-full bg-[var(--color-ink)] px-5 py-3 text-sm text-white"
-            >
-              Request a pickup
-            </Link>
-          }
-        />
-      ) : null}
-
       <div className="space-y-3">
-        {query.data?.map((item) => (
-          <Link
-            key={item.id}
-            to={`/citizen/textile-collections/${item.id}`}
-            className="flex min-w-0 items-center gap-4 rounded-xl border border-black/10 bg-white p-4 transition hover:border-black/20"
-          >
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
-              <IconRecycle className="h-5 w-5" stroke={1.6} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{item.title}</p>
-              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
-                {item.reference}
-              </p>
-              <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
-                {LABELS[item.status] ?? item.status}
-              </p>
-            </div>
-            <IconChevronRight className="h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]" />
-          </Link>
-        ))}
+        {data.map((item) => {
+          const isDropoff = item.collection_method === 'dropoff';
+          const label =
+            (isDropoff && DROPOFF_LABELS[item.status]) ?? LABELS[item.status] ?? item.status;
+          const batchDate =
+            (
+              item as unknown as {
+                scheduled_date?: string | null;
+                batch?: {
+                  collection_date?: string;
+                  window_start?: string | null;
+                  window_end?: string | null;
+                  status?: string;
+                } | null;
+              }
+            ).scheduled_date ??
+            (item as unknown as { batch?: { collection_date?: string } | null }).batch
+              ?.collection_date ??
+            null;
+          const batch =
+            (
+              item as unknown as {
+                batch?: {
+                  window_start?: string | null;
+                  window_end?: string | null;
+                  status?: string;
+                } | null;
+              }
+            ).batch ?? null;
+          const windowStr =
+            batch?.window_start && batch?.window_end
+              ? `${batch.window_start}–${batch.window_end}`
+              : null;
+          const tripChip =
+            !isDropoff && item.status === 'scheduled' && batch?.status
+              ? (TRIP_LABELS[batch.status] ?? null)
+              : null;
+          const dateLabel =
+            !isDropoff && item.status === 'scheduled' ? formatListDate(batchDate) : null;
+          return (
+            <Link
+              key={item.id}
+              to={`/citizen/textile-collections/${item.id}`}
+              className="flex min-w-0 items-center gap-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-[var(--color-border-subtle)] transition hover:ring-[var(--color-border)]"
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
+                <IconRecycle className="h-5 w-5" stroke={1.6} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{item.title}</p>
+                <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
+                  {item.reference}
+                </p>
+                <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-secondary)]">
+                  <MethodBadge method={item.collection_method} />
+                  <span>{label}</span>
+                  {tripChip ? (
+                    <span className="rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-text-secondary)]">
+                      {tripChip}
+                    </span>
+                  ) : null}
+                </p>
+                {dateLabel ? (
+                  <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+                    {dateLabel}
+                    {windowStr ? ` · ${windowStr}` : ''}
+                  </p>
+                ) : null}
+              </div>
+              <IconChevronRight className="h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]" />
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

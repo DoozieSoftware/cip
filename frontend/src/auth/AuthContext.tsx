@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- auth context, provider, and hook are intentionally colocated as one portal pattern */
 import {
   createContext,
   useCallback,
@@ -51,7 +52,7 @@ export interface AuthContextValue {
   loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -148,6 +149,12 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
 
     if (typeof window !== 'undefined' && ownerId) {
       window.dispatchEvent(new CustomEvent('cip:auth-logout', { detail: { ownerId } }));
+      // Phase 4: clear device-local offline queue tied to this user/session per retention policy
+      try {
+        window.localStorage.removeItem(`cip_offline_queue:${ownerId}`);
+      } catch {
+        // ignore storage errors
+      }
     }
     setToken(null);
     setUser(null);
@@ -187,4 +194,8 @@ export function useAuth(): AuthContextValue {
     throw new Error('useAuth must be used within AuthProvider');
   }
   return ctx;
+}
+
+export function useOptionalAuth(): AuthContextValue | null {
+  return useContext(AuthContext);
 }

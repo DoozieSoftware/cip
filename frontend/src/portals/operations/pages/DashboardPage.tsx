@@ -7,7 +7,7 @@ import {
   IconListDetails,
   IconRefresh,
 } from '@tabler/icons-react';
-import { Card, CardBody, Spinner, EmptyState } from '../../../shared/ui';
+import { Button, Card, CardBody, ErrorState, Spinner } from '../../../shared/ui';
 import { departmentApi } from '../api/operations';
 import { useDepartmentSelection } from '../context/DepartmentSelectionContext';
 import type { DepartmentDashboardCounts } from '../types';
@@ -25,7 +25,7 @@ function MetricCard({
 }) {
   const toneClasses: Record<string, { ring: string; icon: string }> = {
     default: {
-      ring: 'ring-[#ecebe6]',
+      ring: 'ring-[var(--color-border-subtle)]',
       icon: 'bg-[var(--color-canvas)] text-[var(--color-text-secondary)]',
     },
     warning: { ring: 'ring-amber-200', icon: 'bg-amber-50 text-amber-600' },
@@ -40,7 +40,7 @@ function MetricCard({
     <Card>
       <CardBody className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             {label}
           </p>
           <p className="mt-2 text-3xl font-semibold leading-none text-[var(--color-ink)] tabular-nums">
@@ -78,20 +78,19 @@ export default function DashboardPage() {
 
   if (error || !data) {
     return (
-      <EmptyState
+      <ErrorState
         title="Could not load the dashboard"
         description="The department dashboard endpoint did not respond. The backend may be unreachable or your session may have expired."
         action={
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            leftIcon={<IconRefresh className="h-4 w-4" stroke={1.6} />}
             onClick={() => {
               void refetch();
             }}
-            className="mt-3 inline-flex items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
           >
-            <IconRefresh className="h-4 w-4" stroke={1.6} />
             Retry
-          </button>
+          </Button>
         }
       />
     );
@@ -100,12 +99,12 @@ export default function DashboardPage() {
   const categoryEntries = Object.entries(data.by_category ?? {});
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Page header */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <IconListDetails className="h-5 w-5 text-[var(--color-text-tertiary)]" stroke={1.6} />
-          <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+          <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             Live overview
           </span>
         </div>
@@ -159,17 +158,17 @@ export default function DashboardPage() {
           </Card>
         ) : (
           <Card>
-            <CardBody className="divide-y divide-[#ecebe6]">
+            <CardBody className="divide-y divide-[var(--color-border-subtle)]">
               {categoryEntries.map(([code, count]) => {
                 const maxCount = Math.max(...categoryEntries.map(([, c]) => c), 1);
                 const pct = Math.round((count / maxCount) * 100);
                 return (
                   <div key={code} className="flex items-center gap-4 py-3">
-                    <span className="w-32 shrink-0 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                    <span className="w-32 shrink-0 truncate font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                       {code}
                     </span>
                     <div className="flex-1">
-                      <div className="h-1.5 overflow-hidden rounded-full bg-[#ecebe6]">
+                      <div className="h-1.5 overflow-hidden rounded-full bg-[var(--color-border-subtle)]">
                         <div
                           className="h-full rounded-full bg-[var(--color-ink)]"
                           style={{ width: `${pct}%` }}

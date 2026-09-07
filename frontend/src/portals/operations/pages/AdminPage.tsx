@@ -1,22 +1,24 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { IconBuilding, IconUsers } from '@tabler/icons-react';
 import {
+  Badge,
+  Button,
   Card,
   CardBody,
   CardHeader,
   CardTitle,
-  Spinner,
   EmptyState,
+  ErrorState,
   Input,
   Select,
-  Button,
-  Badge,
+  Spinner,
   Table,
-  THead,
   TBody,
-  TR,
-  TH,
   TD,
+  TH,
+  THead,
+  TR,
 } from '../../../shared/ui';
 import { adminApi, type AdminUpdatePayload, type AttachOfficerPayload } from '../api/operations';
 import { useAuth } from '../../../auth/AuthContext';
@@ -52,6 +54,7 @@ export default function AdminPage() {
   const {
     data: officers,
     isLoading,
+    error: officersError,
     refetch,
   } = useQuery<DepartmentOfficer[]>({
     queryKey: ['admin', 'officers', departmentId],
@@ -117,13 +120,25 @@ export default function AdminPage() {
   if (!departmentId) {
     return (
       <div className="space-y-6">
-        <header>
-          <h1 className="text-xl font-semibold text-slate-900">Department admin</h1>
-          <p className="text-sm text-slate-500">No department is assigned to this account.</p>
+        <header className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-ink)]">
+            <IconBuilding className="h-5 w-5 text-white" stroke={1.6} />
+          </div>
+          <div>
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+              Administration
+            </p>
+            <h1 className="text-lg font-semibold tracking-tight text-[var(--color-ink)]">
+              Department admin
+            </h1>
+            <p className="text-xs text-[var(--color-text-secondary)]">
+              No department is assigned to this account.
+            </p>
+          </div>
         </header>
         <Card>
           <CardBody>
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-[var(--color-text-secondary)]">
               Ask a platform administrator to assign this user to a department before managing
               officers or settings.
             </p>
@@ -141,12 +156,37 @@ export default function AdminPage() {
     );
   }
 
+  if (officersError) {
+    return (
+      <ErrorState
+        title="Could not load officers"
+        description="The department officers endpoint did not respond."
+        error={officersError instanceof Error ? officersError : null}
+        action={
+          <Button variant="primary" onClick={() => void refetch()}>
+            Retry
+          </Button>
+        }
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-xl font-semibold text-slate-900">Department admin</h1>
-          <p className="text-sm text-slate-500">{department?.name}</p>
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-ink)]">
+            <IconBuilding className="h-5 w-5 text-white" stroke={1.6} />
+          </div>
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+              Administration
+            </p>
+            <h1 className="text-lg font-semibold tracking-tight text-[var(--color-ink)]">
+              Department admin
+            </h1>
+            <p className="text-xs text-[var(--color-text-secondary)]">{department?.name}</p>
+          </div>
         </div>
         {canChooseDepartment ? (
           <div className="w-full sm:w-72">
@@ -167,10 +207,13 @@ export default function AdminPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Officers</CardTitle>
+          <div className="flex items-center gap-2">
+            <IconUsers className="h-4 w-4 text-[var(--color-text-tertiary)]" stroke={1.6} />
+            <CardTitle>Officers</CardTitle>
+          </div>
         </CardHeader>
-        <CardBody className="space-y-3">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <CardBody className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {canChooseDepartment ? (
               <Select
                 label="Officer"
@@ -199,11 +242,12 @@ export default function AdminPage() {
                 placeholder="Enter an officer account id"
               />
             )}
-            <label className="flex items-center gap-2 pt-6 text-sm text-slate-700">
+            <label className="flex items-center gap-2 pt-6 text-sm text-[var(--color-text-secondary)]">
               <input
                 type="checkbox"
                 checked={newIsManager}
                 onChange={(e) => setNewIsManager(e.target.checked)}
+                className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-ink)] focus:ring-[var(--color-ink)]"
               />
               Is manager
             </label>
@@ -214,6 +258,7 @@ export default function AdminPage() {
                   attachOfficer.mutate();
                 }}
                 disabled={attachOfficer.isPending || newOfficerId.trim() === ''}
+                className="min-h-11 rounded-full px-5"
               >
                 {attachOfficer.isPending ? 'Attaching…' : 'Attach officer'}
               </Button>
@@ -239,22 +284,24 @@ export default function AdminPage() {
               <TBody>
                 {officers.map((o) => (
                   <TR key={o.id}>
-                    <TD>{o.name ?? '—'}</TD>
-                    <TD className="font-mono text-xs">{o.mobile}</TD>
-                    <TD>{o.email ?? '—'}</TD>
+                    <TD className="text-[var(--color-ink)]">{o.name ?? '—'}</TD>
+                    <TD className="font-mono text-xs text-[var(--color-ink)]">{o.mobile}</TD>
+                    <TD className="text-[var(--color-ink)]">{o.email ?? '—'}</TD>
                     <TD>
                       {o.is_manager ? <Badge tone="info">Manager</Badge> : <Badge>Officer</Badge>}
                     </TD>
-                    <TD className="text-xs text-slate-500">
+                    <TD className="text-xs text-[var(--color-text-secondary)]">
                       {o.assigned_at ? new Date(o.assigned_at).toLocaleDateString() : '—'}
                     </TD>
                     <TD>
                       <Button
                         variant="danger"
+                        size="sm"
                         onClick={() => {
                           detachOfficer.mutate(o.id);
                         }}
                         disabled={detachOfficer.isPending}
+                        className="min-h-9 rounded-full focus-visible:ring-2 focus-visible:ring-[var(--color-danger)] focus-visible:ring-offset-2"
                       >
                         Detach
                       </Button>
@@ -271,7 +318,7 @@ export default function AdminPage() {
         <CardHeader>
           <CardTitle>Settings</CardTitle>
         </CardHeader>
-        <CardBody className="space-y-3">
+        <CardBody className="space-y-4">
           <Input
             label="Response target (minutes)"
             type="number"
@@ -279,22 +326,30 @@ export default function AdminPage() {
             onChange={(e) => setSla(e.target.value)}
           />
           <div>
-            <p className="mb-1 text-sm font-medium text-slate-700">Working hours</p>
+            <p className="mb-1 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
+              Working hours
+            </p>
             {/* A day select plus two time inputs per row cannot fit a phone
                 width; scroll the table rather than letting it push the page. */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-lg border border-[var(--color-border-subtle)]">
               <table className="w-full min-w-[20rem] text-sm">
                 <thead>
-                  <tr className="text-xs uppercase text-slate-500">
-                    <th className="text-left">Day</th>
-                    <th className="text-left">Open</th>
-                    <th className="text-left">Close</th>
+                  <tr className="border-b border-[var(--color-border-subtle)] bg-[var(--color-canvas)] text-xs uppercase text-[var(--color-text-secondary)]">
+                    <th className="px-3 py-2 text-left font-mono text-[10px] font-medium tracking-[0.12em]">
+                      Day
+                    </th>
+                    <th className="px-3 py-2 text-left font-mono text-[10px] font-medium tracking-[0.12em]">
+                      Open
+                    </th>
+                    <th className="px-3 py-2 text-left font-mono text-[10px] font-medium tracking-[0.12em]">
+                      Close
+                    </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-[var(--color-border-subtle)]">
                   {workingHours.map((row, idx) => (
                     <tr key={idx}>
-                      <td>
+                      <td className="px-2 py-1.5">
                         <select
                           value={row.day}
                           onChange={(e) => {
@@ -303,7 +358,7 @@ export default function AdminPage() {
                               cur.map((r, i) => (i === idx ? { ...r, day: v } : r)),
                             );
                           }}
-                          className="rounded border border-slate-300 px-2 py-1"
+                          className="rounded-md border border-[var(--color-border)] bg-white px-2 py-1.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ink)]/20"
                         >
                           {DAYS.map((d) => (
                             <option key={d} value={d}>
@@ -312,7 +367,7 @@ export default function AdminPage() {
                           ))}
                         </select>
                       </td>
-                      <td>
+                      <td className="px-2 py-1.5">
                         <input
                           type="time"
                           value={row.open}
@@ -321,10 +376,10 @@ export default function AdminPage() {
                               cur.map((r, i) => (i === idx ? { ...r, open: e.target.value } : r)),
                             )
                           }
-                          className="rounded border border-slate-300 px-2 py-1"
+                          className="rounded-md border border-[var(--color-border)] bg-white px-2 py-1.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ink)]/20"
                         />
                       </td>
-                      <td>
+                      <td className="px-2 py-1.5">
                         <input
                           type="time"
                           value={row.close}
@@ -333,7 +388,7 @@ export default function AdminPage() {
                               cur.map((r, i) => (i === idx ? { ...r, close: e.target.value } : r)),
                             )
                           }
-                          className="rounded border border-slate-300 px-2 py-1"
+                          className="rounded-md border border-[var(--color-border)] bg-white px-2 py-1.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ink)]/20"
                         />
                       </td>
                     </tr>
@@ -353,6 +408,7 @@ export default function AdminPage() {
               updateAdmin.mutate();
             }}
             disabled={updateAdmin.isPending}
+            className="min-h-11 rounded-full px-5"
           >
             {updateAdmin.isPending ? 'Saving…' : 'Save settings'}
           </Button>

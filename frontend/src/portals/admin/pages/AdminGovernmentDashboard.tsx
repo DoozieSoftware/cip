@@ -23,7 +23,7 @@ import {
   usePlatformHealth,
   useSchedulerJobs,
 } from '../api/client';
-import { Card, CardBody, CardHeader, Spinner, ErrorState } from '../../../shared/ui';
+import { Button, Card, CardBody, CardHeader, Spinner, ErrorState } from '../../../shared/ui';
 import { auditActionLabel } from '../../../shared/auditActionLabel';
 
 interface Counts {
@@ -91,6 +91,18 @@ export default function AdminGovernmentDashboard(): JSX.Element {
         <ErrorState
           title="Failed to load dashboard"
           description="Something went wrong while loading the administrative summary."
+          action={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                void counts.refetch();
+                void health.refetch();
+              }}
+            >
+              Retry
+            </Button>
+          }
         />
       </div>
     );
@@ -104,7 +116,7 @@ export default function AdminGovernmentDashboard(): JSX.Element {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <header>
-        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+        <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
           Home / Administration
         </p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
@@ -130,21 +142,21 @@ export default function AdminGovernmentDashboard(): JSX.Element {
       </header>
 
       <div
-        className={`flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3 ${
+        className={`flex flex-wrap items-center justify-between gap-4 rounded-xl px-4 py-3 ring-1 ring-[var(--color-border-subtle)] ${
           health.data?.status === 'ok'
-            ? 'bg-[#e9e6de]'
+            ? 'bg-[var(--color-success)]/10'
             : health.data?.status === 'degraded'
-              ? 'bg-[#fff6e4]'
-              : 'bg-[#fbeeed]'
+              ? 'bg-[var(--color-warning)]/10'
+              : 'bg-[var(--color-danger)]/10'
         }`}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <span
             className={`h-2.5 w-2.5 rounded-full ${
               health.data?.status === 'ok'
-                ? 'bg-[var(--color-ink-soft)]'
+                ? 'bg-[var(--color-success)]'
                 : health.data?.status === 'degraded'
-                  ? 'bg-[#b9822b]'
+                  ? 'bg-[var(--color-warning)]'
                   : 'bg-[var(--color-danger)]'
             }`}
           />
@@ -452,7 +464,7 @@ function SummaryCard({
   return (
     <Link
       to={to}
-      className="group flex items-start gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5 transition hover:ring-[var(--color-ink)]/20"
+      className="group flex items-start gap-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5 transition hover:ring-[var(--color-ink)]/20"
     >
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
         {icon}
@@ -462,7 +474,7 @@ function SummaryCard({
           {label}
         </p>
         <p className="mt-1 text-2xl font-semibold tabular-nums text-[var(--color-ink)]">{value}</p>
-        <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{note}</p>
+        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{note}</p>
       </div>
     </Link>
   );
@@ -473,18 +485,18 @@ function Status({ status }: { status: 'ok' | 'degraded' | 'down' }): JSX.Element
     <span
       className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
         status === 'ok'
-          ? 'text-[var(--color-ink-soft)]'
+          ? 'text-[var(--color-success)]'
           : status === 'degraded'
-            ? 'text-[#805913]'
+            ? 'text-[var(--color-warning)]'
             : 'text-[var(--color-danger)]'
       }`}
     >
       <span
         className={`h-1.5 w-1.5 rounded-full ${
           status === 'ok'
-            ? 'bg-[var(--color-ink-soft)]'
+            ? 'bg-[var(--color-success)]'
             : status === 'degraded'
-              ? 'bg-[#b9822b]'
+              ? 'bg-[var(--color-warning)]'
               : 'bg-[var(--color-danger)]'
         }`}
       />
@@ -503,10 +515,10 @@ function Readiness({
   good: boolean;
 }): JSX.Element {
   return (
-    <div className="flex items-center justify-between gap-3 px-4 py-3">
+    <div className="flex items-center justify-between gap-4 px-4 py-3">
       <dt className="text-sm text-[var(--color-ink)]">{label}</dt>
       <dd
-        className={`text-xs font-semibold ${good ? 'text-[var(--color-ink-soft)]' : 'text-[var(--color-text-tertiary)]'}`}
+        className={`text-xs font-semibold ${good ? 'text-[var(--color-success)]' : 'text-[var(--color-text-tertiary)]'}`}
       >
         {value}
       </dd>
@@ -539,7 +551,7 @@ function TaskLink({
   return (
     <Link
       to={to}
-      className="flex items-center gap-3 px-4 py-3 transition hover:bg-[var(--color-canvas)]"
+      className="flex items-center gap-4 px-4 py-3 transition hover:bg-[var(--color-canvas)]"
     >
       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--color-surface-alt)]">
         {icon}

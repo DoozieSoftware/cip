@@ -5,8 +5,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import TextileRequestPage from '../TextileRequestPage';
+import { ApiError } from '../../../../shared/api/errors';
 import TextileCollectionDetailPage from '../TextileCollectionDetailPage';
 import type { TextileCollectionRequest } from '../../api/textileZones';
+import type * as TextileZonesApi from '../../api/textileZones';
 
 // ── Mock the textileZones API module ──────────────────────────────────────────
 const mockCreate = vi.fn();
@@ -14,7 +16,28 @@ const mockUploadPhoto = vi.fn();
 const mockCancel = vi.fn();
 const mockCollectionData = vi.fn<() => TextileCollectionRequest | null>();
 
-vi.mock('../../api/textileZones', () => ({
+vi.mock('qrcode', () => ({ default: { toCanvas: vi.fn().mockResolvedValue(undefined) } }));
+
+vi.mock('../../api/textileZones', async (importOriginal) => ({
+  ...(await importOriginal<typeof TextileZonesApi>()),
+  useRescheduleTextileCollection: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+    error: null,
+    reset: vi.fn(),
+  }),
+  useUpdateTextileInstructions: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+    error: null,
+    reset: vi.fn(),
+  }),
+  useTextileAvailability: () => ({
+    data: { unavailable_dates: [], next_available_date: null },
+    isLoading: false,
+    isError: false,
+  }),
+  useTextileCapacityMinimum: () => ({ data: null, isLoading: false, isError: false }),
   useCreateTextileCollection: () => ({
     mutateAsync: mockCreate,
     isPending: false,
@@ -22,6 +45,7 @@ vi.mock('../../api/textileZones', () => ({
   }),
   useCitizenTextileCollection: () => ({
     data: mockCollectionData(),
+    refetch: vi.fn(),
     isLoading: false,
     isError: false,
   }),
@@ -248,7 +272,7 @@ describe('TextileRequestPage — photo picker', () => {
 
     await waitFor(() => expect(screen.getByAltText('Preview of your bags')).toBeInTheDocument());
 
-    fireEvent.change(screen.getByLabelText('Request title'), {
+    fireEvent.change(screen.getByLabelText('Short title for your request'), {
       target: { value: 'Test pickup request' },
     });
     fireEvent.click(screen.getByRole('button', { name: /send pickup request/i }));
@@ -259,8 +283,10 @@ describe('TextileRequestPage — photo picker', () => {
     });
   });
 
-  it('still navigates if the photo upload fails', async () => {
-    mockUploadPhoto.mockRejectedValueOnce(new Error('Network error'));
+  it('shows a recoverable warning if the photo upload is rejected', async () => {
+    mockUploadPhoto.mockRejectedValueOnce(
+      new ApiError(422, 'VALIDATION_FAILED', 'Photo was rejected', {}),
+    );
 
     const input = screen.getByLabelText('Choose photo');
     const validFile = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
@@ -268,7 +294,7 @@ describe('TextileRequestPage — photo picker', () => {
 
     await waitFor(() => expect(screen.getByAltText('Preview of your bags')).toBeInTheDocument());
 
-    fireEvent.change(screen.getByLabelText('Request title'), {
+    fireEvent.change(screen.getByLabelText('Short title for your request'), {
       target: { value: 'Test pickup request' },
     });
     fireEvent.click(screen.getByRole('button', { name: /send pickup request/i }));
@@ -294,7 +320,7 @@ describe('TextileRequestPage — photo picker', () => {
 
     await waitFor(() => expect(screen.getByAltText('Preview of your bags')).toBeInTheDocument());
 
-    fireEvent.change(screen.getByLabelText('Request title'), {
+    fireEvent.change(screen.getByLabelText('Short title for your request'), {
       target: { value: 'Test pickup request' },
     });
     fireEvent.click(screen.getByRole('button', { name: /send pickup request/i }));
@@ -358,7 +384,7 @@ describe('TextileRequestPage — category picker', () => {
       { wrapper: qcWrapper },
     );
 
-    fireEvent.change(screen.getByLabelText('Request title'), {
+    fireEvent.change(screen.getByLabelText('Short title for your request'), {
       target: { value: 'Test pickup request' },
     });
     fireEvent.click(screen.getByRole('button', { name: /send pickup request/i }));

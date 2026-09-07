@@ -10,7 +10,7 @@ import {
   IconChevronLeft,
   IconChevronRight,
 } from '@tabler/icons-react';
-import { Spinner, EmptyState, Badge } from '../../../shared/ui';
+import { Spinner, EmptyState, ErrorState, Badge, Card, Button } from '../../../shared/ui';
 import { api } from '../api/client';
 import { departmentApi, type ReportListFilters } from '../api/operations';
 import { ExportMenu } from '../components/ExportMenu';
@@ -162,19 +162,18 @@ export default function ReportListPage() {
 
   if (error || !data) {
     return (
-      <EmptyState
+      <ErrorState
         title="Could not load complaints"
         description="The complaints endpoint did not respond."
         action={
-          <button
-            type="button"
+          <Button
+            variant="primary"
             onClick={() => {
               void refetch();
             }}
-            className="text-sm font-medium text-[var(--color-ink)] underline underline-offset-2"
           >
             Retry
-          </button>
+          </Button>
         }
       />
     );
@@ -209,7 +208,7 @@ export default function ReportListPage() {
   ].filter(Boolean).length;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
@@ -236,17 +235,17 @@ export default function ReportListPage() {
           |
         </span>
         <span>
-          <strong className="font-semibold text-red-600">{overdue}</strong> overdue
+          <strong className="font-semibold text-[var(--color-danger)]">{overdue}</strong> overdue
         </span>
         <span aria-hidden className="text-[var(--color-text-tertiary)]">
           |
         </span>
         <span>
-          <strong className="font-semibold text-emerald-700">{resolved}</strong> fixed
+          <strong className="font-semibold text-[var(--color-success)]">{resolved}</strong> fixed
         </span>
       </div>
 
-      <div className="rounded-xl bg-white p-3">
+      <Card className="p-3">
         <div className="flex gap-2">
           <label className="relative min-w-0 flex-1">
             <span className="sr-only">Search complaints</span>
@@ -262,14 +261,14 @@ export default function ReportListPage() {
               placeholder="Search title or complaint number"
               value={filters.search ?? ''}
               onChange={(e) => updateFilter('search', e.target.value)}
-              className="h-10 w-full rounded-full border-0 bg-[var(--color-canvas)] pl-9 pr-3 text-sm text-[var(--color-ink)] outline-none transition placeholder:text-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-ink)]/10"
+              className="h-10 w-full rounded-lg border-0 bg-[var(--color-canvas)] pl-9 pr-3 text-sm text-[var(--color-ink)] outline-none transition placeholder:text-[var(--color-text-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]/20"
             />
           </label>
           <button
             type="button"
             onClick={() => setFiltersOpen((open) => !open)}
             aria-expanded={filtersOpen}
-            className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-medium transition ${
+            className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 ${
               filtersOpen || activeFilterCount > 0
                 ? 'bg-[var(--color-ink)] text-white'
                 : 'bg-[var(--color-canvas)] text-[var(--color-ink)]'
@@ -294,7 +293,7 @@ export default function ReportListPage() {
                   name="status"
                   value={filters.status ?? ''}
                   onChange={(e) => updateFilter('status', e.target.value)}
-                  className="h-9 w-full rounded-full border-0 bg-[var(--color-canvas)] px-4 text-sm text-[var(--color-ink)] outline-none focus:ring-2 focus:ring-[var(--color-ink)]/10"
+                  className="h-9 w-full rounded-lg border-0 bg-[var(--color-canvas)] px-4 text-sm text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]/20"
                 >
                   {STATUS_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -309,7 +308,7 @@ export default function ReportListPage() {
                   name="category"
                   value={filters.category ?? ''}
                   onChange={(e) => updateFilter('category', e.target.value)}
-                  className="h-9 w-full rounded-full border-0 bg-[var(--color-canvas)] px-4 text-sm text-[var(--color-ink)] outline-none focus:ring-2 focus:ring-[var(--color-ink)]/10"
+                  className="h-9 w-full rounded-lg border-0 bg-[var(--color-canvas)] px-4 text-sm text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]/20"
                 >
                   <option value="">All categories</option>
                   {(reportTypes.data ?? []).map((type) => (
@@ -322,7 +321,7 @@ export default function ReportListPage() {
             </div>
             <div className="mt-2 flex flex-wrap items-end gap-2">
               <label className="min-w-[140px] flex-1">
-                <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                <span className="mb-1 block font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                   From date
                 </span>
                 <input
@@ -330,11 +329,11 @@ export default function ReportListPage() {
                   type="date"
                   value={filters.date_from ?? ''}
                   onChange={(e) => updateFilter('date_from', e.target.value)}
-                  className="h-9 w-full rounded-full border-0 bg-[var(--color-canvas)] px-4 text-sm text-[var(--color-ink)] outline-none focus:ring-2 focus:ring-[var(--color-ink)]/10"
+                  className="h-9 w-full rounded-lg border-0 bg-[var(--color-canvas)] px-4 text-sm text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]/20"
                 />
               </label>
               <label className="min-w-[140px] flex-1">
-                <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                <span className="mb-1 block font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                   To date
                 </span>
                 <input
@@ -342,14 +341,14 @@ export default function ReportListPage() {
                   type="date"
                   value={filters.date_to ?? ''}
                   onChange={(e) => updateFilter('date_to', e.target.value)}
-                  className="h-9 w-full rounded-full border-0 bg-[var(--color-canvas)] px-4 text-sm text-[var(--color-ink)] outline-none focus:ring-2 focus:ring-[var(--color-ink)]/10"
+                  className="h-9 w-full rounded-lg border-0 bg-[var(--color-canvas)] px-4 text-sm text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]/20"
                 />
               </label>
               {activeFilterCount > 0 && (
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="flex h-9 items-center gap-1 rounded-full px-3 text-sm font-medium text-red-600 hover:bg-red-50"
+                  className="flex min-h-11 items-center gap-1 rounded-full px-3 text-sm font-medium text-[var(--color-danger)] transition hover:bg-[var(--color-danger)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)] focus-visible:ring-offset-2"
                 >
                   <IconX size={14} stroke={1.6} />
                   Clear
@@ -358,7 +357,7 @@ export default function ReportListPage() {
             </div>
           </div>
         )}
-      </div>
+      </Card>
 
       {data.data.length === 0 ? (
         <EmptyState title="No complaints match" description="Try clearing your filters." />
@@ -368,7 +367,7 @@ export default function ReportListPage() {
             <Link
               key={r.id}
               to={`/operations/reports/${r.id}${selectedId ? `?department_id=${encodeURIComponent(selectedId)}` : ''}`}
-              className="group block rounded-xl bg-white p-4 transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+              className="group block rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5 transition hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
             >
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0 flex-1">

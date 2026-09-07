@@ -7,11 +7,14 @@ import type { AnalyticsSummary, ReportListItem } from '../types';
 import {
   IconArrowRight,
   IconCheck,
+  IconX,
   IconClock,
   IconEye,
   IconFingerprint,
   IconLink,
   IconTrendingUp,
+  IconGitMerge,
+  IconAlertTriangle,
 } from '@tabler/icons-react';
 
 function StatCard({
@@ -33,16 +36,18 @@ function StatCard({
             letting them push the grid past the viewport. */}
         <span
           title={label}
-          className="min-w-0 flex-1 truncate font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]"
+          className="min-w-0 flex-1 truncate font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]"
         >
           {label}
         </span>
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#f3f2ed]">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--color-canvas)]">
           <Icon className="h-4 w-4" stroke={1.6} />
         </span>
       </div>
-      <div className="mt-3 text-2xl font-semibold text-[#1d1d1b] tabular-nums">{value}</div>
-      {hint && <div className="mt-1 text-xs text-[#85847f]">{hint}</div>}
+      <div className="mt-3 text-2xl font-semibold text-[var(--color-ink)] tabular-nums">
+        {value}
+      </div>
+      {hint && <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">{hint}</div>}
     </div>
   );
 }
@@ -55,19 +60,19 @@ function QueueRow({ item, onSelect }: { item: ReportListItem; onSelect: (id: str
     <button
       type="button"
       onClick={() => onSelect(item.id)}
-      className="flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors hover:bg-[#f3f2ed]"
+      className="flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors hover:bg-[var(--color-canvas)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
     >
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-[#1d1d1b]">{item.title}</p>
-        <p className="truncate text-xs text-[#6f6e69]">
+        <p className="truncate text-sm font-medium text-[var(--color-ink)]">{item.title}</p>
+        <p className="truncate text-xs text-[var(--color-text-secondary)]">
           {category} &middot; {item.tracking_number}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-3">
-        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
           AI {aiConfidence}
         </span>
-        <IconArrowRight className="h-4 w-4 text-[#85847f]" stroke={1.6} />
+        <IconArrowRight className="h-4 w-4 text-[var(--color-text-tertiary)]" stroke={1.6} />
       </div>
     </button>
   );
@@ -114,7 +119,7 @@ export default function DashboardPage() {
             onClick={() => {
               void refetchStats();
             }}
-            className="rounded-full bg-[#1d1d1b] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2d2d2b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d1d1b] focus-visible:ring-offset-2"
+            className="rounded-full bg-[var(--color-ink)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
           >
             Retry
           </button>
@@ -131,14 +136,18 @@ export default function DashboardPage() {
         : 'text-red-600';
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[#1d1d1b]">Dashboard</h1>
-          <p className="mt-0.5 text-sm text-[#6f6e69]">Live complaint review workload</p>
+          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+            Dashboard
+          </h1>
+          <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">
+            Live complaint review workload
+          </p>
         </div>
-        <span className="hidden items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#6f6e69] shadow-sm ring-1 ring-black/5 sm:inline-flex">
+        <span className="hidden items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm ring-1 ring-black/5 sm:inline-flex">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
           Auto-refresh 30 s
         </span>
@@ -146,7 +155,7 @@ export default function DashboardPage() {
 
       {/* Queue stats */}
       <section aria-label="Pending review counts">
-        <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+        <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
           Pending review
         </h2>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -168,7 +177,7 @@ export default function DashboardPage() {
 
       {/* Today's outcomes */}
       <section aria-label="Today's outcomes">
-        <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+        <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
           Today&apos;s outcomes
         </h2>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -176,34 +185,34 @@ export default function DashboardPage() {
           <StatCard
             label={staffReportStatusLabel('rejected')}
             value={stats.rejected_today}
-            icon={IconCheck}
+            icon={IconX}
           />
           <StatCard
             label={staffReportStatusLabel('merged')}
             value={stats.merged_today}
-            icon={IconCheck}
+            icon={IconGitMerge}
           />
           <StatCard
             label={staffReportStatusLabel('escalated')}
             value={stats.escalated_today}
-            icon={IconCheck}
+            icon={IconAlertTriangle}
           />
         </div>
       </section>
 
       {/* AI accuracy */}
       <section>
-        <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+        <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
           AI accuracy
         </h2>
         <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-[#6f6e69]">7-day agreement rate</span>
+            <span className="text-sm text-[var(--color-text-secondary)]">7-day agreement rate</span>
             <span className={`text-lg font-semibold tabular-nums ${aiTone}`}>
               {stats.ai_accuracy_pct.toFixed(1)}%
             </span>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-[#85847f]">
+          <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-tertiary)]">
             Fraction of moderator decisions that agreed with the AI recommendation over the last 7
             days. Lower scores indicate that the AI provider needs prompt tuning or a swap to a
             stronger model.
@@ -214,7 +223,7 @@ export default function DashboardPage() {
       {/* Recent reports + Review CTA */}
       <section aria-label="Complaints awaiting review">
         <div className="flex items-center justify-between">
-          <h2 className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+          <h2 className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             Awaiting review
           </h2>
           <button
@@ -222,7 +231,7 @@ export default function DashboardPage() {
             onClick={() => {
               void navigate('/moderator/queue');
             }}
-            className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-white px-4 text-xs font-medium text-[#1d1d1b] ring-1 ring-[#d8d6cf] transition-colors hover:text-[#6f6e69]"
+            className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-white px-4 text-xs font-medium text-[var(--color-ink)] ring-1 ring-[var(--color-border)] transition-colors hover:bg-[var(--color-canvas)] hover:text-[var(--color-text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
           >
             View all
             <IconArrowRight className="h-3.5 w-3.5" stroke={1.6} />
@@ -231,7 +240,7 @@ export default function DashboardPage() {
 
         <div className="mt-3 overflow-hidden rounded-xl bg-white p-2 shadow-sm ring-1 ring-black/5">
           {recentQueue && recentQueue.length > 0 ? (
-            <ul className="divide-y divide-[#e4e2dc]">
+            <ul className="divide-y divide-[var(--color-border-subtle)]">
               {recentQueue.map((item) => (
                 <li key={item.id}>
                   <QueueRow
@@ -245,7 +254,9 @@ export default function DashboardPage() {
             </ul>
           ) : (
             <div className="p-6 text-center">
-              <p className="text-sm text-[#6f6e69]">No complaints are awaiting review</p>
+              <p className="text-sm text-[var(--color-text-secondary)]">
+                No complaints are awaiting review
+              </p>
             </div>
           )}
         </div>
@@ -256,7 +267,7 @@ export default function DashboardPage() {
             onClick={() => {
               void navigate('/moderator/queue');
             }}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#1d1d1b] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#2d2d2b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d1d1b] focus-visible:ring-offset-2 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-ink)] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 sm:w-auto"
           >
             <IconEye className="h-4 w-4" stroke={1.6} />
             Review complaints

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from '../../../../auth/AuthContext';
 import type { TextileCollectionListItem } from '../../api/textileApi';
 import type * as TextileShared from './shared';
 import TextileDispatchPage from './TextileDispatchPage';
@@ -61,7 +62,9 @@ function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={queryClient}>
-      <TextileDispatchPage />
+      <AuthProvider>
+        <TextileDispatchPage />
+      </AuthProvider>
     </QueryClientProvider>,
   );
 }
@@ -83,6 +86,12 @@ describe('TextileDispatchPage', () => {
       isError: false,
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof useTextileQueue>);
+  });
+
+  it('does not expose a manual refresh action on the dispatch board', () => {
+    renderPage();
+
+    expect(screen.queryByRole('button', { name: 'Refresh' })).not.toBeInTheDocument();
   });
 
   it('uses an accessible proof-photo button instead of exposing the raw file picker', () => {

@@ -12,24 +12,33 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { cx } from '../../../shared/ui';
-import { MapContainer, Marker, TileLayer } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import IssueLocationPicker from '../components/IssueLocationPicker';
 import { CameraCapture } from '../components/CameraCapture';
 import { issueLocationFromReporter, type IssueLocation } from '../components/issueLocation';
 import { ApiError } from '../../../shared/api/errors';
 import { TextileCollectionFields } from '../components/TextileCollectionFields';
+import { CentreCard } from '../components/CentreCard';
 import {
   useCreateTextileCollection,
+  useTextileCapacityMinimum,
+  useTextileAvailability,
+  useTextileServiceZones,
   uploadTextileCollectionPhoto,
+  isTextileNetworkFailure,
+  requestCapacityException,
   type TextileCollectionCategory,
   type TextileCollectionPayload,
 } from '../api/textileZones';
+import { TextileMinimumNotice, isBelowMinimum } from '../components/TextileMinimumNotice';
+import { slotUnavailableFallback } from './textileStatusCopy';
+import { getQueue } from '../offline/queue';
+import { requestBackgroundSync } from '../offline/swBridge';
+import { readSession } from '../../../auth/storage';
+import { useToast } from '../components/Toast';
+import { TextileOfflineBanner } from '../components/TextileOfflineBanner';
 
-const MAX_PHOTO_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_PHOTO_SIZE_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-
 const CATEGORY_OPTIONS: {
   value: TextileCollectionCategory;
   label: string;
@@ -39,61 +48,12 @@ const CATEGORY_OPTIONS: {
   { value: 'metal_scrap', label: 'Metal Scrap', icon: IconSettings },
   { value: 'e_waste', label: 'E-Waste', icon: IconDeviceDesktop },
 ];
-
-const DROP_OFF_PIN = L.divIcon({
-  className: 'cip-dropoff-pin',
-  html: '<span aria-hidden="true" style="display:block;width:22px;height:22px;border-radius:50%;background:#1d6fb8;border:3px solid #fff;box-shadow:0 1px 5px #0008"></span>',
-  iconSize: [22, 22],
-  iconAnchor: [11, 11],
-});
-
-function DropOffMap({ center }: { center: { latitude: number; longitude: number } }): JSX.Element {
-  return (
-    <div
-      role="img"
-      aria-label="Map showing the collection point area"
-      className="mt-3 overflow-hidden rounded-lg border border-blue-200"
-      style={{ height: 190 }}
-    >
-      <MapContainer
-        center={[center.latitude, center.longitude]}
-        zoom={15}
-        style={{ height: '100%', width: '100%' }}
-        scrollWheelZoom={false}
-        attributionControl={false}
-        dragging={false}
-        doubleClickZoom={false}
-        zoomControl={false}
-        touchZoom={false}
-      >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <Marker position={[center.latitude, center.longitude]} icon={DROP_OFF_PIN} />
-      </MapContainer>
-    </div>
-  );
-}
-
-function googleMapsUrl(info: {
-  name: string;
-  address: string;
-  center: { latitude: number; longitude: number } | null;
-}): string {
-  if (info.center) {
-    return `https://www.google.com/maps?q=${info.center.latitude}%2C${info.center.longitude}`;
-  }
-  return `https://www.google.com/maps?q=${encodeURIComponent(`${info.name} ${info.address}`)}`;
-}
-
 function validatePhotoFile(file: File): string | null {
-  if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-    return 'Please select a JPEG, PNG, or WebP image.';
-  }
-  if (file.size > MAX_PHOTO_SIZE_BYTES) {
+  if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) return 'Please select a JPEG, PNG, or WebP image.';
+  if (file.size > MAX_PHOTO_SIZE_BYTES)
     return 'Photo must be 10 MB or smaller. Please choose a smaller file.';
-  }
   return null;
 }
-
 export default function TextileRequestPage(): JSX.Element {
   const navigate = useNavigate();
   const create = useCreateTextileCollection();
@@ -110,8 +70,6 @@ export default function TextileRequestPage(): JSX.Element {
     address: string;
     center: { latitude: number; longitude: number } | null;
   } | null>(null);
-
-  // --- Photo picker state ---
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -119,14 +77,27 @@ export default function TextileRequestPage(): JSX.Element {
   const [photoUploadWarning, setPhotoUploadWarning] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [showCamera, setShowCamera] = useState(false);
-
-  // Revoke object URL on cleanup or when the preview changes.
+  const serviceZonesForMinimum = useTextileServiceZones(category);
+  const zoneIdForMinimum = details?.service_zone_id ?? serviceZonesForMinimum.data?.[0]?.id ?? '';
+  const capacityMinimum = useTextileCapacityMinimum(zoneIdForMinimum);
+  const minimum = capacityMinimum.data;
+  const minimumIsLoading = serviceZonesForMinimum.isLoading || capacityMinimum.isLoading;
+  const [exceptionReason, setExceptionReason] = useState('');
+  const [exceptionError, setExceptionError] = useState<string | null>(null);
+  const [isExceptionSubmitting, setIsExceptionSubmitting] = useState(false);
+  const [showExceptionForm, setShowExceptionForm] = useState(false);
+  const belowMinimum = isBelowMinimum(
+    minimum,
+    details?.estimated_bags ?? null,
+    details?.estimated_weight_kg ?? null,
+    details?.collection_method ?? null,
+  );
+  const allowExceptions = true;
   useEffect(() => {
     return () => {
       if (photoPreview) URL.revokeObjectURL(photoPreview);
     };
   }, [photoPreview]);
-
   function applyPhotoFile(file: File): void {
     setPhotoError(null);
     setPhotoUploadWarning(null);
@@ -139,7 +110,6 @@ export default function TextileRequestPage(): JSX.Element {
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
   }
-
   function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>): void {
     const file = event.target.files?.[0] ?? null;
     if (!file) {
@@ -149,10 +119,8 @@ export default function TextileRequestPage(): JSX.Element {
       return;
     }
     applyPhotoFile(file);
-    // Clear the input so the same file can be re-selected after removal.
     event.target.value = '';
   }
-
   function removePhoto(): void {
     if (photoPreview) URL.revokeObjectURL(photoPreview);
     setPhotoFile(null);
@@ -161,18 +129,22 @@ export default function TextileRequestPage(): JSX.Element {
     setPhotoUploadWarning(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
-
-  const onDetailsChange = useCallback((next: TextileCollectionPayload | null) => {
-    setDetails(next);
-  }, []);
+  const onDetailsChange = useCallback(
+    (next: TextileCollectionPayload | null) => setDetails(next),
+    [],
+  );
   const onValidityChange = useCallback((valid: boolean) => setDetailsValid(valid), []);
-
+  const availability = useTextileAvailability(
+    details?.service_zone_id ?? null,
+    details?.collection_method ?? null,
+  );
+  const isPremises = details?.collection_method === 'premises';
+  const unavailableDates = availability.data?.unavailable_dates ?? [];
+  const nextAvailableDate = availability.data?.next_available_date ?? null;
   function handleCategoryChange(next: TextileCollectionCategory): void {
     setCategory(next);
-    // Clear zone selection when category changes — the zone list will refetch.
     setDetails(null);
   }
-
   function captureLocation(): void {
     if (!navigator.geolocation) {
       setLocationMessage('Location is not available in this browser. You can still continue.');
@@ -204,37 +176,188 @@ export default function TextileRequestPage(): JSX.Element {
       { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 },
     );
   }
-
-  async function submit(): Promise<void> {
+  const toast = useToast();
+  async function submitWithException(): Promise<void> {
     if (!details || !detailsValid || title.trim().length < 5) return;
-
-    const created = await create.mutateAsync({
+    if (!allowExceptions) return;
+    if (exceptionReason.trim().length < 10) {
+      setExceptionError(
+        'Please provide at least 10 characters explaining why an exception is needed.',
+      );
+      return;
+    }
+    setExceptionError(null);
+    setIsExceptionSubmitting(true);
+    const ownerId = readSession()?.user.id ?? null;
+    const idempotencyKey =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `textile-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const payload = {
       ...details,
       title: title.trim(),
       notes: notes.trim() || null,
       latitude: location?.latitude ?? null,
       longitude: location?.longitude ?? null,
-    });
-
-    // Upload the optional photo *after* the request is created.
-    // A photo upload failure is non-blocking — the user is redirected
-    // to the detail page with a warning.
-    if (photoFile) {
-      setUploadingPhoto(true);
-      try {
-        await uploadTextileCollectionPhoto(created.id, photoFile);
-      } catch {
-        setPhotoUploadWarning(
-          'Request created, but the photo could not be uploaded. You can add it later from the request page.',
-        );
-      } finally {
-        setUploadingPhoto(false);
+      idempotency_key: idempotencyKey,
+      photo_file: photoFile,
+    } as Parameters<typeof create.mutateAsync>[0] & {
+      idempotency_key?: string;
+      photo_file?: File | null;
+    };
+    try {
+      const created = await create.mutateAsync(payload);
+      if (photoFile) {
+        setUploadingPhoto(true);
+        try {
+          await uploadTextileCollectionPhoto(created.id, photoFile);
+        } catch (err) {
+          if (isTextileNetworkFailure(err)) {
+            await getQueue(ownerId).enqueue({
+              kind: 'textile.request.photo',
+              payload: {
+                collectionId: created.id,
+                file: photoFile,
+                idempotency_key: idempotencyKey,
+              },
+              id: `${idempotencyKey}-photo`,
+            });
+            void requestBackgroundSync();
+            toast.show(
+              'Photo queued — will upload when back online. It stays on this device only.',
+              'info',
+              5000,
+            );
+          } else {
+            setPhotoUploadWarning(
+              'Request created, but the photo could not be uploaded. You can add it later from the request page.',
+            );
+          }
+        } finally {
+          setUploadingPhoto(false);
+        }
       }
+      try {
+        const exceptionIdempotencyKey =
+          typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : `textile-exception-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        await requestCapacityException({
+          collectionId: created.id,
+          reason: exceptionReason.trim(),
+          reason_code: 'below_minimum',
+          idempotency_key: exceptionIdempotencyKey,
+        });
+        toast.show('Request submitted with exception note — a human will review it.', 'info', 5000);
+      } catch (err) {
+        const msg =
+          err instanceof ApiError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : 'Exception request failed';
+        setExceptionError(msg);
+        toast.show(
+          'Request created, but the exception note could not be saved. You can add it from the detail page.',
+          'info',
+          6000,
+        );
+      }
+      void navigate(`/citizen/textile-collections/${created.id}`);
+    } catch (err) {
+      if (isTextileNetworkFailure(err)) {
+        await getQueue(ownerId).enqueue({
+          kind: 'textile.request.create',
+          payload,
+          id: idempotencyKey,
+        });
+        void requestBackgroundSync();
+        toast.show(
+          'You are offline — request saved on this device and will send automatically when online. Check pending uploads below.',
+          'info',
+          6000,
+        );
+        void navigate('/citizen/textile-collections');
+        return;
+      }
+      return;
+    } finally {
+      setIsExceptionSubmitting(false);
     }
-
-    void navigate(`/citizen/textile-collections/${created.id}`);
   }
 
+  async function submit(): Promise<void> {
+    if (!details || !detailsValid || title.trim().length < 5) return;
+    const ownerId = readSession()?.user.id ?? null;
+    const idempotencyKey =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `textile-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const payload = {
+      ...details,
+      title: title.trim(),
+      notes: notes.trim() || null,
+      latitude: location?.latitude ?? null,
+      longitude: location?.longitude ?? null,
+      idempotency_key: idempotencyKey,
+      photo_file: photoFile,
+    } as Parameters<typeof create.mutateAsync>[0] & {
+      idempotency_key?: string;
+      photo_file?: File | null;
+    };
+    try {
+      const created = await create.mutateAsync(payload);
+      if (photoFile) {
+        setUploadingPhoto(true);
+        try {
+          await uploadTextileCollectionPhoto(created.id, photoFile);
+        } catch (err) {
+          if (isTextileNetworkFailure(err)) {
+            await getQueue(ownerId).enqueue({
+              kind: 'textile.request.photo',
+              payload: {
+                collectionId: created.id,
+                file: photoFile,
+                idempotency_key: idempotencyKey,
+              },
+              id: `${idempotencyKey}-photo`,
+            });
+            void requestBackgroundSync();
+            toast.show(
+              'Photo queued — will upload when back online. It stays on this device only.',
+              'info',
+              5000,
+            );
+          } else {
+            setPhotoUploadWarning(
+              'Request created, but the photo could not be uploaded. You can add it later from the request page.',
+            );
+          }
+        } finally {
+          setUploadingPhoto(false);
+        }
+      }
+      void navigate(`/citizen/textile-collections/${created.id}`);
+    } catch (err) {
+      if (isTextileNetworkFailure(err)) {
+        await getQueue(ownerId).enqueue({
+          kind: 'textile.request.create',
+          payload,
+          id: idempotencyKey,
+        });
+        void requestBackgroundSync();
+        toast.show(
+          'You are offline — request saved on this device and will send automatically when online. Check pending uploads below.',
+          'info',
+          6000,
+        );
+        void navigate('/citizen/textile-collections');
+        return;
+      }
+      // Non-network error — create.error (ApiError) drives the existing error banner.
+      return;
+    }
+  }
   const apiError =
     create.error instanceof ApiError
       ? create.error
@@ -245,15 +368,21 @@ export default function TextileRequestPage(): JSX.Element {
     apiError instanceof ApiError && apiError.code === 'CATEGORY_NOT_SERVED'
       ? apiError.message
       : null;
-  const generalError = categoryError ? null : apiError?.message;
+  const slotUnavailableError =
+    apiError instanceof ApiError &&
+    (apiError.code === 'SLOT_UNAVAILABLE' || apiError.status === 409)
+      ? apiError
+      : null;
+  const generalError = categoryError || slotUnavailableError ? null : apiError?.message;
   const isSubmitting = create.isPending || uploadingPhoto;
-
+  const dropoffActive = dropoffInfo !== null;
   return (
     <div className="mx-auto min-w-0 max-w-3xl space-y-6">
-      <header className="border-b border-[var(--color-border-faint)] pb-6">
+      <TextileOfflineBanner />
+      <header className="border-b border-[var(--color-border-faint)] pb-5">
         <Link
           to="/citizen"
-          className="inline-flex min-h-11 items-center gap-2 text-sm text-[var(--color-text-secondary)]"
+          className="inline-flex h-11 items-center gap-2 text-sm text-[var(--color-text-secondary)]"
         >
           <IconArrowLeft className="h-4 w-4" stroke={1.6} /> Back to services
         </Link>
@@ -262,62 +391,91 @@ export default function TextileRequestPage(): JSX.Element {
             <IconRecycle className="h-5 w-5" stroke={1.7} />
           </span>
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
-              Pickup service
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+              Collection service
             </p>
             <h1 className="mt-1 text-3xl font-normal tracking-[-0.035em]">Request a collection</h1>
             <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-              This is a pickup request sent to a verified local partner. It is not a civic
-              complaint.
+              Pickup at home or drop-off at a centre — you choose.
+            </p>
+            <p className="mt-2 text-xs leading-5 text-[var(--color-text-secondary)]">
+              Every request is reviewed by a person. We never reject silently.
             </p>
           </div>
         </div>
+        <ol className="mt-4 flex gap-2 text-[10px]" aria-label="Steps">
+          <li className="flex-1 rounded-full bg-[var(--color-ink)] px-3 py-1.5 text-center font-medium text-white">
+            1. What to collect
+          </li>
+          <li className="flex-1 rounded-full bg-white px-3 py-1.5 text-center font-medium text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)]">
+            2. How much & where
+          </li>
+          <li className="flex-1 rounded-full bg-white px-3 py-1.5 text-center font-medium text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)]">
+            3. Photo & send
+          </li>
+        </ol>
       </header>
-
-      <section className="space-y-4 rounded-xl bg-white p-5 shadow-sm">
+      <section className="space-y-4 rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
+        <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+          Step 1 — What is it?
+        </p>
         <div>
           <label htmlFor="textile-title" className="text-sm font-medium">
-            Request title
+            Short title for your request
           </label>
+          <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+            Helps the team know what’s inside — you can keep it short.
+          </p>
           <input
             id="textile-title"
             value={title}
-            placeholder="e.g. Wardrobe cleanout"
-            onChange={(event) => setTitle(event.target.value)}
-            className="mt-1 block min-h-11 w-full rounded-lg border border-[#d8d6cf] px-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            placeholder="e.g. Old clothes from house shifting"
+            onChange={(e) => setTitle(e.target.value)}
+            aria-describedby="textile-title-help"
+            className="mt-1 block min-h-11 w-full rounded-lg border border-[var(--color-border)] px-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
+          <p id="textile-title-help" className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+            At least 5 letters — e.g. “2 bags of old clothes” is fine.
+          </p>
         </div>
         <div>
           <label htmlFor="textile-notes" className="text-sm font-medium">
-            What should be collected?
+            What’s inside?{' '}
+            <span className="font-normal text-[var(--color-text-secondary)]">(optional)</span>
           </label>
           <textarea
             id="textile-notes"
             value={notes}
-            onChange={(event) => setNotes(event.target.value)}
+            onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            placeholder="For example: wearable clothes, bedsheets and curtains"
-            className="mt-1 block w-full rounded-lg border border-[#d8d6cf] p-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            placeholder="e.g. Wearable clothes, 2 bedsheets, some torn curtains for recycling"
+            className="mt-1 block w-full rounded-lg border border-[var(--color-border)] p-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
-        </div>
-      </section>
-
-      <section className="space-y-3 rounded-xl bg-white p-5 shadow-sm">
-        <div>
-          <h2 className="text-sm font-medium">What are we collecting?</h2>
-          <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
-            Choose the material type so we can route your request to the right partner.
+          <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+            Torn or wearable — both OK. Just help the team handle it right.
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Material category">
+      </section>
+      <section className="space-y-3 rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
+        <div>
+          <h2 className="text-sm font-medium">What kind of material?</h2>
+          <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
+            Pick one — we’ll send it to the right local team. Tap the card.
+          </p>
+        </div>
+        <div
+          className="grid grid-cols-2 gap-2 sm:grid-cols-3 max-[360px]:grid-cols-2"
+          role="radiogroup"
+          aria-label="Material category"
+        >
           {CATEGORY_OPTIONS.map(({ value, label, icon: Icon }) => (
             <label
               key={value}
               className={cx(
-                'flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border px-2 py-3 text-center text-sm',
+                'flex cursor-pointer flex-col items-center gap-2 rounded-lg border px-2 py-3 text-center text-sm min-h-11',
                 category === value
                   ? 'border-[var(--color-ink)] bg-[var(--color-surface-alt)] font-medium'
-                  : 'border-[#d8d6cf] bg-white',
+                  : 'border-[var(--color-border)] bg-white',
               )}
             >
               <input
@@ -333,21 +491,22 @@ export default function TextileRequestPage(): JSX.Element {
             </label>
           ))}
         </div>
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-          <p className="font-medium">Minimum quantities for a collection route:</p>
-          <ul className="mt-1 space-y-0.5 pl-4" style={{ listStyleType: 'disc' }}>
-            <li>Clothes &amp; Textiles — about 5 kg</li>
-            <li>Metal Scrap — about 5 kg</li>
-            <li>E-Waste — about 2 kg</li>
-          </ul>
-        </div>
+        <TextileMinimumNotice
+          minimum={minimum}
+          estimatedBags={details?.estimated_bags ?? null}
+          estimatedWeightKg={details?.estimated_weight_kg ?? null}
+          isLoading={minimumIsLoading}
+          isError={capacityMinimum.isError}
+          collectionMethod={dropoffActive ? 'dropoff' : (details?.collection_method ?? null)}
+          onRequestException={() => setShowExceptionForm(true)}
+          onRetry={() => void capacityMinimum.refetch()}
+        />
         {categoryError ? (
-          <p role="alert" className="text-xs font-medium text-red-600">
+          <p role="alert" className="text-xs font-medium text-[var(--color-danger)]">
             {categoryError}
           </p>
         ) : null}
       </section>
-
       <TextileCollectionFields
         category={category}
         value={details}
@@ -355,37 +514,90 @@ export default function TextileRequestPage(): JSX.Element {
         onValidityChange={onValidityChange}
         onDropoffChange={setDropoffInfo}
       />
-
-      {dropoffInfo ? (
-        <section className="rounded-xl border border border-black/10 bg-white p-5">
+      {isPremises && details ? (
+        <section
+          aria-label="Availability"
+          className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]"
+        >
+          <h2 className="text-sm font-medium">Pickup availability</h2>
+          {availability.isLoading ? (
+            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Checking dates…</p>
+          ) : unavailableDates.length > 0 ? (
+            <div className="mt-2 rounded-lg border border-[var(--color-warning)]/20 bg-white p-3">
+              <p className="text-xs font-medium text-[var(--color-warning)]">Unavailable dates</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
+                {unavailableDates.slice(0, 8).join(', ')}
+                {unavailableDates.length > 8 ? ` +${unavailableDates.length - 8} more` : ''}
+              </p>
+              {nextAvailableDate ? (
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                  Next available: <span className="font-medium">{nextAvailableDate}</span> — your
+                  request will be grouped for then.
+                </p>
+              ) : null}
+              {availability.data?.reason ? (
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                  {availability.data.reason}
+                </p>
+              ) : null}
+            </div>
+          ) : nextAvailableDate ? (
+            <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
+              Next available pickup:{' '}
+              <span className="font-medium text-[var(--color-ink)]">{nextAvailableDate}</span>.
+              Submit now and we will schedule for the next open window.
+            </p>
+          ) : (
+            <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
+              Pickups are available on upcoming dates. We group nearby requests into the next trip
+              window.
+            </p>
+          )}
+          {availability.data && availability.data.windows?.length ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {availability.data.windows.map((w) => (
+                <span
+                  key={`${w.window_start}-${w.window_end}`}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${w.available ? 'bg-[var(--color-success)]/10 text-[var(--color-success)] border border-[var(--color-success)]/20' : 'bg-zinc-100 text-zinc-500 border border-[var(--color-border-subtle)] line-through'}`}
+                >
+                  {w.window_start}–{w.window_end}
+                  {w.available ? '' : ' unavailable'}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {unavailableDates.length > 0 && availability.data?.windows?.every((w) => !w.available) ? (
+            <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-3 text-xs leading-5 text-[var(--color-text-secondary)]">
+              <p className="font-medium">No pickup window available right now</p>
+              <p className="mt-1">{slotUnavailableFallback('premises')}</p>
+              <p className="mt-2 text-xs">
+                You can still submit for the next open slot, or switch to drop-off above.
+              </p>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+      {dropoffActive ? (
+        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
           <h2 className="text-sm font-medium">Drop-off location</h2>
           <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
             Take your items to the collection point below. No pickup is arranged.
           </p>
-          <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
-            <p className="text-xs font-medium text-blue-800">📍 Drop-off point</p>
-            <p className="mt-0.5 text-base font-semibold text-blue-900">{dropoffInfo.name}</p>
-            <p className="mt-0.5 text-sm text-blue-700">{dropoffInfo.address}</p>
-            <a
-              href={googleMapsUrl(dropoffInfo)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full border border-blue-300 bg-white px-5 text-sm font-medium text-blue-700 hover:bg-blue-50"
-            >
-              <IconMapPin className="h-4 w-4" stroke={1.6} />
-              Open in Google Maps
-            </a>
+          <div className="mt-3">
+            <CentreCard
+              name={dropoffInfo.name}
+              address={dropoffInfo.address}
+              center={dropoffInfo.center}
+            />
           </div>
-          {dropoffInfo.center ? <DropOffMap center={dropoffInfo.center} /> : null}
         </section>
       ) : (
-        <section className="rounded-xl border border-black/10 bg-white p-5">
+        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
           <h2 className="text-sm font-medium">Pickup location</h2>
           <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
             Optional. Add your exact location so the collection team finds you easily.
           </p>
           {locationMessage ? <p className="mt-2 text-xs font-medium">{locationMessage}</p> : null}
-
           {location ? (
             <div className="mt-3 space-y-3">
               <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)]">
@@ -430,28 +642,38 @@ export default function TextileRequestPage(): JSX.Element {
             <button
               type="button"
               onClick={captureLocation}
-              className="mt-3 inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-black/15 px-5 text-sm font-medium"
+              className="mt-3 inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] px-5 text-sm font-medium"
             >
               <IconMapPin className="h-4 w-4" stroke={1.6} /> Use current location
             </button>
           )}
         </section>
       )}
-
-      {/* --- Optional photo picker --- */}
-      <section className="rounded-xl border border-black/10 bg-white p-5">
-        <h2 className="text-sm font-medium">Add a photo of your bags (optional)</h2>
+      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
+        <h2 className="text-sm font-medium">
+          Add a photo of your bags{' '}
+          <span className="font-normal text-[var(--color-text-secondary)]">(optional)</span>
+        </h2>
         <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
-          A photo helps the collection team identify your items. You can also add one later.
+          {dropoffActive
+            ? 'A photo helps centre staff recognise your bags. You can also add one later — not required to send.'
+            : 'A photo helps the team find and count your bags. You can also add one later — not required to send.'}
         </p>
-
+        <div className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-4">
+          <p className="text-xs font-medium text-[var(--color-ink)]">Tips for a good photo</p>
+          <ul className="mt-1.5 list-disc space-y-1 pl-4 text-xs leading-4 text-[var(--color-text-secondary)]">
+            <li>Put all bags together in daylight</li>
+            <li>One clear photo is enough</li>
+            <li>Max 10 MB — JPEG, PNG or WebP</li>
+          </ul>
+        </div>
         {photoPreview ? (
           <div className="mt-3 inline-block">
             <div className="relative">
               <img
                 src={photoPreview}
                 alt="Preview of your bags"
-                className="h-40 rounded-lg border border-black/10 object-cover"
+                className="h-40 rounded-lg border border-[var(--color-border-subtle)] object-cover"
               />
               <button
                 type="button"
@@ -480,7 +702,7 @@ export default function TextileRequestPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => setShowCamera(false)}
-                  className="mt-2 inline-flex min-h-10 items-center rounded-full border border-black/15 px-5 text-sm font-medium"
+                  className="mt-2 inline-flex h-11 items-center justify-center rounded-full border border-[var(--color-border)] px-5 text-sm font-medium"
                 >
                   Cancel
                 </button>
@@ -490,14 +712,14 @@ export default function TextileRequestPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => setShowCamera(true)}
-                  className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-black/15 px-5 text-sm font-medium"
+                  className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-[var(--color-border)] px-5 text-sm font-medium"
                 >
                   <IconCamera className="h-4 w-4" stroke={1.6} />
                   Take photo
                 </button>
                 <label
                   htmlFor="textile-photo-input"
-                  className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-black/15 px-5 text-sm font-medium"
+                  className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-[var(--color-border)] px-5 text-sm font-medium"
                 >
                   <IconPhoto className="h-4 w-4" stroke={1.6} />
                   Choose photo
@@ -514,44 +736,152 @@ export default function TextileRequestPage(): JSX.Element {
             )}
           </div>
         )}
-
         {photoError ? (
-          <p role="alert" className="mt-2 text-xs font-medium text-red-600">
+          <p role="alert" className="mt-2 text-xs font-medium text-[var(--color-danger)]">
             {photoError}
           </p>
         ) : null}
       </section>
-
+      {slotUnavailableError ? (
+        <div
+          role="alert"
+          className="rounded-xl border border-[var(--color-warning)]/20 bg-white p-4"
+        >
+          <p className="text-sm font-medium text-[var(--color-warning)]">
+            Slot no longer available
+          </p>
+          <p className="mt-1 text-sm leading-5 text-[var(--color-text-secondary)]">
+            {slotUnavailableError.message || slotUnavailableFallback('premises')}
+          </p>
+          {nextAvailableDate ? (
+            <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
+              Next open pickup: <span className="font-medium">{nextAvailableDate}</span>. Try
+              resubmitting, or switch to drop-off — no slot needed.
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
+              Try a different zone or switch to drop-off — no slot needed.
+            </p>
+          )}
+        </div>
+      ) : null}
       {generalError ? (
         <div
           role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+          className="rounded-xl border border-[var(--color-danger)]/20 bg-white p-4 text-sm text-[var(--color-danger)]"
         >
           {generalError}
         </div>
       ) : null}
-
       {photoUploadWarning ? (
         <div
           role="status"
-          className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800"
+          className="rounded-xl border border-[var(--color-warning)]/20 bg-white p-4 text-sm text-[var(--color-warning)]"
         >
           {photoUploadWarning}
         </div>
       ) : null}
-
       <button
         type="button"
-        disabled={!detailsValid || title.trim().length < 5 || isSubmitting}
+        disabled={!detailsValid || title.trim().length < 5 || isSubmitting || isExceptionSubmitting}
         onClick={() => void submit()}
-        className="min-h-12 w-full rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-45"
+        className="h-12 w-full rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-45"
       >
         {uploadingPhoto
           ? 'Uploading photo…'
           : create.isPending
             ? 'Sending request…'
-            : 'Send pickup request'}
+            : dropoffActive
+              ? 'Create drop-off plan'
+              : 'Send pickup request'}
       </button>
+      {belowMinimum && allowExceptions && !dropoffActive ? (
+        <div className="rounded-xl border border-[var(--color-warning)]/20 bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
+          {showExceptionForm ? (
+            <div className="space-y-3">
+              <label
+                htmlFor="textile-exception-reason"
+                className="block text-sm font-medium text-[var(--color-ink)]"
+              >
+                Why should we collect this?{' '}
+                <span className="font-normal text-[var(--color-text-secondary)]">(short note)</span>
+              </label>
+              <p className="text-xs leading-5 text-[var(--color-text-secondary)]">
+                You have less than the usual minimum. A short note helps the local team decide — for
+                example: urgent hostel clearance, valuable clothes, or you can wait for the next
+                nearby pickup.
+              </p>
+              <textarea
+                id="textile-exception-reason"
+                value={exceptionReason}
+                onChange={(e) => {
+                  setExceptionReason(e.target.value);
+                  if (exceptionError) setExceptionError(null);
+                }}
+                rows={3}
+                placeholder="e.g. 2 bags of wearable clothes, hostel is closing this week. Can wait for next pickup nearby."
+                className="block w-full rounded-xl border border-[var(--color-border)] p-3 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+                aria-describedby="textile-exception-hint"
+              />
+              <p id="textile-exception-hint" className="text-xs text-[var(--color-text-tertiary)]">
+                At least 10 letters. We never reject silently — a person reviews this.
+              </p>
+              {exceptionError ? (
+                <p role="alert" className="text-xs font-medium text-[var(--color-danger)]">
+                  {exceptionError}
+                </p>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={
+                    !detailsValid ||
+                    title.trim().length < 5 ||
+                    isExceptionSubmitting ||
+                    isSubmitting
+                  }
+                  onClick={() => void submitWithException()}
+                  className="inline-flex h-11 items-center rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white disabled:opacity-40"
+                >
+                  {isExceptionSubmitting ? 'Submitting…' : 'Send with note'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowExceptionForm(false);
+                    setExceptionError(null);
+                  }}
+                  className="inline-flex h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
+              <p className="text-xs leading-4 text-[var(--color-text-tertiary)]">
+                Your request is sent first, then the note is attached. You will be notified when the
+                team responds.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--color-ink)]">
+                  Below the usual minimum
+                </h3>
+                <p className="mt-1 max-w-prose text-sm leading-5 text-[var(--color-text-secondary)]">
+                  That is OK. Add a short note and a person will review. We never reject silently.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowExceptionForm(true)}
+                className="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium"
+              >
+                Add a short note
+              </button>
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

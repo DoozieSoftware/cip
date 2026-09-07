@@ -62,7 +62,7 @@ describe('CitizenLayout locale support', () => {
     expect(within(sidebar).getByText('Home')).toBeTruthy();
     expect(within(sidebar).getByText('Complaints')).toBeTruthy();
     expect(within(sidebar).getByText('New complaint')).toBeTruthy();
-    expect(within(sidebar).getByText('Pickups')).toBeTruthy();
+    expect(within(sidebar).getByText(translate('en-IN', 'nav.collections'))).toBeTruthy();
     expect(within(sidebar).getByText('Account')).toBeTruthy();
   });
 

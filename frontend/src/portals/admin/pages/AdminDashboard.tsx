@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { type JSX } from 'react';
+import { Link } from 'react-router-dom';
 import { requestRaw as apiRequest } from '../../../shared/api/client';
 import type { ApiEnvelope } from '../../../shared/api/envelope';
-import { Spinner } from '../../../shared/ui';
-import { Link } from 'react-router-dom';
+import { Card, Spinner } from '../../../shared/ui';
 
 interface Counts {
   organizations: number;
@@ -44,8 +44,12 @@ export default function AdminDashboard(): JSX.Element {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold text-slate-900">Platform dashboard</h1>
-        <p className="text-sm text-slate-600">Live counts and quick navigation.</p>
+        <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          Platform dashboard
+        </h1>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+          Live counts and quick navigation.
+        </p>
       </header>
 
       {counts.isLoading ? (
@@ -76,50 +80,60 @@ export default function AdminDashboard(): JSX.Element {
             <Link
               key={c.label}
               to={c.to}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-fuchsia-300 hover:shadow"
+              className="rounded-xl bg-[var(--color-surface)] p-5 shadow-sm ring-1 ring-black/5 transition hover:shadow hover:ring-[var(--color-border-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
             >
-              <div className="text-3xl font-bold text-fuchsia-700">{c.value}</div>
-              <div className="mt-1 text-sm font-medium text-slate-900">{c.label}</div>
+              <div className="text-3xl font-semibold tracking-[-0.01em] tabular-nums text-[var(--color-ink)]">
+                {c.value}
+              </div>
+              <div className="mt-1 text-sm font-medium text-[var(--color-ink)]">{c.label}</div>
             </Link>
           ))}
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
+      <Card className="p-5">
+        <h2 className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
           Quick actions
         </h2>
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <Link
             to="/admin/audit"
-            className="rounded-lg border border-slate-200 p-3 text-sm hover:bg-slate-50"
+            className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-4 text-sm transition hover:border-[var(--color-border)] hover:bg-[var(--color-canvas)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
           >
-            <strong className="text-slate-900">Audit log</strong>
-            <p className="text-xs text-slate-500">Search who-did-what across the platform.</p>
+            <strong className="font-medium text-[var(--color-ink)]">Audit log</strong>
+            <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+              Search who-did-what across the platform.
+            </p>
           </Link>
           <Link
             to="/admin/security-policies"
-            className="rounded-lg border border-slate-200 p-3 text-sm hover:bg-slate-50"
+            className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-4 text-sm transition hover:border-[var(--color-border)] hover:bg-[var(--color-canvas)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
           >
-            <strong className="text-slate-900">Tune security policies</strong>
-            <p className="text-xs text-slate-500">Password, OTP, JWT, rate limits, media caps.</p>
+            <strong className="font-medium text-[var(--color-ink)]">Tune security policies</strong>
+            <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+              Password, OTP, JWT, rate limits, media caps.
+            </p>
           </Link>
           <Link
             to="/admin/feature-flags"
-            className="rounded-lg border border-slate-200 p-3 text-sm hover:bg-slate-50"
+            className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-4 text-sm transition hover:border-[var(--color-border)] hover:bg-[var(--color-canvas)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
           >
-            <strong className="text-slate-900">Flip a feature flag</strong>
-            <p className="text-xs text-slate-500">Kill switch or gradual rollout.</p>
+            <strong className="font-medium text-[var(--color-ink)]">Flip a feature flag</strong>
+            <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+              Kill switch or gradual rollout.
+            </p>
           </Link>
           <Link
             to="/admin/report-types"
-            className="rounded-lg border border-slate-200 p-3 text-sm hover:bg-slate-50"
+            className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-4 text-sm transition hover:border-[var(--color-border)] hover:bg-[var(--color-canvas)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
           >
-            <strong className="text-slate-900">Add a report type</strong>
-            <p className="text-xs text-slate-500">New civic issue categories.</p>
+            <strong className="font-medium text-[var(--color-ink)]">Add a report type</strong>
+            <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+              New civic issue categories.
+            </p>
           </Link>
         </div>
-      </section>
+      </Card>
     </div>
   );
 }

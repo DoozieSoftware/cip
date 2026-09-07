@@ -71,7 +71,7 @@ function DepartmentForm({
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submit} className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <Input
           label="Name"
@@ -79,7 +79,7 @@ function DepartmentForm({
           value={draft.name}
           required
           onChange={(event) => setDraft({ ...draft, name: event.target.value })}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
         <Input
           label="Code"
@@ -87,7 +87,7 @@ function DepartmentForm({
           value={draft.code}
           required
           onChange={(event) => setDraft({ ...draft, code: event.target.value })}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
         <label className="block">
           <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
@@ -96,7 +96,7 @@ function DepartmentForm({
           <select
             value={draft.parent_id ?? ''}
             onChange={(event) => setDraft({ ...draft, parent_id: event.target.value || null })}
-            className="mt-1 block h-12 w-full rounded-xl border border-[var(--color-border)] bg-white px-4 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
           >
             <option value="">None</option>
             {departments.map((item) => (
@@ -111,7 +111,7 @@ function DepartmentForm({
           name="jurisdiction"
           value={draft.jurisdiction ?? ''}
           onChange={(event) => setDraft({ ...draft, jurisdiction: event.target.value })}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
         <Input
           label="Email"
@@ -119,14 +119,14 @@ function DepartmentForm({
           type="email"
           value={draft.email ?? ''}
           onChange={(event) => setDraft({ ...draft, email: event.target.value })}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
         <Input
           label="Phone"
           name="phone"
           value={draft.phone ?? ''}
           onChange={(event) => setDraft({ ...draft, phone: event.target.value })}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
         <Input
           label="Response target (minutes)"
@@ -136,7 +136,7 @@ function DepartmentForm({
           onChange={(event) =>
             setDraft({ ...draft, default_sla_minutes: Number(event.target.value) })
           }
-          className="w-full rounded-xl border border border-[var(--color-border)] bg-white px-4 py-3.5 text-base focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </div>
       <label className="block">
@@ -147,7 +147,7 @@ function DepartmentForm({
           value={draft.address ?? ''}
           onChange={(event) => setDraft({ ...draft, address: event.target.value })}
           rows={2}
-          className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
+          className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-1 focus:ring-[var(--color-ink)]"
         />
       </label>
       <label className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
@@ -178,6 +178,7 @@ export default function AdminDepartments(): JSX.Element {
   const remove = useDeleteDepartment();
   const [editing, setEditing] = useState<AdminDepartment | null>(null);
   const [open, setOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<AdminDepartment | null>(null);
   const departments = list.data ?? [];
   const initial: AdminDepartmentInput = editing ? { ...editing } : blank;
   const submit = (input: AdminDepartmentInput): void => {
@@ -193,7 +194,7 @@ export default function AdminDepartments(): JSX.Element {
     <div className="mx-auto max-w-6xl space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             Platform configuration
           </p>
           <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
@@ -237,7 +238,7 @@ export default function AdminDepartments(): JSX.Element {
           }
         />
       ) : departments.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-white p-10 text-center">
+        <div className="rounded-lg border border-dashed border-[var(--color-border)] bg-white p-10 text-center">
           <EmptyState
             title="No departments"
             description="Create a department to start organizing civic response teams."
@@ -303,7 +304,7 @@ export default function AdminDepartments(): JSX.Element {
                         tone={item.active ? 'success' : 'neutral'}
                         className={
                           item.active
-                            ? 'bg-[#edf7f0] text-[var(--color-success)] ring-0'
+                            ? 'bg-[var(--color-success)]/10 text-[var(--color-success)] ring-0'
                             : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] ring-0'
                         }
                       >
@@ -333,9 +334,7 @@ export default function AdminDepartments(): JSX.Element {
                         <Button
                           size="sm"
                           variant="danger"
-                          onClick={() => {
-                            if (confirm(`Delete ${item.name}?`)) remove.mutate(item.id);
-                          }}
+                          onClick={() => setDeleteTarget(item)}
                           leftIcon={<IconTrash className="h-3.5 w-3.5" stroke={1.6} />}
                         >
                           Delete
@@ -364,6 +363,33 @@ export default function AdminDepartments(): JSX.Element {
           onCancel={() => setOpen(false)}
           onSubmit={submit}
         />
+      </Dialog>
+
+      <Dialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title={deleteTarget ? `Delete ${deleteTarget.name}?` : 'Delete department'}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              loading={remove.isPending}
+              onClick={() => {
+                if (deleteTarget)
+                  remove.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) });
+              }}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          This action cannot be undone. The department will be removed permanently.
+        </p>
       </Dialog>
     </div>
   );

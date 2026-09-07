@@ -140,7 +140,7 @@ describe('TextileCollectionFields', () => {
       />,
       { wrapper },
     );
-    fireEvent.click(screen.getByText('Drop-off'));
+    fireEvent.click(screen.getByRole('radio', { name: /I’ll go to the centre/ }));
     // The drop-off card (name, address, map, Maps link) now renders in
     // TextileRequestPage, so this component's job is to report it upward.
     await waitFor(() => {
@@ -163,7 +163,7 @@ describe('TextileCollectionFields', () => {
       />,
       { wrapper },
     );
-    expect(screen.queryByLabelText(/RWA \/ community name/)).toBeNull();
+    expect(screen.queryByLabelText(/Apartment \/ community name/)).toBeNull();
   });
 
   it('shows the RWA name field when requester_type is rwa', async () => {
@@ -179,7 +179,7 @@ describe('TextileCollectionFields', () => {
     );
     fireEvent.click(screen.getByText('RWA / Community'));
     await waitFor(() => {
-      expect(screen.getByLabelText(/RWA \/ community name/)).toBeDefined();
+      expect(screen.getByLabelText(/Apartment \/ community name/)).toBeDefined();
     });
   });
 
@@ -212,7 +212,7 @@ describe('TextileCollectionFields', () => {
       />,
       { wrapper },
     );
-    const emailInput = screen.getByLabelText(/Contact email/);
+    const emailInput = screen.getByLabelText(/Email \(for receipt\)/);
     fireEvent.change(emailInput, { target: { value: 'bad-email' } });
     await waitFor(() => {
       expect(onChange).toHaveBeenLastCalledWith(null);
@@ -230,7 +230,9 @@ describe('TextileCollectionFields', () => {
       />,
       { wrapper },
     );
-    const dropoffLabel = screen.getByText('Drop-off').closest('label');
+    const dropoffLabel = screen
+      .getByRole('radio', { name: /I’ll go to the centre/ })
+      .closest('label');
     expect(dropoffLabel?.querySelector('input[type="radio"]')).toHaveAttribute('disabled');
   });
 });

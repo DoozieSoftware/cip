@@ -77,9 +77,9 @@ const FILTER_TABS: { key: StatusFilter; label: string; icon?: JSX.Element }[] = 
 
 function PageHeader({ t }: { t: (key: string) => string }): JSX.Element {
   return (
-    <header className="flex items-start justify-between gap-5 border-b border-[var(--color-border-faint)] px-4 pb-5 pt-6">
+    <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] px-6 py-6">
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+        <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
           {t('nav.reports')}
         </p>
         <h1 className="mt-2 text-2xl font-normal tracking-[-0.025em] text-[var(--color-ink)]">
@@ -383,7 +383,7 @@ export default function MyReportsPage(): JSX.Element {
       <PageHeader t={t} />
 
       <div className="mx-auto max-w-3xl">
-        <div className="mb-5">
+        <div className="mb-6">
           <form
             className="mb-4 flex gap-2"
             role="search"
@@ -431,7 +431,7 @@ export default function MyReportsPage(): JSX.Element {
                 className={`flex h-11 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-medium transition ${
                   statusFilter === tab.key
                     ? 'bg-[var(--color-ink)] text-white'
-                    : 'bg-slate-100 text-[var(--color-text-secondary)] hover:bg-slate-200'
+                    : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border-subtle)]'
                 }`}
               >
                 {tab.icon}
@@ -440,7 +440,7 @@ export default function MyReportsPage(): JSX.Element {
             ))}
           </div>
           <form
-            className="mt-3 grid gap-2 rounded-2xl border border-[var(--color-border-subtle)] bg-white p-3 sm:grid-cols-2 lg:grid-cols-5"
+            className="mt-4 grid gap-2 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-4 sm:grid-cols-2 lg:grid-cols-5"
             onSubmit={applyAdvancedFilters}
             aria-label={t('reports.advancedFilters')}
           >
@@ -449,7 +449,7 @@ export default function MyReportsPage(): JSX.Element {
               <select
                 value={categoryInput}
                 onChange={(event) => setCategoryInput(event.target.value)}
-                className="h-11 w-full rounded-xl border border-[var(--color-border-subtle)] bg-white px-3 text-sm text-[var(--color-ink)]"
+                className="h-11 w-full rounded-lg border border-[var(--color-border-subtle)] bg-white px-3 text-sm text-[var(--color-ink)]"
               >
                 <option value="">{t('reports.allCategories')}</option>
                 {(reportTypes.data ?? []).map((type) => (
@@ -465,7 +465,7 @@ export default function MyReportsPage(): JSX.Element {
                 value={areaInput}
                 onChange={(event) => setAreaInput(event.target.value)}
                 placeholder={t('reports.area')}
-                className="h-11 w-full rounded-xl border border-[var(--color-border-subtle)] bg-white px-3 text-sm text-[var(--color-ink)]"
+                className="h-11 w-full rounded-lg border border-[var(--color-border-subtle)] bg-white px-3 text-sm text-[var(--color-ink)]"
               />
             </label>
             <label className="text-xs text-[var(--color-text-secondary)]">
@@ -475,7 +475,7 @@ export default function MyReportsPage(): JSX.Element {
                 value={dateFromInput}
                 onChange={(event) => setDateFromInput(event.target.value)}
                 aria-label={t('reports.dateFrom')}
-                className="h-11 w-full rounded-xl border border-[var(--color-border-subtle)] bg-white px-3 text-sm text-[var(--color-ink)]"
+                className="h-11 w-full rounded-lg border border-[var(--color-border-subtle)] bg-white px-3 text-sm text-[var(--color-ink)]"
               />
             </label>
             <label className="text-xs text-[var(--color-text-secondary)]">
@@ -485,13 +485,13 @@ export default function MyReportsPage(): JSX.Element {
                 value={dateToInput}
                 onChange={(event) => setDateToInput(event.target.value)}
                 aria-label={t('reports.dateTo')}
-                className="h-11 w-full rounded-xl border border-[var(--color-border-subtle)] bg-white px-3 text-sm text-[var(--color-ink)]"
+                className="h-11 w-full rounded-lg border border-[var(--color-border-subtle)] bg-white px-3 text-sm text-[var(--color-ink)]"
               />
             </label>
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="h-11 flex-1 rounded-xl bg-[var(--color-ink)] px-3 text-sm font-medium text-white"
+                className="h-11 flex-1 rounded-lg bg-[var(--color-ink)] px-3 text-sm font-medium text-white"
               >
                 {t('reports.applyFilters')}
               </button>
@@ -510,7 +510,7 @@ export default function MyReportsPage(): JSX.Element {
                     page: null,
                   });
                 }}
-                className="h-11 rounded-xl border border-[var(--color-border-subtle)] px-3 text-sm font-medium text-[var(--color-ink)]"
+                className="h-11 rounded-lg border border-[var(--color-border-subtle)] px-3 text-sm font-medium text-[var(--color-ink)]"
               >
                 {t('reports.clearFilters')}
               </button>
@@ -525,7 +525,7 @@ export default function MyReportsPage(): JSX.Element {
         ) : reports.isError && reports.data ? (
           <>
             <div
-              className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+              className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
               role="status"
               aria-live="polite"
             >
@@ -546,7 +546,7 @@ export default function MyReportsPage(): JSX.Element {
               <EmptyStateSection t={t} statusFilter={statusFilter} applyFilter={applyFilter} />
             ) : (
               <>
-                <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+                <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                   {t('reports.reportCount', {
                     count: meta.total,
                     plural: meta.total === 1 ? '' : 's',
@@ -565,7 +565,7 @@ export default function MyReportsPage(): JSX.Element {
           <EmptyStateSection t={t} statusFilter={statusFilter} applyFilter={applyFilter} />
         ) : (
           <>
-            <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
               {t('reports.reportCount', {
                 count: meta.total,
                 plural: meta.total === 1 ? '' : 's',

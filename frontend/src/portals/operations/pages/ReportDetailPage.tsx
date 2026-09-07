@@ -19,7 +19,7 @@ import {
   IconCircleDotted,
   IconChevronDown,
 } from '@tabler/icons-react';
-import { Badge, Dialog, EmptyState, Spinner, Textarea } from '../../../shared/ui';
+import { Badge, Button, Dialog, ErrorState, Spinner, Textarea } from '../../../shared/ui';
 import { CameraCapture, type CameraError } from '../../citizen/components/CameraCapture';
 import { departmentApi } from '../api/operations';
 import type {
@@ -222,7 +222,7 @@ function ProofVerificationCard({
   return (
     <section
       aria-labelledby={`proof-verification-${verification.id}`}
-      className="mt-4 rounded-lg bg-[var(--color-canvas)] p-4"
+      className="mt-4 rounded-xl bg-[var(--color-canvas)] p-4 ring-1 ring-[var(--color-border-subtle)]"
     >
       <div className="flex flex-wrap items-center gap-2">
         <h3
@@ -237,9 +237,9 @@ function ProofVerificationCard({
         {verification.summary}
       </p>
 
-      <dl className="mt-3 grid grid-cols-1 gap-3 border-y border-white py-3 text-xs sm:grid-cols-2">
+      <dl className="mt-3 grid grid-cols-1 gap-3 border-y border-[var(--color-border-subtle)] py-3 text-xs sm:grid-cols-2">
         <div>
-          <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+          <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             Location
           </dt>
           <dd className="mt-0.5 font-medium text-[var(--color-ink)]">
@@ -247,7 +247,7 @@ function ProofVerificationCard({
           </dd>
         </div>
         <div>
-          <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+          <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             Visual match
           </dt>
           <dd className="mt-0.5 font-medium text-[var(--color-ink)]">
@@ -547,19 +547,19 @@ export default function ReportDetailPage() {
   }
   if (error || !report) {
     return (
-      <EmptyState
+      <ErrorState
         title="Complaint could not be loaded"
         description="Refresh this page, or go back to the complaints list if this complaint is no longer assigned to your department."
+        error={error instanceof Error ? error : null}
         action={
-          <button
-            type="button"
+          <Button
+            variant="primary"
             onClick={() => {
               void refetch();
             }}
-            className="text-sm font-medium text-[var(--color-ink)] underline underline-offset-2"
           >
             Retry
-          </button>
+          </Button>
         }
       />
     );
@@ -580,16 +580,16 @@ export default function ReportDetailPage() {
     : (ACTIONS_BY_STATUS[status as ReportStatusCode] ?? []);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <Link
         to="/operations/reports"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 rounded-md"
       >
         <IconArrowLeft size={16} stroke={1.6} />
         Back to complaints
       </Link>
 
-      <header className="rounded-xl bg-white p-4">
+      <header className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -599,7 +599,9 @@ export default function ReportDetailPage() {
               <Badge tone={statusTone(status)}>{statusLabel(status)}</Badge>
               {report.report_type && <Badge tone="neutral">{report.report_type.name}</Badge>}
             </div>
-            <h1 className="mt-2 text-lg font-semibold text-[var(--color-ink)]">{report.title}</h1>
+            <h1 className="mt-2 text-lg font-semibold tracking-tight text-[var(--color-ink)]">
+              {report.title}
+            </h1>
             <p className="mt-0.5 font-mono text-xs text-[var(--color-text-tertiary)]">
               {report.tracking_number}
             </p>
@@ -621,7 +623,7 @@ export default function ReportDetailPage() {
       </header>
 
       {report.assignments.length > 1 && (
-        <div className="rounded-xl bg-white p-4">
+        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
           <div className="flex items-center gap-2">
             <IconLink size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
             <h2 className="text-sm font-semibold text-[var(--color-ink)]">
@@ -631,7 +633,7 @@ export default function ReportDetailPage() {
           <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
             This complaint needs action from multiple departments.
           </p>
-          <div className="mt-3 space-y-0 divide-y divide-[var(--color-canvas)]">
+          <div className="mt-3 space-y-0 divide-y divide-[var(--color-border-subtle)]">
             {report.assignments.map((a) => (
               <div
                 key={a.id}
@@ -681,12 +683,12 @@ export default function ReportDetailPage() {
         </div>
       )}
 
-      <div className="rounded-xl bg-white p-4">
+      <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-2xl">
             <div className="flex items-center gap-2">
               <IconShield size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
-              <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+              <p className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                 Current status
               </p>
             </div>
@@ -714,14 +716,14 @@ export default function ReportDetailPage() {
                         (!hasProofForSelectedWork || isProofVerificationPending))
                     }
                     aria-keyshortcuts={meta.shortcut}
-                    className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                    className={`inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
                       event === 'accept' || event === 'start'
-                        ? 'bg-[var(--color-ink)] text-white hover:bg-[var(--color-ink)]/90'
+                        ? 'bg-[var(--color-ink)] text-white hover:bg-black focus-visible:ring-[var(--color-ink)]'
                         : event === 'resolve'
-                          ? 'bg-emerald-700 text-white hover:bg-emerald-800'
+                          ? 'bg-[var(--color-success)] text-white hover:bg-[var(--color-success-hover)] focus-visible:ring-[var(--color-success)]'
                           : event === 'close'
-                            ? 'bg-red-600 text-white hover:bg-red-700'
-                            : 'bg-[var(--color-canvas)] text-[var(--color-ink)] hover:bg-[var(--color-canvas)]/80'
+                            ? 'bg-[var(--color-danger)] text-white hover:bg-[var(--color-danger-hover)] focus-visible:ring-[var(--color-danger)]'
+                            : 'bg-[var(--color-canvas)] text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:ring-[var(--color-ink)]'
                     }`}
                   >
                     {actionPending && activeAction === event ? (
@@ -747,17 +749,17 @@ export default function ReportDetailPage() {
             </div>
           )}
           {availableActions.includes('resolve') && !hasProofForSelectedWork && (
-            <p className="w-full text-xs text-amber-700 sm:basis-full">
+            <p className="w-full text-xs text-[var(--color-warning)] sm:basis-full">
               Upload at least one proof photo with current location before marking this work fixed.
             </p>
           )}
           {availableActions.includes('resolve') && isProofVerificationPending && (
-            <p className="w-full text-xs text-amber-700 sm:basis-full">
+            <p className="w-full text-xs text-[var(--color-warning)] sm:basis-full">
               Proof upload is complete. Wait for AI verification before marking this work fixed.
             </p>
           )}
           {action.isError && (
-            <p role="alert" className="w-full text-sm text-red-600 sm:basis-full">
+            <p role="alert" className="w-full text-sm text-[var(--color-danger)] sm:basis-full">
               {action.error instanceof Error
                 ? action.error.message
                 : 'The complaint action failed.'}
@@ -767,7 +769,7 @@ export default function ReportDetailPage() {
       </div>
 
       {isSecondaryTask && (
-        <div className="rounded-xl bg-white p-4">
+        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="flex items-center gap-2">
@@ -782,7 +784,7 @@ export default function ReportDetailPage() {
               </p>
               <div className="mt-3 flex items-center gap-4 text-xs">
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  <p className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Department
                   </p>
                   <p className="mt-0.5 font-medium text-[var(--color-ink)]">
@@ -790,7 +792,7 @@ export default function ReportDetailPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  <p className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Assigned
                   </p>
                   <p className="mt-0.5 font-medium text-[var(--color-ink)]">
@@ -810,7 +812,7 @@ export default function ReportDetailPage() {
                   disabled={
                     completeTask.isPending || !hasProofForSelectedWork || isProofVerificationPending
                   }
-                  className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-5 py-2 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:opacity-50"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-success)] px-5 py-2 text-sm font-medium text-white transition hover:bg-[var(--color-success-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-success)] focus-visible:ring-offset-2 disabled:opacity-50"
                 >
                   {completeTask.isPending ? (
                     <span
@@ -826,12 +828,12 @@ export default function ReportDetailPage() {
             </div>
           </div>
           {taskStatus === 'open' && !hasProofForSelectedWork && (
-            <p className="mt-3 text-xs text-amber-700">
+            <p className="mt-3 text-xs text-[var(--color-warning)]">
               Upload proof from the work location before completing this cross agency work.
             </p>
           )}
           {completeTask.isError && (
-            <p role="alert" className="mt-3 text-sm text-red-600">
+            <p role="alert" className="mt-3 text-sm text-[var(--color-danger)]">
               {completeTask.error instanceof Error
                 ? completeTask.error.message
                 : 'The task could not be completed.'}
@@ -840,9 +842,9 @@ export default function ReportDetailPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]">
-        <div className="min-w-0 space-y-5">
-          <div className="rounded-xl bg-white p-4">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]">
+        <div className="min-w-0 space-y-6">
+          <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
             <div className="flex items-center gap-2">
               <IconPaperclip size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
               <h2 className="text-sm font-semibold text-[var(--color-ink)]">Evidence and proof</h2>
@@ -862,9 +864,9 @@ export default function ReportDetailPage() {
               />
             )}
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="rounded-lg bg-[var(--color-canvas)] p-3">
+              <div className="rounded-xl bg-[var(--color-canvas)] p-3 ring-1 ring-[var(--color-border-subtle)]">
                 <div className="mb-3 flex items-center justify-between">
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  <p className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Before
                   </p>
                   <span className="text-xs text-[var(--color-text-tertiary)]">
@@ -872,7 +874,7 @@ export default function ReportDetailPage() {
                   </span>
                 </div>
                 {evidence.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-text-tertiary)]/30 py-8 text-center">
+                  <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-border)] py-8 text-center">
                     <IconFileText
                       size={20}
                       stroke={1.6}
@@ -884,12 +886,12 @@ export default function ReportDetailPage() {
                   <MediaGallery items={evidence} label="Citizen evidence" />
                 )}
               </div>
-              <div className="rounded-lg bg-emerald-50 p-3">
+              <div className="rounded-xl bg-[var(--color-success)]/5 p-3 ring-1 ring-[var(--color-success)]/15">
                 <div className="mb-3 flex items-center justify-between">
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-emerald-700">
+                  <p className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-success)]">
                     After
                   </p>
-                  <span className="text-xs text-emerald-700">
+                  <span className="text-xs text-[var(--color-success)]">
                     {selectedAssignmentProof.length === 0
                       ? 'Awaiting proof'
                       : isProofVerificationPending
@@ -898,8 +900,8 @@ export default function ReportDetailPage() {
                   </span>
                 </div>
                 {selectedAssignmentProof.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-emerald-300 bg-white/70 px-4 py-8 text-center">
-                    <IconCamera size={20} stroke={1.6} className="text-emerald-600" />
+                  <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-success)]/30 bg-white/70 px-4 py-8 text-center">
+                    <IconCamera size={20} stroke={1.6} className="text-[var(--color-success)]" />
                     <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
                       Capture a fresh proof photo at the work location after the field crew
                       completes the work.
@@ -910,7 +912,7 @@ export default function ReportDetailPage() {
                           type="button"
                           onClick={openProofCamera}
                           disabled={uploadProof.isPending}
-                          className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:opacity-50"
+                          className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-success)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--color-success-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-success)] focus-visible:ring-offset-2 disabled:opacity-50"
                         >
                           <IconCamera size={15} stroke={1.7} />
                           Take proof photo
@@ -919,7 +921,7 @@ export default function ReportDetailPage() {
                           type="button"
                           onClick={openExistingProofPicker}
                           disabled={uploadProof.isPending}
-                          className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border-subtle)] bg-white px-4 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)] disabled:opacity-50"
+                          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 disabled:opacity-50"
                         >
                           <IconUpload size={15} stroke={1.7} />
                           Upload existing photo
@@ -968,7 +970,7 @@ export default function ReportDetailPage() {
               <div
                 role="status"
                 aria-live="polite"
-                className="mt-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900"
+                className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--color-warning-muted)] bg-[var(--color-warning)]/10 p-3 text-[var(--color-ink)]"
               >
                 <Spinner label="AI proof verification in progress" className="mt-0.5 h-4 w-4" />
                 <div>
@@ -981,7 +983,7 @@ export default function ReportDetailPage() {
               </div>
             )}
             {!isTerminal && selectedAssignmentProof.length > 0 && (
-              <div className="mt-4 flex flex-col gap-2 border-t border-[var(--color-canvas)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-4 flex flex-col gap-2 border-t border-[var(--color-border-subtle)] pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-[var(--color-text-tertiary)]">
                   Proof stays department-private. Existing photos include current location and any
                   available image metadata, then require review before completion.
@@ -991,7 +993,7 @@ export default function ReportDetailPage() {
                     type="button"
                     onClick={openProofCamera}
                     disabled={uploadProof.isPending}
-                    className="inline-flex items-center gap-2 rounded-full bg-[var(--color-canvas)] px-4 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)]/80 disabled:opacity-50"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-canvas)] px-4 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 disabled:opacity-50"
                   >
                     <IconCamera size={14} stroke={1.6} />
                     {uploadProof.isPending ? 'Uploading proof…' : 'Take another proof photo'}
@@ -1000,19 +1002,19 @@ export default function ReportDetailPage() {
                     type="button"
                     onClick={openExistingProofPicker}
                     disabled={uploadProof.isPending}
-                    className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border-subtle)] bg-white px-4 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)] disabled:opacity-50"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-canvas)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 disabled:opacity-50"
                   >
                     <IconUpload size={14} stroke={1.6} />
                     Upload existing photo
                   </button>
                 </div>
                 {proofCaptureError && (
-                  <p role="alert" className="text-sm text-red-600">
+                  <p role="alert" className="text-sm text-[var(--color-danger)]">
                     {proofCaptureError}
                   </p>
                 )}
                 {uploadProof.isError && (
-                  <p role="alert" className="text-sm text-red-600">
+                  <p role="alert" className="text-sm text-[var(--color-danger)]">
                     {uploadProof.error instanceof Error
                       ? uploadProof.error.message
                       : 'The proof photos could not be uploaded.'}
@@ -1022,7 +1024,7 @@ export default function ReportDetailPage() {
             )}
           </div>
 
-          <div className="rounded-xl bg-white p-4">
+          <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
             <div className="flex items-center gap-2">
               <IconFileText size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
               <h2 className="text-sm font-semibold text-[var(--color-ink)]">Complaint details</h2>
@@ -1035,7 +1037,7 @@ export default function ReportDetailPage() {
               )}
               <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-xs sm:grid-cols-2">
                 <div>
-                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  <dt className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Type
                   </dt>
                   <dd className="mt-0.5 text-[var(--color-ink)]">
@@ -1043,7 +1045,7 @@ export default function ReportDetailPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  <dt className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Submitted
                   </dt>
                   <dd className="mt-0.5 text-[var(--color-ink)]">
@@ -1051,7 +1053,7 @@ export default function ReportDetailPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  <dt className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                     Reference
                   </dt>
                   <dd className="mt-0.5 font-mono text-[var(--color-ink)]">
@@ -1062,7 +1064,7 @@ export default function ReportDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-xl bg-white p-4">
+          <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
             <div className="flex items-center gap-2">
               <IconCircleDotted
                 size={14}
@@ -1077,16 +1079,16 @@ export default function ReportDetailPage() {
           </div>
         </div>
 
-        <aside className="min-w-0 space-y-5">
+        <aside className="min-w-0 space-y-6">
           <LocationCard location={report.location} />
-          <div className="rounded-xl bg-white p-4">
+          <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
             <div className="flex items-center gap-2">
               <IconUser size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
               <h2 className="text-sm font-semibold text-[var(--color-ink)]">Accountability</h2>
             </div>
             <dl className="mt-3 space-y-3 text-xs">
               <div className="flex items-center justify-between">
-                <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                <dt className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                   Department
                 </dt>
                 <dd className="font-medium text-[var(--color-ink)]">
@@ -1094,7 +1096,7 @@ export default function ReportDetailPage() {
                 </dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                <dt className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                   Assigned officer
                 </dt>
                 <dd className="font-medium text-[var(--color-ink)]">
@@ -1102,7 +1104,7 @@ export default function ReportDetailPage() {
                 </dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                <dt className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                   Due target
                 </dt>
                 <dd>
@@ -1120,7 +1122,7 @@ export default function ReportDetailPage() {
         </aside>
       </div>
 
-      <div className="rounded-xl bg-white p-4">
+      <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
         <div className="flex items-center gap-2">
           <IconMessageCircle size={14} stroke={1.6} className="text-[var(--color-text-tertiary)]" />
           <h2 className="text-sm font-semibold text-[var(--color-ink)]">Internal notes</h2>
@@ -1135,33 +1137,30 @@ export default function ReportDetailPage() {
               placeholder="Site visit notes, contact log, etc."
               rows={3}
               aria-keyshortcuts="N"
-              className="rounded-lg border-0 bg-[var(--color-canvas)] text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-ink)]/10"
+              className="rounded-xl border-0 bg-[var(--color-canvas)] text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-ink)]/20"
             />
             <div className="mt-2 flex justify-end">
-              <button
-                type="button"
+              <Button
+                variant="primary"
                 onClick={() => {
                   addNote.mutate();
                 }}
                 disabled={addNote.isPending || noteBody.trim() === ''}
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 py-2 text-sm font-medium text-white transition hover:bg-[var(--color-ink)]/90 disabled:cursor-not-allowed disabled:opacity-40"
+                leftIcon={<IconSend size={14} stroke={1.6} />}
+                loading={addNote.isPending}
+                className="min-h-11 rounded-full px-5"
               >
-                {addNote.isPending ? (
-                  <span
-                    aria-hidden
-                    className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
-                  />
-                ) : (
-                  <IconSend size={14} stroke={1.6} />
-                )}
                 Save note
-              </button>
+              </Button>
             </div>
           </div>
 
           <div className="space-y-2">
             {(notesData ?? []).map((n) => (
-              <div key={n.id} className="rounded-lg bg-[var(--color-canvas)] p-3">
+              <div
+                key={n.id}
+                className="rounded-xl bg-[var(--color-canvas)] p-3 ring-1 ring-[var(--color-border-subtle)]"
+              >
                 <p className="text-sm leading-5 text-[var(--color-ink)]">{n.body}</p>
                 <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[var(--color-text-tertiary)]">
                   <IconUser size={10} stroke={1.6} />
@@ -1188,11 +1187,15 @@ export default function ReportDetailPage() {
         size="lg"
       >
         <div className="space-y-4">
-          <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-950">
-            <IconShield size={18} stroke={1.7} className="mt-0.5 shrink-0 text-emerald-700" />
+          <div className="flex items-start gap-3 rounded-xl border border-[var(--color-success)]/20 bg-[var(--color-success)]/5 p-3 text-[var(--color-ink)]">
+            <IconShield
+              size={18}
+              stroke={1.7}
+              className="mt-0.5 shrink-0 text-[var(--color-success)]"
+            />
             <div>
               <p className="text-sm font-semibold">Capture the completed work at this location</p>
-              <p className="mt-0.5 text-xs leading-5 text-emerald-800">
+              <p className="mt-0.5 text-xs leading-5 text-[var(--color-text-secondary)]">
                 The photo, current device location, capture time, officer, and file integrity record
                 are kept with this proof. This is the preferred way to submit completion proof.
               </p>

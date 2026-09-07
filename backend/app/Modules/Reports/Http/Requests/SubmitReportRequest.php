@@ -7,6 +7,7 @@ namespace App\Modules\Reports\Http\Requests;
 use App\Modules\Reports\Rules\LocationAccuracy;
 use App\Modules\Users\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * SubmitReportRequest per docs/05 §6, §7 and docs/11 §12.
@@ -37,7 +38,7 @@ class SubmitReportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'report_type_id' => ['required', 'uuid', 'exists:report_types,id'],
+            'report_type_id' => ['required', 'uuid', Rule::exists('report_types', 'id')->where('active', true)],
             'title' => ['required', 'string', 'min:5', 'max:255'],
             // A photo plus a short issue title is sufficient for low-literacy
             // and time-sensitive reports; text detail remains optional.

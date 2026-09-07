@@ -53,22 +53,22 @@ export default function NotificationsPage(): JSX.Element {
   }, [list.isError]);
 
   return (
-    <div className="space-y-8">
-      <header className="flex items-start justify-between gap-5 border-b border-[var(--color-border-faint)] pb-7">
+    <div className="space-y-6">
+      <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-faint)] pb-6">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             {t('citizenServices')}
           </p>
-          <h1 className="mt-2 text-[2rem] font-normal leading-[1.05] tracking-[-0.035em] sm:text-4xl">
+          <h1 className="mt-2 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
             {t('notifications.title')}
           </h1>
-          <p className="mt-3 max-w-2xl text-[15px] leading-6 text-[var(--color-text-secondary)]">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-text-secondary)]">
             {t('notifications.subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-3">
           {unreadCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d8d6cf] bg-[#faf9f6] px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-subtle)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-subtle)]">
               <IconBellRinging className="h-3.5 w-3.5" stroke={1.6} aria-hidden />
               {t('notifications.unread', { count: unreadCount })}
             </span>
@@ -82,8 +82,8 @@ export default function NotificationsPage(): JSX.Element {
             <Spinner label={t('notifications.loading')} />
           </div>
         ) : !online && notifications.length === 0 ? (
-          <div className="rounded-2xl border border-black/10 bg-white">
-            <div className="flex flex-col items-center px-6 py-16">
+          <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+            <div className="flex flex-col items-center px-6 py-12">
               <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-surface-alt)]">
                 <IconWifiOff
                   className="h-7 w-7 text-[var(--color-text-subtle)]"
@@ -91,18 +91,18 @@ export default function NotificationsPage(): JSX.Element {
                   aria-hidden
                 />
               </span>
-              <p className="mt-4 text-base font-medium text-[var(--color-ink)]">
+              <p className="mt-4 text-sm font-medium text-[var(--color-ink)]">
                 {t('notifications.offlineTitle')}
               </p>
-              <p className="mt-1 text-sm text-[var(--color-text-subtle)]">
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
                 {t('notifications.offlineDetail')}
               </p>
             </div>
           </div>
         ) : list.isError && notifications.length === 0 ? (
           list.error instanceof ApiError && list.error.status === 401 ? (
-            <div className="rounded-2xl border border-black/10 bg-white">
-              <div className="flex flex-col items-center px-6 py-16">
+            <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+              <div className="flex flex-col items-center px-6 py-12">
                 <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-surface-alt)]">
                   <IconBell
                     className="h-7 w-7 text-[var(--color-text-subtle)]"
@@ -110,15 +110,15 @@ export default function NotificationsPage(): JSX.Element {
                     aria-hidden
                   />
                 </span>
-                <p className="mt-4 text-base font-medium text-[var(--color-ink)]">
+                <p className="mt-4 text-sm font-medium text-[var(--color-ink)]">
                   {t('notifications.sessionTitle')}
                 </p>
-                <p className="mt-1 text-sm text-[var(--color-text-subtle)]">
+                <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
                   {t('notifications.sessionDetail')}
                 </p>
                 <Link
                   to="/login"
-                  className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium transition hover:border-black/30"
+                  className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium text-[var(--color-ink)] transition hover:border-[var(--color-border-strong)] hover:bg-[var(--color-canvas)]"
                 >
                   {t('notifications.signInAgain')}
                   <IconChevronRight className="h-4 w-4" stroke={1.6} />
@@ -126,8 +126,8 @@ export default function NotificationsPage(): JSX.Element {
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-black/10 bg-white">
-              <div className="flex flex-col items-center px-6 py-16">
+            <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+              <div className="flex flex-col items-center px-6 py-12">
                 <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-surface-alt)]">
                   <IconBell
                     className="h-7 w-7 text-[var(--color-text-subtle)]"
@@ -135,10 +135,10 @@ export default function NotificationsPage(): JSX.Element {
                     aria-hidden
                   />
                 </span>
-                <p className="mt-4 text-base font-medium text-[var(--color-ink)]">
+                <p className="mt-4 text-sm font-medium text-[var(--color-ink)]">
                   {t('notifications.errorTitle')}
                 </p>
-                <p className="mt-1 text-sm text-[var(--color-text-subtle)]">
+                <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
                   {t('notifications.errorDetail')}
                 </p>
                 <button
@@ -146,7 +146,7 @@ export default function NotificationsPage(): JSX.Element {
                   onClick={() => {
                     void list.refetch();
                   }}
-                  className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium transition hover:border-black/30"
+                  className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-5 text-sm font-medium text-[var(--color-ink)] transition hover:border-[var(--color-border-strong)] hover:bg-[var(--color-canvas)]"
                 >
                   <IconRefresh className="h-4 w-4" stroke={1.7} aria-hidden />
                   {t('common.tryAgain')}
@@ -155,8 +155,8 @@ export default function NotificationsPage(): JSX.Element {
             </div>
           )
         ) : notifications.length === 0 ? (
-          <div className="rounded-2xl border border-black/10 bg-white">
-            <div className="flex flex-col items-center px-6 py-16">
+          <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+            <div className="flex flex-col items-center px-6 py-12">
               <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-surface-alt)]">
                 <IconBell
                   className="h-7 w-7 text-[var(--color-text-subtle)]"
@@ -164,15 +164,15 @@ export default function NotificationsPage(): JSX.Element {
                   aria-hidden
                 />
               </span>
-              <p className="mt-4 text-base font-medium text-[var(--color-ink)]">
+              <p className="mt-4 text-sm font-medium text-[var(--color-ink)]">
                 {t('notifications.noNotifications')}
               </p>
-              <p className="mt-1 text-sm text-[var(--color-text-subtle)]">
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
                 {t('notifications.updatesHere')}
               </p>
               <Link
                 to="/citizen/submit"
-                className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-black/15 bg-white px-5 text-sm font-medium transition hover:border-black/30"
+                className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white transition hover:bg-black"
               >
                 {t('notifications.fileReport')}
                 <IconChevronRight className="h-4 w-4" stroke={1.6} />
@@ -184,7 +184,7 @@ export default function NotificationsPage(): JSX.Element {
             {list.isError && (
               <div
                 role="status"
-                className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm text-amber-800"
+                className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
               >
                 <span>{t('notifications.stale')}</span>
                 <button
@@ -192,7 +192,7 @@ export default function NotificationsPage(): JSX.Element {
                   onClick={() => {
                     void list.refetch();
                   }}
-                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-amber-300 bg-white px-4 text-xs font-medium text-amber-800 transition hover:border-amber/30"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-amber-300 bg-white px-4 text-xs font-medium text-amber-800 transition hover:bg-amber-50"
                 >
                   <IconRefresh className="h-3.5 w-3.5" stroke={1.7} aria-hidden />
                   {t('common.retry')}
@@ -203,8 +203,8 @@ export default function NotificationsPage(): JSX.Element {
               <div
                 key={n.id}
                 className={cx(
-                  'rounded-2xl bg-white p-5 shadow-sm ring-1 transition',
-                  n.read_at ? 'ring-slate-200' : 'bg-blue-50/40 ring-blue-200',
+                  'rounded-xl bg-white p-6 shadow-sm ring-1 transition',
+                  n.read_at ? 'ring-black/5' : 'ring-[var(--color-border)]',
                 )}
               >
                 <div className="flex items-start gap-4">
@@ -213,7 +213,7 @@ export default function NotificationsPage(): JSX.Element {
                       'grid h-10 w-10 shrink-0 place-items-center rounded-full',
                       n.read_at
                         ? 'bg-[var(--color-surface-alt)] text-[var(--color-text-subtle)]'
-                        : 'bg-blue-100 text-blue-600',
+                        : 'bg-[var(--color-ink)] text-white',
                     )}
                     aria-hidden
                   >
@@ -225,7 +225,7 @@ export default function NotificationsPage(): JSX.Element {
                         <div className="flex items-center gap-2">
                           {!n.read_at && (
                             <span
-                              className="h-2 w-2 shrink-0 rounded-full bg-blue-600"
+                              className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-ink)]"
                               aria-label={t('notifications.unreadLabel')}
                             />
                           )}
@@ -243,21 +243,21 @@ export default function NotificationsPage(): JSX.Element {
                         aria-hidden
                       />
                     </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
                       <time
                         dateTime={n.created_at}
-                        className="text-xs text-[var(--color-text-tertiary)]"
+                        className="font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]"
                       >
                         {formatDateTime(n.created_at, locale)}
                       </time>
-                      <span className="inline-flex items-center rounded bg-[var(--color-surface-alt)] px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+                      <span className="inline-flex items-center rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
                         {t(channelKey(n.channel))}
                       </span>
                     </div>
                     {n.data && typeof n.data === 'object' && 'report_id' in n.data && (
                       <Link
                         to={`/citizen/reports/${String(n.data.report_id)}`}
-                        className="mt-3 inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-[var(--color-ink)] transition hover:bg-[#faf9f6]"
+                        className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-[var(--color-ink)] underline underline-offset-4 hover:text-[var(--color-ink-soft)]"
                       >
                         {t('notifications.viewReport')}
                         <IconChevronRight className="h-4 w-4" stroke={1.6} aria-hidden />
@@ -270,7 +270,7 @@ export default function NotificationsPage(): JSX.Element {
                     <button
                       type="button"
                       onClick={() => markRead.mutate(n.id)}
-                      className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-black/15 bg-white px-5 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:border-black/30 active:bg-[#faf9f6] sm:w-auto"
+                      className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-5 py-2 text-sm font-medium text-[var(--color-ink)] transition hover:border-[var(--color-border-strong)] hover:bg-[var(--color-canvas)] sm:w-auto"
                     >
                       <IconCheck className="h-4 w-4" stroke={1.7} aria-hidden />
                       {t('notifications.markAsRead')}

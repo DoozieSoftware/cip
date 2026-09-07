@@ -13,6 +13,9 @@ export interface TextileServiceZone {
   service_radius_km: number | null;
   methods: TextileCollectionMethod[];
   dropoff: { name: string; address: string } | null;
+  dropoff_name: string | null;
+  dropoff_address: string | null;
+  dropoff_hours: string | null;
   readiness_instructions: string | null;
   partner: { id: string; name: string } | null;
 }
@@ -57,10 +60,35 @@ export interface TextileCollectionRequest extends TextileCollectionPayload {
   missed_pickup_reason: string | null;
   picked_up_at: string | null;
   submitted_at: string | null;
-  service_zone: { id: string; code: string; name: string } | null;
+  capacity_exception_id?: string | null;
+  capacity_checked_at?: string | null;
+  capacity_context?: Record<string, unknown> | null;
+  service_zone: {
+    id: string;
+    code: string;
+    name: string;
+    dropoff_name: string | null;
+    dropoff_address: string | null;
+    center: { latitude: number; longitude: number } | null;
+  } | null;
   partner: { id: string; name: string } | null;
-  batch: { id: string; reference: string; collection_date: string; status: string } | null;
+  batch: {
+    id: string;
+    reference: string;
+    collection_date: string;
+    status: string;
+    window_start: string | null;
+    window_end: string | null;
+    trip_reference: string | null;
+  } | null;
   photos?: TextileCollectionPhoto[];
+}
+
+export interface TextileCapacityMinimum {
+  service_zone_id: string;
+  min_bags: number | null;
+  min_weight_kg: number | null;
+  guidance_text: string | null;
 }
 
 export interface CreateTextileCollectionInput extends TextileCollectionPayload {
@@ -96,6 +124,16 @@ export function useCitizenTextileCollection(id: string) {
   });
 }
 
+export function useTextileCapacityMinimum(zoneId: string) {
+  return useQuery({
+    queryKey: ['textile-capacity-minimum', zoneId],
+    queryFn: () =>
+      request<TextileCapacityMinimum>(`/textile-collection/zones/${zoneId}/capacity-minimum`),
+    enabled: zoneId !== '',
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useCreateTextileCollection() {
   const queryClient = useQueryClient();
 
@@ -125,6 +163,52 @@ export function useCancelTextileCollection(id: string) {
   });
 }
 
+export function isTextileNetworkFailure(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message.toLowerCase() : '';
+  if (
+    msg.includes('failed to fetch') ||
+    msg.includes('networkerror') ||
+    msg.includes('load failed')
+  )
+    return true;
+  const anyErr = err as { status?: number; code?: string };
+  if (anyErr?.status === 0 || anyErr?.code === 'OFFLINE' || anyErr?.code === 'NETWORK_ERROR')
+    return true;
+  // Treat anything that is not a structured ApiError response as offline.
+  // ApiError always has a numeric status >=400.
+  if (anyErr?.status !== undefined && anyErr.status >= 400) return false;
+  if (err instanceof Error && msg.includes('http_')) return false;
+  return !(err instanceof Error && (err as unknown as { name?: string })?.name === 'ApiError');
+}
+
+export async function submitTextileRequestPayload(
+  input: CreateTextileCollectionInput & { idempotency_key?: string; photo_file?: File | null },
+): Promise<TextileCollectionRequest> {
+  const idempotencyKey =
+    input.idempotency_key ??
+    (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `textile-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const { photo_file: _photo, ...body } = input;
+  const created = await request<TextileCollectionRequest>('/textile-collection/requests', {
+    method: 'POST',
+    headers: { 'Idempotency-Key': idempotencyKey },
+    body,
+  });
+  if (_photo) {
+    const fd = new FormData();
+    fd.append('photo', _photo);
+    await upload<{ photo: { id: string; role: string; url: string } }>(
+      `/citizen/textile-collections/${created.id}/photo`,
+      fd,
+      { headers: { 'Idempotency-Key': idempotencyKey } },
+    ).catch(() => {
+      // Photo failure is non-fatal — detail page offers "add photo later".
+    });
+  }
+  return created;
+}
+
 export async function uploadTextileCollectionPhoto(
   collectionId: string,
   file: File,
@@ -137,4 +221,142 @@ export async function uploadTextileCollectionPhoto(
     formData,
     { signal },
   );
+}
+
+export interface TextileAvailability {
+  service_zone_id: string;
+  collection_method: TextileCollectionMethod;
+  unavailable_dates: string[];
+  next_available_date: string | null;
+  cutoff_hours: number | null;
+  reason: string | null;
+  windows: { window_start: string; window_end: string; available: boolean }[];
+}
+
+export function useTextileAvailability(
+  serviceZoneId: string | null,
+  method: TextileCollectionMethod | null,
+) {
+  return useQuery({
+    queryKey: ['textile-availability', serviceZoneId, method],
+    queryFn: () =>
+      request<TextileAvailability>('/textile-collection/availability', {
+        query: {
+          service_zone_id: serviceZoneId ?? '',
+          collection_method: method ?? '',
+        },
+      }),
+    enabled: Boolean(serviceZoneId && method === 'premises'),
+    staleTime: 2 * 60_000,
+    retry: false,
+  });
+}
+
+export interface RescheduleTextileInput {
+  requested_date: string;
+  window_start?: string | null;
+  window_end?: string | null;
+  reason?: string | null;
+}
+
+export function useRescheduleTextileCollection(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: RescheduleTextileInput) =>
+      request<TextileCollectionRequest>(`/citizen/textile-collections/${id}/reschedule`, {
+        method: 'POST',
+        body: {
+          scheduled_date: payload.requested_date,
+          scheduled_window_start: payload.window_start,
+          scheduled_window_end: payload.window_end,
+          reason: payload.reason,
+        },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['citizen', 'textile-collections', id] });
+      void queryClient.invalidateQueries({ queryKey: ['citizen', 'textile-collections'] });
+    },
+  });
+}
+
+export interface UpdateTextileInstructionsInput {
+  readiness_instructions?: string | null;
+  contact_phone?: string;
+  contact_email?: string;
+  pickup_address?: string;
+}
+
+export function useUpdateTextileInstructions(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UpdateTextileInstructionsInput) =>
+      request<TextileCollectionRequest>(`/citizen/textile-collections/${id}/instructions`, {
+        method: 'PATCH',
+        body: payload,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['citizen', 'textile-collections', id] });
+      void queryClient.invalidateQueries({ queryKey: ['citizen', 'textile-collections'] });
+    },
+  });
+}
+
+export interface RequestCapacityExceptionInput {
+  collectionId: string;
+  reason: string;
+  reason_code?: string | null;
+  idempotency_key?: string;
+}
+
+export interface TextileCapacityException {
+  id: string;
+  collection_request_id: string;
+  service_zone_id: string | null;
+  department_id: string;
+  status: string;
+  reason_code: string | null;
+  reason: string | null;
+  payload_snapshot?: unknown;
+  decision_payload?: unknown;
+  requested_by?: string;
+  decided_by?: string | null;
+  decided_reason?: string | null;
+  decided_at?: string | null;
+  created_at?: string;
+}
+
+export async function requestCapacityException(
+  input: RequestCapacityExceptionInput,
+): Promise<TextileCapacityException> {
+  const idempotencyKey =
+    input.idempotency_key ??
+    (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `textile-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const body: Record<string, unknown> = {
+    reason: input.reason,
+    idempotency_key: idempotencyKey,
+  };
+  if (input.reason_code) body.reason_code = input.reason_code;
+  return request<TextileCapacityException>(
+    `/citizen/textile-collections/${input.collectionId}/capacity-exception`,
+    {
+      method: 'POST',
+      headers: { 'Idempotency-Key': idempotencyKey },
+      body,
+    },
+  );
+}
+
+export function useRequestCapacityException() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: RequestCapacityExceptionInput) => requestCapacityException(input),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['citizen', 'textile-collections', variables.collectionId],
+      });
+      void queryClient.invalidateQueries({ queryKey: ['citizen', 'textile-collections'] });
+    },
+  });
 }

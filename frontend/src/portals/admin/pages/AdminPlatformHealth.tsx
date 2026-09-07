@@ -5,6 +5,7 @@ import {
   type HealthComponent,
 } from '../api/client';
 import {
+  Button,
   Card,
   CardBody,
   CardHeader,
@@ -16,9 +17,10 @@ import {
 import { cx } from '../../../shared/ui/cx';
 
 const STATUS_COLOR: Record<string, string> = {
-  ok: 'bg-[#edf7f0] text-[var(--color-success)] ring-[#c8e6d2]',
-  degraded: 'bg-[#fff6e4] text-[#805913] ring-[#f0d9a8]',
-  down: 'bg-[#fbeeed] text-[var(--color-danger)] ring-[#ecccc8]',
+  ok: 'bg-[var(--color-success)]/10 text-[var(--color-success)] ring-[var(--color-success-muted)]',
+  degraded:
+    'bg-[var(--color-warning)]/10 text-[var(--color-warning)] ring-[var(--color-warning-muted)]',
+  down: 'bg-[var(--color-danger)]/10 text-[var(--color-danger)] ring-[var(--color-danger-muted)]',
 };
 
 const COMPONENT_LABEL: Record<string, string> = {
@@ -59,6 +61,18 @@ export default function AdminPlatformHealth(): JSX.Element {
         <ErrorState
           title="Failed to load platform health"
           description="The health probe could not be reached. Try again in a moment."
+          action={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                void summary.refetch();
+                void components.refetch();
+              }}
+            >
+              Retry
+            </Button>
+          }
         />
       </div>
     );
@@ -66,9 +80,12 @@ export default function AdminPlatformHealth(): JSX.Element {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Operations / Health
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
             Platform health
           </h1>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
@@ -91,7 +108,7 @@ export default function AdminPlatformHealth(): JSX.Element {
                   overall === 'ok'
                     ? 'text-[var(--color-success)]'
                     : overall === 'degraded'
-                      ? 'text-[#805913]'
+                      ? 'text-[var(--color-warning)]'
                       : overall === 'down'
                         ? 'text-[var(--color-danger)]'
                         : 'text-[var(--color-ink)]',

@@ -230,7 +230,7 @@ function ProviderForm({
     <form
       onSubmit={handleSubmit}
       aria-label="Provider form"
-      className="space-y-5 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-canvas)] p-5"
+      className="space-y-6 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-canvas)] p-6"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <label className="block text-sm">
@@ -239,7 +239,7 @@ function ProviderForm({
             required
             value={form.code}
             onChange={(e) => setForm({ ...form, code: e.target.value })}
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
@@ -247,7 +247,7 @@ function ProviderForm({
           <select
             value={form.driver}
             onChange={(e) => setForm({ ...form, driver: e.target.value as AiProviderDriver })}
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           >
             {DRIVERS.map((d) => (
               <option key={d.value} value={d.value}>
@@ -262,7 +262,7 @@ function ProviderForm({
             required
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
@@ -271,7 +271,7 @@ function ProviderForm({
             required
             value={form.model}
             onChange={(e) => setForm({ ...form, model: e.target.value })}
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="col-span-2 block text-sm">
@@ -282,7 +282,7 @@ function ProviderForm({
             placeholder="https://openrouter.ai/api or your Modal.com endpoint"
             value={form.base_url}
             onChange={(e) => setForm({ ...form, base_url: e.target.value })}
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
@@ -292,7 +292,7 @@ function ProviderForm({
             onChange={(e) =>
               setForm({ ...form, auth_type: e.target.value as AiProviderInput['auth_type'] })
             }
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           >
             <option value="bearer">Bearer token</option>
             <option value="api_key">API key</option>
@@ -306,7 +306,7 @@ function ProviderForm({
             placeholder="Leave blank to keep the existing key"
             value={form.credentials?.api_key ?? ''}
             onChange={(e) => setForm({ ...form, credentials: { api_key: e.target.value } })}
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
@@ -318,7 +318,7 @@ function ProviderForm({
             max={2}
             value={form.temperature}
             onChange={(e) => setForm({ ...form, temperature: Number(e.target.value) })}
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
@@ -329,7 +329,7 @@ function ProviderForm({
             max={120000}
             value={form.timeout_ms}
             onChange={(e) => setForm({ ...form, timeout_ms: Number(e.target.value) })}
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
@@ -340,7 +340,7 @@ function ProviderForm({
             max={5}
             value={form.retry_count}
             onChange={(e) => setForm({ ...form, retry_count: Number(e.target.value) })}
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="block text-sm">
@@ -350,7 +350,7 @@ function ProviderForm({
             min={0}
             value={form.priority}
             onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })}
-            className="mt-1 block w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-2 block w-full rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
         </label>
         <label className="flex items-center gap-2 text-sm">
@@ -399,7 +399,7 @@ function ProviderForm({
                 next[i] = [e.target.value, value];
                 setHeaderRows(next);
               }}
-              className="block w-1/2 rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+              className="block w-1/2 rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
             />
             <input
               placeholder="Header value"
@@ -409,16 +409,17 @@ function ProviderForm({
                 next[i] = [key, e.target.value];
                 setHeaderRows(next);
               }}
-              className="block w-1/2 rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+              className="block w-1/2 rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
             />
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setHeaderRows(headerRows.filter((_, idx) => idx !== i))}
-              className="rounded-xl border border-[var(--color-border)] bg-white px-2 text-sm hover:bg-[var(--color-canvas)]"
               aria-label={`Remove header row ${i + 1}`}
             >
               ✕
-            </button>
+            </Button>
           </div>
         ))}
       </div>
@@ -472,7 +473,10 @@ export default function AdminAi(): JSX.Element {
     <div className="mx-auto max-w-6xl space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+            Platform / AI
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-[var(--color-ink)]">
             AI providers & prompts
           </h1>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
@@ -518,7 +522,7 @@ export default function AdminAi(): JSX.Element {
       </div>
 
       {tab === 'providers' ? (
-        <div className="space-y-5">
+        <div className="space-y-6">
           {editing !== null ? (
             <ProviderForm
               initial={

@@ -50,6 +50,19 @@ final class TextileCollectionResource extends JsonResource
             'missed_pickup_reason' => $this->resource->missed_pickup_reason,
             'picked_up_at' => $this->resource->picked_up_at?->toIso8601String(),
             'submitted_at' => $this->resource->submitted_at?->toIso8601String(),
+            'dropoff_confirmed_at' => $this->resource->dropoff_confirmed_at?->toIso8601String(),
+            'dropoff_valid_until' => $this->resource->dropoff_valid_until?->toDateString(),
+            'rescheduled_at' => $this->resource->rescheduled_at?->toIso8601String(),
+            'reminder_sent_at' => $this->resource->reminder_sent_at?->toIso8601String(),
+            'reschedule_count' => $this->resource->reschedule_count,
+            'previous_scheduled_date' => $this->resource->previous_scheduled_date?->toDateString(),
+            'previous_window_start' => $this->resource->previous_window_start,
+            'previous_window_end' => $this->resource->previous_window_end,
+            'previous_batch_id' => $this->resource->previous_batch_id,
+            'capacity_exception_id' => $this->resource->capacity_exception_id,
+            'capacity_checked_at' => $this->resource->capacity_checked_at?->toIso8601String(),
+            'capacity_context' => $this->resource->capacity_context,
+            'next_step' => $this->nextStep(),
             'service_zone' => $zone === null ? null : [
                 'id' => $zone->id,
                 'code' => $zone->code,
@@ -72,6 +85,15 @@ final class TextileCollectionResource extends JsonResource
             ],
             'photos' => $this->photosArray(),
         ];
+    }
+
+    private function nextStep(): ?string
+    {
+        return match ($this->resource->status) {
+            'dropoff_awaiting_drop' => 'Drop off at centre',
+            'pending_review' => 'Awaiting review',
+            default => null,
+        };
     }
 
     /** @return list<array{id: string, role: string, url: string}> */
