@@ -34,6 +34,6 @@ flowchart LR
 
 ## History archive
 
-- **History** lists completed, missed, rejected, and cancelled requests with references, zones, estimated vs actual quantities, and statuses.
+- **History** lists completed, missed, rejected, and cancelled requests with references, zones, estimated vs actual quantities, and statuses. Search-as-you-type, filters, and per-page controls work here too.
 - Drop-off centre receipts and doorstep pickups are reported separately.
 - Targets are set only after a baseline period — never before the data exists.

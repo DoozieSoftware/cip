@@ -5,7 +5,7 @@
 
 ## Opening the queue
 
-Log in as the department officer and open **Reviews**. New citizen bookings arrive with status **pending review**, newest first. Use search, zone, and category filters to work through the list.
+Log in as the department officer and open **Reviews**. New citizen bookings arrive with status **pending review**, newest first. Use the search box (search-as-you-type), zone, and category filters to work through the list. Each row shows a volume badge (bags and kg) so you can judge the load at a glance. Use the per-page control at the bottom to show more rows when clearing a backlog.
 
 ## What to check on each request
 

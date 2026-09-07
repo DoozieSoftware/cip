@@ -13,7 +13,7 @@
 ## Step by step
 
 1. Open the **Schedule** desk.
-2. Find the zone section. Each row shows the `DLN-` reference, citizen, address, and estimated bags and kg.
+2. Find the zone section. Each row shows the `DLN-` reference, citizen, address, and a volume badge with estimated bags and kg. Use search-as-you-type and the per-page control for large queues.
 3. Tick the requests for this trip. A capacity panel totals the load and checks it against the zone’s vehicle limits:
    - Too many bags, kg, or stops → a red blocker explains what to remove or split.
    - Near a limit → an amber warning asks for a careful look.
