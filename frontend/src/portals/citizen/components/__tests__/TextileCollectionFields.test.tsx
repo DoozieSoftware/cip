@@ -235,4 +235,44 @@ describe('TextileCollectionFields', () => {
       .closest('label');
     expect(dropoffLabel?.querySelector('input[type="radio"]')).toHaveAttribute('disabled');
   });
+
+  it('displays inline warning and aria-invalid when entered quantity is below pickup minimum', async () => {
+    mockZones([ZONE_A]);
+    render(
+      <TextileCollectionFields
+        category="clothes_waste"
+        value={null}
+        onChange={vi.fn()}
+        onValidityChange={vi.fn()}
+        minimum={{
+          service_zone_id: 'zone-a',
+          min_bags: 3,
+          min_weight_kg: 10,
+          guidance_text: null,
+        }}
+      />,
+      { wrapper },
+    );
+
+    // Switch to premises (home pickup)
+    fireEvent.click(screen.getByText('Pick up from my home'));
+
+    // Enter 1 bag (below minimum of 3 bags)
+    const bagsInput = screen.getByLabelText('How many bags?');
+    fireEvent.change(bagsInput, { target: { value: '1' } });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Below home pickup minimum/)).toBeDefined();
+      expect(bagsInput).toHaveAttribute('aria-invalid', 'true');
+    });
+
+    // Click "switch to centre drop-off" button inside warning
+    const switchBtn = screen.getByRole('button', { name: /switch to centre drop-off/i });
+    fireEvent.click(switchBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Below home pickup minimum/)).toBeNull();
+      expect(bagsInput).toHaveAttribute('aria-invalid', 'false');
+    });
+  });
 });

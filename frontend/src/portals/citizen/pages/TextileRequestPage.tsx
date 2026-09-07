@@ -61,6 +61,7 @@ export default function TextileRequestPage(): JSX.Element {
   const [notes, setNotes] = useState('');
   const [details, setDetails] = useState<TextileCollectionPayload | null>(null);
   const [detailsValid, setDetailsValid] = useState(false);
+  const [liveDraft, setLiveDraft] = useState<TextileCollectionPayload | null>(null);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationMessage, setLocationMessage] = useState<string | null>(null);
   const [issueLocation, setIssueLocation] = useState<IssueLocation | null>(null);
@@ -77,16 +78,18 @@ export default function TextileRequestPage(): JSX.Element {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const serviceZonesForMinimum = useTextileServiceZones(category);
-  const zoneIdForMinimum = details?.service_zone_id ?? serviceZonesForMinimum.data?.[0]?.id ?? '';
+  const zoneIdForMinimum =
+    liveDraft?.service_zone_id ??
+    details?.service_zone_id ??
+    serviceZonesForMinimum.data?.[0]?.id ??
+    '';
   const capacityMinimum = useTextileCapacityMinimum(zoneIdForMinimum);
   const minimum = capacityMinimum.data;
   const minimumIsLoading = serviceZonesForMinimum.isLoading || capacityMinimum.isLoading;
-  const belowMinimum = isBelowMinimum(
-    minimum,
-    details?.estimated_bags ?? null,
-    details?.estimated_weight_kg ?? null,
-    details?.collection_method ?? null,
-  );
+  const liveBags = liveDraft?.estimated_bags ?? details?.estimated_bags ?? null;
+  const liveWeight = liveDraft?.estimated_weight_kg ?? details?.estimated_weight_kg ?? null;
+  const liveMethod = liveDraft?.collection_method ?? details?.collection_method ?? null;
+  const belowMinimum = isBelowMinimum(minimum, liveBags, liveWeight, liveMethod);
   useEffect(() => {
     return () => {
       if (photoPreview) URL.revokeObjectURL(photoPreview);
@@ -128,11 +131,12 @@ export default function TextileRequestPage(): JSX.Element {
     [],
   );
   const onValidityChange = useCallback((valid: boolean) => setDetailsValid(valid), []);
+  const onDraftChange = useCallback((draft: TextileCollectionPayload) => setLiveDraft(draft), []);
   const availability = useTextileAvailability(
-    details?.service_zone_id ?? null,
-    details?.collection_method ?? null,
+    liveDraft?.service_zone_id ?? details?.service_zone_id ?? null,
+    liveMethod ?? null,
   );
-  const isPremises = details?.collection_method === 'premises';
+  const isPremises = liveMethod === 'premises';
   const pickupMinimumUnavailable =
     isPremises && (minimumIsLoading || capacityMinimum.isError || !minimum);
   const unavailableDates = availability.data?.unavailable_dates ?? [];
@@ -281,12 +285,11 @@ export default function TextileRequestPage(): JSX.Element {
             <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
               Collection service
             </p>
-            <h1 className="mt-1 text-3xl font-normal tracking-[-0.035em]">Request a collection</h1>
-            <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-              Pickup at home or drop-off at a centre — you choose.
-            </p>
-            <p className="mt-2 text-xs leading-5 text-[var(--color-text-secondary)]">
-              Every request is reviewed by a person. We never reject silently.
+            <h1 className="mt-1 text-2xl sm:text-3xl font-normal tracking-[-0.035em]">
+              Request a collection
+            </h1>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+              Pickup at home or drop-off at a centre.
             </p>
           </div>
         </div>
@@ -310,20 +313,13 @@ export default function TextileRequestPage(): JSX.Element {
           <label htmlFor="textile-title" className="text-sm font-medium">
             Short title for your request
           </label>
-          <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
-            Helps the team know what’s inside — you can keep it short.
-          </p>
           <input
             id="textile-title"
             value={title}
-            placeholder="e.g. Old clothes from house shifting"
+            placeholder="e.g. 2 bags of old clothes"
             onChange={(e) => setTitle(e.target.value)}
-            aria-describedby="textile-title-help"
-            className="mt-1 block min-h-11 w-full rounded-lg border border-[var(--color-border)] px-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            className="mt-1.5 block min-h-11 w-full rounded-lg border border-[var(--color-border)] px-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
-          <p id="textile-title-help" className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-            At least 5 letters — e.g. “2 bags of old clothes” is fine.
-          </p>
         </div>
         <div>
           <label htmlFor="textile-notes" className="text-sm font-medium">
@@ -335,21 +331,13 @@ export default function TextileRequestPage(): JSX.Element {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            placeholder="e.g. Wearable clothes, 2 bedsheets, some torn curtains for recycling"
-            className="mt-1 block w-full rounded-lg border border-[var(--color-border)] p-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            placeholder="e.g. Wearable clothes, bedsheets, curtains"
+            className="mt-1.5 block w-full rounded-lg border border-[var(--color-border)] p-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
-          <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-            Torn or wearable — both OK. Just help the team handle it right.
-          </p>
         </div>
       </section>
       <section className="space-y-3 rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
-        <div>
-          <h2 className="text-sm font-medium">What kind of material?</h2>
-          <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
-            Pick one — we’ll send it to the right local team. Tap the card.
-          </p>
-        </div>
+        <h2 className="text-sm font-medium">What kind of material?</h2>
         <div
           className="grid grid-cols-2 gap-2 sm:grid-cols-3 max-[360px]:grid-cols-2"
           role="radiogroup"
@@ -380,11 +368,11 @@ export default function TextileRequestPage(): JSX.Element {
         </div>
         <TextileMinimumNotice
           minimum={minimum}
-          estimatedBags={details?.estimated_bags ?? null}
-          estimatedWeightKg={details?.estimated_weight_kg ?? null}
+          estimatedBags={liveBags}
+          estimatedWeightKg={liveWeight}
           isLoading={minimumIsLoading}
           isError={capacityMinimum.isError}
-          collectionMethod={dropoffActive ? 'dropoff' : (details?.collection_method ?? null)}
+          collectionMethod={dropoffActive ? 'dropoff' : liveMethod}
           onRetry={() => void capacityMinimum.refetch()}
         />
         {categoryError ? (
@@ -399,6 +387,8 @@ export default function TextileRequestPage(): JSX.Element {
         onChange={onDetailsChange}
         onValidityChange={onValidityChange}
         onDropoffChange={setDropoffInfo}
+        onDraftChange={onDraftChange}
+        minimum={minimum}
       />
       {isPremises && details ? (
         <section
@@ -466,9 +456,6 @@ export default function TextileRequestPage(): JSX.Element {
       {dropoffActive ? (
         <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
           <h2 className="text-sm font-medium">Drop-off location</h2>
-          <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
-            Take your items to the collection point below. No pickup is arranged.
-          </p>
           <div className="mt-3">
             <CentreCard
               name={dropoffInfo.name}
@@ -479,10 +466,10 @@ export default function TextileRequestPage(): JSX.Element {
         </section>
       ) : (
         <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
-          <h2 className="text-sm font-medium">Pickup location</h2>
-          <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
-            Optional. Add your exact location so the collection team finds you easily.
-          </p>
+          <h2 className="text-sm font-medium">
+            Pickup location{' '}
+            <span className="font-normal text-[var(--color-text-secondary)]">(optional pin)</span>
+          </h2>
           {locationMessage ? <p className="mt-2 text-xs font-medium">{locationMessage}</p> : null}
           {location ? (
             <div className="mt-3 space-y-3">
@@ -536,22 +523,14 @@ export default function TextileRequestPage(): JSX.Element {
         </section>
       )}
       <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
-        <h2 className="text-sm font-medium">
-          Add a photo of your bags{' '}
-          <span className="font-normal text-[var(--color-text-secondary)]">(optional)</span>
-        </h2>
-        <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
-          {dropoffActive
-            ? 'A photo helps centre staff recognise your bags. You can also add one later — not required to send.'
-            : 'A photo helps the team find and count your bags. You can also add one later — not required to send.'}
-        </p>
-        <div className="mt-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-4">
-          <p className="text-xs font-medium text-[var(--color-ink)]">Tips for a good photo</p>
-          <ul className="mt-1.5 list-disc space-y-1 pl-4 text-xs leading-4 text-[var(--color-text-secondary)]">
-            <li>Put all bags together in daylight</li>
-            <li>One clear photo is enough</li>
-            <li>Max 10 MB — JPEG, PNG or WebP</li>
-          </ul>
+        <div>
+          <h2 className="text-sm font-medium">
+            Photo of your bags{' '}
+            <span className="font-normal text-[var(--color-text-secondary)]">(optional)</span>
+          </h2>
+          <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+            Helps the team recognise and count your bags. Max 10 MB.
+          </p>
         </div>
         {photoPreview ? (
           <div className="mt-3 inline-block">
@@ -667,6 +646,22 @@ export default function TextileRequestPage(): JSX.Element {
           {photoUploadWarning}
         </div>
       ) : null}
+      {belowMinimum && !dropoffActive ? (
+        <p
+          role="alert"
+          className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-5 text-amber-900"
+        >
+          <span className="font-semibold">
+            Cannot submit — below the pickup minimum
+            {minimum?.min_bags !== null || minimum?.min_weight_kg !== null
+              ? ` (needs ${[minimum?.min_bags != null ? `${minimum?.min_bags} bags` : null, minimum?.min_weight_kg != null ? `${minimum?.min_weight_kg} kg` : null].filter(Boolean).join(' or ')})`
+              : ''}
+            .
+          </span>{' '}
+          Your estimate is {liveBags ?? '—'} bags / {liveWeight ?? '—'} kg. Add more bags, or switch
+          to drop-off — any amount is accepted at the centre.
+        </p>
+      ) : null}
       <button
         type="button"
         disabled={
@@ -689,6 +684,9 @@ export default function TextileRequestPage(): JSX.Element {
                 ? 'Pickup minimum not met'
                 : 'Send pickup request'}
       </button>
+      <p className="text-center text-xs text-[var(--color-text-tertiary)]">
+        Every request is reviewed by our team before dispatch.
+      </p>
     </div>
   );
 }

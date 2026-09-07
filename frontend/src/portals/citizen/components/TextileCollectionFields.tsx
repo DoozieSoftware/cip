@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState, type JSX } from 'react';
 import { Spinner, cx } from '../../../shared/ui';
 import {
   useTextileServiceZones,
+  type TextileCapacityMinimum,
   type TextileCollectionCategory,
   type TextileCollectionMethod,
   type TextileCollectionPayload,
   type TextileServiceZone,
 } from '../api/textileZones';
+import { isBelowMinimum } from './TextileMinimumNotice';
 
 const PHONE_PATTERN = '^[0-9+() -]{8,20}$';
 
@@ -22,6 +24,8 @@ export interface TextileCollectionFieldsProps {
   onChange: (next: TextileCollectionPayload | null) => void;
   onValidityChange: (valid: boolean) => void;
   onDropoffChange?: (dropoff: TextileDropoffView | null) => void;
+  onDraftChange?: (draft: TextileCollectionPayload) => void;
+  minimum?: TextileCapacityMinimum | null;
 }
 
 type FieldKey =
@@ -135,6 +139,8 @@ export function TextileCollectionFields({
   onChange,
   onValidityChange,
   onDropoffChange,
+  onDraftChange,
+  minimum,
 }: TextileCollectionFieldsProps): JSX.Element {
   const zonesQuery = useTextileServiceZones(category);
 
@@ -151,6 +157,8 @@ export function TextileCollectionFields({
       onChange={onChange}
       onValidityChange={onValidityChange}
       onDropoffChange={onDropoffChange}
+      onDraftChange={onDraftChange}
+      minimum={minimum}
     />
   );
 }
@@ -165,6 +173,8 @@ interface InnerProps {
   onChange: (next: TextileCollectionPayload | null) => void;
   onValidityChange: (valid: boolean) => void;
   onDropoffChange?: (dropoff: TextileDropoffView | null) => void;
+  onDraftChange?: (draft: TextileCollectionPayload) => void;
+  minimum?: TextileCapacityMinimum | null;
 }
 
 function TextileCollectionFieldsInner({
@@ -177,6 +187,8 @@ function TextileCollectionFieldsInner({
   onChange,
   onValidityChange,
   onDropoffChange,
+  onDraftChange,
+  minimum,
 }: InnerProps): JSX.Element {
   const [draft, setDraft] = useState<TextileCollectionPayload>(
     () => value ?? buildInitial(zones[0]?.id, category, zones[0]),
@@ -220,7 +232,8 @@ function TextileCollectionFieldsInner({
   useEffect(() => {
     onChange(isValid ? draft : null);
     onValidityChange(isValid);
-  }, [isValid, draft, onChange, onValidityChange]);
+    onDraftChange?.(draft);
+  }, [isValid, draft, onChange, onValidityChange, onDraftChange]);
 
   function patch<K extends keyof TextileCollectionPayload>(
     key: K,
@@ -229,16 +242,26 @@ function TextileCollectionFieldsInner({
     setDraft((prev) => ({ ...prev, [key]: next }));
   }
 
+  const isBelowMin = isBelowMinimum(
+    minimum,
+    draft.estimated_bags,
+    draft.estimated_weight_kg,
+    draft.collection_method,
+  );
+
+  const minParts: string[] = [];
+  if (minimum?.min_bags !== null && minimum?.min_bags !== undefined) {
+    minParts.push(`${minimum.min_bags} bags`);
+  }
+  if (minimum?.min_weight_kg !== null && minimum?.min_weight_kg !== undefined) {
+    minParts.push(`${minimum.min_weight_kg} kg`);
+  }
+  const minText = minParts.join(' or ');
+
   return (
     <div className="space-y-5 rounded-2xl bg-white p-5 sm:p-6 shadow-sm ring-1 ring-black/5">
       <div>
         <h3 className="text-base font-semibold text-[var(--color-ink)]">Collection details</h3>
-        <p className="mt-1 text-sm leading-5 text-[var(--color-text-secondary)]">
-          Fill bags or weight — either one is enough. We will send it to a local team after review.
-        </p>
-        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-          Every request is reviewed by a person. We never reject silently.
-        </p>
       </div>
 
       {zonesLoading ? (
@@ -281,21 +304,24 @@ function TextileCollectionFieldsInner({
               </option>
             ))}
           </select>
-          {selectedZone?.readiness_instructions ? (
-            <p className="mt-2 rounded-md bg-[var(--color-surface-alt)] p-2 text-xs text-[var(--color-text-secondary)]">
-              {selectedZone.readiness_instructions}
-            </p>
-          ) : null}
-          {selectedZone?.partner ? (
-            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-              Collected by {selectedZone.partner.name}
-            </p>
-          ) : null}
           {errors.service_zone_id ? (
             <p className="mt-1 text-xs text-red-600">{errors.service_zone_id}</p>
           ) : null}
         </div>
       )}
+
+      {selectedZone?.partner ? (
+        <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-4 text-xs leading-5 text-[var(--color-text-secondary)]">
+          <p className="font-semibold text-[var(--color-ink)]">
+            Partner: {selectedZone.partner.name}
+          </p>
+          {selectedZone.readiness_instructions ? (
+            <p className="mt-1 text-[var(--color-text-secondary)]">
+              {selectedZone.readiness_instructions}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       <fieldset>
         <legend className="block text-sm font-medium text-[var(--color-ink)]">Requester</legend>
@@ -324,49 +350,32 @@ function TextileCollectionFieldsInner({
         </div>
       </fieldset>
 
-      {draft.requester_type === 'rwa' ? (
-        <Field
-          id="textile-rwa-name"
-          label="Apartment / community name"
-          helper="e.g. Green View Apartments, 4th Block"
-          value={draft.rwa_name ?? ''}
-          onChange={(v) => patch('rwa_name', v || null)}
-          error={errors.rwa_name}
-          fieldTouched={touched.has('rwa_name')}
-          onBlur={() => setTouched((prev) => new Set([...prev, 'rwa_name']))}
-          placeholder="e.g. Green View Apartments"
-        />
-      ) : null}
-
       <Field
         id="textile-requester-name"
         label="Your name"
-        helper="As on your ID — for the receipt"
         value={draft.requester_name}
         onChange={(v) => patch('requester_name', v)}
         error={errors.requester_name}
         fieldTouched={touched.has('requester_name')}
         onBlur={() => setTouched((prev) => new Set([...prev, 'requester_name']))}
-        placeholder="e.g. Ramesh Kumar"
+        placeholder="Full name"
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         <Field
           id="textile-email"
           label="Email (for receipt)"
-          helper="We send updates here"
           type="email"
           value={draft.contact_email}
           onChange={(v) => patch('contact_email', v)}
           error={errors.contact_email}
           fieldTouched={touched.has('contact_email')}
           onBlur={() => setTouched((prev) => new Set([...prev, 'contact_email']))}
-          placeholder="you@example.com"
+          placeholder="name@example.com"
         />
         <Field
           id="textile-phone"
           label="Phone (for pickup updates)"
-          helper="We’ll call or SMS if needed"
           type="tel"
           inputMode="tel"
           pattern={PHONE_PATTERN}
@@ -375,9 +384,22 @@ function TextileCollectionFieldsInner({
           error={errors.contact_phone}
           fieldTouched={touched.has('contact_phone')}
           onBlur={() => setTouched((prev) => new Set([...prev, 'contact_phone']))}
-          placeholder="e.g. 98765 43210"
+          placeholder="e.g. +91 98765 43210"
         />
       </div>
+
+      {draft.requester_type === 'rwa' ? (
+        <Field
+          id="textile-rwa-name"
+          label="Apartment / community name"
+          value={draft.rwa_name ?? ''}
+          onChange={(v) => patch('rwa_name', v || null)}
+          error={errors.rwa_name}
+          fieldTouched={touched.has('rwa_name')}
+          onBlur={() => setTouched((prev) => new Set([...prev, 'rwa_name']))}
+          placeholder="e.g. Green View Apartments"
+        />
+      ) : null}
 
       <div>
         <label
@@ -388,11 +410,6 @@ function TextileCollectionFieldsInner({
             ? 'Your address (for contact & receipt)'
             : 'Pickup address'}
         </label>
-        <p className="mt-1 text-xs leading-4 text-[var(--color-text-secondary)]">
-          {draft.collection_method === 'dropoff'
-            ? 'For your receipt only — we don’t send a truck here.'
-            : 'House/flat, street, landmark — help the crew find you on first try.'}
-        </p>
         <textarea
           id="textile-address"
           rows={3}
@@ -401,30 +418,21 @@ function TextileCollectionFieldsInner({
           placeholder={
             draft.collection_method === 'dropoff'
               ? 'Your home address for the receipt'
-              : 'e.g. #12, 3rd Cross, Near Hanuman Temple, Jayanagar'
+              : 'House/flat, street, landmark'
           }
           className="mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           aria-invalid={touched.has('pickup_address') && Boolean(errors.pickup_address)}
-          aria-describedby="textile-address-help"
           onBlur={() => setTouched((prev) => new Set([...prev, 'pickup_address']))}
         />
-        <p id="textile-address-help" className="sr-only">
-          Enter your full address so the team can find you.
-        </p>
         {touched.has('pickup_address') && errors.pickup_address ? (
-          <p role="alert" className="mt-1 text-xs font-medium text-red-600">
-            {errors.pickup_address}
-          </p>
+          <p className="mt-1 text-xs text-red-600">{errors.pickup_address}</p>
         ) : null}
       </div>
 
-      <fieldset role="radiogroup" aria-label="How will we collect?">
+      <fieldset>
         <legend className="block text-sm font-medium text-[var(--color-ink)]">
           How will we collect?
         </legend>
-        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-          Pick one — you can change it before sending.
-        </p>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           <MethodToggle
             available={selectedZone?.methods.includes('dropoff') ?? false}
@@ -432,7 +440,7 @@ function TextileCollectionFieldsInner({
             current={draft.collection_method}
             onSelect={(v) => patch('collection_method', v)}
             label="I’ll go to the centre"
-            description="Drop off any amount — no minimum, no truck needed."
+            description="Drop off any amount — no minimum."
           />
           <MethodToggle
             available={selectedZone?.methods.includes('premises') ?? false}
@@ -440,7 +448,7 @@ function TextileCollectionFieldsInner({
             current={draft.collection_method}
             onSelect={(v) => patch('collection_method', v)}
             label="Pick up from my home"
-            description="We come to you — needs a few bags/kg."
+            description="We come to your doorstep."
           />
         </div>
 
@@ -451,21 +459,23 @@ function TextileCollectionFieldsInner({
 
       <div>
         <p className="text-sm font-medium text-[var(--color-ink)]">How much do you have?</p>
-        <p className="mt-1 text-xs leading-4 text-[var(--color-text-secondary)]">
-          Fill <span className="font-semibold">bags OR weight</span> — you need only one. No
-          weighing machine? Just count bags.
+        <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+          Fill bags or weight — either is enough.
         </p>
-        <div className="mt-3 grid gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
+        <div className="mt-2.5 grid gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
           <Field
             id="textile-bags"
             label="How many bags?"
-            helper="Any bag size is OK — one sack = 1 bag"
             type="number"
             min={1}
             max={999}
             value={draft.estimated_bags === null ? '' : String(draft.estimated_bags)}
-            onChange={(v) => patch('estimated_bags', v === '' ? null : Number(v))}
+            onChange={(v) => {
+              patch('estimated_bags', v === '' ? null : Number(v));
+              setTouched((prev) => new Set([...prev, 'estimated_bags']));
+            }}
             error={errors.estimated_bags}
+            warning={isBelowMin}
             fieldTouched={touched.has('estimated_bags')}
             onBlur={() => setTouched((prev) => new Set([...prev, 'estimated_bags']))}
             placeholder="e.g. 3"
@@ -485,19 +495,45 @@ function TextileCollectionFieldsInner({
           <Field
             id="textile-weight"
             label="About how many kg?"
-            helper="If you know — else leave blank"
             type="number"
             min={0.1}
             max={99999.99}
             step={0.1}
             value={draft.estimated_weight_kg === null ? '' : String(draft.estimated_weight_kg)}
-            onChange={(v) => patch('estimated_weight_kg', v === '' ? null : Number(v))}
+            onChange={(v) => {
+              patch('estimated_weight_kg', v === '' ? null : Number(v));
+              setTouched((prev) => new Set([...prev, 'estimated_weight_kg']));
+            }}
             error={errors.estimated_weight_kg}
+            warning={isBelowMin}
             fieldTouched={touched.has('estimated_weight_kg')}
             onBlur={() => setTouched((prev) => new Set([...prev, 'estimated_weight_kg']))}
             placeholder="e.g. 8"
           />
         </div>
+        {isBelowMin ? (
+          <div
+            id="textile-quantity-warn"
+            role="alert"
+            aria-live="polite"
+            className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-900"
+          >
+            <p className="font-semibold">
+              Below home pickup minimum {minText ? `(${minText})` : ''}
+            </p>
+            <p className="mt-0.5 text-amber-800">
+              Home pickup requires a minimum load to dispatch a vehicle. Add more items, or{' '}
+              <button
+                type="button"
+                onClick={() => patch('collection_method', 'dropoff')}
+                className="font-semibold underline hover:text-amber-950 cursor-pointer"
+              >
+                switch to centre drop-off
+              </button>{' '}
+              (any amount accepted).
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -510,6 +546,7 @@ interface FieldProps {
   value: string;
   onChange: (next: string) => void;
   error?: string;
+  warning?: boolean;
   type?: 'text' | 'email' | 'tel' | 'number';
   inputMode?: 'text' | 'tel' | 'numeric' | 'decimal';
   pattern?: string;
@@ -528,6 +565,7 @@ function Field({
   value,
   onChange,
   error,
+  warning,
   type = 'text',
   inputMode,
   pattern,
@@ -538,6 +576,9 @@ function Field({
   fieldTouched = true,
   onBlur,
 }: FieldProps): JSX.Element {
+  const hasError = fieldTouched && Boolean(error);
+  const hasWarning = !hasError && Boolean(warning);
+
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-[var(--color-ink)]">
@@ -557,9 +598,18 @@ function Field({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-white py-2.5 px-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
-        aria-invalid={fieldTouched && Boolean(error)}
-        aria-describedby={helper ? `${id}-help` : undefined}
+        className={cx(
+          'mt-1 block w-full rounded-lg border bg-white py-2.5 px-3 text-base focus:outline-none focus:ring-1',
+          hasError
+            ? 'border-red-500 text-red-950 focus:border-red-500 focus:ring-red-500'
+            : hasWarning
+              ? 'border-amber-400 text-amber-950 focus:border-amber-500 focus:ring-amber-500'
+              : 'border-[var(--color-border)] focus:border-[var(--color-ink)] focus:ring-[var(--color-ink)]',
+        )}
+        aria-invalid={hasError || hasWarning}
+        aria-describedby={
+          hasError ? `${id}-err` : hasWarning ? `${id}-warn` : helper ? `${id}-help` : undefined
+        }
         onBlur={onBlur}
       />
       {helper ? (
@@ -567,8 +617,8 @@ function Field({
           {helper}
         </span>
       ) : null}
-      {error ? (
-        <p role="alert" className="mt-1 text-xs font-medium text-red-600">
+      {hasError ? (
+        <p id={`${id}-err`} role="alert" className="mt-1 text-xs font-medium text-red-600">
           {error}
         </p>
       ) : null}
