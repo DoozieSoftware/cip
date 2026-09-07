@@ -265,7 +265,12 @@ export function useRescheduleTextileCollection(id: string) {
     mutationFn: (payload: RescheduleTextileInput) =>
       request<TextileCollectionRequest>(`/citizen/textile-collections/${id}/reschedule`, {
         method: 'POST',
-        body: payload,
+        body: {
+          scheduled_date: payload.requested_date,
+          scheduled_window_start: payload.window_start,
+          scheduled_window_end: payload.window_end,
+          reason: payload.reason,
+        },
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['citizen', 'textile-collections', id] });

@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use App\Modules\Departments\Models\Department;
-use App\Modules\Security\Models\AuditLog;
-use App\Modules\TextileCollections\Models\TextileCollectionRequest;
 use App\Modules\TextileCollections\Models\TextileServiceZone;
 use App\Modules\Users\Models\User;
 use Database\Seeders\ReportPrioritiesSeeder;
@@ -12,8 +10,8 @@ use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -28,6 +26,7 @@ beforeEach(function (): void {
 function dropoffZone(array $overrides = []): TextileServiceZone
 {
     $drLinenId = Department::query()->where('code', 'DR_LINEN')->value('id');
+
     return TextileServiceZone::query()->create(array_merge([
         'code' => 'DRL-'.strtoupper(substr(uniqid(), -8)),
         'name' => 'Dropoff Zone',
@@ -41,9 +40,11 @@ function dropoffZone(array $overrides = []): TextileServiceZone
 function otherPartnerZone(array $overrides = []): TextileServiceZone
 {
     $dept = Department::query()->where('code', '!=', 'DR_LINEN')->first();
+
     if (! $dept) {
         $dept = Department::factory()->create(['code' => 'DEMO_EWASTE', 'name' => 'Demo Ewaste']);
     }
+
     return TextileServiceZone::query()->create(array_merge([
         'code' => 'EW-'.strtoupper(substr(uniqid(), -8)),
         'name' => 'Other Partner Zone',
@@ -76,6 +77,7 @@ function signInDeptStaff(Department $dept): User
     $staff = User::factory()->create();
     $staff->departments()->attach($dept->id, ['active' => true]);
     Sanctum::actingAs($staff);
+
     return $staff;
 }
 
@@ -93,20 +95,17 @@ it('BE-R8 rejects scheduling a dropoff request into a trip batch', function (): 
     $staff = signInDeptStaff(Department::query()->where('code', 'DR_LINEN')->firstOrFail());
     $this->postJson("/api/v1/department/textile-collections/{$id}/approve")->assertOk();
 
-    // Attempt schedule: future guard should reject dropoff method; today it SCHEDS (bug) so we assert either 422 or document gap.
-    // Acceptance: dropoff must NOT be schedulable. If endpoint accepts, this test FAILS until guard added — which is the desired findings-test signal.
-    // We keep it as non-todo but allow both outcomes with an explicit branch that will turn strict once BE-R8 guard ships.
+    // Attempt schedule: the BE-R8 guard rejects dropoff method with 422.
     $schedule = $this->postJson('/api/v1/department/textile-collections/schedule', [
         'service_zone_id' => $zone->id,
         'collection_request_ids' => [$id],
         'collection_date' => Carbon::tomorrow()->toDateString(),
     ]);
-    // TODO strict: expect 422 when method guard ships. For now assert the request exists and outcome is noted.
-    // To keep green on current engine, accept either 201 (gap) or 422 (fixed).
-    expect($schedule->status())->toBeIn([201, 422]);
-    if ($schedule->status() === 422) {
-        $schedule->assertJsonValidationErrors(['collection_request_ids']);
-    }
+    // The BE-R8 guard has shipped: dropoff requests are rejected with the
+    // standard ApiException envelope (not a validator error bag).
+    $schedule->assertStatus(422)
+        ->assertJsonPath('code', 'VALIDATION_FAILED')
+        ->assertJsonPath('message', 'Drop-off requests must never enter a trip.');
 });
 
 // ---- Mark OPEN D-01..D-08 dependent receipt tests as todo ----
@@ -124,7 +123,7 @@ it('BE-R7 dropoff receipt audit: AuditLog action textile.receive with before/aft
 it('BE-R negative: unauthenticated receipt attempt is 401 or 404 (route not yet shipped)', function (): void {
     $zone = dropoffZone();
     $this->postJson("/api/v1/department/dropoff-centres/{$zone->id}/receipts", [
-        'collection_request_id' => (string) \Illuminate\Support\Str::uuid(),
+        'collection_request_id' => (string) Str::uuid(),
         'actual_bags' => 1,
     ])->assertStatus(401);
 });
@@ -134,6 +133,6 @@ it('BE-R negative: citizen cannot call staff receipt route → 403 or 404', func
     Sanctum::actingAs($citizen);
     $zone = dropoffZone();
     $this->postJson("/api/v1/department/dropoff-centres/{$zone->id}/receipts", [
-        'collection_request_id' => (string) \Illuminate\Support\Str::uuid(),
+        'collection_request_id' => (string) Str::uuid(),
     ])->assertStatus(403);
 });

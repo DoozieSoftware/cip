@@ -6,14 +6,14 @@ import type { TextileCapacityMinimum } from '../../api/textileZones';
 describe('TextileMinimumNotice', () => {
   it('shows loading state', () => {
     render(<TextileMinimumNotice isLoading minimum={null} />);
-    expect(screen.getByText(/Loading this partner/)).toBeInTheDocument();
+    expect(screen.getByText(/Checking what’s needed in your area/)).toBeInTheDocument();
   });
 
   it('shows error state with alert and retry', () => {
     const onRetry = vi.fn();
     render(<TextileMinimumNotice isError minimum={null} onRetry={onRetry} />);
-    expect(screen.getByRole('alert')).toHaveTextContent(/Could not load minimum/);
-    const btn = screen.getByRole('button', { name: /Retry/i });
+    expect(screen.getByRole('alert')).toHaveTextContent(/Could not check the minimum/);
+    const btn = screen.getByRole('button', { name: /Try again/i });
     fireEvent.click(btn);
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
@@ -21,7 +21,7 @@ describe('TextileMinimumNotice', () => {
   it('shows error state without retry when onRetry not provided', () => {
     render(<TextileMinimumNotice isError minimum={null} />);
     expect(screen.getByRole('alert')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Retry/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Try again/i })).not.toBeInTheDocument();
   });
 
   it('shows empty state when no minimum is configured', () => {
@@ -35,7 +35,7 @@ describe('TextileMinimumNotice', () => {
         }}
       />,
     );
-    expect(screen.getByText(/has not configured a minimum/)).toBeInTheDocument();
+    expect(screen.getByText(/No minimum in your area/)).toBeInTheDocument();
   });
 
   it('renders minimum with bags and guidance text', () => {
@@ -60,7 +60,7 @@ describe('TextileMinimumNotice', () => {
     };
     render(<TextileMinimumNotice minimum={minimum} estimatedBags={5} />);
     expect(screen.getByText(/3 bags/)).toBeInTheDocument();
-    expect(screen.getByText(/never silently rejected/)).toBeInTheDocument();
+    expect(screen.getByText(/Fill bags or kg/)).toBeInTheDocument();
   });
 
   it('shows exception CTA when below minimum by bags', () => {
@@ -80,8 +80,8 @@ describe('TextileMinimumNotice', () => {
         onRequestException={onRequestException}
       />,
     );
-    expect(screen.getByText(/Your estimate is below the partner minimum/)).toBeInTheDocument();
-    const btn = screen.getByRole('button', { name: /Request exception/i });
+    expect(screen.getByText(/You have less than the usual minimum/)).toBeInTheDocument();
+    const btn = screen.getByRole('button', { name: /Add a short note for review/i });
     expect(btn).toBeInTheDocument();
     fireEvent.click(btn);
     expect(onRequestException).toHaveBeenCalledTimes(1);
@@ -97,7 +97,9 @@ describe('TextileMinimumNotice', () => {
     render(
       <TextileMinimumNotice minimum={minimum} estimatedWeightKg={2} onRequestException={vi.fn()} />,
     );
-    expect(screen.getByRole('button', { name: /Request exception/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Add a short note for review/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Urgent exceptions allowed/)).toBeInTheDocument();
   });
 
@@ -116,7 +118,9 @@ describe('TextileMinimumNotice', () => {
         onRequestException={vi.fn()}
       />,
     );
-    expect(screen.queryByRole('button', { name: /Request exception/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Add a short note for review/i }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText(/meets the guidance/)).toBeInTheDocument();
   });
 
@@ -136,8 +140,10 @@ describe('TextileMinimumNotice', () => {
         onRequestException={vi.fn()}
       />,
     );
-    expect(screen.getByText(/No minimum — drop off any amount/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Request exception/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/No minimum for drop-off/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Add a short note for review/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('does not show CTA when onRequestException not provided even if below minimum', () => {
@@ -148,8 +154,10 @@ describe('TextileMinimumNotice', () => {
       guidance_text: null,
     };
     render(<TextileMinimumNotice minimum={minimum} estimatedBags={1} />);
-    expect(screen.getByText(/Your estimate is below/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Request exception/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/You have less than the usual minimum/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Add a short note for review/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('never silently rejects — always shows explanatory copy', () => {
@@ -162,7 +170,7 @@ describe('TextileMinimumNotice', () => {
     render(
       <TextileMinimumNotice minimum={minimum} estimatedBags={1} onRequestException={vi.fn()} />,
     );
-    expect(screen.getByText(/We never silently reject/)).toBeInTheDocument();
+    expect(screen.getByText(/We never reject silently/)).toBeInTheDocument();
   });
 });
 

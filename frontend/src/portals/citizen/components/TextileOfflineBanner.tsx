@@ -89,10 +89,13 @@ export function TextileOfflineBanner(): JSX.Element | null {
             <ul className="mt-2 space-y-1 text-xs text-amber-700">
               {pending.slice(0, 3).map((item) => (
                 <li key={item.id} className="truncate">
-                  • {formatKind(item.kind)} — {item.status} {item.attempts > 0 ? `(retry ${item.attempts})` : ''} · pending upload
+                  • {formatKind(item.kind)} — {item.status}{' '}
+                  {item.attempts > 0 ? `(retry ${item.attempts})` : ''} · pending upload
                 </li>
               ))}
-              {pending.length > 3 ? <li className="text-[11px]">+{pending.length - 3} more</li> : null}
+              {pending.length > 3 ? (
+                <li className="text-[11px]">+{pending.length - 3} more</li>
+              ) : null}
             </ul>
             <div className="mt-3 flex flex-wrap gap-2">
               <button
@@ -116,16 +119,20 @@ export function TextileOfflineBanner(): JSX.Element | null {
       {dead.length > 0 ? (
         <div className="mt-3 rounded-lg border border-red-200 bg-white p-3">
           <div className="flex items-center gap-2 text-xs font-medium text-red-700">
-            <IconAlertTriangle className="h-4 w-4" /> {dead.length} upload{dead.length === 1 ? '' : 's'} failed permanently — needs your review
+            <IconAlertTriangle className="h-4 w-4" /> {dead.length} upload
+            {dead.length === 1 ? '' : 's'} failed permanently — needs your review
           </div>
           <p className="mt-1 text-xs leading-5 text-red-600">
-            These were not delivered after multiple retries (corrupt file, changed device, or expired
-            session). Open the recovery view to retry or discard. Proof is still on this device until
-            you clear it.
+            These were not delivered after multiple retries (corrupt file, changed device, or
+            expired session). Open the recovery view to retry or discard. Proof is still on this
+            device until you clear it.
           </p>
           <ul className="mt-2 space-y-2">
             {dead.map((item) => (
-              <li key={item.id} className="flex items-center justify-between gap-2 rounded border border-black/10 bg-zinc-50 px-2 py-1.5 text-xs">
+              <li
+                key={item.id}
+                className="flex items-center justify-between gap-2 rounded border border-black/10 bg-zinc-50 px-2 py-1.5 text-xs"
+              >
                 <span className="truncate">
                   {formatKind(item.kind)} · {item.last_error ?? 'Upload failed'}
                 </span>

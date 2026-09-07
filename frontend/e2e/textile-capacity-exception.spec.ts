@@ -142,7 +142,9 @@ test.describe('textile capacity exception — citizen below-minimum journey', ()
     await capacityMinimumResponse;
     // Wait for zones and capacity minimum to load — guidance should appear
     await expect(page.getByText(/Minimum quantities for a collection route/)).toBeVisible();
-    await expect(page.getByText(/This partner's guidance:\s*5\s*bags\s*or\s*10\s*kg/)).toBeVisible();
+    await expect(
+      page.getByText(/This partner's guidance:\s*5\s*bags\s*or\s*10\s*kg/),
+    ).toBeVisible();
     await expect(page.getByText(/Please combine with neighbours/)).toBeVisible();
 
     // Fill required collection fields — service zone defaults to South Zone

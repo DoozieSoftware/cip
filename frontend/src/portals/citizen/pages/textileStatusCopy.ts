@@ -11,8 +11,10 @@ export type TextileTripStatus =
  * Phase 3: human-readable explanation for why rescheduling is blocked or requires fallback.
  */
 export function rescheduleBlockedReason(tripStatus: string | null | undefined): string | null {
-  if (tripStatus === 'in_progress') return 'Crew is already on the route — rescheduling is paused. Contact support for help.';
-  if (tripStatus === 'completed') return 'This trip is already completed and cannot be rescheduled.';
+  if (tripStatus === 'in_progress')
+    return 'Crew is already on the route — rescheduling is paused. Contact support for help.';
+  if (tripStatus === 'completed')
+    return 'This trip is already completed and cannot be rescheduled.';
   return null;
 }
 export function unavailableCopy(unavailableDates: string[], nextAvailable: string | null): string {

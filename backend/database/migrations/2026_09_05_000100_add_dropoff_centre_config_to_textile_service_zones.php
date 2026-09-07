@@ -28,7 +28,7 @@ return new class extends Migration
     {
         Schema::table('textile_service_zones', function (Blueprint $table): void {
             $table->dropIndex(['centre_status']);
-            $table->dropColumn(['operating_hours','public_phone','centre_status','centre_closed_note','receipt_requires_photo','receipt_requires_bags','receipt_requires_weight','max_open_dropoffs_per_citizen']);
+            $table->dropColumn(['operating_hours', 'public_phone', 'centre_status', 'centre_closed_note', 'receipt_requires_photo', 'receipt_requires_bags', 'receipt_requires_weight', 'max_open_dropoffs_per_citizen']);
         });
     }
 };

@@ -37,11 +37,16 @@ export interface OfflineQueueHook {
   reportFailure: (key: string, reason: string) => Promise<void>;
 }
 
-export function useOfflineQueue(userId: string | undefined, departmentId: string | undefined): OfflineQueueHook {
+export function useOfflineQueue(
+  userId: string | undefined,
+  departmentId: string | undefined,
+): OfflineQueueHook {
   const [items, setItems] = useState<OfflineQueuedCollection[]>(() =>
     userId ? loadOfflineQueue(userId) : [],
   );
-  const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator !== 'undefined' ? navigator.onLine : true,
+  );
   const [isRetrying, setIsRetrying] = useState(false);
 
   const reload = useCallback(() => {
@@ -78,7 +83,10 @@ export function useOfflineQueue(userId: string | undefined, departmentId: string
     return () => window.clearInterval(id);
   }, [reload]);
 
-  const pendingCount = useMemo(() => items.filter((i) => i.status === 'pending' || i.status === 'uploading').length, [items]);
+  const pendingCount = useMemo(
+    () => items.filter((i) => i.status === 'pending' || i.status === 'uploading').length,
+    [items],
+  );
   const failedCount = useMemo(() => items.filter((i) => i.status === 'failed').length, [items]);
 
   const enqueue = useCallback(
@@ -121,7 +129,10 @@ export function useOfflineQueue(userId: string | undefined, departmentId: string
       // Corrupted data URL -> mark failed, do not silently discard
       const file = dataUrlToFile(item.fileDataUrl, item.fileName, item.fileType);
       if (!file) {
-        updateOfflineItem(userId, key, { status: 'failed', lastError: 'Corrupted upload data — please re-capture proof photo.' });
+        updateOfflineItem(userId, key, {
+          status: 'failed',
+          lastError: 'Corrupted upload data — please re-capture proof photo.',
+        });
         reload();
         return;
       }
@@ -141,7 +152,13 @@ export function useOfflineQueue(userId: string | undefined, departmentId: string
       reload();
 
       try {
-        await uploadTextileProofPhoto(item.collectionId, file, departmentId, undefined, item.idempotencyKey);
+        await uploadTextileProofPhoto(
+          item.collectionId,
+          file,
+          departmentId,
+          undefined,
+          item.idempotencyKey,
+        );
         await recordTextileOutcome(item.collectionId, {
           outcome: 'collected',
           actual_bags: item.bags,
@@ -231,7 +248,11 @@ export function useOfflineQueue(userId: string | undefined, departmentId: string
         await reportOfflineFailure(item.collectionId, {
           idempotency_key: item.idempotencyKey,
           failure_reason: reason,
-          payload_snapshot: { bags: item.bags, weight: item.weight, reference: item.collectionReference },
+          payload_snapshot: {
+            bags: item.bags,
+            weight: item.weight,
+            reference: item.collectionReference,
+          },
           department_id: departmentId,
         });
       } catch {
@@ -241,5 +262,17 @@ export function useOfflineQueue(userId: string | undefined, departmentId: string
     [departmentId, userId],
   );
 
-  return { items, pendingCount, failedCount, isOnline, isRetrying, enqueue, retryAll, retryOne: doRetryOne, remove, clearCompleted, reportFailure };
+  return {
+    items,
+    pendingCount,
+    failedCount,
+    isOnline,
+    isRetrying,
+    enqueue,
+    retryAll,
+    retryOne: doRetryOne,
+    remove,
+    clearCompleted,
+    reportFailure,
+  };
 }

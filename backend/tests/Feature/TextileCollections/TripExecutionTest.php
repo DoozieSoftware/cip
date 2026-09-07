@@ -16,6 +16,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -30,6 +31,7 @@ beforeEach(function (): void {
 function tripZone(): TextileServiceZone
 {
     $dept = Department::query()->where('code', 'DR_LINEN')->firstOrFail();
+
     return TextileServiceZone::query()->create([
         'code' => 'DRL-'.strtoupper(substr(uniqid(), -8)),
         'name' => 'Trip Zone',
@@ -56,6 +58,7 @@ function tripCitizenRequest(TextileServiceZone $zone): TextileCollectionRequest
         'estimated_bags' => 3,
         'estimated_weight_kg' => 8.5,
     ])->assertCreated();
+
     return TextileCollectionRequest::query()->findOrFail($res->json('data.id'));
 }
 
@@ -64,16 +67,18 @@ function tripStaff(): User
     $staff = User::factory()->create();
     $dept = Department::query()->where('code', 'DR_LINEN')->firstOrFail();
     $staff->departments()->attach($dept->id, ['active' => true]);
+
     return $staff;
 }
 
 function otherPartnerStaff(): User
 {
     $dept = Department::query()->where('code', '!=', 'DR_LINEN')->first();
+
     if (! $dept) {
         $dept = Department::factory()->create(['code' => 'DEMO_EWASTE', 'name' => 'Demo Ewaste']);
         DB::table('textile_partner_capabilities')->insert([
-            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'id' => (string) Str::uuid(),
             'department_id' => $dept->id,
             'category' => 'e_waste',
             'active' => true,
@@ -83,6 +88,7 @@ function otherPartnerStaff(): User
     }
     $staff = User::factory()->create();
     $staff->departments()->attach($dept->id, ['active' => true]);
+
     return $staff;
 }
 
@@ -100,6 +106,7 @@ function makeBatchWithRequest(TextileServiceZone $zone): array
         'window_end' => '12:00',
     ])->assertCreated();
     $batch = TextileCollectionBatch::query()->findOrFail($sched->json('data.id'));
+
     return [$batch, $req, $staff];
 }
 
@@ -169,7 +176,10 @@ it('trip progress: reorder after start is rejected', function (): void {
     $req2 = tripCitizenRequest($zone);
     $staff = tripStaff();
     Sanctum::actingAs($staff);
-    foreach ([$req1, $req2] as $r) { test()->postJson("/api/v1/department/textile-collections/{$r->id}/approve")->assertOk(); }
+
+    foreach ([$req1, $req2] as $r) {
+        test()->postJson("/api/v1/department/textile-collections/{$r->id}/approve")->assertOk();
+    }
     $sched = $this->postJson('/api/v1/department/textile-collections/schedule', [
         'service_zone_id' => $zone->id,
         'collection_request_ids' => [$req1->id, $req2->id],
@@ -313,7 +323,7 @@ it('trip concurrency: recording a stop cannot overwrite a later outcome (exactly
     $r2 = $this->postJson("/api/v1/department/textile-collections/{$req->id}/outcome", [
         'outcome' => 'missed', 'reason' => 'Late miss attempt',
     ]);
-    $successes = collect([$r1, $r2])->filter(fn($r) => $r->status() === 200)->count();
+    $successes = collect([$r1, $r2])->filter(fn ($r) => $r->status() === 200)->count();
     expect($successes)->toBe(1);
     expect($req->refresh()->status)->toBeIn(['picked_up', 'missed']);
 });
@@ -324,7 +334,10 @@ it('trip concurrency: double reorder with same ordered_ids is idempotent (no cra
     $r2 = tripCitizenRequest($zone);
     $staff = tripStaff();
     Sanctum::actingAs($staff);
-    foreach ([$r1, $r2] as $r) { $this->postJson("/api/v1/department/textile-collections/{$r->id}/approve")->assertOk(); }
+
+    foreach ([$r1, $r2] as $r) {
+        $this->postJson("/api/v1/department/textile-collections/{$r->id}/approve")->assertOk();
+    }
     $sched = $this->postJson('/api/v1/department/textile-collections/schedule', [
         'service_zone_id' => $zone->id,
         'collection_request_ids' => [$r1->id, $r2->id],
@@ -344,11 +357,12 @@ it('trip concurrency: double reorder with same ordered_ids is idempotent (no cra
 
 // ---- Smoke: route existence ----
 
-it('trip execution routes are shipped and gated (not bare 404)', function (): void {
+it('citizen cannot assign an existing trip', function (): void {
+    [$batch] = makeBatchWithRequest(tripZone());
     $user = User::factory()->create();
     Sanctum::actingAs($user);
     // Non-partner citizen gets 403 not 404, proving route exists
-    $this->postJson('/api/v1/department/textile-batches/'.(string) \Illuminate\Support\Str::uuid().'/assignment', [
+    $this->postJson("/api/v1/department/textile-batches/{$batch->id}/assignment", [
         'assigned_user_id' => $user->id,
     ])->assertStatus(403);
 });

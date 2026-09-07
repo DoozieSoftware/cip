@@ -420,7 +420,7 @@ it('citizen can request a capacity exception for own collection', function (): v
         'status' => 'pending',
     ]);
 
-    expect(AuditLog::query()->where('entity', 'textile_capacity')->where('entity_id', $exceptionId)->where('action', 'textile.capacity_exception_requested')->exists())->toBeTrue();
+    expect(AuditLog::query()->where('entity', 'textile_capacity')->where('entity_id', $exceptionId)->where('action', 'textile.capacity_exc_requested')->exists())->toBeTrue();
 
     // Collection is annotated
     expect($req->refresh()->capacity_exception_id)->toBe($exceptionId);
@@ -488,7 +488,7 @@ it('partner can approve an exception and collection context is annotated', funct
     $decide->assertJsonPath('data.status', 'approved')
         ->assertJsonPath('data.decided_reason', 'Approved after review, high priority.');
 
-    expect(AuditLog::query()->where('entity', 'textile_capacity')->where('entity_id', $exceptionId)->where('action', 'textile.capacity_exception_approved')->exists())->toBeTrue();
+    expect(AuditLog::query()->where('entity', 'textile_capacity')->where('entity_id', $exceptionId)->where('action', 'textile.capacity_exc_approved')->exists())->toBeTrue();
 
     $exc = TextileCapacityException::query()->findOrFail($exceptionId);
     expect($exc->status)->toBe('approved')
@@ -517,7 +517,7 @@ it('partner can reject an exception', function (): void {
         'reason' => 'Insufficient justification.',
     ])->assertOk()->assertJsonPath('data.status', 'rejected');
 
-    expect(AuditLog::query()->where('entity', 'textile_capacity')->where('entity_id', $exceptionId)->where('action', 'textile.capacity_exception_rejected')->exists())->toBeTrue();
+    expect(AuditLog::query()->where('entity', 'textile_capacity')->where('entity_id', $exceptionId)->where('action', 'textile.capacity_exc_rejected')->exists())->toBeTrue();
 });
 
 it('decide exception twice is rejected as already decided', function (): void {
@@ -638,9 +638,8 @@ it('unauthenticated cannot access capacity endpoints', function (): void {
     // Citizen endpoint requires auth as well
     $citizen = capacityCitizen();
     $req = capacityCreateRequest($citizen, $zone);
-    // Clear auth
-    Sanctum::actingAs(null);
-    // Use a fresh unauthenticated client
+    // Discard the Sanctum guard user set by the request fixture.
+    $this->app['auth']->forgetGuards();
     $this->postJson("/api/v1/citizen/textile-collections/{$req->id}/capacity-exception", [
         'reason' => 'Unauth test.',
     ])->assertUnauthorized();

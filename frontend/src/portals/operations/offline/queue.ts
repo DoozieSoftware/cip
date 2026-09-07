@@ -47,7 +47,9 @@ export interface OpsQueueAdapter {
 export class MemoryOpsAdapter implements OpsQueueAdapter {
   private readonly store = new Map<string, OpsQueueItem>();
   list(): Promise<OpsQueueItem[]> {
-    return Promise.resolve(Array.from(this.store.values()).sort((a, b) => a.enqueued_at - b.enqueued_at));
+    return Promise.resolve(
+      Array.from(this.store.values()).sort((a, b) => a.enqueued_at - b.enqueued_at),
+    );
   }
   put(item: OpsQueueItem): Promise<void> {
     this.store.set(item.id, { ...item });
@@ -71,7 +73,11 @@ async function loadIdb(): Promise<unknown> {
   if (cachedIdbPromise) return cachedIdbPromise;
   cachedIdbPromise = (async () => {
     const mod: {
-      openDB: (name: string, version: number, opts: { upgrade: (db: unknown) => void }) => Promise<unknown>;
+      openDB: (
+        name: string,
+        version: number,
+        opts: { upgrade: (db: unknown) => void },
+      ) => Promise<unknown>;
     } = await import(/* @vite-ignore */ 'idb').catch(() => {
       throw new Error("The 'idb' package is not installed. Run `npm i idb`.");
     });
@@ -88,16 +94,39 @@ async function loadIdb(): Promise<unknown> {
   return cachedIdbPromise;
 }
 
-interface IdbStore { getAll(): Promise<OpsQueueItem[]>; get(key: string): Promise<OpsQueueItem | undefined>; put(v: unknown): Promise<void>; delete(k: string): Promise<void>; }
-interface IdbTx { store: IdbStore; }
-type Idb = { transaction: (s: string, m: string) => IdbTx; getAll: (s: string) => Promise<OpsQueueItem[]>; put: (s: string, v: unknown) => Promise<void>; delete: (s: string, k: string) => Promise<void>; };
+interface IdbStore {
+  getAll(): Promise<OpsQueueItem[]>;
+  get(key: string): Promise<OpsQueueItem | undefined>;
+  put(v: unknown): Promise<void>;
+  delete(k: string): Promise<void>;
+}
+interface IdbTx {
+  store: IdbStore;
+}
+type Idb = {
+  transaction: (s: string, m: string) => IdbTx;
+  getAll: (s: string) => Promise<OpsQueueItem[]>;
+  put: (s: string, v: unknown) => Promise<void>;
+  delete: (s: string, k: string) => Promise<void>;
+};
 
 export class IndexedDBOpsAdapter implements OpsQueueAdapter {
   private readonly dbPromise: Promise<Idb>;
-  constructor() { this.dbPromise = loadIdb() as Promise<Idb>; }
-  async list(): Promise<OpsQueueItem[]> { const db = await this.dbPromise; return db.getAll('ops_items'); }
-  async put(item: OpsQueueItem): Promise<void> { const db = await this.dbPromise; await db.put('ops_items', item); }
-  async delete(id: string): Promise<void> { const db = await this.dbPromise; await db.delete('ops_items', id); }
+  constructor() {
+    this.dbPromise = loadIdb() as Promise<Idb>;
+  }
+  async list(): Promise<OpsQueueItem[]> {
+    const db = await this.dbPromise;
+    return db.getAll('ops_items');
+  }
+  async put(item: OpsQueueItem): Promise<void> {
+    const db = await this.dbPromise;
+    await db.put('ops_items', item);
+  }
+  async delete(id: string): Promise<void> {
+    const db = await this.dbPromise;
+    await db.delete('ops_items', id);
+  }
   async patch(id: string, patch: Partial<OpsQueueItem>): Promise<void> {
     const db = await this.dbPromise;
     const tx = db.transaction('ops_items', 'readwrite');
@@ -115,7 +144,11 @@ export interface OpsQueueOptions {
   now?: () => number;
   retry?: (item: OpsQueueItem) => Promise<void>;
 }
-export interface EnqueueOpsInput<TPayload> { kind: OpsQueueItemKind; payload: TPayload; id?: string; }
+export interface EnqueueOpsInput<TPayload> {
+  kind: OpsQueueItemKind;
+  payload: TPayload;
+  id?: string;
+}
 
 const DEFAULT_BACKOFF = (attempt: number): number => {
   const base = Math.min(2 ** attempt * 1000, 5 * 60 * 1000);
@@ -125,7 +158,8 @@ const DEFAULT_BACKOFF = (attempt: number): number => {
 export const ANONYMOUS_OPS_OWNER = '__anonymous__';
 const DONE_RETENTION_MS = 24 * 60 * 60 * 1000;
 function uuid(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
+    return crypto.randomUUID();
   return 'ops-' + Math.random().toString(36).slice(2) + '-' + Date.now().toString(36);
 }
 
@@ -150,11 +184,23 @@ export class OpsOfflineQueue {
     this.retry = opts.retry;
   }
 
-  setRetryHandler(retry: (item: OpsQueueItem) => Promise<void>): void { this.retry = retry; }
-  get owner_id(): string { return this.ownerId; }
-  stop(): void { this.stopped = true; if (this.retryTimer !== null) clearTimeout(this.retryTimer); this.retryTimer = null; }
-  resume(): void { this.stopped = false; }
-  private owned(items: OpsQueueItem[]): OpsQueueItem[] { return items.filter((i) => i.owner_id === this.ownerId); }
+  setRetryHandler(retry: (item: OpsQueueItem) => Promise<void>): void {
+    this.retry = retry;
+  }
+  get owner_id(): string {
+    return this.ownerId;
+  }
+  stop(): void {
+    this.stopped = true;
+    if (this.retryTimer !== null) clearTimeout(this.retryTimer);
+    this.retryTimer = null;
+  }
+  resume(): void {
+    this.stopped = false;
+  }
+  private owned(items: OpsQueueItem[]): OpsQueueItem[] {
+    return items.filter((i) => i.owner_id === this.ownerId);
+  }
 
   async size(): Promise<number> {
     const items = this.owned(await this.adapter.list());
@@ -162,19 +208,26 @@ export class OpsOfflineQueue {
   }
   async pending(): Promise<OpsQueueItem[]> {
     const items = this.owned(await this.adapter.list());
-    return items.filter((i) => i.status === 'pending' || i.status === 'in_flight' || i.status === 'failed');
+    return items.filter(
+      (i) => i.status === 'pending' || i.status === 'in_flight' || i.status === 'failed',
+    );
   }
-  async failed(): Promise<OpsQueueItem[]> { return (await this.pending()).filter((i) => i.status === 'failed'); }
+  async failed(): Promise<OpsQueueItem[]> {
+    return (await this.pending()).filter((i) => i.status === 'failed');
+  }
   async dead(): Promise<OpsQueueItem[]> {
     const items = this.owned(await this.adapter.list());
     return items.filter((i) => i.status === 'dead');
   }
-  async all(): Promise<OpsQueueItem[]> { return this.owned(await this.adapter.list()); }
+  async all(): Promise<OpsQueueItem[]> {
+    return this.owned(await this.adapter.list());
+  }
 
   async enqueue<TPayload>(input: EnqueueOpsInput<TPayload>): Promise<OpsQueueItem<TPayload>> {
     const id = input.id ?? uuid();
     const existing = (await this.adapter.list()).find((i) => i.id === id);
-    if (existing && existing.owner_id !== this.ownerId) throw new Error('Queue item belongs to another account.');
+    if (existing && existing.owner_id !== this.ownerId)
+      throw new Error('Queue item belongs to another account.');
     if (existing) return existing as OpsQueueItem<TPayload>;
     const item: OpsQueueItem<TPayload> = {
       id,
@@ -236,27 +289,54 @@ export class OpsOfflineQueue {
       const isUnrecoverable =
         /401|FORBIDDEN|UNAUTHORIZED|VALIDATION_FAILED|PROOF_PHOTO_REQUIRED/i.test(message);
       if (isUnrecoverable) {
-        await this.adapter.patch(item.id, { status: 'dead', attempts, last_error: message, updated_at: this.now() });
+        await this.adapter.patch(item.id, {
+          status: 'dead',
+          attempts,
+          last_error: message,
+          updated_at: this.now(),
+        });
         return { ...item, status: 'dead', attempts, last_error: message };
       }
       if (attempts >= item.max_attempts) {
-        await this.adapter.patch(item.id, { status: 'dead', attempts, last_error: message, updated_at: this.now() });
+        await this.adapter.patch(item.id, {
+          status: 'dead',
+          attempts,
+          last_error: message,
+          updated_at: this.now(),
+        });
         return { ...item, status: 'dead', attempts, last_error: message };
       }
       const nextAttempt = this.now() + this.backoff(attempts);
-      await this.adapter.patch(item.id, { status: 'failed', attempts, last_error: message, next_attempt_at: nextAttempt, updated_at: this.now() });
-      return { ...item, status: 'failed', attempts, last_error: message, next_attempt_at: nextAttempt };
+      await this.adapter.patch(item.id, {
+        status: 'failed',
+        attempts,
+        last_error: message,
+        next_attempt_at: nextAttempt,
+        updated_at: this.now(),
+      });
+      return {
+        ...item,
+        status: 'failed',
+        attempts,
+        last_error: message,
+        next_attempt_at: nextAttempt,
+      };
     }
   }
 
   async drain(): Promise<{ processed: number; succeeded: number; failed: number; dead: number }> {
     if (this.running || this.stopped) return { processed: 0, succeeded: 0, failed: 0, dead: 0 };
     this.running = true;
-    let processed = 0, succeeded = 0, failed = 0, dead = 0;
+    let processed = 0,
+      succeeded = 0,
+      failed = 0,
+      dead = 0;
     try {
       const items = this.owned(await this.adapter.list());
       const now = this.now();
-      const due = items.filter((i) => (i.status === 'pending' || i.status === 'failed') && i.next_attempt_at <= now);
+      const due = items.filter(
+        (i) => (i.status === 'pending' || i.status === 'failed') && i.next_attempt_at <= now,
+      );
       for (const item of due) {
         const result = await this.processOne(item);
         processed++;
@@ -275,19 +355,28 @@ export class OpsOfflineQueue {
 
   subscribe(listener: () => void): () => void {
     this.listeners.push(listener);
-    return () => { this.listeners = this.listeners.filter((l) => l !== listener); };
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== listener);
+    };
   }
-  private emit(): void { for (const l of this.listeners) l(); }
+  private emit(): void {
+    for (const l of this.listeners) l();
+  }
 
   private scheduleNextDrain(): void {
     if (this.stopped || this.retryTimer !== null) return;
     void this.adapter.list().then((all) => {
       if (this.stopped || this.retryTimer !== null) return;
       const now = this.now();
-      const next = this.owned(all).filter((i) => (i.status === 'pending' || i.status === 'failed') && i.next_attempt_at > now).sort((a, b) => a.next_attempt_at - b.next_attempt_at)[0];
+      const next = this.owned(all)
+        .filter((i) => (i.status === 'pending' || i.status === 'failed') && i.next_attempt_at > now)
+        .sort((a, b) => a.next_attempt_at - b.next_attempt_at)[0];
       if (!next) return;
       const delay = Math.max(250, Math.min(next.next_attempt_at - now, 5 * 60 * 1000));
-      this.retryTimer = setTimeout(() => { this.retryTimer = null; void this.drain(); }, delay);
+      this.retryTimer = setTimeout(() => {
+        this.retryTimer = null;
+        void this.drain();
+      }, delay);
     });
   }
 }
@@ -295,9 +384,16 @@ export class OpsOfflineQueue {
 let _singleton: OpsOfflineQueue | null = null;
 let _singletonOwner: string | null = null;
 
-export function getOpsQueue(ownerIdOrAdapter?: string | null | OpsQueueAdapter, adapterArg?: OpsQueueAdapter): OpsOfflineQueue {
-  const adapter = ownerIdOrAdapter !== null && typeof ownerIdOrAdapter === 'object' ? ownerIdOrAdapter : adapterArg;
-  const owner = (typeof ownerIdOrAdapter === 'string' ? ownerIdOrAdapter : null) || ANONYMOUS_OPS_OWNER;
+export function getOpsQueue(
+  ownerIdOrAdapter?: string | null | OpsQueueAdapter,
+  adapterArg?: OpsQueueAdapter,
+): OpsOfflineQueue {
+  const adapter =
+    ownerIdOrAdapter !== null && typeof ownerIdOrAdapter === 'object'
+      ? ownerIdOrAdapter
+      : adapterArg;
+  const owner =
+    (typeof ownerIdOrAdapter === 'string' ? ownerIdOrAdapter : null) || ANONYMOUS_OPS_OWNER;
   if (!_singleton || _singletonOwner !== owner) {
     _singleton?.stop();
     let a: OpsQueueAdapter;
@@ -310,7 +406,11 @@ export function getOpsQueue(ownerIdOrAdapter?: string | null | OpsQueueAdapter, 
   return _singleton;
 }
 
-export function resetOpsQueue(): void { _singleton?.stop(); _singleton = null; _singletonOwner = null; }
+export function resetOpsQueue(): void {
+  _singleton?.stop();
+  _singleton = null;
+  _singletonOwner = null;
+}
 export async function stopAndClearOpsQueue(ownerId: string): Promise<void> {
   const queue = getOpsQueue(ownerId);
   queue.stop();

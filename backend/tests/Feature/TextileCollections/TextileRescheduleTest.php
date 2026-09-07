@@ -13,7 +13,6 @@ use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
@@ -30,6 +29,7 @@ beforeEach(function (): void {
 function rescheduleZone(array $overrides = []): TextileServiceZone
 {
     $drLinenId = Department::query()->where('code', 'DR_LINEN')->value('id');
+
     return TextileServiceZone::query()->create(array_merge([
         'code' => 'DRL-'.strtoupper(substr(uniqid(), -8)),
         'name' => 'Reschedule Zone',
@@ -61,6 +61,7 @@ function createRescheduleRequest(User $citizen, TextileServiceZone $zone, array 
     Sanctum::actingAs($citizen);
     $res = test()->postJson('/api/v1/textile-collection/requests', reschedulePayload($zone, $overrides));
     $res->assertCreated();
+
     return TextileCollectionRequest::query()->findOrFail($res->json('data.id'));
 }
 
@@ -69,17 +70,20 @@ function reschedulePartnerStaff(): User
     $staff = User::factory()->create();
     $dept = Department::query()->where('code', 'DR_LINEN')->firstOrFail();
     $staff->departments()->attach($dept->id, ['active' => true]);
+
     return $staff;
 }
 
 function otherReschedulePartnerStaff(): User
 {
     $dept = Department::query()->where('code', '!=', 'DR_LINEN')->first();
+
     if (! $dept) {
         $dept = Department::factory()->create(['code' => 'DEMO_EWASTE', 'name' => 'Demo Ewaste']);
     }
     $staff = User::factory()->create();
     $staff->departments()->attach($dept->id, ['active' => true]);
+
     return $staff;
 }
 
@@ -95,32 +99,34 @@ function scheduleForReschedule(TextileServiceZone $zone, TextileCollectionReques
         'window_start' => '09:00',
         'window_end' => '12:00',
     ])->assertCreated();
+
     return TextileCollectionBatch::query()->findOrFail($sched->json('data.id'));
 }
 
 // ── Phase 3 §6: citizen self-service — contract + findings tests ──────────
-// The citizen reschedule endpoint is not yet shipped (no D-04 decision on cutoff
-// window/override role). These baseline tests document the contract and keep
-// green until the lane ships, at which point the 404 branch is replaced by the
-// happy-path guards below.
-
-it('BE-X5 baseline: citizen reschedule endpoint is not yet shipped → 404 shapes contract for Phase 3', function (): void {
+it('citizen reschedules before cutoff and preserves the old schedule in audit history', function (): void {
     $citizen = User::factory()->create();
     $zone = rescheduleZone();
     $req = createRescheduleRequest($citizen, $zone);
-    // Try approve + schedule so request is in scheduled state
-    scheduleForReschedule($zone, $req);
-    $req->refresh();
-    expect($req->status)->toBe(TextileCollectionRequest::STATUS_SCHEDULED);
+    $oldDate = Carbon::today()->addDays(4)->toDateString();
+    $newDate = Carbon::today()->addDays(7)->toDateString();
+    $batch = scheduleForReschedule($zone, $req, $oldDate);
 
     Sanctum::actingAs($citizen);
-    $attempt = $this->postJson("/api/v1/citizen/textile-collections/{$req->id}/reschedule", [
-        'collection_date' => Carbon::tomorrow()->addDays(2)->toDateString(),
-        'window_start' => '14:00',
-        'window_end' => '17:00',
-    ]);
-    // Before Phase 3 ships the lane, the route does not exist.
-    expect($attempt->status())->toBe(404);
+    $this->postJson("/api/v1/citizen/textile-collections/{$req->id}/reschedule", [
+        'scheduled_date' => $newDate,
+        'scheduled_window_start' => '14:00',
+        'scheduled_window_end' => '17:00',
+    ])->assertOk()->assertJsonPath('data.scheduled_date', $newDate);
+
+    expect($req->refresh()->batch_id)->toBeNull()
+        ->and($req->previous_batch_id)->toBe($batch->id)
+        ->and($req->reschedule_count)->toBe(1);
+    $audit = AuditLog::query()->where('entity_id', $req->id)->where('action', 'textile.reschedule')->sole();
+    expect($audit->before['scheduled_date'])->toBe($oldDate)
+        ->and($audit->after['scheduled_date'])->toBe($newDate)
+        ->and($audit->after['scheduled_window_start'])->toBe('14:00')
+        ->and($audit->after['scheduled_window_end'])->toBe('17:00');
 });
 
 it('BE-X5 baseline: unauthenticated reschedule attempt is 401 not 404 leak', function (): void {
@@ -128,15 +134,14 @@ it('BE-X5 baseline: unauthenticated reschedule attempt is 401 not 404 leak', fun
     $zone = rescheduleZone();
     $req = createRescheduleRequest($citizen, $zone);
     $reqId = $req->id;
-    // No actingAs → unauthenticated
-    \Laravel\Sanctum\Sanctum::actingAs(null);
-    // Clear auth: Pest's Sanctum helper needs explicit logout
+    // Discard the Sanctum guard user set by the request fixture.
+    $this->app['auth']->forgetGuards();
     $this->postJson("/api/v1/citizen/textile-collections/{$reqId}/reschedule", [
-        'collection_date' => Carbon::tomorrow()->addDay()->toDateString(),
+        'scheduled_date' => Carbon::tomorrow()->addDay()->toDateString(),
     ])->assertStatus(401);
 });
 
-it('BE-X5 baseline: other citizen cannot reschedule another citizen request → 404 or 403 after lane ships', function (): void {
+it('other citizen cannot reschedule another citizen request', function (): void {
     $owner = User::factory()->create();
     $zone = rescheduleZone();
     $req = createRescheduleRequest($owner, $zone);
@@ -144,25 +149,24 @@ it('BE-X5 baseline: other citizen cannot reschedule another citizen request → 
     $intruder = User::factory()->create();
     Sanctum::actingAs($intruder);
     $res = $this->postJson("/api/v1/citizen/textile-collections/{$req->id}/reschedule", [
-        'collection_date' => Carbon::tomorrow()->addDays(3)->toDateString(),
+        'scheduled_date' => Carbon::tomorrow()->addDays(3)->toDateString(),
     ]);
-    // Either 404 (route not shipped) or 403 (lane ships but ownership guard fires) is acceptable until strict.
-    expect($res->status())->toBeIn([404, 403]);
+    expect($res->status())->toBe(403);
 });
 
-it('BE-X5 baseline: reschedule does not yet create duplicate active bookings — count stays 1', function (): void {
+it('repeated successful reschedules keep one active booking', function (): void {
     $citizen = User::factory()->create();
     $zone = rescheduleZone();
     $req = createRescheduleRequest($citizen, $zone);
-    scheduleForReschedule($zone, $req);
+    scheduleForReschedule($zone, $req, Carbon::today()->addDays(4)->toDateString());
     Sanctum::actingAs($citizen);
-    // Attempt repeated reschedule — both 404 today, so no duplicate row could be created.
     $this->postJson("/api/v1/citizen/textile-collections/{$req->id}/reschedule", [
-        'collection_date' => Carbon::tomorrow()->addDays(2)->toDateString(),
-    ]);
+        'scheduled_date' => Carbon::tomorrow()->addDays(2)->toDateString(),
+    ])->assertOk();
     $this->postJson("/api/v1/citizen/textile-collections/{$req->id}/reschedule", [
-        'collection_date' => Carbon::tomorrow()->addDays(3)->toDateString(),
-    ]);
+        'scheduled_date' => Carbon::tomorrow()->addDays(3)->toDateString(),
+    ])->assertOk();
+    expect($req->refresh()->reschedule_count)->toBe(2);
     // Citizen should still have exactly one active collection request.
     $activeCount = TextileCollectionRequest::query()
         ->where('citizen_id', $citizen->id)
@@ -219,7 +223,7 @@ it('BE-X5 guardrail: staff personal phone is never exposed in citizen reschedule
         ->and($body)->not->toContain('driver_phone');
 });
 
-it('BE-X5 guardrail: cross-partner staff cannot reschedule another partner request → 403 or 404 after lane ships', function (): void {
+it('cross-partner staff cannot reschedule another partner request', function (): void {
     $citizen = User::factory()->create();
     $zone = rescheduleZone();
     $req = createRescheduleRequest($citizen, $zone);
@@ -227,10 +231,9 @@ it('BE-X5 guardrail: cross-partner staff cannot reschedule another partner reque
     $other = otherReschedulePartnerStaff();
     Sanctum::actingAs($other);
     $attempt = $this->postJson("/api/v1/department/textile-collections/{$req->id}/reschedule", [
-        'collection_date' => Carbon::tomorrow()->addDays(5)->toDateString(),
+        'scheduled_date' => Carbon::tomorrow()->addDays(5)->toDateString(),
     ]);
-    // Before lane ships: department reschedule route does not exist → 404. After: 403 for other partner.
-    expect($attempt->status())->toBeIn([404, 403, 405]);
+    expect($attempt->status())->toBe(403);
 });
 
 it('BE-X5 guardrail: notification suppression baseline — cancelled request has no scheduled reminder side-effect', function (): void {
@@ -263,8 +266,7 @@ it('BE-X5 lane guard: dropoff request cannot be rescheduled as a doorstep pickup
     $this->postJson("/api/v1/department/textile-collections/{$id}/approve")->assertOk();
     Sanctum::actingAs($citizen);
     $res = $this->postJson("/api/v1/citizen/textile-collections/{$id}/reschedule", [
-        'collection_date' => Carbon::tomorrow()->addDays(2)->toDateString(),
+        'scheduled_date' => Carbon::tomorrow()->addDays(2)->toDateString(),
     ]);
-    // Before lane ships: 404. After: should be 422 (dropoff not in trip lane).
-    expect($res->status())->toBeIn([404, 422]);
+    $res->assertUnprocessable()->assertJsonPath('message', 'Only premises pickups can be rescheduled.');
 });

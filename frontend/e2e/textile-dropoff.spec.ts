@@ -7,7 +7,10 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('E2E-1 drop-off happy [OPEN D-01/D-02]', () => {
-  test.fixme(true, 'OPEN D-01: citizen books drop-off → approval → counter receipt w/ photo → sees received (no trip steps)');
+  test.fixme(
+    true,
+    'OPEN D-01: citizen books drop-off → approval → counter receipt w/ photo → sees received (no trip steps)',
+  );
 });
 
 test.describe('E2E-2 drop-off rejected walk-in [OPEN D-01/D-02]', () => {

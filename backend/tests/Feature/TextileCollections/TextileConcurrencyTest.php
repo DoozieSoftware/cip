@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Departments\Models\Department;
-use App\Modules\Security\Models\AuditLog;
+use App\Modules\Media\Models\Media;
 use App\Modules\TextileCollections\Models\TextileCollectionRequest;
 use App\Modules\TextileCollections\Models\TextileServiceZone;
 use App\Modules\Users\Models\User;
@@ -28,6 +28,7 @@ beforeEach(function (): void {
 function concZone(): TextileServiceZone
 {
     $dept = Department::query()->where('code', 'DR_LINEN')->firstOrFail();
+
     return TextileServiceZone::query()->create([
         'code' => 'DRL-'.strtoupper(substr(uniqid(), -8)),
         'name' => 'Conc Zone',
@@ -52,20 +53,29 @@ function concPayload(TextileServiceZone $z, array $o = []): array
         'estimated_weight_kg' => 8.5,
     ], $o);
 }
-function concStaff(): User { $s = User::factory()->create(); $d = Department::query()->where('code','DR_LINEN')->firstOrFail(); $s->departments()->attach($d->id, ['active'=>true]); return $s; }
+function concStaff(): User
+{
+    $s = User::factory()->create();
+    $d = Department::query()->where('code', 'DR_LINEN')->firstOrFail();
+    $s->departments()->attach($d->id, ['active' => true]);
+
+    return $s;
+}
 function makeScheduled(TextileServiceZone $zone): TextileCollectionRequest
 {
     $citizen = User::factory()->create();
     Sanctum::actingAs($citizen);
     $r = test()->postJson('/api/v1/textile-collection/requests', concPayload($zone))->assertCreated();
     $col = TextileCollectionRequest::query()->findOrFail($r->json('data.id'));
-    $staff = concStaff(); Sanctum::actingAs($staff);
+    $staff = concStaff();
+    Sanctum::actingAs($staff);
     test()->postJson("/api/v1/department/textile-collections/{$col->id}/approve")->assertOk();
     test()->postJson('/api/v1/department/textile-collections/schedule', [
         'service_zone_id' => $zone->id,
         'collection_request_ids' => [$col->id],
         'collection_date' => Carbon::tomorrow()->toDateString(),
     ])->assertCreated();
+
     return $col->refresh();
 }
 
@@ -74,7 +84,8 @@ function makeScheduled(TextileServiceZone $zone): TextileCollectionRequest
 it('CC-1 / BE-C4 collect ∥ miss same scheduled request → exactly one terminal outcome', function (): void {
     $zone = concZone();
     $col = makeScheduled($zone);
-    $staff = concStaff(); Sanctum::actingAs($staff);
+    $staff = concStaff();
+    Sanctum::actingAs($staff);
     // attach proof so collected can succeed
     $file = UploadedFile::fake()->image('proof.jpg', 100, 100)->size(100);
     $this->postJson("/api/v1/department/textile-collections/{$col->id}/proof", ['photo' => $file])->assertCreated();
@@ -86,7 +97,7 @@ it('CC-1 / BE-C4 collect ∥ miss same scheduled request → exactly one termina
         'outcome' => 'missed', 'reason' => 'Nobody at home for miss test.',
     ]);
     // exactly one succeeds
-    $successes = collect([$r1, $r2])->filter(fn($r) => $r->status() === 200)->count();
+    $successes = collect([$r1, $r2])->filter(fn ($r) => $r->status() === 200)->count();
     expect($successes)->toBe(1);
     $col->refresh();
     expect($col->status)->toBeIn(['picked_up', 'missed']);
@@ -96,7 +107,8 @@ it('CC-1 / BE-C4 collect ∥ miss same scheduled request → exactly one termina
 it('CC-2 / BE-X4 cancel ∥ collect same request → exactly one terminal state', function (): void {
     $zone = concZone();
     $col = makeScheduled($zone);
-    $staff = concStaff(); Sanctum::actingAs($staff);
+    $staff = concStaff();
+    Sanctum::actingAs($staff);
     $file = UploadedFile::fake()->image('proof.jpg', 100, 100)->size(100);
     $this->postJson("/api/v1/department/textile-collections/{$col->id}/proof", ['photo' => $file])->assertCreated();
 
@@ -109,7 +121,7 @@ it('CC-2 / BE-X4 cancel ∥ collect same request → exactly one terminal state'
     // citizen cancel after
     Sanctum::actingAs($citizen);
     $rCancel = $this->postJson("/api/v1/citizen/textile-collections/{$col->id}/cancel", ['reason' => 'No longer needed cancel test']);
-    $successes = collect([$rCollect, $rCancel])->filter(fn($r) => $r->status() === 200)->count();
+    $successes = collect([$rCollect, $rCancel])->filter(fn ($r) => $r->status() === 200)->count();
     expect($successes)->toBe(1);
     $col->refresh();
     expect($col->status)->toBeIn(['picked_up', 'cancelled']);
@@ -122,7 +134,8 @@ it('CC-4 concurrent schedule of same request → one batch wins (existing lock p
     Sanctum::actingAs($citizen);
     $r = $this->postJson('/api/v1/textile-collection/requests', concPayload($zone))->assertCreated();
     $id = $r->json('data.id');
-    $staff = concStaff(); Sanctum::actingAs($staff);
+    $staff = concStaff();
+    Sanctum::actingAs($staff);
     $this->postJson("/api/v1/department/textile-collections/{$id}/approve")->assertOk();
     $r1 = $this->postJson('/api/v1/department/textile-collections/schedule', [
         'service_zone_id' => $zone->id, 'collection_request_ids' => [$id], 'collection_date' => Carbon::tomorrow()->toDateString(),
@@ -146,7 +159,7 @@ it('CC-7 double POST citizen photo → single active evidence chain (is_replaced
     $this->postJson("/api/v1/citizen/textile-collections/{$id}/photo", ['photo' => $f1])->assertCreated();
     $f2 = UploadedFile::fake()->image('b.jpg', 100, 100)->size(100);
     $this->postJson("/api/v1/citizen/textile-collections/{$id}/photo", ['photo' => $f2])->assertCreated();
-    $active = \App\Modules\Media\Models\Media::query()->where('textile_collection_id', $id)->where('role','evidence')->where('is_replaced', false)->count();
+    $active = Media::query()->where('textile_collection_id', $id)->where('role', 'evidence')->where('is_replaced', false)->count();
     expect($active)->toBe(1);
 });
 

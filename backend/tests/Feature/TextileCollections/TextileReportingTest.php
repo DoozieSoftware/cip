@@ -221,11 +221,11 @@ it('dashboard missed, reschedule and exception rates are computed', function ():
 
     expect($res['totals']['requests'])->toBe(5)
         ->and($res['rates']['missed_count'])->toBe(1)
-        ->and($res['rates']['missed_rate_pct'])->toBe(20.0)
+        ->and($res['rates']['missed_rate_pct'])->toEqual(20.0)
         ->and($res['rates']['rescheduled_count'])->toBe(1)
-        ->and($res['rates']['reschedule_rate_pct'])->toBe(20.0)
+        ->and($res['rates']['reschedule_rate_pct'])->toEqual(20.0)
         ->and($res['rates']['exception_count'])->toBe(1)
-        ->and($res['rates']['exception_rate_pct'])->toBe(20.0);
+        ->and($res['rates']['exception_rate_pct'])->toEqual(20.0);
 });
 
 it('dashboard zone, category and method breakdowns are present', function (): void {

@@ -51,19 +51,25 @@ export function TextileFieldOfflineBanner(): JSX.Element | null {
               {isOffline ? ' — offline' : ' — retrying automatically'}
             </p>
             <p className="mt-1 text-xs leading-5 text-amber-700">
-              Proof photo, bags and weight are saved <span className="font-medium">for your account only</span> on this
-              device. Retry is idempotent — one final outcome will be recorded. Not transferred to another staff member or
-              device. Cleared after confirmed upload.
+              Proof photo, bags and weight are saved{' '}
+              <span className="font-medium">for your account only</span> on this device. Retry is
+              idempotent — one final outcome will be recorded. Not transferred to another staff
+              member or device. Cleared after confirmed upload.
             </p>
             <ul className="mt-2 space-y-1 text-xs text-amber-700">
               {pending.slice(0, 4).map((item) => (
                 <li key={item.id} className="truncate">
-                  • {String((item.payload as { collectionId?: string })?.collectionId ?? item.id).slice(0, 12)}… —{' '}
-                  {item.status} pending upload
+                  •{' '}
+                  {String(
+                    (item.payload as { collectionId?: string })?.collectionId ?? item.id,
+                  ).slice(0, 12)}
+                  … — {item.status} pending upload
                   {item.attempts ? ` · retry ${item.attempts}` : ''}
                 </li>
               ))}
-              {pending.length > 4 ? <li className="text-[11px]">+{pending.length - 4} more</li> : null}
+              {pending.length > 4 ? (
+                <li className="text-[11px]">+{pending.length - 4} more</li>
+              ) : null}
             </ul>
             <button
               type="button"
@@ -91,17 +97,23 @@ export function TextileFieldOfflineBanner(): JSX.Element | null {
       {dead.length > 0 ? (
         <div className="mt-3 rounded-lg border border-red-200 bg-white p-3">
           <p className="flex items-center gap-2 text-xs font-medium text-red-700">
-            <IconAlertTriangle className="h-4 w-4" /> {dead.length} upload{dead.length === 1 ? '' : 's'} failed permanently
+            <IconAlertTriangle className="h-4 w-4" /> {dead.length} upload
+            {dead.length === 1 ? '' : 's'} failed permanently
           </p>
           <p className="mt-1 text-xs leading-5 text-red-600">
-            Retry is exhausted (corrupted file, expired session, or device mismatch). Proof remains on this device until you
-            review. Authorised recovery: retry or discard. Session expiry or logout keeps data isolated per account — no
-            cross-device sync.
+            Retry is exhausted (corrupted file, expired session, or device mismatch). Proof remains
+            on this device until you review. Authorised recovery: retry or discard. Session expiry
+            or logout keeps data isolated per account — no cross-device sync.
           </p>
           <ul className="mt-2 space-y-2">
             {dead.map((item) => (
-              <li key={item.id} className="flex items-center justify-between gap-2 rounded border border-black/10 bg-zinc-50 px-2 py-1.5 text-xs">
-                <span className="truncate">{item.last_error ?? 'Upload failed'} — pending review</span>
+              <li
+                key={item.id}
+                className="flex items-center justify-between gap-2 rounded border border-black/10 bg-zinc-50 px-2 py-1.5 text-xs"
+              >
+                <span className="truncate">
+                  {item.last_error ?? 'Upload failed'} — pending review
+                </span>
                 <span className="flex shrink-0 gap-1">
                   <button
                     type="button"

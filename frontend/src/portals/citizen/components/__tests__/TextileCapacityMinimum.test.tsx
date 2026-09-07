@@ -130,13 +130,15 @@ describe('TextileMinimumNotice — citizen journey (TextileCapacityMinimum.test)
       />,
       { wrapper: qcWrapper },
     );
-    expect(screen.getByText(/Loading this partner/)).toBeInTheDocument();
+    expect(screen.getByText(/Checking what’s needed in your area/)).toBeInTheDocument();
 
     rerender(
       <TextileMinimumNotice minimum={minimum} estimatedBags={2} onRequestException={vi.fn()} />,
     );
     expect(screen.getByText(/5 bags/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Request exception/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Add a short note for review/i }),
+    ).toBeInTheDocument();
   });
 
   it('does not show CTA after rerender when estimate now meets minimum', () => {
@@ -150,11 +152,15 @@ describe('TextileMinimumNotice — citizen journey (TextileCapacityMinimum.test)
       <TextileMinimumNotice minimum={minimum} estimatedBags={1} onRequestException={vi.fn()} />,
       { wrapper: qcWrapper },
     );
-    expect(screen.getByRole('button', { name: /Request exception/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Add a short note for review/i }),
+    ).toBeInTheDocument();
     rerender(
       <TextileMinimumNotice minimum={minimum} estimatedBags={5} onRequestException={vi.fn()} />,
     );
-    expect(screen.queryByRole('button', { name: /Request exception/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Add a short note for review/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('shows error then after retry shows minimum', async () => {
@@ -169,7 +175,7 @@ describe('TextileMinimumNotice — citizen journey (TextileCapacityMinimum.test)
       wrapper: qcWrapper,
     });
     expect(screen.getByRole('alert')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Retry/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Try again/i }));
     expect(onRetry).toHaveBeenCalled();
     rerender(<TextileMinimumNotice minimum={minimum} estimatedBags={2} />);
     expect(screen.getByText(/2 bags/)).toBeInTheDocument();
@@ -187,7 +193,7 @@ describe('TextileMinimumNotice — citizen journey (TextileCapacityMinimum.test)
       />,
       { wrapper: qcWrapper },
     );
-    expect(screen.getByText(/has not configured a minimum/)).toBeInTheDocument();
-    expect(screen.getByText(/reviewed before it is scheduled/)).toBeInTheDocument();
+    expect(screen.getByText(/No minimum in your area/)).toBeInTheDocument();
+    expect(screen.getByText(/We will review and schedule/)).toBeInTheDocument();
   });
 });

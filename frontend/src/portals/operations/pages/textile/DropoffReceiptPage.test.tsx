@@ -7,7 +7,9 @@ import { describe, it } from 'vitest';
 describe('DropoffReceiptPage (FE-R1)', () => {
   it.todo('FE-R1 [OPEN D-01] loading/empty/error states for counter desk receipt page');
   it.todo('FE-R1 [OPEN D-01] find-by-reference lookup');
-  it.todo('FE-R1 [OPEN D-08] submit disabled without mandatory proof photo (when receipt_requires_photo=true)');
+  it.todo(
+    'FE-R1 [OPEN D-08] submit disabled without mandatory proof photo (when receipt_requires_photo=true)',
+  );
   it.todo('FE-E1 every new screen has explicit loading/empty/error states');
 });
 
@@ -20,6 +22,8 @@ describe('Citizen detail dropoff copy (FE-R2)', () => {
 });
 
 describe('Trip manifest (FE-A1/A2)', () => {
-  it.todo('FE-A1 [OPEN D-05] trip-manifest assign UI hidden without gate; driver sees own trips only');
+  it.todo(
+    'FE-A1 [OPEN D-05] trip-manifest assign UI hidden without gate; driver sees own trips only',
+  );
   it.todo('FE-A2 [OPEN D-06] manifest reorder up/down commits, optimistic revert on 409');
 });

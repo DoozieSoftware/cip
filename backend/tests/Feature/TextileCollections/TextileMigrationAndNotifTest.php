@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Modules\Departments\Models\Department;
-use App\Modules\TextileCollections\Models\TextileCollectionRequest;
 use App\Modules\TextileCollections\Models\TextileServiceZone;
 use App\Modules\Users\Models\User;
 use Database\Seeders\ReportPrioritiesSeeder;
@@ -11,7 +10,7 @@ use Database\Seeders\ReportStatusesSeeder;
 use Database\Seeders\ReportTypesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 
@@ -24,7 +23,7 @@ beforeEach(function (): void {
     (new ReportTypesSeeder)->run();
 });
 
-it('BE-M1 new migration keeps existing 5 textile migrations untouched; existing requests backfill stays intact', function (): void {
+it('BE-M1 textile schema retains core columns and includes the shipped receipt lane', function (): void {
     // Check expected tables/columns exist and no destructive change to existing rows
     expect(Schema::hasTable('textile_collection_requests'))->toBeTrue();
     expect(Schema::hasTable('textile_collection_batches'))->toBeTrue();
@@ -33,9 +32,8 @@ it('BE-M1 new migration keeps existing 5 textile migrations untouched; existing 
     expect(Schema::hasColumn('textile_collection_requests', 'status'))->toBeTrue();
     expect(Schema::hasColumn('textile_collection_requests', 'collection_method'))->toBeTrue();
     expect(Schema::hasColumn('textile_collection_requests', 'batch_id'))->toBeTrue();
-    // future columns (dropoff lane, receipts, trip assignment) are NOT required yet — just document they are OPEN
-    // green assertion: current engine has no receipt table yet
-    expect(Schema::hasTable('textile_dropoff_receipts'))->toBeFalse();
+    expect(Schema::hasTable('textile_dropoff_receipts'))->toBeTrue();
+    expect(Schema::hasColumn('textile_collection_requests', 'receipt_id'))->toBeTrue();
 });
 
 it('BE-M2 [OPEN D-03] legacy completed dropoffs mapping per approved rule')->todo();
@@ -45,7 +43,7 @@ it('NEGATIVE: mime spoof .php renamed to .jpg is rejected on photo upload', func
     $zone = TextileServiceZone::query()->create([
         'code' => 'DRL-'.strtoupper(substr(uniqid(), -8)),
         'name' => 'Mime Zone',
-        'department_id' => Department::query()->where('code','DR_LINEN')->value('id'),
+        'department_id' => Department::query()->where('code', 'DR_LINEN')->value('id'),
         'dropoff_enabled' => true, 'premises_pickup_enabled' => true, 'active' => true,
     ]);
     $citizen = User::factory()->create();
@@ -57,7 +55,7 @@ it('NEGATIVE: mime spoof .php renamed to .jpg is rejected on photo upload', func
     ])->assertCreated();
     $id = $r->json('data.id');
     // Create a fake php file with jpg extension — UploadTextilePhotoRequest should reject via mimes
-    $file = \Illuminate\Http\UploadedFile::fake()->create('evil.jpg', 10, 'text/x-php');
+    $file = UploadedFile::fake()->create('evil.jpg', 10, 'text/x-php');
     // Use citizen photo route
     $this->postJson("/api/v1/citizen/textile-collections/{$id}/photo", ['photo' => $file])
         ->assertUnprocessable();

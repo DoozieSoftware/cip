@@ -39,11 +39,13 @@ export function OfflineBanner({
           </span>
         ) : pendingCount > 0 ? (
           <span className="inline-flex items-center gap-1.5 font-medium text-indigo-700">
-            <IconCloudUpload className="h-4 w-4" /> {pendingCount} pending upload{pendingCount === 1 ? '' : 's'}
+            <IconCloudUpload className="h-4 w-4" /> {pendingCount} pending upload
+            {pendingCount === 1 ? '' : 's'}
           </span>
         ) : failedCount > 0 ? (
           <span className="inline-flex items-center gap-1.5 font-medium text-rose-700">
-            <IconAlertTriangle className="h-4 w-4" /> {failedCount} failed upload{failedCount === 1 ? '' : 's'} — needs recovery
+            <IconAlertTriangle className="h-4 w-4" /> {failedCount} failed upload
+            {failedCount === 1 ? '' : 's'} — needs recovery
           </span>
         ) : (
           <span className="text-[var(--color-text-secondary)]">All uploads synced</span>
@@ -80,11 +82,19 @@ export function OfflineBanner({
               className="flex flex-wrap items-center gap-2 rounded-lg border border-black/10 bg-white px-3 py-2 text-xs"
             >
               <span className="font-mono">{item.collectionReference}</span>
-              <span>{item.bags} bags · {item.weight} kg</span>
+              <span>
+                {item.bags} bags · {item.weight} kg
+              </span>
               <span
                 className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${item.status === 'pending' ? 'bg-amber-100 text-amber-800' : item.status === 'uploading' ? 'bg-indigo-100 text-indigo-700' : item.status === 'failed' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}
               >
-                {item.status === 'pending' ? 'Pending upload' : item.status === 'uploading' ? 'Uploading…' : item.status === 'failed' ? 'Failed' : 'Completed'}
+                {item.status === 'pending'
+                  ? 'Pending upload'
+                  : item.status === 'uploading'
+                    ? 'Uploading…'
+                    : item.status === 'failed'
+                      ? 'Failed'
+                      : 'Completed'}
               </span>
               {item.lastError ? <span className="text-rose-600">{item.lastError}</span> : null}
               <span className="text-[var(--color-text-tertiary)]">
@@ -117,12 +127,15 @@ export function OfflineBanner({
 
       {!isOnline ? (
         <p className="mt-2 text-xs text-amber-700">
-          Proof photos are stored locally and tied to your session. They will retry when connectivity returns and clear after confirmed upload. Logging out clears pending uploads on this device; a device change keeps them on the original device.
+          Proof photos are stored locally and tied to your session. They will retry when
+          connectivity returns and clear after confirmed upload. Logging out clears pending uploads
+          on this device; a device change keeps them on the original device.
         </p>
       ) : null}
       {failedCount > 0 ? (
         <p className="mt-2 text-xs text-rose-700">
-          Failed uploads are not discarded — resolve them here or in the recovery view. Corrupted or expired-session uploads require re-capture or re-login.
+          Failed uploads are not discarded — resolve them here or in the recovery view. Corrupted or
+          expired-session uploads require re-capture or re-login.
         </p>
       ) : null}
     </div>

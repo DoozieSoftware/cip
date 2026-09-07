@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
@@ -9,9 +9,30 @@ import type { TextileCollectionRequest } from '../../api/textileZones';
 const mockCollectionData = vi.fn<() => TextileCollectionRequest | null>();
 const mockCancel = vi.fn<(...args: unknown[]) => Promise<unknown>>();
 const mockCreate = vi.fn();
+const mockReschedule = vi.fn();
 const mockUploadPhoto = vi.fn<(...args: unknown[]) => Promise<unknown>>();
 
+vi.mock('qrcode', () => ({ default: { toCanvas: vi.fn().mockResolvedValue(undefined) } }));
+
 vi.mock('../../api/textileZones', () => ({
+  useRescheduleTextileCollection: () => ({
+    mutateAsync: mockReschedule,
+    isPending: false,
+    error: null,
+    reset: vi.fn(),
+  }),
+  useUpdateTextileInstructions: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+    error: null,
+    reset: vi.fn(),
+  }),
+  useTextileAvailability: () => ({
+    data: { unavailable_dates: [], next_available_date: null },
+    isLoading: false,
+    isError: false,
+  }),
+  useTextileCapacityMinimum: () => ({ data: null, isLoading: false, isError: false }),
   useCreateTextileCollection: () => ({
     mutateAsync: mockCreate,
     isPending: false,
@@ -19,6 +40,7 @@ vi.mock('../../api/textileZones', () => ({
   }),
   useCitizenTextileCollection: () => ({
     data: mockCollectionData(),
+    refetch: vi.fn(),
     isLoading: false,
     isError: false,
   }),
@@ -102,15 +124,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockCollectionData.mockReturnValue({ ...BASE });
   mockCancel.mockResolvedValue({});
+  mockReschedule.mockResolvedValue({});
   mockCreate.mockResolvedValue({ id: 'new-id' });
   mockUploadPhoto.mockResolvedValue({ photo: { id: '1', role: 'evidence', url: 'x' } });
 });
 
 // ── Phase 3 §6: citizen self-service reschedule surface ─────────────────────
-// The live reschedule picker is behind an OPEN D-04 decision on cutoff window.
-// Current UI shows a disabled placeholder; Phase 3 will replace it with a
-// date/window picker, unavailable-slot copy, and cutoff guard.
-
 describe('TextileCollectionDetailPage — reschedule surface (Phase 3)', () => {
   it('shows the reschedule section for a scheduled premises pickup', () => {
     renderDetail();
@@ -136,14 +155,23 @@ describe('TextileCollectionDetailPage — reschedule surface (Phase 3)', () => {
     expect(screen.queryByLabelText('Reschedule')).not.toBeInTheDocument();
   });
 
-  it('currently shows a disabled placeholder until Phase 3 ships', () => {
+  it('opens the picker and submits a new date and window', async () => {
     renderDetail();
-    const btn = screen.getByRole('button', { name: /Reschedule — coming soon/i });
-    expect(btn).toBeDisabled();
-    expect(
-      screen.getByText(/Rescheduling will be available before the crew starts the trip/),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/No staff contact is shown here/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Reschedule pickup' }));
+    expect(screen.getByRole('button', { name: 'Confirm new slot' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('New date'), { target: { value: '2026-10-15' } });
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '14:00' } });
+    fireEvent.change(screen.getByLabelText('To'), { target: { value: '17:00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm new slot' }));
+    await waitFor(() =>
+      expect(mockReschedule).toHaveBeenCalledExactlyOnceWith({
+        requested_date: '2026-10-15',
+        window_start: '14:00',
+        window_end: '17:00',
+      }),
+    );
+    expect(await screen.findByRole('status')).toHaveTextContent('Rescheduled to 2026-10-15');
+    expect(mockCancel).not.toHaveBeenCalled();
   });
 
   it('freezes rescheduling copy when the trip is in_progress', () => {
@@ -153,9 +181,9 @@ describe('TextileCollectionDetailPage — reschedule surface (Phase 3)', () => {
     });
     renderDetail();
     expect(
-      screen.getByText(/Rescheduling is paused while the crew is on the route/),
+      screen.getByText(/Crew is already on the route — rescheduling is paused/),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Reschedule — coming soon/i })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Reschedule pickup' })).not.toBeInTheDocument();
   });
 
   it('freezes rescheduling copy when the trip is completed', () => {
@@ -165,7 +193,7 @@ describe('TextileCollectionDetailPage — reschedule surface (Phase 3)', () => {
     });
     renderDetail();
     expect(
-      screen.getByText(/Rescheduling is paused while the crew is on the route/),
+      screen.getByText(/This trip is already completed and cannot be rescheduled/),
     ).toBeInTheDocument();
   });
 
@@ -225,13 +253,15 @@ describe('TextileCollectionDetailPage — reschedule surface (Phase 3)', () => {
     'FE-RS loading/empty/error: reschedule picker shows loading, empty (no alternative slots), and error states',
   );
 
-  it('double-clicking the placeholder reschedule button does not fire a request', () => {
+  it('does not submit when the picker is opened twice without choosing a date', () => {
     renderDetail();
-    const btn = screen.getByRole('button', { name: /Reschedule — coming soon/i });
+    const btn = screen.getByRole('button', { name: 'Reschedule pickup' });
     fireEvent.click(btn);
     fireEvent.click(btn);
+    const confirm = screen.getByRole('button', { name: 'Confirm new slot' });
+    expect(confirm).toBeDisabled();
+    fireEvent.click(confirm);
+    expect(mockReschedule).not.toHaveBeenCalled();
     expect(mockCancel).not.toHaveBeenCalled();
-    // Disabled button must stay disabled
-    expect(btn).toBeDisabled();
   });
 });
