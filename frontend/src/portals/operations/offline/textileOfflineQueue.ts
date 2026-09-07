@@ -1,5 +1,6 @@
 import { getOpsQueue, type OpsQueueItem } from './queue';
 import { ApiError } from '../../../shared/api/errors';
+import { readSession } from '../../../auth/storage';
 
 export interface CollectPayload {
   collectionId: string;
@@ -31,10 +32,10 @@ function buildUrl(path: string, query?: Record<string, unknown>): string {
 
 function getToken(): string | null {
   try {
-    const raw = localStorage.getItem('cip.auth.session');
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { token?: string; access_token?: string };
-    return parsed.token ?? parsed.access_token ?? null;
+    // Single source of truth: auth storage writes { token, user, ... }.
+    // A previous localStorage-key mismatch meant this always returned null,
+    // so every offline retry went out as Unauthenticated.
+    return readSession()?.token ?? null;
   } catch {
     return null;
   }
