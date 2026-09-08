@@ -189,7 +189,7 @@ export function LoginPage(): JSX.Element {
         res.data.refresh_token,
         res.data.refresh_expires_at,
       );
-      void navigate(routeForRoles(me.data.roles), { replace: true });
+      void navigate(routeForRoles(me.data.roles, me.data.departments), { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Invalid mobile or password');
     } finally {
@@ -247,7 +247,7 @@ export function LoginPage(): JSX.Element {
         res.data.refresh_token,
         res.data.refresh_expires_at,
       );
-      const target = routeForRoles(me.data.roles);
+      const target = routeForRoles(me.data.roles, me.data.departments);
       void navigate(target, { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Verification failed');
@@ -266,15 +266,15 @@ export function LoginPage(): JSX.Element {
           <span className="text-sm font-semibold tracking-[-0.01em] text-[#1d1d1b]">CIP India</span>
         </Link>
 
-        <div className="mt-10 grid flex-1 grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
+        <div className="mt-8 grid flex-1 grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
           <section>
             <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#686762]">
-              Citizen services
+              {selectedAccount?.mobile === '9999900001' ? 'Citizen services' : 'Platform access'}
             </p>
-            <h1 className="mt-3 text-3xl font-normal leading-[1.1] tracking-[-0.035em] text-[#1d1d1b] sm:text-4xl">
+            <h1 className="mt-2 text-3xl font-normal leading-[1.1] tracking-[-0.035em] text-[#1d1d1b] sm:text-4xl">
               Sign in to your account.
             </h1>
-            <p className="mt-4 text-[15px] leading-6 text-[#4f4e4a]">
+            <p className="mt-3 text-[14px] leading-6 text-[#4f4e4a]">
               {authMode === 'otp'
                 ? 'Choose a demo role or enter your mobile number. The demo uses a one-time code printed in the response so you can sign in without a phone.'
                 : authMode === 'push'
@@ -588,7 +588,10 @@ export function LoginPage(): JSX.Element {
   );
 }
 
-export function routeForRoles(roles: Role[]): string {
+export function routeForRoles(roles: Role[], departments?: SessionUser['departments']): string {
+  if (departments?.some((department) => department.code === 'DR_LINEN')) {
+    return '/operations/textile-collections/review';
+  }
   if (roles.includes('super_admin') || roles.includes('system')) return '/admin';
   if (roles.includes('moderator') || roles.includes('auditor')) return '/moderator';
   if (roles.includes('department_officer') || roles.includes('department_admin'))

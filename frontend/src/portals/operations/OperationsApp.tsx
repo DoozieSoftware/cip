@@ -46,7 +46,11 @@ function OperationsHome() {
   const { user } = useAuth();
   const isDrLinen = user?.departments?.some((department) => department.code === 'DR_LINEN');
 
-  return isDrLinen ? <Navigate to="/operations/textile-collections" replace /> : <DashboardPage />;
+  return isDrLinen ? (
+    <Navigate to="/operations/textile-collections/review" replace />
+  ) : (
+    <DashboardPage />
+  );
 }
 
 function OperationsOfflineBridge(): null {
