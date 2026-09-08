@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import TextileDispatchPage from './TextileDispatchPage';
 import { useDesk, useTextileQueue } from './shared';
@@ -59,9 +60,11 @@ const ITEM: TextileCollectionListItem = {
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={qc}>
-      <TextileDispatchPage />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={qc}>
+        <TextileDispatchPage />
+      </QueryClientProvider>
+    </MemoryRouter>,
   );
 }
 
@@ -81,22 +84,21 @@ describe('Textile trip execution frontend (Phase 2, unblocked subset)', () => {
     } as unknown as ReturnType<typeof useTextileQueue>);
   });
 
-  it('FE-C1 double-click submit does not fire duplicate outcome POST (single-click guard)', () => {
-    // Current TextileDispatchPage has a single Record collection button per row; we assert clicking twice still shows one dialog (no double submit path).
+  it('FE-C1 board defers outcome submits to the stop-work page (single navigation target)', () => {
+    // Board rows are pure navigation now; the collect/missed POSTs live on the stop page.
     renderPage();
-    const btn = screen.getByRole('button', { name: 'Record collection' });
-    fireEvent.click(btn);
-    fireEvent.click(btn);
-    // Dialog should be open exactly once
-    expect(
-      screen.getAllByRole('button', { name: 'Record collection' }).length,
-    ).toBeGreaterThanOrEqual(1);
+    const links = screen.getAllByRole('link', { name: /Stop 1: Lakshmi/ });
+    expect(links).toHaveLength(1);
+    expect(links[0].getAttribute('href')).toContain('/dispatch/batch-1/stops/collection-1');
+    expect(screen.queryByRole('button', { name: 'Record collection' })).not.toBeInTheDocument();
   });
 
-  it('FE-C1 proof picker is accessible (smoke remains green)', () => {
+  it('FE-C1 proof capture lives on the stop page (board keeps no file picker)', () => {
     renderPage();
-    fireEvent.click(screen.getByRole('button', { name: 'Record collection' }));
-    expect(screen.getByRole('button', { name: 'Choose proof photo' })).toBeVisible();
+    expect(screen.getByRole('link', { name: /Stop 1: Lakshmi/ }).getAttribute('href')).toContain(
+      '/dispatch/batch-1/stops/collection-1',
+    );
+    expect(screen.queryByRole('button', { name: 'Choose proof photo' })).not.toBeInTheDocument();
   });
 
   it.todo('FE-X1 citizen cancel confirm dialog + disabled after picked_up/cancelled/rejected');

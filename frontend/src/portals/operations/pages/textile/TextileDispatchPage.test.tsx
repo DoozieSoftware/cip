@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '../../../../auth/AuthContext';
 import type { TextileCollectionListItem } from '../../api/textileApi';
@@ -61,11 +62,13 @@ const ITEM: TextileCollectionListItem = {
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TextileDispatchPage />
-      </AuthProvider>
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TextileDispatchPage />
+        </AuthProvider>
+      </QueryClientProvider>
+    </MemoryRouter>,
   );
 }
 
@@ -94,23 +97,18 @@ describe('TextileDispatchPage', () => {
     expect(screen.queryByRole('button', { name: 'Refresh' })).not.toBeInTheDocument();
   });
 
-  it('uses an accessible proof-photo button instead of exposing the raw file picker', () => {
+  it('renders stops as navigation rows into the dedicated stop-work page', () => {
     renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Record collection' }));
-
-    const picker = screen.getByRole('button', { name: 'Choose proof photo' });
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    const clickSpy = vi.spyOn(fileInput, 'click');
-
-    expect(picker).toBeVisible();
-    expect(screen.getByText('JPG, PNG or WebP, up to 10 MB.')).toBeVisible();
-    expect(fileInput).toHaveClass('sr-only');
-    expect(fileInput).toHaveAttribute('tabindex', '-1');
-
-    fireEvent.click(picker);
-
-    expect(clickSpy).toHaveBeenCalledOnce();
-    clickSpy.mockRestore();
+    const stopLink = screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ });
+    expect(stopLink).toBeVisible();
+    expect(stopLink.getAttribute('href')).toBe(
+      '/operations/textile-collections/dispatch/batch-1/stops/collection-1',
+    );
+    // Stop-work actions live on the stop page, not inline on the board.
+    expect(screen.queryByRole('button', { name: 'Mark missed' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Record collection' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Call' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Navigate' })).not.toBeInTheDocument();
   });
 });

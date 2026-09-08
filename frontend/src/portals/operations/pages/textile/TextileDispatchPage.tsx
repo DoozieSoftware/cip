@@ -1,86 +1,22 @@
 import { useMemo, useState, type JSX } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import {
-  IconAlertTriangle,
-  IconCalendar,
-  IconCamera,
-  IconCheck,
-  IconClock,
-  IconLock,
-  IconMapPin,
-  IconNavigation,
-  IconPackage,
-  IconPhone,
-  IconX,
-} from '@tabler/icons-react';
-
-/* Button system — 44px targets, 8pt grid, one solid primary per stop.
- * Call/Navigate are outline with colored intent on hover; Mark missed is
- * destructive outline. All share h-11, rounded-lg, 14px — no color soup. */
-const BTN = {
-  primary:
-    'inline-flex h-11 items-center justify-center gap-1.5 rounded-lg bg-[var(--color-ink)] px-5 text-[14px] font-semibold tracking-tight text-white shadow-sm transition-colors hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 disabled:opacity-40',
-  call: 'inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-4 text-[14px] font-medium text-[var(--color-ink)] shadow-sm transition-colors hover:border-emerald-200 hover:bg-emerald-50 hover:text-[var(--color-success)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-success)] focus-visible:ring-offset-1 disabled:opacity-40',
-  navigate:
-    'inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-4 text-[14px] font-medium text-[var(--color-ink)] shadow-sm transition-colors hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1 disabled:opacity-40',
-  danger:
-    'inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-white px-4 text-[14px] font-medium text-[var(--color-danger)] shadow-sm transition-colors hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)] focus-visible:ring-offset-1 disabled:opacity-40',
-};
-import { ApiError } from '../../../../shared/api/errors';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { IconCheck, IconChevronRight, IconLock } from '@tabler/icons-react';
 import { readSession } from '../../../../auth/storage';
-import { ConfirmActionDialog } from '../../components/ConfirmActionDialog';
-import {
-  collectTextileWithProof,
-  evaluateBatchCapacity,
-  recordTextileOutcome,
-  type TextileCollectionListItem,
-} from '../../api/textileApi';
+import { evaluateBatchCapacity, type TextileCollectionListItem } from '../../api/textileApi';
 import { CapacityWarningBanner } from '../../components/CapacityWarningBanner';
 import { SuggestedStopsHint } from '../../components/SuggestedStopsHint';
-import { getQueue } from '../../../citizen/offline/queue';
-import { requestBackgroundSync } from '../../../citizen/offline/swBridge';
 import { TextileFieldOfflineBanner } from '../../components/TextileFieldOfflineBanner';
-import { getOpsQueue } from '../../offline/queue';
-import {
-  registerTextileOfflineRetry,
-  type CollectPayload,
-} from '../../offline/textileOfflineQueue';
 import { OfflineBanner } from '../../offline/OfflineBanner';
-import { useOptionalAuth } from '../../../../auth/AuthContext';
 import { useOpsQueue } from '../../offline/useOpsQueue';
 import { useOfflineQueue } from './hooks/useOfflineQueue';
-
-function toISODate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-function isOfflineError(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message.toLowerCase() : '';
-  if (
-    msg.includes('failed to fetch') ||
-    msg.includes('networkerror') ||
-    msg.includes('load failed')
-  )
-    return true;
-  const anyErr = err as { status?: number; code?: string };
-  if (anyErr?.status === 0 || anyErr?.code === 'OFFLINE') return true;
-  if (anyErr?.status !== undefined && anyErr.status >= 400) return false;
-  return !(err instanceof ApiError);
-}
 import {
-  CATEGORY_LABELS,
   DeskPage,
   DeskStates,
   Pager,
-  RescheduleDetail,
-  RescheduleOverrideNotice,
   SearchBox,
+  STATUS_LABELS,
   TripProgressBar,
-  UnavailableBadge,
-  formatPreviousWindow,
   getTripProgress,
   isRescheduleFrozen,
   useDesk,
@@ -89,43 +25,13 @@ import {
   CategoryFilter,
   formatVolume,
 } from './shared';
-import { StopRecordForm } from './components/StopRecordForm';
+import { formatTripDate, stopPageHref } from './stopWorkUtils';
 
-function telHref(phone: string) {
-  return `tel:${phone.replace(/\s/g, '')}`;
-}
-function mapsHref(address: string) {
-  const q = encodeURIComponent(address);
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  return isIOS ? `maps://?q=${q}` : `https://www.google.com/maps/search/?api=1&query=${q}`;
-}
-
-function newIdempotencyKey(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
-    return crypto.randomUUID();
-  return `collect-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-function isNetworkFailure(err: unknown): boolean {
-  return !(err instanceof ApiError);
-}
-
-function formatTripDate(raw: string): string {
-  if (!raw) return '';
-  // Expect YYYY-MM-DD
-  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) {
-    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-    if (!Number.isNaN(d.getTime()))
-      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  }
-  try {
-    const d = new Date(raw);
-    if (!Number.isNaN(d.getTime()))
-      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  } catch {
-    // ignore parse error, fall through
-  }
-  return raw;
+function toISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 const TRIP_STATUS_META: Record<string, { label: string; cls: string }> = {
@@ -191,23 +97,76 @@ function BatchCapacityNotice({
   );
 }
 
+function BoardFilters({
+  dateFilter,
+  zoneId,
+  categoryId,
+  onDateFilter,
+  onZoneId,
+  onCategoryId,
+}: {
+  dateFilter: string;
+  zoneId: string;
+  categoryId: string;
+  onDateFilter: (next: string) => void;
+  onZoneId: (next: string) => void;
+  onCategoryId: (next: string) => void;
+}): JSX.Element {
+  return (
+    <>
+      <label className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
+        Date
+        <input
+          type="date"
+          value={dateFilter === 'all' ? '' : dateFilter}
+          onChange={(e) => onDateFilter(e.target.value || 'all')}
+          aria-label="Filter trips by date"
+          className="min-h-11 rounded-lg border border-[var(--color-border)] bg-white px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+        />
+      </label>
+      {dateFilter !== 'all' ? (
+        <button
+          type="button"
+          onClick={() => onDateFilter('all')}
+          className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-3 text-xs font-medium hover:bg-[var(--color-surface-alt)]"
+        >
+          All dates
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onDateFilter(toISODate(new Date()))}
+          className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-3 text-xs font-medium hover:bg-[var(--color-surface-alt)]"
+        >
+          Today
+        </button>
+      )}
+      <ZoneFilter value={zoneId} onChange={onZoneId} />
+      <CategoryFilter value={categoryId} onChange={onCategoryId} />
+    </>
+  );
+}
+
 export default function TextileDispatchPage(): JSX.Element {
   const desk = useDesk();
-  const auth = useOptionalAuth();
-  const user = auth?.user ?? readSession()?.user ?? null;
   const [search, setSearch] = useState('');
   const [zoneId, setZoneId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [page, setPage] = useState(1);
   const [dateFilter, setDateFilter] = useState('all');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [missedTarget, setMissedTarget] = useState<TextileCollectionListItem | null>(null);
-  const [overrideTarget, setOverrideTarget] = useState<TextileCollectionListItem | null>(null);
-  const [overrideReason, setOverrideReason] = useState('');
-  const [assignmentOpen] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [queuedNotice, setQueuedNotice] = useState<string | null>(null);
   const opsQueue = useOpsQueue();
+  function handleDateFilter(next: string): void {
+    setDateFilter(next);
+    setPage(1);
+  }
+  function handleZoneId(next: string): void {
+    setZoneId(next);
+    setPage(1);
+  }
+  function handleCategoryId(next: string): void {
+    setCategoryId(next);
+    setPage(1);
+  }
 
   const queue = useTextileQueue({
     status: 'scheduled',
@@ -218,129 +177,13 @@ export default function TextileDispatchPage(): JSX.Element {
     collectionMethod: 'premises',
     // Large page so trip groups never split across pages and counts stay whole.
     perPage: 200,
-    autoRefresh:
-      expandedId === null && missedTarget === null && !assignmentOpen && overrideTarget === null,
+    autoRefresh: true,
     enabled: desk.ready && desk.isDrLinen,
     departmentId: desk.departmentId,
   });
   const rows = useMemo(() => queue.data?.data ?? [], [queue.data?.data]);
   const userId = readSession()?.user?.id;
   const offline = useOfflineQueue(userId, desk.departmentId);
-
-  const outcome = useMutation({
-    mutationFn: ({
-      id,
-      kind,
-      bags,
-      weight,
-      reason,
-      idempotencyKey,
-    }: {
-      id: string;
-      kind: 'collected' | 'missed';
-      bags?: number;
-      weight?: number;
-      reason?: string;
-      idempotencyKey?: string;
-    }) =>
-      recordTextileOutcome(id, {
-        outcome: kind,
-        department_id: desk.departmentId,
-        idempotencyKey,
-        ...(kind === 'collected' ? { actual_bags: bags, actual_weight_kg: weight } : { reason }),
-      }),
-    onSuccess: () => {
-      setExpandedId(null);
-      setMissedTarget(null);
-      setOverrideTarget(null);
-      setOverrideReason('');
-      void queue.refetch();
-    },
-  });
-
-  async function handleMissed(item: TextileCollectionListItem, reason: string): Promise<void> {
-    setServerError(null);
-    const idempotencyKey =
-      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-        ? crypto.randomUUID()
-        : `field-missed-${item.id}-${Date.now()}`;
-    try {
-      await outcome.mutateAsync({ id: item.id, kind: 'missed', reason });
-    } catch (e) {
-      if (isOfflineError(e)) {
-        const ownerId = readSession()?.user.id ?? null;
-        await getQueue(ownerId).enqueue({
-          kind: 'textile.field.outcome',
-          id: idempotencyKey,
-          payload: {
-            collectionId: item.id,
-            outcome: 'missed',
-            reason,
-            department_id: desk.departmentId,
-          },
-        });
-        void requestBackgroundSync();
-        setServerError(
-          `Missed pickup saved offline — pending upload. Will retry automatically. (id ${idempotencyKey.slice(0, 8)}…)`,
-        );
-        setMissedTarget(null);
-        return;
-      }
-      if (e instanceof ApiError) setServerError(e.message);
-      else setServerError('Failed to record missed pickup');
-    }
-  }
-
-  async function handleCollect(
-    item: TextileCollectionListItem,
-    p: { bags: number; weight: number; file: File; reason?: string },
-  ) {
-    setServerError(null);
-    setQueuedNotice(null);
-    const idempotencyKey = newIdempotencyKey();
-    try {
-      await collectTextileWithProof(
-        item.id,
-        {
-          actual_bags: p.bags,
-          actual_weight_kg: p.weight,
-          photo: p.file,
-          reason: p.reason,
-          idempotencyKey,
-        },
-        desk.departmentId,
-      );
-      setExpandedId(null);
-      void queue.refetch();
-    } catch (e) {
-      if (isNetworkFailure(e)) {
-        // Offline — queue locally and show explicit pending state
-        registerTextileOfflineRetry(user?.id ?? null);
-        const payload: CollectPayload = {
-          collectionId: item.id,
-          actualBags: p.bags,
-          actualWeightKg: p.weight,
-          reason: p.reason,
-          photoName: p.file.name,
-          photoType: p.file.type,
-          photoBlob: p.file,
-          idempotencyKey,
-          departmentId: desk.departmentId,
-          reference: item.reference,
-        };
-        await getOpsQueue(user?.id ?? null).enqueue({
-          kind: 'textile.collect',
-          payload,
-          id: idempotencyKey,
-        });
-        setQueuedNotice(`Queued offline — ${item.reference} will upload when you are back online.`);
-        setExpandedId(null);
-        return;
-      }
-      if (e instanceof ApiError) setServerError(e.message);
-      else setServerError('Failed to record collection');
-    }
-  }
 
   const trips = useMemo(() => {
     const map = new Map<
@@ -393,7 +236,7 @@ export default function TextileDispatchPage(): JSX.Element {
     <DeskPage
       desk={desk}
       title="Dispatch Board"
-      description="Manage today's collection trips, stops and collection outcomes."
+      description="Today's trips, stops and outcomes."
       toolbar={
         <div className="flex flex-col gap-2 rounded-lg border border-[var(--color-border-subtle)] bg-white px-2.5 py-2 sm:flex-row sm:items-center sm:gap-3">
           <div className="min-w-0 flex-1">
@@ -405,107 +248,70 @@ export default function TextileDispatchPage(): JSX.Element {
               }}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-            <label className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
-              Trip date
-              <input
-                type="date"
-                value={dateFilter === 'all' ? '' : dateFilter}
-                onChange={(e) => {
-                  setDateFilter(e.target.value || 'all');
-                  setPage(1);
-                }}
-                aria-label="Filter trips by date"
-                className="min-h-11 rounded-lg border border-[var(--color-border)] bg-white px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
-              />
-            </label>
-            {dateFilter !== 'all' ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setDateFilter('all');
-                  setPage(1);
-                }}
-                className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-3 text-xs font-medium hover:bg-[var(--color-surface-alt)]"
-              >
-                All dates
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setDateFilter(toISODate(new Date()));
-                  setPage(1);
-                }}
-                className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-3 text-xs font-medium hover:bg-[var(--color-surface-alt)]"
-              >
-                Today
-              </button>
-            )}
-            <ZoneFilter
-              value={zoneId}
-              onChange={(n) => {
-                setZoneId(n);
-                setPage(1);
-              }}
-            />
-            <CategoryFilter
-              value={categoryId}
-              onChange={(n) => {
-                setCategoryId(n);
-                setPage(1);
-              }}
+          <div className="hidden flex-wrap items-center gap-2 sm:flex sm:shrink-0">
+            <BoardFilters
+              dateFilter={dateFilter}
+              zoneId={zoneId}
+              categoryId={categoryId}
+              onDateFilter={handleDateFilter}
+              onZoneId={handleZoneId}
+              onCategoryId={handleCategoryId}
             />
           </div>
+          <details className="sm:hidden">
+            <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-[var(--color-border)] bg-white px-3 text-xs font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1">
+              Filters
+            </summary>
+            <div className="flex flex-wrap items-center gap-2 pt-2">
+              <BoardFilters
+                dateFilter={dateFilter}
+                zoneId={zoneId}
+                categoryId={categoryId}
+                onDateFilter={handleDateFilter}
+                onZoneId={handleZoneId}
+                onCategoryId={handleCategoryId}
+              />
+            </div>
+          </details>
         </div>
       }
     >
       <OfflineBanner />
       <div className="space-y-2">
         <TextileFieldOfflineBanner />
-        {queuedNotice ? (
-          <p
-            role="status"
-            className="rounded-md bg-sky-50 px-3 py-2 text-xs leading-4 text-sky-800"
-          >
-            {queuedNotice}
-          </p>
-        ) : null}
         {opsQueue.pending.length > 0 ? (
           <p
             aria-label={`${opsQueue.pending.length} pending uploads`}
             className="rounded-md border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs leading-4 text-sky-800"
           >
-            {opsQueue.pending.length} pending upload{opsQueue.pending.length === 1 ? '' : 's'}{' '}
-            queued for this account — retry is automatic and idempotent.
-          </p>
-        ) : null}
-        {serverError ? (
-          <p
-            role="alert"
-            className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-4 text-amber-800"
-          >
-            {serverError}
+            {opsQueue.pending.length} pending upload{opsQueue.pending.length === 1 ? '' : 's'} —
+            auto-retry.
           </p>
         ) : null}
       </div>
 
-      {/* Summary — ledger inline, not dashboard big-numbers */}
+      {/* Summary — compact ledger strip */}
       {summary ? (
-        <div className="grid grid-cols-5 divide-x divide-[var(--color-border-subtle)] overflow-hidden rounded-lg border border-[var(--color-border-subtle)] bg-white shadow-sm">
+        <div
+          aria-label="Dispatch summary"
+          className="grid grid-cols-5 divide-x divide-[var(--color-border-subtle)] overflow-hidden rounded-lg border border-[var(--color-border-subtle)] bg-white shadow-sm"
+        >
           {[
-            { label: "Today's trips", value: summary.trips, cls: 'text-[var(--color-ink)]' },
-            { label: 'Total stops', value: summary.total, cls: 'text-[var(--color-ink)]' },
-            { label: 'Remaining', value: summary.remaining, cls: 'text-amber-700' },
-            { label: 'Completed', value: summary.collected, cls: 'text-[var(--color-success)]' },
+            { label: 'Trips', value: summary.trips, cls: 'text-[var(--color-ink)]' },
+            { label: 'Stops', value: summary.total, cls: 'text-[var(--color-ink)]' },
+            { label: 'Left', value: summary.remaining, cls: 'text-amber-700' },
+            { label: 'Collected', value: summary.collected, cls: 'text-[var(--color-success)]' },
             { label: 'Missed', value: summary.missed, cls: 'text-[var(--color-danger)]' },
           ].map((m) => (
-            <div key={m.label} className="flex flex-col justify-center gap-1 px-3 py-3 sm:px-4">
-              <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+            <div
+              key={m.label}
+              className="flex min-w-0 flex-col justify-center gap-0.5 px-2 py-2 sm:px-3"
+            >
+              <p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
                 {m.label}
               </p>
               <p
-                className={`text-[18px] font-bold leading-none tracking-tight tabular-nums ${m.cls}`}
+                className={`text-[16px] font-bold leading-none tracking-tight tabular-nums ${m.cls}`}
               >
                 {m.value}
               </p>
@@ -520,12 +326,8 @@ export default function TextileDispatchPage(): JSX.Element {
         onRetry={() => void queue.refetch()}
         hasRows={trips.length > 0}
         emptyTitle={dateFilter === 'all' ? 'No scheduled pickups' : `No trips on ${dateFilter}`}
-        emptyBody="Schedule a trip on the Trip scheduling page and it will appear here for dispatch."
+        emptyBody="Schedule a trip and it will appear here."
       >
-        {/* Hidden affordance for Phase 2 manifest tests expecting anchored "Record" */}
-        <button type="button" aria-label="Record" className="sr-only" tabIndex={-1}>
-          Record
-        </button>
         <div className="space-y-3">
           {trips.map((trip) => {
             const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
@@ -541,27 +343,26 @@ export default function TextileDispatchPage(): JSX.Element {
             };
             const formattedDate = trip.date ? formatTripDate(trip.date) : '';
             const tripRef = trip.ref !== 'Unassigned' ? trip.ref : trip.label;
+            const crew = [
+              trip.items[0]?.batch?.driver_name,
+              trip.items[0]?.batch?.team_name,
+              trip.items[0]?.batch?.vehicle_label,
+            ]
+              .filter(Boolean)
+              .join(' · ');
             return (
               <section
                 key={trip.id}
                 className="overflow-hidden rounded-lg border border-[var(--color-border-subtle)] bg-white shadow-sm"
               >
-                {/* Trip header — human label first, trip code secondary */}
-                <header className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-4 py-3 sm:px-5">
+                {/* Trip header — ref first, then date/count; progress is the primary action anchor */}
+                <header className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-3 py-2 sm:px-4">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <h2 className="text-[13px] font-bold tracking-tight text-[var(--color-ink)]">
-                      Trip{' '}
-                      <span className="font-mono font-medium text-[var(--color-text-secondary)]">
-                        {tripRef}
-                      </span>
+                    <h2 className="font-mono text-[13px] font-bold tracking-tight text-[var(--color-ink)]">
+                      {tripRef}
                     </h2>
                     {formattedDate ? (
-                      <span className="inline-flex items-center gap-1 text-[13px] leading-none text-[var(--color-text-secondary)]">
-                        <IconCalendar
-                          className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
-                          stroke={1.65}
-                          aria-hidden="true"
-                        />
+                      <span className="text-[13px] leading-none text-[var(--color-text-secondary)]">
                         {formattedDate}
                       </span>
                     ) : null}
@@ -570,12 +371,7 @@ export default function TextileDispatchPage(): JSX.Element {
                     </span>
                     {frozen ? (
                       <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium leading-none text-amber-800">
-                        <IconAlertTriangle
-                          className="h-3.5 w-3.5"
-                          stroke={1.65}
-                          aria-hidden="true"
-                        />{' '}
-                        Locked
+                        <IconLock className="h-3.5 w-3.5" stroke={1.65} aria-hidden="true" /> Locked
                       </span>
                     ) : null}
                     <div className="ml-auto flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
@@ -596,45 +392,22 @@ export default function TextileDispatchPage(): JSX.Element {
                     </div>
                   </div>
 
-                  {/* assignment meta */}
-                  {(trip.items[0]?.batch?.driver_name ||
-                    trip.items[0]?.batch?.team_name ||
-                    trip.items[0]?.batch?.vehicle_label) && (
+                  {/* crew — values only; field staff know the order */}
+                  {crew ? (
                     <p className="mt-1.5 text-xs leading-4 text-[var(--color-text-secondary)]">
-                      {trip.items[0]?.batch?.driver_name ? (
-                        <span className="font-medium text-[var(--color-ink)]">
-                          Driver {trip.items[0].batch.driver_name}
-                        </span>
-                      ) : null}
-                      {trip.items[0]?.batch?.driver_name && trip.items[0]?.batch?.team_name ? (
-                        <span className="mx-1 opacity-40">·</span>
-                      ) : null}
-                      {trip.items[0]?.batch?.team_name ? (
-                        <span className="font-medium text-[var(--color-ink)]">
-                          Team {trip.items[0].batch.team_name}
-                        </span>
-                      ) : null}
-                      {(trip.items[0]?.batch?.driver_name || trip.items[0]?.batch?.team_name) &&
-                      trip.items[0]?.batch?.vehicle_label ? (
-                        <span className="mx-1 opacity-40">·</span>
-                      ) : null}
-                      {trip.items[0]?.batch?.vehicle_label ? (
-                        <span>{trip.items[0].batch.vehicle_label}</span>
-                      ) : null}
+                      {crew}
                     </p>
-                  )}
+                  ) : null}
 
                   {(hasRescheduledStops || hasUnavailableStops) && (
                     <p className="mt-1.5 text-[11px] leading-4 text-[var(--color-text-secondary)]">
-                      {hasRescheduledStops
-                        ? 'Rescheduled stops show previous slot and reason. '
-                        : ''}
-                      {hasUnavailableStops ? 'Unavailable reason shown per stop.' : ''}
+                      {hasRescheduledStops ? 'Rescheduled: prior slot on stop page. ' : ''}
+                      {hasUnavailableStops ? 'Unavailable reasons on stop page.' : ''}
                     </p>
                   )}
 
                   {/* capacity + route advisory — compact inside header */}
-                  <div className="mt-2.5">
+                  <div className="mt-1.5">
                     <BatchCapacityNotice
                       batchId={trip.id}
                       departmentId={desk.departmentId}
@@ -643,442 +416,94 @@ export default function TextileDispatchPage(): JSX.Element {
                   </div>
                 </header>
 
-                {/* Stops — run-sheet: stations along a route spine */}
-                <ul>
+                {/* Stops — navigation rows; tap opens the dedicated stop-work page */}
+                <ul className="divide-y divide-[var(--color-border-subtle)]">
                   {trip.items.map((item, idx) => {
-                    const evidencePhoto = item.photos?.find((p) => p.role === 'evidence');
                     const queued = offline.items.find(
                       (q) => q.collectionId === item.id && q.status !== 'completed',
                     );
-                    void formatPreviousWindow; // keep import until RescheduleDetail covers it fully
-                    const itemFrozen = isRescheduleFrozen(item.batch?.status);
                     const isNext = idx === 0 && item.status === 'scheduled';
                     const isCollected = item.status === 'picked_up';
                     const isMissed = item.status === 'missed';
-                    const isTerminal = isCollected || isMissed;
-                    const isLast = idx === trip.items.length - 1;
+                    const statusDotCls = isCollected
+                      ? 'bg-[var(--color-success)]'
+                      : isMissed
+                        ? 'bg-[var(--color-danger)]'
+                        : queued
+                          ? queued.status === 'failed'
+                            ? 'bg-[var(--color-danger)]'
+                            : 'bg-amber-500'
+                          : isNext
+                            ? 'bg-amber-500'
+                            : 'bg-neutral-300';
+                    const statusLabel = isCollected
+                      ? 'Collected'
+                      : isMissed
+                        ? 'Missed'
+                        : queued
+                          ? queued.status === 'failed'
+                            ? 'Upload failed'
+                            : 'Pending upload'
+                          : (STATUS_LABELS[item.status] ?? item.status);
                     return (
-                      <li
-                        key={item.id}
-                        className={`relative flex gap-3 px-4 py-4 sm:gap-4 sm:px-5 ${isNext ? 'bg-amber-50/50' : 'bg-white'} ${isLast ? '' : 'border-b border-[var(--color-border-subtle)]'}`}
-                      >
-                        {/* route spine connector (hidden when single stop) */}
-                        {trip.items.length > 1 ? (
-                          <span
-                            aria-hidden
-                            className="pointer-events-none absolute left-[34px] w-px bg-[var(--color-border)] sm:left-[38px]"
-                            style={{ top: idx === 0 ? 34 : 0, bottom: isLast ? 34 : 0 }}
-                          />
-                        ) : null}
-                        {/* station dot */}
-                        <span
-                          className={`relative z-[1] mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full text-[13px] font-bold leading-none ${
-                            isNext
-                              ? 'bg-amber-500 text-white ring-4 ring-amber-200/70'
-                              : isCollected
-                                ? 'bg-[var(--color-success)] text-white'
-                                : isMissed
-                                  ? 'border-2 border-rose-400 bg-white text-[var(--color-danger)]'
-                                  : 'border-2 border-[var(--color-border-strong)] bg-white text-[var(--color-text-secondary)]'
-                          }`}
+                      <li key={item.id} className={isNext ? 'bg-amber-50/50' : 'bg-white'}>
+                        {/* One-line stop row: number dot, name, truncated address, estimate chip, status dot */}
+                        <Link
+                          to={stopPageHref(trip.id, item.id)}
+                          aria-label={`Stop ${idx + 1}: ${item.requester_name}, ${item.pickup_address}`}
+                          className="flex min-h-[44px] w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ink)] sm:px-4"
                         >
-                          {isCollected ? (
-                            <IconCheck className="h-4 w-4" stroke={2.5} aria-hidden="true" />
-                          ) : (
-                            idx + 1
-                          )}
-                        </span>
-
-                        {/* thumb */}
-                        {evidencePhoto ? (
-                          <img
-                            src={evidencePhoto.url}
-                            alt=""
-                            className="hidden h-12 w-12 shrink-0 rounded-lg object-cover ring-1 ring-black/5 sm:block mt-0.5"
-                          />
-                        ) : null}
-
-                        <div className="min-w-0 flex-1">
-                          {/* pickup ref + outcome: human label first, code secondary */}
-                          {/* stop eyebrow — ref + status chip share one row so every
-                              stop scans the same: code left, outcome right */}
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                            <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-                              Pickup{' '}
-                              <span className="font-mono normal-case tracking-wide">
-                                {item.reference}
-                              </span>
-                            </span>
+                          <span
+                            aria-hidden="true"
+                            className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold leading-none ${
+                              isNext
+                                ? 'bg-amber-500 text-white'
+                                : isCollected
+                                  ? 'bg-[var(--color-success)] text-white'
+                                  : isMissed
+                                    ? 'border border-rose-400 bg-white text-[var(--color-danger)]'
+                                    : 'border border-[var(--color-border-strong)] bg-white text-[var(--color-text-secondary)]'
+                            }`}
+                          >
                             {isCollected ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold leading-none text-emerald-800 ring-1 ring-inset ring-emerald-200">
-                                <IconCheck
-                                  className="h-3.5 w-3.5"
-                                  stroke={2.5}
-                                  aria-hidden="true"
-                                />{' '}
-                                Collected
-                              </span>
-                            ) : isMissed ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold leading-none text-rose-800 ring-1 ring-inset ring-rose-200">
-                                <IconX className="h-3.5 w-3.5" stroke={2.5} aria-hidden="true" />{' '}
-                                Missed
-                              </span>
-                            ) : queued ? (
-                              <span
-                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold leading-none ring-1 ring-inset ${queued.status === 'failed' ? 'bg-rose-50 text-rose-700 ring-rose-200' : 'bg-amber-50 text-amber-800 ring-amber-200'}`}
-                              >
-                                {queued.status === 'failed' ? (
-                                  <IconAlertTriangle
-                                    className="h-3.5 w-3.5"
-                                    stroke={2}
-                                    aria-hidden="true"
-                                  />
-                                ) : (
-                                  <IconClock
-                                    className="h-3.5 w-3.5"
-                                    stroke={2}
-                                    aria-hidden="true"
-                                  />
-                                )}{' '}
-                                {queued.status === 'failed' ? 'Upload failed' : 'Pending upload'}
-                              </span>
-                            ) : null}
-                            {itemFrozen && !isTerminal ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium leading-none text-amber-800 ring-1 ring-inset ring-amber-200">
-                                <IconLock className="h-3.5 w-3.5" stroke={2} aria-hidden="true" />{' '}
-                                Locked
-                              </span>
-                            ) : null}
-                            {item.unavailable_reason ? (
-                              <UnavailableBadge reason={item.unavailable_reason} />
-                            ) : null}
-                          </div>
-
-                          {/* stop title — prominent name with Up next inline so the
-                              row keeps one headline instead of two stacked badges */}
-                          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                            <p className="text-[17px] font-bold leading-6 tracking-tight text-[var(--color-ink)]">
-                              {item.requester_name}
-                            </p>
-                            {isNext ? (
-                              <span className="inline-flex items-center rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">
-                                Up next
-                              </span>
-                            ) : null}
-                          </div>
-                          {/* stop meta — one address line with a map-pin anchor */}
-                          <p className="mt-1 flex items-start gap-1.5 text-[13px] leading-5 text-[var(--color-text-secondary)]">
-                            <IconMapPin
-                              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]"
-                              stroke={1.75}
-                              aria-hidden="true"
-                            />
-                            <span className="min-w-0 break-words">{item.pickup_address}</span>
-                          </p>
-
-                          {evidencePhoto ? (
-                            <div className="mt-2 flex items-center gap-2 sm:hidden">
-                              <img
-                                src={evidencePhoto.url}
-                                alt=""
-                                className="h-9 w-9 rounded-lg object-cover ring-1 ring-black/5"
-                              />
-                              <span className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
-                                <IconCamera
-                                  className="h-4 w-4 text-[var(--color-text-tertiary)]"
-                                  stroke={1.75}
-                                  aria-hidden="true"
-                                />
-                                Photo attached
-                              </span>
-                            </div>
-                          ) : null}
-
-                          {/* estimate meta — same icon + pill anatomy on every stop */}
-                          <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                              <IconPackage
-                                className="h-3.5 w-3.5"
-                                stroke={1.75}
-                                aria-hidden="true"
-                              />
-                              {CATEGORY_LABELS[item.category] ?? item.category}
-                            </span>
-                            <span className="text-[var(--color-border-strong)]" aria-hidden="true">
-                              ·
-                            </span>
-                            {isCollected && item.actual_bags !== null ? (
-                              <span className="inline-flex flex-wrap items-center gap-1.5 text-[13px] leading-5">
-                                <span className="text-[var(--color-text-secondary)]">
-                                  {formatVolume(item.estimated_bags, item.estimated_weight_kg)}{' '}
-                                  expected
-                                </span>
-                                <span
-                                  className="text-[var(--color-border-strong)]"
-                                  aria-hidden="true"
-                                >
-                                  →
-                                </span>
-                                <span className="inline-flex items-center gap-1 font-semibold text-[var(--color-ink)]">
-                                  <IconCheck
-                                    className="h-3.5 w-3.5 text-[var(--color-success)]"
-                                    stroke={2.5}
-                                    aria-hidden="true"
-                                  />
-                                  {formatVolume(item.actual_bags, item.actual_weight_kg)} collected
-                                </span>
-                                {item.picked_up_at ? (
-                                  <span className="text-[var(--color-text-tertiary)]">
-                                    ·{' '}
-                                    {new Date(item.picked_up_at).toLocaleTimeString([], {
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    })}
-                                  </span>
-                                ) : null}
-                              </span>
-                            ) : isMissed ? (
-                              <span className="inline-flex items-center gap-1.5 text-[13px] font-medium leading-5 text-rose-700">
-                                <IconX className="h-4 w-4 shrink-0" stroke={2} aria-hidden="true" />
-                                {item.missed_pickup_reason
-                                  ? `Missed · ${item.missed_pickup_reason}`
-                                  : 'Missed'}
-                              </span>
+                              <IconCheck className="h-3 w-3" stroke={3} aria-hidden="true" />
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-3 py-1.5 text-[13px] font-semibold leading-none text-[var(--color-ink)]">
-                                <span
-                                  className="h-1.5 w-1.5 rounded-full bg-amber-500"
-                                  aria-hidden="true"
-                                />
-                                {formatVolume(item.estimated_bags, item.estimated_weight_kg)}{' '}
-                                expected
-                              </span>
+                              idx + 1
                             )}
-                          </div>
-
-                          <RescheduleDetail item={item} />
-                          {item.readiness_instructions ? (
-                            <p className="mt-2 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] leading-5 text-amber-800">
-                              <IconAlertTriangle
-                                className="mt-0.5 h-4 w-4 shrink-0"
-                                stroke={1.75}
-                                aria-hidden="true"
-                              />
-                              <span>
-                                <span className="font-semibold">Instructions:</span>{' '}
-                                {item.readiness_instructions}
-                              </span>
-                            </p>
-                          ) : null}
-
-                          {/* action row — mobile (hidden when terminal) */}
-                          {!isTerminal ? (
-                            <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
-                              <a href={telHref(item.contact_phone)} className={BTN.call}>
-                                <IconPhone
-                                  className="h-4 w-4 text-emerald-700"
-                                  stroke={1.75}
-                                  aria-hidden="true"
-                                />{' '}
-                                Call
-                              </a>
-                              <a
-                                href={mapsHref(item.pickup_address)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className={BTN.navigate}
-                              >
-                                <IconNavigation
-                                  className="h-4 w-4 text-sky-700"
-                                  stroke={1.75}
-                                  aria-hidden="true"
-                                />{' '}
-                                Navigate
-                              </a>
-                              <button
-                                type="button"
-                                aria-label="Record this stop"
-                                disabled={outcome.isPending}
-                                onClick={() =>
-                                  setExpandedId(expandedId === item.id ? null : item.id)
-                                }
-                                className={BTN.primary}
-                              >
-                                <IconCamera className="h-4 w-4" stroke={1.75} aria-hidden="true" />
-                                {expandedId === item.id ? 'Close' : 'Record collection'}
-                              </button>
-                              <button
-                                type="button"
-                                disabled={outcome.isPending}
-                                onClick={() => setMissedTarget(item)}
-                                className={BTN.danger}
-                              >
-                                <IconX className="h-4 w-4" stroke={2} aria-hidden="true" />
-                                Mark missed
-                              </button>
-                              {itemFrozen ? (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOverrideTarget(item);
-                                    setOverrideReason('');
-                                  }}
-                                  className="inline-flex h-11 items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-4 text-[14px] font-semibold text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
-                                  aria-label={`Override reschedule for ${item.reference}`}
-                                >
-                                  <IconLock className="h-4 w-4" stroke={2} aria-hidden="true" />
-                                  Override
-                                </button>
-                              ) : null}
-                            </div>
-                          ) : null}
-                        </div>
-
-                        {/* actions — desktop (hidden when terminal or on mobile) */}
-                        {!isTerminal ? (
-                          <div className="hidden shrink-0 flex-col items-end gap-2 lg:flex">
-                            <div className="flex items-center gap-2">
-                              <a href={telHref(item.contact_phone)} className={BTN.call}>
-                                <IconPhone
-                                  className="h-4 w-4 text-emerald-700"
-                                  stroke={1.75}
-                                  aria-hidden="true"
-                                />{' '}
-                                Call
-                              </a>
-                              <a
-                                href={mapsHref(item.pickup_address)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className={BTN.navigate}
-                              >
-                                <IconNavigation
-                                  className="h-4 w-4 text-sky-700"
-                                  stroke={1.75}
-                                  aria-hidden="true"
-                                />{' '}
-                                Navigate
-                              </a>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                aria-label="Record collection"
-                                disabled={outcome.isPending}
-                                onClick={() =>
-                                  setExpandedId(expandedId === item.id ? null : item.id)
-                                }
-                                className={`${BTN.primary} min-w-[164px] justify-center`}
-                              >
-                                <IconCamera className="h-4 w-4" stroke={1.75} aria-hidden="true" />
-                                {expandedId === item.id ? 'Close' : 'Record collection'}
-                              </button>
-                              <button
-                                type="button"
-                                disabled={outcome.isPending}
-                                onClick={() => setMissedTarget(item)}
-                                className={BTN.danger}
-                              >
-                                <IconX className="h-4 w-4" stroke={2} aria-hidden="true" />
-                                Mark missed
-                              </button>
-                            </div>
-                            {itemFrozen ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setOverrideTarget(item);
-                                  setOverrideReason('');
-                                }}
-                                className="inline-flex h-11 items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-4 text-[14px] font-semibold text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
-                                aria-label={`Override reschedule for ${item.reference}`}
-                              >
-                                <IconLock className="h-4 w-4" stroke={2} aria-hidden="true" />
-                                Override reschedule
-                              </button>
-                            ) : null}
-                          </div>
-                        ) : null}
+                          </span>
+                          <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
+                            <span className="max-w-[42%] shrink-0 truncate text-[14px] font-semibold tracking-tight text-[var(--color-ink)]">
+                              {item.requester_name}
+                            </span>
+                            <span
+                              className="min-w-0 flex-1 truncate text-xs leading-4 text-[var(--color-text-secondary)]"
+                              title={item.pickup_address}
+                            >
+                              {item.pickup_address}
+                            </span>
+                          </span>
+                          <span className="inline-flex shrink-0 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-0.5 text-[11px] font-semibold leading-4 text-[var(--color-ink)]">
+                            {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
+                          </span>
+                          <span
+                            className={`h-2 w-2 shrink-0 rounded-full ${statusDotCls}`}
+                            title={statusLabel}
+                            aria-hidden="true"
+                          />
+                          <span className="sr-only">{statusLabel}</span>
+                          <IconChevronRight
+                            className="h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]"
+                            stroke={2}
+                            aria-hidden="true"
+                          />
+                        </Link>
                       </li>
                     );
                   })}
                 </ul>
-
-                {/* expanded record form */}
-                {trip.items.some((i) => expandedId === i.id) ? (
-                  <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] px-3 py-3">
-                    {trip.items
-                      .filter((i) => expandedId === i.id)
-                      .map((item) => (
-                        <div key={item.id}>
-                          <StopRecordForm
-                            item={item}
-                            busy={outcome.isPending}
-                            onSubmit={(p) => void handleCollect(item, p)}
-                          />
-                          {serverError ? (
-                            <p
-                              role="alert"
-                              className="mt-2 rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs text-rose-700"
-                            >
-                              {serverError}
-                            </p>
-                          ) : null}
-                        </div>
-                      ))}
-                  </div>
-                ) : null}
               </section>
             );
           })}
-          <ConfirmActionDialog
-            open={missedTarget !== null}
-            title={`Mark ${missedTarget?.reference ?? ''} as missed`}
-            description="The visit will be logged as a missed pickup and the request can be re-scheduled."
-            confirmLabel="Log missed pickup"
-            confirmVariant="danger"
-            requiresNote
-            busy={outcome.isPending}
-            onClose={() => setMissedTarget(null)}
-            onConfirm={(note) => {
-              if (missedTarget && note) void handleMissed(missedTarget, note);
-            }}
-          />
-          <ConfirmActionDialog
-            open={overrideTarget !== null}
-            title={`Override reschedule — ${overrideTarget?.reference ?? ''}`}
-            description="This trip is in progress and rescheduling is frozen. Provide an override reason to reschedule (audit-logged)."
-            confirmLabel="Confirm override"
-            confirmVariant="danger"
-            requiresNote
-            busy={outcome.isPending}
-            onClose={() => {
-              setOverrideTarget(null);
-              setOverrideReason('');
-            }}
-            onConfirm={(note) => {
-              const reason = note || overrideReason;
-              if (overrideTarget && reason && reason.trim().length >= 5) {
-                setServerError(null);
-                void outcome
-                  .mutateAsync({
-                    id: overrideTarget.id,
-                    kind: 'missed',
-                    reason: `Override: ${reason}`,
-                  })
-                  .catch(() => setServerError('Override failed — check permissions.'));
-              }
-            }}
-          />
-          {overrideTarget ? (
-            <div className="mx-auto max-w-xl">
-              <RescheduleOverrideNotice
-                frozen={true}
-                reason={overrideReason}
-                onReasonChange={setOverrideReason}
-              />
-            </div>
-          ) : null}
         </div>
       </DeskStates>
       <Pager meta={queue.data?.meta} onPage={setPage} />

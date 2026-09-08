@@ -25,6 +25,7 @@ const ProfilePage = lazy(() => import('../../shared/components/StaffProfilePage'
 const TextileReviewPage = lazy(() => import('./pages/textile/TextileReviewPage'));
 const TextileSchedulePage = lazy(() => import('./pages/textile/TextileSchedulePage'));
 const TextileDispatchPage = lazy(() => import('./pages/textile/TextileDispatchPage'));
+const TextileStopPage = lazy(() => import('./pages/textile/TextileStopPage'));
 const TextileCompletedPage = lazy(() => import('./pages/textile/TextileCompletedPage'));
 const TextileStaffDetailPage = lazy(() => import('./pages/textile/TextileStaffDetailPage'));
 const TextileReceiptPage = lazy(() => import('./pages/textile/TextileReceiptPage'));
@@ -105,6 +106,10 @@ export function OperationsApp() {
             <Route path="textile-collections/schedule" element={<TextileSchedulePage />} />
             <Route path="textile-collections/receipt" element={<TextileReceiptPage />} />
             <Route path="textile-collections/dispatch" element={<TextileDispatchPage />} />
+            <Route
+              path="textile-collections/dispatch/:batchId/stops/:stopId"
+              element={<TextileStopPage />}
+            />
             <Route path="textile-collections/recovery" element={<TextileRecoveryPage />} />
             <Route
               path="textile-collections/offline-recovery"

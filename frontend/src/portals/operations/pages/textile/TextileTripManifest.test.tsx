@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import TextileDispatchPage from './TextileDispatchPage';
 import { useDesk, useTextileQueue } from './shared';
@@ -62,9 +63,11 @@ const makeItem = (
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={qc}>
-      <TextileDispatchPage />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={qc}>
+        <TextileDispatchPage />
+      </QueryClientProvider>
+    </MemoryRouter>,
   );
 }
 
@@ -99,11 +102,11 @@ describe('Textile trip manifest (Phase 2)', () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof useTextileQueue>);
     renderPage();
-    // formatVolume renders "4 bags · 11 kg" for estimate; actual may be shown in expanded stop
+    // Board row carries the estimate chip; actuals live on the stop-work page.
     expect(screen.getAllByText(/bag/i).length).toBeGreaterThan(0);
   });
 
-  it('manifest shows citizen evidence photo when present (if available)', () => {
+  it('manifest defers citizen evidence photo to the stop-work page', () => {
     const item = makeItem({
       photos: [{ id: 'ev-1', role: 'evidence', url: 'https://cdn/evidence.jpg' }],
     });
@@ -114,11 +117,14 @@ describe('Textile trip manifest (Phase 2)', () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof useTextileQueue>);
     renderPage();
-    // Board renders evidence thumbnail when present
-    expect(document.querySelector('img[src="https://cdn/evidence.jpg"]')).not.toBeNull();
+    // Board rows are pure navigation; the evidence photo renders on the stop page.
+    expect(document.querySelector('img[src="https://cdn/evidence.jpg"]')).toBeNull();
+    expect(
+      screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ }).getAttribute('href'),
+    ).toContain('/dispatch/batch-1/stops/c-1');
   });
 
-  it('manifest exposes Open in Maps and Call customer actions with safe hrefs', () => {
+  it('manifest links each stop to its stop-work page where Call/Navigate live', () => {
     vi.mocked(useTextileQueue).mockReturnValue({
       data: { data: [makeItem()], meta: { page: 1, per_page: 25, total: 1, last_page: 1 } },
       isLoading: false,
@@ -126,17 +132,12 @@ describe('Textile trip manifest (Phase 2)', () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof useTextileQueue>);
     renderPage();
-    // Board has map/phone links per stop
-    const mapLinks = screen.queryAllByRole('link', { name: /map/i });
-    const telLinks = screen.queryAllByRole('link', { name: /call|phone/i });
-    // Either links exist or buttons that open them exist — at minimum the address/phone text is present
     expect(screen.getByText(/Jayanagar/)).toBeInTheDocument();
-    if (mapLinks.length > 0) {
-      expect(mapLinks[0].getAttribute('href')).toMatch(/google\.com\/maps|maps:\/\//);
-    }
-    if (telLinks.length > 0) {
-      expect(telLinks[0].getAttribute('href')).toMatch(/^tel:/);
-    }
+    const stopLink = screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ });
+    expect(stopLink.getAttribute('href')).toContain('/dispatch/batch-1/stops/c-1');
+    // Call/Navigate moved off the board onto the stop page.
+    expect(screen.queryByRole('link', { name: 'Call' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Navigate' })).not.toBeInTheDocument();
   });
 
   it('manifest shows trip progress badge (unstarted / in progress / completed states)', () => {
@@ -231,7 +232,7 @@ describe('Textile trip manifest (Phase 2)', () => {
     expect(document.body.textContent).toMatch(/missed/i);
   });
 
-  it('record / mark missed buttons are present for pending stops', () => {
+  it('pending stops link to the stop-work page where record / mark missed live', () => {
     vi.mocked(useTextileQueue).mockReturnValue({
       data: { data: [makeItem()], meta: { page: 1, per_page: 25, total: 1, last_page: 1 } },
       isLoading: false,
@@ -239,10 +240,10 @@ describe('Textile trip manifest (Phase 2)', () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof useTextileQueue>);
     renderPage();
-    expect(screen.getByRole('button', { name: /^record$/i })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /mark missed/i }).length).toBeGreaterThanOrEqual(
-      1,
-    );
+    expect(
+      screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ }).getAttribute('href'),
+    ).toContain('/dispatch/batch-1/stops/c-1');
+    expect(screen.queryByRole('button', { name: /mark missed/i })).not.toBeInTheDocument();
   });
 
   it.todo('FE-A1 [OPEN D-05] assign UI hidden without gate; driver sees own trips only');
