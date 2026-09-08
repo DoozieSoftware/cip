@@ -58,3 +58,7 @@ docker/minio/data/
 # Docker
 .docker/
 .worktrees/
+
+# Demo verification test suite (local only)
+demo-tests/
+
