@@ -3,12 +3,32 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import type { ApiEnvelope } from '../../../auth/api';
+import type { SessionUser } from '../../../auth/AuthContext';
 import type { StaffProfileData } from '../StaffProfilePage';
 
-const mockAuthContext = { updateUser: vi.fn() };
+const mockAuthContext: { updateUser: ReturnType<typeof vi.fn>; user: SessionUser | null } = {
+  updateUser: vi.fn(),
+  user: null,
+};
 
 vi.mock('../../../auth/AuthContext', () => ({
   useAuth: () => mockAuthContext,
+}));
+
+const mockQueue = vi.hoisted(() => ({ pending: [] as Array<{ id: string }> }));
+
+vi.mock('../../../portals/operations/offline/useOpsQueue', () => ({
+  useOpsQueue: () => ({
+    items: [],
+    pending: mockQueue.pending,
+    dead: [],
+    done: [],
+    isOnline: true,
+    refresh: vi.fn(),
+    drain: vi.fn(),
+    remove: vi.fn(),
+    clearDone: vi.fn(),
+  }),
 }));
 
 vi.mock('../../../auth/api', () => ({
@@ -42,19 +62,34 @@ const envelopeFor = (data: StaffProfileData | null): ApiEnvelope<StaffProfileDat
 });
 
 function renderPage(): void {
+  renderAt('/');
+}
+
+function renderAt(path: string): void {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <StaffProfilePage />
       </MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
+const drLinenUser: SessionUser = {
+  id: 'u-field-1',
+  name: 'Field Officer',
+  mobile: '9999900001',
+  email: null,
+  roles: ['department_officer'],
+  departments: [{ id: 'd-dr', code: 'DR_LINEN', name: 'Dr Linen', is_manager: false }],
+};
+
 describe('StaffProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAuthContext.user = null;
+    mockQueue.pending = [];
     vi.mocked(apiRequest).mockResolvedValue(envelopeFor(staffProfile));
   });
 
@@ -198,5 +233,74 @@ describe('StaffProfilePage', () => {
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Language/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Notification channel/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('StaffProfilePage textile overflow links', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuthContext.user = drLinenUser;
+    mockQueue.pending = [];
+    vi.mocked(apiRequest).mockResolvedValue(envelopeFor(staffProfile));
+  });
+
+  const overflowRoutes: Array<[string, string]> = [
+    ['History', '/operations/textile-collections/completed'],
+    ['Device uploads', '/operations/textile-collections/recovery'],
+    ['Server failures', '/operations/textile-collections/offline-recovery'],
+    ['Capacity', '/operations/textile-collections/capacity'],
+  ];
+
+  it('lists the destinations removed from the mobile bottom bar', async () => {
+    renderAt('/operations/profile');
+    await screen.findByRole('heading', { name: 'Profile' });
+
+    for (const [label, href] of overflowRoutes) {
+      const link = screen.getByRole('link', { name: label });
+      expect(link).toHaveAttribute('href', href);
+    }
+  });
+
+  it('badges Device uploads with the pending upload count', async () => {
+    mockQueue.pending = [{ id: 'q-1' }, { id: 'q-2' }];
+    renderAt('/operations/profile');
+
+    const link = await screen.findByRole('link', { name: 'Device uploads 2 pending' });
+    expect(link).toHaveAttribute('href', '/operations/textile-collections/recovery');
+  });
+
+  it('hides the pending badge when nothing is queued', async () => {
+    renderAt('/operations/profile');
+    await screen.findByRole('heading', { name: 'Profile' });
+
+    expect(screen.getByRole('link', { name: 'Device uploads' })).toBeInTheDocument();
+    expect(screen.queryByText(/pending/)).not.toBeInTheDocument();
+  });
+
+  it('hides the section for staff outside DR_LINEN', async () => {
+    mockAuthContext.user = {
+      ...drLinenUser,
+      departments: [
+        {
+          id: 'd-1',
+          code: 'BESCOM',
+          name: 'Bengaluru Electricity Supply Company',
+          is_manager: false,
+        },
+      ],
+    };
+    renderAt('/operations/profile');
+    await screen.findByRole('heading', { name: 'Profile' });
+
+    expect(screen.queryByRole('link', { name: 'History' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Device uploads/ })).not.toBeInTheDocument();
+  });
+
+  it('hides the section outside the operations portal', async () => {
+    renderAt('/moderator/profile');
+    await screen.findByRole('heading', { name: 'Profile' });
+
+    expect(screen.queryByRole('link', { name: 'History' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Device uploads/ })).not.toBeInTheDocument();
   });
 });
