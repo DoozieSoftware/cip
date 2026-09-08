@@ -55,9 +55,25 @@ function formatDate(dateStr: string | null): string {
     return dateStr;
   }
 }
+function toLocalISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function formatTimeOfDay(value: string): string {
+  const match = /^(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/.exec(value.trim());
+  if (!match) return value;
+  const hour = Number(match[1]);
+  const minute = match[2] ?? '00';
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23) return value;
+  const suffix = hour < 12 ? 'AM' : 'PM';
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12}:${minute} ${suffix}`;
+}
 function formatWindow(start: string | null, end: string | null): string | null {
   if (!start || !end) return null;
-  return `Between ${start}–${end}`;
+  return `Between ${formatTimeOfDay(start)} – ${formatTimeOfDay(end)}`;
 }
 const PICKUP_STEPS = [
   { key: 'pending_review', label: 'Requested' },
@@ -504,6 +520,8 @@ function RescheduleSection({
   const unavailableDates = availability.data?.unavailable_dates ?? [];
   const nextAvailable = availability.data?.next_available_date ?? null;
   const isUnavailablePicked = date ? unavailableDates.includes(date) : false;
+  const todayStr = toLocalISODate(new Date());
+  const isPastPicked = date ? date < todayStr : false;
   const fallback = slotUnavailableFallback('premises');
 
   async function handleSubmit(): Promise<void> {
@@ -516,7 +534,7 @@ function RescheduleSection({
         window_end: wEnd || null,
       });
       setSuccess(
-        `Rescheduled to ${date}${wStart && wEnd ? ` · ${wStart}–${wEnd}` : ''}. Old assignment was removed atomically.`,
+        `Rescheduled to ${date}${wStart && wEnd ? ` · ${formatTimeOfDay(wStart)} – ${formatTimeOfDay(wEnd)}` : ''}. Old assignment was removed atomically.`,
       );
       setOpen(false);
       onRescheduled();
@@ -608,11 +626,16 @@ function RescheduleSection({
               <input
                 type="date"
                 value={date}
+                min={todayStr}
                 onChange={(e) => setDate(e.target.value)}
-                aria-invalid={isUnavailablePicked}
-                className={`mt-1 block w-full rounded-lg border p-2.5 text-sm ${isUnavailablePicked ? 'border-[var(--color-warning)] bg-[var(--color-warning)]/10' : 'border-[var(--color-border)]'}`}
+                aria-invalid={isUnavailablePicked || isPastPicked}
+                className={`mt-1 block w-full rounded-lg border p-2.5 text-sm ${isUnavailablePicked || isPastPicked ? 'border-[var(--color-warning)] bg-[var(--color-warning)]/10' : 'border-[var(--color-border)]'}`}
               />
-              {isUnavailablePicked ? (
+              {isPastPicked ? (
+                <span className="mt-1 block text-[11px] font-medium text-[var(--color-warning)]">
+                  Past dates are not available — please choose today or a future date.
+                </span>
+              ) : isUnavailablePicked ? (
                 <span className="mt-1 block text-[11px] font-medium text-[var(--color-warning)]">
                   This date is unavailable — pick another or see fallback below.
                 </span>

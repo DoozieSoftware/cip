@@ -5,12 +5,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import TextileCollectionDetailPage from '../TextileCollectionDetailPage';
 import type { TextileCollectionRequest } from '../../api/textileZones';
+import { ApiError } from '../../../../shared/api/errors';
 
 const mockCollectionData = vi.fn<() => TextileCollectionRequest | null>();
 const mockCancel = vi.fn<(...args: unknown[]) => Promise<unknown>>();
 const mockCreate = vi.fn();
 const mockReschedule = vi.fn();
 const mockUploadPhoto = vi.fn<(...args: unknown[]) => Promise<unknown>>();
+let mockRescheduleError: unknown = null;
 
 vi.mock('qrcode', () => ({ default: { toCanvas: vi.fn().mockResolvedValue(undefined) } }));
 
@@ -18,7 +20,7 @@ vi.mock('../../api/textileZones', () => ({
   useRescheduleTextileCollection: () => ({
     mutateAsync: mockReschedule,
     isPending: false,
-    error: null,
+    error: mockRescheduleError,
     reset: vi.fn(),
   }),
   useUpdateTextileInstructions: () => ({
@@ -122,6 +124,7 @@ function renderDetail() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockRescheduleError = null;
   mockCollectionData.mockReturnValue({ ...BASE });
   mockCancel.mockResolvedValue({});
   mockReschedule.mockResolvedValue({});
@@ -263,5 +266,75 @@ describe('TextileCollectionDetailPage — reschedule surface (Phase 3)', () => {
     fireEvent.click(confirm);
     expect(mockReschedule).not.toHaveBeenCalled();
     expect(mockCancel).not.toHaveBeenCalled();
+  });
+
+  // ── Issue #9: past dates blocked + human-friendly window ────────────────
+
+  it('blocks past dates via min=today on the reschedule date picker', () => {
+    renderDetail();
+    fireEvent.click(screen.getByRole('button', { name: 'Reschedule pickup' }));
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    expect(screen.getByLabelText('New date')).toHaveAttribute('min', today);
+  });
+
+  it('warns when a past date is entered but still submits so the server error surfaces', async () => {
+    renderDetail();
+    fireEvent.click(screen.getByRole('button', { name: 'Reschedule pickup' }));
+    const now = new Date();
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    const past = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+    fireEvent.change(screen.getByLabelText('New date'), { target: { value: past } });
+    expect(
+      screen.getByText(/Past dates are not available — please choose today or a future date/),
+    ).toBeInTheDocument();
+    // Past dates remain submittable so a server-side rejection is surfaced, not swallowed.
+    const confirm = screen.getByRole('button', { name: 'Confirm new slot' });
+    expect(confirm).not.toBeDisabled();
+    fireEvent.click(confirm);
+    await waitFor(() =>
+      expect(mockReschedule).toHaveBeenCalledExactlyOnceWith({
+        requested_date: past,
+        window_start: '09:00',
+        window_end: '12:00',
+      }),
+    );
+  });
+
+  it('surfaces a server past-date rejection clearly', () => {
+    mockRescheduleError = new ApiError(
+      422,
+      'INVALID_DATE',
+      'Requested date must be today or in the future.',
+      null,
+    );
+    renderDetail();
+    fireEvent.click(screen.getByRole('button', { name: 'Reschedule pickup' }));
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent('Requested date must be today or in the future.');
+  });
+
+  it('formats the current window human-friendly instead of raw seconds', () => {
+    mockCollectionData.mockReturnValue({
+      ...BASE,
+      scheduled_window_start: '10:02:00',
+      scheduled_window_end: '13:05:00',
+      batch: { ...BASE.batch!, window_start: '10:02:00', window_end: '13:05:00' },
+    });
+    renderDetail();
+    expect(screen.getAllByText(/Between 10:02 AM – 1:05 PM/).length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toContain('10:02:00');
+    expect(document.body.textContent).not.toContain('13:05:00');
+  });
+
+  it('formats midnight/noon window boundaries correctly', () => {
+    mockCollectionData.mockReturnValue({
+      ...BASE,
+      scheduled_window_start: '00:00:00',
+      scheduled_window_end: '12:00:00',
+      batch: { ...BASE.batch!, window_start: '00:00:00', window_end: '12:00:00' },
+    });
+    renderDetail();
+    expect(screen.getAllByText(/Between 12:00 AM – 12:00 PM/).length).toBeGreaterThan(0);
   });
 });
