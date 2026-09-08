@@ -15,6 +15,7 @@ import {
   Maximize2,
   Package,
   Printer,
+  Scale,
   Truck,
   User,
   Users,
@@ -221,6 +222,15 @@ function TripSheetModal({ trip, onClose }: { trip: TripEntry; onClose: () => voi
   const progress = trip.items[0]?.batch?.progress ?? getTripProgress(trip.items);
   const formattedDate = trip.date ? formatTripDate(trip.date) : 'Unscheduled';
 
+  const totalBags = trip.items.reduce(
+    (acc, it) => acc + (it.actual_bags ?? it.estimated_bags ?? 0),
+    0,
+  );
+  const totalWeight = trip.items.reduce(
+    (acc, it) => acc + (it.actual_weight_kg ?? it.estimated_weight_kg ?? 0),
+    0,
+  );
+
   return (
     <div
       role="presentation"
@@ -237,7 +247,7 @@ function TripSheetModal({ trip, onClose }: { trip: TripEntry; onClose: () => voi
         aria-modal="true"
         aria-label={`Trip sheet manifest for ${trip.ref}`}
         tabIndex={-1}
-        className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-2xl focus:outline-none"
+        className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-2xl focus:outline-none print:fixed print:inset-0 print:max-h-none print:w-screen print:border-none print:shadow-none"
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-6 py-4">
@@ -255,18 +265,18 @@ function TripSheetModal({ trip, onClose }: { trip: TripEntry; onClose: () => voi
                 </span>
               </div>
               <p className="text-xs text-[var(--color-text-secondary)]">
-                Collection Date: {formattedDate}
+                Dr. Linen Route Manifest · Scheduled: {formattedDate}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 print:hidden">
             <button
               type="button"
               onClick={() => window.print()}
               className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-ink)] shadow-xs transition hover:bg-[var(--color-surface-alt)]"
             >
               <Printer className="h-3.5 w-3.5" />
-              Print Manifest
+              Print Route Sheet
             </button>
             <button
               type="button"
@@ -299,8 +309,12 @@ function TripSheetModal({ trip, onClose }: { trip: TripEntry; onClose: () => voi
                   <span>{team}</span>
                 </span>
               ) : null}
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border-subtle)] bg-white px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--color-ink)]">
+                <Scale className="h-3 w-3 text-[var(--color-text-tertiary)]" />
+                Est. Load: {totalBags} bags · {Math.round(totalWeight * 10) / 10} kg
+              </span>
             </div>
-            <div className="w-full sm:w-64">
+            <div className="w-full sm:w-64 print:hidden">
               <TripProgressBar
                 batchStatus={trip.items[0]?.batch?.status ?? 'planned'}
                 collected={progress.collected}
@@ -315,9 +329,14 @@ function TripSheetModal({ trip, onClose }: { trip: TripEntry; onClose: () => voi
         {/* Full Stops List (all 8-15+ stops) */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
-              Complete Route Itinerary ({trip.items.length} stops)
-            </h4>
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                Complete Route Itinerary ({trip.items.length} stops in sequence)
+              </h4>
+              <span className="text-[11px] text-[var(--color-text-tertiary)] print:hidden">
+                Click stop to open execution detail
+              </span>
+            </div>
             <div className="divide-y divide-[var(--color-border-subtle)] overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-white shadow-xs">
               {trip.items.map((item, idx) => {
                 const isCollected = item.status === 'picked_up';
@@ -363,7 +382,7 @@ function TripSheetModal({ trip, onClose }: { trip: TripEntry; onClose: () => voi
                         ) : null}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 self-end sm:self-center">
+                    <div className="flex items-center gap-3 self-end sm:self-center print:hidden">
                       <span className="inline-flex items-center gap-1 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-2 py-0.5 text-xs font-semibold tabular-nums text-[var(--color-ink)]">
                         <Package className="h-3 w-3 text-[var(--color-text-tertiary)]" />
                         {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
@@ -385,7 +404,7 @@ function TripSheetModal({ trip, onClose }: { trip: TripEntry; onClose: () => voi
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-between border-t border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-6 py-3">
+        <div className="flex items-center justify-between border-t border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-6 py-3 print:hidden">
           <span className="text-xs text-[var(--color-text-secondary)]">
             Total {trip.items.length} stop{trip.items.length === 1 ? '' : 's'} assigned to route
           </span>
@@ -473,14 +492,29 @@ export default function TextileDispatchPage(): JSX.Element {
     if (trips.length === 0 || rows.length === 0) return null;
     let collected = 0;
     let missed = 0;
+    let totalBags = 0;
+    let totalWeight = 0;
+
     for (const t of trips) {
       const p = t.items[0]?.batch?.progress ?? getTripProgress(t.items);
       collected += p.collected;
       missed += p.missed;
+      for (const item of t.items) {
+        totalBags += item.actual_bags ?? item.estimated_bags ?? 0;
+        totalWeight += item.actual_weight_kg ?? item.estimated_weight_kg ?? 0;
+      }
     }
     const total = rows.length;
     const remaining = Math.max(0, total - collected - missed);
-    return { trips: trips.length, total, remaining, collected, missed };
+    return {
+      trips: trips.length,
+      total,
+      remaining,
+      collected,
+      missed,
+      totalBags,
+      totalWeight: Math.round(totalWeight * 10) / 10,
+    };
   }, [trips, rows.length]);
 
   const [collapsedTrips, setCollapsedTrips] = useState<Record<string, boolean>>({});
@@ -598,19 +632,21 @@ export default function TextileDispatchPage(): JSX.Element {
       {/* Fleet Command KPI Strip */}
       {summary ? (
         <div aria-label="Dispatch summary" className="space-y-2.5">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
-            {/* Trips */}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-6 sm:gap-3">
+            {/* Trips / Routes */}
             <div className="flex flex-col justify-between rounded-xl border border-[var(--color-border-subtle)] bg-white p-3 shadow-xs">
               <div className="flex items-center justify-between text-[var(--color-text-secondary)]">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                  Trips
+                  Routes
                 </span>
                 <Truck className="h-4 w-4 text-[var(--color-text-tertiary)]" strokeWidth={1.75} />
               </div>
               <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-ink)] tabular-nums">
                 {summary.trips}
               </p>
-              <span className="text-[11px] text-[var(--color-text-tertiary)]">active routes</span>
+              <span className="text-[11px] text-[var(--color-text-tertiary)]">
+                active delivery vans
+              </span>
             </div>
 
             {/* Total Stops */}
@@ -626,6 +662,23 @@ export default function TextileDispatchPage(): JSX.Element {
               </p>
               <span className="text-[11px] text-[var(--color-text-tertiary)]">
                 total route stops
+              </span>
+            </div>
+
+            {/* Recovery Load */}
+            <div className="flex flex-col justify-between rounded-xl border border-[var(--color-border-subtle)] bg-white p-3 shadow-xs">
+              <div className="flex items-center justify-between text-[var(--color-text-secondary)]">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  Volume Load
+                </span>
+                <Scale className="h-4 w-4 text-[var(--color-text-tertiary)]" strokeWidth={1.75} />
+              </div>
+              <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-ink)] tabular-nums">
+                {summary.totalWeight}{' '}
+                <span className="text-xs font-normal text-[var(--color-text-secondary)]">kg</span>
+              </p>
+              <span className="text-[11px] text-[var(--color-text-tertiary)]">
+                {summary.totalBags} bags est.
               </span>
             </div>
 
@@ -668,7 +721,7 @@ export default function TextileDispatchPage(): JSX.Element {
               <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-danger)] tabular-nums">
                 {summary.missed}
               </p>
-              <span className="text-[11px] text-rose-700/80">missed or exceptions</span>
+              <span className="text-[11px] text-rose-700/80">exceptions logged</span>
             </div>
           </div>
 
@@ -991,7 +1044,7 @@ export default function TextileDispatchPage(): JSX.Element {
                       ) : null}
 
                       {/* Capped scrollable stops container: handles 8 to 15+ stops smoothly */}
-                      <div className="relative max-h-72 overflow-y-auto">
+                      <div className="relative max-h-80 overflow-y-auto">
                         {/* Visual route connector line connecting all stops */}
                         <div
                           aria-hidden="true"
