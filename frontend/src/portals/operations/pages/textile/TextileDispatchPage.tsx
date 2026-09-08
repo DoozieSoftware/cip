@@ -931,8 +931,11 @@ export default function TextileDispatchPage(): JSX.Element {
                               {Math.round(totalWeight * 10) / 10} kg ({totalBags} bags)
                             </span>
                           </td>
-                          <td className="px-3 py-3 align-middle">
-                            <div className="min-w-0">
+                          <td className="min-w-0 overflow-hidden px-3 py-3 align-middle">
+                            <div
+                              className="min-w-0 overflow-hidden whitespace-nowrap text-ellipsis [&>div]:min-w-0 [&_span:last-child]:min-w-0 [&_span:last-child]:shrink [&_span:last-child]:truncate"
+                              title={`${progress.collected} of ${progress.total} collected · ${progress.pending} left · ${progress.missed} missed`}
+                            >
                               <TripProgressBar
                                 batchStatus={batchStatus}
                                 collected={progress.collected}
@@ -942,7 +945,7 @@ export default function TextileDispatchPage(): JSX.Element {
                               />
                             </div>
                           </td>
-                          <td className="px-3 py-3 align-middle">
+                          <td className="min-w-0 overflow-hidden px-3 py-3 align-middle">
                             {nextPending ? (
                               <div className="flex min-w-0 flex-col gap-0.5">
                                 <Link
@@ -977,7 +980,7 @@ export default function TextileDispatchPage(): JSX.Element {
                               }}
                               className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-white shadow-2xs transition hover:bg-black"
                             >
-                              <span>Inspect Route</span>
+                              <span>Open route</span>
                               <ChevronRight className="h-3 w-3 shrink-0" />
                             </button>
                           </td>

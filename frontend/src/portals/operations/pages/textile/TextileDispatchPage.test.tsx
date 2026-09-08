@@ -136,7 +136,7 @@ describe('TextileDispatchPage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('opens and closes the slide-over route details drawer when inspecting a route', () => {
+  it('opens and closes the slide-over route details drawer when opening a route', () => {
     renderPage();
 
     // Drawer is closed initially
@@ -157,6 +157,33 @@ describe('TextileDispatchPage', () => {
     expect(
       screen.queryByRole('complementary', { name: 'Route details drawer' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('labels the row action as Open route', () => {
+    renderPage();
+
+    expect(screen.getByRole('button', { name: 'Open route' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Inspect Route' })).not.toBeInTheDocument();
+  });
+
+  it('contains progress text with ellipsis instead of overlapping the next stop', () => {
+    renderPage();
+
+    const progress = screen.getByLabelText(/Trip progress/);
+    const tooltip = progress.closest('div[title]');
+    expect(tooltip).not.toBeNull();
+    expect(tooltip?.getAttribute('title')).toMatch(/collected/);
+    expect(tooltip?.className).toMatch(/overflow-hidden/);
+    expect(tooltip?.className).toMatch(/whitespace-nowrap/);
+
+    const progressCell = tooltip?.closest('td');
+    expect(progressCell?.className).toMatch(/overflow-hidden/);
+    expect(progressCell?.className).toMatch(/min-w-0/);
+
+    const nextStopLink = screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ });
+    const nextStopCell = nextStopLink.closest('td');
+    expect(nextStopCell?.className).toMatch(/overflow-hidden/);
+    expect(nextStopCell?.className).toMatch(/min-w-0/);
   });
 
   it('renders a 10-stop route smoothly with Next Stop callout and stop links', () => {
