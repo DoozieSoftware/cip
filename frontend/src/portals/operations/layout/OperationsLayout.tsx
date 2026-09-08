@@ -22,6 +22,7 @@ import {
 } from '@tabler/icons-react';
 import { useAuth, type Role } from '../../../auth/AuthContext';
 import { DepartmentSwitcher } from '../components/DepartmentSwitcher';
+import { useOpsQueue } from '../offline/useOpsQueue';
 
 interface NavItem {
   to: string;
@@ -98,10 +99,30 @@ const MOBILE_NAV: NavItem[] = [
 ];
 
 const DR_LINEN_NAV: NavItem[] = [
-  { to: '/operations/textile-collections/review', label: 'Reviews', icon: IconClipboardCheck },
-  { to: '/operations/textile-collections/schedule', label: 'Trips', icon: IconCalendarStats },
-  { to: '/operations/textile-collections/receipt', label: 'Receipt', icon: IconClipboardList },
-  { to: '/operations/textile-collections/dispatch', label: 'Dispatch', icon: IconTruck },
+  {
+    to: '/operations/textile-collections/review',
+    label: 'Reviews',
+    icon: IconClipboardCheck,
+    mobile: true,
+  },
+  {
+    to: '/operations/textile-collections/schedule',
+    label: 'Trips',
+    icon: IconCalendarStats,
+    mobile: true,
+  },
+  {
+    to: '/operations/textile-collections/receipt',
+    label: 'Receipt',
+    icon: IconClipboardList,
+    mobile: true,
+  },
+  {
+    to: '/operations/textile-collections/dispatch',
+    label: 'Dispatch',
+    icon: IconTruck,
+    mobile: true,
+  },
   { to: '/operations/textile-collections/completed', label: 'History', icon: IconHistory },
   { to: '/operations/textile-collections/recovery', label: 'Device uploads', icon: IconShield },
   {
@@ -110,7 +131,7 @@ const DR_LINEN_NAV: NavItem[] = [
     icon: IconAlertTriangle,
   },
   { to: '/operations/textile-collections/capacity', label: 'Capacity', icon: IconChartBar },
-  { to: '/operations/profile', label: 'Profile', icon: IconUser },
+  { to: '/operations/profile', label: 'Profile', icon: IconUser, mobile: true },
 ];
 
 export function OperationsLayout(): JSX.Element {
@@ -119,6 +140,10 @@ export function OperationsLayout(): JSX.Element {
   const queryClient = useQueryClient();
   const isDrLinen =
     user?.departments?.some((department) => department.code === 'DR_LINEN') ?? false;
+  // Pending device uploads live under Profile on mobile (overflow section), so
+  // the Profile tab carries the attention dot when uploads are queued.
+  const { pending: queuedUploads } = useOpsQueue();
+  const pendingUploadCount = isDrLinen ? queuedUploads.length : 0;
 
   const nav = useMemo(
     () =>
@@ -273,16 +298,26 @@ export function OperationsLayout(): JSX.Element {
           aria-label="Operations sections"
           className="fixed inset-x-3 bottom-3 z-30 rounded-2xl border border-black/10 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_12px_40px_rgba(29,29,27,0.16)] backdrop-blur-xl lg:hidden"
         >
-          <ul className={`grid items-stretch px-1 ${isDrLinen ? 'grid-cols-2' : 'grid-cols-5'}`}>
-            {(isDrLinen ? DR_LINEN_NAV : MOBILE_NAV)
+          {/* Mobile bottom nav: DR_LINEN shows only `mobile` items (max 5).
+              The remaining destinations stay in the desktop sidebar and are
+              linked from the Profile page "Textile collections" section. */}
+          <ul className="grid grid-cols-5 items-stretch px-1">
+            {(isDrLinen ? DR_LINEN_NAV.filter((item) => item.mobile) : MOBILE_NAV)
               .filter((item) => item.allowedRoles === undefined || hasAnyRole(item.allowedRoles))
               .map((item) => {
                 const Icon = item.icon;
+                const isOverflowEntry = isDrLinen && item.to === '/operations/profile';
+                const showOverflowDot = isOverflowEntry && pendingUploadCount > 0;
                 return (
                   <li key={item.to}>
                     <NavLink
                       to={item.to}
                       end={item.end}
+                      aria-label={
+                        showOverflowDot
+                          ? `${item.label}, ${pendingUploadCount} pending uploads`
+                          : undefined
+                      }
                       className={({ isActive }) =>
                         [
                           'relative flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium transition-colors',
@@ -294,7 +329,15 @@ export function OperationsLayout(): JSX.Element {
                     >
                       {({ isActive }) => (
                         <>
-                          <Icon className="h-5 w-5" stroke={isActive ? 2.1 : 1.6} />
+                          <span className="relative inline-flex">
+                            <Icon className="h-5 w-5" stroke={isActive ? 2.1 : 1.6} />
+                            {showOverflowDot ? (
+                              <span
+                                aria-hidden="true"
+                                className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-white"
+                              />
+                            ) : null}
+                          </span>
                           <span className="max-w-full truncate leading-tight">{item.label}</span>
                           {isActive && (
                             <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[var(--color-ink)]" />

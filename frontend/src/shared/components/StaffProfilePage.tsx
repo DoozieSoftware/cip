@@ -1,9 +1,25 @@
 import { useEffect, useState, type FormEvent, type JSX } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { IconBell, IconBuilding, IconUser } from '@tabler/icons-react';
+import {
+  IconAlertTriangle,
+  IconBell,
+  IconBuilding,
+  IconChartBar,
+  IconChevronRight,
+  IconClipboardList,
+  IconHistory,
+  IconShield,
+  IconUser,
+} from '@tabler/icons-react';
 import { apiRequest, type ApiEnvelope } from '../../auth/api';
 import { useAuth } from '../../auth/AuthContext';
 import { pushSupport, subscribeToPush } from '../../portals/citizen/push/subscribe';
+// Shared page, operations-specific overflow: the DR_LINEN destinations dropped
+// from the mobile bottom bar live here, so this page reads the operations
+// offline queue to badge the Device-uploads row (same source as the
+// operations OfflineBanner). Other portals never render that section.
+import { useOpsQueue } from '../../portals/operations/offline/useOpsQueue';
 import {
   Badge,
   Button,
@@ -85,9 +101,83 @@ function InfoRow({
   );
 }
 
+/**
+ * Destinations removed from the operations mobile bottom bar (kept to max 5
+ * items) that stay reachable for DR_LINEN staff from the Profile page.
+ * Icons and labels mirror the operations `DR_LINEN_NAV` entries.
+ */
+const TEXTILE_MORE_LINKS = [
+  { to: '/operations/textile-collections/completed', label: 'History', icon: IconHistory },
+  {
+    to: '/operations/textile-collections/recovery',
+    label: 'Device uploads',
+    icon: IconShield,
+    badge: 'pending-uploads' as const,
+  },
+  {
+    to: '/operations/textile-collections/offline-recovery',
+    label: 'Server failures',
+    icon: IconAlertTriangle,
+  },
+  { to: '/operations/textile-collections/capacity', label: 'Capacity', icon: IconChartBar },
+];
+
+/**
+ * Overflow destinations removed from the operations mobile bottom bar.
+ * Isolated so the offline-queue subscription only runs when the section is
+ * shown (operations portal, DR_LINEN staff) — never for moderator/admin.
+ */
+function TextileCollectionsMoreLinks(): JSX.Element {
+  const { pending } = useOpsQueue();
+  const pendingCount = pending.length;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <IconClipboardList className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+          <CardTitle>Textile collections</CardTitle>
+        </div>
+      </CardHeader>
+      <CardBody>
+        <ul className="divide-y divide-[#e6e4dc]">
+          {TEXTILE_MORE_LINKS.map((link) => {
+            const LinkIcon = link.icon;
+            const showPendingBadge = link.badge === 'pending-uploads' && pendingCount > 0;
+            return (
+              <li key={link.to}>
+                <Link
+                  to={link.to}
+                  className="flex min-h-[44px] items-center gap-3 rounded-md px-2 py-3 text-sm font-medium text-[#1d1d1b] transition-colors hover:bg-[#faf9f6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+                >
+                  <LinkIcon
+                    className="h-5 w-5 shrink-0 text-[#6f6e69]"
+                    stroke={1.6}
+                    aria-hidden="true"
+                  />
+                  <span className="min-w-0 flex-1 truncate">{link.label}</span>
+                  {showPendingBadge ? (
+                    <Badge tone="warning">{pendingCount} pending</Badge>
+                  ) : null}
+                  <IconChevronRight
+                    className="h-4 w-4 shrink-0 text-[#85847f]"
+                    stroke={1.6}
+                    aria-hidden="true"
+                  />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </CardBody>
+    </Card>
+  );
+}
+
 export default function StaffProfilePage(): JSX.Element {
   const queryClient = useQueryClient();
-  const { updateUser } = useAuth();
+  const { updateUser, user } = useAuth();
+  const { pathname } = useLocation();
   const queryKey = ['staff-profile', 'me'];
 
   const {
@@ -187,6 +277,12 @@ export default function StaffProfilePage(): JSX.Element {
   const canSave = name.trim().length > 0 && mobile.trim().length > 0;
   const roles = profile.roles ?? [];
   const departments = profile.departments ?? [];
+  // Overflow links for destinations dropped from the mobile bottom bar. Shown
+  // only inside the operations portal for DR_LINEN staff; the shared page is
+  // also used by the moderator and admin portals.
+  const showTextileMoreLinks =
+    pathname.startsWith('/operations') &&
+    (user?.departments?.some((department) => department.code === 'DR_LINEN') ?? false);
 
   return (
     <div className="space-y-6">
@@ -363,6 +459,12 @@ export default function StaffProfilePage(): JSX.Element {
           </CardBody>
         </Card>
       </div>
+
+      {showTextileMoreLinks ? (
+        <div className="lg:hidden">
+          <TextileCollectionsMoreLinks />
+        </div>
+      ) : null}
     </div>
   );
 }
