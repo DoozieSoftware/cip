@@ -156,9 +156,7 @@ function TextileCollectionsMoreLinks(): JSX.Element {
                     aria-hidden="true"
                   />
                   <span className="min-w-0 flex-1 truncate">{link.label}</span>
-                  {showPendingBadge ? (
-                    <Badge tone="warning">{pendingCount} pending</Badge>
-                  ) : null}
+                  {showPendingBadge ? <Badge tone="warning">{pendingCount} pending</Badge> : null}
                   <IconChevronRight
                     className="h-4 w-4 shrink-0 text-[#85847f]"
                     stroke={1.6}
