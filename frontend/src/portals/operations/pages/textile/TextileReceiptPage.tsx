@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { IconCamera, IconSearch } from '@tabler/icons-react';
+import { IconCamera, IconCircleCheck, IconSearch } from '@tabler/icons-react';
 import { ApiError } from '../../../../shared/api/errors';
 import {
   recordDropoffReceipt,
@@ -39,8 +39,18 @@ export default function TextileReceiptPage(): JSX.Element {
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState<{
+    reference: string;
+    bags: string;
+    weight: string;
+  } | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
+  const successHeadingRef = useRef<HTMLHeadingElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (confirmed) successHeadingRef.current?.focus();
+  }, [confirmed]);
 
   useEffect(
     () => () => {
@@ -105,7 +115,7 @@ export default function TextileReceiptPage(): JSX.Element {
   }
 
   async function confirm() {
-    if (!selected || !canConfirm) return;
+    if (!selected || !canConfirm || busy || confirmed) return;
     const zoneId = selected.service_zone?.id;
     if (!zoneId) {
       setServerError('This booking has no service zone; configure the centre before receipt.');
@@ -113,6 +123,9 @@ export default function TextileReceiptPage(): JSX.Element {
     }
     setBusy(true);
     setServerError(null);
+    const confirmedReference = selected.reference;
+    const confirmedBags = bags;
+    const confirmedWeight = weight;
     try {
       if (!photoFile) return;
       // One key per receipt attempt so a retry after a network failure cannot
@@ -132,12 +145,40 @@ export default function TextileReceiptPage(): JSX.Element {
         idempotencyKey,
         department_id: desk.departmentId,
       });
-      setSuccess(`Receipt confirmed for ${selected.reference} — ${bags} bags, ${weight} kg`);
+      setConfirmed({
+        reference: confirmedReference,
+        bags: confirmedBags,
+        weight: confirmedWeight,
+      });
     } catch (e) {
       if (e instanceof ApiError) setServerError(e.message);
       else setServerError('Failed to record receipt');
     } finally {
       setBusy(false);
+    }
+  }
+
+  function resetToFreshForm() {
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setQuery('');
+    setSearch('');
+    setSelected(null);
+    setBags('');
+    setWeight('');
+    setReason('');
+    setNote('');
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setPhotoError(null);
+    setServerError(null);
+    setConfirmed(null);
+    setBusy(false);
+    // Search input stays mounted in the left column; return focus there so
+    // staff can scan the next booking without extra taps.
+    if (typeof requestAnimationFrame !== 'undefined') {
+      requestAnimationFrame(() => searchInputRef.current?.focus());
+    } else {
+      searchInputRef.current?.focus();
     }
   }
 
@@ -162,6 +203,7 @@ export default function TextileReceiptPage(): JSX.Element {
                 stroke={1.65}
               />
               <input
+                ref={searchInputRef}
                 inputMode="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -254,7 +296,36 @@ export default function TextileReceiptPage(): JSX.Element {
         </div>
 
         <div className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-black/5">
-          {!selected ? (
+          {confirmed ? (
+            <div className="space-y-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-success)]/[0.12] text-[var(--color-success)]">
+                <IconCircleCheck className="h-6 w-6" stroke={1.65} aria-hidden="true" />
+              </div>
+              <div className="space-y-1">
+                <h2
+                  ref={successHeadingRef}
+                  tabIndex={-1}
+                  className="text-base font-semibold text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 rounded"
+                >
+                  Receipt confirmed
+                </h2>
+                <p role="status" className="text-sm text-[var(--color-text-secondary)]">
+                  Receipt confirmed for{' '}
+                  <span className="font-mono text-xs font-medium text-[var(--color-ink)]">
+                    {confirmed.reference}
+                  </span>{' '}
+                  — {confirmed.bags} bags, {confirmed.weight} kg
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={resetToFreshForm}
+                className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-ink)] px-6 text-sm font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2"
+              >
+                Find next booking
+              </button>
+            </div>
+          ) : !selected ? (
             <DeskStates
               loading={false}
               error={false}
@@ -370,14 +441,6 @@ export default function TextileReceiptPage(): JSX.Element {
               {serverError ? (
                 <p role="alert" className="text-xs text-[var(--color-danger)]">
                   {serverError}
-                </p>
-              ) : null}
-              {success ? (
-                <p
-                  role="status"
-                  className="rounded-lg border border-[var(--color-success)]/20 bg-[var(--color-success)]/[0.08] px-3 py-2 text-xs text-[var(--color-success)]"
-                >
-                  {success}
                 </p>
               ) : null}
 
