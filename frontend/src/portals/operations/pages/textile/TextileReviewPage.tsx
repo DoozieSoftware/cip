@@ -126,7 +126,7 @@ export default function TextileReviewPage(): JSX.Element {
           {selected.length > 0 ? (
             <aside
               aria-label="Bulk actions"
-              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-full border border-black/10 bg-[#1d1d1b] px-4 py-2 text-white shadow-2xl backdrop-blur"
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-full border border-black/10 bg-[var(--color-ink)] px-4 py-2 text-white shadow-2xl backdrop-blur"
             >
               <p className="text-xs font-medium whitespace-nowrap">
                 <span className="font-semibold text-white">{selected.length}</span> selected ·{' '}
@@ -137,7 +137,7 @@ export default function TextileReviewPage(): JSX.Element {
                 type="button"
                 disabled={approve.isPending}
                 onClick={() => setApproveTarget(selected)}
-                className="inline-flex h-7 items-center gap-1 rounded-full bg-white px-3 text-xs font-semibold text-[#1d1d1b] transition hover:bg-neutral-200 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="inline-flex h-7 items-center gap-1 rounded-full bg-white px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:bg-neutral-200 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 <IconCheck className="h-3.5 w-3.5" />
                 Approve ({selected.length})
