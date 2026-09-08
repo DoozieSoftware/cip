@@ -3,9 +3,15 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   IconAlertTriangle,
   IconCalendar,
+  IconCamera,
   IconCheck,
+  IconClock,
+  IconLock,
+  IconMapPin,
   IconNavigation,
+  IconPackage,
   IconPhone,
+  IconX,
 } from '@tabler/icons-react';
 
 /* Button system — 44px targets, 8pt grid, one solid primary per stop.
@@ -554,6 +560,7 @@ export default function TextileDispatchPage(): JSX.Element {
                         <IconCalendar
                           className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
                           stroke={1.65}
+                          aria-hidden="true"
                         />
                         {formattedDate}
                       </span>
@@ -563,7 +570,12 @@ export default function TextileDispatchPage(): JSX.Element {
                     </span>
                     {frozen ? (
                       <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium leading-none text-amber-800">
-                        <IconAlertTriangle className="h-3.5 w-3.5" stroke={1.65} /> Locked
+                        <IconAlertTriangle
+                          className="h-3.5 w-3.5"
+                          stroke={1.65}
+                          aria-hidden="true"
+                        />{' '}
+                        Locked
                       </span>
                     ) : null}
                     <div className="ml-auto flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
@@ -670,7 +682,11 @@ export default function TextileDispatchPage(): JSX.Element {
                                   : 'border-2 border-[var(--color-border-strong)] bg-white text-[var(--color-text-secondary)]'
                           }`}
                         >
-                          {isCollected ? <IconCheck className="h-4 w-4" stroke={2.5} /> : idx + 1}
+                          {isCollected ? (
+                            <IconCheck className="h-4 w-4" stroke={2.5} aria-hidden="true" />
+                          ) : (
+                            idx + 1
+                          )}
                         </span>
 
                         {/* thumb */}
@@ -684,28 +700,52 @@ export default function TextileDispatchPage(): JSX.Element {
 
                         <div className="min-w-0 flex-1">
                           {/* pickup ref + outcome: human label first, code secondary */}
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-xs text-[var(--color-text-tertiary)]">
+                          {/* stop eyebrow — ref + status chip share one row so every
+                              stop scans the same: code left, outcome right */}
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                            <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
                               Pickup{' '}
-                              <span className="font-mono tracking-wide">{item.reference}</span>
+                              <span className="font-mono normal-case tracking-wide">
+                                {item.reference}
+                              </span>
                             </span>
                             {isCollected ? (
-                              <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold leading-none text-emerald-800 ring-1 ring-inset ring-emerald-200">
-                                <IconCheck className="h-3.5 w-3.5" stroke={2.5} /> Collected
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold leading-none text-emerald-800 ring-1 ring-inset ring-emerald-200">
+                                <IconCheck
+                                  className="h-3.5 w-3.5"
+                                  stroke={2.5}
+                                  aria-hidden="true"
+                                />{' '}
+                                Collected
                               </span>
                             ) : isMissed ? (
-                              <span className="inline-flex items-center rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-semibold leading-none text-rose-800 ring-1 ring-inset ring-rose-200">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold leading-none text-rose-800 ring-1 ring-inset ring-rose-200">
+                                <IconX className="h-3.5 w-3.5" stroke={2.5} aria-hidden="true" />{' '}
                                 Missed
                               </span>
                             ) : queued ? (
                               <span
-                                className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-semibold leading-none ring-1 ring-inset ${queued.status === 'failed' ? 'bg-rose-50 text-rose-700 ring-rose-200' : 'bg-amber-50 text-amber-800 ring-amber-200'}`}
+                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold leading-none ring-1 ring-inset ${queued.status === 'failed' ? 'bg-rose-50 text-rose-700 ring-rose-200' : 'bg-amber-50 text-amber-800 ring-amber-200'}`}
                               >
+                                {queued.status === 'failed' ? (
+                                  <IconAlertTriangle
+                                    className="h-3.5 w-3.5"
+                                    stroke={2}
+                                    aria-hidden="true"
+                                  />
+                                ) : (
+                                  <IconClock
+                                    className="h-3.5 w-3.5"
+                                    stroke={2}
+                                    aria-hidden="true"
+                                  />
+                                )}{' '}
                                 {queued.status === 'failed' ? 'Upload failed' : 'Pending upload'}
                               </span>
                             ) : null}
                             {itemFrozen && !isTerminal ? (
-                              <span className="rounded-lg bg-amber-50 px-2 py-1 text-xs font-medium leading-none text-amber-800 ring-1 ring-inset ring-amber-200">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium leading-none text-amber-800 ring-1 ring-inset ring-amber-200">
+                                <IconLock className="h-3.5 w-3.5" stroke={2} aria-hidden="true" />{' '}
                                 Locked
                               </span>
                             ) : null}
@@ -714,16 +754,26 @@ export default function TextileDispatchPage(): JSX.Element {
                             ) : null}
                           </div>
 
-                          {isNext ? (
-                            <span className="mt-2 inline-flex items-center rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">
-                              Up next
-                            </span>
-                          ) : null}
-                          <p className="mt-1.5 text-[16px] font-semibold leading-5 tracking-tight text-[var(--color-ink)]">
-                            {item.requester_name}
-                          </p>
-                          <p className="mt-0.5 text-[13px] leading-5 text-[var(--color-text-secondary)]">
-                            {item.pickup_address}
+                          {/* stop title — prominent name with Up next inline so the
+                              row keeps one headline instead of two stacked badges */}
+                          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                            <p className="text-[17px] font-bold leading-6 tracking-tight text-[var(--color-ink)]">
+                              {item.requester_name}
+                            </p>
+                            {isNext ? (
+                              <span className="inline-flex items-center rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">
+                                Up next
+                              </span>
+                            ) : null}
+                          </div>
+                          {/* stop meta — one address line with a map-pin anchor */}
+                          <p className="mt-1 flex items-start gap-1.5 text-[13px] leading-5 text-[var(--color-text-secondary)]">
+                            <IconMapPin
+                              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]"
+                              stroke={1.75}
+                              aria-hidden="true"
+                            />
+                            <span className="min-w-0 break-words">{item.pickup_address}</span>
                           </p>
 
                           {evidencePhoto ? (
@@ -733,26 +783,48 @@ export default function TextileDispatchPage(): JSX.Element {
                                 alt=""
                                 className="h-9 w-9 rounded-lg object-cover ring-1 ring-black/5"
                               />
-                              <span className="text-xs text-[var(--color-text-secondary)]">
+                              <span className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
+                                <IconCamera
+                                  className="h-4 w-4 text-[var(--color-text-tertiary)]"
+                                  stroke={1.75}
+                                  aria-hidden="true"
+                                />
                                 Photo attached
                               </span>
                             </div>
                           ) : null}
 
-                          {/* volume: scale jumps 13 category · 14 data, one job per element */}
-                          <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                          {/* estimate meta — same icon + pill anatomy on every stop */}
+                          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                              <IconPackage
+                                className="h-3.5 w-3.5"
+                                stroke={1.75}
+                                aria-hidden="true"
+                              />
                               {CATEGORY_LABELS[item.category] ?? item.category}
                             </span>
-                            <span className="text-[var(--color-border-strong)]">·</span>
+                            <span className="text-[var(--color-border-strong)]" aria-hidden="true">
+                              ·
+                            </span>
                             {isCollected && item.actual_bags !== null ? (
                               <span className="inline-flex flex-wrap items-center gap-1.5 text-[13px] leading-5">
                                 <span className="text-[var(--color-text-secondary)]">
                                   {formatVolume(item.estimated_bags, item.estimated_weight_kg)}{' '}
                                   expected
                                 </span>
-                                <span className="text-[var(--color-border-strong)]">→</span>
-                                <span className="font-semibold text-[var(--color-ink)]">
+                                <span
+                                  className="text-[var(--color-border-strong)]"
+                                  aria-hidden="true"
+                                >
+                                  →
+                                </span>
+                                <span className="inline-flex items-center gap-1 font-semibold text-[var(--color-ink)]">
+                                  <IconCheck
+                                    className="h-3.5 w-3.5 text-[var(--color-success)]"
+                                    stroke={2.5}
+                                    aria-hidden="true"
+                                  />
                                   {formatVolume(item.actual_bags, item.actual_weight_kg)} collected
                                 </span>
                                 {item.picked_up_at ? (
@@ -766,16 +838,17 @@ export default function TextileDispatchPage(): JSX.Element {
                                 ) : null}
                               </span>
                             ) : isMissed ? (
-                              <span className="text-[13px] font-medium leading-5 text-rose-700">
+                              <span className="inline-flex items-center gap-1.5 text-[13px] font-medium leading-5 text-rose-700">
+                                <IconX className="h-4 w-4 shrink-0" stroke={2} aria-hidden="true" />
                                 {item.missed_pickup_reason
                                   ? `Missed · ${item.missed_pickup_reason}`
                                   : 'Missed'}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-3 py-1.5 text-[13px] font-semibold leading-none text-[var(--color-ink)]">
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-3 py-1.5 text-[13px] font-semibold leading-none text-[var(--color-ink)]">
                                 <span
                                   className="h-1.5 w-1.5 rounded-full bg-amber-500"
-                                  aria-hidden
+                                  aria-hidden="true"
                                 />
                                 {formatVolume(item.estimated_bags, item.estimated_weight_kg)}{' '}
                                 expected
@@ -785,9 +858,16 @@ export default function TextileDispatchPage(): JSX.Element {
 
                           <RescheduleDetail item={item} />
                           {item.readiness_instructions ? (
-                            <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] leading-5 text-amber-800">
-                              <span className="font-semibold">Instructions:</span>{' '}
-                              {item.readiness_instructions}
+                            <p className="mt-2 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] leading-5 text-amber-800">
+                              <IconAlertTriangle
+                                className="mt-0.5 h-4 w-4 shrink-0"
+                                stroke={1.75}
+                                aria-hidden="true"
+                              />
+                              <span>
+                                <span className="font-semibold">Instructions:</span>{' '}
+                                {item.readiness_instructions}
+                              </span>
                             </p>
                           ) : null}
 
@@ -795,7 +875,11 @@ export default function TextileDispatchPage(): JSX.Element {
                           {!isTerminal ? (
                             <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
                               <a href={telHref(item.contact_phone)} className={BTN.call}>
-                                <IconPhone className="h-4 w-4 text-emerald-700" stroke={1.75} />{' '}
+                                <IconPhone
+                                  className="h-4 w-4 text-emerald-700"
+                                  stroke={1.75}
+                                  aria-hidden="true"
+                                />{' '}
                                 Call
                               </a>
                               <a
@@ -804,7 +888,11 @@ export default function TextileDispatchPage(): JSX.Element {
                                 rel="noreferrer"
                                 className={BTN.navigate}
                               >
-                                <IconNavigation className="h-4 w-4 text-sky-700" stroke={1.75} />{' '}
+                                <IconNavigation
+                                  className="h-4 w-4 text-sky-700"
+                                  stroke={1.75}
+                                  aria-hidden="true"
+                                />{' '}
                                 Navigate
                               </a>
                               <button
@@ -816,6 +904,7 @@ export default function TextileDispatchPage(): JSX.Element {
                                 }
                                 className={BTN.primary}
                               >
+                                <IconCamera className="h-4 w-4" stroke={1.75} aria-hidden="true" />
                                 {expandedId === item.id ? 'Close' : 'Record collection'}
                               </button>
                               <button
@@ -824,6 +913,7 @@ export default function TextileDispatchPage(): JSX.Element {
                                 onClick={() => setMissedTarget(item)}
                                 className={BTN.danger}
                               >
+                                <IconX className="h-4 w-4" stroke={2} aria-hidden="true" />
                                 Mark missed
                               </button>
                               {itemFrozen ? (
@@ -833,9 +923,10 @@ export default function TextileDispatchPage(): JSX.Element {
                                     setOverrideTarget(item);
                                     setOverrideReason('');
                                   }}
-                                  className="inline-flex h-11 items-center rounded-lg border border-amber-200 bg-amber-50 px-4 text-[14px] font-semibold text-amber-800 transition-colors hover:bg-amber-100"
+                                  className="inline-flex h-11 items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-4 text-[14px] font-semibold text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
                                   aria-label={`Override reschedule for ${item.reference}`}
                                 >
+                                  <IconLock className="h-4 w-4" stroke={2} aria-hidden="true" />
                                   Override
                                 </button>
                               ) : null}
@@ -848,7 +939,11 @@ export default function TextileDispatchPage(): JSX.Element {
                           <div className="hidden shrink-0 flex-col items-end gap-2 lg:flex">
                             <div className="flex items-center gap-2">
                               <a href={telHref(item.contact_phone)} className={BTN.call}>
-                                <IconPhone className="h-4 w-4 text-emerald-700" stroke={1.75} />{' '}
+                                <IconPhone
+                                  className="h-4 w-4 text-emerald-700"
+                                  stroke={1.75}
+                                  aria-hidden="true"
+                                />{' '}
                                 Call
                               </a>
                               <a
@@ -857,7 +952,11 @@ export default function TextileDispatchPage(): JSX.Element {
                                 rel="noreferrer"
                                 className={BTN.navigate}
                               >
-                                <IconNavigation className="h-4 w-4 text-sky-700" stroke={1.75} />{' '}
+                                <IconNavigation
+                                  className="h-4 w-4 text-sky-700"
+                                  stroke={1.75}
+                                  aria-hidden="true"
+                                />{' '}
                                 Navigate
                               </a>
                             </div>
@@ -871,6 +970,7 @@ export default function TextileDispatchPage(): JSX.Element {
                                 }
                                 className={`${BTN.primary} min-w-[164px] justify-center`}
                               >
+                                <IconCamera className="h-4 w-4" stroke={1.75} aria-hidden="true" />
                                 {expandedId === item.id ? 'Close' : 'Record collection'}
                               </button>
                               <button
@@ -879,6 +979,7 @@ export default function TextileDispatchPage(): JSX.Element {
                                 onClick={() => setMissedTarget(item)}
                                 className={BTN.danger}
                               >
+                                <IconX className="h-4 w-4" stroke={2} aria-hidden="true" />
                                 Mark missed
                               </button>
                             </div>
@@ -889,9 +990,10 @@ export default function TextileDispatchPage(): JSX.Element {
                                   setOverrideTarget(item);
                                   setOverrideReason('');
                                 }}
-                                className="inline-flex h-11 items-center rounded-lg border border-amber-200 bg-amber-50 px-4 text-[14px] font-semibold text-amber-800 transition-colors hover:bg-amber-100"
+                                className="inline-flex h-11 items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-4 text-[14px] font-semibold text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
                                 aria-label={`Override reschedule for ${item.reference}`}
                               >
+                                <IconLock className="h-4 w-4" stroke={2} aria-hidden="true" />
                                 Override reschedule
                               </button>
                             ) : null}
