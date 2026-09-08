@@ -14,6 +14,7 @@ import {
   Package,
   Printer,
   Scale,
+  Search,
   Truck,
   User,
   Users,
@@ -430,6 +431,11 @@ export default function TextileDispatchPage(): JSX.Element {
   const [selectedTripSheet, setSelectedTripSheet] = useState<TripEntry | null>(null);
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<'routes' | 'console'>('routes');
+  const [routeQuery, setRouteQuery] = useState('');
+  const [routeStatusTab, setRouteStatusTab] = useState<
+    'all' | 'planned' | 'in_progress' | 'completed'
+  >('all');
+  const [rosterDensity, setRosterDensity] = useState<'cards' | 'compact'>('cards');
   const opsQueue = useOpsQueue();
 
   function handleDateFilter(next: string): void {
@@ -517,12 +523,47 @@ export default function TextileDispatchPage(): JSX.Element {
     };
   }, [trips, rows.length]);
 
+  // Filtered trips for route roster
+  const filteredTrips = useMemo(() => {
+    return trips.filter((trip) => {
+      if (routeStatusTab !== 'all') {
+        const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
+        if (routeStatusTab === 'in_progress' && batchStatus !== 'in_progress') return false;
+        if (
+          routeStatusTab === 'planned' &&
+          batchStatus !== 'planned' &&
+          batchStatus !== 'scheduled'
+        )
+          return false;
+        if (routeStatusTab === 'completed' && batchStatus !== 'completed') return false;
+      }
+      if (routeQuery.trim()) {
+        const q = routeQuery.toLowerCase();
+        const tripRef = (trip.ref !== 'Unassigned' ? trip.ref : trip.label).toLowerCase();
+        const driver = (trip.items[0]?.batch?.driver_name ?? '').toLowerCase();
+        const vehicle = (trip.items[0]?.batch?.vehicle_label ?? '').toLowerCase();
+        const matchStop = trip.items.some(
+          (i) =>
+            i.requester_name.toLowerCase().includes(q) ||
+            i.reference.toLowerCase().includes(q) ||
+            i.pickup_address.toLowerCase().includes(q),
+        );
+        if (!tripRef.includes(q) && !driver.includes(q) && !vehicle.includes(q) && !matchStop) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [trips, routeStatusTab, routeQuery]);
+
   // Active selected trip for command console
   const activeTrip = useMemo(() => {
     if (trips.length === 0) return null;
-    const found = trips.find((t) => t.id === selectedTripId);
-    return found ?? trips[0];
-  }, [trips, selectedTripId]);
+    const found =
+      filteredTrips.find((t) => t.id === selectedTripId) ??
+      trips.find((t) => t.id === selectedTripId);
+    return found ?? filteredTrips[0] ?? trips[0];
+  }, [trips, filteredTrips, selectedTripId]);
 
   return (
     <DeskPage
@@ -819,148 +860,286 @@ export default function TextileDispatchPage(): JSX.Element {
               ) : null}
 
               {/* Grid Layout */}
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:items-start">
                 {/* LEFT COLUMN: Fleet Route Cards Selector (lg:col-span-5) */}
                 {trips.length > 1 ? (
                   <div
-                    className={`space-y-3 lg:col-span-5 ${
+                    className={`space-y-2.5 lg:col-span-5 ${
                       mobileTab === 'routes' ? 'block' : 'hidden lg:block'
                     }`}
                   >
+                    {/* Header bar with count and density toggle */}
                     <div className="flex items-center justify-between px-1">
                       <div className="flex items-center gap-2">
                         <h3 className="text-xs font-semibold text-[var(--color-ink)]">Routes</h3>
                         <span className="rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 font-mono text-[11px] font-medium text-[var(--color-text-secondary)]">
-                          {trips.length}
+                          {filteredTrips.length === trips.length
+                            ? trips.length
+                            : `${filteredTrips.length} of ${trips.length}`}
                         </span>
                       </div>
-                      <span className="text-xs text-[var(--color-text-secondary)]">
-                        Select to view itinerary
-                      </span>
+                      <div className="inline-flex items-center rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-0.5 text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() => setRosterDensity('cards')}
+                          className={`rounded px-2 py-0.5 transition ${
+                            rosterDensity === 'cards'
+                              ? 'bg-white font-semibold text-[var(--color-ink)] shadow-2xs'
+                              : 'text-[var(--color-text-secondary)] hover:text-[var(--color-ink)]'
+                          }`}
+                        >
+                          Cards
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRosterDensity('compact')}
+                          className={`rounded px-2 py-0.5 transition ${
+                            rosterDensity === 'compact'
+                              ? 'bg-white font-semibold text-[var(--color-ink)] shadow-2xs'
+                              : 'text-[var(--color-text-secondary)] hover:text-[var(--color-ink)]'
+                          }`}
+                        >
+                          Compact
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="space-y-2.5">
-                      {trips.map((trip) => {
-                        const isSelected = activeTrip?.id === trip.id;
-                        const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
-                        const progress =
-                          trip.items[0]?.batch?.progress ?? getTripProgress(trip.items);
-                        const statusMeta = TRIP_STATUS_META[batchStatus] ?? {
-                          label: batchStatus.replaceAll('_', ' '),
-                          cls: 'border-[var(--color-border-subtle)] bg-zinc-50 text-zinc-700',
-                          dot: 'bg-zinc-400',
-                        };
-                        const formattedDate = trip.date ? formatTripDate(trip.date) : '';
-                        const tripRef = trip.ref !== 'Unassigned' ? trip.ref : trip.label;
-                        const driver = trip.items[0]?.batch?.driver_name;
-                        const vehicle = trip.items[0]?.batch?.vehicle_label;
-                        const totalBags = trip.items.reduce(
-                          (acc, it) => acc + (it.actual_bags ?? it.estimated_bags ?? 0),
-                          0,
-                        );
-                        const totalWeight = trip.items.reduce(
-                          (acc, it) => acc + (it.actual_weight_kg ?? it.estimated_weight_kg ?? 0),
-                          0,
-                        );
+                    {/* In-Roster Fast Search and Status Filter */}
+                    <div className="space-y-2 rounded-xl border border-[var(--color-border-subtle)] bg-white p-2.5 shadow-2xs">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
+                        <input
+                          type="text"
+                          value={routeQuery}
+                          onChange={(e) => setRouteQuery(e.target.value)}
+                          placeholder="Filter routes, driver, stop..."
+                          className="w-full rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] py-1.5 pl-8 pr-7 text-xs text-[var(--color-ink)] placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-ink)] focus:bg-white focus:outline-none"
+                        />
+                        {routeQuery ? (
+                          <button
+                            type="button"
+                            onClick={() => setRouteQuery('')}
+                            className="absolute right-2.5 top-2 text-xs font-bold text-[var(--color-text-secondary)] hover:text-[var(--color-ink)]"
+                            aria-label="Clear route search"
+                          >
+                            &times;
+                          </button>
+                        ) : null}
+                      </div>
 
-                        return (
-                          <div
-                            key={trip.id}
-                            onClick={() => {
-                              setSelectedTripId(trip.id);
-                              setMobileTab('console');
-                            }}
-                            role="button"
-                            tabIndex={0}
-                            aria-label={`Select route ${tripRef}`}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
+                      {/* Status quick tabs */}
+                      <div className="flex items-center gap-1 overflow-x-auto text-[11px]">
+                        {(
+                          [
+                            { id: 'all', label: 'All' },
+                            { id: 'planned', label: 'Planned' },
+                            { id: 'in_progress', label: 'Active' },
+                            { id: 'completed', label: 'Done' },
+                          ] as const
+                        ).map((tab) => {
+                          const count = trips.filter((t) => {
+                            if (tab.id === 'all') return true;
+                            const s = t.items[0]?.batch?.status ?? 'planned';
+                            if (tab.id === 'planned') return s === 'planned' || s === 'scheduled';
+                            if (tab.id === 'in_progress') return s === 'in_progress';
+                            if (tab.id === 'completed') return s === 'completed';
+                            return false;
+                          }).length;
+
+                          return (
+                            <button
+                              key={tab.id}
+                              type="button"
+                              onClick={() => setRouteStatusTab(tab.id)}
+                              className={`rounded-md px-2 py-0.5 transition ${
+                                routeStatusTab === tab.id
+                                  ? 'bg-[var(--color-ink)] font-semibold text-white'
+                                  : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
+                              }`}
+                            >
+                              {tab.label} ({count})
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Scrollable List Container (Independent scroll: max-h-[calc(100vh-310px)]) */}
+                    <div className="space-y-2 lg:max-h-[calc(100vh-310px)] lg:overflow-y-auto lg:pr-1">
+                      {filteredTrips.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-[var(--color-border-subtle)] p-6 text-center text-xs text-[var(--color-text-secondary)]">
+                          No routes match current filter.
+                        </div>
+                      ) : (
+                        filteredTrips.map((trip) => {
+                          const isSelected = activeTrip?.id === trip.id;
+                          const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
+                          const progress =
+                            trip.items[0]?.batch?.progress ?? getTripProgress(trip.items);
+                          const statusMeta = TRIP_STATUS_META[batchStatus] ?? {
+                            label: batchStatus.replaceAll('_', ' '),
+                            cls: 'border-[var(--color-border-subtle)] bg-zinc-50 text-zinc-700',
+                            dot: 'bg-zinc-400',
+                          };
+                          const formattedDate = trip.date ? formatTripDate(trip.date) : '';
+                          const tripRef = trip.ref !== 'Unassigned' ? trip.ref : trip.label;
+                          const driver = trip.items[0]?.batch?.driver_name;
+                          const vehicle = trip.items[0]?.batch?.vehicle_label;
+                          const totalBags = trip.items.reduce(
+                            (acc, it) => acc + (it.actual_bags ?? it.estimated_bags ?? 0),
+                            0,
+                          );
+                          const totalWeight = trip.items.reduce(
+                            (acc, it) => acc + (it.actual_weight_kg ?? it.estimated_weight_kg ?? 0),
+                            0,
+                          );
+
+                          if (rosterDensity === 'compact') {
+                            return (
+                              <div
+                                key={trip.id}
+                                onClick={() => {
+                                  setSelectedTripId(trip.id);
+                                  setMobileTab('console');
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                aria-label={`Select route ${tripRef}`}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    setSelectedTripId(trip.id);
+                                    setMobileTab('console');
+                                  }
+                                }}
+                                className={`group flex items-center justify-between gap-2.5 rounded-lg px-3 py-2.5 text-left transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'border-2 border-[var(--color-ink)] bg-white shadow-xs'
+                                    : 'border border-[var(--color-border-subtle)] bg-white hover:border-[var(--color-border)] hover:bg-slate-50/50'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="font-mono text-xs font-bold text-[var(--color-ink)] truncate">
+                                    {tripRef}
+                                  </span>
+                                  <span className="text-xs text-[var(--color-text-secondary)] truncate">
+                                    · {driver ?? 'Unassigned'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="font-mono text-[11px] text-[var(--color-text-secondary)]">
+                                    {trip.items.length} stop{trip.items.length === 1 ? '' : 's'} ·{' '}
+                                    {Math.round(totalWeight * 10) / 10}kg
+                                  </span>
+                                  <span
+                                    className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${statusMeta.cls}`}
+                                  >
+                                    {statusMeta.label}
+                                  </span>
+                                  <ChevronRight className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div
+                              key={trip.id}
+                              onClick={() => {
                                 setSelectedTripId(trip.id);
                                 setMobileTab('console');
-                              }
-                            }}
-                            className={`group relative rounded-xl p-3.5 text-left transition-all cursor-pointer ${
-                              isSelected
-                                ? 'border-2 border-[var(--color-ink)] bg-white shadow-xs'
-                                : 'border border-[var(--color-border-subtle)] bg-white hover:border-[var(--color-border)] hover:bg-slate-50/50'
-                            }`}
-                          >
-                            {/* Route Ref & Status */}
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-bold text-[var(--color-ink)]">
-                                  {tripRef}
-                                </span>
-                                {formattedDate ? (
-                                  <span className="flex items-center gap-1 font-mono text-[11px] text-[var(--color-text-secondary)]">
-                                    <Calendar className="h-3 w-3 text-[var(--color-text-secondary)]" />
-                                    {formattedDate}
+                              }}
+                              role="button"
+                              tabIndex={0}
+                              aria-label={`Select route ${tripRef}`}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  setSelectedTripId(trip.id);
+                                  setMobileTab('console');
+                                }
+                              }}
+                              className={`group relative rounded-xl p-3.5 text-left transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'border-2 border-[var(--color-ink)] bg-white shadow-xs'
+                                  : 'border border-[var(--color-border-subtle)] bg-white hover:border-[var(--color-border)] hover:bg-slate-50/50'
+                              }`}
+                            >
+                              {/* Route Ref & Status */}
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-bold text-[var(--color-ink)]">
+                                    {tripRef}
                                   </span>
-                                ) : null}
-                              </div>
-                              <span
-                                className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusMeta.cls}`}
-                              >
-                                <span
-                                  className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`}
-                                  aria-hidden="true"
-                                />
-                                {statusMeta.label}
-                              </span>
-                            </div>
-
-                            {/* Crew, Vehicle, and Load */}
-                            <div className="mt-2.5 flex items-center justify-between text-xs">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-700">
-                                  {driver ? (
-                                    driver.slice(0, 2).toUpperCase()
-                                  ) : (
-                                    <User className="h-3.5 w-3.5" />
-                                  )}
-                                </div>
-                                <div className="flex flex-col min-w-0">
-                                  <span className="truncate font-semibold text-[var(--color-ink)]">
-                                    {driver ?? 'Unassigned Driver'}
-                                  </span>
-                                  {vehicle ? (
-                                    <span className="truncate font-mono text-[10px] text-[var(--color-text-secondary)]">
-                                      {vehicle}
+                                  {formattedDate ? (
+                                    <span className="flex items-center gap-1 font-mono text-[11px] text-[var(--color-text-secondary)]">
+                                      <Calendar className="h-3 w-3 text-[var(--color-text-secondary)]" />
+                                      {formattedDate}
                                     </span>
                                   ) : null}
                                 </div>
-                              </div>
-                              <div className="shrink-0 flex items-center gap-1 rounded bg-slate-50 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-600">
-                                <span>
-                                  {trip.items.length} stop{trip.items.length === 1 ? '' : 's'}
+                                <span
+                                  className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusMeta.cls}`}
+                                >
+                                  <span
+                                    className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`}
+                                    aria-hidden="true"
+                                  />
+                                  {statusMeta.label}
                                 </span>
-                                <span>·</span>
-                                <span>{Math.round(totalWeight * 10) / 10} kg</span>
+                              </div>
+
+                              {/* Crew, Vehicle, and Load */}
+                              <div className="mt-2.5 flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-700">
+                                    {driver ? (
+                                      driver.slice(0, 2).toUpperCase()
+                                    ) : (
+                                      <User className="h-3.5 w-3.5" />
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col min-w-0">
+                                    <span className="truncate font-semibold text-[var(--color-ink)]">
+                                      {driver ?? 'Unassigned Driver'}
+                                    </span>
+                                    {vehicle ? (
+                                      <span className="truncate font-mono text-[10px] text-[var(--color-text-secondary)]">
+                                        {vehicle}
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                </div>
+                                <div className="shrink-0 flex items-center gap-1 rounded bg-slate-50 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-600">
+                                  <span>
+                                    {trip.items.length} stop{trip.items.length === 1 ? '' : 's'}
+                                  </span>
+                                  <span>·</span>
+                                  <span>{Math.round(totalWeight * 10) / 10} kg</span>
+                                </div>
+                              </div>
+
+                              {/* Mini Progress */}
+                              <div className="mt-2.5">
+                                <TripProgressBar
+                                  batchStatus={batchStatus}
+                                  collected={progress.collected}
+                                  missed={progress.missed}
+                                  pending={progress.pending}
+                                  total={progress.total}
+                                />
+                              </div>
+
+                              {/* Clean card footer */}
+                              <div className="mt-2.5 flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
+                                <span>{totalBags} bags est.</span>
+                                <span className="flex items-center gap-1 font-medium text-[var(--color-ink)]">
+                                  <span>{isSelected ? 'Viewing' : 'View route'}</span>
+                                  <ChevronRight className="h-3.5 w-3.5" />
+                                </span>
                               </div>
                             </div>
-
-                            {/* Mini Progress */}
-                            <div className="mt-2.5">
-                              <TripProgressBar
-                                batchStatus={batchStatus}
-                                collected={progress.collected}
-                                missed={progress.missed}
-                                pending={progress.pending}
-                                total={progress.total}
-                              />
-                            </div>
-
-                            {/* Clean card footer */}
-                            <div className="mt-2.5 flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
-                              <span>{totalBags} bags est.</span>
-                              <span className="flex items-center gap-1 font-medium text-[var(--color-ink)]">
-                                <span>{isSelected ? 'Viewing' : 'View route'}</span>
-                                <ChevronRight className="h-3.5 w-3.5" />
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })
+                      )}
                     </div>
                   </div>
                 ) : null}
@@ -969,7 +1148,7 @@ export default function TextileDispatchPage(): JSX.Element {
                 <div
                   className={`${trips.length > 1 ? 'lg:col-span-7' : 'lg:col-span-12'} ${
                     mobileTab === 'console' || trips.length === 1 ? 'block' : 'hidden lg:block'
-                  }`}
+                  } lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto`}
                 >
                   {activeTrip ? (
                     (() => {
