@@ -407,8 +407,8 @@ export default function TextileSchedulePage(): JSX.Element {
               aria-label="New trip"
               className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-sm"
             >
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-                <div className="min-w-0 flex-1">
+              <div className="flex flex-col gap-5">
+                <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold tracking-tight text-[var(--color-ink)]">
                       <IconCalendarPlus
@@ -433,155 +433,159 @@ export default function TextileSchedulePage(): JSX.Element {
                       {selected.length} stop{selected.length === 1 ? '' : 's'}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-                    Zone: {selectedItems[0]?.service_zone?.name ?? '—'}
-                  </p>
-                  {selectedItems.some((r) => r.reschedule_reason || r.previous_scheduled_date) ? (
-                    <p className="mt-1 text-xs text-amber-800">
-                      {
-                        selectedItems.filter(
-                          (r) => r.reschedule_reason || r.previous_scheduled_date,
-                        ).length
-                      }{' '}
-                      rescheduled — previous slot shown per request below.
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs text-[var(--color-text-secondary)]">
+                      Zone: {selectedItems[0]?.service_zone?.name ?? '—'}
                     </p>
-                  ) : null}
-                  {selectedItems.some((r) => r.status === 'missed') ? (
-                    <p className="mt-1 text-xs text-orange-800">
-                      {selectedItems.filter((r) => r.status === 'missed').length} missed —
-                      re-attempt on the new date and window below.
-                    </p>
-                  ) : null}
-                </div>
-                <label className="text-xs font-medium">
-                  <div className="flex items-center justify-between">
-                    <span>Pickup date</span>
-                    <span className="flex gap-1 font-normal">
-                      <button
-                        type="button"
-                        onClick={() => setDate(new Date().toISOString().slice(0, 10))}
-                        className="rounded px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
-                      >
-                        Today
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const tomorrow = new Date();
-                          tomorrow.setDate(tomorrow.getDate() + 1);
-                          setDate(tomorrow.toISOString().slice(0, 10));
-                        }}
-                        className="rounded px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
-                      >
-                        Tomorrow
-                      </button>
-                    </span>
+                    {selectedItems.some((r) => r.reschedule_reason || r.previous_scheduled_date) ? (
+                      <p className="text-xs text-amber-800">
+                        {
+                          selectedItems.filter(
+                            (r) => r.reschedule_reason || r.previous_scheduled_date,
+                          ).length
+                        }{' '}
+                        rescheduled — previous slot shown per request below.
+                      </p>
+                    ) : null}
+                    {selectedItems.some((r) => r.status === 'missed') ? (
+                      <p className="text-xs text-orange-800">
+                        {selectedItems.filter((r) => r.status === 'missed').length} missed —
+                        re-attempt on the new date and window below.
+                      </p>
+                    ) : null}
                   </div>
-                  <input
-                    type="date"
-                    value={date}
-                    min={new Date().toISOString().slice(0, 10)}
-                    onChange={(event) => setDate(event.target.value)}
-                    aria-label="Pickup date"
-                    className={FIELD_INPUT}
-                  />
-                </label>
-                <div className="space-y-1">
-                  <div>
-                    <span
-                      id="window-presets-label"
-                      className="text-[11px] font-medium text-[var(--color-text-secondary)]"
-                    >
-                      Quick windows
-                    </span>
-                    <div
-                      role="group"
-                      aria-labelledby="window-presets-label"
-                      className="mt-1 flex flex-wrap gap-1.5"
-                    >
-                      {WINDOW_PRESETS.map((preset) => {
-                        const active = windowStart === preset.start && windowEnd === preset.end;
-                        return (
-                          <button
-                            key={preset.label}
-                            type="button"
-                            aria-pressed={active}
-                            onClick={() => {
-                              setWindowStart(preset.start);
-                              setWindowEnd(preset.end);
-                            }}
-                            className={
-                              active
-                                ? 'inline-flex min-h-9 items-center rounded-full border border-transparent bg-[var(--color-ink)] px-3.5 text-xs font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1'
-                                : 'inline-flex min-h-9 items-center rounded-full border border-[var(--color-border)] bg-white px-3.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1'
-                            }
-                          >
-                            {preset.label}
-                          </button>
-                        );
-                      })}
+                </div>
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_auto] lg:items-end">
+                  <label className="block min-w-0 text-xs font-medium">
+                    <div className="flex items-center justify-between">
+                      <span>Pickup date</span>
+                      <span className="flex gap-1 font-normal">
+                        <button
+                          type="button"
+                          onClick={() => setDate(new Date().toISOString().slice(0, 10))}
+                          className="rounded px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
+                        >
+                          Today
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const tomorrow = new Date();
+                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            setDate(tomorrow.toISOString().slice(0, 10));
+                          }}
+                          className="rounded px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
+                        >
+                          Tomorrow
+                        </button>
+                      </span>
                     </div>
-                  </div>
-                  <div className="flex flex-col gap-3 pt-1 sm:flex-row">
-                    <label className="text-xs font-medium">
-                      <span className="inline-flex items-center gap-1">
-                        <IconClock
-                          className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
-                          aria-hidden
-                        />
-                        Window start
+                    <input
+                      type="date"
+                      value={date}
+                      min={new Date().toISOString().slice(0, 10)}
+                      onChange={(event) => setDate(event.target.value)}
+                      aria-label="Pickup date"
+                      className={FIELD_INPUT}
+                    />
+                  </label>
+                  <div className="min-w-0 space-y-3">
+                    <div>
+                      <span
+                        id="window-presets-label"
+                        className="text-[11px] font-medium text-[var(--color-text-secondary)]"
+                      >
+                        Quick windows
                       </span>
-                      <input
-                        type="time"
-                        value={windowStart}
-                        onChange={(event) => setWindowStart(event.target.value)}
-                        aria-label="Window start"
-                        className={FIELD_INPUT}
-                      />
-                    </label>
-                    <label className="text-xs font-medium">
-                      <span className="inline-flex items-center gap-1">
-                        <IconClock
-                          className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
-                          aria-hidden
+                      <div
+                        role="group"
+                        aria-labelledby="window-presets-label"
+                        className="mt-2 flex flex-wrap gap-2"
+                      >
+                        {WINDOW_PRESETS.map((preset) => {
+                          const active = windowStart === preset.start && windowEnd === preset.end;
+                          return (
+                            <button
+                              key={preset.label}
+                              type="button"
+                              aria-pressed={active}
+                              onClick={() => {
+                                setWindowStart(preset.start);
+                                setWindowEnd(preset.end);
+                              }}
+                              className={
+                                active
+                                  ? 'inline-flex min-h-11 items-center rounded-full border border-transparent bg-[var(--color-ink)] px-3.5 text-xs font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1'
+                                  : 'inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-3.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1'
+                              }
+                            >
+                              {preset.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="grid gap-3 pt-1 sm:grid-cols-2">
+                      <label className="block min-w-0 text-xs font-medium">
+                        <span className="inline-flex items-center gap-1">
+                          <IconClock
+                            className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
+                            aria-hidden
+                          />
+                          Window start
+                        </span>
+                        <input
+                          type="time"
+                          value={windowStart}
+                          onChange={(event) => setWindowStart(event.target.value)}
+                          aria-label="Window start"
+                          className={FIELD_INPUT}
                         />
-                        Window end
-                      </span>
-                      <input
-                        type="time"
-                        value={windowEnd}
-                        onChange={(event) => setWindowEnd(event.target.value)}
-                        aria-label="Window end"
-                        className={FIELD_INPUT}
-                      />
-                    </label>
+                      </label>
+                      <label className="block min-w-0 text-xs font-medium">
+                        <span className="inline-flex items-center gap-1">
+                          <IconClock
+                            className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
+                            aria-hidden
+                          />
+                          Window end
+                        </span>
+                        <input
+                          type="time"
+                          value={windowEnd}
+                          onChange={(event) => setWindowEnd(event.target.value)}
+                          aria-label="Window end"
+                          className={FIELD_INPUT}
+                        />
+                      </label>
+                    </div>
+                    <p className="text-[11px] text-[var(--color-text-tertiary)]">
+                      Tap a preset or set a custom window.
+                    </p>
                   </div>
-                  <p className="text-[11px] text-[var(--color-text-tertiary)]">
-                    Tap a preset or set a custom window.
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled={!canSchedule || schedule.isPending}
-                    onClick={() => void schedule.mutateAsync()}
-                    className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 disabled:opacity-40"
-                  >
-                    <IconCalendarPlus className="h-4 w-4" stroke={1.75} aria-hidden />
-                    {schedule.isPending ? 'Scheduling…' : 'Schedule trip'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelected([]);
-                      setManifestOrder([]);
-                      setOverrideReason('');
-                    }}
-                    className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
-                  >
-                    <IconX className="h-4 w-4" aria-hidden />
-                    Clear
-                  </button>
+                  <div className="flex flex-wrap gap-2 lg:justify-end">
+                    <button
+                      type="button"
+                      disabled={!canSchedule || schedule.isPending}
+                      onClick={() => void schedule.mutateAsync()}
+                      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 disabled:opacity-40"
+                    >
+                      <IconCalendarPlus className="h-4 w-4" stroke={1.75} aria-hidden />
+                      {schedule.isPending ? 'Scheduling…' : 'Schedule trip'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelected([]);
+                        setManifestOrder([]);
+                        setOverrideReason('');
+                      }}
+                      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+                    >
+                      <IconX className="h-4 w-4" aria-hidden />
+                      Clear
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -658,8 +662,8 @@ export default function TextileSchedulePage(): JSX.Element {
                   {unavailableDates.join(', ')} — choose a different date or add an override reason.
                 </p>
               ) : null}
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <label className="text-xs font-medium">
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <label className="block min-w-0 text-xs font-medium">
                   Driver / team
                   <input
                     value={driverName}
@@ -668,7 +672,7 @@ export default function TextileSchedulePage(): JSX.Element {
                     className={FIELD_INPUT}
                   />
                 </label>
-                <label className="text-xs font-medium">
+                <label className="block min-w-0 text-xs font-medium">
                   Team
                   <input
                     value={teamName}
@@ -677,7 +681,7 @@ export default function TextileSchedulePage(): JSX.Element {
                     className={FIELD_INPUT}
                   />
                 </label>
-                <label className="text-xs font-medium">
+                <label className="block min-w-0 text-xs font-medium">
                   Vehicle
                   <input
                     value={vehicleLabel}
@@ -686,7 +690,7 @@ export default function TextileSchedulePage(): JSX.Element {
                     className={FIELD_INPUT}
                   />
                 </label>
-                <label className="text-xs font-medium">
+                <label className="block min-w-0 text-xs font-medium">
                   Trip ref
                   <input
                     value={tripReference}
@@ -696,7 +700,7 @@ export default function TextileSchedulePage(): JSX.Element {
                   />
                 </label>
               </div>
-              <label className="mt-3 block text-xs font-medium">
+              <label className="mt-4 block min-w-0 text-xs font-medium">
                 Instructions
                 <textarea
                   value={instructions}
