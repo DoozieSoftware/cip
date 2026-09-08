@@ -4,14 +4,21 @@ import { Link, useParams } from 'react-router-dom';
 import {
   IconAlertTriangle,
   IconArrowLeft,
+  IconCalendar,
   IconCamera,
   IconCheck,
   IconChevronLeft,
   IconChevronRight,
   IconClock,
+  IconCopy,
+  IconExternalLink,
   IconLock,
+  IconMail,
+  IconMapPin,
   IconNavigation,
+  IconPackage,
   IconPhone,
+  IconTruck,
   IconX,
 } from '@tabler/icons-react';
 import { ApiError } from '../../../../shared/api/errors';
@@ -123,7 +130,16 @@ export default function TextileStopPage(): JSX.Element {
   const [overrideReason, setOverrideReason] = useState('');
   const [serverError, setServerError] = useState<string | null>(null);
   const [queuedNotice, setQueuedNotice] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const opsQueue = useOpsQueue();
+
+  function handleCopy(text: string) {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      void navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
 
   const detail = useQuery({
     queryKey: ['operations', 'textile', 'detail', stopId, desk.departmentId],
@@ -380,44 +396,92 @@ export default function TextileStopPage(): JSX.Element {
         emptyBody="Moved to another trip or removed."
       >
         {item ? (
-          <div className="space-y-3">
-            {/* Trip context header */}
+          <div className="space-y-4">
+            {/* Trip context header & route sequence */}
             <section
               aria-label="Trip context"
-              className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-3 py-2 sm:px-4"
+              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"
             >
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <h2 className="font-mono text-[13px] font-bold tracking-tight text-[var(--color-ink)]">
-                  {tripRef}
-                </h2>
-                {formattedDate ? (
-                  <span className="text-[13px] leading-none text-[var(--color-text-secondary)]">
-                    {formattedDate}
-                  </span>
-                ) : null}
-                {stopIndex >= 0 && siblings.length > 0 ? (
-                  <span className="text-[12px] leading-none text-[var(--color-text-tertiary)]">
-                    · Stop {stopIndex + 1} of {siblings.length}
-                  </span>
-                ) : null}
-                {frozen ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium leading-none text-amber-800">
-                    <IconLock className="h-3.5 w-3.5" stroke={1.65} aria-hidden="true" /> Locked
-                  </span>
-                ) : null}
-                <span
-                  className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none ${statusMeta.cls}`}
-                >
-                  {statusMeta.label}
-                </span>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-md bg-slate-900 px-2.5 py-1 font-mono text-xs font-bold text-white">
+                      {tripRef}
+                    </span>
+                    {formattedDate ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500">
+                        <IconCalendar className="h-3.5 w-3.5" />
+                        {formattedDate}
+                      </span>
+                    ) : null}
+                    {stopIndex >= 0 && siblings.length > 0 ? (
+                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                        Stop {stopIndex + 1} of {siblings.length}
+                      </span>
+                    ) : null}
+                    <span
+                      className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold leading-none ${statusMeta.cls}`}
+                    >
+                      {statusMeta.label}
+                    </span>
+                    {frozen ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
+                        <IconLock className="h-3.5 w-3.5" stroke={1.65} aria-hidden="true" /> Locked
+                      </span>
+                    ) : null}
+                  </div>
+
+                  {crew ? (
+                    <div className="mt-2 flex items-center gap-2 text-xs font-medium text-slate-600">
+                      <IconTruck className="h-3.5 w-3.5 text-slate-400" />
+                      <span>{crew}</span>
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* Prev / Next Stop Navigation */}
+                <nav aria-label="Stop navigation" className="flex items-center gap-2">
+                  {prevStop ? (
+                    <Link
+                      to={`/operations/textile-collections/dispatch/${batchId}/stops/${prevStop.id}`}
+                      aria-label="Previous stop"
+                      className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
+                    >
+                      <IconChevronLeft className="h-4 w-4" stroke={2} aria-hidden="true" />
+                      Prev
+                    </Link>
+                  ) : (
+                    <span className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 px-3.5 py-1.5 text-xs text-slate-400 opacity-60">
+                      <IconChevronLeft className="h-4 w-4" stroke={2} aria-hidden="true" />
+                      Prev
+                    </span>
+                  )}
+                  {nextStop ? (
+                    <Link
+                      to={`/operations/textile-collections/dispatch/${batchId}/stops/${nextStop.id}`}
+                      aria-label="Next stop"
+                      className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
+                    >
+                      Next
+                      <IconChevronRight className="h-4 w-4" stroke={2} aria-hidden="true" />
+                    </Link>
+                  ) : (
+                    <span className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 px-3.5 py-1.5 text-xs text-slate-400 opacity-60">
+                      Next
+                      <IconChevronRight className="h-4 w-4" stroke={2} aria-hidden="true" />
+                    </span>
+                  )}
+                </nav>
               </div>
-              {crew ? (
-                <p className="mt-1.5 text-xs leading-4 text-[var(--color-text-secondary)]">
-                  {crew}
-                </p>
-              ) : null}
+
               {progress ? (
-                <div className="mt-2 flex min-w-[140px] max-w-[320px] items-center">
+                <div className="mt-3.5 border-t border-slate-100 pt-3">
+                  <div className="flex items-center justify-between text-xs text-slate-600 mb-1.5">
+                    <span className="font-semibold">Route Execution Progress</span>
+                    <span>
+                      {progress.collected} of {progress.total} stops collected
+                    </span>
+                  </div>
                   <TripProgressBar
                     batchStatus={batchStatus}
                     collected={progress.collected}
@@ -427,74 +491,116 @@ export default function TextileStopPage(): JSX.Element {
                   />
                 </div>
               ) : null}
-              <nav
-                aria-label="Stop navigation"
-                className="mt-2 flex flex-wrap items-center gap-2 border-t border-[var(--color-border-subtle)] pt-2"
-              >
-                {prevStop ? (
-                  <Link
-                    to={`/operations/textile-collections/dispatch/${batchId}/stops/${prevStop.id}`}
-                    aria-label="Previous stop"
-                    className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-[var(--color-border)] bg-white px-4 text-[14px] font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
-                  >
-                    <IconChevronLeft className="h-4 w-4" stroke={2} aria-hidden="true" />
-                    Prev
-                  </Link>
-                ) : (
-                  <span className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-4 text-[14px] text-[var(--color-text-tertiary)] opacity-60">
-                    <IconChevronLeft className="h-4 w-4" stroke={2} aria-hidden="true" />
-                    Prev
-                  </span>
-                )}
-                {nextStop ? (
-                  <Link
-                    to={`/operations/textile-collections/dispatch/${batchId}/stops/${nextStop.id}`}
-                    aria-label="Next stop"
-                    className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-[var(--color-border)] bg-white px-4 text-[14px] font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
-                  >
-                    Next
-                    <IconChevronRight className="h-4 w-4" stroke={2} aria-hidden="true" />
-                  </Link>
-                ) : (
-                  <span className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-4 text-[14px] text-[var(--color-text-tertiary)] opacity-60">
-                    Next
-                    <IconChevronRight className="h-4 w-4" stroke={2} aria-hidden="true" />
-                  </span>
-                )}
-              </nav>
+
+              {/* Interactive Route Stop Sequence Stepper */}
+              {siblings.length > 1 ? (
+                <div className="mt-4 border-t border-slate-100 pt-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                    Route Itinerary ({siblings.length} stops)
+                  </p>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {siblings.map((stop, idx) => {
+                      const isCurrent = stop.id === (item?.id ?? stopId);
+                      const isStopCollected = stop.status === 'picked_up';
+                      const isStopMissed = stop.status === 'missed';
+                      return (
+                        <Link
+                          key={stop.id}
+                          to={`/operations/textile-collections/dispatch/${batchId}/stops/${stop.id}`}
+                          className={`group flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-xs transition ${
+                            isCurrent
+                              ? 'border-slate-900 bg-slate-900 text-white shadow-xs'
+                              : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white'
+                          }`}
+                        >
+                          <span
+                            className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                              isCurrent
+                                ? 'bg-white text-slate-900'
+                                : isStopCollected
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : isStopMissed
+                                    ? 'bg-rose-100 text-rose-800'
+                                    : 'bg-slate-200 text-slate-700'
+                            }`}
+                          >
+                            {isStopCollected ? (
+                              <IconCheck className="h-3 w-3" stroke={2.5} />
+                            ) : isStopMissed ? (
+                              <IconX className="h-3 w-3" stroke={2.5} />
+                            ) : (
+                              idx + 1
+                            )}
+                          </span>
+                          <div className="flex flex-col text-left">
+                            <span className="font-semibold truncate max-w-[120px]">
+                              {stop.requester_name}
+                            </span>
+                            <span
+                              className={`text-[10px] ${isCurrent ? 'text-slate-300' : 'text-slate-500'}`}
+                            >
+                              {isStopCollected
+                                ? 'Collected'
+                                : isStopMissed
+                                  ? 'Missed'
+                                  : `Stop #${idx + 1}`}
+                            </span>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </section>
 
-            {/* Stop work card */}
-            <section
-              aria-label={`Stop work for ${item.requester_name}`}
-              className="overflow-hidden rounded-lg border border-[var(--color-border-subtle)] bg-white shadow-sm"
-            >
-              <div className="px-4 py-4 sm:px-5">
-                <div className="flex gap-3">
-                  {evidencePhoto ? (
-                    <img
-                      src={evidencePhoto.url}
-                      alt="citizen evidence"
-                      className="mt-0.5 hidden h-16 w-16 shrink-0 rounded-lg object-cover ring-1 ring-black/5 sm:block"
-                    />
-                  ) : null}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                      <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+            {/* Two-Column Responsive Stop Workspace */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              {/* LEFT COLUMN: Stop Information, Customer & Location (7 cols) */}
+              <div className="lg:col-span-7 space-y-4">
+                {/* Card 1: Stop Hero & Customer Details */}
+                <section
+                  aria-label={`Stop work for ${item.requester_name}`}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg">
                         {item.reference}
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(item.reference)}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-900 transition"
+                        title="Copy reference"
+                      >
+                        <IconCopy className="h-3.5 w-3.5" />
+                        <span>{copied ? 'Copied!' : 'Copy'}</span>
+                      </button>
+                      {stopIndex >= 0 && siblings.length > 0 ? (
+                        <span className="text-xs font-semibold text-slate-500">
+                          Stop #{stopIndex + 1}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
                       {isCollected ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold leading-none text-emerald-800 ring-1 ring-inset ring-emerald-200">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 border border-emerald-200">
                           <IconCheck className="h-3.5 w-3.5" stroke={2.5} aria-hidden="true" />{' '}
                           Collected
                         </span>
                       ) : isMissed ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold leading-none text-rose-800 ring-1 ring-inset ring-rose-200">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-800 border border-rose-200">
                           <IconX className="h-3.5 w-3.5" stroke={2.5} aria-hidden="true" /> Missed
                         </span>
                       ) : queued ? (
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold leading-none ring-1 ring-inset ${queued.status === 'failed' ? 'bg-rose-50 text-rose-700 ring-rose-200' : 'bg-amber-50 text-amber-800 ring-amber-200'}`}
+                          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
+                            queued.status === 'failed'
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                              : 'bg-amber-50 text-amber-800 border border-amber-200'
+                          }`}
                         >
                           {queued.status === 'failed' ? (
                             <IconAlertTriangle
@@ -504,14 +610,22 @@ export default function TextileStopPage(): JSX.Element {
                             />
                           ) : (
                             <IconClock className="h-3.5 w-3.5" stroke={2} aria-hidden="true" />
-                          )}{' '}
+                          )}
                           {queued.status === 'failed' ? 'Upload failed' : 'Pending upload'}
                         </span>
                       ) : (
-                        <span className="sr-only">{statusLabel}</span>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-800 border border-sky-200">
+                          Scheduled
+                        </span>
                       )}
+                      <span className="sr-only">{statusLabel}</span>
+                      {isNext ? (
+                        <span className="rounded-full bg-amber-500 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">
+                          Up next
+                        </span>
+                      ) : null}
                       {itemFrozen && !isTerminal ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium leading-none text-amber-800 ring-1 ring-inset ring-amber-200">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 border border-amber-200">
                           <IconLock className="h-3.5 w-3.5" stroke={2} aria-hidden="true" /> Locked
                         </span>
                       ) : null}
@@ -519,186 +633,360 @@ export default function TextileStopPage(): JSX.Element {
                         <UnavailableBadge reason={item.unavailable_reason} />
                       ) : null}
                     </div>
+                  </div>
 
-                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                      <p className="text-[20px] font-bold leading-7 tracking-tight text-[var(--color-ink)]">
+                  <div className="mt-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h1 className="text-2xl font-bold tracking-tight text-slate-900">
                         {item.requester_name}
-                      </p>
-                      {isNext ? (
-                        <span className="inline-flex items-center rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">
-                          Up next
+                      </h1>
+                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600 uppercase">
+                        {item.requester_type ?? 'Individual citizen'}
+                      </span>
+                    </div>
+
+                    {/* Quick Contact & Action Bar */}
+                    <div className="mt-3.5 flex flex-wrap items-center gap-2.5">
+                      <a href={telHref(item.contact_phone)} aria-label="Call" className={BTN.call}>
+                        <IconPhone
+                          className="h-4 w-4 text-emerald-700"
+                          stroke={2}
+                          aria-hidden="true"
+                        />
+                        <span>Call</span>
+                      </a>
+
+                      <a
+                        href={mapsHref(item.pickup_address)}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label="Navigate"
+                        className={BTN.navigate}
+                      >
+                        <IconNavigation
+                          className="h-4 w-4 text-sky-700"
+                          stroke={2}
+                          aria-hidden="true"
+                        />
+                        <span>Navigate</span>
+                        <IconExternalLink className="h-3.5 w-3.5 text-sky-500" />
+                      </a>
+
+                      {item.contact_phone ? (
+                        <span className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-mono font-semibold text-slate-700">
+                          {item.contact_phone}
                         </span>
                       ) : null}
+
+                      {item.contact_email ? (
+                        <a
+                          href={`mailto:${item.contact_email}`}
+                          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-700 hover:bg-white transition"
+                        >
+                          <IconMail className="h-3.5 w-3.5 text-slate-500" />
+                          <span className="truncate max-w-[160px]">{item.contact_email}</span>
+                        </a>
+                      ) : null}
                     </div>
-                    <p className="mt-1 text-[14px] leading-6 text-[var(--color-text-secondary)]">
-                      {item.pickup_address}
-                    </p>
+                  </div>
+                </section>
+
+                {/* Card 2: Location & Directions */}
+                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                  <div className="flex items-center gap-2 text-slate-500 mb-2">
+                    <IconMapPin className="h-4 w-4 text-slate-700" />
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Pickup Address
+                    </h2>
+                  </div>
+                  <p className="text-sm font-semibold leading-relaxed text-slate-900">
+                    {item.pickup_address}
+                  </p>
+                  {item.service_zone ? (
+                    <div className="mt-3 flex items-center gap-2 text-xs text-slate-600">
+                      <span className="rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-700">
+                        Zone: {item.service_zone.name}
+                      </span>
+                    </div>
+                  ) : null}
+                </section>
+
+                {/* Card 3: Materials & Volume Summary */}
+                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                  <div className="flex items-center gap-2 text-slate-500 mb-3">
+                    <IconPackage className="h-4 w-4 text-slate-700" />
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Textile Category & Volume
+                    </h2>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5">
+                      <span className="text-[11px] font-semibold uppercase text-slate-500">
+                        Category
+                      </span>
+                      <p className="mt-1 text-sm font-bold text-slate-900">
+                        {CATEGORY_LABELS[item.category] ?? item.category}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5">
+                      <span className="text-[11px] font-semibold uppercase text-slate-500">
+                        Estimated Volume
+                      </span>
+                      <p className="mt-1 text-sm font-bold text-slate-900">
+                        {item.estimated_bags ?? '—'} bags · {item.estimated_weight_kg ?? '—'} kg
+                      </p>
+                    </div>
+                  </div>
+
+                  {isCollected && item.actual_bags !== null ? (
+                    <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+                        Verified Actuals Collected
+                      </span>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-sm font-bold text-emerald-950">
+                        <IconCheck className="h-4 w-4 text-emerald-600" stroke={2.5} />
+                        <span>{formatVolume(item.actual_bags, item.actual_weight_kg)}</span>
+                        {item.picked_up_at ? (
+                          <span className="text-xs font-normal text-emerald-700">
+                            · Collected at{' '}
+                            {new Date(item.picked_up_at).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {isMissed ? (
+                    <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50/70 p-3.5">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-rose-800">
+                        <IconX className="h-4 w-4" stroke={2.5} />
+                        <span>Missed Pickup Recorded</span>
+                      </div>
+                      <p className="mt-1 text-xs text-rose-900 font-medium">
+                        {item.missed_pickup_reason ??
+                          'Customer was unreachable or gate was locked.'}
+                      </p>
+                    </div>
+                  ) : null}
+                </section>
+
+                {/* Card 4: Citizen Instructions & Evidence */}
+                {item.readiness_instructions || item.notes || evidencePhoto ? (
+                  <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Citizen Notes & Instructions
+                    </h2>
+
+                    {item.readiness_instructions ? (
+                      <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/80 p-3.5 text-xs font-medium text-amber-900">
+                        <IconAlertTriangle
+                          className="mt-0.5 h-4 w-4 shrink-0 text-amber-700"
+                          stroke={2}
+                          aria-hidden="true"
+                        />
+                        <div>
+                          <span className="font-bold block text-amber-950">
+                            Gate & Handover Instructions:
+                          </span>
+                          <p className="mt-0.5">{item.readiness_instructions}</p>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {item.notes ? (
+                      <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-700">
+                        <span className="font-bold text-slate-900 block mb-0.5">
+                          Booking Notes:
+                        </span>
+                        <p>{item.notes}</p>
+                      </div>
+                    ) : null}
 
                     {evidencePhoto ? (
-                      <figure className="mt-3 max-w-md">
+                      <figure className="rounded-xl border border-slate-200 overflow-hidden bg-slate-50 p-3">
+                        <figcaption className="text-xs font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+                          <IconCamera className="h-3.5 w-3.5 text-slate-500" />
+                          Citizen evidence photo
+                        </figcaption>
                         <img
                           src={evidencePhoto.url}
                           alt="citizen evidence"
-                          className="w-full rounded-lg object-cover ring-1 ring-black/5"
+                          className="max-h-72 w-full rounded-lg object-cover ring-1 ring-slate-200"
                           loading="lazy"
                         />
-                        <figcaption className="mt-1 text-xs text-[var(--color-text-secondary)]">
-                          Evidence
-                        </figcaption>
                       </figure>
                     ) : null}
+                  </section>
+                ) : null}
 
-                    <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                      <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                        {CATEGORY_LABELS[item.category] ?? item.category}
-                      </span>
-                      <span className="text-[var(--color-border-strong)]" aria-hidden="true">
-                        ·
-                      </span>
-                      {isCollected && item.actual_bags !== null ? (
-                        <span className="inline-flex flex-wrap items-center gap-1.5 text-[13px] leading-5">
-                          <span className="text-[var(--color-text-secondary)]">
-                            est. {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
-                          </span>
-                          <span className="text-[var(--color-border-strong)]" aria-hidden="true">
-                            →
-                          </span>
-                          <span className="inline-flex items-center gap-1 font-semibold text-[var(--color-ink)]">
-                            <IconCheck
-                              className="h-3.5 w-3.5 text-[var(--color-success)]"
-                              stroke={2.5}
-                              aria-hidden="true"
-                            />
-                            {formatVolume(item.actual_bags, item.actual_weight_kg)}
-                          </span>
-                          {item.picked_up_at ? (
-                            <span className="text-[var(--color-text-tertiary)]">
-                              ·{' '}
-                              {new Date(item.picked_up_at).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </span>
-                          ) : null}
-                        </span>
-                      ) : isMissed ? (
-                        <span className="inline-flex items-center gap-1.5 text-[13px] font-medium leading-5 text-rose-700">
-                          <IconX className="h-4 w-4 shrink-0" stroke={2} aria-hidden="true" />
-                          {item.missed_pickup_reason
-                            ? `Missed · ${item.missed_pickup_reason}`
-                            : 'Missed'}
-                        </span>
+                <RescheduleDetail item={item} />
+              </div>
+
+              {/* RIGHT COLUMN: Execution & Action Console (5 cols) */}
+              <div className="lg:col-span-5 lg:sticky lg:top-4 space-y-4">
+                {!isTerminal ? (
+                  <>
+                    {/* Record Collection Console */}
+                    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 font-bold">
+                            <IconCamera className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h2 className="text-sm font-bold text-slate-900">Record Collection</h2>
+                            <p className="text-[11px] text-slate-500">Weigh bags & capture proof</p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          aria-label="Record this stop"
+                          disabled={outcome.isPending}
+                          onClick={() => setRecordOpen((v) => !v)}
+                          className={BTN.primary}
+                        >
+                          <IconCamera className="h-4 w-4" stroke={1.75} aria-hidden="true" />
+                          {recordOpen ? 'Close' : 'Record collection'}
+                        </button>
+                      </div>
+
+                      {recordOpen ? (
+                        <StopRecordForm
+                          item={item}
+                          busy={outcome.isPending}
+                          onSubmit={(p) => void handleCollect(item, p)}
+                        />
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-3 py-1.5 text-[13px] font-semibold leading-none text-[var(--color-ink)]">
-                          <span
-                            className="h-1.5 w-1.5 rounded-full bg-amber-500"
-                            aria-hidden="true"
-                          />
-                          est. {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
-                        </span>
+                        <p className="text-xs text-slate-500 py-4 text-center">
+                          Click &quot;Record collection&quot; above to open the collection
+                          verification form.
+                        </p>
                       )}
+
+                      {serverError ? (
+                        <p
+                          role="alert"
+                          className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700"
+                        >
+                          {serverError}
+                        </p>
+                      ) : null}
+                    </section>
+
+                    {/* Alternative Actions */}
+                    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">
+                        Alternative Actions
+                      </h3>
+
+                      <div className="flex flex-wrap gap-2">
+                        <SecondaryStopActions
+                          item={item}
+                          busy={outcome.isPending}
+                          showOverride={itemFrozen}
+                          onMissed={(t) => setMissedTarget(t)}
+                          onOverride={(t) => {
+                            setOverrideTarget(t);
+                            setOverrideReason('');
+                          }}
+                        />
+                      </div>
+
+                      {/* Mobile More actions disclosure */}
+                      <details className="mt-2 sm:hidden">
+                        <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-slate-200 bg-white px-4 text-[14px] font-medium hover:bg-slate-50 focus-visible:outline-none">
+                          More actions
+                        </summary>
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          <SecondaryStopActions
+                            item={item}
+                            busy={outcome.isPending}
+                            showOverride={itemFrozen}
+                            onMissed={(t) => setMissedTarget(t)}
+                            onOverride={(t) => {
+                              setOverrideTarget(t);
+                              setOverrideReason('');
+                            }}
+                          />
+                        </div>
+                      </details>
+                    </section>
+                  </>
+                ) : isCollected ? (
+                  /* Collected State */
+                  <section className="rounded-2xl border border-emerald-200 bg-white p-6 shadow-xs text-center space-y-4">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 ring-8 ring-emerald-50">
+                      <IconCheck className="h-7 w-7" stroke={3} />
                     </div>
 
-                    <RescheduleDetail item={item} />
-                    {item.readiness_instructions ? (
-                      <p className="mt-2 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] leading-5 text-amber-800">
-                        <IconAlertTriangle
-                          className="mt-0.5 h-4 w-4 shrink-0"
-                          stroke={1.75}
-                          aria-hidden="true"
-                        />
-                        <span>{item.readiness_instructions}</span>
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-900">
+                        Stop Successfully Collected
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Verified actuals: {item.actual_bags} bags · {item.actual_weight_kg} kg
                       </p>
-                    ) : null}
+                    </div>
 
-                    {!isTerminal ? (
-                      <>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            aria-label="Record this stop"
-                            disabled={outcome.isPending}
-                            onClick={() => setRecordOpen((v) => !v)}
-                            className={BTN.primary}
-                          >
-                            <IconCamera className="h-4 w-4" stroke={1.75} aria-hidden="true" />
-                            {recordOpen ? 'Close' : 'Record collection'}
-                          </button>
-                          <a href={telHref(item.contact_phone)} className={BTN.call}>
-                            <IconPhone
-                              className="h-4 w-4 text-emerald-700"
-                              stroke={1.75}
-                              aria-hidden="true"
-                            />{' '}
-                            Call
-                          </a>
-                          <a
-                            href={mapsHref(item.pickup_address)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={BTN.navigate}
-                          >
-                            <IconNavigation
-                              className="h-4 w-4 text-sky-700"
-                              stroke={1.75}
-                              aria-hidden="true"
-                            />{' '}
-                            Navigate
-                          </a>
-                          <span className="hidden flex-wrap gap-2 sm:flex">
-                            <SecondaryStopActions
-                              item={item}
-                              busy={outcome.isPending}
-                              showOverride={itemFrozen}
-                              onMissed={(t) => setMissedTarget(t)}
-                              onOverride={(t) => {
-                                setOverrideTarget(t);
-                                setOverrideReason('');
-                              }}
-                            />
-                          </span>
-                        </div>
-                        <details className="mt-2 sm:hidden">
-                          <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-[var(--color-border)] bg-white px-4 text-[14px] font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1">
-                            More actions
-                          </summary>
-                          <div className="flex flex-wrap gap-2 pt-2">
-                            <SecondaryStopActions
-                              item={item}
-                              busy={outcome.isPending}
-                              showOverride={itemFrozen}
-                              onMissed={(t) => setMissedTarget(t)}
-                              onOverride={(t) => {
-                                setOverrideTarget(t);
-                                setOverrideReason('');
-                              }}
-                            />
-                          </div>
-                        </details>
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-
-                {!isTerminal && recordOpen ? (
-                  <div className="-mx-4 mt-4 border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] px-4 py-3 sm:-mx-5 sm:px-5">
-                    <StopRecordForm
-                      item={item}
-                      busy={outcome.isPending}
-                      onSubmit={(p) => void handleCollect(item, p)}
-                    />
-                    {serverError ? (
-                      <p
-                        role="alert"
-                        className="mt-2 rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs text-rose-700"
+                    {nextStop ? (
+                      <Link
+                        to={`/operations/textile-collections/dispatch/${batchId}/stops/${nextStop.id}`}
+                        className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white shadow-sm hover:bg-black transition"
                       >
-                        {serverError}
+                        <span>Proceed to Next Stop ({nextStop.requester_name})</span>
+                        <IconChevronRight className="h-4 w-4" stroke={2} />
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/operations/textile-collections/dispatch"
+                        className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 shadow-2xs hover:bg-slate-50 transition"
+                      >
+                        <IconArrowLeft className="h-4 w-4" />
+                        <span>Return to Dispatch Board</span>
+                      </Link>
+                    )}
+                  </section>
+                ) : (
+                  /* Missed State */
+                  <section className="rounded-2xl border border-rose-200 bg-white p-6 shadow-xs text-center space-y-4">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 text-rose-700 ring-8 ring-rose-50">
+                      <IconX className="h-7 w-7" stroke={3} />
+                    </div>
+
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-900">Pickup Logged as Missed</h2>
+                      <p className="text-xs text-rose-700 mt-1 font-medium">
+                        {item.missed_pickup_reason ?? 'Citizen was unavailable'}
                       </p>
-                    ) : null}
-                  </div>
-                ) : null}
+                    </div>
+
+                    {nextStop ? (
+                      <Link
+                        to={`/operations/textile-collections/dispatch/${batchId}/stops/${nextStop.id}`}
+                        className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white shadow-sm hover:bg-black transition"
+                      >
+                        <span>Continue Route (Next: {nextStop.requester_name})</span>
+                        <IconChevronRight className="h-4 w-4" stroke={2} />
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/operations/textile-collections/dispatch"
+                        className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 shadow-2xs hover:bg-slate-50 transition"
+                      >
+                        <IconArrowLeft className="h-4 w-4" />
+                        <span>Return to Dispatch Board</span>
+                      </Link>
+                    )}
+                  </section>
+                )}
               </div>
-            </section>
+            </div>
 
             <ConfirmActionDialog
               open={missedTarget !== null}

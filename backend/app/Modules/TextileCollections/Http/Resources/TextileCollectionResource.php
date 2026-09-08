@@ -78,6 +78,10 @@ final class TextileCollectionResource extends JsonResource
                 'window_end' => $batch->window_end,
                 'status' => $batch->status,
                 'trip_reference' => $batch->trip_reference,
+                'driver_name' => $batch->relationLoaded('assignedUser')
+                    ? $batch->assignedUser?->name
+                    : ($batch->assigned_user_id !== null ? $batch->assignedUser?->name : null),
+                'vehicle_label' => $batch->vehicle_label,
             ],
             'partner' => $department === null ? null : [
                 'id' => $department->id,

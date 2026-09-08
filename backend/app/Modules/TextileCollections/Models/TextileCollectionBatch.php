@@ -19,6 +19,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $window_end
  * @property string $status
  * @property string|null $trip_reference
+ * @property string|null $assigned_user_id
+ * @property string|null $vehicle_label
+ * @property-read User|null $assignedUser
  */
 final class TextileCollectionBatch extends Model
 {
@@ -70,6 +73,12 @@ final class TextileCollectionBatch extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function assignedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_user_id');
     }
 
     /** @return HasMany<TextileCollectionRequest, $this> */

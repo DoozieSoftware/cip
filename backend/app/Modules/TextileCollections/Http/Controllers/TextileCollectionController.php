@@ -329,7 +329,7 @@ final class TextileCollectionController extends BaseController
             : [];
 
         $page = TextileCollectionRequest::query()
-            ->with(['citizen', 'serviceZone', 'batch', 'photos', 'department'])
+            ->with(['citizen', 'serviceZone', 'batch.assignedUser', 'photos', 'department'])
             ->where('department_id', $resolved->id)
             ->when($statuses !== [], fn ($query) => $query->whereIn('status', $statuses))
             ->when(is_string($zoneId) && $zoneId !== '', fn ($query) => $query->where('service_zone_id', $zoneId))
