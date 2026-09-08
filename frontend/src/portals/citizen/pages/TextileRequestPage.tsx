@@ -137,8 +137,11 @@ export default function TextileRequestPage(): JSX.Element {
     liveMethod ?? null,
   );
   const isPremises = liveMethod === 'premises';
-  const pickupMinimumUnavailable =
-    isPremises && (minimumIsLoading || capacityMinimum.isError || !minimum);
+  // Fail closed while the minimum is unverifiable (loading/error), but fail
+  // open when no minimum is configured (minimum === null): null means "no
+  // minimum", which must not block submit. Below-minimum estimates are still
+  // blocked separately via `belowMinimum`.
+  const pickupMinimumUnavailable = isPremises && (minimumIsLoading || capacityMinimum.isError);
   const unavailableDates = availability.data?.unavailable_dates ?? [];
   const nextAvailableDate = availability.data?.next_available_date ?? null;
   function handleCategoryChange(next: TextileCollectionCategory): void {
