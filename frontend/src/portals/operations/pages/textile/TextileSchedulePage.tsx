@@ -43,6 +43,14 @@ import {
   formatVolume,
 } from './shared';
 
+// Quick pickup windows (24h values for the API). Tapping a chip fills both time
+// fields; the native time inputs below stay as the custom override.
+const WINDOW_PRESETS = [
+  { label: '09:00–12:00', start: '09:00', end: '12:00' },
+  { label: '12:00–15:00', start: '12:00', end: '15:00' },
+  { label: '15:00–18:00', start: '15:00', end: '18:00' },
+] as const;
+
 // Shared field input — single source for date/time + driver/team/vehicle/ref/instructions
 // (rounded-lg per spec, token border, focus ring). Keeps ops desk consistent.
 const FIELD_INPUT =
@@ -168,7 +176,9 @@ export default function TextileSchedulePage(): JSX.Element {
   const [overrideReason, setOverrideReason] = useState('');
 
   const queue = useTextileQueue({
-    status: 'ready_to_group',
+    // Backend scheduleBatch accepts ready_to_group + missed — keep missed
+    // bookings in the queue so they can be re-tripped from here.
+    status: 'ready_to_group,missed',
     search,
     page,
     zoneId: zoneId || undefined,
@@ -333,12 +343,12 @@ export default function TextileSchedulePage(): JSX.Element {
           <span>Trip scheduling</span>
           {queue.data?.meta?.total !== undefined ? (
             <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-800 border border-blue-200">
-              {queue.data.meta.total} ready
+              {queue.data.meta.total} to schedule
             </span>
           ) : null}
         </>
       }
-      description="Approved requests grouped by area. Pick a zone, set a date and window, then schedule the trip."
+      description="Approved and missed requests grouped by area. Pick a zone, set a date and window, then schedule the trip."
       toolbar={
         <div className="flex flex-col gap-2 rounded-lg border border-[var(--color-border-subtle)] bg-white px-2.5 py-2 sm:flex-row sm:items-center sm:gap-3">
           <div className="min-w-0 flex-1">
@@ -375,7 +385,7 @@ export default function TextileSchedulePage(): JSX.Element {
         onRetry={() => void queue.refetch()}
         hasRows={rows.length > 0}
         emptyTitle="Nothing ready to schedule"
-        emptyBody="Approve requests on the Pickup reviews page to make them schedulable."
+        emptyBody="Approve requests on the Pickup reviews page to make them schedulable. Missed pickups return here for re-attempt."
       >
         <div className="space-y-4">
           {/* Phase 3: surface why slots are unavailable and why items were rescheduled */}
@@ -436,6 +446,12 @@ export default function TextileSchedulePage(): JSX.Element {
                       rescheduled — previous slot shown per request below.
                     </p>
                   ) : null}
+                  {selectedItems.some((r) => r.status === 'missed') ? (
+                    <p className="mt-1 text-xs text-orange-800">
+                      {selectedItems.filter((r) => r.status === 'missed').length} missed —
+                      re-attempt on the new date and window below.
+                    </p>
+                  ) : null}
                 </div>
                 <label className="text-xs font-medium">
                   <div className="flex items-center justify-between">
@@ -470,38 +486,80 @@ export default function TextileSchedulePage(): JSX.Element {
                     className={FIELD_INPUT}
                   />
                 </label>
-                <label className="text-xs font-medium">
-                  <span className="inline-flex items-center gap-1">
-                    <IconClock
-                      className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
-                      aria-hidden
-                    />
-                    Window start
-                  </span>
-                  <input
-                    type="time"
-                    value={windowStart}
-                    onChange={(event) => setWindowStart(event.target.value)}
-                    aria-label="Window start"
-                    className={FIELD_INPUT}
-                  />
-                </label>
-                <label className="text-xs font-medium">
-                  <span className="inline-flex items-center gap-1">
-                    <IconClock
-                      className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
-                      aria-hidden
-                    />
-                    Window end
-                  </span>
-                  <input
-                    type="time"
-                    value={windowEnd}
-                    onChange={(event) => setWindowEnd(event.target.value)}
-                    aria-label="Window end"
-                    className={FIELD_INPUT}
-                  />
-                </label>
+                <div className="space-y-1">
+                  <div>
+                    <span
+                      id="window-presets-label"
+                      className="text-[11px] font-medium text-[var(--color-text-secondary)]"
+                    >
+                      Quick windows
+                    </span>
+                    <div
+                      role="group"
+                      aria-labelledby="window-presets-label"
+                      className="mt-1 flex flex-wrap gap-1.5"
+                    >
+                      {WINDOW_PRESETS.map((preset) => {
+                        const active = windowStart === preset.start && windowEnd === preset.end;
+                        return (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            aria-pressed={active}
+                            onClick={() => {
+                              setWindowStart(preset.start);
+                              setWindowEnd(preset.end);
+                            }}
+                            className={
+                              active
+                                ? 'inline-flex min-h-9 items-center rounded-full border border-transparent bg-[var(--color-ink)] px-3.5 text-xs font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1'
+                                : 'inline-flex min-h-9 items-center rounded-full border border-[var(--color-border)] bg-white px-3.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1'
+                            }
+                          >
+                            {preset.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-3 pt-1 sm:flex-row">
+                    <label className="text-xs font-medium">
+                      <span className="inline-flex items-center gap-1">
+                        <IconClock
+                          className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
+                          aria-hidden
+                        />
+                        Window start
+                      </span>
+                      <input
+                        type="time"
+                        value={windowStart}
+                        onChange={(event) => setWindowStart(event.target.value)}
+                        aria-label="Window start"
+                        className={FIELD_INPUT}
+                      />
+                    </label>
+                    <label className="text-xs font-medium">
+                      <span className="inline-flex items-center gap-1">
+                        <IconClock
+                          className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
+                          aria-hidden
+                        />
+                        Window end
+                      </span>
+                      <input
+                        type="time"
+                        value={windowEnd}
+                        onChange={(event) => setWindowEnd(event.target.value)}
+                        aria-label="Window end"
+                        className={FIELD_INPUT}
+                      />
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-[var(--color-text-tertiary)]">
+                    Tap a preset or set a custom window.
+                  </p>
+                </div>
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -753,6 +811,11 @@ export default function TextileSchedulePage(): JSX.Element {
                                 {item.reference}
                               </span>
                               <StatusBadge status={item.status} />
+                              {item.status === 'missed' ? (
+                                <span className="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[11px] font-medium text-orange-800">
+                                  Re-attempt
+                                </span>
+                              ) : null}
                               <CategoryBadge category={item.category} />
                               <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-ink)]">
                                 <IconPackage
