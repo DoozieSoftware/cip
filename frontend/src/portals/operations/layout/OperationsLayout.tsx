@@ -284,12 +284,12 @@ export function OperationsLayout(): JSX.Element {
         </header>
 
         {/* Department switcher bar */}
-        <div className="border-b border-[var(--color-border-faint)] bg-[#faf9f6] px-4 py-2 lg:px-10">
+        <div className="border-b border-[var(--color-border-faint)] bg-[#faf9f6] px-4 py-2 lg:px-8">
           <DepartmentSwitcher />
         </div>
 
         {/* Content area */}
-        <main className="w-full flex-1 px-4 py-6 pb-28 sm:px-6 lg:px-10 lg:py-8 lg:pb-12">
+        <main className="w-full flex-1 px-4 py-5 pb-28 sm:px-6 lg:px-8 lg:py-6 lg:pb-12">
           <Outlet />
         </main>
 

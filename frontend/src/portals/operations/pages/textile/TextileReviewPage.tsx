@@ -79,14 +79,16 @@ export default function TextileReviewPage(): JSX.Element {
       }
       description="Select requests to approve in a batch, or open a row to decide individually. Rejecting always needs a reason the requester will see, so it lives in the detail view."
       toolbar={
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <SearchBox
-            value={search}
-            onChange={(next) => {
-              setSearch(next);
-              setPage(1);
-            }}
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="min-w-[200px] flex-1 sm:max-w-xs">
+            <SearchBox
+              value={search}
+              onChange={(next) => {
+                setSearch(next);
+                setPage(1);
+              }}
+            />
+          </div>
           <ZoneFilter
             value={zoneId}
             onChange={(next) => {
@@ -120,35 +122,40 @@ export default function TextileReviewPage(): JSX.Element {
         emptyBody="New citizen pickup requests will land here."
       >
         <div className="space-y-3">
+          {/* Linear/Stripe-style Floating Selection Dock: Zero layout shift */}
           {selected.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-4 py-3">
-              <p className="text-sm font-medium">
-                {selected.length} selected · {selectedBags} bags
+            <aside
+              aria-label="Bulk actions"
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-full border border-black/10 bg-[#1d1d1b] px-4 py-2 text-white shadow-2xl backdrop-blur"
+            >
+              <p className="text-xs font-medium whitespace-nowrap">
+                <span className="font-semibold text-white">{selected.length}</span> selected ·{' '}
+                {selectedBags} bags
                 {selectedWeight > 0 ? ` · ~${selectedWeight.toFixed(1)} kg` : ''}
               </p>
               <button
                 type="button"
                 disabled={approve.isPending}
                 onClick={() => setApproveTarget(selected)}
-                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-ink)] px-4 text-sm font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 disabled:opacity-40"
+                className="inline-flex h-7 items-center gap-1 rounded-full bg-white px-3 text-xs font-semibold text-[#1d1d1b] transition hover:bg-neutral-200 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
-                <IconCheck className="h-4 w-4" />
-                Approve selected ({selected.length})
+                <IconCheck className="h-3.5 w-3.5" />
+                Approve ({selected.length})
               </button>
               <button
                 type="button"
                 onClick={() => setSelected([])}
-                className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+                className="inline-flex h-7 items-center rounded-full px-2 text-xs font-medium text-neutral-400 hover:text-white transition focus-visible:outline-none"
               >
-                Clear selection
+                Clear
               </button>
-            </div>
+            </aside>
           ) : null}
 
           <TableShell
             head={
               <>
-                <th className="w-10 px-3 py-2.5">
+                <th className="w-9 px-3 py-2">
                   <input
                     type="checkbox"
                     aria-label="Select all on this page"
@@ -156,85 +163,89 @@ export default function TextileReviewPage(): JSX.Element {
                     onChange={(event) =>
                       setSelected(event.target.checked ? rows.map((r) => r.id) : [])
                     }
-                    className="h-4 w-4 accent-[var(--color-ink)]"
+                    className="h-3.5 w-3.5 rounded accent-[var(--color-ink)]"
                   />
                 </th>
-                <th className="px-3 py-2.5">Reference</th>
-                <th className="px-3 py-2.5">Requester</th>
-                <th className="px-3 py-2.5">Zone</th>
-                <th className="px-3 py-2.5">Volume</th>
-                <th className="px-3 py-2.5">Method</th>
-                <th className="px-3 py-2.5">Submitted</th>
-                <th className="px-3 py-2.5 text-right">Actions</th>
+                <th className="px-3 py-2">Reference &amp; Category</th>
+                <th className="px-3 py-2">Requester</th>
+                <th className="px-3 py-2">Zone</th>
+                <th className="px-3 py-2">Volume</th>
+                <th className="px-3 py-2">Submitted</th>
+                <th className="px-3 py-2 text-right">Action</th>
               </>
             }
           >
-            {rows.map((item) => (
-              <tr
-                key={item.id}
-                className={`hover:bg-[var(--color-surface-alt)] ${selected.includes(item.id) ? 'bg-[var(--color-info)]/[0.06]' : ''}`}
-              >
-                <td className="px-3 py-2.5">
-                  <input
-                    type="checkbox"
-                    aria-label={`Select ${item.reference}`}
-                    checked={selected.includes(item.id)}
-                    onChange={() =>
-                      setSelected((current) =>
-                        current.includes(item.id)
-                          ? current.filter((id) => id !== item.id)
-                          : [...current, item.id],
-                      )
-                    }
-                    className="h-4 w-4 accent-[var(--color-ink)]"
-                  />
-                </td>
-                <td className="px-3 py-2.5">
-                  <Link
-                    to={`/operations/textile-collections/${item.id}`}
-                    className="font-mono text-xs font-medium text-[var(--color-ink)] underline-offset-2 hover:underline"
-                  >
-                    {item.reference}
-                  </Link>
-                  <p className="mt-0.5 max-w-[220px] truncate text-xs text-[var(--color-text-secondary)]">
-                    {item.title}
-                  </p>
-                  <div className="mt-0.5 flex flex-wrap gap-1">
-                    <CategoryBadge category={item.category} />
-                    <MethodBadge method={item.collection_method} />
-                  </div>
-                  {item.service_zone?.dropoff_name ? (
-                    <p className="mt-0.5 text-[10px] text-[var(--color-text-tertiary)]">
-                      {item.service_zone.dropoff_name}
-                    </p>
-                  ) : null}
-                </td>
-                <td className="px-3 py-2.5">
-                  <p className="font-medium">{item.requester_name}</p>
-                  <p className="text-xs text-[var(--color-text-secondary)]">{item.contact_phone}</p>
-                </td>
-                <td className="px-3 py-2.5">{item.service_zone?.name ?? '—'}</td>
-                <td className="whitespace-nowrap px-3 py-2.5">
-                  {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2.5">
-                  {item.collection_method === 'dropoff' ? 'Drop-off' : 'Pickup'}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2.5 text-xs text-[var(--color-text-secondary)]">
-                  {item.submitted_at ? new Date(item.submitted_at).toLocaleDateString() : '—'}
-                </td>
-                <td className="px-3 py-2.5">
-                  <div className="flex justify-end">
+            {rows.map((item) => {
+              const isSelected = selected.includes(item.id);
+              const customTitle =
+                item.title && item.title.trim().toLowerCase() !== 'textile pickup request'
+                  ? item.title
+                  : null;
+              return (
+                <tr
+                  key={item.id}
+                  className={`transition-colors hover:bg-[var(--color-surface-alt)] ${isSelected ? 'bg-[var(--color-info)]/[0.07]' : ''}`}
+                >
+                  <td className="px-3 py-2">
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${item.reference}`}
+                      checked={isSelected}
+                      onChange={() =>
+                        setSelected((current) =>
+                          current.includes(item.id)
+                            ? current.filter((id) => id !== item.id)
+                            : [...current, item.id],
+                        )
+                      }
+                      className="h-3.5 w-3.5 rounded accent-[var(--color-ink)]"
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Link
+                        to={`/operations/textile-collections/${item.id}`}
+                        className="font-mono text-xs font-semibold text-[var(--color-ink)] hover:underline"
+                      >
+                        {item.reference}
+                      </Link>
+                      <CategoryBadge category={item.category} />
+                      <MethodBadge method={item.collection_method} />
+                    </div>
+                    {customTitle || item.service_zone?.dropoff_name ? (
+                      <p className="mt-0.5 max-w-[260px] truncate text-[11px] text-[var(--color-text-secondary)]">
+                        {customTitle ?? item.service_zone?.dropoff_name}
+                      </p>
+                    ) : null}
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="block text-xs font-medium text-[var(--color-ink)]">
+                      {item.requester_name}
+                    </span>
+                    <span className="block font-mono text-[10px] text-[var(--color-text-tertiary)]">
+                      {item.contact_phone ? `•••• ${item.contact_phone.slice(-4)}` : '—'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-xs text-[var(--color-ink)]">
+                    {item.service_zone?.name ?? '—'}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-[var(--color-ink)]">
+                    {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-xs text-[var(--color-text-secondary)]">
+                    {item.submitted_at ? new Date(item.submitted_at).toLocaleDateString() : '—'}
+                  </td>
+                  <td className="px-3 py-2 text-right">
                     <Link
                       to={`/operations/textile-collections/${item.id}`}
-                      className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-white px-3.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+                      className="inline-flex h-7 items-center rounded-md px-2.5 text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
                     >
-                      View
+                      View →
                     </Link>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
           </TableShell>
         </div>
       </DeskStates>

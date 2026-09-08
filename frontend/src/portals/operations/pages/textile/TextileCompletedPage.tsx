@@ -57,14 +57,16 @@ export default function TextileCompletedPage(): JSX.Element {
       title="Pickup history"
       description="Completed, missed, rejected and cancelled pickup requests — the audit trail for reporting."
       toolbar={
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <SearchBox
-            value={search}
-            onChange={(next) => {
-              setSearch(next);
-              setPage(1);
-            }}
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="min-w-[200px] flex-1 sm:max-w-xs">
+            <SearchBox
+              value={search}
+              onChange={(next) => {
+                setSearch(next);
+                setPage(1);
+              }}
+            />
+          </div>
           <ZoneFilter
             value={zoneId}
             onChange={(next) => {
@@ -82,7 +84,10 @@ export default function TextileCompletedPage(): JSX.Element {
         </div>
       }
     >
-      <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filter by outcome">
+      <div
+        className="flex items-center gap-1.5 overflow-x-auto pb-0.5"
+        aria-label="Filter by outcome"
+      >
         {HISTORY_FILTERS.map((filter) => (
           <button
             key={filter.value}
@@ -92,10 +97,10 @@ export default function TextileCompletedPage(): JSX.Element {
               setPage(1);
             }}
             className={cx(
-              'min-h-10 shrink-0 rounded-full px-4 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1',
+              'h-7 shrink-0 rounded-md px-2.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]',
               statusFilter === filter.value
                 ? 'bg-[var(--color-ink)] text-white'
-                : 'border border-[var(--color-border)] bg-white hover:bg-[var(--color-surface-alt)]',
+                : 'border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)]',
             )}
           >
             {filter.label}
@@ -113,55 +118,55 @@ export default function TextileCompletedPage(): JSX.Element {
         <TableShell
           head={
             <>
-              <th className="px-3 py-2.5">Reference</th>
-              <th className="px-3 py-2.5">Requester</th>
-              <th className="px-3 py-2.5">Zone</th>
-              <th className="px-3 py-2.5">Method</th>
-              <th className="px-3 py-2.5">Est. volume</th>
-              <th className="px-3 py-2.5">Collected</th>
-              <th className="px-3 py-2.5">Status</th>
+              <th className="px-3 py-2">Reference &amp; Category</th>
+              <th className="px-3 py-2">Requester</th>
+              <th className="px-3 py-2">Zone</th>
+              <th className="px-3 py-2">Est. Volume</th>
+              <th className="px-3 py-2">Collected</th>
+              <th className="px-3 py-2">Status</th>
             </>
           }
         >
           {rows.map((item) => (
-            <tr key={item.id} className="hover:bg-[var(--color-surface-alt)]">
-              <td className="px-3 py-2.5">
-                <Link
-                  to={`/operations/textile-collections/${item.id}`}
-                  className="font-mono text-xs font-medium text-[var(--color-ink)] underline decoration-[var(--color-border)] underline-offset-2 hover:decoration-[var(--color-ink)]"
-                >
-                  {item.reference}
-                </Link>
-                <p className="mt-0.5 max-w-[200px] truncate text-xs text-[var(--color-text-secondary)]">
-                  {item.title}
-                </p>
-                <div className="mt-0.5">
+            <tr key={item.id} className="transition-colors hover:bg-[var(--color-surface-alt)]">
+              <td className="px-3 py-2">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Link
+                    to={`/operations/textile-collections/${item.id}`}
+                    className="font-mono text-xs font-semibold text-[var(--color-ink)] hover:underline"
+                  >
+                    {item.reference}
+                  </Link>
                   <CategoryBadge category={item.category} />
+                  <MethodBadge method={item.collection_method} />
                 </div>
               </td>
-              <td className="px-3 py-2.5">{item.requester_name}</td>
-              <td className="px-3 py-2.5">{item.service_zone?.name ?? '—'}</td>
-              <td className="px-3 py-2.5">
-                <MethodBadge method={item.collection_method} />
+              <td className="px-3 py-2 text-xs font-medium text-[var(--color-ink)]">
+                {item.requester_name}
               </td>
-              <td className="whitespace-nowrap px-3 py-2.5 text-xs">
+              <td className="px-3 py-2 text-xs text-[var(--color-ink)]">
+                {item.service_zone?.name ?? '—'}
+              </td>
+              <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-[var(--color-ink)]">
                 {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
               </td>
-              <td className="whitespace-nowrap px-3 py-2.5 text-xs">
+              <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-[var(--color-ink)]">
                 {item.actual_bags !== null
                   ? `${item.actual_bags} bags · ${item.actual_weight_kg} kg`
                   : '—'}
               </td>
-              <td className="px-3 py-2.5">
-                <StatusBadge status={item.status} />
-                {item.status === 'rejected' && item.rejection_reason ? (
-                  <p
-                    className="mt-1 max-w-[220px] truncate text-xs text-[var(--color-text-secondary)]"
-                    title={item.rejection_reason}
-                  >
-                    {item.rejection_reason}
-                  </p>
-                ) : null}
+              <td className="px-3 py-2">
+                <div className="flex items-center gap-1.5">
+                  <StatusBadge status={item.status} />
+                  {item.status === 'rejected' && item.rejection_reason ? (
+                    <span
+                      className="max-w-[160px] truncate text-[11px] text-[var(--color-text-secondary)]"
+                      title={item.rejection_reason}
+                    >
+                      {item.rejection_reason}
+                    </span>
+                  ) : null}
+                </div>
               </td>
             </tr>
           ))}

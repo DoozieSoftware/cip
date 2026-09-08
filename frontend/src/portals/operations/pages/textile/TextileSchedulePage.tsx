@@ -109,8 +109,8 @@ export default function TextileSchedulePage(): JSX.Element {
       }
       description="Approved and missed requests grouped by area. Select requests, then continue to schedule the trip."
       toolbar={
-        <div className="flex flex-col gap-2 rounded-lg border border-[var(--color-border-subtle)] bg-white px-2.5 py-2 sm:flex-row sm:items-center sm:gap-3">
-          <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="min-w-[200px] flex-1 sm:max-w-xs">
             <SearchBox
               value={search}
               onChange={(next) => {
@@ -119,22 +119,20 @@ export default function TextileSchedulePage(): JSX.Element {
               }}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-            <ZoneFilter
-              value={zoneId}
-              onChange={(next) => {
-                setZoneId(next);
-                setPage(1);
-              }}
-            />
-            <CategoryFilter
-              value={categoryId}
-              onChange={(next) => {
-                setCategoryId(next);
-                setPage(1);
-              }}
-            />
-          </div>
+          <ZoneFilter
+            value={zoneId}
+            onChange={(next) => {
+              setZoneId(next);
+              setPage(1);
+            }}
+          />
+          <CategoryFilter
+            value={categoryId}
+            onChange={(next) => {
+              setCategoryId(next);
+              setPage(1);
+            }}
+          />
         </div>
       }
     >
@@ -174,38 +172,37 @@ export default function TextileSchedulePage(): JSX.Element {
                 aria-label={zone?.name ?? 'No zone'}
                 className={`overflow-hidden rounded-xl border bg-white shadow-sm ${zoneLocked ? 'border-[var(--color-border-subtle)] opacity-60' : 'border-[var(--color-border-subtle)]'}`}
               >
-                <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-4 py-3 sm:px-5">
-                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-3.5 py-2.5 sm:px-4">
+                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                     <IconMapPin
-                      className="h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]"
+                      className="h-3.5 w-3.5 shrink-0 text-[var(--color-text-tertiary)]"
                       stroke={1.75}
                       aria-hidden
                     />
-                    <h2 className="text-sm font-semibold tracking-tight text-[var(--color-ink)]">
+                    <h2 className="text-xs font-semibold tracking-tight text-[var(--color-ink)]">
                       {zone?.name ?? 'No zone'}
                     </h2>
-                    <span className="rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-text-secondary)]">
+                    <span className="rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)]">
                       {items.length} request{items.length === 1 ? '' : 's'} · {zoneBags} bags
                       {zoneWeight > 0 ? ` · ${zoneWeight.toFixed(1)} kg` : ''}
                     </span>
                     {selectedInZone > 0 ? (
-                      <span className="rounded-full bg-[var(--color-ink)] px-2 py-0.5 text-[11px] font-semibold text-white">
+                      <span className="rounded bg-[var(--color-ink)] px-1.5 py-0.5 text-[10px] font-semibold text-white">
                         {selectedInZone} selected
                       </span>
                     ) : null}
                     {zoneLocked ? (
-                      <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                      <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
                         Locked — finish the current zone first
                       </span>
                     ) : null}
                     {zoneUnavailable ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
-                        <IconAlertTriangle className="h-3 w-3" aria-hidden /> Unavailable slots in
-                        zone
+                      <span className="inline-flex items-center gap-1 rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-medium text-rose-700 border border-rose-200">
+                        <IconAlertTriangle className="h-3 w-3" aria-hidden /> Unavailable slots
                       </span>
                     ) : null}
                   </div>
-                  <label className="flex min-h-11 items-center gap-2 rounded-full px-1 text-xs font-medium text-[var(--color-text-secondary)] focus-within:outline-none focus-within:ring-2 focus-within:ring-[var(--color-ink)] focus-within:ring-offset-1">
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-secondary)] focus-within:outline-none focus-within:ring-1 focus-within:ring-[var(--color-ink)] rounded px-1">
                     <input
                       type="checkbox"
                       aria-label={`Select all in ${zone?.name ?? 'zone'}`}
@@ -219,7 +216,7 @@ export default function TextileSchedulePage(): JSX.Element {
                             : current.filter((id) => !ids.includes(id));
                         })
                       }
-                      className="h-5 w-5 rounded accent-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+                      className="h-4 w-4 rounded accent-[var(--color-ink)]"
                     />
                     Select all
                   </label>
@@ -235,9 +232,9 @@ export default function TextileSchedulePage(): JSX.Element {
                     return (
                       <li
                         key={item.id}
-                        className={`px-4 py-3 text-sm sm:px-5 ${isSelected ? 'bg-[var(--color-info)]/[0.06]' : 'bg-white'} hover:bg-[var(--color-surface-alt)]/60`}
+                        className={`px-3.5 py-2.5 text-sm sm:px-4 transition-colors ${isSelected ? 'bg-[var(--color-info)]/[0.07]' : 'bg-white'} hover:bg-[var(--color-surface-alt)]/60`}
                       >
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-2.5">
                           <input
                             type="checkbox"
                             aria-label={`Select ${item.reference}`}
@@ -250,21 +247,21 @@ export default function TextileSchedulePage(): JSX.Element {
                                   : [...current, item.id],
                               )
                             }
-                            className="mt-1 h-5 w-5 shrink-0 rounded accent-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+                            className="mt-0.5 h-4 w-4 shrink-0 rounded accent-[var(--color-ink)]"
                           />
                           <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
                               <span className="font-mono text-xs font-semibold tracking-wide text-[var(--color-ink)]">
                                 {item.reference}
                               </span>
                               <StatusBadge status={item.status} />
                               {item.status === 'missed' ? (
-                                <span className="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[11px] font-medium text-orange-800">
+                                <span className="rounded border border-orange-200 bg-orange-50 px-1.5 py-0.5 text-[10px] font-medium text-orange-800">
                                   Re-attempt
                                 </span>
                               ) : null}
                               <CategoryBadge category={item.category} />
-                              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-ink)]">
+                              <span className="inline-flex items-center gap-1 rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-ink)]">
                                 <IconPackage
                                   className="h-3 w-3 text-[var(--color-text-secondary)]"
                                   stroke={1.75}
@@ -282,22 +279,28 @@ export default function TextileSchedulePage(): JSX.Element {
                                 <UnavailableBadge reason={item.unavailable_reason} />
                               ) : null}
                             </div>
-                            <p className="mt-1.5 flex items-center gap-1.5 text-[15px] font-semibold leading-5 tracking-tight text-[var(--color-ink)]">
-                              <IconUser
-                                className="h-3.5 w-3.5 shrink-0 text-[var(--color-text-tertiary)]"
-                                stroke={1.75}
-                                aria-hidden
-                              />
-                              <span className="min-w-0 truncate">{item.requester_name}</span>
-                            </p>
-                            <p className="mt-0.5 flex items-start gap-1.5 text-[13px] leading-5 text-[var(--color-text-secondary)]">
-                              <IconMapPin
-                                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-text-tertiary)]"
-                                stroke={1.75}
-                                aria-hidden
-                              />
-                              <span className="min-w-0 break-words">{item.pickup_address}</span>
-                            </p>
+                            <div className="mt-1 flex flex-wrap items-baseline gap-x-3 text-xs">
+                              <span className="flex items-center gap-1 font-medium text-[var(--color-ink)]">
+                                <IconUser
+                                  className="h-3 w-3 shrink-0 text-[var(--color-text-tertiary)]"
+                                  stroke={1.75}
+                                  aria-hidden
+                                />
+                                <span className="truncate max-w-[180px]">
+                                  {item.requester_name}
+                                </span>
+                              </span>
+                              <span className="flex items-center gap-1 text-[var(--color-text-secondary)]">
+                                <IconMapPin
+                                  className="h-3 w-3 shrink-0 text-[var(--color-text-tertiary)]"
+                                  stroke={1.75}
+                                  aria-hidden
+                                />
+                                <span className="truncate max-w-sm" title={item.pickup_address}>
+                                  {item.pickup_address}
+                                </span>
+                              </span>
+                            </div>
                             <RescheduleDetail item={item} />
                           </div>
                         </div>
@@ -325,32 +328,33 @@ export default function TextileSchedulePage(): JSX.Element {
         </div>
       </DeskStates>
 
-      {/* Sticky selection bar — continues to the dedicated new-trip page */}
+      {/* Sleek Floating Dock: Linear/Stripe style, zero layout shifting */}
       {selected.length > 0 ? (
-        <div className="sticky bottom-0 z-10 -mx-1 border-t border-[var(--color-border-subtle)] bg-white/95 px-3 py-3 backdrop-blur">
-          <div className="mx-auto flex w-full max-w-2xl items-center gap-2">
-            <button
-              type="button"
-              disabled={selectedZoneIds.size !== 1}
-              onClick={() => {
-                void navigate(TRIP_NEW_PATH, { state: { selectedIds: selected } });
-              }}
-              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 disabled:opacity-40"
-            >
-              <IconCalendarPlus className="h-4 w-4" stroke={1.75} aria-hidden />
-              {selected.length} selected · {selectedBags} bags · Schedule →
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelected([])}
-              aria-label="Clear selection"
-              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
-            >
-              <IconX className="h-4 w-4" aria-hidden />
-              Clear
-            </button>
-          </div>
-        </div>
+        <aside
+          aria-label="Schedule actions"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-full border border-black/10 bg-[#1d1d1b] px-4 py-2 text-white shadow-2xl backdrop-blur"
+        >
+          <button
+            type="button"
+            disabled={selectedZoneIds.size !== 1}
+            onClick={() => {
+              void navigate(TRIP_NEW_PATH, { state: { selectedIds: selected } });
+            }}
+            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-full bg-white px-4 text-xs font-semibold text-[#1d1d1b] transition hover:bg-neutral-200 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            <IconCalendarPlus className="h-3.5 w-3.5" stroke={1.75} aria-hidden />
+            {selected.length} selected · {selectedBags} bags · Schedule →
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelected([])}
+            aria-label="Clear selection"
+            className="inline-flex h-8 items-center justify-center gap-1 rounded-full px-2.5 text-xs font-medium text-neutral-400 hover:text-white transition focus-visible:outline-none"
+          >
+            <IconX className="h-3 w-3" aria-hidden />
+            Clear selection
+          </button>
+        </aside>
       ) : null}
 
       <Pager

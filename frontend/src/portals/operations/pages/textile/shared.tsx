@@ -179,17 +179,15 @@ export function DeskPage({
   }
 
   return (
-    <div className="min-w-0 space-y-4">
-      <header className="border-b border-[var(--color-border-faint)] pb-3.5">
+    <div className="min-w-0 space-y-3">
+      <header className="border-b border-[var(--color-border-faint)] pb-2.5">
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
           Dr. Linen operations
         </p>
-        <h1 className="mt-0.5 flex flex-wrap items-center gap-2.5 text-[22px] font-semibold tracking-[-0.025em] leading-tight text-[var(--color-ink)]">
+        <h1 className="mt-0.5 flex flex-wrap items-center gap-2 text-lg font-semibold tracking-[-0.02em] leading-tight text-[var(--color-ink)]">
           {title}
         </h1>
-        <p className="mt-1 text-[13px] leading-4 text-[var(--color-text-secondary)]">
-          {description}
-        </p>
+        <p className="mt-0.5 text-xs leading-4 text-[var(--color-text-secondary)]">{description}</p>
       </header>
       {toolbar}
       {children}
@@ -198,9 +196,7 @@ export function DeskPage({
 }
 
 /**
- * Ops desk uses pill (rounded-full) controls intentionally — desk is a high-density
- * filter bar, not a form. Spec 8px (rounded-lg) applies to cards/inputs; pills stay
- * for Search/Zone/Category/Method/Pager but must have focus rings (a11y). Keep.
+ * High-density, space-efficient filter controls following YC/Linear operational UI standards.
  */
 export function SearchBox({
   value,
@@ -227,9 +223,9 @@ export function SearchBox({
   }, [localValue, onChange, value]);
 
   return (
-    <div className="relative w-full max-w-md">
+    <div className="relative w-full max-w-sm">
       <IconSearch
-        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)]"
+        className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-text-tertiary)]"
         stroke={1.65}
       />
       <input
@@ -237,7 +233,7 @@ export function SearchBox({
         onChange={(event) => setLocalValue(event.target.value)}
         placeholder={placeholder}
         aria-label="Search pickup requests"
-        className="min-h-10 w-full rounded-full border border-[var(--color-border)] bg-white pl-9 pr-8 text-sm focus-visible:border-[var(--color-border-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+        className="h-9 w-full rounded-lg border border-[var(--color-border)] bg-white pl-8 pr-7 text-xs text-[var(--color-ink)] focus-visible:border-[var(--color-border-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
       />
       {localValue ? (
         <button
@@ -247,9 +243,9 @@ export function SearchBox({
             setLocalValue('');
             onChange('');
           }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
         >
-          <IconX className="h-3.5 w-3.5" />
+          <IconX className="h-3 w-3" />
         </button>
       ) : null}
     </div>
@@ -269,7 +265,7 @@ export function ZoneFilter({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       aria-label="Filter by service zone"
-      className="min-h-10 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+      className="h-9 rounded-lg border border-[var(--color-border)] bg-white px-2.5 text-xs font-medium text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
     >
       <option value="">All zones</option>
       {(zones.data ?? []).map((zone) => (
@@ -293,7 +289,7 @@ export function CategoryFilter({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       aria-label="Filter by category"
-      className="min-h-10 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+      className="h-9 rounded-lg border border-[var(--color-border)] bg-white px-2.5 text-xs font-medium text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
     >
       <option value="">All categories</option>
       {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
@@ -309,16 +305,23 @@ export function CategoryBadge({ category }: { category: string }): JSX.Element |
   const label = CATEGORY_LABELS[category];
   if (!label) return null;
   return (
-    <span className="font-mono text-[9px] uppercase tracking-[0.1em] rounded px-1.5 py-0.5 bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]">
+    <span className="font-mono text-[9px] uppercase tracking-[0.08em] rounded px-1.5 py-0.5 bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]">
       {label}
     </span>
   );
 }
 export function MethodBadge({ method }: { method: string }): JSX.Element {
-  const style = method === 'dropoff' ? 'bg-sky-50 text-sky-800' : 'bg-violet-50 text-violet-800';
+  const style =
+    method === 'dropoff'
+      ? 'bg-sky-50 text-sky-800 border-sky-200'
+      : 'bg-violet-50 text-violet-800 border-violet-200';
   const label = method === 'dropoff' ? 'Drop-off' : method === 'premises' ? 'Pickup' : method;
   return (
-    <span className={cx('rounded-full px-2 py-0.5 text-[11px] font-medium', style)}>{label}</span>
+    <span
+      className={cx('rounded border px-1.5 py-0.5 text-[10px] font-medium leading-none', style)}
+    >
+      {label}
+    </span>
   );
 }
 export function VarianceBadge({
@@ -353,7 +356,7 @@ export function MethodFilter({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label="Filter by collection method"
-      className="min-h-10 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+      className="h-9 rounded-lg border border-[var(--color-border)] bg-white px-2.5 text-xs font-medium text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
     >
       <option value="">All methods</option>
       <option value="dropoff">Drop-off</option>
@@ -372,9 +375,9 @@ export function TableShell({
 }): JSX.Element {
   return (
     <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-black/5">
-      <table className="w-full min-w-[820px] border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+      <table className="w-full min-w-[760px] border-collapse text-sm">
+        <thead className="sticky top-0 z-10 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] shadow-[0_1px_0_var(--color-border-subtle)]">
+          <tr className="text-left font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             {head}
           </tr>
         </thead>
