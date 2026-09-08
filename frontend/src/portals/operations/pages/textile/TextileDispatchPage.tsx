@@ -613,118 +613,74 @@ export default function TextileDispatchPage(): JSX.Element {
         ) : null}
       </div>
 
-      {/* CIP India Sovereign 5-Slot Tabular Metric Strip */}
+      {/* Clean 4-Stat Metric Summary */}
       {summary ? (
-        <div aria-label="Dispatch summary" className="space-y-3">
-          <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-xs">
-            <div className="grid grid-cols-2 divide-y divide-[var(--color-border-subtle)] sm:grid-cols-5 sm:divide-y-0 sm:divide-x">
-              {/* 01 / ACTIVE VANS */}
-              <div className="flex flex-col justify-between p-3.5 sm:p-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
-                    01 / Active Vans
-                  </span>
-                  <Truck className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <p className="font-mono text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-ink)] tabular-nums">
-                    {summary.trips}
-                  </p>
-                  <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px] font-bold text-emerald-800">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" aria-hidden="true" />
-                    Online
-                  </span>
-                </div>
-                <span className="mt-1 text-[11px] text-[var(--color-text-secondary)]">
-                  Active deployment
-                </span>
-              </div>
-
-              {/* 02 / ROUTE PROGRESS */}
-              <div className="flex flex-col justify-between p-3.5 sm:p-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
-                    02 / Route Progress
-                  </span>
-                  <span className="font-mono text-xs font-bold text-[var(--color-ink)]">
-                    {summary.total > 0 ? Math.round((summary.collected / summary.total) * 100) : 0}%
-                  </span>
-                </div>
-                <div className="mt-2">
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-alt)]">
-                    <div
-                      className="h-full rounded-full bg-[var(--color-ink)] transition-all duration-500"
-                      style={{
-                        width: `${summary.total > 0 ? Math.round((summary.collected / summary.total) * 100) : 0}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="mt-1 flex items-center justify-between text-[11px] text-[var(--color-text-secondary)]">
-                  <span>
-                    {summary.collected} of {summary.total} completed
-                  </span>
-                  <span className="font-mono font-medium">{summary.total} stops</span>
-                </div>
-              </div>
-
-              {/* 03 / RECOVERY LOAD */}
-              <div className="flex flex-col justify-between p-3.5 sm:p-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
-                    03 / Recovery Load
-                  </span>
-                  <Scale className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
-                </div>
-                <p className="mt-2 font-mono text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-ink)] tabular-nums">
-                  {summary.totalWeight}{' '}
-                  <span className="text-xs font-normal text-[var(--color-text-secondary)]">kg</span>
-                </p>
-                <span className="mt-1 text-[11px] text-[var(--color-text-secondary)]">
-                  Est. {summary.totalBags} bags cargo
-                </span>
-              </div>
-
-              {/* 04 / REMAINING STOPS */}
-              <div className="flex flex-col justify-between p-3.5 sm:p-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
-                    04 / Remaining Stops
-                  </span>
-                  <Clock className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
-                </div>
-                <p className="mt-2 font-mono text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-ink)] tabular-nums">
-                  {summary.remaining}
-                </p>
-                <span className="mt-1 text-[11px] text-[var(--color-text-secondary)]">
-                  Pending completion
-                </span>
-              </div>
-
-              {/* 05 / SYSTEM EXCEPTIONS */}
-              <div className="col-span-2 sm:col-span-1 flex flex-col justify-between p-3.5 sm:p-4 bg-[var(--color-surface-sunken)]/50">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
-                    05 / Exceptions
-                  </span>
-                  <span
-                    className="h-2 w-2 rounded-full bg-emerald-500"
-                    title="Telemetry verified"
-                  />
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <p className="font-mono text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-ink)] tabular-nums">
-                    0
-                  </p>
-                  <span className="inline-flex items-center rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] font-medium text-zinc-700">
-                    Normal
-                  </span>
-                </div>
-                <span className="mt-1 text-[11px] text-[var(--color-text-secondary)]">
-                  Zero route deviations
-                </span>
-              </div>
+        <div aria-label="Dispatch summary" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/* Active Vans */}
+          <div className="rounded-xl border border-[var(--color-border-subtle)] bg-white p-3.5 shadow-2xs">
+            <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
+              <span className="font-medium">Active Vans</span>
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" aria-hidden="true" />
+                Online
+              </span>
             </div>
+            <p className="mt-1 font-mono text-2xl font-bold text-[var(--color-ink)] tabular-nums">
+              {summary.trips}
+            </p>
+            <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5">
+              Active fleet deployment
+            </p>
+          </div>
+
+          {/* Route Progress */}
+          <div className="rounded-xl border border-[var(--color-border-subtle)] bg-white p-3.5 shadow-2xs">
+            <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
+              <span className="font-medium">Route Progress</span>
+              <span className="font-mono font-semibold text-[var(--color-ink)]">
+                {summary.total > 0 ? Math.round((summary.collected / summary.total) * 100) : 0}%
+              </span>
+            </div>
+            <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-alt)]">
+              <div
+                className="h-full rounded-full bg-[var(--color-ink)] transition-all duration-500"
+                style={{
+                  width: `${summary.total > 0 ? Math.round((summary.collected / summary.total) * 100) : 0}%`,
+                }}
+              />
+            </div>
+            <p className="text-[11px] text-[var(--color-text-secondary)] mt-1">
+              {summary.collected} of {summary.total} completed
+            </p>
+          </div>
+
+          {/* Recovery Cargo */}
+          <div className="rounded-xl border border-[var(--color-border-subtle)] bg-white p-3.5 shadow-2xs">
+            <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
+              <span className="font-medium">Recovery Cargo</span>
+              <Scale className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
+            </div>
+            <p className="mt-1 font-mono text-2xl font-bold text-[var(--color-ink)] tabular-nums">
+              {summary.totalWeight}{' '}
+              <span className="text-xs font-normal text-[var(--color-text-secondary)]">kg</span>
+            </p>
+            <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5">
+              Est. {summary.totalBags} collection bags
+            </p>
+          </div>
+
+          {/* Remaining Stops */}
+          <div className="rounded-xl border border-[var(--color-border-subtle)] bg-white p-3.5 shadow-2xs">
+            <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
+              <span className="font-medium">Remaining Stops</span>
+              <Clock className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
+            </div>
+            <p className="mt-1 font-mono text-2xl font-bold text-[var(--color-ink)] tabular-nums">
+              {summary.remaining}
+            </p>
+            <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5">
+              Pending completion
+            </p>
           </div>
         </div>
       ) : null}
@@ -872,11 +828,14 @@ export default function TextileDispatchPage(): JSX.Element {
                     }`}
                   >
                     <div className="flex items-center justify-between px-1">
-                      <h3 className="font-mono text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
-                        [ Active Roster ] ({trips.length})
-                      </h3>
-                      <span className="font-mono text-[11px] text-[var(--color-text-secondary)]">
-                        Fleet Dispatch Units
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xs font-semibold text-[var(--color-ink)]">Routes</h3>
+                        <span className="rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 font-mono text-[11px] font-medium text-[var(--color-text-secondary)]">
+                          {trips.length}
+                        </span>
+                      </div>
+                      <span className="text-xs text-[var(--color-text-secondary)]">
+                        Select to view itinerary
                       </span>
                     </div>
 
@@ -920,16 +879,16 @@ export default function TextileDispatchPage(): JSX.Element {
                                 setMobileTab('console');
                               }
                             }}
-                            className={`group relative rounded-xl p-4 text-left transition-all cursor-pointer ${
+                            className={`group relative rounded-xl p-3.5 text-left transition-all cursor-pointer ${
                               isSelected
-                                ? 'border border-[var(--color-ink)] bg-[var(--color-surface-sunken)] shadow-xs border-l-4 border-l-[var(--color-ink)]'
-                                : 'border border-[var(--color-border-subtle)] bg-white hover:border-[var(--color-border)] hover:bg-[var(--color-surface-sunken)]/40'
+                                ? 'border-2 border-[var(--color-ink)] bg-white shadow-xs'
+                                : 'border border-[var(--color-border-subtle)] bg-white hover:border-[var(--color-border)] hover:bg-slate-50/50'
                             }`}
                           >
                             {/* Route Ref & Status */}
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
-                                <span className="rounded border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-0.5 font-mono text-xs font-bold text-[var(--color-ink)]">
+                                <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-bold text-[var(--color-ink)]">
                                   {tripRef}
                                 </span>
                                 {formattedDate ? (
@@ -940,7 +899,7 @@ export default function TextileDispatchPage(): JSX.Element {
                                 ) : null}
                               </div>
                               <span
-                                className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold ${statusMeta.cls}`}
+                                className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusMeta.cls}`}
                               >
                                 <span
                                   className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`}
@@ -952,27 +911,26 @@ export default function TextileDispatchPage(): JSX.Element {
 
                             {/* Crew, Vehicle, and Load */}
                             <div className="mt-2.5 flex items-center justify-between text-xs">
-                              <div className="flex items-center gap-2">
-                                <div className="grid h-7 w-7 place-items-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface-alt)] font-mono text-xs font-bold text-[var(--color-ink)]">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-700">
                                   {driver ? (
                                     driver.slice(0, 2).toUpperCase()
                                   ) : (
                                     <User className="h-3.5 w-3.5" />
                                   )}
                                 </div>
-                                <div className="flex flex-col">
-                                  <span className="font-bold text-[var(--color-ink)] leading-none">
+                                <div className="flex flex-col min-w-0">
+                                  <span className="truncate font-semibold text-[var(--color-ink)]">
                                     {driver ?? 'Unassigned Driver'}
                                   </span>
                                   {vehicle ? (
-                                    <span className="font-mono text-[10px] text-[var(--color-text-secondary)]">
+                                    <span className="truncate font-mono text-[10px] text-[var(--color-text-secondary)]">
                                       {vehicle}
                                     </span>
                                   ) : null}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-1 rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--color-ink)]">
-                                <Package className="h-3 w-3 text-[var(--color-text-secondary)]" />
+                              <div className="shrink-0 flex items-center gap-1 rounded bg-slate-50 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-600">
                                 <span>
                                   {trip.items.length} stop{trip.items.length === 1 ? '' : 's'}
                                 </span>
@@ -982,7 +940,7 @@ export default function TextileDispatchPage(): JSX.Element {
                             </div>
 
                             {/* Mini Progress */}
-                            <div className="mt-3">
+                            <div className="mt-2.5">
                               <TripProgressBar
                                 batchStatus={batchStatus}
                                 collected={progress.collected}
@@ -992,20 +950,12 @@ export default function TextileDispatchPage(): JSX.Element {
                               />
                             </div>
 
-                            {/* Card Footer */}
-                            <div className="mt-2.5 flex items-center justify-between border-t border-[var(--color-border-subtle)] pt-2 text-[11px]">
-                              <span className="font-mono text-[var(--color-text-secondary)]">
-                                Estimated {totalBags} bags
-                              </span>
-                              <span
-                                className={`inline-flex items-center gap-1 font-mono text-xs font-bold ${
-                                  isSelected
-                                    ? 'text-[var(--color-ink)]'
-                                    : 'text-[var(--color-text-secondary)] group-hover:text-[var(--color-ink)]'
-                                }`}
-                              >
-                                {isSelected ? '[ Active Console ]' : '[ Inspect Route ]'}
-                                <ChevronRight className="h-3 w-3" />
+                            {/* Clean card footer */}
+                            <div className="mt-2.5 flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
+                              <span>{totalBags} bags est.</span>
+                              <span className="flex items-center gap-1 font-medium text-[var(--color-ink)]">
+                                <span>{isSelected ? 'Viewing' : 'View route'}</span>
+                                <ChevronRight className="h-3.5 w-3.5" />
                               </span>
                             </div>
                           </div>
@@ -1061,24 +1011,21 @@ export default function TextileDispatchPage(): JSX.Element {
                       );
 
                       return (
-                        <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-xs">
-                          {/* Console Sovereign Light Header */}
+                        <section className="overflow-hidden rounded-2xl border border-[var(--color-border-subtle)] bg-white shadow-xs">
+                          {/* Console Header */}
                           <header className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] p-4 sm:p-5 text-[var(--color-ink)]">
                             <div className="flex flex-wrap items-center justify-between gap-3">
                               <div className="flex items-center gap-3">
-                                <div className="grid h-10 w-10 place-items-center rounded-xl border border-[var(--color-border)] bg-white text-[var(--color-ink)] shadow-2xs">
+                                <div className="grid h-10 w-10 place-items-center rounded-xl border border-[var(--color-border-subtle)] bg-white text-[var(--color-ink)] shadow-2xs">
                                   <Truck className="h-5 w-5" />
                                 </div>
                                 <div>
                                   <div className="flex items-center gap-2">
-                                    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
-                                      [ Route Execution ]
-                                    </span>
                                     <h2 className="font-mono text-base font-bold text-[var(--color-ink)] tracking-wide">
-                                      {tripRef}
+                                      Route {tripRef}
                                     </h2>
                                     <span
-                                      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold ${statusMeta.cls}`}
+                                      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusMeta.cls}`}
                                     >
                                       <span
                                         className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`}
@@ -1093,9 +1040,9 @@ export default function TextileDispatchPage(): JSX.Element {
                                       </span>
                                     ) : null}
                                   </div>
-                                  <p className="mt-0.5 flex flex-wrap items-center gap-2 font-mono text-xs text-[var(--color-text-secondary)]">
+                                  <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-secondary)]">
                                     {formattedDate ? (
-                                      <span className="inline-flex items-center gap-1">
+                                      <span className="inline-flex items-center gap-1 font-mono">
                                         <Calendar className="h-3 w-3 text-[var(--color-text-secondary)]" />
                                         {formattedDate}
                                       </span>
@@ -1115,7 +1062,7 @@ export default function TextileDispatchPage(): JSX.Element {
                                 <button
                                   type="button"
                                   onClick={() => setSelectedTripSheet(activeTrip)}
-                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-3 py-1.5 font-mono text-xs font-semibold text-[var(--color-ink)] shadow-2xs transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-ink)] shadow-2xs transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
                                 >
                                   <Maximize2 className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
                                   <span>Trip Sheet ({activeTrip.items.length})</span>
@@ -1123,7 +1070,7 @@ export default function TextileDispatchPage(): JSX.Element {
                                 <button
                                   type="button"
                                   onClick={() => window.print()}
-                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-3 py-1.5 font-mono text-xs font-semibold text-[var(--color-ink)] shadow-2xs transition hover:bg-[var(--color-surface-alt)] print:hidden"
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-ink)] shadow-2xs transition hover:bg-slate-50 print:hidden"
                                 >
                                   <Printer className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
                                   <span className="hidden sm:inline">Print</span>
@@ -1184,57 +1131,44 @@ export default function TextileDispatchPage(): JSX.Element {
                               items={activeTrip.items}
                             />
 
-                            {/* Active Next Stop Hero Callout */}
+                            {/* Active Next Stop Callout */}
                             {activeNextStop ? (
-                              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-sunken)] p-4 shadow-2xs">
-                                <div className="flex flex-wrap items-center justify-between gap-3">
-                                  <div className="min-w-0 pr-3 space-y-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="shrink-0 rounded bg-[var(--color-ink)] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-white shadow-2xs">
-                                        Next Stop #{activeNextStopIdx + 1}
-                                      </span>
-                                      <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
-                                        [ Target Manifest ]
-                                      </span>
-                                    </div>
-                                    <div className="flex flex-wrap items-baseline gap-2">
-                                      <h3 className="truncate font-bold text-base text-[var(--color-ink)]">
-                                        {activeNextStop.requester_name}
-                                      </h3>
-                                      <span className="shrink-0 font-mono text-xs text-[var(--color-text-secondary)]">
-                                        ({activeNextStop.reference})
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-3 text-xs font-mono text-[var(--color-ink-soft)]">
-                                      <span>
-                                        Payload:{' '}
-                                        {formatVolume(
-                                          activeNextStop.estimated_bags,
-                                          activeNextStop.estimated_weight_kg,
-                                        )}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <Link
-                                    to={stopPageHref(activeTrip.id, activeNextStop.id)}
-                                    aria-label="Execute next stop"
-                                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--color-ink)] px-4 py-2.5 font-mono text-xs font-bold text-white shadow-xs transition hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
-                                  >
-                                    <span>Execute stop</span>
-                                    <span>&rarr;</span>
-                                  </Link>
+                              <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200/80 bg-amber-50/60 px-4 py-3 text-xs">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <span className="shrink-0 rounded bg-amber-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wide">
+                                    Next Stop #{activeNextStopIdx + 1}
+                                  </span>
+                                  <span className="font-bold text-[var(--color-ink)] truncate">
+                                    {activeNextStop.requester_name}
+                                  </span>
+                                  <span className="text-[var(--color-text-secondary)] font-mono text-[11px] hidden sm:inline">
+                                    (
+                                    {formatVolume(
+                                      activeNextStop.estimated_bags,
+                                      activeNextStop.estimated_weight_kg,
+                                    )}
+                                    )
+                                  </span>
                                 </div>
+                                <Link
+                                  to={stopPageHref(activeTrip.id, activeNextStop.id)}
+                                  aria-label="Execute next stop"
+                                  className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-[var(--color-ink)] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-black transition shadow-xs"
+                                >
+                                  <span>Execute stop</span>
+                                  <span aria-hidden="true">&rarr;</span>
+                                </Link>
                               </div>
                             ) : null}
 
                             {/* Sequential Route Timeline */}
                             <div className="space-y-2">
                               <div className="flex items-center justify-between px-1">
-                                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
-                                  [ Stop Sequence & Itinerary ]
+                                <span className="text-xs font-semibold text-[var(--color-ink)]">
+                                  Itinerary ({activeTrip.items.length} stops)
                                 </span>
-                                <span className="font-mono text-[10px] text-[var(--color-text-secondary)]">
-                                  {activeTrip.items.length} sequence points
+                                <span className="text-xs text-[var(--color-text-secondary)]">
+                                  Sorted by sequence
                                 </span>
                               </div>
 
@@ -1381,24 +1315,6 @@ export default function TextileDispatchPage(): JSX.Element {
                                 </button>
                               </div>
                             ) : null}
-                          </div>
-
-                          {/* Audit Telemetry Status Bar */}
-                          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)]/80 px-4 py-2.5 text-[11px] font-mono text-[var(--color-text-secondary)]">
-                            <div className="flex items-center gap-3">
-                              <span>
-                                Edge Node:{' '}
-                                <strong className="text-[var(--color-ink)]">BLR-SOUTH-01</strong>
-                              </span>
-                              <span>·</span>
-                              <span>
-                                Telemetry SLA: <strong className="text-emerald-700">99.98%</strong>
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                              <span>Compliance: DPDP Act 2023 Verified</span>
-                            </div>
                           </div>
                         </section>
                       );
