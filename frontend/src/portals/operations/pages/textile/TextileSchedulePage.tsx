@@ -407,7 +407,8 @@ export default function TextileSchedulePage(): JSX.Element {
               aria-label="New trip"
               className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-sm"
             >
-              <div className="flex flex-col gap-5">
+              <div className="flex max-w-3xl flex-col gap-4">
+                {/* 1. Summary strip: badges row, zone line, notes directly under */}
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold tracking-tight text-[var(--color-ink)]">
@@ -455,15 +456,30 @@ export default function TextileSchedulePage(): JSX.Element {
                     ) : null}
                   </div>
                 </div>
-                <div className="grid gap-4 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_auto] lg:items-end">
-                  <label className="block min-w-0 text-xs font-medium">
-                    <div className="flex items-center justify-between">
-                      <span>Pickup date</span>
-                      <span className="flex gap-1 font-normal">
+                {/* 2. Date & window: joined date control, chips directly under, start/end side by side */}
+                <div className="flex min-w-0 flex-col gap-3">
+                  <div className="min-w-0">
+                    <label
+                      htmlFor="textile-trip-date"
+                      className="text-xs font-medium text-[var(--color-ink)]"
+                    >
+                      Pickup date
+                    </label>
+                    <div className="mt-1 flex max-w-md items-stretch">
+                      <input
+                        id="textile-trip-date"
+                        type="date"
+                        value={date}
+                        min={new Date().toISOString().slice(0, 10)}
+                        onChange={(event) => setDate(event.target.value)}
+                        aria-label="Pickup date"
+                        className="block min-h-11 w-full min-w-0 flex-1 rounded-l-lg rounded-r-none border border-[var(--color-border)] bg-white px-3 text-sm focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 focus-visible:border-[var(--color-border-strong)]"
+                      />
+                      <div role="group" aria-label="Quick date" className="flex shrink-0">
                         <button
                           type="button"
                           onClick={() => setDate(new Date().toISOString().slice(0, 10))}
-                          className="rounded px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
+                          className="-ml-px inline-flex min-h-11 shrink-0 items-center border border-[var(--color-border)] bg-white px-3 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
                         >
                           Today
                         </button>
@@ -474,247 +490,240 @@ export default function TextileSchedulePage(): JSX.Element {
                             tomorrow.setDate(tomorrow.getDate() + 1);
                             setDate(tomorrow.toISOString().slice(0, 10));
                           }}
-                          className="rounded px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
+                          className="-ml-px inline-flex min-h-11 shrink-0 items-center rounded-l-none rounded-r-lg border border-[var(--color-border)] bg-white px-3 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
                         >
                           Tomorrow
                         </button>
-                      </span>
+                      </div>
                     </div>
+                  </div>
+                  <div className="min-w-0">
+                    <span
+                      id="window-presets-label"
+                      className="text-[11px] font-medium text-[var(--color-text-secondary)]"
+                    >
+                      Quick windows
+                    </span>
+                    <div
+                      role="group"
+                      aria-labelledby="window-presets-label"
+                      className="mt-2 flex flex-wrap justify-start gap-2"
+                    >
+                      {WINDOW_PRESETS.map((preset) => {
+                        const active = windowStart === preset.start && windowEnd === preset.end;
+                        return (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            aria-pressed={active}
+                            onClick={() => {
+                              setWindowStart(preset.start);
+                              setWindowEnd(preset.end);
+                            }}
+                            className={
+                              active
+                                ? 'inline-flex min-h-11 items-center rounded-full border border-transparent bg-[var(--color-ink)] px-3.5 text-xs font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1'
+                                : 'inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-3.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1'
+                            }
+                          >
+                            {preset.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block min-w-0 text-xs font-medium">
+                      <span className="inline-flex items-center gap-1">
+                        <IconClock
+                          className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
+                          aria-hidden
+                        />
+                        Window start
+                      </span>
+                      <input
+                        type="time"
+                        value={windowStart}
+                        onChange={(event) => setWindowStart(event.target.value)}
+                        aria-label="Window start"
+                        className={FIELD_INPUT}
+                      />
+                    </label>
+                    <label className="block min-w-0 text-xs font-medium">
+                      <span className="inline-flex items-center gap-1">
+                        <IconClock
+                          className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
+                          aria-hidden
+                        />
+                        Window end
+                      </span>
+                      <input
+                        type="time"
+                        value={windowEnd}
+                        onChange={(event) => setWindowEnd(event.target.value)}
+                        aria-label="Window end"
+                        className={FIELD_INPUT}
+                      />
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-[var(--color-text-tertiary)]">
+                    Tap a preset or set a custom window.
+                  </p>
+                </div>
+
+                {/* Capacity evaluation before partner confirms a batch */}
+                <div className="space-y-3 empty:hidden">
+                  {capacityRulesQuery.isLoading ? (
+                    <div
+                      role="status"
+                      className="flex items-center gap-2 rounded-lg border border-[var(--color-border-subtle)] bg-white px-4 py-3 text-xs text-[var(--color-text-secondary)]"
+                    >
+                      Checking capacity…
+                    </div>
+                  ) : null}
+                  {capacityRulesQuery.isError ? (
+                    <div
+                      role="alert"
+                      className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800"
+                    >
+                      Could not load capacity rules — trip checks are unavailable.{' '}
+                      <button
+                        type="button"
+                        onClick={() => void capacityRulesQuery.refetch()}
+                        className="ml-2 inline-flex min-h-7 items-center rounded-full border border-amber-300 bg-white px-3 text-[11px] font-medium text-amber-800 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-warning)] focus-visible:ring-offset-1"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : null}
+                  {prospectiveEvaluation ? (
+                    <CapacityWarningBanner evaluation={prospectiveEvaluation} />
+                  ) : null}
+                  {hasCapacityBlockers ? (
+                    <p
+                      role="alert"
+                      className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-danger)]"
+                    >
+                      <IconAlertTriangle className="h-3.5 w-3.5" />
+                      Scheduling is blocked by capacity limits above. Reduce the load before
+                      confirming.
+                    </p>
+                  ) : canScheduleDespiteWarnings ? (
+                    <p role="status" className="text-xs text-[var(--color-warning)]">
+                      Warnings above require review, but you may still schedule.
+                    </p>
+                  ) : null}
+                  {showSuggestedHint ? (
+                    <SuggestedStopsHint
+                      suggestedOrder={suggestedOrderForSelection}
+                      currentOrder={orderedSelected.length ? orderedSelected : selected}
+                      items={selectedItems}
+                      note="Suggested grouping keeps the same zone together; ordering sorts by address to shorten driving. Apply and then confirm the manifest order."
+                      onApply={() => setManifestOrder(suggestedOrderForSelection)}
+                    />
+                  ) : null}
+                </div>
+
+                {/* Phase 3: frozen reschedule override */}
+                {frozen ? (
+                  <div>
+                    <RescheduleOverrideNotice
+                      frozen={frozen}
+                      reason={overrideReason}
+                      onReasonChange={setOverrideReason}
+                    />
+                  </div>
+                ) : null}
+                {requestedSlotUnavailable ? (
+                  <p
+                    role="alert"
+                    className="flex items-center gap-1.5 text-xs text-[var(--color-danger)]"
+                  >
+                    <IconAlertTriangle className="h-3.5 w-3.5" />
+                    Requested date {date} is unavailable. Next available slots are outside{' '}
+                    {unavailableDates.join(', ')} — choose a different date or add an override
+                    reason.
+                  </p>
+                ) : null}
+                {/* 3. Crew & vehicle: compact 2-col grid, no full-width stretching */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block min-w-0 text-xs font-medium">
+                    Driver / team
                     <input
-                      type="date"
-                      value={date}
-                      min={new Date().toISOString().slice(0, 10)}
-                      onChange={(event) => setDate(event.target.value)}
-                      aria-label="Pickup date"
+                      value={driverName}
+                      onChange={(e) => setDriverName(e.target.value)}
+                      placeholder="Driver name"
                       className={FIELD_INPUT}
                     />
                   </label>
-                  <div className="min-w-0 space-y-3">
-                    <div>
-                      <span
-                        id="window-presets-label"
-                        className="text-[11px] font-medium text-[var(--color-text-secondary)]"
-                      >
-                        Quick windows
-                      </span>
-                      <div
-                        role="group"
-                        aria-labelledby="window-presets-label"
-                        className="mt-2 flex flex-wrap gap-2"
-                      >
-                        {WINDOW_PRESETS.map((preset) => {
-                          const active = windowStart === preset.start && windowEnd === preset.end;
-                          return (
-                            <button
-                              key={preset.label}
-                              type="button"
-                              aria-pressed={active}
-                              onClick={() => {
-                                setWindowStart(preset.start);
-                                setWindowEnd(preset.end);
-                              }}
-                              className={
-                                active
-                                  ? 'inline-flex min-h-11 items-center rounded-full border border-transparent bg-[var(--color-ink)] px-3.5 text-xs font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1'
-                                  : 'inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-3.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1'
-                              }
-                            >
-                              {preset.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <div className="grid gap-3 pt-1 sm:grid-cols-2">
-                      <label className="block min-w-0 text-xs font-medium">
-                        <span className="inline-flex items-center gap-1">
-                          <IconClock
-                            className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
-                            aria-hidden
-                          />
-                          Window start
-                        </span>
-                        <input
-                          type="time"
-                          value={windowStart}
-                          onChange={(event) => setWindowStart(event.target.value)}
-                          aria-label="Window start"
-                          className={FIELD_INPUT}
-                        />
-                      </label>
-                      <label className="block min-w-0 text-xs font-medium">
-                        <span className="inline-flex items-center gap-1">
-                          <IconClock
-                            className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
-                            aria-hidden
-                          />
-                          Window end
-                        </span>
-                        <input
-                          type="time"
-                          value={windowEnd}
-                          onChange={(event) => setWindowEnd(event.target.value)}
-                          aria-label="Window end"
-                          className={FIELD_INPUT}
-                        />
-                      </label>
-                    </div>
-                    <p className="text-[11px] text-[var(--color-text-tertiary)]">
-                      Tap a preset or set a custom window.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 lg:justify-end">
-                    <button
-                      type="button"
-                      disabled={!canSchedule || schedule.isPending}
-                      onClick={() => void schedule.mutateAsync()}
-                      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 disabled:opacity-40"
-                    >
-                      <IconCalendarPlus className="h-4 w-4" stroke={1.75} aria-hidden />
-                      {schedule.isPending ? 'Scheduling…' : 'Schedule trip'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelected([]);
-                        setManifestOrder([]);
-                        setOverrideReason('');
-                      }}
-                      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
-                    >
-                      <IconX className="h-4 w-4" aria-hidden />
-                      Clear
-                    </button>
-                  </div>
+                  <label className="block min-w-0 text-xs font-medium">
+                    Team
+                    <input
+                      value={teamName}
+                      onChange={(e) => setTeamName(e.target.value)}
+                      placeholder="Team (optional)"
+                      className={FIELD_INPUT}
+                    />
+                  </label>
+                  <label className="block min-w-0 text-xs font-medium">
+                    Vehicle
+                    <input
+                      value={vehicleLabel}
+                      onChange={(e) => setVehicleLabel(e.target.value)}
+                      placeholder="Vehicle reg / label"
+                      className={FIELD_INPUT}
+                    />
+                  </label>
+                  <label className="block min-w-0 text-xs font-medium">
+                    Trip ref
+                    <input
+                      value={tripReference}
+                      onChange={(e) => setTripReference(e.target.value)}
+                      placeholder="DRL-… (optional)"
+                      className={FIELD_INPUT}
+                    />
+                  </label>
                 </div>
-              </div>
-
-              {/* Capacity evaluation before partner confirms a batch */}
-              <div className="mt-4 space-y-3">
-                {capacityRulesQuery.isLoading ? (
-                  <div
-                    role="status"
-                    className="flex items-center gap-2 rounded-lg border border-[var(--color-border-subtle)] bg-white px-4 py-3 text-xs text-[var(--color-text-secondary)]"
-                  >
-                    Checking capacity…
-                  </div>
-                ) : null}
-                {capacityRulesQuery.isError ? (
-                  <div
-                    role="alert"
-                    className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800"
-                  >
-                    Could not load capacity rules — trip checks are unavailable.{' '}
-                    <button
-                      type="button"
-                      onClick={() => void capacityRulesQuery.refetch()}
-                      className="ml-2 inline-flex min-h-7 items-center rounded-full border border-amber-300 bg-white px-3 text-[11px] font-medium text-amber-800 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-warning)] focus-visible:ring-offset-1"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                ) : null}
-                {prospectiveEvaluation ? (
-                  <CapacityWarningBanner evaluation={prospectiveEvaluation} />
-                ) : null}
-                {hasCapacityBlockers ? (
-                  <p
-                    role="alert"
-                    className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-danger)]"
-                  >
-                    <IconAlertTriangle className="h-3.5 w-3.5" />
-                    Scheduling is blocked by capacity limits above. Reduce the load before
-                    confirming.
-                  </p>
-                ) : canScheduleDespiteWarnings ? (
-                  <p role="status" className="text-xs text-[var(--color-warning)]">
-                    Warnings above require review, but you may still schedule.
+                {/* 4. Instructions full width, then left-aligned action row */}
+                <label className="block min-w-0 text-xs font-medium">
+                  Instructions
+                  <textarea
+                    value={instructions}
+                    onChange={(e) => setInstructions(e.target.value)}
+                    placeholder="Collection instructions for crew"
+                    rows={2}
+                    className={FIELD_TEXTAREA}
+                  />
+                </label>
+                {scheduleError ? (
+                  <p role="alert" className="text-xs text-red-700">
+                    Could not schedule the trip. Check the date and try again.
                   </p>
                 ) : null}
-                {showSuggestedHint ? (
-                  <SuggestedStopsHint
-                    suggestedOrder={suggestedOrderForSelection}
-                    currentOrder={orderedSelected.length ? orderedSelected : selected}
-                    items={selectedItems}
-                    note="Suggested grouping keeps the same zone together; ordering sorts by address to shorten driving. Apply and then confirm the manifest order."
-                    onApply={() => setManifestOrder(suggestedOrderForSelection)}
-                  />
-                ) : null}
-              </div>
-
-              {/* Phase 3: frozen reschedule override */}
-              {frozen ? (
-                <div className="mt-3">
-                  <RescheduleOverrideNotice
-                    frozen={frozen}
-                    reason={overrideReason}
-                    onReasonChange={setOverrideReason}
-                  />
+                <div className="flex flex-wrap justify-start gap-2">
+                  <button
+                    type="button"
+                    disabled={!canSchedule || schedule.isPending}
+                    onClick={() => void schedule.mutateAsync()}
+                    className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-[var(--color-ink)] px-5 text-sm font-medium text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 disabled:opacity-40"
+                  >
+                    <IconCalendarPlus className="h-4 w-4" stroke={1.75} aria-hidden />
+                    {schedule.isPending ? 'Scheduling…' : 'Schedule trip'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelected([]);
+                      setManifestOrder([]);
+                      setOverrideReason('');
+                    }}
+                    className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+                  >
+                    <IconX className="h-4 w-4" aria-hidden />
+                    Clear
+                  </button>
                 </div>
-              ) : null}
-              {requestedSlotUnavailable ? (
-                <p
-                  role="alert"
-                  className="mt-2 flex items-center gap-1.5 text-xs text-[var(--color-danger)]"
-                >
-                  <IconAlertTriangle className="h-3.5 w-3.5" />
-                  Requested date {date} is unavailable. Next available slots are outside{' '}
-                  {unavailableDates.join(', ')} — choose a different date or add an override reason.
-                </p>
-              ) : null}
-              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <label className="block min-w-0 text-xs font-medium">
-                  Driver / team
-                  <input
-                    value={driverName}
-                    onChange={(e) => setDriverName(e.target.value)}
-                    placeholder="Driver name"
-                    className={FIELD_INPUT}
-                  />
-                </label>
-                <label className="block min-w-0 text-xs font-medium">
-                  Team
-                  <input
-                    value={teamName}
-                    onChange={(e) => setTeamName(e.target.value)}
-                    placeholder="Team (optional)"
-                    className={FIELD_INPUT}
-                  />
-                </label>
-                <label className="block min-w-0 text-xs font-medium">
-                  Vehicle
-                  <input
-                    value={vehicleLabel}
-                    onChange={(e) => setVehicleLabel(e.target.value)}
-                    placeholder="Vehicle reg / label"
-                    className={FIELD_INPUT}
-                  />
-                </label>
-                <label className="block min-w-0 text-xs font-medium">
-                  Trip ref
-                  <input
-                    value={tripReference}
-                    onChange={(e) => setTripReference(e.target.value)}
-                    placeholder="DRL-… (optional)"
-                    className={FIELD_INPUT}
-                  />
-                </label>
               </div>
-              <label className="mt-4 block min-w-0 text-xs font-medium">
-                Instructions
-                <textarea
-                  value={instructions}
-                  onChange={(e) => setInstructions(e.target.value)}
-                  placeholder="Collection instructions for crew"
-                  rows={2}
-                  className={FIELD_TEXTAREA}
-                />
-              </label>
-              {scheduleError ? (
-                <p role="alert" className="mt-2 text-xs text-red-700">
-                  Could not schedule the trip. Check the date and try again.
-                </p>
-              ) : null}
             </section>
           ) : null}
 
