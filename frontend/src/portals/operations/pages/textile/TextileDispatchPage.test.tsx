@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '../../../../auth/AuthContext';
@@ -110,5 +110,80 @@ describe('TextileDispatchPage', () => {
     expect(screen.queryByRole('button', { name: 'Record collection' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Call' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Navigate' })).not.toBeInTheDocument();
+  });
+
+  it('opens and closes the trip sheet modal for high-density route manifests', () => {
+    renderPage();
+
+    // Modal should be closed initially
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    // Open Trip Sheet modal
+    const tripSheetBtn = screen.getByRole('button', { name: /Trip Sheet \(1\)/ });
+    fireEvent.click(tripSheetBtn);
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByText(/Stops Manifest/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/DRL-260826-XX11TO/)).toBeInTheDocument();
+
+    // Close via Done button
+    const doneBtn = within(dialog).getByRole('button', { name: 'Done' });
+    fireEvent.click(doneBtn);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('toggles between timeline view and fleet matrix view', () => {
+    renderPage();
+
+    // Default is timeline
+    expect(screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ })).toBeInTheDocument();
+
+    // Switch to matrix view
+    const matrixBtn = screen.getByTitle('Fleet Matrix View');
+    fireEvent.click(matrixBtn);
+
+    // Matrix table should be visible with columns
+    expect(screen.getByText('Route Reference')).toBeInTheDocument();
+    expect(screen.getByText('Driver / Vehicle')).toBeInTheDocument();
+
+    // Switch back to timeline
+    const timelineBtn = screen.getByTitle('Timeline View');
+    fireEvent.click(timelineBtn);
+    expect(screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ })).toBeInTheDocument();
+  });
+
+  it('renders a 10-stop route smoothly with Next Stop callout and stop links', () => {
+    const tenStops: TextileCollectionListItem[] = Array.from({ length: 10 }, (_, i) => ({
+      ...ITEM,
+      id: `collection-${i + 1}`,
+      reference: `DLN-2026-STOP${i + 1}`,
+      requester_name: `Customer ${i + 1}`,
+      pickup_address: `${i + 10} Main St, Bengaluru 5600${i + 10}`,
+      status: i === 0 ? 'picked_up' : 'scheduled',
+    }));
+
+    vi.mocked(useTextileQueue).mockReturnValue({
+      data: {
+        data: tenStops,
+        meta: { page: 1, per_page: 25, total: 10, last_page: 1 },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useTextileQueue>);
+
+    renderPage();
+
+    // Route footer hint for 10 stops
+    expect(screen.getByText(/Showing itinerary \(10 stops\)/)).toBeInTheDocument();
+
+    // Next stop banner should highlight stop #2 (since stop #1 is picked_up)
+    expect(screen.getByText(/Next Stop #2/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Customer 2/)).toHaveLength(2);
+
+    // All 10 stops exist in the DOM
+    const allLinks = screen.getAllByRole('link', { name: /Stop \d+: Customer/ });
+    expect(allLinks).toHaveLength(10);
   });
 });

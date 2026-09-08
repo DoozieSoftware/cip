@@ -2,19 +2,24 @@ import { useMemo, useState, type JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
-  IconAlertCircle,
-  IconCalendar,
-  IconCheck,
-  IconChevronDown,
-  IconChevronRight,
-  IconClock,
-  IconLock,
-  IconMapPin,
-  IconPackage,
-  IconTruck,
-  IconUser,
-  IconUsers,
-} from '@tabler/icons-react';
+  AlertCircle,
+  Calendar,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Layers,
+  LayoutList,
+  Lock,
+  MapPin,
+  Maximize2,
+  Package,
+  Printer,
+  Truck,
+  User,
+  Users,
+  X,
+} from 'lucide-react';
 import { readSession } from '../../../../auth/storage';
 import { evaluateBatchCapacity, type TextileCollectionListItem } from '../../api/textileApi';
 import { CapacityWarningBanner } from '../../components/CapacityWarningBanner';
@@ -79,6 +84,14 @@ const TRIP_STATUS_META: Record<string, { label: string; cls: string; dot: string
     dot: 'bg-neutral-400',
   },
 };
+
+interface TripEntry {
+  label: string;
+  id: string;
+  items: TextileCollectionListItem[];
+  ref: string;
+  date: string;
+}
 
 function BatchCapacityNotice({
   batchId,
@@ -201,6 +214,194 @@ function BoardFilters({
   );
 }
 
+function TripSheetModal({ trip, onClose }: { trip: TripEntry; onClose: () => void }): JSX.Element {
+  const driver = trip.items[0]?.batch?.driver_name;
+  const vehicle = trip.items[0]?.batch?.vehicle_label;
+  const team = trip.items[0]?.batch?.team_name;
+  const progress = trip.items[0]?.batch?.progress ?? getTripProgress(trip.items);
+  const formattedDate = trip.date ? formatTripDate(trip.date) : 'Unscheduled';
+
+  return (
+    <div
+      role="presentation"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Trip sheet manifest for ${trip.ref}`}
+        tabIndex={-1}
+        className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-2xl focus:outline-none"
+      >
+        {/* Modal Header */}
+        <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--color-ink)] text-white shadow-xs">
+              <Truck className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-mono text-base font-bold text-[var(--color-ink)]">
+                  {trip.ref}
+                </h3>
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                  {trip.items.length} Stops Manifest
+                </span>
+              </div>
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                Collection Date: {formattedDate}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-ink)] shadow-xs transition hover:bg-[var(--color-surface-alt)]"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Print Manifest
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close manifest"
+              className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--color-border-subtle)] bg-white text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Modal Subheader Details */}
+        <div className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)]/50 px-6 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-4 text-[var(--color-text-secondary)]">
+              <span className="inline-flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
+                <strong className="text-[var(--color-ink)]">{driver ?? 'Unassigned Driver'}</strong>
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Truck className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
+                <strong className="text-[var(--color-ink)]">
+                  {vehicle ?? 'Unassigned Vehicle'}
+                </strong>
+              </span>
+              {team ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
+                  <span>{team}</span>
+                </span>
+              ) : null}
+            </div>
+            <div className="w-full sm:w-64">
+              <TripProgressBar
+                batchStatus={trip.items[0]?.batch?.status ?? 'planned'}
+                collected={progress.collected}
+                missed={progress.missed}
+                pending={progress.pending}
+                total={progress.total}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Full Stops List (all 8-15+ stops) */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+              Complete Route Itinerary ({trip.items.length} stops)
+            </h4>
+            <div className="divide-y divide-[var(--color-border-subtle)] overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-white shadow-xs">
+              {trip.items.map((item, idx) => {
+                const isCollected = item.status === 'picked_up';
+                const isMissed = item.status === 'missed';
+                return (
+                  <div
+                    key={item.id}
+                    className="flex flex-col gap-2 p-4 transition-colors hover:bg-[var(--color-surface-alt)]/40 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span
+                        className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold shadow-xs ${
+                          isCollected
+                            ? 'bg-[var(--color-success)] text-white'
+                            : isMissed
+                              ? 'bg-rose-100 text-[var(--color-danger)]'
+                              : 'bg-zinc-100 text-zinc-800'
+                        }`}
+                      >
+                        {isCollected ? <Check className="h-4 w-4" strokeWidth={3} /> : idx + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-[var(--color-ink)]">
+                            {item.requester_name}
+                          </span>
+                          <span className="font-mono text-[11px] text-[var(--color-text-tertiary)]">
+                            · {item.reference}
+                          </span>
+                          {item.contact_phone ? (
+                            <span className="font-mono text-[11px] text-sky-800">
+                              {item.contact_phone}
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+                          {item.pickup_address}
+                        </p>
+                        {item.readiness_instructions ? (
+                          <p className="mt-1 inline-block rounded bg-amber-50 px-2 py-0.5 text-[11px] text-amber-900">
+                            Instructions: {item.readiness_instructions}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 self-end sm:self-center">
+                      <span className="inline-flex items-center gap-1 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-2 py-0.5 text-xs font-semibold tabular-nums text-[var(--color-ink)]">
+                        <Package className="h-3 w-3 text-[var(--color-text-tertiary)]" />
+                        {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
+                      </span>
+                      <Link
+                        to={stopPageHref(trip.id, item.id)}
+                        aria-label={`Open stop ${idx + 1}`}
+                        className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-white px-2.5 py-1 text-xs font-medium text-[var(--color-ink)] shadow-xs transition hover:bg-[var(--color-surface-alt)]"
+                      >
+                        <span>Open Stop</span>
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="flex items-center justify-between border-t border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-6 py-3">
+          <span className="text-xs text-[var(--color-text-secondary)]">
+            Total {trip.items.length} stop{trip.items.length === 1 ? '' : 's'} assigned to route
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg bg-[var(--color-ink)] px-4 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TextileDispatchPage(): JSX.Element {
   const desk = useDesk();
   const [search, setSearch] = useState('');
@@ -208,6 +409,8 @@ export default function TextileDispatchPage(): JSX.Element {
   const [categoryId, setCategoryId] = useState('');
   const [page, setPage] = useState(1);
   const [dateFilter, setDateFilter] = useState('all');
+  const [viewMode, setViewMode] = useState<'timeline' | 'matrix'>('timeline');
+  const [selectedTripSheet, setSelectedTripSheet] = useState<TripEntry | null>(null);
   const opsQueue = useOpsQueue();
 
   function handleDateFilter(next: string): void {
@@ -241,13 +444,11 @@ export default function TextileDispatchPage(): JSX.Element {
   const offline = useOfflineQueue(userId, desk.departmentId);
 
   const trips = useMemo(() => {
-    const map = new Map<
-      string,
-      { label: string; id: string; items: TextileCollectionListItem[]; ref: string; date: string }
-    >();
+    const map = new Map<string, TripEntry>();
     for (const row of rows) {
       const tripDate = row.batch?.collection_date ?? '';
       if (dateFilter !== 'all' && tripDate !== dateFilter) continue;
+
       const key = row.batch?.id ?? 'unassigned';
       const entry = map.get(key) ?? {
         label: row.batch
@@ -321,6 +522,37 @@ export default function TextileDispatchPage(): JSX.Element {
               }}
             />
           </div>
+
+          {/* View mode toggle */}
+          <div className="inline-flex items-center rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode('timeline')}
+              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                viewMode === 'timeline'
+                  ? 'bg-white font-semibold text-[var(--color-ink)] shadow-xs'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-ink)]'
+              }`}
+              title="Timeline View"
+            >
+              <LayoutList className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Timeline</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('matrix')}
+              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                viewMode === 'matrix'
+                  ? 'bg-white font-semibold text-[var(--color-ink)] shadow-xs'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-ink)]'
+              }`}
+              title="Fleet Matrix View"
+            >
+              <Layers className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Matrix</span>
+            </button>
+          </div>
+
           <div className="hidden flex-wrap items-center gap-2 sm:flex sm:shrink-0">
             <BoardFilters
               dateFilter={dateFilter}
@@ -373,7 +605,7 @@ export default function TextileDispatchPage(): JSX.Element {
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
                   Trips
                 </span>
-                <IconTruck className="h-4 w-4 text-[var(--color-text-tertiary)]" stroke={1.5} />
+                <Truck className="h-4 w-4 text-[var(--color-text-tertiary)]" strokeWidth={1.75} />
               </div>
               <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-ink)] tabular-nums">
                 {summary.trips}
@@ -387,7 +619,7 @@ export default function TextileDispatchPage(): JSX.Element {
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
                   Stops
                 </span>
-                <IconMapPin className="h-4 w-4 text-[var(--color-text-tertiary)]" stroke={1.5} />
+                <MapPin className="h-4 w-4 text-[var(--color-text-tertiary)]" strokeWidth={1.75} />
               </div>
               <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-ink)] tabular-nums">
                 {summary.total}
@@ -399,11 +631,11 @@ export default function TextileDispatchPage(): JSX.Element {
 
             {/* Remaining / Left */}
             <div className="flex flex-col justify-between rounded-xl border border-amber-200/70 bg-amber-50/40 p-3 shadow-xs">
-              <div className="flex items-center justify-between text-amber-800">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">
-                  Left
+              <div className="flex items-center justify-between text-amber-900">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-800">
+                  Remaining
                 </span>
-                <IconClock className="h-4 w-4 text-amber-600" stroke={1.5} />
+                <Clock className="h-4 w-4 text-amber-700" strokeWidth={1.75} />
               </div>
               <p className="mt-2 text-2xl font-bold tracking-tight text-amber-900 tabular-nums">
                 {summary.remaining}
@@ -417,7 +649,7 @@ export default function TextileDispatchPage(): JSX.Element {
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
                   Collected
                 </span>
-                <IconCheck className="h-4 w-4 text-emerald-600" stroke={2} />
+                <Check className="h-4 w-4 text-emerald-600" strokeWidth={2.2} />
               </div>
               <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-success)] tabular-nums">
                 {summary.collected}
@@ -431,7 +663,7 @@ export default function TextileDispatchPage(): JSX.Element {
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-rose-700">
                   Missed
                 </span>
-                <IconAlertCircle className="h-4 w-4 text-rose-600" stroke={1.5} />
+                <AlertCircle className="h-4 w-4 text-rose-600" strokeWidth={1.75} />
               </div>
               <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-danger)] tabular-nums">
                 {summary.missed}
@@ -485,109 +717,224 @@ export default function TextileDispatchPage(): JSX.Element {
             </div>
           ) : null}
 
-          {trips.map((trip) => {
-            const isTripCollapsed = !!collapsedTrips[trip.id];
-            const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
-            const progress = trip.items[0]?.batch?.progress ?? getTripProgress(trip.items);
-            const frozen = isRescheduleFrozen(batchStatus);
-            const hasRescheduledStops = trip.items.some(
-              (i) => !!i.reschedule_reason || !!i.previous_scheduled_date,
-            );
-            const hasUnavailableStops = trip.items.some((i) => !!i.unavailable_reason);
-            const statusMeta = TRIP_STATUS_META[batchStatus] ?? {
-              label: batchStatus.replaceAll('_', ' '),
-              cls: 'border-[var(--color-border-subtle)] bg-zinc-50 text-zinc-700',
-              dot: 'bg-zinc-400',
-            };
-            const formattedDate = trip.date ? formatTripDate(trip.date) : '';
-            const tripRef = trip.ref !== 'Unassigned' ? trip.ref : trip.label;
-            const driver = trip.items[0]?.batch?.driver_name;
-            const team = trip.items[0]?.batch?.team_name;
-            const vehicle = trip.items[0]?.batch?.vehicle_label;
+          {/* MATRIX VIEW */}
+          {viewMode === 'matrix' ? (
+            <div className="overflow-x-auto rounded-xl border border-[var(--color-border-subtle)] bg-white shadow-xs">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)] text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  <tr>
+                    <th className="px-4 py-3">Route Reference</th>
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Driver / Vehicle</th>
+                    <th className="px-4 py-3">Progress</th>
+                    <th className="px-4 py-3">Next Stop</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border-subtle)]/60">
+                  {trips.map((trip) => {
+                    const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
+                    const progress = trip.items[0]?.batch?.progress ?? getTripProgress(trip.items);
+                    const statusMeta = TRIP_STATUS_META[batchStatus] ?? {
+                      label: batchStatus.replaceAll('_', ' '),
+                      cls: 'border-[var(--color-border-subtle)] bg-zinc-50 text-zinc-700',
+                      dot: 'bg-zinc-400',
+                    };
+                    const formattedDate = trip.date ? formatTripDate(trip.date) : 'Unscheduled';
+                    const tripRef = trip.ref !== 'Unassigned' ? trip.ref : trip.label;
+                    const driver = trip.items[0]?.batch?.driver_name;
+                    const vehicle = trip.items[0]?.batch?.vehicle_label;
+                    const nextPending = trip.items.find((i) => i.status === 'scheduled');
 
-            return (
-              <section
-                key={trip.id}
-                className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-white shadow-xs transition-all hover:border-[var(--color-border)] hover:shadow-sm"
-              >
-                {/* Trip Card Header */}
-                <header className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-3.5 sm:p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                      <button
-                        type="button"
-                        onClick={() => toggleTrip(trip.id)}
-                        aria-label={`${isTripCollapsed ? 'Expand' : 'Collapse'} trip ${tripRef}`}
-                        aria-expanded={!isTripCollapsed}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--color-border-subtle)] bg-white text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+                    return (
+                      <tr
+                        key={trip.id}
+                        className="transition-colors hover:bg-[var(--color-surface-alt)]/40"
                       >
-                        <IconChevronDown
-                          className={`h-4 w-4 transition-transform duration-150 ${isTripCollapsed ? '-rotate-90' : ''}`}
-                          aria-hidden="true"
-                        />
-                      </button>
-
-                      <h2 className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-2.5 py-0.5 font-mono text-xs font-bold text-[var(--color-ink)]">
-                        {tripRef}
-                      </h2>
-
-                      {formattedDate ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-text-secondary)]">
-                          <IconCalendar className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
+                        <td className="px-4 py-3 font-mono font-bold text-[var(--color-ink)]">
+                          {tripRef}
+                        </td>
+                        <td className="px-4 py-3 text-[var(--color-text-secondary)]">
                           {formattedDate}
-                        </span>
-                      ) : null}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium ${statusMeta.cls}`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`}
+                              aria-hidden="true"
+                            />
+                            {statusMeta.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-[var(--color-ink)]">
+                              {driver ?? 'Unassigned'}
+                            </span>
+                            {vehicle ? (
+                              <span className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
+                                {vehicle}
+                              </span>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="w-36">
+                            <TripProgressBar
+                              batchStatus={batchStatus}
+                              collected={progress.collected}
+                              missed={progress.missed}
+                              pending={progress.pending}
+                              total={progress.total}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {nextPending ? (
+                            <span className="truncate max-w-[180px] inline-block font-medium text-[var(--color-ink)]">
+                              {nextPending.requester_name}
+                            </span>
+                          ) : (
+                            <span className="text-[var(--color-text-tertiary)]">None</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedTripSheet(trip)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--color-ink)] shadow-xs transition hover:bg-[var(--color-surface-alt)]"
+                          >
+                            <span>Trip Sheet ({trip.items.length})</span>
+                            <Maximize2 className="h-3 w-3" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            /* TIMELINE VIEW */
+            trips.map((trip) => {
+              const isTripCollapsed = !!collapsedTrips[trip.id];
+              const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
+              const progress = trip.items[0]?.batch?.progress ?? getTripProgress(trip.items);
+              const frozen = isRescheduleFrozen(batchStatus);
+              const hasRescheduledStops = trip.items.some(
+                (i) => !!i.reschedule_reason || !!i.previous_scheduled_date,
+              );
+              const hasUnavailableStops = trip.items.some((i) => !!i.unavailable_reason);
+              const statusMeta = TRIP_STATUS_META[batchStatus] ?? {
+                label: batchStatus.replaceAll('_', ' '),
+                cls: 'border-[var(--color-border-subtle)] bg-zinc-50 text-zinc-700',
+                dot: 'bg-zinc-400',
+              };
+              const formattedDate = trip.date ? formatTripDate(trip.date) : '';
+              const tripRef = trip.ref !== 'Unassigned' ? trip.ref : trip.label;
+              const driver = trip.items[0]?.batch?.driver_name;
+              const team = trip.items[0]?.batch?.team_name;
+              const vehicle = trip.items[0]?.batch?.vehicle_label;
 
-                      <span className="rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--color-text-secondary)]">
-                        {trip.items.length} stop{trip.items.length === 1 ? '' : 's'}
-                      </span>
+              // Find active next stop
+              const activeNextStopIdx = trip.items.findIndex((i) => i.status === 'scheduled');
+              const activeNextStop = activeNextStopIdx >= 0 ? trip.items[activeNextStopIdx] : null;
 
-                      {frozen ? (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800">
-                          <IconLock
-                            className="h-3.5 w-3.5 text-amber-700"
-                            stroke={1.65}
+              return (
+                <section
+                  key={trip.id}
+                  className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-white shadow-xs transition-all hover:border-[var(--color-border)] hover:shadow-sm"
+                >
+                  {/* Trip Card Header */}
+                  <header className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-3.5 sm:p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <button
+                          type="button"
+                          onClick={() => toggleTrip(trip.id)}
+                          aria-label={`${isTripCollapsed ? 'Expand' : 'Collapse'} trip ${tripRef}`}
+                          aria-expanded={!isTripCollapsed}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--color-border-subtle)] bg-white text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+                        >
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform duration-150 ${isTripCollapsed ? '-rotate-90' : ''}`}
                             aria-hidden="true"
                           />
-                          Locked
-                        </span>
-                      ) : null}
-                    </div>
+                        </button>
 
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusMeta.cls}`}
+                        <h2 className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-2.5 py-0.5 font-mono text-xs font-bold text-[var(--color-ink)]">
+                          {tripRef}
+                        </h2>
+
+                        {formattedDate ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-text-secondary)]">
+                            <Calendar className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
+                            {formattedDate}
+                          </span>
+                        ) : null}
+
+                        <span className="rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--color-text-secondary)]">
+                          {trip.items.length} stop{trip.items.length === 1 ? '' : 's'}
+                        </span>
+
+                        {frozen ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800">
+                            <Lock
+                              className="h-3.5 w-3.5 text-amber-700"
+                              strokeWidth={1.75}
+                              aria-hidden="true"
+                            />
+                            Locked
+                          </span>
+                        ) : null}
+
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusMeta.cls}`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`}
+                            aria-hidden="true"
+                          />
+                          {statusMeta.label}
+                        </span>
+
+                        {driver ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-[var(--color-text-secondary)]">
+                            <User className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
+                            <span className="font-semibold text-[var(--color-ink)]">{driver}</span>
+                          </span>
+                        ) : null}
+
+                        {vehicle ? (
+                          <span className="inline-flex items-center gap-1 font-mono text-[11px] text-[var(--color-text-tertiary)]">
+                            <Truck className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
+                            {vehicle}
+                          </span>
+                        ) : null}
+
+                        {team ? (
+                          <span className="hidden items-center gap-1 text-xs text-[var(--color-text-tertiary)] sm:inline-flex">
+                            <Users className="h-3.5 w-3.5" />
+                            {team}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {/* Right actions: Trip Sheet Modal Trigger */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTripSheet(trip)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--color-ink)] shadow-xs transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
                       >
-                        <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`} />
-                        {statusMeta.label}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Operational Crew & Progress Bar */}
-                  <div className="mt-3 flex flex-col gap-2 border-t border-[var(--color-border-subtle)]/70 pt-2.5 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-secondary)] sm:gap-3">
-                      {driver ? (
-                        <span className="inline-flex items-center gap-1 font-medium text-[var(--color-ink)]">
-                          <IconUser className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
-                          {driver}
-                        </span>
-                      ) : null}
-                      {vehicle ? (
-                        <span className="inline-flex items-center gap-1 font-medium text-[var(--color-ink)]">
-                          <IconTruck className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
-                          {vehicle}
-                        </span>
-                      ) : null}
-                      {team ? (
-                        <span className="inline-flex items-center gap-1 text-[var(--color-text-secondary)]">
-                          <IconUsers className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
-                          {team}
-                        </span>
-                      ) : null}
+                        <Maximize2 className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
+                        <span>Trip Sheet ({trip.items.length})</span>
+                      </button>
                     </div>
 
-                    <div className="flex items-center sm:w-72">
+                    <div className="mt-3">
                       <TripProgressBar
                         batchStatus={batchStatus}
                         collected={progress.collected}
@@ -596,152 +943,203 @@ export default function TextileDispatchPage(): JSX.Element {
                         total={progress.total}
                       />
                     </div>
-                  </div>
 
-                  {(hasRescheduledStops || hasUnavailableStops) && (
-                    <p className="mt-2 rounded-md border border-amber-200/60 bg-amber-50/70 px-2.5 py-1 text-[11px] leading-4 text-amber-800">
-                      {hasRescheduledStops
-                        ? 'Rescheduled stops present — prior slot on stop page. '
-                        : ''}
-                      {hasUnavailableStops ? 'Unavailable reasons detailed on stop page.' : ''}
-                    </p>
-                  )}
+                    {(frozen || hasRescheduledStops || hasUnavailableStops) && (
+                      <p className="mt-2 text-[11px] text-amber-800/90">
+                        {frozen ? 'Trip is locked — rescheduling disabled. ' : ''}
+                        {hasRescheduledStops
+                          ? 'Rescheduled stops present — prior slot on stop page. '
+                          : ''}
+                        {hasUnavailableStops ? 'Unavailable reasons detailed on stop page.' : ''}
+                      </p>
+                    )}
 
-                  <div className="mt-2">
-                    <BatchCapacityNotice
-                      batchId={trip.id}
-                      departmentId={desk.departmentId}
-                      items={trip.items}
-                    />
-                  </div>
-                </header>
+                    <div className="mt-2">
+                      <BatchCapacityNotice
+                        batchId={trip.id}
+                        departmentId={desk.departmentId}
+                        items={trip.items}
+                      />
+                    </div>
+                  </header>
 
-                {/* Stop Itinerary Route Timeline */}
-                {!isTripCollapsed ? (
-                  <div className="relative">
-                    {/* Visual route connector line connecting all stops */}
-                    <div
-                      aria-hidden="true"
-                      className="pointer-events-none absolute bottom-6 left-[27px] top-6 w-0.5 bg-[var(--color-border-subtle)] sm:left-[31px]"
-                    />
-
-                    <ul className="divide-y divide-[var(--color-border-subtle)]/60">
-                      {trip.items.map((item, idx) => {
-                        const queued = offline.items.find(
-                          (q) => q.collectionId === item.id && q.status !== 'completed',
-                        );
-                        const isNext = idx === 0 && item.status === 'scheduled';
-                        const isCollected = item.status === 'picked_up';
-                        const isMissed = item.status === 'missed';
-                        const statusLabel = isCollected
-                          ? 'Collected'
-                          : isMissed
-                            ? 'Missed'
-                            : queued
-                              ? queued.status === 'failed'
-                                ? 'Upload failed'
-                                : 'Pending upload'
-                              : (STATUS_LABELS[item.status] ?? item.status);
-
-                        const statusBadgeCls = isCollected
-                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                          : isMissed
-                            ? 'bg-rose-50 text-rose-800 border-rose-200'
-                            : queued
-                              ? 'bg-amber-50 text-amber-800 border-amber-200'
-                              : isNext
-                                ? 'bg-amber-50 text-amber-900 border-amber-300 font-semibold'
-                                : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-border-subtle)]';
-
-                        return (
-                          <li
-                            key={item.id}
-                            className={`group relative transition-colors ${isNext ? 'bg-amber-50/30' : 'bg-white hover:bg-[var(--color-surface-alt)]/50'}`}
+                  {/* Stop Itinerary Route Timeline */}
+                  {!isTripCollapsed ? (
+                    <div>
+                      {/* Active Next Stop Hero Callout */}
+                      {activeNextStop ? (
+                        <div className="flex items-center justify-between border-b border-amber-200/80 bg-amber-50/70 px-3.5 py-2 sm:px-4">
+                          <div className="flex min-w-0 items-center gap-2 text-xs">
+                            <span className="shrink-0 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                              Next Stop #{activeNextStopIdx + 1}
+                            </span>
+                            <span className="truncate font-semibold text-amber-950">
+                              {activeNextStop.requester_name}
+                            </span>
+                            <span className="shrink-0 font-mono text-[11px] text-amber-800/80">
+                              ({activeNextStop.reference})
+                            </span>
+                          </div>
+                          <Link
+                            to={stopPageHref(trip.id, activeNextStop.id)}
+                            aria-label="Execute next stop"
+                            className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white shadow-xs transition hover:bg-amber-700"
                           >
-                            <Link
-                              to={stopPageHref(trip.id, item.id)}
-                              aria-label={`Stop ${idx + 1}: ${item.requester_name}, ${item.pickup_address}`}
-                              className="flex min-h-[48px] w-full items-center gap-3 px-3 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ink)] sm:gap-4 sm:px-4"
-                            >
-                              {/* Step Node along the Timeline */}
-                              <span
-                                aria-hidden="true"
-                                className={`relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold leading-none shadow-xs ring-4 ring-white ${
-                                  isCollected
-                                    ? 'bg-[var(--color-success)] text-white'
-                                    : isMissed
-                                      ? 'border-2 border-rose-400 bg-white text-[var(--color-danger)]'
-                                      : isNext
-                                        ? 'animate-pulse bg-amber-500 text-white'
-                                        : 'border-2 border-[var(--color-border-strong)] bg-white text-[var(--color-ink)]'
-                                }`}
+                            Execute stop &rarr;
+                          </Link>
+                        </div>
+                      ) : null}
+
+                      {/* Capped scrollable stops container: handles 8 to 15+ stops smoothly */}
+                      <div className="relative max-h-72 overflow-y-auto">
+                        {/* Visual route connector line connecting all stops */}
+                        <div
+                          aria-hidden="true"
+                          className="pointer-events-none absolute bottom-4 left-[27px] top-4 w-0.5 bg-[var(--color-border-subtle)] sm:left-[31px]"
+                        />
+
+                        <ul className="divide-y divide-[var(--color-border-subtle)]/60">
+                          {trip.items.map((item, idx) => {
+                            const queued = offline.items.find(
+                              (q) => q.collectionId === item.id && q.status !== 'completed',
+                            );
+                            const isNext = idx === activeNextStopIdx;
+                            const isCollected = item.status === 'picked_up';
+                            const isMissed = item.status === 'missed';
+                            const statusLabel = isCollected
+                              ? 'Collected'
+                              : isMissed
+                                ? 'Missed'
+                                : queued
+                                  ? queued.status === 'failed'
+                                    ? 'Upload failed'
+                                    : 'Pending upload'
+                                  : (STATUS_LABELS[item.status] ?? item.status);
+
+                            const statusBadgeCls = isCollected
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              : isMissed
+                                ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                : queued
+                                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                  : isNext
+                                    ? 'bg-amber-50 text-amber-900 border-amber-300 font-semibold'
+                                    : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-border-subtle)]';
+
+                            return (
+                              <li
+                                key={item.id}
+                                className={`group relative transition-colors ${isNext ? 'bg-amber-50/30' : 'bg-white hover:bg-[var(--color-surface-alt)]/50'}`}
                               >
-                                {isCollected ? (
-                                  <IconCheck
-                                    className="h-3.5 w-3.5"
-                                    stroke={3}
+                                <Link
+                                  to={stopPageHref(trip.id, item.id)}
+                                  aria-label={`Stop ${idx + 1}: ${item.requester_name}, ${item.pickup_address}`}
+                                  className="flex min-h-[48px] w-full items-center gap-3 px-3 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ink)] sm:gap-4 sm:px-4"
+                                >
+                                  {/* Step Node along the Timeline */}
+                                  <span
+                                    aria-hidden="true"
+                                    className={`relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold leading-none shadow-xs ring-4 ring-white ${
+                                      isCollected
+                                        ? 'bg-[var(--color-success)] text-white'
+                                        : isMissed
+                                          ? 'border-2 border-rose-400 bg-white text-[var(--color-danger)]'
+                                          : isNext
+                                            ? 'animate-pulse bg-amber-500 text-white'
+                                            : 'border-2 border-[var(--color-border-strong)] bg-white text-[var(--color-ink)]'
+                                    }`}
+                                  >
+                                    {isCollected ? (
+                                      <Check
+                                        className="h-3.5 w-3.5"
+                                        strokeWidth={3}
+                                        aria-hidden="true"
+                                      />
+                                    ) : (
+                                      idx + 1
+                                    )}
+                                  </span>
+
+                                  {/* Stop Itinerary Content */}
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      <span className="truncate text-xs font-semibold text-[var(--color-ink)] group-hover:text-black">
+                                        {item.requester_name}
+                                      </span>
+                                      <span className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
+                                        · {item.reference}
+                                      </span>
+                                      {item.service_zone?.name ? (
+                                        <span className="rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-secondary)]">
+                                          {item.service_zone.name}
+                                        </span>
+                                      ) : null}
+                                    </div>
+
+                                    <div className="mt-0.5 flex items-center gap-1 text-xs text-[var(--color-text-secondary)]">
+                                      <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--color-text-tertiary)]" />
+                                      <span className="truncate" title={item.pickup_address}>
+                                        {item.pickup_address}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Volume badge */}
+                                  <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-2 py-0.5 text-xs font-semibold tabular-nums text-[var(--color-ink)]">
+                                    <Package className="h-3 w-3 text-[var(--color-text-tertiary)]" />
+                                    {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
+                                  </span>
+
+                                  {/* Status Badge */}
+                                  <span
+                                    className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[11px] font-medium leading-none ${statusBadgeCls}`}
+                                  >
+                                    {statusLabel}
+                                  </span>
+
+                                  {/* Navigation Chevron */}
+                                  <ChevronRight
+                                    className="h-4 w-4 shrink-0 text-[var(--color-text-tertiary)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--color-ink)]"
+                                    strokeWidth={2}
                                     aria-hidden="true"
                                   />
-                                ) : (
-                                  idx + 1
-                                )}
-                              </span>
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
 
-                              {/* Stop Itinerary Content */}
-                              <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  <span className="truncate text-xs font-semibold text-[var(--color-ink)] group-hover:text-black">
-                                    {item.requester_name}
-                                  </span>
-                                  <span className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
-                                    · {item.reference}
-                                  </span>
-                                  {item.service_zone?.name ? (
-                                    <span className="rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-secondary)]">
-                                      {item.service_zone.name}
-                                    </span>
-                                  ) : null}
-                                </div>
-
-                                <div className="mt-0.5 flex items-center gap-1 text-xs text-[var(--color-text-secondary)]">
-                                  <IconMapPin className="h-3.5 w-3.5 shrink-0 text-[var(--color-text-tertiary)]" />
-                                  <span className="truncate" title={item.pickup_address}>
-                                    {item.pickup_address}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Volume badge */}
-                              <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-2 py-0.5 text-xs font-semibold tabular-nums text-[var(--color-ink)]">
-                                <IconPackage className="h-3 w-3 text-[var(--color-text-tertiary)]" />
-                                {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
-                              </span>
-
-                              {/* Status Badge */}
-                              <span
-                                className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[11px] font-medium leading-none ${statusBadgeCls}`}
-                              >
-                                {statusLabel}
-                              </span>
-
-                              {/* Navigation Chevron */}
-                              <IconChevronRight
-                                className="h-4 w-4 shrink-0 text-[var(--color-text-tertiary)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--color-ink)]"
-                                stroke={2}
-                                aria-hidden="true"
-                              />
-                            </Link>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                ) : null}
-              </section>
-            );
-          })}
+                      {/* Footer hint if trip has multiple stops */}
+                      {trip.items.length > 3 ? (
+                        <div className="flex items-center justify-between border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)]/50 px-4 py-2 text-xs text-[var(--color-text-secondary)]">
+                          <span>
+                            Showing itinerary ({trip.items.length} stop
+                            {trip.items.length === 1 ? '' : 's'})
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedTripSheet(trip)}
+                            className="inline-flex items-center gap-1 font-semibold text-[var(--color-ink)] hover:underline"
+                          >
+                            Open Full Trip Sheet ({trip.items.length}) &rarr;
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </section>
+              );
+            })
+          )}
         </div>
       </DeskStates>
+
+      {/* TRIP SHEET MANIFEST MODAL */}
+      {selectedTripSheet ? (
+        <TripSheetModal trip={selectedTripSheet} onClose={() => setSelectedTripSheet(null)} />
+      ) : null}
+
       <Pager meta={queue.data?.meta} onPage={setPage} />
     </DeskPage>
   );
