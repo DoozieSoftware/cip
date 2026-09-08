@@ -1,4 +1,4 @@
-import { useMemo, useState, type JSX } from 'react';
+import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
@@ -430,13 +430,22 @@ export default function TextileDispatchPage(): JSX.Element {
   const [viewMode, setViewMode] = useState<'timeline' | 'matrix'>('timeline');
   const [selectedTripSheet, setSelectedTripSheet] = useState<TripEntry | null>(null);
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
-  const [mobileTab, setMobileTab] = useState<'routes' | 'console'>('routes');
+  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
   const [routeQuery, setRouteQuery] = useState('');
   const [routeStatusTab, setRouteStatusTab] = useState<
     'all' | 'planned' | 'in_progress' | 'completed'
   >('all');
-  const [rosterDensity, setRosterDensity] = useState<'cards' | 'compact'>('cards');
   const opsQueue = useOpsQueue();
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && isDrawerOpen) {
+        setIsDrawerOpen(false);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDrawerOpen]);
 
   function handleDateFilter(next: string): void {
     setDateFilter(next);
@@ -556,6 +565,20 @@ export default function TextileDispatchPage(): JSX.Element {
     });
   }, [trips, routeStatusTab, routeQuery]);
 
+  // Route counts for status filter tabs
+  const statusCounts = useMemo(() => {
+    let planned = 0;
+    let inProgress = 0;
+    let completed = 0;
+    for (const t of trips) {
+      const s = t.items[0]?.batch?.status ?? 'planned';
+      if (s === 'planned' || s === 'scheduled') planned++;
+      else if (s === 'in_progress') inProgress++;
+      else if (s === 'completed') completed++;
+    }
+    return { all: trips.length, planned, inProgress, completed };
+  }, [trips]);
+
   // Active selected trip for command console
   const activeTrip = useMemo(() => {
     if (trips.length === 0) return null;
@@ -586,7 +609,10 @@ export default function TextileDispatchPage(): JSX.Element {
           <div className="inline-flex items-center rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-0.5">
             <button
               type="button"
-              onClick={() => setViewMode('timeline')}
+              onClick={() => {
+                setViewMode('timeline');
+                setIsDrawerOpen(true);
+              }}
               className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition ${
                 viewMode === 'timeline'
                   ? 'bg-white font-semibold text-[var(--color-ink)] shadow-xs'
@@ -599,7 +625,10 @@ export default function TextileDispatchPage(): JSX.Element {
             </button>
             <button
               type="button"
-              onClick={() => setViewMode('matrix')}
+              onClick={() => {
+                setViewMode('matrix');
+                setIsDrawerOpen(false);
+              }}
               className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition ${
                 viewMode === 'matrix'
                   ? 'bg-white font-semibold text-[var(--color-ink)] shadow-xs'
@@ -829,296 +858,173 @@ export default function TextileDispatchPage(): JSX.Element {
               </table>
             </div>
           ) : (
-            /* STITCH MASTER-DETAIL FLEET DISPATCH CONSOLE */
-            <div>
-              {/* Mobile View Switcher (Tabs) */}
-              {trips.length > 1 ? (
-                <div className="mb-3 flex items-center gap-2 border-b border-slate-200 pb-2.5 lg:hidden">
-                  <button
-                    type="button"
-                    onClick={() => setMobileTab('routes')}
-                    className={`flex-1 rounded-lg py-2 text-center text-xs font-bold transition ${
-                      mobileTab === 'routes'
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    }`}
-                  >
-                    Routes ({trips.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMobileTab('console')}
-                    className={`flex-1 rounded-lg py-2 text-center text-xs font-bold transition ${
-                      mobileTab === 'console'
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    }`}
-                  >
-                    Route Console
-                  </button>
+            /* FULL-WIDTH DISPATCH OPERATIONS TABLE + SLIDE-OVER ROUTE DRAWER */
+            <div className="space-y-3">
+              {/* Filter and Search Bar for High-Volume Routes */}
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-border-subtle)] bg-white p-3 shadow-2xs">
+                <div className="relative flex-1 min-w-[260px]">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
+                  <input
+                    type="text"
+                    value={routeQuery}
+                    onChange={(e) => setRouteQuery(e.target.value)}
+                    placeholder="Filter routes by reference, driver, vehicle, or customer address..."
+                    className="w-full rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] py-1.5 pl-8 pr-7 text-xs text-[var(--color-ink)] placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-ink)] focus:bg-white focus:outline-none"
+                  />
+                  {routeQuery ? (
+                    <button
+                      type="button"
+                      onClick={() => setRouteQuery('')}
+                      className="absolute right-2.5 top-2 text-xs font-bold text-[var(--color-text-secondary)] hover:text-[var(--color-ink)]"
+                      aria-label="Clear route search"
+                    >
+                      &times;
+                    </button>
+                  ) : null}
                 </div>
-              ) : null}
 
-              {/* Grid Layout */}
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:items-start">
-                {/* LEFT COLUMN: Fleet Route Cards Selector (lg:col-span-5) */}
-                {trips.length > 1 ? (
-                  <div
-                    className={`space-y-2.5 lg:col-span-5 ${
-                      mobileTab === 'routes' ? 'block' : 'hidden lg:block'
-                    }`}
-                  >
-                    {/* Header bar with count and density toggle */}
-                    <div className="flex items-center justify-between px-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-xs font-semibold text-[var(--color-ink)]">Routes</h3>
-                        <span className="rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 font-mono text-[11px] font-medium text-[var(--color-text-secondary)]">
-                          {filteredTrips.length === trips.length
-                            ? trips.length
-                            : `${filteredTrips.length} of ${trips.length}`}
-                        </span>
-                      </div>
-                      <div className="inline-flex items-center rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-0.5 text-[11px]">
-                        <button
-                          type="button"
-                          onClick={() => setRosterDensity('cards')}
-                          className={`rounded px-2 py-0.5 transition ${
-                            rosterDensity === 'cards'
-                              ? 'bg-white font-semibold text-[var(--color-ink)] shadow-2xs'
-                              : 'text-[var(--color-text-secondary)] hover:text-[var(--color-ink)]'
-                          }`}
-                        >
-                          Cards
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setRosterDensity('compact')}
-                          className={`rounded px-2 py-0.5 transition ${
-                            rosterDensity === 'compact'
-                              ? 'bg-white font-semibold text-[var(--color-ink)] shadow-2xs'
-                              : 'text-[var(--color-text-secondary)] hover:text-[var(--color-ink)]'
-                          }`}
-                        >
-                          Compact
-                        </button>
-                      </div>
-                    </div>
+                {/* Status Filter Tabs */}
+                <div className="flex items-center gap-1 overflow-x-auto text-xs">
+                  {(
+                    [
+                      { id: 'all', label: `All Routes (${statusCounts.all})` },
+                      { id: 'in_progress', label: `In Progress (${statusCounts.inProgress})` },
+                      { id: 'planned', label: `Planned (${statusCounts.planned})` },
+                      { id: 'completed', label: `Completed (${statusCounts.completed})` },
+                    ] as const
+                  ).map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setRouteStatusTab(tab.id)}
+                      className={`rounded-lg px-2.5 py-1.5 transition text-xs ${
+                        routeStatusTab === tab.id
+                          ? 'bg-[var(--color-ink)] font-semibold text-white shadow-2xs'
+                          : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                    {/* In-Roster Fast Search and Status Filter */}
-                    <div className="space-y-2 rounded-xl border border-[var(--color-border-subtle)] bg-white p-2.5 shadow-2xs">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
-                        <input
-                          type="text"
-                          value={routeQuery}
-                          onChange={(e) => setRouteQuery(e.target.value)}
-                          placeholder="Filter routes, driver, stop..."
-                          className="w-full rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] py-1.5 pl-8 pr-7 text-xs text-[var(--color-ink)] placeholder:text-[var(--color-text-secondary)] focus:border-[var(--color-ink)] focus:bg-white focus:outline-none"
-                        />
-                        {routeQuery ? (
-                          <button
-                            type="button"
-                            onClick={() => setRouteQuery('')}
-                            className="absolute right-2.5 top-2 text-xs font-bold text-[var(--color-text-secondary)] hover:text-[var(--color-ink)]"
-                            aria-label="Clear route search"
-                          >
-                            &times;
-                          </button>
-                        ) : null}
-                      </div>
-
-                      {/* Status quick tabs */}
-                      <div className="flex items-center gap-1 overflow-x-auto text-[11px]">
-                        {(
-                          [
-                            { id: 'all', label: 'All' },
-                            { id: 'planned', label: 'Planned' },
-                            { id: 'in_progress', label: 'Active' },
-                            { id: 'completed', label: 'Done' },
-                          ] as const
-                        ).map((tab) => {
-                          const count = trips.filter((t) => {
-                            if (tab.id === 'all') return true;
-                            const s = t.items[0]?.batch?.status ?? 'planned';
-                            if (tab.id === 'planned') return s === 'planned' || s === 'scheduled';
-                            if (tab.id === 'in_progress') return s === 'in_progress';
-                            if (tab.id === 'completed') return s === 'completed';
-                            return false;
-                          }).length;
-
-                          return (
-                            <button
-                              key={tab.id}
-                              type="button"
-                              onClick={() => setRouteStatusTab(tab.id)}
-                              className={`rounded-md px-2 py-0.5 transition ${
-                                routeStatusTab === tab.id
-                                  ? 'bg-[var(--color-ink)] font-semibold text-white'
-                                  : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
-                              }`}
-                            >
-                              {tab.label} ({count})
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Scrollable List Container (Independent scroll: max-h-[calc(100vh-310px)]) */}
-                    <div className="space-y-2 lg:max-h-[calc(100vh-310px)] lg:overflow-y-auto lg:pr-1">
-                      {filteredTrips.length === 0 ? (
-                        <div className="rounded-xl border border-dashed border-[var(--color-border-subtle)] p-6 text-center text-xs text-[var(--color-text-secondary)]">
+              {/* Full-Width Dispatch Operations Table (Ready for 1,000+ Records) */}
+              <div className="overflow-x-auto rounded-xl border border-[var(--color-border-subtle)] bg-white shadow-xs">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3">Route Reference</th>
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Driver / Vehicle</th>
+                      <th className="px-4 py-3">Stops & Cargo</th>
+                      <th className="px-4 py-3">Progress</th>
+                      <th className="px-4 py-3">Next Stop</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredTrips.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="p-8 text-center text-xs text-slate-500">
                           No routes match current filter.
-                        </div>
-                      ) : (
-                        filteredTrips.map((trip) => {
-                          const isSelected = activeTrip?.id === trip.id;
-                          const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
-                          const progress =
-                            trip.items[0]?.batch?.progress ?? getTripProgress(trip.items);
-                          const statusMeta = TRIP_STATUS_META[batchStatus] ?? {
-                            label: batchStatus.replaceAll('_', ' '),
-                            cls: 'border-[var(--color-border-subtle)] bg-zinc-50 text-zinc-700',
-                            dot: 'bg-zinc-400',
-                          };
-                          const formattedDate = trip.date ? formatTripDate(trip.date) : '';
-                          const tripRef = trip.ref !== 'Unassigned' ? trip.ref : trip.label;
-                          const driver = trip.items[0]?.batch?.driver_name;
-                          const vehicle = trip.items[0]?.batch?.vehicle_label;
-                          const totalBags = trip.items.reduce(
-                            (acc, it) => acc + (it.actual_bags ?? it.estimated_bags ?? 0),
-                            0,
-                          );
-                          const totalWeight = trip.items.reduce(
-                            (acc, it) => acc + (it.actual_weight_kg ?? it.estimated_weight_kg ?? 0),
-                            0,
-                          );
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredTrips.map((trip) => {
+                        const isSelected = activeTrip?.id === trip.id && isDrawerOpen;
+                        const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
+                        const progress =
+                          trip.items[0]?.batch?.progress ?? getTripProgress(trip.items);
+                        const statusMeta = TRIP_STATUS_META[batchStatus] ?? {
+                          label: batchStatus.replaceAll('_', ' '),
+                          cls: 'border-[var(--color-border-subtle)] bg-zinc-50 text-zinc-700',
+                          dot: 'bg-zinc-400',
+                        };
+                        const formattedDate = trip.date ? formatTripDate(trip.date) : 'Unscheduled';
+                        const tripRef = trip.ref !== 'Unassigned' ? trip.ref : trip.label;
+                        const driver = trip.items[0]?.batch?.driver_name;
+                        const vehicle = trip.items[0]?.batch?.vehicle_label;
+                        const totalBags = trip.items.reduce(
+                          (acc, it) => acc + (it.actual_bags ?? it.estimated_bags ?? 0),
+                          0,
+                        );
+                        const totalWeight = trip.items.reduce(
+                          (acc, it) => acc + (it.actual_weight_kg ?? it.estimated_weight_kg ?? 0),
+                          0,
+                        );
+                        const nextPendingIdx = trip.items.findIndex(
+                          (i) => i.status === 'scheduled',
+                        );
+                        const nextPending = nextPendingIdx >= 0 ? trip.items[nextPendingIdx] : null;
 
-                          if (rosterDensity === 'compact') {
-                            return (
-                              <div
-                                key={trip.id}
-                                onClick={() => {
-                                  setSelectedTripId(trip.id);
-                                  setMobileTab('console');
-                                }}
-                                role="button"
-                                tabIndex={0}
-                                aria-label={`Select route ${tripRef}`}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' || e.key === ' ') {
-                                    setSelectedTripId(trip.id);
-                                    setMobileTab('console');
-                                  }
-                                }}
-                                className={`group flex items-center justify-between gap-2.5 rounded-lg px-3 py-2.5 text-left transition-all cursor-pointer ${
-                                  isSelected
-                                    ? 'border-2 border-[var(--color-ink)] bg-white shadow-xs'
-                                    : 'border border-[var(--color-border-subtle)] bg-white hover:border-[var(--color-border)] hover:bg-slate-50/50'
-                                }`}
+                        return (
+                          <tr
+                            key={trip.id}
+                            onClick={() => {
+                              setSelectedTripId(trip.id);
+                              setIsDrawerOpen(true);
+                            }}
+                            className={`cursor-pointer transition-colors ${
+                              isSelected
+                                ? 'bg-amber-50/50 border-l-4 border-l-amber-500'
+                                : 'hover:bg-slate-50/70'
+                            }`}
+                          >
+                            <td className="px-4 py-3.5 font-mono">
+                              <span className="font-bold text-slate-900 block text-xs">
+                                {tripRef}
+                              </span>
+                              <span className="text-[10px] text-slate-400 block font-mono">
+                                ID: {trip.id}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5 font-mono text-slate-600 text-xs">
+                              {formattedDate}
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span
+                                className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusMeta.cls}`}
                               >
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <span className="font-mono text-xs font-bold text-[var(--color-ink)] truncate">
-                                    {tripRef}
-                                  </span>
-                                  <span className="text-xs text-[var(--color-text-secondary)] truncate">
-                                    · {driver ?? 'Unassigned'}
-                                  </span>
+                                <span
+                                  className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`}
+                                  aria-hidden="true"
+                                />
+                                {statusMeta.label}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <div className="flex items-center gap-2">
+                                <div className="grid h-6 w-6 place-items-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-700 shrink-0">
+                                  {driver ? (
+                                    driver.slice(0, 2).toUpperCase()
+                                  ) : (
+                                    <User className="h-3 w-3" />
+                                  )}
                                 </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <span className="font-mono text-[11px] text-[var(--color-text-secondary)]">
-                                    {trip.items.length} stop{trip.items.length === 1 ? '' : 's'} ·{' '}
-                                    {Math.round(totalWeight * 10) / 10}kg
+                                <div className="min-w-0">
+                                  <span className="font-semibold text-slate-900 block leading-tight truncate">
+                                    {driver ?? 'Unassigned Driver'}
                                   </span>
-                                  <span
-                                    className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${statusMeta.cls}`}
-                                  >
-                                    {statusMeta.label}
-                                  </span>
-                                  <ChevronRight className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
-                                </div>
-                              </div>
-                            );
-                          }
-
-                          return (
-                            <div
-                              key={trip.id}
-                              onClick={() => {
-                                setSelectedTripId(trip.id);
-                                setMobileTab('console');
-                              }}
-                              role="button"
-                              tabIndex={0}
-                              aria-label={`Select route ${tripRef}`}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  setSelectedTripId(trip.id);
-                                  setMobileTab('console');
-                                }
-                              }}
-                              className={`group relative rounded-xl p-3.5 text-left transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'border-2 border-[var(--color-ink)] bg-white shadow-xs'
-                                  : 'border border-[var(--color-border-subtle)] bg-white hover:border-[var(--color-border)] hover:bg-slate-50/50'
-                              }`}
-                            >
-                              {/* Route Ref & Status */}
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-bold text-[var(--color-ink)]">
-                                    {tripRef}
-                                  </span>
-                                  {formattedDate ? (
-                                    <span className="flex items-center gap-1 font-mono text-[11px] text-[var(--color-text-secondary)]">
-                                      <Calendar className="h-3 w-3 text-[var(--color-text-secondary)]" />
-                                      {formattedDate}
+                                  {vehicle ? (
+                                    <span className="font-mono text-[10px] text-slate-400 block truncate">
+                                      {vehicle}
                                     </span>
                                   ) : null}
                                 </div>
-                                <span
-                                  className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusMeta.cls}`}
-                                >
-                                  <span
-                                    className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`}
-                                    aria-hidden="true"
-                                  />
-                                  {statusMeta.label}
-                                </span>
                               </div>
-
-                              {/* Crew, Vehicle, and Load */}
-                              <div className="mt-2.5 flex items-center justify-between text-xs">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-700">
-                                    {driver ? (
-                                      driver.slice(0, 2).toUpperCase()
-                                    ) : (
-                                      <User className="h-3.5 w-3.5" />
-                                    )}
-                                  </div>
-                                  <div className="flex flex-col min-w-0">
-                                    <span className="truncate font-semibold text-[var(--color-ink)]">
-                                      {driver ?? 'Unassigned Driver'}
-                                    </span>
-                                    {vehicle ? (
-                                      <span className="truncate font-mono text-[10px] text-[var(--color-text-secondary)]">
-                                        {vehicle}
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                </div>
-                                <div className="shrink-0 flex items-center gap-1 rounded bg-slate-50 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-600">
-                                  <span>
-                                    {trip.items.length} stop{trip.items.length === 1 ? '' : 's'}
-                                  </span>
-                                  <span>·</span>
-                                  <span>{Math.round(totalWeight * 10) / 10} kg</span>
-                                </div>
-                              </div>
-
-                              {/* Mini Progress */}
-                              <div className="mt-2.5">
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span className="font-semibold text-slate-900">
+                                {trip.items.length} stop{trip.items.length === 1 ? '' : 's'}
+                              </span>
+                              <span className="text-slate-400 block text-[11px]">
+                                {Math.round(totalWeight * 10) / 10} kg ({totalBags} bags)
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <div className="w-32 sm:w-36">
                                 <TripProgressBar
                                   batchStatus={batchStatus}
                                   collected={progress.collected}
@@ -1127,31 +1033,75 @@ export default function TextileDispatchPage(): JSX.Element {
                                   total={progress.total}
                                 />
                               </div>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              {nextPending ? (
+                                <div className="flex flex-col">
+                                  <span className="font-semibold text-slate-800">
+                                    Stop #{nextPendingIdx + 1}
+                                  </span>
+                                  <span className="text-[11px] text-slate-500 truncate max-w-[160px]">
+                                    {nextPending.service_zone?.name ??
+                                      nextPending.pickup_address.split(',')[0]}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400">Complete</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3.5 text-right space-x-2">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedTripId(trip.id);
+                                  setIsDrawerOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1 rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-xs font-semibold text-white shadow-2xs hover:bg-black transition"
+                              >
+                                <span>Inspect Route</span>
+                                <ChevronRight className="h-3 w-3" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
 
-                              {/* Clean card footer */}
-                              <div className="mt-2.5 flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
-                                <span>{totalBags} bags est.</span>
-                                <span className="flex items-center gap-1 font-medium text-[var(--color-ink)]">
-                                  <span>{isSelected ? 'Viewing' : 'View route'}</span>
-                                  <ChevronRight className="h-3.5 w-3.5" />
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
+                {/* Table Footer */}
+                <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-xs text-slate-500 bg-slate-50/50">
+                  <div>
+                    Showing <strong>{filteredTrips.length}</strong> of{' '}
+                    <strong>{trips.length}</strong> routes (
+                    {trips.reduce((acc, t) => acc + t.items.length, 0)} total pickup stops)
                   </div>
-                ) : null}
+                  {filteredTrips.length > 0 && activeTrip ? (
+                    <span className="font-mono text-[11px] text-slate-400">
+                      Selected:{' '}
+                      {activeTrip.ref !== 'Unassigned' ? activeTrip.ref : activeTrip.label}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
 
-                {/* RIGHT COLUMN: Active Route Dispatch Console */}
-                <div
-                  className={`${trips.length > 1 ? 'lg:col-span-7' : 'lg:col-span-12'} ${
-                    mobileTab === 'console' || trips.length === 1 ? 'block' : 'hidden lg:block'
-                  } lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto`}
-                >
-                  {activeTrip ? (
-                    (() => {
+              {/* SLIDE-OVER ROUTE DRAWER */}
+              {isDrawerOpen && activeTrip ? (
+                <>
+                  {/* Subtle Backdrop */}
+                  <div
+                    className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[0.5px] transition-opacity"
+                    onClick={() => setIsDrawerOpen(false)}
+                    aria-hidden="true"
+                  />
+
+                  {/* Drawer Panel */}
+                  <aside
+                    aria-label="Route details drawer"
+                    className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col bg-white shadow-2xl border-l border-slate-200"
+                  >
+                    {(() => {
                       const batchStatus = activeTrip.items[0]?.batch?.status ?? 'planned';
                       const progress =
                         activeTrip.items[0]?.batch?.progress ?? getTripProgress(activeTrip.items);
@@ -1190,17 +1140,17 @@ export default function TextileDispatchPage(): JSX.Element {
                       );
 
                       return (
-                        <section className="overflow-hidden rounded-2xl border border-[var(--color-border-subtle)] bg-white shadow-xs">
-                          {/* Console Header */}
-                          <header className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] p-4 sm:p-5 text-[var(--color-ink)]">
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                              <div className="flex items-center gap-3">
-                                <div className="grid h-10 w-10 place-items-center rounded-xl border border-[var(--color-border-subtle)] bg-white text-[var(--color-ink)] shadow-2xs">
-                                  <Truck className="h-5 w-5" />
+                        <>
+                          {/* Drawer Header */}
+                          <header className="border-b border-slate-200 bg-slate-50/80 p-4 sm:p-5">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-800 shadow-2xs">
+                                  <Truck className="h-4.5 w-4.5" />
                                 </div>
                                 <div>
                                   <div className="flex items-center gap-2">
-                                    <h2 className="font-mono text-base font-bold text-[var(--color-ink)] tracking-wide">
+                                    <h2 className="font-mono text-sm font-bold text-[var(--color-ink)]">
                                       Route {tripRef}
                                     </h2>
                                     <span
@@ -1236,12 +1186,12 @@ export default function TextileDispatchPage(): JSX.Element {
                                 </div>
                               </div>
 
-                              {/* Action: Trip Sheet Modal Trigger */}
-                              <div className="flex items-center gap-2">
+                              {/* Drawer Top Action & Close Button */}
+                              <div className="flex items-center gap-1.5">
                                 <button
                                   type="button"
                                   onClick={() => setSelectedTripSheet(activeTrip)}
-                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-ink)] shadow-2xs transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--color-ink)] shadow-2xs transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
                                 >
                                   <Maximize2 className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
                                   <span>Trip Sheet ({activeTrip.items.length})</span>
@@ -1249,16 +1199,24 @@ export default function TextileDispatchPage(): JSX.Element {
                                 <button
                                   type="button"
                                   onClick={() => window.print()}
-                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-ink)] shadow-2xs transition hover:bg-slate-50 print:hidden"
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--color-ink)] shadow-2xs transition hover:bg-slate-50 print:hidden"
                                 >
                                   <Printer className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
                                   <span className="hidden sm:inline">Print</span>
                                 </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setIsDrawerOpen(false)}
+                                  aria-label="Close route drawer"
+                                  className="grid h-7 w-7 place-items-center rounded-lg text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
                               </div>
                             </div>
 
-                            {/* Crew info bar */}
-                            <div className="mt-3.5 flex flex-wrap items-center gap-4 rounded-xl border border-[var(--color-border-subtle)] bg-white px-3.5 py-2 text-xs text-[var(--color-ink)] shadow-2xs">
+                            {/* Driver / Crew Bar */}
+                            <div className="mt-3 flex flex-wrap items-center gap-4 rounded-xl border border-[var(--color-border-subtle)] bg-white px-3 py-1.5 text-xs text-[var(--color-ink)] shadow-2xs">
                               <span className="inline-flex items-center gap-1.5">
                                 <User className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
                                 <strong>{driver ?? 'Unassigned Driver'}</strong>
@@ -1278,7 +1236,7 @@ export default function TextileDispatchPage(): JSX.Element {
                             </div>
 
                             {/* Route progress */}
-                            <div className="mt-3">
+                            <div className="mt-2.5">
                               <TripProgressBar
                                 batchStatus={batchStatus}
                                 collected={progress.collected}
@@ -1289,7 +1247,7 @@ export default function TextileDispatchPage(): JSX.Element {
                             </div>
 
                             {(frozen || hasRescheduledStops || hasUnavailableStops) && (
-                              <p className="mt-2 text-[11px] text-amber-800">
+                              <p className="mt-1.5 text-[11px] text-amber-800">
                                 {frozen ? 'Trip is locked — rescheduling disabled. ' : ''}
                                 {hasRescheduledStops
                                   ? 'Rescheduled stops present — prior slot on stop page. '
@@ -1301,8 +1259,8 @@ export default function TextileDispatchPage(): JSX.Element {
                             )}
                           </header>
 
-                          {/* Console Body Workspace */}
-                          <div className="space-y-4 bg-white p-4 sm:p-5">
+                          {/* Scrollable Itinerary Workspace */}
+                          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
                             {/* Capacity Notices */}
                             <BatchCapacityNotice
                               batchId={activeTrip.id}
@@ -1310,7 +1268,7 @@ export default function TextileDispatchPage(): JSX.Element {
                               items={activeTrip.items}
                             />
 
-                            {/* Active Next Stop Callout */}
+                            {/* Next Stop Hero Callout */}
                             {activeNextStop ? (
                               <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200/80 bg-amber-50/60 px-4 py-3 text-xs">
                                 <div className="flex items-center gap-2.5 min-w-0">
@@ -1351,7 +1309,7 @@ export default function TextileDispatchPage(): JSX.Element {
                                 </span>
                               </div>
 
-                              <div className="relative max-h-[460px] overflow-y-auto pr-1">
+                              <div className="relative">
                                 {/* Continuous Trunk Line */}
                                 <div
                                   aria-hidden="true"
@@ -1495,16 +1453,26 @@ export default function TextileDispatchPage(): JSX.Element {
                               </div>
                             ) : null}
                           </div>
-                        </section>
+
+                          {/* Drawer Footer Actions */}
+                          <div className="border-t border-slate-200 bg-slate-50/90 p-3.5 px-5 flex items-center justify-between">
+                            <span className="text-xs text-slate-500 font-mono">
+                              Press ESC or click Done to close
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setIsDrawerOpen(false)}
+                              className="rounded-lg bg-[var(--color-ink)] px-4 py-1.5 text-xs font-bold text-white hover:bg-black transition shadow-xs"
+                            >
+                              Done
+                            </button>
+                          </div>
+                        </>
                       );
-                    })()
-                  ) : (
-                    <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
-                      Select a route from the list to view itinerary and dispatch details.
-                    </div>
-                  )}
-                </div>
-              </div>
+                    })()}
+                  </aside>
+                </>
+              ) : null}
             </div>
           )}
         </div>
