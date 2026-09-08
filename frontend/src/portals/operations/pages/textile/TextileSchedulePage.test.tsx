@@ -1,11 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '../../../../auth/AuthContext';
 import type { TextileCollectionListItem } from '../../api/textileApi';
-import type * as TextileApi from '../../api/textileApi';
-import { fetchCapacityRules } from '../../api/textileApi';
 import type * as TextileShared from './shared';
 import TextileSchedulePage from './TextileSchedulePage';
 import { useDesk, useTextileQueue } from './shared';
@@ -21,14 +19,6 @@ vi.mock('./shared', async () => {
     Pager: () => null,
     useDesk: vi.fn(),
     useTextileQueue: vi.fn(),
-  };
-});
-
-vi.mock('../../api/textileApi', async () => {
-  const actual = await vi.importActual<typeof TextileApi>('../../api/textileApi');
-  return {
-    ...actual,
-    fetchCapacityRules: vi.fn(() => Promise.resolve([])),
   };
 });
 
@@ -88,13 +78,26 @@ const MISSED_ITEM = makeItem({
   scheduled_window_end: '12:00',
 });
 
-function renderPage() {
+function renderSchedule(state?: unknown) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <MemoryRouter>
+    <MemoryRouter
+      initialEntries={[
+        { pathname: '/operations/textile-collections/schedule', state: state ?? null },
+      ]}
+    >
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <TextileSchedulePage />
+          <Routes>
+            <Route
+              path="/operations/textile-collections/schedule"
+              element={<TextileSchedulePage />}
+            />
+            <Route
+              path="/operations/textile-collections/schedule/new"
+              element={<div>New trip page</div>}
+            />
+          </Routes>
         </AuthProvider>
       </QueryClientProvider>
     </MemoryRouter>,
@@ -121,7 +124,7 @@ describe('TextileSchedulePage', () => {
   });
 
   it('fetches ready and missed bookings so missed ones can be re-tripped', () => {
-    renderPage();
+    renderSchedule();
 
     expect(vi.mocked(useTextileQueue)).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'ready_to_group,missed' }),
@@ -129,7 +132,7 @@ describe('TextileSchedulePage', () => {
   });
 
   it('badges missed rows as missed with a re-attempt marker and reason', () => {
-    renderPage();
+    renderSchedule();
 
     expect(screen.getByText('Missed')).toBeVisible();
     expect(screen.getByText('Re-attempt')).toBeVisible();
@@ -138,40 +141,35 @@ describe('TextileSchedulePage', () => {
     expect(screen.getAllByText('Re-attempt')).toHaveLength(1);
   });
 
-  it('fills both window fields from a preset chip and keeps 24h values', () => {
-    renderPage();
+  it('shows a sticky bar with counts that continues to the new-trip page', () => {
+    renderSchedule();
 
-    // Chips appear with the trip form once a request is selected.
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Select DLN-2026-79FFFC75' }));
-
-    fireEvent.click(screen.getByRole('button', { name: '09:00–12:00' }));
-
-    expect(screen.getByLabelText('Window start')).toHaveValue('09:00');
-    expect(screen.getByLabelText('Window end')).toHaveValue('12:00');
-    // All three presets stay available; manual inputs remain for custom override.
-    expect(screen.getByRole('button', { name: '12:00–15:00' })).toBeVisible();
-    expect(screen.getByRole('button', { name: '15:00–18:00' })).toBeVisible();
-    fireEvent.change(screen.getByLabelText('Window start'), { target: { value: '10:30' } });
-    expect(screen.getByLabelText('Window start')).toHaveValue('10:30');
-  });
-
-  it('keeps scheduling validation working for a mixed ready + missed selection', () => {
-    renderPage();
+    expect(screen.queryByRole('button', { name: /Schedule →/ })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select DLN-2026-79FFFC75' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select DLN-2026-81AAAB12' }));
 
-    expect(screen.getByText(/1 missed — re-attempt/)).toBeVisible();
-
-    const scheduleButton = screen.getByRole('button', { name: 'Schedule trip' });
-    // No date yet — still blocked.
-    expect(scheduleButton).toBeDisabled();
-
-    fireEvent.change(screen.getByLabelText('Pickup date', { selector: 'input' }), {
-      target: { value: '2026-09-20' },
-    });
-
+    const scheduleButton = screen.getByRole('button', { name: /2 selected · 8 bags · Schedule →/ });
+    expect(scheduleButton).toBeVisible();
     expect(scheduleButton).toBeEnabled();
-    expect(vi.mocked(fetchCapacityRules)).toHaveBeenCalled();
+
+    fireEvent.click(scheduleButton);
+    expect(screen.getByText('New trip page')).toBeVisible();
+  });
+
+  it('restores the selection when returning from the new-trip page', () => {
+    renderSchedule({ selectedIds: ['collection-1'] });
+
+    expect(screen.getByRole('button', { name: /1 selected · 4 bags · Schedule →/ })).toBeVisible();
+  });
+
+  it('clears the selection from the sticky bar', () => {
+    renderSchedule();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select DLN-2026-79FFFC75' }));
+    expect(screen.getByRole('button', { name: /Schedule →/ })).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
+    expect(screen.queryByRole('button', { name: /Schedule →/ })).not.toBeInTheDocument();
   });
 });
