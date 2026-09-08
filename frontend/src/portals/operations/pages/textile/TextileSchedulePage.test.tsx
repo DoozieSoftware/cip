@@ -172,4 +172,60 @@ describe('TextileSchedulePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
     expect(screen.queryByRole('button', { name: /Schedule →/ })).not.toBeInTheDocument();
   });
+
+  it('allows collapsing and expanding zone sections to manage screen space', () => {
+    renderSchedule();
+
+    const collapseBtn = screen.getByRole('button', { name: 'Collapse Jayanagar' });
+    expect(screen.getByText('DLN-2026-79FFFC75')).toBeVisible();
+
+    fireEvent.click(collapseBtn);
+    expect(screen.queryByText('DLN-2026-79FFFC75')).not.toBeInTheDocument();
+
+    const expandBtn = screen.getByRole('button', { name: 'Expand Jayanagar' });
+    fireEvent.click(expandBtn);
+    expect(screen.getByText('DLN-2026-79FFFC75')).toBeVisible();
+  });
+
+  it('renders quick jump buttons and batch collapse when multiple zones exist', () => {
+    const ZONE_2 = {
+      id: 'zone-2',
+      code: 'KORAMANGALA',
+      name: 'Koramangala',
+      dropoff_name: null,
+      dropoff_address: null,
+    };
+    const ITEM_ZONE_2 = makeItem({
+      id: 'collection-3',
+      reference: 'DLN-2026-99999999',
+      service_zone: ZONE_2,
+    });
+
+    vi.mocked(useTextileQueue).mockReturnValue({
+      data: {
+        data: [READY_ITEM, ITEM_ZONE_2],
+        meta: { page: 1, per_page: 25, total: 2, last_page: 1 },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useTextileQueue>);
+
+    renderSchedule();
+
+    expect(screen.getByRole('button', { name: /Jayanagar \(1\)/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: /Koramangala \(1\)/ })).toBeVisible();
+
+    const collapseAll = screen.getByRole('button', { name: 'Collapse all zones' });
+    fireEvent.click(collapseAll);
+
+    expect(screen.queryByText('DLN-2026-79FFFC75')).not.toBeInTheDocument();
+    expect(screen.queryByText('DLN-2026-99999999')).not.toBeInTheDocument();
+
+    const expandAll = screen.getByRole('button', { name: 'Expand all zones' });
+    fireEvent.click(expandAll);
+
+    expect(screen.getByText('DLN-2026-79FFFC75')).toBeVisible();
+    expect(screen.getByText('DLN-2026-99999999')).toBeVisible();
+  });
 });

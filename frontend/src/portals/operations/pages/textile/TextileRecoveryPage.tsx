@@ -15,11 +15,11 @@ export default function TextileRecoveryPage(): JSX.Element {
       description="Pending and failed field uploads. Retry safely — the same proof is never recorded twice."
     >
       {allFailed.length === 0 ? (
-        <div className="rounded-xl border border-[var(--color-border-subtle)] bg-white p-8 text-center shadow-sm">
-          <p className="text-sm font-medium text-[var(--color-ink)]">
+        <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-white p-8 text-center shadow-xs">
+          <p className="text-xs font-semibold text-[var(--color-ink)]">
             No pending or failed uploads
           </p>
-          <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
+          <p className="mt-1 text-xs leading-normal text-[var(--color-text-secondary)]">
             Collections captured offline appear here until they are safely uploaded.
           </p>
           {pending.length === 0 ? null : (
@@ -28,24 +28,24 @@ export default function TextileRecoveryPage(): JSX.Element {
               onClick={() => {
                 void clearDone();
               }}
-              className="mt-4 inline-flex min-h-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-xs font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+              className="mt-4 inline-flex h-8 items-center justify-center rounded-lg border border-[var(--color-border)] bg-white px-3 text-xs font-semibold text-[var(--color-ink)] shadow-xs transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
             >
               Clear completed
             </button>
           )}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={() => void drain()}
-              className="inline-flex min-h-9 items-center gap-1 rounded-full bg-[var(--color-ink)] px-4 text-xs font-medium text-white transition hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[var(--color-ink)] px-3 text-xs font-semibold text-white shadow-xs transition hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
             >
-              <IconRefresh className="h-4 w-4" /> Retry all
+              <IconRefresh className="h-3.5 w-3.5" /> Retry all
             </button>
           </div>
-          <ul className="space-y-3">
+          <ul className="space-y-2.5">
             {allFailed.map((item) => {
               const p = item.payload as {
                 collectionId?: string;
@@ -57,12 +57,13 @@ export default function TextileRecoveryPage(): JSX.Element {
               return (
                 <li
                   key={item.id}
-                  className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm"
+                  className="rounded-xl border border-amber-200/80 bg-amber-50/60 p-3.5 sm:p-4 shadow-xs"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="flex items-center gap-1.5 text-sm font-medium text-amber-900">
-                        <IconAlertTriangle className="h-4 w-4 text-amber-700" /> {item.kind} ·{' '}
+                      <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-900">
+                        <IconAlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-700" />{' '}
+                        {item.kind} ·{' '}
                         {p.reference ?? p.collectionId?.slice(0, 8) ?? item.id.slice(0, 8)}
                       </p>
                       <p className="mt-1 text-xs text-amber-800">
@@ -73,7 +74,10 @@ export default function TextileRecoveryPage(): JSX.Element {
                         Status: {item.status} · attempts {item.attempts}/{item.max_attempts}
                       </p>
                       {item.last_error ? (
-                        <p role="alert" className="mt-1 text-xs text-[var(--color-danger)]">
+                        <p
+                          role="alert"
+                          className="mt-1 text-xs font-medium text-[var(--color-danger)]"
+                        >
                           {item.last_error}
                         </p>
                       ) : null}
@@ -82,11 +86,11 @@ export default function TextileRecoveryPage(): JSX.Element {
                         Corrupted photos must be re-captured.
                       </p>
                     </div>
-                    <div className="flex shrink-0 gap-2">
+                    <div className="flex shrink-0 gap-1.5">
                       <button
                         type="button"
                         onClick={() => void drain()}
-                        className="rounded-full border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
+                        className="inline-flex h-7 items-center justify-center rounded-lg border border-amber-300 bg-white px-2.5 text-xs font-semibold text-amber-900 shadow-xs transition hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                       >
                         Retry
                       </button>
@@ -94,9 +98,9 @@ export default function TextileRecoveryPage(): JSX.Element {
                         type="button"
                         aria-label={`Discard ${item.id}`}
                         onClick={() => void remove(item.id)}
-                        className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+                        className="inline-flex h-7 items-center gap-1 rounded-lg border border-[var(--color-border)] bg-white px-2.5 text-xs font-semibold text-[var(--color-ink)] shadow-xs transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
                       >
-                        <IconTrash className="h-3.5 w-3.5" /> Discard
+                        <IconTrash className="h-3 w-3" /> Discard
                       </button>
                     </div>
                   </div>

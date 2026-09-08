@@ -1,7 +1,7 @@
 import { useMemo, useState, type JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { IconCheck, IconChevronRight, IconLock } from '@tabler/icons-react';
+import { IconCheck, IconChevronDown, IconChevronRight, IconLock } from '@tabler/icons-react';
 import { readSession } from '../../../../auth/storage';
 import { evaluateBatchCapacity, type TextileCollectionListItem } from '../../api/textileApi';
 import { CapacityWarningBanner } from '../../components/CapacityWarningBanner';
@@ -121,14 +121,14 @@ function BoardFilters({
           value={dateFilter === 'all' ? '' : dateFilter}
           onChange={(e) => onDateFilter(e.target.value || 'all')}
           aria-label="Filter trips by date"
-          className="min-h-11 rounded-lg border border-[var(--color-border)] bg-white px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+          className="h-9 rounded-lg border border-[var(--color-border)] bg-white px-2.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
         />
       </label>
       {dateFilter !== 'all' ? (
         <button
           type="button"
           onClick={() => onDateFilter('all')}
-          className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-3 text-xs font-medium hover:bg-[var(--color-surface-alt)]"
+          className="inline-flex h-9 items-center rounded-lg border border-[var(--color-border)] bg-white px-3 text-xs font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
         >
           All dates
         </button>
@@ -136,7 +136,7 @@ function BoardFilters({
         <button
           type="button"
           onClick={() => onDateFilter(toISODate(new Date()))}
-          className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-border)] bg-white px-3 text-xs font-medium hover:bg-[var(--color-surface-alt)]"
+          className="inline-flex h-9 items-center rounded-lg border border-[var(--color-border)] bg-white px-3 text-xs font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
         >
           Today
         </button>
@@ -232,6 +232,29 @@ export default function TextileDispatchPage(): JSX.Element {
     return { trips: trips.length, total, remaining, collected, missed };
   }, [trips, rows.length]);
 
+  const [collapsedTrips, setCollapsedTrips] = useState<Record<string, boolean>>({});
+
+  function toggleTrip(tripId: string) {
+    setCollapsedTrips((prev) => ({
+      ...prev,
+      [tripId]: !prev[tripId],
+    }));
+  }
+
+  const allTripsCollapsed = trips.length > 0 && trips.every((t) => !!collapsedTrips[t.id]);
+
+  function toggleAllTrips() {
+    if (allTripsCollapsed) {
+      setCollapsedTrips({});
+    } else {
+      const next: Record<string, boolean> = {};
+      for (const t of trips) {
+        next[t.id] = true;
+      }
+      setCollapsedTrips(next);
+    }
+  }
+
   return (
     <DeskPage
       desk={desk}
@@ -259,7 +282,7 @@ export default function TextileDispatchPage(): JSX.Element {
             />
           </div>
           <details className="sm:hidden">
-            <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-[var(--color-border)] bg-white px-3 text-xs font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1">
+            <summary className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-[var(--color-border)] bg-white px-3 text-xs font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1">
               Filters
             </summary>
             <div className="flex flex-wrap items-center gap-2 pt-2">
@@ -329,7 +352,22 @@ export default function TextileDispatchPage(): JSX.Element {
         emptyBody="Schedule a trip and it will appear here."
       >
         <div className="space-y-3">
+          {trips.length > 1 ? (
+            <div className="flex items-center justify-between px-1 text-xs">
+              <span className="text-[11px] font-medium text-[var(--color-text-secondary)]">
+                {trips.length} scheduled trip{trips.length === 1 ? '' : 's'}
+              </span>
+              <button
+                type="button"
+                onClick={toggleAllTrips}
+                className="text-[11px] font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+              >
+                {allTripsCollapsed ? 'Expand all trips' : 'Collapse all trips'}
+              </button>
+            </div>
+          ) : null}
           {trips.map((trip) => {
+            const isTripCollapsed = !!collapsedTrips[trip.id];
             const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
             const progress = trip.items[0]?.batch?.progress ?? getTripProgress(trip.items);
             const frozen = isRescheduleFrozen(batchStatus);
@@ -358,9 +396,21 @@ export default function TextileDispatchPage(): JSX.Element {
                 {/* Trip header — ref first, then date/count; progress is the primary action anchor */}
                 <header className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-3 py-2 sm:px-4">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <h2 className="font-mono text-[13px] font-bold tracking-tight text-[var(--color-ink)]">
-                      {tripRef}
-                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => toggleTrip(trip.id)}
+                      aria-label={`${isTripCollapsed ? 'Expand' : 'Collapse'} trip ${tripRef}`}
+                      aria-expanded={!isTripCollapsed}
+                      className="inline-flex items-center gap-1 rounded p-0.5 text-left transition hover:bg-black/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
+                    >
+                      <IconChevronDown
+                        className={`h-3.5 w-3.5 text-[var(--color-text-tertiary)] transition-transform duration-150 ${isTripCollapsed ? '-rotate-90' : ''}`}
+                        aria-hidden="true"
+                      />
+                      <h2 className="font-mono text-[13px] font-bold tracking-tight text-[var(--color-ink)]">
+                        {tripRef}
+                      </h2>
+                    </button>
                     {formattedDate ? (
                       <span className="text-[13px] leading-none text-[var(--color-text-secondary)]">
                         {formattedDate}
@@ -417,90 +467,92 @@ export default function TextileDispatchPage(): JSX.Element {
                 </header>
 
                 {/* Stops — navigation rows; tap opens the dedicated stop-work page */}
-                <ul className="divide-y divide-[var(--color-border-subtle)]">
-                  {trip.items.map((item, idx) => {
-                    const queued = offline.items.find(
-                      (q) => q.collectionId === item.id && q.status !== 'completed',
-                    );
-                    const isNext = idx === 0 && item.status === 'scheduled';
-                    const isCollected = item.status === 'picked_up';
-                    const isMissed = item.status === 'missed';
-                    const statusDotCls = isCollected
-                      ? 'bg-[var(--color-success)]'
-                      : isMissed
-                        ? 'bg-[var(--color-danger)]'
-                        : queued
-                          ? queued.status === 'failed'
-                            ? 'bg-[var(--color-danger)]'
-                            : 'bg-amber-500'
-                          : isNext
-                            ? 'bg-amber-500'
-                            : 'bg-neutral-300';
-                    const statusLabel = isCollected
-                      ? 'Collected'
-                      : isMissed
-                        ? 'Missed'
-                        : queued
-                          ? queued.status === 'failed'
-                            ? 'Upload failed'
-                            : 'Pending upload'
-                          : (STATUS_LABELS[item.status] ?? item.status);
-                    return (
-                      <li key={item.id} className={isNext ? 'bg-amber-50/50' : 'bg-white'}>
-                        {/* One-line stop row: number dot, name, truncated address, estimate chip, status dot */}
-                        <Link
-                          to={stopPageHref(trip.id, item.id)}
-                          aria-label={`Stop ${idx + 1}: ${item.requester_name}, ${item.pickup_address}`}
-                          className="flex min-h-[44px] w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ink)] sm:px-4"
-                        >
-                          <span
-                            aria-hidden="true"
-                            className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold leading-none ${
-                              isNext
-                                ? 'bg-amber-500 text-white'
-                                : isCollected
-                                  ? 'bg-[var(--color-success)] text-white'
-                                  : isMissed
-                                    ? 'border border-rose-400 bg-white text-[var(--color-danger)]'
-                                    : 'border border-[var(--color-border-strong)] bg-white text-[var(--color-text-secondary)]'
-                            }`}
+                {!isTripCollapsed ? (
+                  <ul className="divide-y divide-[var(--color-border-subtle)]">
+                    {trip.items.map((item, idx) => {
+                      const queued = offline.items.find(
+                        (q) => q.collectionId === item.id && q.status !== 'completed',
+                      );
+                      const isNext = idx === 0 && item.status === 'scheduled';
+                      const isCollected = item.status === 'picked_up';
+                      const isMissed = item.status === 'missed';
+                      const statusDotCls = isCollected
+                        ? 'bg-[var(--color-success)]'
+                        : isMissed
+                          ? 'bg-[var(--color-danger)]'
+                          : queued
+                            ? queued.status === 'failed'
+                              ? 'bg-[var(--color-danger)]'
+                              : 'bg-amber-500'
+                            : isNext
+                              ? 'bg-amber-500'
+                              : 'bg-neutral-300';
+                      const statusLabel = isCollected
+                        ? 'Collected'
+                        : isMissed
+                          ? 'Missed'
+                          : queued
+                            ? queued.status === 'failed'
+                              ? 'Upload failed'
+                              : 'Pending upload'
+                            : (STATUS_LABELS[item.status] ?? item.status);
+                      return (
+                        <li key={item.id} className={isNext ? 'bg-amber-50/50' : 'bg-white'}>
+                          {/* One-line stop row: number dot, name, truncated address, estimate chip, status dot */}
+                          <Link
+                            to={stopPageHref(trip.id, item.id)}
+                            aria-label={`Stop ${idx + 1}: ${item.requester_name}, ${item.pickup_address}`}
+                            className="flex min-h-[44px] w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ink)] sm:px-4"
                           >
-                            {isCollected ? (
-                              <IconCheck className="h-3 w-3" stroke={3} aria-hidden="true" />
-                            ) : (
-                              idx + 1
-                            )}
-                          </span>
-                          <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
-                            <span className="max-w-[42%] shrink-0 truncate text-[14px] font-semibold tracking-tight text-[var(--color-ink)]">
-                              {item.requester_name}
+                            <span
+                              aria-hidden="true"
+                              className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold leading-none ${
+                                isNext
+                                  ? 'bg-amber-500 text-white'
+                                  : isCollected
+                                    ? 'bg-[var(--color-success)] text-white'
+                                    : isMissed
+                                      ? 'border border-rose-400 bg-white text-[var(--color-danger)]'
+                                      : 'border border-[var(--color-border-strong)] bg-white text-[var(--color-text-secondary)]'
+                              }`}
+                            >
+                              {isCollected ? (
+                                <IconCheck className="h-3 w-3" stroke={3} aria-hidden="true" />
+                              ) : (
+                                idx + 1
+                              )}
+                            </span>
+                            <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
+                              <span className="max-w-[42%] shrink-0 truncate text-[14px] font-semibold tracking-tight text-[var(--color-ink)]">
+                                {item.requester_name}
+                              </span>
+                              <span
+                                className="min-w-0 flex-1 truncate text-xs leading-4 text-[var(--color-text-secondary)]"
+                                title={item.pickup_address}
+                              >
+                                {item.pickup_address}
+                              </span>
+                            </span>
+                            <span className="inline-flex shrink-0 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-0.5 text-[11px] font-semibold leading-4 text-[var(--color-ink)]">
+                              {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
                             </span>
                             <span
-                              className="min-w-0 flex-1 truncate text-xs leading-4 text-[var(--color-text-secondary)]"
-                              title={item.pickup_address}
-                            >
-                              {item.pickup_address}
-                            </span>
-                          </span>
-                          <span className="inline-flex shrink-0 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-0.5 text-[11px] font-semibold leading-4 text-[var(--color-ink)]">
-                            {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
-                          </span>
-                          <span
-                            className={`h-2 w-2 shrink-0 rounded-full ${statusDotCls}`}
-                            title={statusLabel}
-                            aria-hidden="true"
-                          />
-                          <span className="sr-only">{statusLabel}</span>
-                          <IconChevronRight
-                            className="h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]"
-                            stroke={2}
-                            aria-hidden="true"
-                          />
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
+                              className={`h-2 w-2 shrink-0 rounded-full ${statusDotCls}`}
+                              title={statusLabel}
+                              aria-hidden="true"
+                            />
+                            <span className="sr-only">{statusLabel}</span>
+                            <IconChevronRight
+                              className="h-4 w-4 shrink-0 text-[var(--color-text-tertiary)]"
+                              stroke={2}
+                              aria-hidden="true"
+                            />
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
               </section>
             );
           })}

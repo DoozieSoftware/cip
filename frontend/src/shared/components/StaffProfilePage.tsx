@@ -95,8 +95,12 @@ function InfoRow({
 }): JSX.Element {
   return (
     <div className="min-w-0">
-      <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">{label}</dt>
-      <dd className="mt-0.5 truncate text-sm text-[#1d1d1b]">{value ?? '—'}</dd>
+      <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+        {label}
+      </dt>
+      <dd className="mt-0.5 truncate text-xs font-medium text-[var(--color-ink)]">
+        {value ?? '—'}
+      </dd>
     </div>
   );
 }
@@ -135,12 +139,12 @@ function TextileCollectionsMoreLinks(): JSX.Element {
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <IconClipboardList className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+          <IconClipboardList className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
           <CardTitle>Textile collections</CardTitle>
         </div>
       </CardHeader>
       <CardBody>
-        <ul className="divide-y divide-[#e6e4dc]">
+        <ul className="divide-y divide-[var(--color-border-subtle)]">
           {TEXTILE_MORE_LINKS.map((link) => {
             const LinkIcon = link.icon;
             const showPendingBadge = link.badge === 'pending-uploads' && pendingCount > 0;
@@ -148,17 +152,17 @@ function TextileCollectionsMoreLinks(): JSX.Element {
               <li key={link.to}>
                 <Link
                   to={link.to}
-                  className="flex min-h-[44px] items-center gap-3 rounded-md px-2 py-3 text-sm font-medium text-[#1d1d1b] transition-colors hover:bg-[#faf9f6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+                  className="flex h-10 items-center gap-2.5 rounded-lg px-2 text-xs font-medium text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
                 >
                   <LinkIcon
-                    className="h-5 w-5 shrink-0 text-[#6f6e69]"
+                    className="h-4 w-4 shrink-0 text-[var(--color-text-secondary)]"
                     stroke={1.6}
                     aria-hidden="true"
                   />
                   <span className="min-w-0 flex-1 truncate">{link.label}</span>
                   {showPendingBadge ? <Badge tone="warning">{pendingCount} pending</Badge> : null}
                   <IconChevronRight
-                    className="h-4 w-4 shrink-0 text-[#85847f]"
+                    className="h-3.5 w-3.5 shrink-0 text-[var(--color-text-tertiary)]"
                     stroke={1.6}
                     aria-hidden="true"
                   />
@@ -283,130 +287,134 @@ export default function StaffProfilePage(): JSX.Element {
     (user?.departments?.some((department) => department.code === 'DR_LINEN') ?? false);
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-start justify-between gap-5">
+    <div className="space-y-4">
+      <header className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
             Staff account
           </p>
-          <h1 className="mt-1 text-[1.75rem] font-medium tracking-[-0.02em] text-[var(--color-ink)]">
+          <h1 className="mt-0.5 text-xl font-semibold tracking-tight text-[var(--color-ink)]">
             Profile
           </h1>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--color-text-secondary)]">
+          <p className="mt-0.5 max-w-2xl text-xs text-[var(--color-text-secondary)]">
             Your identity, department memberships, and account details.
           </p>
         </div>
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#d8d6cf] bg-[#faf9f6]">
-          <IconUser className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)]">
+          <IconUser className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
         </span>
       </header>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <IconUser className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
-            <CardTitle>Profile details</CardTitle>
-          </div>
-        </CardHeader>
-        <CardBody>
-          <form onSubmit={(event) => void saveProfile(event)} className="space-y-5">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input
-                id="staff-profile-name"
-                label="Name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                autoComplete="name"
-                maxLength={255}
-                placeholder="Your display name"
-              />
-              <Input
-                id="staff-profile-mobile"
-                label="Mobile number"
-                type="tel"
-                inputMode="numeric"
-                autoComplete="tel"
-                maxLength={15}
-                value={mobile}
-                onChange={(event) => setMobile(event.target.value)}
-                placeholder="10-digit mobile number"
-                hint="Used to sign in to the platform."
-              />
-            </div>
-            {saveError ? (
-              <p role="alert" className="text-sm text-red-700">
-                {saveError}
-              </p>
-            ) : null}
-            {saved ? (
-              <p role="status" className="text-sm text-emerald-700">
-                Profile updated.
-              </p>
-            ) : null}
-            <Button
-              type="submit"
-              disabled={saving || !canSave}
-              className="w-full justify-center sm:w-auto"
-            >
-              {saving ? 'Saving…' : 'Save changes'}
-            </Button>
-          </form>
-        </CardBody>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <IconBell className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
-            <CardTitle>Trusted device</CardTitle>
-          </div>
-        </CardHeader>
-        <CardBody>
-          <p className="max-w-2xl text-sm leading-6 text-[#686762]">
-            Enable notifications on this signed-in device to approve future sign-ins without
-            replacing your OTP or password fallback.
-          </p>
-          {pushMessage ? (
-            <p role="status" className="mt-3 text-sm text-[#286548]">
-              {pushMessage}
-            </p>
-          ) : null}
-          <Button
-            type="button"
-            className="mt-4 w-full justify-center sm:w-auto"
-            disabled={enablingPush || !pushSupport().supported}
-            onClick={() => void enableTrustedDevice()}
-          >
-            {enablingPush ? 'Enabling…' : 'Enable sign-in approvals'}
-          </Button>
-          {!pushSupport().supported ? (
-            <p className="mt-2 text-xs text-[#85847f]">
-              Push notifications are not available in this browser.
-            </p>
-          ) : null}
-        </CardBody>
-      </Card>
-
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <IconUser className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+              <IconUser className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
+              <CardTitle>Profile details</CardTitle>
+            </div>
+          </CardHeader>
+          <CardBody>
+            <form onSubmit={(event) => void saveProfile(event)} className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input
+                  id="staff-profile-name"
+                  label="Name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  autoComplete="name"
+                  maxLength={255}
+                  placeholder="Your display name"
+                />
+                <Input
+                  id="staff-profile-mobile"
+                  label="Mobile number"
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  maxLength={15}
+                  value={mobile}
+                  onChange={(event) => setMobile(event.target.value)}
+                  placeholder="10-digit mobile number"
+                  hint="Used to sign in to the platform."
+                />
+              </div>
+              {saveError ? (
+                <p role="alert" className="text-xs font-medium text-[var(--color-danger)]">
+                  {saveError}
+                </p>
+              ) : null}
+              {saved ? (
+                <p role="status" className="text-xs font-medium text-emerald-700">
+                  Profile updated.
+                </p>
+              ) : null}
+              <Button
+                type="submit"
+                size="sm"
+                disabled={saving || !canSave}
+                className="w-full justify-center sm:w-auto"
+              >
+                {saving ? 'Saving…' : 'Save changes'}
+              </Button>
+            </form>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <IconBell className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
+              <CardTitle>Trusted device</CardTitle>
+            </div>
+          </CardHeader>
+          <CardBody>
+            <p className="max-w-2xl text-xs leading-5 text-[var(--color-text-secondary)]">
+              Enable notifications on this signed-in device to approve future sign-ins without
+              replacing your OTP or password fallback.
+            </p>
+            {pushMessage ? (
+              <p role="status" className="mt-2 text-xs font-medium text-emerald-700">
+                {pushMessage}
+              </p>
+            ) : null}
+            <Button
+              type="button"
+              size="sm"
+              className="mt-3 w-full justify-center sm:w-auto"
+              disabled={enablingPush || !pushSupport().supported}
+              onClick={() => void enableTrustedDevice()}
+            >
+              {enablingPush ? 'Enabling…' : 'Enable sign-in approvals'}
+            </Button>
+            {!pushSupport().supported ? (
+              <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">
+                Push notifications are not available in this browser.
+              </p>
+            ) : null}
+          </CardBody>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <IconUser className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
               <CardTitle>Identity</CardTitle>
             </div>
           </CardHeader>
           <CardBody>
-            <dl className="grid gap-4 sm:grid-cols-2">
+            <dl className="grid gap-3 sm:grid-cols-2">
               <InfoRow label="Email" value={profile.email} />
               <InfoRow label="Preferred name" value={profile.preferred_name} />
               <InfoRow label="Account status" value={humanizeRole(profile.status ?? '')} />
             </dl>
             {roles.length > 0 && (
-              <div className="mt-5 border-t border-[#e6e4dc] pt-4">
-                <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+              <div className="mt-4 border-t border-[var(--color-border-subtle)] pt-3">
+                <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                   Access roles
                 </dt>
-                <dd className="mt-2 flex flex-wrap gap-2">
+                <dd className="mt-1.5 flex flex-wrap gap-1.5">
                   {roles.map((role) => (
                     <Badge key={role} tone="neutral" className="capitalize">
                       {humanizeRole(role)}
@@ -421,25 +429,27 @@ export default function StaffProfilePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <IconBuilding className="h-5 w-5 text-[#6f6e69]" stroke={1.6} />
+              <IconBuilding className="h-4 w-4 text-[var(--color-text-secondary)]" stroke={1.6} />
               <CardTitle>Departments</CardTitle>
             </div>
           </CardHeader>
           <CardBody>
             {departments.length === 0 ? (
-              <p className="text-sm text-[#85847f]">No department memberships.</p>
+              <p className="text-xs text-[var(--color-text-tertiary)]">
+                No department memberships.
+              </p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-1.5">
                 {departments.map((department) => (
                   <li
                     key={department.id}
-                    className="flex items-center justify-between gap-3 rounded-md border border-[#e6e4dc] bg-[#faf9f6] px-3 py-2.5"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)]/50 px-3 py-2 text-xs"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-[#1d1d1b]">
+                      <p className="truncate text-xs font-semibold text-[var(--color-ink)]">
                         {department.name}
                       </p>
-                      <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#85847f]">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
                         {department.code}
                       </p>
                     </div>
@@ -448,8 +458,8 @@ export default function StaffProfilePage(): JSX.Element {
                 ))}
               </ul>
             )}
-            <div className="mt-5 border-t border-[#e6e4dc] pt-4">
-              <dl className="grid gap-4 sm:grid-cols-2">
+            <div className="mt-4 border-t border-[var(--color-border-subtle)] pt-3">
+              <dl className="grid gap-3 sm:grid-cols-2">
                 <InfoRow label="Member since" value={formatDate(profile.created_at)} />
                 <InfoRow label="Last login" value={formatDate(profile.last_login_at)} />
               </dl>

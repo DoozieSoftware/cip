@@ -90,10 +90,12 @@ export default function TextileCapacityPage(): JSX.Element {
           </p>
         ) : null}
 
-        <section className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-black/5">
+        <section className="rounded-xl border border-[var(--color-border-subtle)] bg-white p-4 sm:p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold">Zone capacity rules</h2>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                Zone capacity rules
+              </h2>
               <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
                 Home pickups below the configured minimum cannot be submitted or scheduled. Drop-off
                 accepts any amount.
@@ -105,7 +107,7 @@ export default function TextileCapacityPage(): JSX.Element {
                   type="button"
                   disabled={exportBusy}
                   onClick={() => void handleExport()}
-                  className="inline-flex min-h-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-3 py-2 text-xs font-medium hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 disabled:opacity-40"
+                  className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--color-border)] bg-white px-3 text-xs font-semibold text-[var(--color-ink)] hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)] disabled:opacity-40"
                 >
                   {exportBusy ? 'Exporting…' : 'Export CSV'}
                 </button>
@@ -118,10 +120,10 @@ export default function TextileCapacityPage(): JSX.Element {
             ) : null}
           </div>
           {rules.data && rules.data.length > 0 ? (
-            <div className="mt-4 overflow-x-auto">
+            <div className="mt-3 overflow-x-auto">
               <table className="w-full min-w-[640px] text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[var(--color-border-subtle)] text-[var(--color-text-secondary)]">
+                  <tr className="border-b border-[var(--color-border-subtle)] text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
                     <th className="px-2 py-2">Zone</th>
                     <th>Max bags</th>
                     <th>Max kg</th>
@@ -132,8 +134,11 @@ export default function TextileCapacityPage(): JSX.Element {
                 </thead>
                 <tbody>
                   {rules.data.map((rule) => (
-                    <tr key={rule.id} className="border-b border-[var(--color-border-subtle)]">
-                      <td className="px-2 py-2 font-medium">
+                    <tr
+                      key={rule.id}
+                      className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-surface-alt)]"
+                    >
+                      <td className="px-2 py-2 font-medium text-[var(--color-ink)]">
                         {rule.service_zone?.name ?? rule.service_zone_id}
                       </td>
                       <td>{rule.max_bags ?? 'No limit'}</td>
@@ -151,22 +156,28 @@ export default function TextileCapacityPage(): JSX.Element {
               </table>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-[var(--color-text-secondary)]">
+            <p className="mt-3 text-xs text-[var(--color-text-secondary)]">
               No capacity rules configured. Defaults apply until a partner creates a rule.
             </p>
           )}
         </section>
 
         {report ? (
-          <section className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-black/5">
-            <h2 className="text-sm font-semibold">Metric definitions</h2>
-            <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+          <section className="rounded-xl border border-[var(--color-border-subtle)] bg-white p-4 sm:p-5 shadow-sm">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+              Metric definitions
+            </h2>
+            <dl className="mt-3 grid gap-2.5 text-xs sm:grid-cols-2">
               {Object.entries(report.definitions)
                 .filter(([name]) => name !== 'exception_rate')
                 .map(([name, definition]) => (
-                  <div key={name}>
-                    <dt className="font-medium capitalize">{name.replaceAll('_', ' ')}</dt>
-                    <dd className="text-[var(--color-text-secondary)]">{definition}</dd>
+                  <div key={name} className="rounded-lg bg-[var(--color-surface-alt)] p-2.5">
+                    <dt className="font-semibold capitalize text-[var(--color-ink)]">
+                      {name.replaceAll('_', ' ')}
+                    </dt>
+                    <dd className="mt-0.5 text-[11px] leading-relaxed text-[var(--color-text-secondary)]">
+                      {definition}
+                    </dd>
                   </div>
                 ))}
             </dl>
@@ -187,10 +198,14 @@ function Metric({
   note: string;
 }): JSX.Element {
   return (
-    <div className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-black/5">
-      <p className="text-xs text-[var(--color-text-secondary)]">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value}</p>
-      <p className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">{note}</p>
+    <div className="rounded-xl border border-[var(--color-border-subtle)] bg-white p-3.5 sm:p-4 shadow-sm">
+      <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+        {label}
+      </p>
+      <p className="mt-1 text-xl font-bold tracking-tight text-[var(--color-ink)] tabular-nums">
+        {value}
+      </p>
+      <p className="mt-0.5 text-[11px] text-[var(--color-text-secondary)]">{note}</p>
     </div>
   );
 }

@@ -198,8 +198,8 @@ export function OperationsLayout(): JSX.Element {
           </div>
         </div>
 
-        <nav aria-label="Operations sections" className="flex-1 px-3 py-4">
-          <ul className="space-y-0.5">
+        <nav aria-label="Operations sections" className="flex-1 px-3 py-3">
+          <ul className="space-y-1">
             {nav.map((item) => {
               const Icon = item.icon;
               return (
@@ -209,14 +209,14 @@ export function OperationsLayout(): JSX.Element {
                     end={item.end}
                     className={({ isActive }) =>
                       [
-                        'flex min-h-11 items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors duration-150',
+                        'flex h-9 items-center gap-2.5 rounded-lg px-3 text-xs font-medium transition-colors duration-150',
                         isActive
-                          ? 'bg-white text-[var(--color-ink)]'
-                          : 'text-white/60 hover:bg-white/8 hover:text-white',
+                          ? 'bg-white text-[var(--color-ink)] font-semibold shadow-xs'
+                          : 'text-white/70 hover:bg-white/10 hover:text-white',
                       ].join(' ')
                     }
                   >
-                    <Icon className="h-5 w-5 shrink-0" stroke={1.6} />
+                    <Icon className="h-4 w-4 shrink-0" stroke={1.75} />
                     <span className="truncate">{item.label}</span>
                   </NavLink>
                 </li>
@@ -225,9 +225,9 @@ export function OperationsLayout(): JSX.Element {
           </ul>
         </nav>
 
-        <div className="border-t border-white/10 px-3 py-4">
-          <div className="mb-3 flex items-center gap-3 px-3 py-2">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/15 text-xs font-bold text-white uppercase">
+        <div className="border-t border-white/10 px-3 py-3">
+          <div className="mb-2 flex items-center gap-2.5 px-2 py-1.5">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/15 text-[11px] font-bold text-white uppercase">
               {(user?.name ?? user?.mobile ?? '?').slice(0, 1)}
             </span>
             <div className="min-w-0 flex-1">
@@ -240,9 +240,9 @@ export function OperationsLayout(): JSX.Element {
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium text-white/60 transition-colors hover:bg-white/8 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-ink)]"
+            className="flex h-9 w-full items-center justify-center gap-2 rounded-lg px-3 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-ink)]"
           >
-            <IconLogout className="h-4 w-4" stroke={1.6} />
+            <IconLogout className="h-3.5 w-3.5" stroke={1.75} />
             Sign out
           </button>
         </div>

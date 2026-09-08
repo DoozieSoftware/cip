@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   IconAlertTriangle,
   IconCalendarPlus,
+  IconChevronDown,
   IconMapPin,
   IconPackage,
   IconUser,
@@ -94,6 +95,30 @@ export default function TextileSchedulePage(): JSX.Element {
     (r) => !!r.reschedule_reason || !!r.previous_scheduled_date,
   );
 
+  const [collapsedZones, setCollapsedZones] = useState<Record<string, boolean>>({});
+
+  function toggleZone(zoneKey: string) {
+    setCollapsedZones((prev) => ({
+      ...prev,
+      [zoneKey]: !prev[zoneKey],
+    }));
+  }
+
+  const allCollapsed =
+    groups.length > 0 && groups.every((g) => !!collapsedZones[g.zone?.id ?? 'none']);
+
+  function toggleAllZones() {
+    if (allCollapsed) {
+      setCollapsedZones({});
+    } else {
+      const next: Record<string, boolean> = {};
+      for (const g of groups) {
+        next[g.zone?.id ?? 'none'] = true;
+      }
+      setCollapsedZones(next);
+    }
+  }
+
   return (
     <DeskPage
       desk={desk}
@@ -159,7 +184,48 @@ export default function TextileSchedulePage(): JSX.Element {
             />
           ) : null}
 
+          {/* Quick zone jump & collapse controls when multiple zones exist */}
+          {groups.length > 1 ? (
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-border-subtle)] pb-2 text-xs">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-medium text-[var(--color-text-secondary)]">
+                  Jump to:
+                </span>
+                {groups.map(({ zone, items }) => {
+                  const zKey = zone?.id ?? 'none';
+                  const isSelected = zoneId === zone?.id;
+                  return (
+                    <button
+                      key={zKey}
+                      type="button"
+                      onClick={() => {
+                        setZoneId(isSelected ? '' : (zone?.id ?? ''));
+                        setPage(1);
+                      }}
+                      className={`rounded-md px-2 py-0.5 text-xs font-medium transition ${
+                        isSelected
+                          ? 'bg-[var(--color-ink)] text-white'
+                          : 'border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)]'
+                      }`}
+                    >
+                      {zone?.name ?? 'No zone'} ({items.length})
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={toggleAllZones}
+                className="text-[11px] font-medium text-[var(--color-text-secondary)] transition hover:text-[var(--color-ink)]"
+              >
+                {allCollapsed ? 'Expand all zones' : 'Collapse all zones'}
+              </button>
+            </div>
+          ) : null}
+
           {groups.map(({ zone, items }) => {
+            const zoneKey = zone?.id ?? 'none';
+            const isCollapsed = !!collapsedZones[zoneKey];
             const zoneLocked = lockedZoneId !== null && zone?.id !== lockedZoneId;
             const allZoneSelected = items.every((r) => selected.includes(r.id));
             const zoneUnavailable = items.some((r) => !!r.unavailable_reason);
@@ -168,20 +234,32 @@ export default function TextileSchedulePage(): JSX.Element {
             const selectedInZone = items.filter((r) => selected.includes(r.id)).length;
             return (
               <section
-                key={zone?.id ?? 'none'}
+                key={zoneKey}
                 aria-label={zone?.name ?? 'No zone'}
                 className={`overflow-hidden rounded-xl border bg-white shadow-sm ${zoneLocked ? 'border-[var(--color-border-subtle)] opacity-60' : 'border-[var(--color-border-subtle)]'}`}
               >
                 <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-3.5 py-2.5 sm:px-4">
                   <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                    <IconMapPin
-                      className="h-3.5 w-3.5 shrink-0 text-[var(--color-text-tertiary)]"
-                      stroke={1.75}
-                      aria-hidden
-                    />
-                    <h2 className="text-xs font-semibold tracking-tight text-[var(--color-ink)]">
-                      {zone?.name ?? 'No zone'}
-                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => toggleZone(zoneKey)}
+                      aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${zone?.name ?? 'zone'}`}
+                      aria-expanded={!isCollapsed}
+                      className="inline-flex items-center gap-1 rounded p-0.5 text-left transition hover:bg-black/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
+                    >
+                      <IconChevronDown
+                        className={`h-3.5 w-3.5 text-[var(--color-text-tertiary)] transition-transform duration-150 ${isCollapsed ? '-rotate-90' : ''}`}
+                        aria-hidden
+                      />
+                      <IconMapPin
+                        className="h-3.5 w-3.5 shrink-0 text-[var(--color-text-tertiary)]"
+                        stroke={1.75}
+                        aria-hidden
+                      />
+                      <h2 className="text-xs font-semibold tracking-tight text-[var(--color-ink)]">
+                        {zone?.name ?? 'No zone'}
+                      </h2>
+                    </button>
                     <span className="rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)]">
                       {items.length} request{items.length === 1 ? '' : 's'} · {zoneBags} bags
                       {zoneWeight > 0 ? ` · ${zoneWeight.toFixed(1)} kg` : ''}
@@ -221,93 +299,95 @@ export default function TextileSchedulePage(): JSX.Element {
                     Select all
                   </label>
                 </header>
-                <ul className="divide-y divide-[var(--color-border-subtle)]">
-                  {items.map((item) => {
-                    const prev = formatPreviousWindow(
-                      item.previous_scheduled_date,
-                      item.previous_window_start,
-                      item.previous_window_end,
-                    );
-                    const isSelected = selected.includes(item.id);
-                    return (
-                      <li
-                        key={item.id}
-                        className={`px-3.5 py-2.5 text-sm sm:px-4 transition-colors ${isSelected ? 'bg-[var(--color-info)]/[0.07]' : 'bg-white'} hover:bg-[var(--color-surface-alt)]/60`}
-                      >
-                        <div className="flex items-start gap-2.5">
-                          <input
-                            type="checkbox"
-                            aria-label={`Select ${item.reference}`}
-                            disabled={zoneLocked}
-                            checked={isSelected}
-                            onChange={() =>
-                              setSelected((current) =>
-                                current.includes(item.id)
-                                  ? current.filter((id) => id !== item.id)
-                                  : [...current, item.id],
-                              )
-                            }
-                            className="mt-0.5 h-4 w-4 shrink-0 rounded accent-[var(--color-ink)]"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                              <span className="font-mono text-xs font-semibold tracking-wide text-[var(--color-ink)]">
-                                {item.reference}
-                              </span>
-                              <StatusBadge status={item.status} />
-                              {item.status === 'missed' ? (
-                                <span className="rounded border border-orange-200 bg-orange-50 px-1.5 py-0.5 text-[10px] font-medium text-orange-800">
-                                  Re-attempt
+                {!isCollapsed ? (
+                  <ul className="divide-y divide-[var(--color-border-subtle)]">
+                    {items.map((item) => {
+                      const prev = formatPreviousWindow(
+                        item.previous_scheduled_date,
+                        item.previous_window_start,
+                        item.previous_window_end,
+                      );
+                      const isSelected = selected.includes(item.id);
+                      return (
+                        <li
+                          key={item.id}
+                          className={`px-3.5 py-2.5 text-sm sm:px-4 transition-colors ${isSelected ? 'bg-[var(--color-info)]/[0.07]' : 'bg-white'} hover:bg-[var(--color-surface-alt)]/60`}
+                        >
+                          <div className="flex items-start gap-2.5">
+                            <input
+                              type="checkbox"
+                              aria-label={`Select ${item.reference}`}
+                              disabled={zoneLocked}
+                              checked={isSelected}
+                              onChange={() =>
+                                setSelected((current) =>
+                                  current.includes(item.id)
+                                    ? current.filter((id) => id !== item.id)
+                                    : [...current, item.id],
+                                )
+                              }
+                              className="mt-0.5 h-4 w-4 shrink-0 rounded accent-[var(--color-ink)]"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                                <span className="font-mono text-xs font-semibold tracking-wide text-[var(--color-ink)]">
+                                  {item.reference}
                                 </span>
-                              ) : null}
-                              <CategoryBadge category={item.category} />
-                              <span className="inline-flex items-center gap-1 rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-ink)]">
-                                <IconPackage
-                                  className="h-3 w-3 text-[var(--color-text-secondary)]"
-                                  stroke={1.75}
-                                  aria-hidden
-                                />
-                                {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
-                              </span>
-                              {item.reschedule_reason || prev ? (
-                                <RescheduleBadge
-                                  reason={item.reschedule_reason ?? null}
-                                  previous={prev}
-                                />
-                              ) : null}
-                              {item.unavailable_reason ? (
-                                <UnavailableBadge reason={item.unavailable_reason} />
-                              ) : null}
+                                <StatusBadge status={item.status} />
+                                {item.status === 'missed' ? (
+                                  <span className="rounded border border-orange-200 bg-orange-50 px-1.5 py-0.5 text-[10px] font-medium text-orange-800">
+                                    Re-attempt
+                                  </span>
+                                ) : null}
+                                <CategoryBadge category={item.category} />
+                                <span className="inline-flex items-center gap-1 rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-ink)]">
+                                  <IconPackage
+                                    className="h-3 w-3 text-[var(--color-text-secondary)]"
+                                    stroke={1.75}
+                                    aria-hidden
+                                  />
+                                  {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
+                                </span>
+                                {item.reschedule_reason || prev ? (
+                                  <RescheduleBadge
+                                    reason={item.reschedule_reason ?? null}
+                                    previous={prev}
+                                  />
+                                ) : null}
+                                {item.unavailable_reason ? (
+                                  <UnavailableBadge reason={item.unavailable_reason} />
+                                ) : null}
+                              </div>
+                              <div className="mt-1 flex flex-wrap items-baseline gap-x-3 text-xs">
+                                <span className="flex items-center gap-1 font-medium text-[var(--color-ink)]">
+                                  <IconUser
+                                    className="h-3 w-3 shrink-0 text-[var(--color-text-tertiary)]"
+                                    stroke={1.75}
+                                    aria-hidden
+                                  />
+                                  <span className="truncate max-w-[180px]">
+                                    {item.requester_name}
+                                  </span>
+                                </span>
+                                <span className="flex items-center gap-1 text-[var(--color-text-secondary)]">
+                                  <IconMapPin
+                                    className="h-3 w-3 shrink-0 text-[var(--color-text-tertiary)]"
+                                    stroke={1.75}
+                                    aria-hidden
+                                  />
+                                  <span className="truncate max-w-sm" title={item.pickup_address}>
+                                    {item.pickup_address}
+                                  </span>
+                                </span>
+                              </div>
+                              <RescheduleDetail item={item} />
                             </div>
-                            <div className="mt-1 flex flex-wrap items-baseline gap-x-3 text-xs">
-                              <span className="flex items-center gap-1 font-medium text-[var(--color-ink)]">
-                                <IconUser
-                                  className="h-3 w-3 shrink-0 text-[var(--color-text-tertiary)]"
-                                  stroke={1.75}
-                                  aria-hidden
-                                />
-                                <span className="truncate max-w-[180px]">
-                                  {item.requester_name}
-                                </span>
-                              </span>
-                              <span className="flex items-center gap-1 text-[var(--color-text-secondary)]">
-                                <IconMapPin
-                                  className="h-3 w-3 shrink-0 text-[var(--color-text-tertiary)]"
-                                  stroke={1.75}
-                                  aria-hidden
-                                />
-                                <span className="truncate max-w-sm" title={item.pickup_address}>
-                                  {item.pickup_address}
-                                </span>
-                              </span>
-                            </div>
-                            <RescheduleDetail item={item} />
                           </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
               </section>
             );
           })}
