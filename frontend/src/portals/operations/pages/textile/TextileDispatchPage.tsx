@@ -2,10 +2,8 @@ import { useMemo, useState, type JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle,
   Calendar,
   Check,
-  ChevronDown,
   ChevronRight,
   Clock,
   Layers,
@@ -430,6 +428,8 @@ export default function TextileDispatchPage(): JSX.Element {
   const [dateFilter, setDateFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'timeline' | 'matrix'>('timeline');
   const [selectedTripSheet, setSelectedTripSheet] = useState<TripEntry | null>(null);
+  const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [mobileTab, setMobileTab] = useState<'routes' | 'console'>('routes');
   const opsQueue = useOpsQueue();
 
   function handleDateFilter(next: string): void {
@@ -517,28 +517,12 @@ export default function TextileDispatchPage(): JSX.Element {
     };
   }, [trips, rows.length]);
 
-  const [collapsedTrips, setCollapsedTrips] = useState<Record<string, boolean>>({});
-
-  function toggleTrip(tripId: string) {
-    setCollapsedTrips((prev) => ({
-      ...prev,
-      [tripId]: !prev[tripId],
-    }));
-  }
-
-  const allTripsCollapsed = trips.length > 0 && trips.every((t) => !!collapsedTrips[t.id]);
-
-  function toggleAllTrips() {
-    if (allTripsCollapsed) {
-      setCollapsedTrips({});
-    } else {
-      const next: Record<string, boolean> = {};
-      for (const t of trips) {
-        next[t.id] = true;
-      }
-      setCollapsedTrips(next);
-    }
-  }
+  // Active selected trip for command console
+  const activeTrip = useMemo(() => {
+    if (trips.length === 0) return null;
+    const found = trips.find((t) => t.id === selectedTripId);
+    return found ?? trips[0];
+  }, [trips, selectedTripId]);
 
   return (
     <DeskPage
@@ -629,116 +613,90 @@ export default function TextileDispatchPage(): JSX.Element {
         ) : null}
       </div>
 
-      {/* Fleet Command KPI Strip */}
+      {/* Fleet Command KPI Ribbon (Stitch High-Density HUD) */}
       {summary ? (
-        <div aria-label="Dispatch summary" className="space-y-2.5">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-6 sm:gap-3">
-            {/* Trips / Routes */}
-            <div className="flex flex-col justify-between rounded-xl border border-[var(--color-border-subtle)] bg-white p-3 shadow-xs">
-              <div className="flex items-center justify-between text-[var(--color-text-secondary)]">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                  Routes
+        <div aria-label="Dispatch summary" className="space-y-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {/* Active Delivery Vans */}
+            <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs transition hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Active Vans
                 </span>
-                <Truck className="h-4 w-4 text-[var(--color-text-tertiary)]" strokeWidth={1.75} />
+                <div className="grid h-7 w-7 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                  <Truck className="h-4 w-4" strokeWidth={2} />
+                </div>
               </div>
-              <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-ink)] tabular-nums">
+              <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 tabular-nums">
                 {summary.trips}
               </p>
-              <span className="text-[11px] text-[var(--color-text-tertiary)]">
-                active delivery vans
-              </span>
+              <span className="text-xs text-slate-500">active delivery vans</span>
             </div>
 
             {/* Total Stops */}
-            <div className="flex flex-col justify-between rounded-xl border border-[var(--color-border-subtle)] bg-white p-3 shadow-xs">
-              <div className="flex items-center justify-between text-[var(--color-text-secondary)]">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                  Stops
+            <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs transition hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Route Stops
                 </span>
-                <MapPin className="h-4 w-4 text-[var(--color-text-tertiary)]" strokeWidth={1.75} />
+                <div className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-50 text-indigo-600">
+                  <MapPin className="h-4 w-4" strokeWidth={2} />
+                </div>
               </div>
-              <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-ink)] tabular-nums">
+              <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 tabular-nums">
                 {summary.total}
               </p>
-              <span className="text-[11px] text-[var(--color-text-tertiary)]">
-                total route stops
-              </span>
+              <span className="text-xs text-slate-500">total route stops</span>
             </div>
 
-            {/* Recovery Load */}
-            <div className="flex flex-col justify-between rounded-xl border border-[var(--color-border-subtle)] bg-white p-3 shadow-xs">
-              <div className="flex items-center justify-between text-[var(--color-text-secondary)]">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+            {/* Circular Recovery Load */}
+            <div className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs transition hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   Volume Load
                 </span>
-                <Scale className="h-4 w-4 text-[var(--color-text-tertiary)]" strokeWidth={1.75} />
+                <div className="grid h-7 w-7 place-items-center rounded-lg bg-teal-50 text-teal-600">
+                  <Scale className="h-4 w-4" strokeWidth={2} />
+                </div>
               </div>
-              <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-ink)] tabular-nums">
+              <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 tabular-nums">
                 {summary.totalWeight}{' '}
-                <span className="text-xs font-normal text-[var(--color-text-secondary)]">kg</span>
+                <span className="text-sm font-semibold text-slate-500">kg</span>
               </p>
-              <span className="text-[11px] text-[var(--color-text-tertiary)]">
-                {summary.totalBags} bags est.
-              </span>
+              <span className="text-xs text-slate-500">{summary.totalBags} bags est.</span>
             </div>
 
-            {/* Remaining / Left */}
-            <div className="flex flex-col justify-between rounded-xl border border-amber-200/70 bg-amber-50/40 p-3 shadow-xs">
-              <div className="flex items-center justify-between text-amber-900">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-800">
+            {/* Pending & Exceptions */}
+            <div className="flex flex-col justify-between rounded-xl border border-amber-200/80 bg-gradient-to-br from-amber-50/50 to-orange-50/30 p-3.5 shadow-xs transition hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
                   Remaining
                 </span>
-                <Clock className="h-4 w-4 text-amber-700" strokeWidth={1.75} />
+                <div className="grid h-7 w-7 place-items-center rounded-lg bg-amber-100 text-amber-700">
+                  <Clock className="h-4 w-4" strokeWidth={2} />
+                </div>
               </div>
-              <p className="mt-2 text-2xl font-bold tracking-tight text-amber-900 tabular-nums">
+              <p className="mt-2 text-3xl font-extrabold tracking-tight text-amber-950 tabular-nums">
                 {summary.remaining}
               </p>
-              <span className="text-[11px] text-amber-700/80">pending completion</span>
-            </div>
-
-            {/* Collected */}
-            <div className="flex flex-col justify-between rounded-xl border border-emerald-200/70 bg-emerald-50/40 p-3 shadow-xs">
-              <div className="flex items-center justify-between text-emerald-800">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
-                  Collected
-                </span>
-                <Check className="h-4 w-4 text-emerald-600" strokeWidth={2.2} />
-              </div>
-              <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-success)] tabular-nums">
-                {summary.collected}
-              </p>
-              <span className="text-[11px] text-emerald-700/80">completed pickups</span>
-            </div>
-
-            {/* Missed */}
-            <div className="flex flex-col justify-between rounded-xl border border-rose-200/70 bg-rose-50/40 p-3 shadow-xs">
-              <div className="flex items-center justify-between text-rose-800">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-rose-700">
-                  Missed
-                </span>
-                <AlertCircle className="h-4 w-4 text-rose-600" strokeWidth={1.75} />
-              </div>
-              <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-danger)] tabular-nums">
-                {summary.missed}
-              </p>
-              <span className="text-[11px] text-rose-700/80">exceptions logged</span>
+              <span className="text-xs text-amber-700/90">
+                pending completion ({summary.collected} collected)
+              </span>
             </div>
           </div>
 
-          {/* Fleet Progress Bar */}
-          <div className="flex items-center gap-3 rounded-lg border border-[var(--color-border-subtle)] bg-white px-3.5 py-2 shadow-xs">
-            <span className="shrink-0 text-xs font-semibold text-[var(--color-text-secondary)]">
-              Fleet Progress
-            </span>
-            <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--color-surface-alt)]">
+          {/* Fleet Route Completion Gauge */}
+          <div className="flex items-center gap-3 rounded-xl border border-slate-200/90 bg-white px-4 py-2.5 shadow-xs">
+            <span className="shrink-0 text-xs font-bold text-slate-700">Fleet Progress</span>
+            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
               <div
-                className="h-full rounded-full bg-[var(--color-success)] transition-all"
+                className="h-full rounded-full bg-gradient-to-r from-blue-600 to-emerald-500 transition-all duration-500"
                 style={{
                   width: `${summary.total > 0 ? Math.round((summary.collected / summary.total) * 100) : 0}%`,
                 }}
               />
             </div>
-            <span className="shrink-0 font-mono text-xs font-bold tabular-nums text-[var(--color-ink)]">
+            <span className="shrink-0 font-mono text-xs font-bold tabular-nums text-slate-900">
               {summary.total > 0 ? Math.round((summary.collected / summary.total) * 100) : 0}% (
               {summary.collected}/{summary.total})
             </span>
@@ -755,26 +713,11 @@ export default function TextileDispatchPage(): JSX.Element {
         emptyBody="Schedule a trip and it will appear here."
       >
         <div className="space-y-4">
-          {trips.length > 1 ? (
-            <div className="flex items-center justify-between px-1">
-              <span className="text-xs font-semibold text-[var(--color-text-secondary)]">
-                {trips.length} scheduled route{trips.length === 1 ? '' : 's'}
-              </span>
-              <button
-                type="button"
-                onClick={toggleAllTrips}
-                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)]"
-              >
-                {allTripsCollapsed ? 'Expand all trips' : 'Collapse all trips'}
-              </button>
-            </div>
-          ) : null}
-
           {/* MATRIX VIEW */}
           {viewMode === 'matrix' ? (
-            <div className="overflow-x-auto rounded-xl border border-[var(--color-border-subtle)] bg-white shadow-xs">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)] text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   <tr>
                     <th className="px-4 py-3">Route Reference</th>
                     <th className="px-4 py-3">Date</th>
@@ -785,14 +728,14 @@ export default function TextileDispatchPage(): JSX.Element {
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[var(--color-border-subtle)]/60">
+                <tbody className="divide-y divide-slate-100">
                   {trips.map((trip) => {
                     const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
                     const progress = trip.items[0]?.batch?.progress ?? getTripProgress(trip.items);
                     const statusMeta = TRIP_STATUS_META[batchStatus] ?? {
                       label: batchStatus.replaceAll('_', ' '),
-                      cls: 'border-[var(--color-border-subtle)] bg-zinc-50 text-zinc-700',
-                      dot: 'bg-zinc-400',
+                      cls: 'border-slate-200 bg-slate-50 text-slate-700',
+                      dot: 'bg-slate-400',
                     };
                     const formattedDate = trip.date ? formatTripDate(trip.date) : 'Unscheduled';
                     const tripRef = trip.ref !== 'Unassigned' ? trip.ref : trip.label;
@@ -801,19 +744,12 @@ export default function TextileDispatchPage(): JSX.Element {
                     const nextPending = trip.items.find((i) => i.status === 'scheduled');
 
                     return (
-                      <tr
-                        key={trip.id}
-                        className="transition-colors hover:bg-[var(--color-surface-alt)]/40"
-                      >
-                        <td className="px-4 py-3 font-mono font-bold text-[var(--color-ink)]">
-                          {tripRef}
-                        </td>
-                        <td className="px-4 py-3 text-[var(--color-text-secondary)]">
-                          {formattedDate}
-                        </td>
+                      <tr key={trip.id} className="transition-colors hover:bg-slate-50/70">
+                        <td className="px-4 py-3 font-mono font-bold text-slate-900">{tripRef}</td>
+                        <td className="px-4 py-3 text-slate-600">{formattedDate}</td>
                         <td className="px-4 py-3">
                           <span
-                            className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium ${statusMeta.cls}`}
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusMeta.cls}`}
                           >
                             <span
                               className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`}
@@ -824,11 +760,11 @@ export default function TextileDispatchPage(): JSX.Element {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-col">
-                            <span className="font-semibold text-[var(--color-ink)]">
+                            <span className="font-semibold text-slate-900">
                               {driver ?? 'Unassigned'}
                             </span>
                             {vehicle ? (
-                              <span className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
+                              <span className="font-mono text-[10px] text-slate-500">
                                 {vehicle}
                               </span>
                             ) : null}
@@ -847,18 +783,18 @@ export default function TextileDispatchPage(): JSX.Element {
                         </td>
                         <td className="px-4 py-3">
                           {nextPending ? (
-                            <span className="truncate max-w-[180px] inline-block font-medium text-[var(--color-ink)]">
+                            <span className="truncate max-w-[180px] inline-block font-medium text-slate-800">
                               {nextPending.requester_name}
                             </span>
                           ) : (
-                            <span className="text-[var(--color-text-tertiary)]">None</span>
+                            <span className="text-slate-400">None</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button
                             type="button"
                             onClick={() => setSelectedTripSheet(trip)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--color-ink)] shadow-xs transition hover:bg-[var(--color-surface-alt)]"
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800 shadow-xs transition hover:bg-slate-50"
                           >
                             <span>Trip Sheet ({trip.items.length})</span>
                             <Maximize2 className="h-3 w-3" />
@@ -871,319 +807,530 @@ export default function TextileDispatchPage(): JSX.Element {
               </table>
             </div>
           ) : (
-            /* TIMELINE VIEW */
-            trips.map((trip) => {
-              const isTripCollapsed = !!collapsedTrips[trip.id];
-              const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
-              const progress = trip.items[0]?.batch?.progress ?? getTripProgress(trip.items);
-              const frozen = isRescheduleFrozen(batchStatus);
-              const hasRescheduledStops = trip.items.some(
-                (i) => !!i.reschedule_reason || !!i.previous_scheduled_date,
-              );
-              const hasUnavailableStops = trip.items.some((i) => !!i.unavailable_reason);
-              const statusMeta = TRIP_STATUS_META[batchStatus] ?? {
-                label: batchStatus.replaceAll('_', ' '),
-                cls: 'border-[var(--color-border-subtle)] bg-zinc-50 text-zinc-700',
-                dot: 'bg-zinc-400',
-              };
-              const formattedDate = trip.date ? formatTripDate(trip.date) : '';
-              const tripRef = trip.ref !== 'Unassigned' ? trip.ref : trip.label;
-              const driver = trip.items[0]?.batch?.driver_name;
-              const team = trip.items[0]?.batch?.team_name;
-              const vehicle = trip.items[0]?.batch?.vehicle_label;
+            /* STITCH MASTER-DETAIL FLEET DISPATCH CONSOLE */
+            <div>
+              {/* Mobile View Switcher (Tabs) */}
+              {trips.length > 1 ? (
+                <div className="mb-3 flex items-center gap-2 border-b border-slate-200 pb-2.5 lg:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setMobileTab('routes')}
+                    className={`flex-1 rounded-lg py-2 text-center text-xs font-bold transition ${
+                      mobileTab === 'routes'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    Routes ({trips.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileTab('console')}
+                    className={`flex-1 rounded-lg py-2 text-center text-xs font-bold transition ${
+                      mobileTab === 'console'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    Route Console
+                  </button>
+                </div>
+              ) : null}
 
-              // Find active next stop
-              const activeNextStopIdx = trip.items.findIndex((i) => i.status === 'scheduled');
-              const activeNextStop = activeNextStopIdx >= 0 ? trip.items[activeNextStopIdx] : null;
-
-              return (
-                <section
-                  key={trip.id}
-                  className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-white shadow-xs transition-all hover:border-[var(--color-border)] hover:shadow-sm"
-                >
-                  {/* Trip Card Header */}
-                  <header className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-3.5 sm:p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                        <button
-                          type="button"
-                          onClick={() => toggleTrip(trip.id)}
-                          aria-label={`${isTripCollapsed ? 'Expand' : 'Collapse'} trip ${tripRef}`}
-                          aria-expanded={!isTripCollapsed}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--color-border-subtle)] bg-white text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
-                        >
-                          <ChevronDown
-                            className={`h-4 w-4 transition-transform duration-150 ${isTripCollapsed ? '-rotate-90' : ''}`}
-                            aria-hidden="true"
-                          />
-                        </button>
-
-                        <h2 className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-2.5 py-0.5 font-mono text-xs font-bold text-[var(--color-ink)]">
-                          {tripRef}
-                        </h2>
-
-                        {formattedDate ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-text-secondary)]">
-                            <Calendar className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
-                            {formattedDate}
-                          </span>
-                        ) : null}
-
-                        <span className="rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 font-mono text-[11px] font-semibold text-[var(--color-text-secondary)]">
-                          {trip.items.length} stop{trip.items.length === 1 ? '' : 's'}
-                        </span>
-
-                        {frozen ? (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800">
-                            <Lock
-                              className="h-3.5 w-3.5 text-amber-700"
-                              strokeWidth={1.75}
-                              aria-hidden="true"
-                            />
-                            Locked
-                          </span>
-                        ) : null}
-
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusMeta.cls}`}
-                        >
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`}
-                            aria-hidden="true"
-                          />
-                          {statusMeta.label}
-                        </span>
-
-                        {driver ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-[var(--color-text-secondary)]">
-                            <User className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
-                            <span className="font-semibold text-[var(--color-ink)]">{driver}</span>
-                          </span>
-                        ) : null}
-
-                        {vehicle ? (
-                          <span className="inline-flex items-center gap-1 font-mono text-[11px] text-[var(--color-text-tertiary)]">
-                            <Truck className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
-                            {vehicle}
-                          </span>
-                        ) : null}
-
-                        {team ? (
-                          <span className="hidden items-center gap-1 text-xs text-[var(--color-text-tertiary)] sm:inline-flex">
-                            <Users className="h-3.5 w-3.5" />
-                            {team}
-                          </span>
-                        ) : null}
-                      </div>
-
-                      {/* Right actions: Trip Sheet Modal Trigger */}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTripSheet(trip)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--color-ink)] shadow-xs transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
-                      >
-                        <Maximize2 className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
-                        <span>Trip Sheet ({trip.items.length})</span>
-                      </button>
+              {/* Grid Layout */}
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+                {/* LEFT COLUMN: Fleet Route Cards Selector (lg:col-span-5) */}
+                {trips.length > 1 ? (
+                  <div
+                    className={`space-y-3 lg:col-span-5 ${
+                      mobileTab === 'routes' ? 'block' : 'hidden lg:block'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between px-1">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Scheduled Routes ({trips.length})
+                      </h3>
+                      <span className="text-[11px] text-slate-400">Select van to command</span>
                     </div>
 
-                    <div className="mt-3">
-                      <TripProgressBar
-                        batchStatus={batchStatus}
-                        collected={progress.collected}
-                        missed={progress.missed}
-                        pending={progress.pending}
-                        total={progress.total}
-                      />
-                    </div>
+                    <div className="space-y-2.5">
+                      {trips.map((trip) => {
+                        const isSelected = activeTrip?.id === trip.id;
+                        const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
+                        const progress =
+                          trip.items[0]?.batch?.progress ?? getTripProgress(trip.items);
+                        const statusMeta = TRIP_STATUS_META[batchStatus] ?? {
+                          label: batchStatus.replaceAll('_', ' '),
+                          cls: 'border-slate-200 bg-slate-100 text-slate-700',
+                          dot: 'bg-slate-400',
+                        };
+                        const formattedDate = trip.date ? formatTripDate(trip.date) : '';
+                        const tripRef = trip.ref !== 'Unassigned' ? trip.ref : trip.label;
+                        const driver = trip.items[0]?.batch?.driver_name;
+                        const vehicle = trip.items[0]?.batch?.vehicle_label;
+                        const totalBags = trip.items.reduce(
+                          (acc, it) => acc + (it.actual_bags ?? it.estimated_bags ?? 0),
+                          0,
+                        );
+                        const totalWeight = trip.items.reduce(
+                          (acc, it) => acc + (it.actual_weight_kg ?? it.estimated_weight_kg ?? 0),
+                          0,
+                        );
 
-                    {(frozen || hasRescheduledStops || hasUnavailableStops) && (
-                      <p className="mt-2 text-[11px] text-amber-800/90">
-                        {frozen ? 'Trip is locked — rescheduling disabled. ' : ''}
-                        {hasRescheduledStops
-                          ? 'Rescheduled stops present — prior slot on stop page. '
-                          : ''}
-                        {hasUnavailableStops ? 'Unavailable reasons detailed on stop page.' : ''}
-                      </p>
-                    )}
-
-                    <div className="mt-2">
-                      <BatchCapacityNotice
-                        batchId={trip.id}
-                        departmentId={desk.departmentId}
-                        items={trip.items}
-                      />
-                    </div>
-                  </header>
-
-                  {/* Stop Itinerary Route Timeline */}
-                  {!isTripCollapsed ? (
-                    <div>
-                      {/* Active Next Stop Hero Callout */}
-                      {activeNextStop ? (
-                        <div className="flex items-center justify-between border-b border-amber-200/80 bg-amber-50/70 px-3.5 py-2 sm:px-4">
-                          <div className="flex min-w-0 items-center gap-2 text-xs">
-                            <span className="shrink-0 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                              Next Stop #{activeNextStopIdx + 1}
-                            </span>
-                            <span className="truncate font-semibold text-amber-950">
-                              {activeNextStop.requester_name}
-                            </span>
-                            <span className="shrink-0 font-mono text-[11px] text-amber-800/80">
-                              ({activeNextStop.reference})
-                            </span>
-                          </div>
-                          <Link
-                            to={stopPageHref(trip.id, activeNextStop.id)}
-                            aria-label="Execute next stop"
-                            className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white shadow-xs transition hover:bg-amber-700"
+                        return (
+                          <div
+                            key={trip.id}
+                            onClick={() => {
+                              setSelectedTripId(trip.id);
+                              setMobileTab('console');
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`Select route ${tripRef}`}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                setSelectedTripId(trip.id);
+                                setMobileTab('console');
+                              }
+                            }}
+                            className={`group relative rounded-xl p-4 text-left transition-all cursor-pointer ${
+                              isSelected
+                                ? 'border-2 border-blue-600 bg-blue-50/20 shadow-md ring-2 ring-blue-500/10'
+                                : 'border border-slate-200/90 bg-white hover:border-slate-300 hover:shadow-xs'
+                            }`}
                           >
-                            Execute stop &rarr;
-                          </Link>
-                        </div>
-                      ) : null}
-
-                      {/* Capped scrollable stops container: handles 8 to 15+ stops smoothly */}
-                      <div className="relative max-h-80 overflow-y-auto">
-                        {/* Visual route connector line connecting all stops */}
-                        <div
-                          aria-hidden="true"
-                          className="pointer-events-none absolute bottom-4 left-[27px] top-4 w-0.5 bg-[var(--color-border-subtle)] sm:left-[31px]"
-                        />
-
-                        <ul className="divide-y divide-[var(--color-border-subtle)]/60">
-                          {trip.items.map((item, idx) => {
-                            const queued = offline.items.find(
-                              (q) => q.collectionId === item.id && q.status !== 'completed',
-                            );
-                            const isNext = idx === activeNextStopIdx;
-                            const isCollected = item.status === 'picked_up';
-                            const isMissed = item.status === 'missed';
-                            const statusLabel = isCollected
-                              ? 'Collected'
-                              : isMissed
-                                ? 'Missed'
-                                : queued
-                                  ? queued.status === 'failed'
-                                    ? 'Upload failed'
-                                    : 'Pending upload'
-                                  : (STATUS_LABELS[item.status] ?? item.status);
-
-                            const statusBadgeCls = isCollected
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                              : isMissed
-                                ? 'bg-rose-50 text-rose-800 border-rose-200'
-                                : queued
-                                  ? 'bg-amber-50 text-amber-800 border-amber-200'
-                                  : isNext
-                                    ? 'bg-amber-50 text-amber-900 border-amber-300 font-semibold'
-                                    : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-border-subtle)]';
-
-                            return (
-                              <li
-                                key={item.id}
-                                className={`group relative transition-colors ${isNext ? 'bg-amber-50/30' : 'bg-white hover:bg-[var(--color-surface-alt)]/50'}`}
+                            {/* Route Ref & Status */}
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-xs font-bold text-slate-900">
+                                  {tripRef}
+                                </span>
+                                {formattedDate ? (
+                                  <span className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                                    <Calendar className="h-3 w-3 text-slate-400" />
+                                    {formattedDate}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <span
+                                className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusMeta.cls}`}
                               >
-                                <Link
-                                  to={stopPageHref(trip.id, item.id)}
-                                  aria-label={`Stop ${idx + 1}: ${item.requester_name}, ${item.pickup_address}`}
-                                  className="flex min-h-[48px] w-full items-center gap-3 px-3 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ink)] sm:gap-4 sm:px-4"
-                                >
-                                  {/* Step Node along the Timeline */}
-                                  <span
-                                    aria-hidden="true"
-                                    className={`relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold leading-none shadow-xs ring-4 ring-white ${
-                                      isCollected
-                                        ? 'bg-[var(--color-success)] text-white'
-                                        : isMissed
-                                          ? 'border-2 border-rose-400 bg-white text-[var(--color-danger)]'
-                                          : isNext
-                                            ? 'animate-pulse bg-amber-500 text-white'
-                                            : 'border-2 border-[var(--color-border-strong)] bg-white text-[var(--color-ink)]'
-                                    }`}
-                                  >
-                                    {isCollected ? (
-                                      <Check
-                                        className="h-3.5 w-3.5"
-                                        strokeWidth={3}
+                                <span
+                                  className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`}
+                                  aria-hidden="true"
+                                />
+                                {statusMeta.label}
+                              </span>
+                            </div>
+
+                            {/* Crew, Vehicle, and Load */}
+                            <div className="mt-2.5 flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-2">
+                                <div className="grid h-6 w-6 place-items-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
+                                  {driver ? (
+                                    driver.charAt(0).toUpperCase()
+                                  ) : (
+                                    <User className="h-3 w-3" />
+                                  )}
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="font-semibold text-slate-900 leading-none">
+                                    {driver ?? 'Unassigned Driver'}
+                                  </span>
+                                  {vehicle ? (
+                                    <span className="font-mono text-[10px] text-slate-500">
+                                      {vehicle}
+                                    </span>
+                                  ) : null}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 rounded border border-slate-200/60 bg-slate-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-slate-600">
+                                <Package className="h-3 w-3 text-slate-400" />
+                                <span>
+                                  {trip.items.length} stop{trip.items.length === 1 ? '' : 's'}
+                                </span>
+                                <span>·</span>
+                                <span>{Math.round(totalWeight * 10) / 10} kg</span>
+                              </div>
+                            </div>
+
+                            {/* Mini Progress */}
+                            <div className="mt-3">
+                              <TripProgressBar
+                                batchStatus={batchStatus}
+                                collected={progress.collected}
+                                missed={progress.missed}
+                                pending={progress.pending}
+                                total={progress.total}
+                              />
+                            </div>
+
+                            {/* Card Footer */}
+                            <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px]">
+                              <span className="text-slate-500">Estimated {totalBags} bags</span>
+                              <span
+                                className={`inline-flex items-center gap-1 font-bold ${
+                                  isSelected
+                                    ? 'text-blue-600'
+                                    : 'text-slate-500 group-hover:text-slate-900'
+                                }`}
+                              >
+                                {isSelected ? 'Active Console' : 'Inspect Route'}
+                                <ChevronRight className="h-3 w-3" />
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* RIGHT COLUMN: Active Route Dispatch Console */}
+                <div
+                  className={`${trips.length > 1 ? 'lg:col-span-7' : 'lg:col-span-12'} ${
+                    mobileTab === 'console' || trips.length === 1 ? 'block' : 'hidden lg:block'
+                  }`}
+                >
+                  {activeTrip ? (
+                    (() => {
+                      const batchStatus = activeTrip.items[0]?.batch?.status ?? 'planned';
+                      const progress =
+                        activeTrip.items[0]?.batch?.progress ?? getTripProgress(activeTrip.items);
+                      const frozen = isRescheduleFrozen(batchStatus);
+                      const hasRescheduledStops = activeTrip.items.some(
+                        (i) => !!i.reschedule_reason || !!i.previous_scheduled_date,
+                      );
+                      const hasUnavailableStops = activeTrip.items.some(
+                        (i) => !!i.unavailable_reason,
+                      );
+                      const statusMeta = TRIP_STATUS_META[batchStatus] ?? {
+                        label: batchStatus.replaceAll('_', ' '),
+                        cls: 'border-slate-200 bg-slate-100 text-slate-700',
+                        dot: 'bg-slate-400',
+                      };
+                      const formattedDate = activeTrip.date ? formatTripDate(activeTrip.date) : '';
+                      const tripRef =
+                        activeTrip.ref !== 'Unassigned' ? activeTrip.ref : activeTrip.label;
+                      const driver = activeTrip.items[0]?.batch?.driver_name;
+                      const team = activeTrip.items[0]?.batch?.team_name;
+                      const vehicle = activeTrip.items[0]?.batch?.vehicle_label;
+
+                      const activeNextStopIdx = activeTrip.items.findIndex(
+                        (i) => i.status === 'scheduled',
+                      );
+                      const activeNextStop =
+                        activeNextStopIdx >= 0 ? activeTrip.items[activeNextStopIdx] : null;
+
+                      const totalBags = activeTrip.items.reduce(
+                        (acc, it) => acc + (it.actual_bags ?? it.estimated_bags ?? 0),
+                        0,
+                      );
+                      const totalWeight = activeTrip.items.reduce(
+                        (acc, it) => acc + (it.actual_weight_kg ?? it.estimated_weight_kg ?? 0),
+                        0,
+                      );
+
+                      return (
+                        <section className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+                          {/* Console Dark Header */}
+                          <header className="bg-slate-900 p-4 sm:p-5 text-white">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 text-white shadow-xs">
+                                  <Truck className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h2 className="font-mono text-base font-bold text-white tracking-wide">
+                                      {tripRef}
+                                    </h2>
+                                    <span
+                                      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusMeta.cls}`}
+                                    >
+                                      <span
+                                        className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`}
                                         aria-hidden="true"
                                       />
-                                    ) : (
-                                      idx + 1
-                                    )}
-                                  </span>
-
-                                  {/* Stop Itinerary Content */}
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex flex-wrap items-center gap-1.5">
-                                      <span className="truncate text-xs font-semibold text-[var(--color-ink)] group-hover:text-black">
-                                        {item.requester_name}
+                                      {statusMeta.label}
+                                    </span>
+                                    {frozen ? (
+                                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/40 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                                        <Lock className="h-3 w-3" />
+                                        Locked
                                       </span>
-                                      <span className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
-                                        · {item.reference}
-                                      </span>
-                                      {item.service_zone?.name ? (
-                                        <span className="rounded bg-[var(--color-surface-alt)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-secondary)]">
-                                          {item.service_zone.name}
-                                        </span>
-                                      ) : null}
-                                    </div>
-
-                                    <div className="mt-0.5 flex items-center gap-1 text-xs text-[var(--color-text-secondary)]">
-                                      <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--color-text-tertiary)]" />
-                                      <span className="truncate" title={item.pickup_address}>
-                                        {item.pickup_address}
-                                      </span>
-                                    </div>
+                                    ) : null}
                                   </div>
+                                  <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                                    {formattedDate ? (
+                                      <span className="inline-flex items-center gap-1">
+                                        <Calendar className="h-3 w-3 text-slate-400" />
+                                        {formattedDate}
+                                      </span>
+                                    ) : null}
+                                    <span>·</span>
+                                    <span>{activeTrip.items.length} stops</span>
+                                    <span>·</span>
+                                    <span>
+                                      Est. {totalBags} bags ({Math.round(totalWeight * 10) / 10} kg)
+                                    </span>
+                                  </p>
+                                </div>
+                              </div>
 
-                                  {/* Volume badge */}
-                                  <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] px-2 py-0.5 text-xs font-semibold tabular-nums text-[var(--color-ink)]">
-                                    <Package className="h-3 w-3 text-[var(--color-text-tertiary)]" />
-                                    {formatVolume(item.estimated_bags, item.estimated_weight_kg)}
-                                  </span>
+                              {/* Action: Trip Sheet Modal Trigger */}
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTripSheet(activeTrip)}
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 shadow-xs transition hover:bg-slate-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                                >
+                                  <Maximize2 className="h-3.5 w-3.5 text-slate-400" />
+                                  <span>Trip Sheet ({activeTrip.items.length})</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => window.print()}
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 shadow-xs transition hover:bg-slate-700 hover:text-white print:hidden"
+                                >
+                                  <Printer className="h-3.5 w-3.5 text-slate-400" />
+                                  <span className="hidden sm:inline">Print</span>
+                                </button>
+                              </div>
+                            </div>
 
-                                  {/* Status Badge */}
-                                  <span
-                                    className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[11px] font-medium leading-none ${statusBadgeCls}`}
-                                  >
-                                    {statusLabel}
-                                  </span>
+                            {/* Crew info bar */}
+                            <div className="mt-3.5 flex flex-wrap items-center gap-4 rounded-xl border border-slate-800 bg-slate-800/60 px-3.5 py-2 text-xs text-slate-300">
+                              <span className="inline-flex items-center gap-1.5">
+                                <User className="h-3.5 w-3.5 text-slate-400" />
+                                <strong>{driver ?? 'Unassigned Driver'}</strong>
+                              </span>
+                              {vehicle ? (
+                                <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-slate-300">
+                                  <Truck className="h-3.5 w-3.5 text-slate-400" />
+                                  {vehicle}
+                                </span>
+                              ) : null}
+                              {team ? (
+                                <span className="inline-flex items-center gap-1.5 text-slate-400">
+                                  <Users className="h-3.5 w-3.5" />
+                                  {team}
+                                </span>
+                              ) : null}
+                            </div>
 
-                                  {/* Navigation Chevron */}
-                                  <ChevronRight
-                                    className="h-4 w-4 shrink-0 text-[var(--color-text-tertiary)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--color-ink)]"
-                                    strokeWidth={2}
-                                    aria-hidden="true"
-                                  />
+                            {/* Route progress */}
+                            <div className="mt-3">
+                              <TripProgressBar
+                                batchStatus={batchStatus}
+                                collected={progress.collected}
+                                missed={progress.missed}
+                                pending={progress.pending}
+                                total={progress.total}
+                              />
+                            </div>
+
+                            {(frozen || hasRescheduledStops || hasUnavailableStops) && (
+                              <p className="mt-2 text-[11px] text-amber-300/90">
+                                {frozen ? 'Trip is locked — rescheduling disabled. ' : ''}
+                                {hasRescheduledStops
+                                  ? 'Rescheduled stops present — prior slot on stop page. '
+                                  : ''}
+                                {hasUnavailableStops
+                                  ? 'Unavailable reasons detailed on stop page.'
+                                  : ''}
+                              </p>
+                            )}
+                          </header>
+
+                          {/* Console Body Workspace */}
+                          <div className="space-y-4 bg-slate-50/50 p-4 sm:p-5">
+                            {/* Capacity Notices */}
+                            <BatchCapacityNotice
+                              batchId={activeTrip.id}
+                              departmentId={desk.departmentId}
+                              items={activeTrip.items}
+                            />
+
+                            {/* Active Next Stop Hero Callout */}
+                            {activeNextStop ? (
+                              <div className="flex items-center justify-between rounded-xl border border-amber-300/80 bg-gradient-to-r from-amber-50 to-orange-50/60 p-3.5 shadow-xs">
+                                <div className="min-w-0 pr-3">
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <span className="shrink-0 rounded bg-amber-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-2xs">
+                                      Next Stop #{activeNextStopIdx + 1}
+                                    </span>
+                                    <span className="truncate font-bold text-amber-950">
+                                      {activeNextStop.requester_name}
+                                    </span>
+                                    <span className="shrink-0 font-mono text-[11px] text-amber-800/80">
+                                      ({activeNextStop.reference})
+                                    </span>
+                                  </div>
+                                </div>
+                                <Link
+                                  to={stopPageHref(activeTrip.id, activeNextStop.id)}
+                                  aria-label="Execute next stop"
+                                  className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-amber-700"
+                                >
+                                  <span>Execute stop</span>
+                                  <span>&rarr;</span>
                                 </Link>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
+                              </div>
+                            ) : null}
 
-                      {/* Footer hint if trip has multiple stops */}
-                      {trip.items.length > 3 ? (
-                        <div className="flex items-center justify-between border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)]/50 px-4 py-2 text-xs text-[var(--color-text-secondary)]">
-                          <span>
-                            Showing itinerary ({trip.items.length} stop
-                            {trip.items.length === 1 ? '' : 's'})
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedTripSheet(trip)}
-                            className="inline-flex items-center gap-1 font-semibold text-[var(--color-ink)] hover:underline"
-                          >
-                            Open Full Trip Sheet ({trip.items.length}) &rarr;
-                          </button>
-                        </div>
-                      ) : null}
+                            {/* Sequential Route Timeline (Progressive Disclosure for 8-15 stops) */}
+                            <div className="relative max-h-[460px] overflow-y-auto pr-1">
+                              {/* Continuous Trunk Line */}
+                              <div
+                                aria-hidden="true"
+                                className="pointer-events-none absolute bottom-4 left-[23px] top-4 w-0.5 bg-slate-200"
+                              />
+
+                              <ul className="space-y-2">
+                                {activeTrip.items.map((item, idx) => {
+                                  const queued = offline.items.find(
+                                    (q) => q.collectionId === item.id && q.status !== 'completed',
+                                  );
+                                  const isNext = idx === activeNextStopIdx;
+                                  const isCollected = item.status === 'picked_up';
+                                  const isMissed = item.status === 'missed';
+                                  const statusLabel = isCollected
+                                    ? 'Collected'
+                                    : isMissed
+                                      ? 'Missed'
+                                      : queued
+                                        ? queued.status === 'failed'
+                                          ? 'Upload failed'
+                                          : 'Pending upload'
+                                        : (STATUS_LABELS[item.status] ?? item.status);
+
+                                  const statusBadgeCls = isCollected
+                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                    : isMissed
+                                      ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                      : queued
+                                        ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                        : isNext
+                                          ? 'bg-amber-50 text-amber-900 border-amber-300 font-semibold'
+                                          : 'bg-slate-100 text-slate-600 border-slate-200';
+
+                                  return (
+                                    <li key={item.id} className="relative">
+                                      <Link
+                                        to={stopPageHref(activeTrip.id, item.id)}
+                                        aria-label={`Stop ${idx + 1}: ${item.requester_name}, ${item.pickup_address}`}
+                                        className={`group flex min-h-[52px] w-full items-center gap-3 rounded-xl border p-3 text-left transition-all ${
+                                          isNext
+                                            ? 'border-amber-300/80 bg-amber-50/30 shadow-xs'
+                                            : 'border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-xs'
+                                        }`}
+                                      >
+                                        {/* Step Node Marker */}
+                                        <span
+                                          aria-hidden="true"
+                                          className={`relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold leading-none shadow-xs ring-4 ring-white ${
+                                            isCollected
+                                              ? 'bg-emerald-600 text-white'
+                                              : isMissed
+                                                ? 'border-2 border-rose-400 bg-white text-rose-600'
+                                                : isNext
+                                                  ? 'animate-pulse bg-amber-500 text-white ring-amber-200'
+                                                  : 'border-2 border-slate-300 bg-white text-slate-700'
+                                          }`}
+                                        >
+                                          {isCollected ? (
+                                            <Check
+                                              className="h-3.5 w-3.5"
+                                              strokeWidth={3}
+                                              aria-hidden="true"
+                                            />
+                                          ) : (
+                                            idx + 1
+                                          )}
+                                        </span>
+
+                                        {/* Stop Content */}
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex flex-wrap items-center gap-1.5">
+                                            <span className="truncate text-xs font-bold text-slate-900 group-hover:text-blue-600">
+                                              {item.requester_name}
+                                            </span>
+                                            <span className="font-mono text-[10px] text-slate-400">
+                                              · {item.reference}
+                                            </span>
+                                            {item.service_zone?.name ? (
+                                              <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
+                                                {item.service_zone.name}
+                                              </span>
+                                            ) : null}
+                                          </div>
+
+                                          <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
+                                            <MapPin className="h-3 w-3 shrink-0 text-slate-400" />
+                                            <span className="truncate" title={item.pickup_address}>
+                                              {item.pickup_address}
+                                            </span>
+                                          </div>
+                                        </div>
+
+                                        {/* Volume Chip */}
+                                        <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold tabular-nums text-slate-800">
+                                          <Package className="h-3 w-3 text-slate-400" />
+                                          {formatVolume(
+                                            item.estimated_bags,
+                                            item.estimated_weight_kg,
+                                          )}
+                                        </span>
+
+                                        {/* Status Badge */}
+                                        <span
+                                          className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[11px] font-medium leading-none ${statusBadgeCls}`}
+                                        >
+                                          {statusLabel}
+                                        </span>
+
+                                        {/* Chevron */}
+                                        <ChevronRight
+                                          className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-600"
+                                          strokeWidth={2}
+                                          aria-hidden="true"
+                                        />
+                                      </Link>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+
+                            {/* Itinerary footer count & Trip Sheet link */}
+                            {activeTrip.items.length > 3 ? (
+                              <div className="flex items-center justify-between border-t border-slate-200 pt-3 text-xs text-slate-500">
+                                <span>
+                                  Showing itinerary ({activeTrip.items.length} stop
+                                  {activeTrip.items.length === 1 ? '' : 's'})
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTripSheet(activeTrip)}
+                                  className="inline-flex items-center gap-1 font-bold text-blue-600 hover:text-blue-700 hover:underline"
+                                >
+                                  Open Full Trip Sheet ({activeTrip.items.length}) &rarr;
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
+                        </section>
+                      );
+                    })()
+                  ) : (
+                    <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+                      Select a route from the list to view itinerary and dispatch details.
                     </div>
-                  ) : null}
-                </section>
-              );
-            })
+                  )}
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </DeskStates>
