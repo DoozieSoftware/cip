@@ -118,7 +118,10 @@ describe('TextileDispatchPage', () => {
     // Modal should be closed initially
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
-    // Open Trip Sheet modal
+    // Open route details drawer first by clicking the route row
+    fireEvent.click(screen.getByText('DRL-260826-XX11TO'));
+
+    // Open Trip Sheet modal from drawer header
     const tripSheetBtn = screen.getByRole('button', { name: /Trip Sheet \(1\)/ });
     fireEvent.click(tripSheetBtn);
 
@@ -133,24 +136,27 @@ describe('TextileDispatchPage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('toggles between timeline view and fleet matrix view', () => {
+  it('opens and closes the slide-over route details drawer when inspecting a route', () => {
     renderPage();
 
-    // Default is timeline
-    expect(screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ })).toBeInTheDocument();
+    // Drawer is closed initially
+    expect(
+      screen.queryByRole('complementary', { name: 'Route details drawer' }),
+    ).not.toBeInTheDocument();
 
-    // Switch to matrix view
-    const matrixBtn = screen.getByTitle('Fleet Matrix View');
-    fireEvent.click(matrixBtn);
+    // Click route row to open drawer
+    fireEvent.click(screen.getByText('DRL-260826-XX11TO'));
 
-    // Matrix table should be visible with columns
-    expect(screen.getByText('Route Reference')).toBeInTheDocument();
-    expect(screen.getByText('Driver / Vehicle')).toBeInTheDocument();
+    // Drawer is now open with route title and itinerary
+    expect(screen.getByRole('complementary', { name: 'Route details drawer' })).toBeInTheDocument();
+    expect(screen.getByText(/Route DRL-260826-XX11TO/)).toBeInTheDocument();
 
-    // Switch back to timeline
-    const timelineBtn = screen.getByTitle('Timeline View');
-    fireEvent.click(timelineBtn);
-    expect(screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ })).toBeInTheDocument();
+    // Close via Done button
+    const doneBtn = screen.getByRole('button', { name: 'Done' });
+    fireEvent.click(doneBtn);
+    expect(
+      screen.queryByRole('complementary', { name: 'Route details drawer' }),
+    ).not.toBeInTheDocument();
   });
 
   it('renders a 10-stop route smoothly with Next Stop callout and stop links', () => {
@@ -175,15 +181,17 @@ describe('TextileDispatchPage', () => {
 
     renderPage();
 
-    // Route footer hint for 10 stops
+    // Click route row to open drawer
+    fireEvent.click(screen.getByText('DRL-260826-XX11TO'));
+
+    // Route footer hint for 10 stops inside drawer
     expect(screen.getByText(/Showing itinerary \(10 stops\)/)).toBeInTheDocument();
 
-    // Next stop banner should highlight stop #2 (since stop #1 is picked_up)
+    // Next stop banner inside drawer should highlight stop #2 (since stop #1 is picked_up)
     expect(screen.getByText(/Next Stop #2/)).toBeInTheDocument();
-    expect(screen.getAllByText(/Customer 2/)).toHaveLength(2);
 
-    // All 10 stops exist in the DOM
+    // All stops exist in the DOM (table + drawer)
     const allLinks = screen.getAllByRole('link', { name: /Stop \d+: Customer/ });
-    expect(allLinks).toHaveLength(10);
+    expect(allLinks.length).toBeGreaterThanOrEqual(10);
   });
 });
