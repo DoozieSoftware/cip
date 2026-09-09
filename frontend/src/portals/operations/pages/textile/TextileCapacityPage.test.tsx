@@ -193,12 +193,12 @@ describe('TextileCapacityPage dashboard', () => {
     expect(screen.getByText('Monthly Volume Progression')).toBeVisible();
     expect(screen.getByText('Collection Method Split')).toBeVisible();
     expect(screen.getByText('Top Service Zones')).toBeVisible();
-    expect(screen.getByText('Material Categories')).toBeVisible();
-    // Environmental impact is not present.
+    // Material Categories and Environmental impact are not present.
+    expect(screen.queryByText('Material Categories')).not.toBeInTheDocument();
     expect(screen.queryByText('Circularity & Environmental Impact')).not.toBeInTheDocument();
     // Filter controls.
     expect(screen.getByLabelText('Analytics zone')).toBeVisible();
-    expect(screen.getByLabelText('Analytics category')).toBeVisible();
+    expect(screen.queryByLabelText('Analytics category')).not.toBeInTheDocument();
     // Reconciliation note ties cards to the CSV export.
     expect(screen.getByText(/Totals match the CSV export for this period/)).toBeVisible();
     // Breakdowns render mapped labels and click-through links.

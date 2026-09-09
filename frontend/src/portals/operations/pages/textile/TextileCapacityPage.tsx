@@ -7,7 +7,6 @@ import {
   IconAlertTriangle,
   IconArrowUpRight,
   IconBuildingCommunity,
-  IconChartBar,
   IconChartPie,
   IconGitFork,
   IconMapPin,
@@ -23,7 +22,6 @@ import {
   type TextileServiceZone,
 } from '../../api/textileApi';
 import {
-  CATEGORY_LABELS,
   DeskPage,
   DeskStates,
   OPERATIONS_QUEUE_REFRESH_MS,
@@ -103,7 +101,6 @@ export default function TextileCapacityPage(): JSX.Element {
   const [year, setYear] = useState('');
   const [month, setMonth] = useState('');
   const [selectedZone, setSelectedZone] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
 
   const zonesQuery = useQuery({
     queryKey: ['operations', 'textile', 'zones', desk.departmentId],
@@ -118,26 +115,16 @@ export default function TextileCapacityPage(): JSX.Element {
     year?: string;
     month?: string;
     service_zone_id?: string;
-    category?: string;
     granularity: 'day' | 'month';
   } = {
     department_id: desk.departmentId,
     ...(year ? { year } : {}),
     ...(month ? { month } : {}),
     ...(selectedZone ? { service_zone_id: selectedZone } : {}),
-    ...(selectedCategory ? { category: selectedCategory } : {}),
     granularity: month ? 'day' : 'month',
   };
   const dashboard = useQuery({
-    queryKey: [
-      'textile',
-      'reporting',
-      desk.departmentId,
-      year,
-      month,
-      selectedZone,
-      selectedCategory,
-    ],
+    queryKey: ['textile', 'reporting', desk.departmentId, year, month, selectedZone],
     queryFn: () => fetchTextileReportingDashboard(periodParams),
     enabled: desk.ready && desk.isDrLinen,
     // Keep the previous period visible while the next one loads so the
@@ -157,7 +144,6 @@ export default function TextileCapacityPage(): JSX.Element {
         ...(year ? { year } : {}),
         ...(month ? { month } : {}),
         ...(selectedZone ? { service_zone_id: selectedZone } : {}),
-        ...(selectedCategory ? { category: selectedCategory } : {}),
       });
     } catch {
       setExportError('Export failed. Check your session and try again.');
@@ -235,30 +221,13 @@ export default function TextileCapacityPage(): JSX.Element {
                   ))}
                 </select>
               </label>
-              <label className="text-[11px] font-medium text-[var(--color-text-secondary)]">
-                Category
-                <select
-                  value={selectedCategory}
-                  onChange={(event) => setSelectedCategory(event.target.value)}
-                  aria-label="Analytics category"
-                  className="ml-1.5 h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs font-medium text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
-                >
-                  <option value="">All categories</option>
-                  {Object.entries(CATEGORY_LABELS).map(([val, lbl]) => (
-                    <option key={val} value={val}>
-                      {lbl}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {year || month || selectedZone || selectedCategory ? (
+              {year || month || selectedZone ? (
                 <button
                   type="button"
                   onClick={() => {
                     setYear('');
                     setMonth('');
                     setSelectedZone('');
-                    setSelectedCategory('');
                   }}
                   className="h-9 px-2 text-xs font-medium text-slate-500 hover:text-slate-800 underline"
                 >
@@ -387,7 +356,7 @@ export default function TextileCapacityPage(): JSX.Element {
 
               <CollapsibleSection
                 title="Operations Analytics & Performance Charts"
-                hint={`${report.timeseries?.length ?? 0} periods · ${Object.keys(report.breakdowns.zone).length} zones · ${Object.keys(report.breakdowns.category).length} categories`}
+                hint={`${report.timeseries?.length ?? 0} periods · ${Object.keys(report.breakdowns.zone).length} zones`}
               >
                 <OperationsChartsGrid report={report} />
               </CollapsibleSection>
@@ -634,11 +603,6 @@ function OperationsChartsGrid({ report }: { report: DashboardReport }): JSX.Elem
   const pickupPct = totalMethod > 0 ? Math.round((pickupCount / totalMethod) * 100) : 0;
   const dropoffPct = totalMethod > 0 ? 100 - pickupPct : 0;
 
-  const categoryEntries = Object.entries(report.breakdowns.category).sort(
-    (a, b) => toCount(b[1]) - toCount(a[1]),
-  );
-  const totalCategory = categoryEntries.reduce((acc, [, c]) => acc + toCount(c), 0);
-
   const zoneEntries = Object.entries(report.breakdowns.zone).sort(
     (a, b) => toCount(b[1]) - toCount(a[1]),
   );
@@ -647,29 +611,24 @@ function OperationsChartsGrid({ report }: { report: DashboardReport }): JSX.Elem
   const timeseries = report.timeseries ?? [];
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* CHART 1: Monthly Volume Progression Bar & Line Chart */}
-        <MonthlyVolumeCard timeseries={timeseries} />
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* CHART 1: Monthly Volume Progression Bar & Line Chart */}
+      <MonthlyVolumeCard timeseries={timeseries} />
 
-        {/* CHART 2: Lifecycle Stage Distribution Bar Chart */}
-        <LifecycleStageCard report={report} />
+      {/* CHART 2: Lifecycle Stage Distribution Bar Chart */}
+      <LifecycleStageCard report={report} />
 
-        {/* CHART 3: Collection Method Split Donut Chart */}
-        <CollectionMethodCard
-          pickupCount={pickupCount}
-          dropoffCount={dropoffCount}
-          pickupPct={pickupPct}
-          dropoffPct={dropoffPct}
-          totalMethod={totalMethod}
-        />
+      {/* CHART 3: Collection Method Split Donut Chart */}
+      <CollectionMethodCard
+        pickupCount={pickupCount}
+        dropoffCount={dropoffCount}
+        pickupPct={pickupPct}
+        dropoffPct={dropoffPct}
+        totalMethod={totalMethod}
+      />
 
-        {/* CHART 4: Top Service Zones Bar Chart */}
-        <TopZonesCard zoneEntries={zoneEntries} totalZone={totalZone} />
-      </div>
-
-      {/* CHART 5: Material Categories Bar Chart */}
-      <CategoriesCard categoryEntries={categoryEntries} totalCategory={totalCategory} />
+      {/* CHART 4: Top Service Zones Bar Chart */}
+      <TopZonesCard zoneEntries={zoneEntries} totalZone={totalZone} />
     </div>
   );
 }
@@ -1166,101 +1125,6 @@ function TopZonesCard({
               >
                 <span className="font-semibold text-slate-800">{zoneName}</span>
                 <span className="font-mono font-bold text-slate-900">
-                  {val} <span className="font-normal text-slate-400 text-[10px]">({pct}%)</span>
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CategoriesCard({
-  categoryEntries,
-  totalCategory,
-}: {
-  categoryEntries: Array<[string, unknown]>;
-  totalCategory: number;
-}): JSX.Element {
-  const catNames = categoryEntries
-    .slice(0, 8)
-    .map(([k]) => labelFor(CATEGORY_LABELS, k))
-    .reverse();
-  const catValues = categoryEntries
-    .slice(0, 8)
-    .map(([, c]) => toCount(c))
-    .reverse();
-
-  const option = {
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    grid: { left: 110, right: 35, top: 10, bottom: 20 },
-    xAxis: {
-      type: 'value',
-      axisLabel: { color: '#94a3b8', fontSize: 10 },
-      splitLine: { lineStyle: { color: '#f1f5f9' } },
-    },
-    yAxis: {
-      type: 'category',
-      data: catNames,
-      axisLabel: { color: '#334155', fontSize: 10, fontWeight: 500 },
-      axisLine: { lineStyle: { color: '#e2e8f0' } },
-    },
-    series: [
-      {
-        type: 'bar',
-        data: catValues,
-        itemStyle: { borderRadius: [0, 4, 4, 0], color: '#0f766e' },
-        label: { show: true, position: 'right', color: '#64748b', fontSize: 10 },
-        barMaxWidth: 18,
-      },
-    ],
-  };
-
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
-            <IconChartBar className="h-4 w-4" stroke={1.75} aria-hidden="true" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-900">Material Categories</h3>
-            <p className="text-xs text-slate-500">Composition of collected textiles</p>
-          </div>
-        </div>
-        <span className="font-mono text-xs font-semibold text-slate-700">
-          {categoryEntries.length} categories
-        </span>
-      </div>
-
-      <div className="mt-3">
-        <ReactECharts
-          option={option}
-          style={{ height: 260 }}
-          aria-label="Material Categories Bar Chart"
-        />
-      </div>
-
-      {/* Accessible Companion List */}
-      <div className="mt-4 border-t border-slate-100 pt-3">
-        <h4 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-          Category Volume Breakdown
-        </h4>
-        <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
-          {categoryEntries.map(([key, count]) => {
-            const val = toCount(count);
-            const pct = totalCategory > 0 ? Math.round((val / totalCategory) * 100) : 0;
-            return (
-              <div
-                key={key}
-                className="flex items-center justify-between rounded-lg bg-slate-50 px-2.5 py-1 text-xs"
-              >
-                <span className="truncate font-medium text-slate-700">
-                  {labelFor(CATEGORY_LABELS, key)}
-                </span>
-                <span className="shrink-0 font-mono font-semibold text-slate-900">
                   {val} <span className="font-normal text-slate-400 text-[10px]">({pct}%)</span>
                 </span>
               </div>

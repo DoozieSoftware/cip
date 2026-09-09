@@ -16,7 +16,7 @@ export default function TextileReceiptVerifyPage(): JSX.Element {
     return () => window.removeEventListener('hashchange', refresh);
   }, []);
 
-  if (result.error) {
+  if (result.payload === null) {
     return (
       <main className="mx-auto max-w-lg px-4 py-10">
         <section className="rounded-2xl border border-rose-200 bg-white p-6 text-center shadow-sm">
