@@ -476,9 +476,23 @@ describe('TextileStopPage', () => {
       'href',
       '/operations/textile-collections/collections/batch-1/stops/collection-2',
     );
-    // Missing locations are a compact warning, not a second itinerary list.
     expect(screen.getByText(/1 collection cannot be placed on the map yet/)).toBeInTheDocument();
     expect(screen.queryByText(/without map coordinates/)).not.toBeInTheDocument();
+
+    // Stop-to-stop navigation ribbon links
+    const gpsLinks = screen.getAllByRole('link', { name: /Navigate with GPS/ });
+    expect(gpsLinks).toHaveLength(3);
+    expect(gpsLinks[0]).toHaveAttribute(
+      'href',
+      expect.stringContaining('https://www.google.com/maps/dir/'),
+    );
+
+    // Toggle road map visibility
+    const mapToggleBtn = screen.getByRole('button', { name: /View road map/ });
+    expect(mapToggleBtn).toBeInTheDocument();
+    fireEvent.click(mapToggleBtn);
+    expect(screen.getByRole('button', { name: /Hide map/ })).toBeInTheDocument();
+
     // No stop wording anywhere on the page.
     expect(screen.queryByText(/Collection stop/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Route Itinerary/)).not.toBeInTheDocument();

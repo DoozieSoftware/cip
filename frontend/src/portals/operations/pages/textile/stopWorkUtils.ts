@@ -22,13 +22,19 @@ export function mapsHref(
   latitude?: number | null,
   longitude?: number | null,
 ): string {
-  const destination =
-    typeof latitude === 'number' && typeof longitude === 'number'
-      ? `${latitude},${longitude}`
-      : address;
-  const q = encodeURIComponent(destination);
+  const hasCoords =
+    typeof latitude === 'number' &&
+    typeof longitude === 'number' &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude);
+
+  const destination = hasCoords ? `${latitude},${longitude}` : encodeURIComponent(address.trim());
+
   const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
-  return isIOS ? `maps://?q=${q}` : `https://www.google.com/maps/search/?api=1&query=${q}`;
+  if (isIOS) {
+    return `maps://?daddr=${destination}&dirflg=d`;
+  }
+  return `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
 }
 
 export function newIdempotencyKey(): string {
