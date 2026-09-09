@@ -55,6 +55,11 @@ export interface TextileCollectionListItem {
     centre_status?: string | null;
     centre_closed_note?: string | null;
   } | null;
+  dropoff_centre?: {
+    id: string;
+    name: string;
+    address: string | null;
+  } | null;
   batch: {
     id: string;
     reference: string;
@@ -221,6 +226,13 @@ export function fetchTextileQueue(params: {
 export function fetchTextileDetail(collectionId: string, departmentId?: string) {
   return request<TextileCollectionListItem>(`/department/textile-collections/${collectionId}`, {
     query: departmentId ? { department_id: departmentId } : {},
+  });
+}
+
+/** Bag verify (issue #18): resolve a scanned receipt QR reference to its booking. */
+export function lookupTextileByReference(reference: string, departmentId?: string) {
+  return request<TextileCollectionListItem>('/department/dropoff-centres/lookup', {
+    query: { reference, ...(departmentId ? { department_id: departmentId } : {}) },
   });
 }
 

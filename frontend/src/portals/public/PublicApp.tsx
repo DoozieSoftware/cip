@@ -7,6 +7,7 @@ import { ErrorBoundary, ErrorState, Spinner } from '../../shared/ui';
 const OverviewPage = lazy(() => import('./pages/OverviewPage'));
 const HeatmapPage = lazy(() => import('./pages/HeatmapPage'));
 const DepartmentPerformancePage = lazy(() => import('./pages/DepartmentPerformancePage'));
+const TextileReceiptVerifyPage = lazy(() => import('./pages/TextileReceiptVerifyPage'));
 
 function Fallback(): JSX.Element {
   return (
@@ -47,6 +48,7 @@ export function PublicApp(): JSX.Element {
             <Route index element={<OverviewPage />} />
             <Route path="heatmap" element={<HeatmapPage />} />
             <Route path="departments" element={<DepartmentPerformancePage />} />
+            <Route path="textile-receipt" element={<TextileReceiptVerifyPage />} />
             <Route path="*" element={<RouteError />} />
           </Route>
         </Routes>

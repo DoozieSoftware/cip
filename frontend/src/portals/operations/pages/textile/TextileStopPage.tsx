@@ -58,6 +58,7 @@ import {
   formatVolume,
 } from './shared';
 import { StopRecordForm } from './components/StopRecordForm';
+import { ReceiptCard } from './components/ReceiptCard';
 import StopRouteMap from './components/StopRouteMap';
 import {
   STOP_BTN as BTN,
@@ -883,6 +884,18 @@ export default function TextileStopPage(): JSX.Element {
                         Verified actuals: {item.actual_bags} bags · {item.actual_weight_kg} kg
                       </p>
                     </div>
+
+                    <ReceiptCard
+                      receipt={{
+                        ref: item.reference,
+                        name: item.requester_name,
+                        bags: item.actual_bags,
+                        kg: item.actual_weight_kg,
+                        at: item.picked_up_at ?? new Date().toISOString(),
+                        via: item.batch?.reference ?? tripRef,
+                        lane: 'premises',
+                      }}
+                    />
 
                     {nextStop ? (
                       <Link

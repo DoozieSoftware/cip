@@ -26,6 +26,8 @@ vi.mock('react-leaflet', () => ({
   useMap: () => ({ fitBounds: vi.fn(), setView: vi.fn() }),
 }));
 
+vi.mock('qrcode', () => ({ default: { toCanvas: vi.fn().mockResolvedValue(undefined) } }));
+
 vi.mock('./shared', async () => {
   const actual = await vi.importActual<typeof TextileShared>('./shared');
   return {
@@ -398,6 +400,31 @@ describe('TextileStopPage', () => {
     expect(
       await screen.findByRole('heading', { name: `${ITEM.reference} collected` }),
     ).toBeVisible();
+  });
+
+  it('shows a printable bag receipt QR after collection', async () => {
+    const collected: TextileCollectionListItem = {
+      ...ITEM,
+      status: 'picked_up',
+      actual_bags: 3,
+      actual_weight_kg: 8.5,
+      picked_up_at: '2026-08-27T10:30:00+05:30',
+    };
+    vi.mocked(fetchTextileDetail).mockResolvedValue(collected);
+    vi.mocked(useTextileQueue).mockReturnValue({
+      data: {
+        data: [collected],
+        meta: { page: 1, per_page: 25, total: 1, last_page: 1 },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useTextileQueue>);
+    renderStopPage();
+
+    expect(await screen.findByRole('heading', { name: 'Lakshmi Devi collected' })).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Bag receipt' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Print bag label' })).toBeVisible();
   });
 
   it('shows a road route map with pins in visit order and no stop wording', async () => {

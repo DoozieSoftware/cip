@@ -27,6 +27,8 @@ vi.mock('../../api/textileApi', async () => {
   };
 });
 
+vi.mock('qrcode', () => ({ default: { toCanvas: vi.fn().mockResolvedValue(undefined) } }));
+
 vi.mock('../../../citizen/components/CameraCapture', () => ({
   CameraCapture: ({
     onCapture,
@@ -89,6 +91,11 @@ const ITEM: TextileCollectionListItem = {
     name: 'Jayanagar',
     dropoff_name: 'Centre 1',
     dropoff_address: '1 Main Road',
+  },
+  dropoff_centre: {
+    id: 'centre-1',
+    name: 'Jayanagar Main Centre',
+    address: '1 Main Road',
   },
   batch: null,
   submitted_at: '2026-08-26T10:00:00+05:30',
@@ -175,6 +182,15 @@ describe('TextileReceiptPage receipt success state', () => {
     }
   });
 
+  it('uses one booking lookup field with no duplicate paste field', () => {
+    renderPage();
+
+    expect(screen.getAllByRole('textbox')).toHaveLength(2);
+    expect(screen.getByRole('textbox', { name: 'Search by reference or phone' })).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Paste a receipt code' })).toBeVisible();
+    expect(screen.queryByRole('textbox', { name: 'Paste booking QR reference' })).toBeNull();
+  });
+
   it('replaces the form with a success state showing ref + bags/kg', async () => {
     renderPage();
     await fillAndConfirm();
@@ -186,6 +202,28 @@ describe('TextileReceiptPage receipt success state', () => {
     expect(status).toHaveTextContent('4 bags');
     expect(status).toHaveTextContent('11 kg');
     expect(document.activeElement).toBe(heading);
+  });
+
+  it('shows a printable bag receipt QR after confirming receipt', async () => {
+    renderPage();
+    await fillAndConfirm();
+
+    await screen.findByRole('heading', { name: 'Pickup request confirmed' });
+    expect(screen.getByRole('region', { name: 'Bag receipt' })).toBeVisible();
+    expect(screen.getByText('Lakshmi Devi')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Print bag label' })).toBeVisible();
+  });
+
+  it('calls the variance field Remarks instead of Reason', async () => {
+    renderPage();
+    await searchAndSelect();
+
+    fireEvent.change(screen.getByLabelText(/Actual bags/), { target: { value: '5' } });
+
+    expect(screen.getByLabelText(/Remarks/)).toBeVisible();
+    expect(screen.getByRole('option', { name: 'Select remark' })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Additional remarks (optional)')).toBeVisible();
+    expect(screen.queryByText(/Reason/)).not.toBeInTheDocument();
   });
 
   it('makes double-submit impossible (form unmounted, single mutation)', async () => {

@@ -16,6 +16,9 @@ import {
   useTextileQueue,
 } from './shared';
 import { validatePhotoFile } from './photoCapture';
+import { ReceiptCard } from './components/ReceiptCard';
+import { VerifyBagCard } from './components/VerifyBagCard';
+import { QrScanner } from './components/QrScanner';
 
 const REASONS: Array<{ value: string; label: string }> = [
   { value: 'quantity_mismatch', label: 'Wrong quantity' },
@@ -46,6 +49,9 @@ export default function TextileReceiptPage(): JSX.Element {
     reference: string;
     bags: string;
     weight: string;
+    name: string;
+    at: string;
+    via: string | null;
   } | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
   const successHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -129,6 +135,12 @@ export default function TextileReceiptPage(): JSX.Element {
     const confirmedReference = selected.reference;
     const confirmedBags = bags;
     const confirmedWeight = weight;
+    const confirmedName = selected.requester_name;
+    const confirmedVia =
+      selected.dropoff_centre?.name ??
+      selected.service_zone?.dropoff_name ??
+      selected.service_zone?.name ??
+      null;
     try {
       if (!photoFile) return;
       // One key per receipt attempt so a retry after a network failure cannot
@@ -152,6 +164,9 @@ export default function TextileReceiptPage(): JSX.Element {
         reference: confirmedReference,
         bags: confirmedBags,
         weight: confirmedWeight,
+        name: confirmedName,
+        at: new Date().toISOString(),
+        via: confirmedVia,
       });
     } catch (e) {
       if (e instanceof ApiError) setServerError(e.message);
@@ -224,6 +239,15 @@ export default function TextileReceiptPage(): JSX.Element {
               Find
             </button>
           </form>
+          <QrScanner
+            cameraLabel="Scan booking QR with camera"
+            showPaste={false}
+            onScan={(raw) => {
+              const reference = raw.trim();
+              setQuery(reference);
+              setSearch(reference);
+            }}
+          />
           {!search ? (
             <p className="text-[11px] text-[var(--color-text-secondary)]">
               Enter a reference like DL-24-0917 or a phone number.
@@ -333,6 +357,17 @@ export default function TextileReceiptPage(): JSX.Element {
                   — {confirmed.bags} bags, {confirmed.weight} kg
                 </p>
               </div>
+              <ReceiptCard
+                receipt={{
+                  ref: confirmed.reference,
+                  name: confirmed.name,
+                  bags: Number(confirmed.bags),
+                  kg: Number(confirmed.weight),
+                  at: confirmed.at,
+                  via: confirmed.via,
+                  lane: 'dropoff',
+                }}
+              />
               <button
                 type="button"
                 onClick={resetToFreshForm}
@@ -386,7 +421,7 @@ export default function TextileReceiptPage(): JSX.Element {
                 >
                   Variance: {variance > 0 ? '+' : ''}
                   {variance.toFixed(1)} kg ({variancePct.toFixed(0)}%){' '}
-                  {needsReason ? '— reason required' : ''}
+                  {needsReason ? '— remarks required' : ''}
                 </p>
               ) : null}
 
@@ -481,7 +516,7 @@ export default function TextileReceiptPage(): JSX.Element {
 
               <div className="space-y-2">
                 <label className="text-xs font-medium text-[var(--color-ink)]">
-                  Reason{' '}
+                  Remarks{' '}
                   {needsReason ? (
                     <span className="text-[var(--color-danger)]">*</span>
                   ) : (
@@ -492,7 +527,7 @@ export default function TextileReceiptPage(): JSX.Element {
                     onChange={(e) => setReason(e.target.value)}
                     className="mt-1 block w-full h-10 rounded-lg border border-[var(--color-border)] bg-white px-3 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 focus-visible:border-[var(--color-border-strong)]"
                   >
-                    <option value="">Select reason</option>
+                    <option value="">Select remark</option>
                     {REASONS.map((r) => (
                       <option key={r.value} value={r.value}>
                         {r.label}
@@ -503,7 +538,7 @@ export default function TextileReceiptPage(): JSX.Element {
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder="Optional note"
+                  placeholder="Additional remarks (optional)"
                   rows={2}
                   className="block w-full rounded-lg border border-[var(--color-border)] bg-white p-2.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 focus-visible:border-[var(--color-border-strong)]"
                 />
@@ -538,12 +573,16 @@ export default function TextileReceiptPage(): JSX.Element {
               </div>
               {!canConfirm && selected ? (
                 <p className="text-[11px] text-[var(--color-text-secondary)]">
-                  Enter bags, weight and photo{needsReason ? ' and a reason' : ''} to confirm.
+                  Enter bags, weight and photo{needsReason ? ' and remarks' : ''} to confirm.
                 </p>
               ) : null}
             </div>
           )}
         </div>
+      </div>
+
+      <div className="mt-4">
+        <VerifyBagCard departmentId={desk.departmentId} />
       </div>
     </DeskPage>
   );
