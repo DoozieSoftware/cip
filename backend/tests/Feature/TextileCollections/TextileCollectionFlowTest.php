@@ -55,7 +55,7 @@ function textilePayload(TextileServiceZone $zone, array $overrides = []): array
         'longitude' => 77.5946,
         'collection_method' => 'premises',
         'estimated_bags' => 3,
-        'estimated_weight_kg' => 8.5,
+        'estimated_weight_kg' => 8,
     ], $overrides);
 }
 
@@ -144,7 +144,7 @@ it('lets Dr. Linen review group schedule and complete a pickup', function (): vo
     $this->postJson("/api/v1/department/textile-collections/{$collection->id}/outcome", [
         'outcome' => 'collected',
         'actual_bags' => 3,
-        'actual_weight_kg' => 8.2,
+        'actual_weight_kg' => 8,
     ])->assertOk()
         ->assertJsonPath('data.status', 'picked_up');
 

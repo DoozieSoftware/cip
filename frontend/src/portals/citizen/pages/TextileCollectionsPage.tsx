@@ -40,7 +40,7 @@ function MethodBadge({ method }: { method: string }): JSX.Element {
     <span
       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${isDropoff ? 'border-[var(--color-info-muted)] bg-[var(--color-info)]/10 text-[var(--color-info)]' : 'border-[var(--color-warning-muted)] bg-[var(--color-warning)]/10 text-[var(--color-warning)]'}`}
     >
-      {isDropoff ? 'Drop-off' : 'Pickup'}
+      {isDropoff ? 'Drop at center' : 'Pick up from location'}
     </span>
   );
 }

@@ -52,7 +52,7 @@ function reschedulePayload(TextileServiceZone $zone, array $overrides = []): arr
         'pickup_address' => '12, MG Road, Bengaluru 560001',
         'collection_method' => 'premises',
         'estimated_bags' => 3,
-        'estimated_weight_kg' => 8.5,
+        'estimated_weight_kg' => 8,
     ], $overrides);
 }
 

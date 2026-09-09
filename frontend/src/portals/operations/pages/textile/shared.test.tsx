@@ -56,6 +56,39 @@ describe('StatusBadge', () => {
   });
 });
 
+describe('TripProgressBar', () => {
+  it('shows counts by default for board-level progress', async () => {
+    const { render, screen } = await import('@testing-library/react');
+    const { TripProgressBar } = await import('./shared');
+
+    render(
+      <TripProgressBar batchStatus="in_progress" collected={1} missed={0} pending={3} total={4} />,
+    );
+    expect(screen.getByRole('progressbar')).toBeDefined();
+    expect(screen.getByText(/1 of 4/)).toBeDefined();
+  });
+
+  it('hides count text but keeps the bar when showCounts is false', async () => {
+    const { render, screen } = await import('@testing-library/react');
+    const { TripProgressBar } = await import('./shared');
+
+    render(
+      <TripProgressBar
+        batchStatus="in_progress"
+        collected={1}
+        missed={0}
+        pending={3}
+        total={4}
+        showCounts={false}
+      />,
+    );
+    expect(screen.getByRole('progressbar')).toBeDefined();
+    expect(screen.queryByText(/1 of 4/)).toBeNull();
+    expect(screen.queryByText(/3 left/)).toBeNull();
+    // Screen readers still get progress through the accessible label.
+    expect(screen.getByLabelText(/Trip progress In progress, 1 of 4 collected/)).toBeDefined();
+  });
+});
 describe('Pager', () => {
   it('renders per-page size options when onPerPageChange is provided', async () => {
     const { render, screen, fireEvent } = await import('@testing-library/react');

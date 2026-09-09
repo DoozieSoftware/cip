@@ -20,6 +20,7 @@ final class TextileCollectionResource extends JsonResource
         $zone = $this->resource->relationLoaded('serviceZone') ? $this->resource->serviceZone : null;
         $batch = $this->resource->relationLoaded('batch') ? $this->resource->batch : null;
         $department = $this->resource->relationLoaded('department') ? $this->resource->department : null;
+        $dropoffCentre = $this->resource->relationLoaded('dropoffCentre') ? $this->resource->dropoffCentre : null;
 
         return [
             'id' => $this->resource->id,
@@ -69,6 +70,11 @@ final class TextileCollectionResource extends JsonResource
                 'name' => $zone->name,
                 'dropoff_name' => $zone->dropoff_name,
                 'dropoff_address' => $zone->dropoff_address,
+            ],
+            'dropoff_centre' => $dropoffCentre === null ? null : [
+                'id' => $dropoffCentre->id,
+                'name' => $dropoffCentre->name,
+                'address' => $dropoffCentre->address,
             ],
             'batch' => $batch === null ? null : [
                 'id' => $batch->id,

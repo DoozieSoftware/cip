@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, type JSX } from 'react';
-import { IconCamera } from '@tabler/icons-react';
+import { IconCamera, IconPhoto } from '@tabler/icons-react';
 import type { TextileCollectionListItem } from '../../../api/textileApi';
+import { CameraCapture } from '../../../../citizen/components/CameraCapture';
 import { validatePhotoFile } from '../photoCapture';
 
 export function StopRecordForm({
@@ -18,6 +19,8 @@ export function StopRecordForm({
   const [preview, setPreview] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [reason, setReason] = useState('');
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const ref = useRef<HTMLInputElement>(null);
   useEffect(
     () => () => {
@@ -128,10 +131,21 @@ export function StopRecordForm({
         <div className="mt-1.5 flex flex-wrap items-center gap-2.5">
           <button
             type="button"
-            onClick={() => ref.current?.click()}
+            onClick={() => {
+              setCameraError(null);
+              setShowCamera(true);
+            }}
             className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-xs font-bold text-slate-800 shadow-2xs transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-900"
           >
             <IconCamera className="h-4 w-4 text-slate-600" />
+            Take photo
+          </button>
+          <button
+            type="button"
+            onClick={() => ref.current?.click()}
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-xs font-bold text-slate-800 shadow-2xs transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-900"
+          >
+            <IconPhoto className="h-4 w-4 text-slate-600" />
             {file ? 'Replace photo' : 'Choose proof photo'}
           </button>
           {preview ? (
@@ -147,6 +161,43 @@ export function StopRecordForm({
             </div>
           ) : null}
         </div>
+        {showCamera ? (
+          <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+            <CameraCapture
+              mode="photo"
+              onCapture={(f) => {
+                setCameraError(null);
+                setShowCamera(false);
+                handle(f);
+              }}
+              onError={(e) => setCameraError(e.message)}
+            />
+            {cameraError ? (
+              <p role="status" className="mt-2 text-[11px] text-slate-600">
+                {cameraError} You can choose a photo file instead.
+              </p>
+            ) : null}
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setShowCamera(false)}
+                className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-4 text-xs font-bold text-slate-800 shadow-2xs transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              >
+                Cancel camera
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCamera(false);
+                  ref.current?.click();
+                }}
+                className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-4 text-xs font-bold text-slate-800 shadow-2xs transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              >
+                Choose a file instead
+              </button>
+            </div>
+          </div>
+        ) : null}
         <p className="mt-1.5 text-[11px] text-slate-500">JPG, PNG or WebP, up to 10 MB.</p>
       </div>
 
@@ -163,17 +214,17 @@ export function StopRecordForm({
           Variance: {varianceBags > 0 ? `+${varianceBags}` : `${varianceBags}`} bags,{' '}
           {varianceKg > 0 ? '+' : ''}
           {varianceKg.toFixed(1)} kg ({variancePct.toFixed(0)}%){' '}
-          {needsReason ? '— reason required' : ''}
+          {needsReason ? '— remarks required' : ''}
         </p>
       ) : null}
 
       {needsReason ? (
         <label className="mt-3 block text-xs font-semibold text-slate-800">
-          Reason <span className="text-red-700">*</span>
+          Remarks <span className="text-red-700">*</span>
           <input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Why the actual differs from estimate"
+            placeholder="Brief remark — e.g. half a kg more than estimated"
             className="mt-1 block w-full min-h-11 rounded-lg border border-amber-300 bg-amber-50/40 px-3 text-sm text-slate-900 shadow-2xs focus:border-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
           />
         </label>
@@ -206,7 +257,7 @@ export function StopRecordForm({
 
       {!can ? (
         <p className="mt-2 text-center text-xs text-slate-500">
-          Enter bags, weight, photo{needsReason ? ' and reason' : ''} to confirm.
+          Enter bags, weight, photo{needsReason ? ' and remarks' : ''} to confirm.
         </p>
       ) : null}
     </div>

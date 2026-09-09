@@ -24,7 +24,7 @@ final class UpdateCapacityRuleRequest extends FormRequest
             'max_weight_kg' => ['nullable', 'numeric', 'min:0.1', 'max:100000'],
             'max_stops' => ['nullable', 'integer', 'min:1', 'max:500'],
             'min_bags' => ['nullable', 'integer', 'min:0', 'max:10000'],
-            'min_weight_kg' => ['nullable', 'numeric', 'min:0', 'max:100000'],
+            'min_weight_kg' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'vehicle_requirements' => ['nullable', 'array'],
             'category_allowlist' => ['nullable', 'array'],
             'category_allowlist.*' => ['string', 'in:clothes_waste,metal_scrap,e_waste'],

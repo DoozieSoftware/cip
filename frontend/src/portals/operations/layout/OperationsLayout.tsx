@@ -54,9 +54,15 @@ const NAV: NavItem[] = [
     departmentCode: 'DR_LINEN',
   },
   {
-    to: '/operations/textile-collections/dispatch',
-    label: 'Dispatch board',
+    to: '/operations/textile-collections/collections',
+    label: 'Collections',
     icon: IconTruck,
+    departmentCode: 'DR_LINEN',
+  },
+  {
+    to: '/operations/textile-collections/centres',
+    label: 'Centres',
+    icon: IconBuildingCommunity,
     departmentCode: 'DR_LINEN',
   },
   {
@@ -112,19 +118,24 @@ const DR_LINEN_NAV: NavItem[] = [
     mobile: true,
   },
   {
-    to: '/operations/textile-collections/receipt',
-    label: 'Receipt',
+    to: '/operations/textile-collections/pickup-requests',
+    label: 'Pickup request',
     icon: IconClipboardList,
     mobile: true,
   },
   {
-    to: '/operations/textile-collections/dispatch',
-    label: 'Dispatch',
+    to: '/operations/textile-collections/collections',
+    label: 'Collections',
     icon: IconTruck,
     mobile: true,
   },
+  {
+    to: '/operations/textile-collections/centres',
+    label: 'Centres',
+    icon: IconBuildingCommunity,
+  },
   { to: '/operations/textile-collections/completed', label: 'History', icon: IconHistory },
-  { to: '/operations/textile-collections/recovery', label: 'Device uploads', icon: IconShield },
+  { to: '/operations/textile-collections/reuploads', label: 'Reupload', icon: IconShield },
   {
     to: '/operations/textile-collections/offline-recovery',
     label: 'Server failures',

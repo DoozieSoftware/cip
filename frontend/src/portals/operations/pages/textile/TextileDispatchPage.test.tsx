@@ -91,7 +91,7 @@ describe('TextileDispatchPage', () => {
     } as unknown as ReturnType<typeof useTextileQueue>);
   });
 
-  it('does not expose a manual refresh action on the dispatch board', () => {
+  it('does not expose a manual refresh action on the collections board', () => {
     renderPage();
 
     expect(screen.queryByRole('button', { name: 'Refresh' })).not.toBeInTheDocument();
@@ -103,7 +103,7 @@ describe('TextileDispatchPage', () => {
     const stopLink = screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ });
     expect(stopLink).toBeVisible();
     expect(stopLink.getAttribute('href')).toBe(
-      '/operations/textile-collections/dispatch/batch-1/stops/collection-1',
+      '/operations/textile-collections/collections/batch-1/stops/collection-1',
     );
     // Stop-work actions live on the stop page, not inline on the board.
     expect(screen.queryByRole('button', { name: 'Mark missed' })).not.toBeInTheDocument();
@@ -220,5 +220,40 @@ describe('TextileDispatchPage', () => {
     // All stops exist in the DOM (table + drawer)
     const allLinks = screen.getAllByRole('link', { name: /Stop \d+: Customer/ });
     expect(allLinks.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it('keeps trip counts on the board but hides them in the route drawer', () => {
+    const fourStops: TextileCollectionListItem[] = Array.from({ length: 4 }, (_, i) => ({
+      ...ITEM,
+      id: `collection-${i + 1}`,
+      reference: `DLN-2026-STOP${i + 1}`,
+      requester_name: `Customer ${i + 1}`,
+      pickup_address: `${i + 10} Main St, Bengaluru 5600${i + 10}`,
+      status: i === 0 ? 'picked_up' : 'scheduled',
+    }));
+
+    vi.mocked(useTextileQueue).mockReturnValue({
+      data: {
+        data: fourStops,
+        meta: { page: 1, per_page: 25, total: 4, last_page: 1 },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useTextileQueue>);
+
+    renderPage();
+
+    // Board-level progress keeps the count text.
+    expect(screen.getAllByText(/1 of 4/).length).toBeGreaterThanOrEqual(1);
+
+    // Open the route details side panel.
+    fireEvent.click(screen.getByText('DRL-260826-XX11TO'));
+    const drawer = screen.getByRole('complementary', { name: 'Route details drawer' });
+    expect(within(drawer).getByRole('progressbar')).toBeInTheDocument();
+    expect(within(drawer).queryByText(/1 of 4 collected/)).not.toBeInTheDocument();
+    expect(within(drawer).queryByText(/3 left/)).not.toBeInTheDocument();
+    // Per-stop status chips stay glanceable inside the drawer.
+    expect(within(drawer).getAllByText('Collected').length).toBeGreaterThanOrEqual(1);
   });
 });

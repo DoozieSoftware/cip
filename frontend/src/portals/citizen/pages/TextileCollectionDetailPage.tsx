@@ -250,7 +250,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
         </p>
         <h1 className="mt-2 break-words text-2xl font-normal tracking-[-0.025em]">{item.title}</h1>
         <p className="mt-1 inline-flex rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 text-xs font-medium">
-          {isDropoff ? 'Drop-off at a centre' : 'Pickup at your address'}
+          {isDropoff ? 'Drop at center' : 'Pick up from location'}
         </p>
         <p className="mt-3 text-sm font-medium">{heading}</p>
         {item.rejection_reason ? (
@@ -366,12 +366,16 @@ export default function TextileCollectionDetailPage(): JSX.Element {
       ) : null}
 
       <section className="grid gap-3 sm:grid-cols-2">
-        <Detail
-          icon={IconMapPin}
-          label={isDropoff ? 'Your address' : 'Pickup address'}
-          value={item.pickup_address}
-          hint={isDropoff ? 'for contact and receipt only — not a pickup point' : undefined}
-        />
+        {/* #16: drop-off collects no address — only show the block when there is
+            an address to display (older rows) or the request is a pickup. */}
+        {!isDropoff || item.pickup_address.trim().length > 0 ? (
+          <Detail
+            icon={IconMapPin}
+            label={isDropoff ? 'Your address' : 'Pickup address'}
+            value={item.pickup_address}
+            hint={isDropoff ? 'for contact and receipt only — not a pickup point' : undefined}
+          />
+        ) : null}
         <Detail
           icon={IconPackage}
           label="Estimated collection"
@@ -390,7 +394,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
         <Detail
           icon={IconPackage}
           label="Collection method"
-          value={isDropoff ? 'Drop-off at a centre' : 'Pickup at your address'}
+          value={isDropoff ? 'Drop at center' : 'Pick up from location'}
         />
       </section>
 

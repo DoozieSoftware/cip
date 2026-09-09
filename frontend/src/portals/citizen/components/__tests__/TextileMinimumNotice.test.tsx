@@ -38,15 +38,30 @@ describe('TextileMinimumNotice', () => {
     expect(screen.getByText(/No pickup minimum is set for your area/)).toBeInTheDocument();
   });
 
-  it('renders minimum with bags and guidance text', () => {
+  it('shows empty state when only a bag minimum is configured (weight-only rule)', () => {
+    // #14: min_bags is kept for records but never enforced or advertised.
+    render(
+      <TextileMinimumNotice
+        minimum={{
+          service_zone_id: 'z1',
+          min_bags: 5,
+          min_weight_kg: null,
+          guidance_text: null,
+        }}
+      />,
+    );
+    expect(screen.getByText(/No pickup minimum is set for your area/)).toBeInTheDocument();
+  });
+
+  it('renders weight-only minimum with guidance text', () => {
     const minimum: TextileCapacityMinimum = {
       service_zone_id: 'z1',
       min_bags: 5,
-      min_weight_kg: 10,
+      min_weight_kg: 4,
       guidance_text: 'Keep bags dry.',
     };
-    render(<TextileMinimumNotice minimum={minimum} estimatedBags={6} estimatedWeightKg={12} />);
-    expect(screen.getByText(/5 bags or 10 kg/)).toBeInTheDocument();
+    render(<TextileMinimumNotice minimum={minimum} estimatedBags={60} estimatedWeightKg={12} />);
+    expect(screen.getByText(/4 kg/)).toBeInTheDocument();
     expect(screen.getByText(/Keep bags dry/)).toBeInTheDocument();
     expect(screen.getByText(/Your estimate meets the guidance/)).toBeInTheDocument();
   });
@@ -54,31 +69,32 @@ describe('TextileMinimumNotice', () => {
   it('renders minimum without guidance fallback', () => {
     const minimum: TextileCapacityMinimum = {
       service_zone_id: 'z1',
-      min_bags: 3,
-      min_weight_kg: null,
+      min_bags: null,
+      min_weight_kg: 4,
       guidance_text: null,
     };
-    render(<TextileMinimumNotice minimum={minimum} estimatedBags={5} />);
-    expect(screen.getByText(/3 bags/)).toBeInTheDocument();
-    expect(screen.getByText(/Fill bags or kg/)).toBeInTheDocument();
+    render(<TextileMinimumNotice minimum={minimum} estimatedWeightKg={5} />);
+    expect(screen.getByText(/4 kg/)).toBeInTheDocument();
+    expect(screen.getByText(/only weight counts toward the pickup minimum/)).toBeInTheDocument();
   });
 
-  it('blocks home pickup guidance when below minimum by bags', () => {
+  it('blocks home pickup guidance when below minimum by weight', () => {
     const minimum: TextileCapacityMinimum = {
       service_zone_id: 'z1',
-      min_bags: 5,
-      min_weight_kg: null,
+      min_bags: null,
+      min_weight_kg: 4,
       guidance_text: null,
     };
     render(
       <TextileMinimumNotice
         minimum={minimum}
-        estimatedBags={2}
+        estimatedWeightKg={2}
         isLoading={false}
         isError={false}
       />,
     );
     expect(screen.getByText(/Below the pickup minimum/)).toBeInTheDocument();
+    expect(screen.getByText(/Home pickup needs at least 4 kg/)).toBeInTheDocument();
     expect(screen.getByText(/Small loads waste a trip/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /note|exception/i })).not.toBeInTheDocument();
   });
@@ -95,14 +111,26 @@ describe('TextileMinimumNotice', () => {
     expect(screen.getByText(/Keep bags dry/)).toBeInTheDocument();
   });
 
-  it('does not show a minimum block when either estimate meets the minimum', () => {
+  it('lets any bag count pass when no weight is entered', () => {
     const minimum: TextileCapacityMinimum = {
       service_zone_id: 'z1',
-      min_bags: 3,
-      min_weight_kg: 5,
+      min_bags: 50,
+      min_weight_kg: 4,
       guidance_text: null,
     };
-    render(<TextileMinimumNotice minimum={minimum} estimatedBags={5} estimatedWeightKg={2} />);
+    render(<TextileMinimumNotice minimum={minimum} estimatedBags={1} />);
+    expect(screen.queryByText(/Below the pickup minimum/)).not.toBeInTheDocument();
+    expect(screen.getByText(/meets the guidance/)).toBeInTheDocument();
+  });
+
+  it('does not show a minimum block when the weight meets the minimum', () => {
+    const minimum: TextileCapacityMinimum = {
+      service_zone_id: 'z1',
+      min_bags: 50,
+      min_weight_kg: 4,
+      guidance_text: null,
+    };
+    render(<TextileMinimumNotice minimum={minimum} estimatedBags={1} estimatedWeightKg={4} />);
     expect(screen.queryByText(/Below the pickup minimum/)).not.toBeInTheDocument();
     expect(screen.getByText(/meets the guidance/)).toBeInTheDocument();
   });
@@ -128,12 +156,12 @@ describe('TextileMinimumNotice', () => {
   it('explains how to proceed when pickup is below minimum', () => {
     const minimum: TextileCapacityMinimum = {
       service_zone_id: 'z1',
-      min_bags: 5,
-      min_weight_kg: null,
+      min_bags: null,
+      min_weight_kg: 4,
       guidance_text: null,
     };
-    render(<TextileMinimumNotice minimum={minimum} estimatedBags={1} />);
-    expect(screen.getByText(/Add more bags, or choose drop-off/)).toBeInTheDocument();
+    render(<TextileMinimumNotice minimum={minimum} estimatedWeightKg={1} />);
+    expect(screen.getByText(/Add more weight, or choose drop-off/)).toBeInTheDocument();
   });
 });
 
@@ -152,49 +180,38 @@ describe('isBelowMinimum helper', () => {
     expect(isBelowMinimum(null, 1, 1, 'premises')).toBe(false);
   });
 
-  it('returns false when no thresholds configured', () => {
+  it('returns false when no weight threshold configured', () => {
     const minimum: TextileCapacityMinimum = {
       service_zone_id: 'z1',
-      min_bags: null,
+      min_bags: 5,
       min_weight_kg: null,
       guidance_text: null,
     };
     expect(isBelowMinimum(minimum, 1, 1, 'premises')).toBe(false);
   });
 
-  it('returns true when bags below', () => {
+  it('ignores the bag count entirely (weight-only rule)', () => {
     const minimum: TextileCapacityMinimum = {
       service_zone_id: 'z1',
-      min_bags: 5,
-      min_weight_kg: null,
+      min_bags: 50,
+      min_weight_kg: 4,
       guidance_text: null,
     };
-    expect(isBelowMinimum(minimum, 2, null, 'premises')).toBe(true);
-    expect(isBelowMinimum(minimum, 5, null, 'premises')).toBe(false);
-    expect(isBelowMinimum(minimum, 6, null, 'premises')).toBe(false);
+    // One bag would fail the old bags rule but passes now.
+    expect(isBelowMinimum(minimum, 1, null, 'premises')).toBe(false);
+    expect(isBelowMinimum(minimum, 0, null, 'premises')).toBe(false);
   });
 
-  it('returns true when weight below', () => {
+  it('returns true when weight below, false when weight meets the minimum', () => {
     const minimum: TextileCapacityMinimum = {
       service_zone_id: 'z1',
       min_bags: null,
-      min_weight_kg: 10,
+      min_weight_kg: 4,
       guidance_text: null,
     };
-    expect(isBelowMinimum(minimum, null, 5, 'premises')).toBe(true);
-  });
-
-  it('accepts either configured minimum', () => {
-    const minimum: TextileCapacityMinimum = {
-      service_zone_id: 'z1',
-      min_bags: 5,
-      min_weight_kg: 10,
-      guidance_text: null,
-    };
-    expect(isBelowMinimum(minimum, 2, 20, 'premises')).toBe(false);
-    expect(isBelowMinimum(minimum, 10, 2, 'premises')).toBe(false);
-    expect(isBelowMinimum(minimum, 2, 2, 'premises')).toBe(true);
-    expect(isBelowMinimum(minimum, 10, 20, 'premises')).toBe(false);
+    expect(isBelowMinimum(minimum, null, 3, 'premises')).toBe(true);
+    expect(isBelowMinimum(minimum, null, 4, 'premises')).toBe(false);
+    expect(isBelowMinimum(minimum, null, 6, 'premises')).toBe(false);
   });
 
   it('handles null estimates without throwing', () => {

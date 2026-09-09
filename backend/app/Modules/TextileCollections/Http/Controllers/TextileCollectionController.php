@@ -50,6 +50,7 @@ use App\Modules\TextileCollections\Services\TextileRescheduleService;
 use App\Modules\TextileCollections\Services\TextileTripService;
 use App\Modules\TextileCollections\Services\TextileUnavailabilityService;
 use App\Modules\Users\Models\User;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -79,7 +80,10 @@ final class TextileCollectionController extends BaseController
     {
         $query = TextileServiceZone::query()
             ->where('active', true)
-            ->with('department')
+            ->with(['department', 'dropoffCentres' => function ($centres): void {
+                assert($centres instanceof HasMany);
+                $centres->where('active', true);
+            }])
             ->orderBy('name');
 
         $category = $request->query('category');
@@ -280,7 +284,7 @@ final class TextileCollectionController extends BaseController
             longitude: $this->optionalFloat($data, 'longitude'),
         );
 
-        $collection->load(['citizen', 'serviceZone', 'batch', 'photos', 'department']);
+        $collection->load(['citizen', 'serviceZone', 'dropoffCentre', 'batch', 'photos', 'department']);
 
         return $this->respond(
             (new TextileCollectionResource($collection))->toArray($request),
@@ -294,7 +298,7 @@ final class TextileCollectionController extends BaseController
         $user = $this->authenticatedUser($request);
         $items = TextileCollectionRequest::query()
             ->where('citizen_id', $user->id)
-            ->with(['serviceZone', 'batch', 'photos', 'department'])
+            ->with(['serviceZone', 'dropoffCentre', 'batch', 'photos', 'department'])
             ->latest('created_at')
             ->get();
 
@@ -309,7 +313,7 @@ final class TextileCollectionController extends BaseController
             throw ApiException::forbidden('You cannot view this collection request.');
         }
 
-        return $this->respond((new TextileCollectionResource($collection->load(['serviceZone', 'batch', 'photos', 'department'])))->toArray($request));
+        return $this->respond((new TextileCollectionResource($collection->load(['serviceZone', 'dropoffCentre', 'batch', 'photos', 'department'])))->toArray($request));
     }
 
     public function index(Request $request): JsonResponse
@@ -329,7 +333,7 @@ final class TextileCollectionController extends BaseController
             : [];
 
         $page = TextileCollectionRequest::query()
-            ->with(['citizen', 'serviceZone', 'batch.assignedUser', 'photos', 'department'])
+            ->with(['citizen', 'serviceZone', 'dropoffCentre', 'batch.assignedUser', 'photos', 'department'])
             ->where('department_id', $resolved->id)
             ->when($statuses !== [], fn ($query) => $query->whereIn('status', $statuses))
             ->when(is_string($zoneId) && $zoneId !== '', fn ($query) => $query->where('service_zone_id', $zoneId))
@@ -370,7 +374,7 @@ final class TextileCollectionController extends BaseController
     {
         $this->assertCollectionPartner($request, $collection);
 
-        return $this->respond((new TextileCollectionResource($collection->load(['citizen', 'serviceZone', 'batch', 'photos', 'department'])))->toArray($request));
+        return $this->respond((new TextileCollectionResource($collection->load(['citizen', 'serviceZone', 'dropoffCentre', 'batch', 'photos', 'department'])))->toArray($request));
     }
 
     public function approve(TextileCollectionRequest $collection, ApproveTextileCollectionRequest $request): JsonResponse
@@ -1419,6 +1423,17 @@ final class TextileCollectionController extends BaseController
         $timeseries = $this->reporting->timeseries($dept->id, $start, $end, $granularity);
 
         return $this->respond(array_merge($dashboard, ['timeseries' => $timeseries, 'granularity' => $granularity]));
+    }
+
+    /**
+     * Live operations snapshot for the capacity dashboard strip.
+     * Partner-scoped via assertCollectionPartner; read-only so no audit row.
+     */
+    public function reportingLive(Request $request): JsonResponse
+    {
+        $dept = $this->assertCollectionPartner($request);
+
+        return $this->respond($this->reporting->liveSnapshot($dept->id));
     }
 
     public function reportingExport(Request $request): Response

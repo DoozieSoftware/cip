@@ -130,13 +130,11 @@ final class TextileCapacityService
         $totalWeight = 0.0;
         $stops = $requests->count();
         $categories = [];
-        $hasBagEstimate = false;
         $hasWeightEstimate = false;
 
         foreach ($requests as $req) {
             $totalBags += (int) ($req->estimated_bags ?? 0);
             $totalWeight += (float) ($req->estimated_weight_kg ?? 0);
-            $hasBagEstimate = $hasBagEstimate || $req->estimated_bags !== null;
             $hasWeightEstimate = $hasWeightEstimate || $req->estimated_weight_kg !== null;
 
             if (is_string($req->category) && $req->category !== '') {
@@ -193,33 +191,15 @@ final class TextileCapacityService
                 }
             }
 
-            if ($effectiveRule->min_bags !== null || $effectiveRule->min_weight_kg !== null) {
-                $minimumChecks = [];
-                $minMsgParts = [];
-
-                if ($effectiveRule->min_bags !== null && $hasBagEstimate) {
-                    $minimumChecks[] = $totalBags >= $effectiveRule->min_bags;
-
-                    if ($totalBags < $effectiveRule->min_bags) {
-                        $minMsgParts[] = "{$totalBags} bags below minimum {$effectiveRule->min_bags}";
-                    }
-                }
-
-                if ($effectiveRule->min_weight_kg !== null && $hasWeightEstimate) {
-                    $minimumChecks[] = $totalWeight >= $effectiveRule->min_weight_kg;
-
-                    if ($totalWeight < $effectiveRule->min_weight_kg) {
-                        $minMsgParts[] = "{$totalWeight} kg below minimum {$effectiveRule->min_weight_kg} kg";
-                    }
-                }
-
-                if ($minimumChecks !== [] && ! in_array(true, $minimumChecks, true)) {
-                    $guidance = is_string($effectiveRule->guidance_text) && $effectiveRule->guidance_text !== '' ? " {$effectiveRule->guidance_text}" : '';
-                    $blockers[] = [
-                        'code' => 'below_minimum',
-                        'message' => 'Trip is '.implode(' and ', $minMsgParts).'.'.$guidance,
-                    ];
-                }
+            // Pickup minimum is weight-only (whole kg) for premises requests.
+            // min_bags stays on the rule record but is never enforced.
+            if ($effectiveRule->min_weight_kg !== null && $hasWeightEstimate
+                && $totalWeight < (float) $effectiveRule->min_weight_kg) {
+                $guidance = is_string($effectiveRule->guidance_text) && $effectiveRule->guidance_text !== '' ? " {$effectiveRule->guidance_text}" : '';
+                $blockers[] = [
+                    'code' => 'below_minimum',
+                    'message' => 'Trip is '.$this->formatKg($totalWeight).' kg below minimum '.$this->formatKg($effectiveRule->min_weight_kg).' kg.'.$guidance,
+                ];
             }
         }
 
@@ -325,10 +305,14 @@ final class TextileCapacityService
         return $query->orderByDesc('updated_at')->first();
     }
 
+    /**
+     * Weight-only pickup minimum for premises requests. Bag counts are
+     * accepted at any size — min_bags stays on the rule record but is
+     * never enforced.
+     */
     public function assertPickupMinimum(
         string $serviceZoneId,
         string $departmentId,
-        ?int $estimatedBags,
         ?float $estimatedWeightKg,
         ?string $date = null,
     ): void {
@@ -338,30 +322,22 @@ final class TextileCapacityService
             return;
         }
 
-        $checks = [];
-        $minimums = [];
-
-        if ($rule->min_bags !== null && $estimatedBags !== null) {
-            $checks[] = $estimatedBags >= $rule->min_bags;
-            $minimums[] = "{$rule->min_bags} bags";
-        }
-
-        if ($rule->min_weight_kg !== null && $estimatedWeightKg !== null) {
-            $checks[] = $estimatedWeightKg >= $rule->min_weight_kg;
-            $minimums[] = "{$rule->min_weight_kg} kg";
-        }
-
-        if ($checks === [] || in_array(true, $checks, true)) {
+        if ($rule->min_weight_kg === null || $estimatedWeightKg === null) {
             return;
         }
 
+        if ($estimatedWeightKg >= (float) $rule->min_weight_kg) {
+            return;
+        }
+
+        $minimumKg = $this->formatKg($rule->min_weight_kg);
+
         throw new ApiException(
             'PICKUP_MINIMUM_NOT_MET',
-            'Home pickup requires at least '.implode(' or ', $minimums).'. Add more material or choose drop-off.',
+            "Home pickup requires at least {$minimumKg} kg. Add more material or choose drop-off.",
             422,
             [
-                'min_bags' => $rule->min_bags,
-                'min_weight_kg' => $rule->min_weight_kg !== null ? (float) $rule->min_weight_kg : null,
+                'min_weight_kg' => $minimumKg,
             ],
         );
     }
@@ -500,6 +476,17 @@ final class TextileCapacityService
         }
 
         return (int) round(($value / $max) * 100);
+    }
+
+    /**
+     * Render a kg value without trailing decimals when whole, since the
+     * pickup minimum is enforced in whole kilograms.
+     */
+    private function formatKg(mixed $value): int|float
+    {
+        $weight = is_numeric($value) ? (float) $value : 0.0;
+
+        return floor($weight) === $weight ? (int) $weight : round($weight, 2);
     }
 
     /**

@@ -68,7 +68,7 @@ function dropoffPayload(TextileServiceZone $zone, array $overrides = []): array
         'pickup_address' => '12 MG Road',
         'collection_method' => 'dropoff',
         'estimated_bags' => 2,
-        'estimated_weight_kg' => 5.0,
+        'estimated_weight_kg' => 5,
     ], $overrides);
 }
 

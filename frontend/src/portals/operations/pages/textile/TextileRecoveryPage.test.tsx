@@ -48,7 +48,7 @@ describe('TextileRecoveryPage', () => {
   it('renders empty state when there are no failed uploads', () => {
     renderPage();
 
-    expect(screen.getByRole('heading', { name: 'Upload recovery' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Reupload' })).toBeInTheDocument();
     expect(screen.getByText('No pending or failed uploads')).toBeInTheDocument();
   });
 

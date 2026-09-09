@@ -28,7 +28,7 @@ final class TextileServiceZone extends Model
         'operating_hours', 'public_phone', 'centre_status', 'centre_closed_note',
         'receipt_requires_photo', 'receipt_requires_bags', 'receipt_requires_weight',
         'max_open_dropoffs_per_citizen',
-    ]; // TODO D-01..D-03,D-07 zone config; separate dropoff_centres pending D-01 option b
+    ]; // TODO D-01..D-03,D-07 zone config; legacy single-centre dropoff_name/dropoff_address kept for back-compat — see TextileDropoffCentre for multi-centre support
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -57,5 +57,11 @@ final class TextileServiceZone extends Model
     public function requests(): HasMany
     {
         return $this->hasMany(TextileCollectionRequest::class, 'service_zone_id');
+    }
+
+    /** @return HasMany<TextileDropoffCentre, $this> */
+    public function dropoffCentres(): HasMany
+    {
+        return $this->hasMany(TextileDropoffCentre::class, 'service_zone_id')->orderBy('sort_order')->orderBy('name');
     }
 }

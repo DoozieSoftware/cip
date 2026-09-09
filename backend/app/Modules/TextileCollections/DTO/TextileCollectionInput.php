@@ -16,10 +16,11 @@ final readonly class TextileCollectionInput
         public ?string $rwaName,
         public string $contactEmail,
         public string $contactPhone,
-        public string $pickupAddress,
+        public ?string $pickupAddress,
         public string $collectionMethod,
         public ?int $estimatedBags,
         public ?float $estimatedWeightKg,
+        public ?string $dropoffCentreId = null,
     ) {}
 
     /** @param array<mixed, mixed> $values */
@@ -39,10 +40,11 @@ final readonly class TextileCollectionInput
             rwaName: self::nullableString($values, 'rwa_name'),
             contactEmail: self::string($values, 'contact_email'),
             contactPhone: self::string($values, 'contact_phone'),
-            pickupAddress: self::string($values, 'pickup_address'),
+            pickupAddress: self::nullableString($values, 'pickup_address'),
             collectionMethod: self::string($values, 'collection_method'),
             estimatedBags: is_numeric($values['estimated_bags'] ?? null) ? (int) $values['estimated_bags'] : null,
             estimatedWeightKg: is_numeric($values['estimated_weight_kg'] ?? null) ? (float) $values['estimated_weight_kg'] : null,
+            dropoffCentreId: self::nullableString($values, 'dropoff_centre_id'),
         );
     }
 

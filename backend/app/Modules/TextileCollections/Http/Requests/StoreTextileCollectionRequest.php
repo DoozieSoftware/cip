@@ -27,12 +27,13 @@ final class StoreTextileCollectionRequest extends FormRequest
                 Rule::in(TextileCollectionRequest::VALID_CATEGORIES),
             ],
             'service_zone_id' => ['required', 'uuid', 'exists:textile_service_zones,id'],
+            'dropoff_centre_id' => ['nullable', 'uuid', 'exists:textile_dropoff_centres,id'],
             'requester_type' => ['required', Rule::in(['individual', 'rwa'])],
             'requester_name' => ['required', 'string', 'min:2', 'max:255'],
             'rwa_name' => ['required_if:requester_type,rwa', 'nullable', 'string', 'min:2', 'max:255'],
             'contact_email' => ['required', 'email:rfc', 'max:255'],
             'contact_phone' => ['required', 'string', 'regex:/^[0-9+() -]{8,20}$/'],
-            'pickup_address' => ['required', 'string', 'min:10', 'max:1000'],
+            'pickup_address' => ['required_if:collection_method,premises', 'nullable', 'string', 'min:10', 'max:1000'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'collection_method' => ['required', Rule::in(['dropoff', 'premises'])],
@@ -49,9 +50,9 @@ final class StoreTextileCollectionRequest extends FormRequest
             'estimated_weight_kg' => [
                 'nullable',
                 'required_without:estimated_bags',
-                'numeric',
-                'min:0.1',
-                'max:99999.99',
+                'integer',
+                'min:1',
+                'max:99999',
             ],
         ];
     }

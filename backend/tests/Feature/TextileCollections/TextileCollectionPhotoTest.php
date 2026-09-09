@@ -52,7 +52,7 @@ function createTextileRequestPhoto(User $citizen, TextileServiceZone $zone): Tex
         'pickup_address' => '12, MG Road, Bengaluru 560001',
         'collection_method' => 'premises',
         'estimated_bags' => 3,
-        'estimated_weight_kg' => 8.5,
+        'estimated_weight_kg' => 8,
     ]);
 
     $response->assertCreated();
@@ -252,7 +252,7 @@ it('returns 422 PROOF_PHOTO_REQUIRED when recording collected without a proof ph
     $this->postJson("/api/v1/department/textile-collections/{$collection->id}/outcome", [
         'outcome' => 'collected',
         'actual_bags' => 3,
-        'actual_weight_kg' => 8.2,
+        'actual_weight_kg' => 8,
     ])->assertUnprocessable()
         ->assertJsonPath('code', 'PROOF_PHOTO_REQUIRED');
 });
@@ -279,7 +279,7 @@ it('allows recording collected after a proof photo is attached', function (): vo
     $this->postJson("/api/v1/department/textile-collections/{$collection->id}/outcome", [
         'outcome' => 'collected',
         'actual_bags' => 3,
-        'actual_weight_kg' => 8.2,
+        'actual_weight_kg' => 8,
     ])->assertOk()
         ->assertJsonPath('data.status', 'picked_up');
 });

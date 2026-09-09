@@ -393,7 +393,7 @@ export default function TextileSchedulePage(): JSX.Element {
           })}
           {hiddenDropoffCount > 0 ? (
             <p className="text-xs text-[var(--color-text-secondary)]">
-              {hiddenDropoffCount} drop-off booking(s) hidden — use Centre receipt.
+              {hiddenDropoffCount} drop-off booking(s) hidden — use Pickup request.
             </p>
           ) : null}
           {selectedZoneIds.size > 1 ? (

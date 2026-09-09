@@ -347,8 +347,8 @@ export default function TextileStopPage(): JSX.Element {
       toolbar={
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            to="/operations/textile-collections/dispatch"
-            aria-label="Back to dispatch board"
+            to="/operations/textile-collections/collections"
+            aria-label="Back to collections"
             className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-4 text-[14px] font-medium text-[var(--color-ink)] shadow-sm transition-colors hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
           >
             <IconArrowLeft className="h-4 w-4" stroke={2} aria-hidden="true" />
@@ -443,7 +443,7 @@ export default function TextileStopPage(): JSX.Element {
                 <nav aria-label="Stop navigation" className="flex items-center gap-2">
                   {prevStop ? (
                     <Link
-                      to={`/operations/textile-collections/dispatch/${batchId}/stops/${prevStop.id}`}
+                      to={`/operations/textile-collections/collections/${batchId}/stops/${prevStop.id}`}
                       aria-label="Previous stop"
                       className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
                     >
@@ -458,7 +458,7 @@ export default function TextileStopPage(): JSX.Element {
                   )}
                   {nextStop ? (
                     <Link
-                      to={`/operations/textile-collections/dispatch/${batchId}/stops/${nextStop.id}`}
+                      to={`/operations/textile-collections/collections/${batchId}/stops/${nextStop.id}`}
                       aria-label="Next stop"
                       className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
                     >
@@ -478,9 +478,6 @@ export default function TextileStopPage(): JSX.Element {
                 <div className="mt-3.5 border-t border-slate-100 pt-3">
                   <div className="flex items-center justify-between text-xs text-slate-600 mb-1.5">
                     <span className="font-semibold">Route Execution Progress</span>
-                    <span>
-                      {progress.collected} of {progress.total} stops collected
-                    </span>
                   </div>
                   <TripProgressBar
                     batchStatus={batchStatus}
@@ -488,6 +485,7 @@ export default function TextileStopPage(): JSX.Element {
                     missed={progress.missed}
                     pending={progress.pending}
                     total={progress.total}
+                    showCounts={false}
                   />
                 </div>
               ) : null}
@@ -506,7 +504,7 @@ export default function TextileStopPage(): JSX.Element {
                       return (
                         <Link
                           key={stop.id}
-                          to={`/operations/textile-collections/dispatch/${batchId}/stops/${stop.id}`}
+                          to={`/operations/textile-collections/collections/${batchId}/stops/${stop.id}`}
                           className={`group flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-xs transition ${
                             isCurrent
                               ? 'border-slate-900 bg-slate-900 text-white shadow-xs'
@@ -927,7 +925,10 @@ export default function TextileStopPage(): JSX.Element {
 
                     <div>
                       <h2 className="text-lg font-bold text-slate-900">
-                        Stop Successfully Collected
+                        {(item.requester_name ?? '').trim()
+                          ? item.requester_name.trim()
+                          : item.reference}{' '}
+                        collected
                       </h2>
                       <p className="text-xs text-slate-500 mt-1">
                         Verified actuals: {item.actual_bags} bags · {item.actual_weight_kg} kg
@@ -936,7 +937,7 @@ export default function TextileStopPage(): JSX.Element {
 
                     {nextStop ? (
                       <Link
-                        to={`/operations/textile-collections/dispatch/${batchId}/stops/${nextStop.id}`}
+                        to={`/operations/textile-collections/collections/${batchId}/stops/${nextStop.id}`}
                         className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white shadow-sm hover:bg-black transition"
                       >
                         <span>Proceed to Next Stop ({nextStop.requester_name})</span>
@@ -944,11 +945,11 @@ export default function TextileStopPage(): JSX.Element {
                       </Link>
                     ) : (
                       <Link
-                        to="/operations/textile-collections/dispatch"
+                        to="/operations/textile-collections/collections"
                         className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 shadow-2xs hover:bg-slate-50 transition"
                       >
                         <IconArrowLeft className="h-4 w-4" />
-                        <span>Return to Dispatch Board</span>
+                        <span>Return to Collections</span>
                       </Link>
                     )}
                   </section>
@@ -968,7 +969,7 @@ export default function TextileStopPage(): JSX.Element {
 
                     {nextStop ? (
                       <Link
-                        to={`/operations/textile-collections/dispatch/${batchId}/stops/${nextStop.id}`}
+                        to={`/operations/textile-collections/collections/${batchId}/stops/${nextStop.id}`}
                         className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white shadow-sm hover:bg-black transition"
                       >
                         <span>Continue Route (Next: {nextStop.requester_name})</span>
@@ -976,11 +977,11 @@ export default function TextileStopPage(): JSX.Element {
                       </Link>
                     ) : (
                       <Link
-                        to="/operations/textile-collections/dispatch"
+                        to="/operations/textile-collections/collections"
                         className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 shadow-2xs hover:bg-slate-50 transition"
                       >
                         <IconArrowLeft className="h-4 w-4" />
-                        <span>Return to Dispatch Board</span>
+                        <span>Return to Collections</span>
                       </Link>
                     )}
                   </section>

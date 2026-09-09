@@ -21,8 +21,8 @@ Welcome. This guide explains how the collection service works and how to use it 
 flowchart LR
     A[Citizen books<br/>pickup or drop-off] --> B{Staff review}
     B -->|Approve pickup| C[Schedule trip<br/>DRL-]
-    B -->|Approve drop-off| D[Centre receipt]
-    C --> E[Dispatch &<br/>collect]
+    B -->|Approve drop-off| D[Pickup request]
+    C --> E[Collections &<br/>collect]
     E --> F[History &<br/>reports]
     D --> F
     B -->|Reject| G[Reason shown<br/>to citizen]
@@ -36,10 +36,10 @@ flowchart LR
 | Collections (citizen) → list / detail | `/citizen/textile-collections`, `/citizen/textile-collections/:id` |
 | Reviews | `/operations/textile-collections/review` |
 | Trips | `/operations/textile-collections/schedule` |
-| Receipt | `/operations/textile-collections/receipt` |
-| Dispatch | `/operations/textile-collections/dispatch` |
+| Pickup request | `/operations/textile-collections/pickup-requests` |
+| Collections | `/operations/textile-collections/collections` |
 | History | `/operations/textile-collections/completed` |
-| Device uploads | `/operations/textile-collections/recovery` |
+| Reupload | `/operations/textile-collections/reuploads` |
 | Server failures | `/operations/textile-collections/offline-recovery` |
 | Capacity | `/operations/textile-collections/capacity` |
 
@@ -53,8 +53,8 @@ flowchart LR
 
 - [Reviewing requests](staff-review.md)
 - [Planning and scheduling trips](staff-scheduling.md)
-- [Running dispatch and recording collections](staff-dispatch.md)
-- [Confirming centre receipts](staff-receipt.md)
+- [Running collections and recording pickups](staff-dispatch.md)
+- [Confirming pickup requests](staff-receipt.md)
 - [Capacity rules and planning](phase-5-capacity.md)
 - [Reports, exports, and history](phase-6-reporting.md)
 

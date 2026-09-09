@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type JSX } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { Spinner, cx } from '../../../shared/ui';
 import {
   useTextileServiceZones,
@@ -8,7 +8,9 @@ import {
   type TextileCollectionPayload,
   type TextileServiceZone,
 } from '../api/textileZones';
+import { useCitizenContactProfile } from '../api/profile';
 import { isBelowMinimum } from './TextileMinimumNotice';
+import { TextileCentreSelect } from './TextileCentreSelect';
 
 const PHONE_PATTERN = '^[0-9+() -]{8,20}$';
 
@@ -37,6 +39,7 @@ type FieldKey =
   | 'contact_phone'
   | 'pickup_address'
   | 'collection_method'
+  | 'dropoff_centre_id'
   | 'estimated_bags'
   | 'estimated_weight_kg';
 
@@ -77,26 +80,30 @@ function validate(
     errors.contact_phone = 'Enter a valid phone (8-20 digits, spaces allowed).';
   }
   const isDropoff = payload.collection_method === 'dropoff';
-  if (payload.pickup_address.trim().length < 10) {
-    errors.pickup_address = isDropoff
-      ? 'Add a full address for your receipt.'
-      : 'Add a full pickup address.';
+  // Drop-off needs no address (#16): the citizen walks into the centre, so no
+  // personal address is collected or validated for drop-off bookings.
+  if (!isDropoff && payload.pickup_address.trim().length < 10) {
+    errors.pickup_address = 'Add a full pickup address.';
   }
   // Either estimate is enough — requesters often cannot weigh textiles.
   if (payload.estimated_bags === null && payload.estimated_weight_kg === null) {
-    errors.estimated_bags = 'Tell us roughly how many bags, or the approximate weight.';
+    errors.estimated_bags = 'Tell us roughly how many bags, or the approximate weight in whole kg.';
   }
+  // Weight-only whole-kg inputs (#14): digits only, no decimals, no negatives.
   if (
     payload.estimated_bags !== null &&
-    (payload.estimated_bags < 1 || payload.estimated_bags > 999)
+    (!Number.isInteger(payload.estimated_bags) ||
+      payload.estimated_bags < 0 ||
+      payload.estimated_bags > 999)
   ) {
-    errors.estimated_bags = 'Bags must be between 1 and 999.';
+    errors.estimated_bags = 'Bags must be a whole number between 0 and 999.';
   }
-  if (
-    payload.estimated_weight_kg !== null &&
-    (payload.estimated_weight_kg < 0.1 || payload.estimated_weight_kg > 99999.99)
-  ) {
-    errors.estimated_weight_kg = 'Weight must be between 0.1 and 99999.99 kg.';
+  if (payload.estimated_weight_kg !== null) {
+    if (!Number.isInteger(payload.estimated_weight_kg)) {
+      errors.estimated_weight_kg = 'Enter weight in whole kg (no decimals).';
+    } else if (payload.estimated_weight_kg < 0 || payload.estimated_weight_kg > 99999) {
+      errors.estimated_weight_kg = 'Weight must be between 0 and 99999 kg.';
+    }
   }
   if (zone) {
     if (payload.collection_method === 'dropoff' && !zone.methods.includes('dropoff')) {
@@ -104,6 +111,14 @@ function validate(
     }
     if (payload.collection_method === 'premises' && !zone.methods.includes('premises')) {
       errors.collection_method = 'Premises pickup is not available in this zone.';
+    }
+    const openCentres = (zone.centres ?? []).filter((c) => c.active && c.status === 'open');
+    if (
+      payload.collection_method === 'dropoff' &&
+      openCentres.length > 0 &&
+      !openCentres.some((c) => c.id === payload.dropoff_centre_id)
+    ) {
+      errors.dropoff_centre_id = 'Choose a drop-off centre.';
     }
   }
   return errors;
@@ -128,6 +143,7 @@ function buildInitial(
     contact_phone: '',
     pickup_address: '',
     collection_method: method,
+    dropoff_centre_id: null,
     estimated_bags: null,
     estimated_weight_kg: null,
   };
@@ -194,6 +210,26 @@ function TextileCollectionFieldsInner({
     () => value ?? buildInitial(zones[0]?.id, category, zones[0]),
   );
   const [touched, setTouched] = useState<Set<string>>(new Set());
+  const profile = useCitizenContactProfile();
+  const prefilledFromProfile = useRef(false);
+
+  // #12: pre-fill name/email/phone/address from the citizen profile once it
+  // loads. Only fills fields the citizen has not already typed into, and only
+  // while the parent has not supplied a value — never overwrites user input.
+  // Runs once per mount: fields left blank (even if blurred) still pre-fill.
+  useEffect(() => {
+    const contact = profile.data;
+    if (prefilledFromProfile.current || value !== null || !contact) return;
+    prefilledFromProfile.current = true;
+    setDraft((prev) => ({
+      ...prev,
+      requester_name: prev.requester_name !== '' ? prev.requester_name : (contact.name ?? ''),
+      contact_email: prev.contact_email !== '' ? prev.contact_email : (contact.email ?? ''),
+      contact_phone: prev.contact_phone !== '' ? prev.contact_phone : (contact.phone ?? ''),
+      pickup_address:
+        prev.pickup_address !== '' ? prev.pickup_address : (contact.defaultAddress ?? ''),
+    }));
+  }, [profile.data, value]);
 
   useEffect(() => {
     if (value === null && draft.service_zone_id === '' && zones.length > 0) {
@@ -211,6 +247,24 @@ function TextileCollectionFieldsInner({
     [zones, draft.service_zone_id],
   );
 
+  const openCentres = useMemo(
+    () => (selectedZone?.centres ?? []).filter((c) => c.active && c.status === 'open'),
+    [selectedZone],
+  );
+
+  // Centre choice follows the zone: drop a selection that belongs to another
+  // zone, and preselect when the zone lists exactly one open centre.
+  useEffect(() => {
+    const current = draft.dropoff_centre_id ?? null;
+    if (current !== null && openCentres.some((c) => c.id === current)) return;
+    if (openCentres.length === 1 && openCentres[0] && draft.collection_method === 'dropoff') {
+      const onlyId = openCentres[0].id;
+      setDraft((prev) => ({ ...prev, dropoff_centre_id: onlyId }));
+    } else if (current !== null) {
+      setDraft((prev) => ({ ...prev, dropoff_centre_id: null }));
+    }
+  }, [openCentres, draft.dropoff_centre_id, draft.collection_method]);
+
   const dropoffView = useMemo<TextileDropoffView | null>(() => {
     if (draft.collection_method !== 'dropoff' || !selectedZone?.dropoff) {
       return null;
@@ -226,14 +280,22 @@ function TextileCollectionFieldsInner({
     onDropoffChange?.(dropoffView);
   }, [dropoffView, onDropoffChange]);
 
-  const errors = useMemo(() => validate(draft, selectedZone), [draft, selectedZone]);
-  const isValid = Object.keys(errors).length === 0 && draft.service_zone_id !== '';
+  // #16: drop-off collects no address — report an empty pickup_address upward
+  // so no unnecessary personal data leaves the form. The draft keeps any typed
+  // address in memory so switching back to premises restores it.
+  const reported = useMemo<TextileCollectionPayload>(
+    () => (draft.collection_method === 'dropoff' ? { ...draft, pickup_address: '' } : draft),
+    [draft],
+  );
+
+  const errors = useMemo(() => validate(reported, selectedZone), [reported, selectedZone]);
+  const isValid = Object.keys(errors).length === 0 && reported.service_zone_id !== '';
 
   useEffect(() => {
-    onChange(isValid ? draft : null);
+    onChange(isValid ? reported : null);
     onValidityChange(isValid);
-    onDraftChange?.(draft);
-  }, [isValid, draft, onChange, onValidityChange, onDraftChange]);
+    onDraftChange?.(reported);
+  }, [isValid, reported, onChange, onValidityChange, onDraftChange]);
 
   function patch<K extends keyof TextileCollectionPayload>(
     key: K,
@@ -249,14 +311,10 @@ function TextileCollectionFieldsInner({
     draft.collection_method,
   );
 
-  const minParts: string[] = [];
-  if (minimum?.min_bags !== null && minimum?.min_bags !== undefined) {
-    minParts.push(`${minimum.min_bags} bags`);
-  }
-  if (minimum?.min_weight_kg !== null && minimum?.min_weight_kg !== undefined) {
-    minParts.push(`${minimum.min_weight_kg} kg`);
-  }
-  const minText = minParts.join(' or ');
+  // Weight-only minimum (#14): only the kg threshold is shown and enforced.
+  const minWeightKg = minimum?.min_weight_kg ?? null;
+  const minText = minWeightKg !== null && minWeightKg !== undefined ? `${minWeightKg} kg` : '';
+  const isDropoffMethod = draft.collection_method === 'dropoff';
 
   return (
     <div className="space-y-5 rounded-2xl bg-white p-5 sm:p-6 shadow-sm ring-1 ring-black/5">
@@ -401,33 +459,29 @@ function TextileCollectionFieldsInner({
         />
       ) : null}
 
-      <div>
-        <label
-          htmlFor="textile-address"
-          className="block text-sm font-medium text-[var(--color-ink)]"
-        >
-          {draft.collection_method === 'dropoff'
-            ? 'Your address (for contact & receipt)'
-            : 'Pickup address'}
-        </label>
-        <textarea
-          id="textile-address"
-          rows={3}
-          value={draft.pickup_address}
-          onChange={(e) => patch('pickup_address', e.target.value)}
-          placeholder={
-            draft.collection_method === 'dropoff'
-              ? 'Your home address for the receipt'
-              : 'House/flat, street, landmark'
-          }
-          className="mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
-          aria-invalid={touched.has('pickup_address') && Boolean(errors.pickup_address)}
-          onBlur={() => setTouched((prev) => new Set([...prev, 'pickup_address']))}
-        />
-        {touched.has('pickup_address') && errors.pickup_address ? (
-          <p className="mt-1 text-xs text-red-600">{errors.pickup_address}</p>
-        ) : null}
-      </div>
+      {isDropoffMethod ? null : (
+        <div>
+          <label
+            htmlFor="textile-address"
+            className="block text-sm font-medium text-[var(--color-ink)]"
+          >
+            Pickup address
+          </label>
+          <textarea
+            id="textile-address"
+            rows={3}
+            value={draft.pickup_address}
+            onChange={(e) => patch('pickup_address', e.target.value)}
+            placeholder="House/flat, street, landmark"
+            className="mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+            aria-invalid={touched.has('pickup_address') && Boolean(errors.pickup_address)}
+            onBlur={() => setTouched((prev) => new Set([...prev, 'pickup_address']))}
+          />
+          {touched.has('pickup_address') && errors.pickup_address ? (
+            <p className="mt-1 text-xs text-red-600">{errors.pickup_address}</p>
+          ) : null}
+        </div>
+      )}
 
       <fieldset>
         <legend className="block text-sm font-medium text-[var(--color-ink)]">
@@ -439,7 +493,7 @@ function TextileCollectionFieldsInner({
             value="dropoff"
             current={draft.collection_method}
             onSelect={(v) => patch('collection_method', v)}
-            label="I’ll go to the centre"
+            label="Drop at center"
             description="Drop off any amount — no minimum."
           />
           <MethodToggle
@@ -447,7 +501,7 @@ function TextileCollectionFieldsInner({
             value="premises"
             current={draft.collection_method}
             onSelect={(v) => patch('collection_method', v)}
-            label="Pick up from my home"
+            label="Pick up from location"
             description="We come to your doorstep."
           />
         </div>
@@ -457,18 +511,37 @@ function TextileCollectionFieldsInner({
         ) : null}
       </fieldset>
 
+      {isDropoffMethod ? (
+        <section
+          aria-labelledby="dropoff-location-title"
+          className="space-y-2 rounded-xl border border-[var(--color-border-subtle)] bg-white p-4"
+        >
+          <h3 id="dropoff-location-title" className="text-sm font-semibold text-[var(--color-ink)]">
+            Drop-off location
+          </h3>
+          <TextileCentreSelect
+            centres={selectedZone?.centres}
+            value={draft.dropoff_centre_id ?? ''}
+            onChange={(id) => patch('dropoff_centre_id', id === '' ? null : id)}
+            error={errors.dropoff_centre_id}
+          />
+        </section>
+      ) : null}
+
       <div>
         <p className="text-sm font-medium text-[var(--color-ink)]">How much do you have?</p>
         <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
-          Fill bags or weight — either is enough.
+          Fill bags or weight in whole kg — either is enough.
         </p>
         <div className="mt-2.5 grid gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
           <Field
             id="textile-bags"
             label="How many bags?"
             type="number"
-            min={1}
+            inputMode="numeric"
+            min={0}
             max={999}
+            step={1}
             value={draft.estimated_bags === null ? '' : String(draft.estimated_bags)}
             onChange={(v) => {
               patch('estimated_bags', v === '' ? null : Number(v));
@@ -496,9 +569,10 @@ function TextileCollectionFieldsInner({
             id="textile-weight"
             label="About how many kg?"
             type="number"
-            min={0.1}
-            max={99999.99}
-            step={0.1}
+            inputMode="numeric"
+            min={0}
+            max={99999}
+            step={1}
             value={draft.estimated_weight_kg === null ? '' : String(draft.estimated_weight_kg)}
             onChange={(v) => {
               patch('estimated_weight_kg', v === '' ? null : Number(v));
@@ -519,10 +593,10 @@ function TextileCollectionFieldsInner({
             className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-900"
           >
             <p className="font-semibold">
-              Below home pickup minimum {minText ? `(${minText})` : ''}
+              Below the pickup minimum — Home pickup needs at least {minText}
             </p>
             <p className="mt-0.5 text-amber-800">
-              Home pickup requires a minimum load to dispatch a vehicle. Add more items, or{' '}
+              Home pickup needs at least {minText} to dispatch a vehicle. Add more weight, or{' '}
               <button
                 type="button"
                 onClick={() => patch('collection_method', 'dropoff')}

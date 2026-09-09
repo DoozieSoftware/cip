@@ -1,7 +1,7 @@
 # Phase 2 — Driver trips
 
 > **Staff:** sidebar **Trips** to schedule (`/operations/textile-collections/schedule`),
-> sidebar **Dispatch** to run the trip (`/operations/textile-collections/dispatch`).
+> sidebar **Collections** to run the trip (`/operations/textile-collections/collections`).
 > **Citizens:** sidebar **Collections** to track the booking.
 
 **What it is:** approved home pickups grouped into executable driver trips.

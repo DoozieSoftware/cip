@@ -246,7 +246,7 @@ describe('StaffProfilePage textile overflow links', () => {
 
   const overflowRoutes: Array<[string, string]> = [
     ['History', '/operations/textile-collections/completed'],
-    ['Device uploads', '/operations/textile-collections/recovery'],
+    ['Reupload', '/operations/textile-collections/reuploads'],
     ['Server failures', '/operations/textile-collections/offline-recovery'],
     ['Capacity', '/operations/textile-collections/capacity'],
   ];
@@ -261,19 +261,19 @@ describe('StaffProfilePage textile overflow links', () => {
     }
   });
 
-  it('badges Device uploads with the pending upload count', async () => {
+  it('badges Reupload with the pending upload count', async () => {
     mockQueue.pending = [{ id: 'q-1' }, { id: 'q-2' }];
     renderAt('/operations/profile');
 
-    const link = await screen.findByRole('link', { name: 'Device uploads 2 pending' });
-    expect(link).toHaveAttribute('href', '/operations/textile-collections/recovery');
+    const link = await screen.findByRole('link', { name: 'Reupload 2 pending' });
+    expect(link).toHaveAttribute('href', '/operations/textile-collections/reuploads');
   });
 
   it('hides the pending badge when nothing is queued', async () => {
     renderAt('/operations/profile');
     await screen.findByRole('heading', { name: 'Profile' });
 
-    expect(screen.getByRole('link', { name: 'Device uploads' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Reupload' })).toBeInTheDocument();
     expect(screen.queryByText(/pending/)).not.toBeInTheDocument();
   });
 
@@ -293,7 +293,7 @@ describe('StaffProfilePage textile overflow links', () => {
     await screen.findByRole('heading', { name: 'Profile' });
 
     expect(screen.queryByRole('link', { name: 'History' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /Device uploads/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Reupload/ })).not.toBeInTheDocument();
   });
 
   it('hides the section outside the operations portal', async () => {
@@ -301,6 +301,6 @@ describe('StaffProfilePage textile overflow links', () => {
     await screen.findByRole('heading', { name: 'Profile' });
 
     expect(screen.queryByRole('link', { name: 'History' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /Device uploads/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Reupload/ })).not.toBeInTheDocument();
   });
 });

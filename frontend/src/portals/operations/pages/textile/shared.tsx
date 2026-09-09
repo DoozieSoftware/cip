@@ -667,12 +667,15 @@ export function TripProgressBar({
   missed,
   pending,
   total,
+  showCounts = true,
 }: {
   batchStatus: string;
   collected: number;
   missed: number;
   pending: number;
   total: number;
+  /** Hide the "N of M · K left" count text; the thin bar stays as the progress signal. */
+  showCounts?: boolean;
 }): JSX.Element {
   const pct = total > 0 ? Math.round((collected / total) * 100) : 0;
   const statusLabel =
@@ -700,14 +703,16 @@ export function TripProgressBar({
           aria-label={doneLabel}
         />
       </div>
-      <span className="shrink-0 text-xs leading-none text-[var(--color-text-secondary)]">
-        <span className="font-semibold tabular-nums text-[var(--color-ink)]">
-          {collected} of {total}
-        </span>{' '}
-        collected
-        {pending > 0 ? ` · ${pending} left` : ''}
-        {missed > 0 ? ` · ${missed} missed` : ''}
-      </span>
+      {showCounts ? (
+        <span className="shrink-0 text-xs leading-none text-[var(--color-text-secondary)]">
+          <span className="font-semibold tabular-nums text-[var(--color-ink)]">
+            {collected} of {total}
+          </span>{' '}
+          collected
+          {pending > 0 ? ` · ${pending} left` : ''}
+          {missed > 0 ? ` · ${missed} missed` : ''}
+        </span>
+      ) : null}
     </div>
   );
 }

@@ -14,41 +14,55 @@ describe('TextileMinimumNotice — citizen journey (TextileCapacityMinimum.test)
   it('shows loading, then blocks a below-minimum pickup after load', async () => {
     const minimum = {
       service_zone_id: 'z1',
-      min_bags: 5,
-      min_weight_kg: null,
+      min_bags: null,
+      min_weight_kg: 4,
       guidance_text: 'Keep dry',
     };
     const { rerender } = render(
-      <TextileMinimumNotice minimum={null} isLoading estimatedBags={2} />,
+      <TextileMinimumNotice minimum={null} isLoading estimatedWeightKg={2} />,
       { wrapper: qcWrapper },
     );
     expect(screen.getByText(/Checking what’s needed in your area/)).toBeInTheDocument();
 
-    rerender(<TextileMinimumNotice minimum={minimum} estimatedBags={2} />);
-    expect(screen.getAllByText(/5 bags/)).not.toHaveLength(0);
+    rerender(<TextileMinimumNotice minimum={minimum} estimatedWeightKg={2} />);
+    expect(screen.getAllByText(/4 kg/)).not.toHaveLength(0);
     expect(screen.getByText(/Below the pickup minimum/)).toBeInTheDocument();
+    expect(screen.getByText(/Home pickup needs at least 4 kg/)).toBeInTheDocument();
   });
 
-  it('removes the minimum block after the estimate meets the minimum', () => {
+  it('removes the minimum block after the weight meets the minimum', () => {
     const minimum = {
       service_zone_id: 'z1',
-      min_bags: 3,
-      min_weight_kg: null,
+      min_bags: null,
+      min_weight_kg: 4,
       guidance_text: null,
     };
-    const { rerender } = render(<TextileMinimumNotice minimum={minimum} estimatedBags={1} />, {
+    const { rerender } = render(<TextileMinimumNotice minimum={minimum} estimatedWeightKg={1} />, {
       wrapper: qcWrapper,
     });
     expect(screen.getByText(/Below the pickup minimum/)).toBeInTheDocument();
-    rerender(<TextileMinimumNotice minimum={minimum} estimatedBags={5} />);
+    rerender(<TextileMinimumNotice minimum={minimum} estimatedWeightKg={5} />);
+    expect(screen.queryByText(/Below the pickup minimum/)).not.toBeInTheDocument();
+  });
+
+  it('lets any bag count pass without a weight estimate', () => {
+    const minimum = {
+      service_zone_id: 'z1',
+      min_bags: 50,
+      min_weight_kg: 4,
+      guidance_text: null,
+    };
+    render(<TextileMinimumNotice minimum={minimum} estimatedBags={1} />, {
+      wrapper: qcWrapper,
+    });
     expect(screen.queryByText(/Below the pickup minimum/)).not.toBeInTheDocument();
   });
 
   it('shows error then after retry shows minimum', async () => {
     const minimum = {
       service_zone_id: 'z1',
-      min_bags: 2,
-      min_weight_kg: null,
+      min_bags: null,
+      min_weight_kg: 4,
       guidance_text: null,
     };
     const onRetry = vi.fn();
@@ -58,8 +72,8 @@ describe('TextileMinimumNotice — citizen journey (TextileCapacityMinimum.test)
     expect(screen.getByRole('alert')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Try again/i }));
     expect(onRetry).toHaveBeenCalled();
-    rerender(<TextileMinimumNotice minimum={minimum} estimatedBags={2} />);
-    expect(screen.getByText(/2 bags/)).toBeInTheDocument();
+    rerender(<TextileMinimumNotice minimum={minimum} estimatedWeightKg={4} />);
+    expect(screen.getByText(/4 kg/)).toBeInTheDocument();
   });
 
   it('empty state explains no minimum is configured', () => {

@@ -27,6 +27,38 @@ vi.mock('../../api/textileApi', async () => {
   };
 });
 
+vi.mock('../../../citizen/components/CameraCapture', () => ({
+  CameraCapture: ({
+    onCapture,
+    onError,
+  }: {
+    onCapture: (file: File, capturedAt: string) => void;
+    onError?: (err: { kind: string; message: string }) => void;
+  }) => (
+    <div>
+      <button
+        type="button"
+        onClick={() =>
+          onCapture(
+            new File(['camera-snap'], 'snap.jpg', { type: 'image/jpeg' }),
+            new Date().toISOString(),
+          )
+        }
+      >
+        Mock capture photo
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          onError?.({ kind: 'permission_denied', message: 'Camera permission is blocked' })
+        }
+      >
+        Mock camera error
+      </button>
+    </div>
+  ),
+}));
+
 const ITEM: TextileCollectionListItem = {
   id: 'collection-1',
   reference: 'DL-2026-0001',
@@ -109,7 +141,7 @@ async function fillAndConfirm() {
   const file = new File(['proof'], 'proof.jpg', { type: 'image/jpeg' });
   fireEvent.change(fileInput, { target: { files: [file] } });
 
-  const confirm = await screen.findByRole('button', { name: 'Confirm receipt' });
+  const confirm = await screen.findByRole('button', { name: 'Confirm pickup request' });
   expect(confirm).toBeEnabled();
   fireEvent.click(confirm);
 
@@ -147,7 +179,7 @@ describe('TextileReceiptPage receipt success state', () => {
     renderPage();
     await fillAndConfirm();
 
-    const heading = await screen.findByRole('heading', { name: 'Receipt confirmed' });
+    const heading = await screen.findByRole('heading', { name: 'Pickup request confirmed' });
     expect(heading).toBeVisible();
     const status = screen.getByRole('status');
     expect(status).toHaveTextContent(ITEM.reference);
@@ -160,13 +192,15 @@ describe('TextileReceiptPage receipt success state', () => {
     renderPage();
     await fillAndConfirm();
 
-    await screen.findByRole('heading', { name: 'Receipt confirmed' });
+    await screen.findByRole('heading', { name: 'Pickup request confirmed' });
 
     await waitFor(() => {
       expect(vi.mocked(recordDropoffReceipt)).toHaveBeenCalledTimes(1);
     });
     // The confirm action is gone with the form — staff cannot tap it again.
-    expect(screen.queryByRole('button', { name: 'Confirm receipt' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Confirm pickup request' }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Confirming…' })).not.toBeInTheDocument();
   });
 
@@ -174,20 +208,76 @@ describe('TextileReceiptPage receipt success state', () => {
     renderPage();
     await fillAndConfirm();
 
-    await screen.findByRole('heading', { name: 'Receipt confirmed' });
+    await screen.findByRole('heading', { name: 'Pickup request confirmed' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Find next booking' }));
 
     await waitFor(() => {
-      expect(screen.queryByRole('heading', { name: 'Receipt confirmed' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('heading', { name: 'Pickup request confirmed' }),
+      ).not.toBeInTheDocument();
     });
     // Fresh form: empty-state copy returns and the success summary is cleared.
     expect(await screen.findByText('Select a booking')).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Confirm receipt' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Confirm pickup request' }),
+    ).not.toBeInTheDocument();
     const searchInput = screen.getByRole('textbox', {
       name: 'Search by reference or phone',
     });
     expect(searchInput).toHaveValue('');
+  });
+
+  it('captures the proof photo with Take photo and confirms pickup request', async () => {
+    renderPage();
+    await searchAndSelect();
+
+    fireEvent.change(screen.getByLabelText(/Actual bags/), { target: { value: '4' } });
+    fireEvent.change(screen.getByLabelText(/Actual weight/), { target: { value: '11' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Take photo' }));
+    expect(await screen.findByRole('button', { name: 'Mock capture photo' })).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mock capture photo' }));
+
+    // Camera closes and the captured photo previews like a picked file.
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Mock capture photo' })).not.toBeInTheDocument();
+    });
+    expect(screen.getByAltText('proof preview')).toBeVisible();
+
+    const confirm = await screen.findByRole('button', { name: 'Confirm pickup request' });
+    expect(confirm).toBeEnabled();
+    fireEvent.click(confirm);
+
+    await waitFor(() => {
+      expect(vi.mocked(uploadTextileProofPhoto)).toHaveBeenCalledTimes(1);
+    });
+    const uploaded = vi.mocked(uploadTextileProofPhoto).mock.calls[0][1];
+    expect(uploaded).toBeInstanceOf(File);
+    expect(uploaded.name).toBe('snap.jpg');
+    expect(await screen.findByRole('heading', { name: 'Pickup request confirmed' })).toBeVisible();
+  });
+
+  it('shows camera errors with a file fallback', async () => {
+    renderPage();
+    await searchAndSelect();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Take photo' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mock camera error' }));
+
+    expect(await screen.findByText(/Camera permission is blocked/)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Choose a file instead' })).toBeVisible();
+
+    // The file picker still works after a camera failure.
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel camera' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Mock camera error' })).not.toBeInTheDocument();
+    });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['proof'], 'proof.jpg', { type: 'image/jpeg' });
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    expect(screen.getByAltText('proof preview')).toBeVisible();
   });
 
   it('keeps the search error/retry state', async () => {

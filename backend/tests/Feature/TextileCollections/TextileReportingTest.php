@@ -7,6 +7,7 @@ use App\Modules\Security\Models\AuditLog;
 use App\Modules\TextileCollections\Models\TextileCapacityException;
 use App\Modules\TextileCollections\Models\TextileCollectionBatch;
 use App\Modules\TextileCollections\Models\TextileCollectionRequest;
+use App\Modules\TextileCollections\Models\TextileOfflineRecoveryItem;
 use App\Modules\TextileCollections\Models\TextilePartnerCapability;
 use App\Modules\TextileCollections\Models\TextileServiceZone;
 use App\Modules\Users\Models\User;
@@ -448,4 +449,84 @@ it('dashboard zone filter narrows results', function (): void {
     expect($filtered['totals']['requests'])->toBe(2)
         ->and($filtered['breakdowns']['zone'])->toHaveKey($zoneA->name)
         ->and($filtered['breakdowns']['zone'])->not->toHaveKey($zoneB->name);
+});
+
+// ── Live snapshot ───────────────────────────────────────────────────
+
+it('live snapshot reports today trips, stops, pending receipts and failed uploads', function (): void {
+    $dept = reportingEnsurePartner('DR_LINEN');
+    $zone = reportingZone($dept);
+    $staff = reportingStaff($dept);
+    $citizen = reportingCitizen();
+    $today = Carbon::now()->toDateString();
+    $tomorrow = Carbon::now()->addDay()->toDateString();
+
+    $todayBatch = reportingCreateBatch($dept, $zone, $staff, $today);
+    $otherDayBatch = reportingCreateBatch($dept, $zone, $staff, $tomorrow);
+
+    reportingCreateRequest($dept, $zone, $citizen, ['batch_id' => $todayBatch->id, 'status' => TextileCollectionRequest::STATUS_SCHEDULED]);
+    reportingCreateRequest($dept, $zone, $citizen, ['batch_id' => $todayBatch->id, 'status' => TextileCollectionRequest::STATUS_SCHEDULED]);
+    reportingCreateRequest($dept, $zone, $citizen, ['batch_id' => $todayBatch->id, 'status' => TextileCollectionRequest::STATUS_PICKED_UP]);
+    reportingCreateRequest($dept, $zone, $citizen, ['batch_id' => $todayBatch->id, 'status' => TextileCollectionRequest::STATUS_MISSED]);
+    // Tomorrow's trip must not leak into today's snapshot.
+    reportingCreateRequest($dept, $zone, $citizen, ['batch_id' => $otherDayBatch->id, 'status' => TextileCollectionRequest::STATUS_SCHEDULED]);
+
+    // Two drop-off bookings still awaiting a centre receipt.
+    reportingCreateRequest($dept, $zone, $citizen, ['collection_method' => 'dropoff', 'status' => TextileCollectionRequest::STATUS_DROPOFF_AWAITING_DROP]);
+    reportingCreateRequest($dept, $zone, $citizen, ['collection_method' => 'dropoff', 'status' => TextileCollectionRequest::STATUS_READY_TO_GROUP]);
+    // Premises ready_to_group is a scheduling queue item, not a centre receipt.
+    reportingCreateRequest($dept, $zone, $citizen, ['collection_method' => 'premises', 'status' => TextileCollectionRequest::STATUS_READY_TO_GROUP]);
+
+    // One pending + one resolved offline failure.
+    $failed = reportingCreateRequest($dept, $zone, $citizen);
+    TextileOfflineRecoveryItem::query()->create([
+        'collection_request_id' => $failed->id,
+        'reported_by' => $staff->id,
+        'failure_reason' => 'Photo upload failed permanently',
+        'status' => TextileOfflineRecoveryItem::STATUS_PENDING,
+    ]);
+    $resolved = reportingCreateRequest($dept, $zone, $citizen);
+    TextileOfflineRecoveryItem::query()->create([
+        'collection_request_id' => $resolved->id,
+        'reported_by' => $staff->id,
+        'failure_reason' => 'Already retried',
+        'status' => TextileOfflineRecoveryItem::STATUS_RESOLVED,
+    ]);
+
+    Sanctum::actingAs($staff);
+    $live = $this->getJson('/api/v1/department/textile-collections/report/live')->assertOk()->json('data');
+
+    expect($live['date'])->toBe($today)
+        ->and($live['trips']['total'])->toBe(1)
+        ->and($live['stops']['total'])->toBe(4)
+        ->and($live['stops']['pending'])->toBe(2)
+        ->and($live['stops']['collected'])->toBe(1)
+        ->and($live['stops']['missed'])->toBe(1)
+        ->and($live['pending_receipts'])->toBe(2)
+        ->and($live['failed_uploads'])->toBe(1);
+});
+
+it('live snapshot is partner-scoped and requires authorization', function (): void {
+    $dept = reportingEnsurePartner('DR_LINEN');
+    $zone = reportingZone($dept);
+    $staff = reportingStaff($dept);
+    $citizen = reportingCitizen();
+
+    $batch = reportingCreateBatch($dept, $zone, $staff, Carbon::now()->toDateString());
+    reportingCreateRequest($dept, $zone, $citizen, ['batch_id' => $batch->id, 'status' => TextileCollectionRequest::STATUS_SCHEDULED]);
+
+    // Unauthenticated → 401, citizen → 403.
+    $this->getJson('/api/v1/department/textile-collections/report/live')->assertUnauthorized();
+    Sanctum::actingAs($citizen);
+    $this->getJson('/api/v1/department/textile-collections/report/live')->assertForbidden();
+
+    // Another partner sees only its own (empty) snapshot.
+    $otherDept = reportingEnsurePartner('REP_OTHER3', ['clothes_waste']);
+    $otherStaff = reportingStaff($otherDept);
+    Sanctum::actingAs($otherStaff);
+    $live = $this->getJson('/api/v1/department/textile-collections/report/live')->assertOk()->json('data');
+    expect($live['trips']['total'])->toBe(0)
+        ->and($live['stops']['total'])->toBe(0)
+        ->and($live['pending_receipts'])->toBe(0)
+        ->and($live['failed_uploads'])->toBe(0);
 });

@@ -14,26 +14,18 @@ export interface TextileMinimumNoticeProps {
 
 export const isBelowMinimum = (
   minimum: TextileCapacityMinimum | null | undefined,
-  estimatedBags: number | null | undefined,
+  _estimatedBags: number | null | undefined,
   estimatedWeightKg: number | null | undefined,
   collectionMethod?: TextileCollectionMethod | null,
 ): boolean => {
+  // Weight-only minimum (#14): bag count never gates a pickup. Only whole-kg
+  // weight is enforced, and only for premises (home) pickup.
+  void _estimatedBags;
   if (collectionMethod === 'dropoff') return false;
   if (!minimum) return false;
-  const hasMinBags = minimum.min_bags !== null && minimum.min_bags !== undefined;
-  const hasMinWeight = minimum.min_weight_kg !== null && minimum.min_weight_kg !== undefined;
-  if (!hasMinBags && !hasMinWeight) return false;
-
-  const checks = [
-    hasMinBags && estimatedBags !== null && estimatedBags !== undefined
-      ? estimatedBags >= (minimum.min_bags as number)
-      : null,
-    hasMinWeight && estimatedWeightKg !== null && estimatedWeightKg !== undefined
-      ? estimatedWeightKg >= (minimum.min_weight_kg as number)
-      : null,
-  ].filter((check): check is boolean => check !== null);
-
-  return checks.length > 0 && !checks.some(Boolean);
+  if (minimum.min_weight_kg === null || minimum.min_weight_kg === undefined) return false;
+  if (estimatedWeightKg === null || estimatedWeightKg === undefined) return false;
+  return estimatedWeightKg < minimum.min_weight_kg;
 };
 
 export function TextileMinimumNotice({
@@ -87,10 +79,13 @@ export function TextileMinimumNotice({
     );
   }
 
+  // Weight-only minimum (#14): only min_weight_kg gates a pickup. A zone
+  // without a weight minimum accepts any amount.
   const hasMinimum =
     minimum !== null &&
     minimum !== undefined &&
-    (minimum.min_bags !== null || minimum.min_weight_kg !== null);
+    minimum.min_weight_kg !== null &&
+    minimum.min_weight_kg !== undefined;
 
   if (!hasMinimum) {
     return (
@@ -105,10 +100,8 @@ export function TextileMinimumNotice({
 
   const belowMinimum = isBelowMinimum(minimum, estimatedBags, estimatedWeightKg, collectionMethod);
 
-  const minParts: string[] = [];
-  if (minimum.min_bags !== null) minParts.push(`${minimum.min_bags} bags`);
-  if (minimum.min_weight_kg !== null) minParts.push(`${minimum.min_weight_kg} kg`);
-  const minText = minParts.join(' or ');
+  const minWeightKg = minimum !== null && minimum !== undefined ? minimum.min_weight_kg : null;
+  const minText = minWeightKg !== null && minWeightKg !== undefined ? `${minWeightKg} kg` : '';
 
   return (
     <div
@@ -122,17 +115,18 @@ export function TextileMinimumNotice({
       </p>
       {!minimum.guidance_text ? (
         <p className="mt-1 text-[11px] leading-4 text-[var(--color-text-secondary)]">
-          Fill bags or kg — either one is enough. For drop-off at a centre, any amount is OK.
+          Enter the weight in whole kg — only weight counts toward the pickup minimum. For drop-off
+          at a centre, any amount is OK.
         </p>
       ) : null}
-      {belowMinimum ? (
+      {belowMinimum && minWeightKg !== null && minWeightKg !== undefined ? (
         <div className="mt-3 rounded-md border border-amber-200 bg-white p-3">
           <p className="text-xs font-semibold text-amber-900">
-            Below the pickup minimum - home pickup needs {minText}
+            Below the pickup minimum — Home pickup needs at least {minWeightKg} kg
           </p>
           <p className="mt-1 text-[11px] leading-4 text-[var(--color-text-secondary)]">
-            Small loads waste a trip. Add more bags, or choose drop-off - any amount is accepted at
-            the centre.
+            Small loads waste a trip. Add more weight, or choose drop-off - any amount is accepted
+            at the centre.
           </p>
         </div>
       ) : (

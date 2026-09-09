@@ -55,14 +55,14 @@ export function OfflineBanner(): JSX.Element | null {
           <div className="flex items-center gap-2">
             <IconAlertTriangle className="h-4 w-4 shrink-0 text-rose-700" />
             <p className="text-xs font-medium text-rose-800">
-              {deadCount} upload{deadCount === 1 ? '' : 's'} failed — open Recovery to fix or retry.
+              {deadCount} upload{deadCount === 1 ? '' : 's'} failed — open Reupload to fix or retry.
             </p>
           </div>
           <a
-            href="/operations/textile-collections/recovery"
+            href="/operations/textile-collections/reuploads"
             className="inline-flex min-h-8 items-center rounded-full border border-rose-300 bg-white px-3 text-xs font-medium text-rose-800"
           >
-            Open recovery
+            Open reupload
           </a>
         </div>
       ) : null}

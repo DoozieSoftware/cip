@@ -51,6 +51,38 @@ vi.mock('../../offline/useOpsQueue', () => ({
   }),
 }));
 
+vi.mock('../../../citizen/components/CameraCapture', () => ({
+  CameraCapture: ({
+    onCapture,
+    onError,
+  }: {
+    onCapture: (file: File, capturedAt: string) => void;
+    onError?: (err: { kind: string; message: string }) => void;
+  }) => (
+    <div>
+      <button
+        type="button"
+        onClick={() =>
+          onCapture(
+            new File(['camera-snap'], 'snap.jpg', { type: 'image/jpeg' }),
+            new Date().toISOString(),
+          )
+        }
+      >
+        Mock capture photo
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          onError?.({ kind: 'permission_denied', message: 'Camera permission is blocked' })
+        }
+      >
+        Mock camera error
+      </button>
+    </div>
+  ),
+}));
+
 const ITEM: TextileCollectionListItem = {
   id: 'collection-1',
   reference: 'DLN-2026-79FFFC75',
@@ -95,12 +127,12 @@ function renderStopPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <MemoryRouter
-      initialEntries={['/operations/textile-collections/dispatch/batch-1/stops/collection-1']}
+      initialEntries={['/operations/textile-collections/collections/batch-1/stops/collection-1']}
     >
       <QueryClientProvider client={queryClient}>
         <Routes>
           <Route
-            path="/operations/textile-collections/dispatch/:batchId/stops/:stopId"
+            path="/operations/textile-collections/collections/:batchId/stops/:stopId"
             element={<TextileStopPage />}
           />
         </Routes>
@@ -147,9 +179,9 @@ describe('TextileStopPage', () => {
     expect(screen.getByText('21, 11th Main, Jayanagar, Bengaluru 560041')).toBeVisible();
     expect(screen.getByText(/DRL-260826-XX11TO/)).toBeVisible();
     expect(screen.getByText(/Stop 1 of 1/)).toBeVisible();
-    expect(screen.getByRole('link', { name: 'Back to dispatch board' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Back to collections' })).toHaveAttribute(
       'href',
-      '/operations/textile-collections/dispatch',
+      '/operations/textile-collections/collections',
     );
     // Estimate + instructions + evidence
     expect(screen.getAllByText(/4 bags · 11 kg/).length).toBeGreaterThanOrEqual(1);
@@ -212,5 +244,146 @@ describe('TextileStopPage', () => {
 
     expect(clickSpy).toHaveBeenCalledOnce();
     clickSpy.mockRestore();
+  });
+
+  it('labels the variance field Remarks and keeps it required on variance', async () => {
+    renderStopPage();
+
+    await screen.findByText('Lakshmi Devi');
+
+    // Prefilled actuals match the estimate, so no remarks field yet.
+    expect(screen.queryByLabelText(/Remarks/)).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/Actual bags/), { target: { value: '5' } });
+
+    expect(await screen.findByLabelText(/Remarks/)).toBeVisible();
+    expect(screen.getByPlaceholderText(/half a kg more than estimated/)).toBeVisible();
+    expect(screen.getByText(/remarks required/)).toBeVisible();
+    expect(screen.getByText(/and remarks.*to confirm/)).toBeVisible();
+    expect(screen.queryByText(/reason required/i)).not.toBeInTheDocument();
+
+    const confirm = screen.getByRole('button', { name: 'Confirm collected' });
+    expect(confirm).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/Remarks/), { target: { value: 'One extra bag' } });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, {
+      target: { files: [new File(['proof'], 'proof.jpg', { type: 'image/jpeg' })] },
+    });
+
+    expect(await screen.findByRole('button', { name: 'Confirm collected' })).toBeEnabled();
+  });
+
+  it('captures a proof photo with Take photo and submits it', async () => {
+    renderStopPage();
+
+    await screen.findByText('Lakshmi Devi');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Take photo' }));
+    expect(await screen.findByRole('button', { name: 'Mock capture photo' })).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mock capture photo' }));
+
+    // Camera closes and the captured photo previews like a picked file.
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Mock capture photo' })).not.toBeInTheDocument();
+    });
+    expect(screen.getByAltText('preview')).toBeVisible();
+
+    const confirm = await screen.findByRole('button', { name: 'Confirm collected' });
+    expect(confirm).toBeEnabled();
+    fireEvent.click(confirm);
+
+    await waitFor(() => {
+      expect(vi.mocked(collectTextileWithProof)).toHaveBeenCalledTimes(1);
+    });
+    const payload = vi.mocked(collectTextileWithProof).mock.calls[0][1];
+    expect(payload.photo).toBeInstanceOf(File);
+    expect(payload.photo.name).toBe('snap.jpg');
+  });
+
+  it('shows camera errors with a file fallback', async () => {
+    renderStopPage();
+
+    await screen.findByText('Lakshmi Devi');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Take photo' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mock camera error' }));
+
+    expect(await screen.findByText(/Camera permission is blocked/)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Choose a file instead' })).toBeVisible();
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const clickSpy = vi.spyOn(fileInput, 'click');
+    fireEvent.click(screen.getByRole('button', { name: 'Choose a file instead' }));
+    expect(clickSpy).toHaveBeenCalledOnce();
+    clickSpy.mockRestore();
+  });
+
+  it('shows a person-first success heading and drops trip arithmetic', async () => {
+    const collected: TextileCollectionListItem = {
+      ...ITEM,
+      status: 'picked_up',
+      requester_name: 'Divya Menon',
+      actual_bags: 3,
+      actual_weight_kg: 8.5,
+      picked_up_at: '2026-08-27T10:30:00+05:30',
+    };
+    const peers: TextileCollectionListItem[] = [2, 3, 4].map((n) => ({
+      ...ITEM,
+      id: `collection-${n}`,
+      reference: `DLN-2026-STOP${n}`,
+      requester_name: `Neighbour ${n}`,
+      status: 'scheduled',
+      actual_bags: null,
+      actual_weight_kg: null,
+      picked_up_at: null,
+    }));
+    vi.mocked(fetchTextileDetail).mockResolvedValue(collected);
+    vi.mocked(useTextileQueue).mockReturnValue({
+      data: {
+        data: [collected, ...peers],
+        meta: { page: 1, per_page: 25, total: 4, last_page: 1 },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useTextileQueue>);
+    renderStopPage();
+
+    expect(await screen.findByRole('heading', { name: 'Divya Menon collected' })).toBeVisible();
+    expect(screen.getByText(/Verified actuals: 3 bags · 8\.5 kg/)).toBeVisible();
+    expect(screen.queryByText(/stops collected/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/1 of 4 collected/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/3 left/)).not.toBeInTheDocument();
+    // Thin progress bar and per-stop status chips stay as the progress signal.
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getAllByText('Collected').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('falls back to the DLN reference when the citizen name is blank', async () => {
+    const collected: TextileCollectionListItem = {
+      ...ITEM,
+      status: 'picked_up',
+      requester_name: '   ',
+      actual_bags: 2,
+      actual_weight_kg: 5,
+      picked_up_at: '2026-08-27T10:30:00+05:30',
+    };
+    vi.mocked(fetchTextileDetail).mockResolvedValue(collected);
+    vi.mocked(useTextileQueue).mockReturnValue({
+      data: {
+        data: [collected],
+        meta: { page: 1, per_page: 25, total: 1, last_page: 1 },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useTextileQueue>);
+    renderStopPage();
+
+    expect(
+      await screen.findByRole('heading', { name: `${ITEM.reference} collected` }),
+    ).toBeVisible();
   });
 });

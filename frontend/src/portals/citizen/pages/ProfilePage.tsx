@@ -16,6 +16,12 @@ import {
 import { useToast } from '../components/Toast';
 import { pushSupport, subscribeToPush, unsubscribeFromPush } from '../push/subscribe';
 import { useMessages } from '../messages';
+import {
+  readDefaultAddress,
+  validateCitizenContact,
+  writeDefaultAddress,
+  type CitizenContactErrors,
+} from '../api/profile';
 
 const PUSH_SUBSCRIBE_URL = '/notifications/push/subscriptions';
 
@@ -25,6 +31,7 @@ interface ProfileData {
   preferred_name?: string | null;
   mobile?: string | null;
   email?: string | null;
+  default_address?: string | null;
   preferred_locale?: 'en-IN' | 'kn-IN' | null;
   notification_channel?: 'sms' | 'push' | 'email' | null;
   roles: string[];
@@ -73,7 +80,11 @@ export default function ProfilePage(): JSX.Element {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [preferredName, setPreferredName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [defaultAddress, setDefaultAddress] = useState('');
+  const [contactErrors, setContactErrors] = useState<CitizenContactErrors>({});
   const [profileLocale, setProfileLocale] = useState<'en-IN' | 'kn-IN'>(locale);
   const [notificationChannel, setNotificationChannel] = useState<'sms' | 'push' | 'email'>('sms');
   const [pushOn, setPushOn] = useState(false);
@@ -91,7 +102,10 @@ export default function ProfilePage(): JSX.Element {
   useEffect(() => {
     if (!me.data) return;
     setPreferredName(me.data.preferred_name ?? '');
+    setFullName(me.data.name ?? '');
     setEmail(me.data.email ?? '');
+    setPhone(me.data.mobile ?? '');
+    setDefaultAddress(me.data.default_address ?? readDefaultAddress());
     setProfileLocale(me.data.preferred_locale ?? locale);
     setNotificationChannel(me.data.notification_channel ?? 'sms');
   }, [me.data, locale]);
@@ -118,18 +132,33 @@ export default function ProfilePage(): JSX.Element {
 
   async function saveProfile(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
+    // Same contact rules as the booking form (#12).
+    const errors = validateCitizenContact({
+      fullName,
+      email,
+      phone,
+      defaultAddress,
+    });
+    setContactErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     setSaving(true);
     setSaveError(null);
     try {
       const response = await apiRequest<ApiEnvelope<ProfileData>>('/auth/profile', {
         method: 'PATCH',
         body: {
+          name: fullName.trim() || null,
           preferred_name: preferredName.trim() || null,
           email: email.trim() || null,
+          mobile: phone.trim(),
+          // Forward-compatible: ignored by backends without the column, picked
+          // up once the backend half of #12 lands. localStorage is the fallback.
+          default_address: defaultAddress.trim() || null,
           preferred_locale: profileLocale,
           notification_channel: notificationChannel,
         },
       });
+      writeDefaultAddress(defaultAddress.trim());
       queryClient.setQueryData(['me'], response.data);
       setLocale(profileLocale);
     } catch (error) {
@@ -237,6 +266,7 @@ export default function ProfilePage(): JSX.Element {
           <>
             <form
               onSubmit={(event) => void saveProfile(event)}
+              noValidate
               className="rounded-xl bg-[var(--color-surface-alt)] p-6 shadow-sm ring-1 ring-black/5"
               aria-labelledby="profile-completion-title"
             >
@@ -251,6 +281,40 @@ export default function ProfilePage(): JSX.Element {
               </p>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <label className="text-sm font-medium text-[var(--color-ink)]">
+                  {t('profile.fullName')}
+                  <input
+                    value={fullName}
+                    onChange={(event) => {
+                      setFullName(event.target.value);
+                      if (contactErrors.fullName) {
+                        setContactErrors((prev) => ({ ...prev, fullName: undefined }));
+                      }
+                    }}
+                    onBlur={() => {
+                      const next = validateCitizenContact({
+                        fullName,
+                        email,
+                        phone,
+                        defaultAddress,
+                      });
+                      setContactErrors((prev) => ({ ...prev, fullName: next.fullName }));
+                    }}
+                    autoComplete="name"
+                    maxLength={255}
+                    placeholder={t('profile.fullName')}
+                    aria-invalid={Boolean(contactErrors.fullName)}
+                    className="mt-1 min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+                  />
+                  {contactErrors.fullName ? (
+                    <span
+                      role="alert"
+                      className="mt-1 block text-xs font-medium text-[var(--color-danger)]"
+                    >
+                      {contactErrors.fullName}
+                    </span>
+                  ) : null}
+                </label>
+                <label className="text-sm font-medium text-[var(--color-ink)]">
                   {t('profile.preferredName')}
                   <input
                     value={preferredName}
@@ -262,6 +326,40 @@ export default function ProfilePage(): JSX.Element {
                   />
                 </label>
                 <label className="text-sm font-medium text-[var(--color-ink)]">
+                  {t('profile.mobileNumber')}
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(event) => {
+                      setPhone(event.target.value);
+                      if (contactErrors.phone) {
+                        setContactErrors((prev) => ({ ...prev, phone: undefined }));
+                      }
+                    }}
+                    autoComplete="tel"
+                    placeholder="+91 98765 43210"
+                    aria-invalid={Boolean(contactErrors.phone)}
+                    onBlur={() => {
+                      const next = validateCitizenContact({
+                        fullName,
+                        email,
+                        phone,
+                        defaultAddress,
+                      });
+                      setContactErrors((prev) => ({ ...prev, phone: next.phone }));
+                    }}
+                    className="mt-1 min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+                  />
+                  {contactErrors.phone ? (
+                    <span
+                      role="alert"
+                      className="mt-1 block text-xs font-medium text-[var(--color-danger)]"
+                    >
+                      {contactErrors.phone}
+                    </span>
+                  ) : null}
+                </label>
+                <label className="text-sm font-medium text-[var(--color-ink)]">
                   {t('profile.emailForNotifications')}{' '}
                   <span className="font-normal text-[var(--color-text-tertiary)]">
                     ({t('common.optional')})
@@ -269,11 +367,81 @@ export default function ProfilePage(): JSX.Element {
                   <input
                     type="email"
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    onChange={(event) => {
+                      setEmail(event.target.value);
+                      if (contactErrors.email) {
+                        setContactErrors((prev) => ({ ...prev, email: undefined }));
+                      }
+                    }}
                     autoComplete="email"
                     placeholder="you@example.com"
+                    aria-invalid={Boolean(contactErrors.email)}
+                    onBlur={() => {
+                      const next = validateCitizenContact({
+                        fullName,
+                        email,
+                        phone,
+                        defaultAddress,
+                      });
+                      setContactErrors((prev) => ({ ...prev, email: next.email }));
+                    }}
                     className="mt-1 min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
                   />
+                  {contactErrors.email ? (
+                    <span
+                      role="alert"
+                      className="mt-1 block text-xs font-medium text-[var(--color-danger)]"
+                    >
+                      {contactErrors.email}
+                    </span>
+                  ) : null}
+                </label>
+                <label className="text-sm font-medium text-[var(--color-ink)] sm:col-span-2">
+                  {t('profile.defaultAddress')}{' '}
+                  <span className="font-normal text-[var(--color-text-tertiary)]">
+                    ({t('common.optional')})
+                  </span>
+                  <textarea
+                    value={defaultAddress}
+                    onChange={(event) => {
+                      setDefaultAddress(event.target.value);
+                      if (contactErrors.defaultAddress) {
+                        setContactErrors((prev) => ({ ...prev, defaultAddress: undefined }));
+                      }
+                    }}
+                    rows={2}
+                    autoComplete="street-address"
+                    placeholder={t('profile.defaultAddressPlaceholder')}
+                    aria-invalid={Boolean(contactErrors.defaultAddress)}
+                    aria-describedby="profile-address-hint"
+                    onBlur={() => {
+                      const next = validateCitizenContact({
+                        fullName,
+                        email,
+                        phone,
+                        defaultAddress,
+                      });
+                      setContactErrors((prev) => ({
+                        ...prev,
+                        defaultAddress: next.defaultAddress,
+                      }));
+                    }}
+                    className="mt-1 min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+                  />
+                  <span
+                    id="profile-address-hint"
+                    className="mt-1 block text-xs font-normal text-[var(--color-text-secondary)]"
+                  >
+                    {t('profile.defaultAddressHint')}
+                  </span>
+                  {contactErrors.defaultAddress ? (
+                    <span
+                      role="alert"
+                      className="mt-1 block text-xs font-medium text-[var(--color-danger)]"
+                    >
+                      {contactErrors.defaultAddress}
+                    </span>
+                  ) : null}
                 </label>
                 <label className="text-sm font-medium text-[var(--color-ink)]">
                   {t('profile.language')}
@@ -331,6 +499,13 @@ export default function ProfilePage(): JSX.Element {
               icon={<IconMail className="h-4 w-4" stroke={1.6} />}
             >
               <InfoRow label={t('profile.emailAddress')} value={me.data?.email} />
+              <InfoRow
+                label={t('profile.defaultAddress')}
+                value={(() => {
+                  const stored = me.data?.default_address ?? readDefaultAddress();
+                  return stored.trim().length > 0 ? stored : undefined;
+                })()}
+              />
             </Section>
 
             <Section

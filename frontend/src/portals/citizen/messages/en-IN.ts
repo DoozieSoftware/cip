@@ -327,7 +327,7 @@ export const en_IN: MessageCatalog = {
   'profile.noRoles': 'No roles assigned.',
   'profile.needToUpdate': 'Need to update your information?',
   'profile.updateDetail':
-    'You can update your preferred name, language, notification channel, and optional email here. Your verified mobile number remains protected.',
+    'Keep your name, phone, email, and default pickup address up to date — new booking forms pre-fill from these. You can change notification choices at any time.',
   'profile.completeTitle': 'Complete your profile',
   'profile.completeDetail':
     'Choose how we address you and how you want to receive complaint updates. You can change these choices at any time.',
@@ -336,6 +336,10 @@ export const en_IN: MessageCatalog = {
     'Keep your contact and notification choices up to date. Your verified mobile number cannot be changed here.',
   'profile.preferredName': 'Preferred name',
   'profile.emailForNotifications': 'Email for notifications',
+  'profile.defaultAddress': 'Default address for pickups',
+  'profile.defaultAddressPlaceholder': 'e.g. Flat 4B, 8th Main Road, Bengaluru 560001',
+  'profile.defaultAddressHint':
+    'Pre-fills the pickup address on new requests. You can still edit it per request.',
   'profile.language': 'Language',
   'profile.languageEnglish': 'English',
   'profile.languageKannada': 'ಕನ್ನಡ (Kannada)',

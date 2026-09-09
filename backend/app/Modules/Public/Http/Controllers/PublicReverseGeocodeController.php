@@ -15,6 +15,12 @@ class PublicReverseGeocodeController extends BaseController
 
     public function __invoke(Request $request): JsonResponse
     {
+        if ($request->filled('q')) {
+            $request->validate(['q' => ['required', 'string', 'min:3', 'max:500']]);
+
+            return $this->respond($this->service->search($request->string('q')->toString()));
+        }
+
         $request->validate(['lat' => ['required', 'numeric', 'between:-90,90'], 'lng' => ['required', 'numeric', 'between:-180,180']]);
 
         return $this->respond($this->service->resolve($request->float('lat'), $request->float('lng')));

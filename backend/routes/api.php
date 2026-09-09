@@ -46,6 +46,7 @@ use App\Modules\Settings\Http\Controllers\Admin\SettingController;
 use App\Modules\Shared\Http\Controllers\Admin\PlatformHealthController;
 use App\Modules\Shared\Http\Controllers\Admin\SchedulerController;
 use App\Modules\TextileCollections\Http\Controllers\TextileCollectionController;
+use App\Modules\TextileCollections\Http\Controllers\TextileZoneCentreController;
 use App\Modules\Users\Http\Controllers\Admin\AdminPermissionController;
 use App\Modules\Users\Http\Controllers\Admin\AdminRoleController;
 use App\Modules\Users\Http\Controllers\Admin\AdminUserController;
@@ -394,6 +395,22 @@ Route::prefix('v1')->group(function (): void {
         Route::put('textile-zones/{zone}', [TextileCollectionController::class, 'updateZone'])
             ->middleware('can:textile.manage_centre')
             ->name('textile-zones.update');
+        // Issue #11 — multi-centre support: partner-scoped zone/centre management.
+        Route::get('textile-zones', [TextileZoneCentreController::class, 'staffZones'])
+            ->middleware('can:textile.manage_centre')
+            ->name('textile-zones.index');
+        Route::post('textile-zones', [TextileZoneCentreController::class, 'storeZone'])
+            ->middleware('can:textile.manage_centre')
+            ->name('textile-zones.store');
+        Route::get('textile-zones/{zone}/centres', [TextileZoneCentreController::class, 'staffCentres'])
+            ->middleware('can:textile.manage_centre')
+            ->name('textile-zones.centres.index');
+        Route::post('textile-zones/{zone}/centres', [TextileZoneCentreController::class, 'storeCentre'])
+            ->middleware('can:textile.manage_centre')
+            ->name('textile-zones.centres.store');
+        Route::put('textile-dropoff-centres/{centre}', [TextileZoneCentreController::class, 'updateCentre'])
+            ->middleware('can:textile.manage_centre')
+            ->name('textile-dropoff-centres.update');
         Route::get('dropoff-centres/lookup', [TextileCollectionController::class, 'lookupByReference'])
             ->middleware('can:textile.record_receipt')
             ->name('dropoff-centres.lookup');
@@ -498,6 +515,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('textile-collections/report/export', [TextileCollectionController::class, 'reportingExport'])
             ->middleware('can:textile.view_reports')
             ->name('textile-collections.report.export');
+        Route::get('textile-collections/report/live', [TextileCollectionController::class, 'reportingLive'])
+            ->middleware('can:textile.view_reports')
+            ->name('textile-collections.report.live');
     });
 
     // Citizen PWA — report submission and read-back (M4)

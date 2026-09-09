@@ -71,7 +71,6 @@ final class TextileCollectionOperationsService
         $this->capacity->assertPickupMinimum(
             serviceZoneId: $collection->service_zone_id,
             departmentId: (string) $collection->department_id,
-            estimatedBags: $collection->estimated_bags,
             estimatedWeightKg: $collection->estimated_weight_kg !== null ? (float) $collection->estimated_weight_kg : null,
         );
 
@@ -108,7 +107,6 @@ final class TextileCollectionOperationsService
                 ->whereIn('id', $collectionRequestIds)
                 ->lockForUpdate()
                 ->get();
-            $estimatedBags = null;
             $estimatedWeightKg = null;
 
             if ($requests->count() !== count($collectionRequestIds)) {
@@ -116,10 +114,6 @@ final class TextileCollectionOperationsService
             }
 
             foreach ($requests as $collection) {
-                if ($collection->estimated_bags !== null) {
-                    $estimatedBags = ($estimatedBags ?? 0) + $collection->estimated_bags;
-                }
-
                 if ($collection->estimated_weight_kg !== null) {
                     $estimatedWeightKg = ($estimatedWeightKg ?? 0.0) + (float) $collection->estimated_weight_kg;
                 }
@@ -146,7 +140,6 @@ final class TextileCollectionOperationsService
                 $this->capacity->assertPickupMinimum(
                     serviceZoneId: $serviceZoneId,
                     departmentId: (string) $firstRequest->department_id,
-                    estimatedBags: $estimatedBags,
                     estimatedWeightKg: $estimatedWeightKg,
                     date: $collectionDate,
                 );

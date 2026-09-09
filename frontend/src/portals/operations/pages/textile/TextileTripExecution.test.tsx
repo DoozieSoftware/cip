@@ -89,14 +89,14 @@ describe('Textile trip execution frontend (Phase 2, unblocked subset)', () => {
     renderPage();
     const links = screen.getAllByRole('link', { name: /Stop 1: Lakshmi/ });
     expect(links).toHaveLength(1);
-    expect(links[0].getAttribute('href')).toContain('/dispatch/batch-1/stops/collection-1');
+    expect(links[0].getAttribute('href')).toContain('/collections/batch-1/stops/collection-1');
     expect(screen.queryByRole('button', { name: 'Record collection' })).not.toBeInTheDocument();
   });
 
   it('FE-C1 proof capture lives on the stop page (board keeps no file picker)', () => {
     renderPage();
     expect(screen.getByRole('link', { name: /Stop 1: Lakshmi/ }).getAttribute('href')).toContain(
-      '/dispatch/batch-1/stops/collection-1',
+      '/collections/batch-1/stops/collection-1',
     );
     expect(screen.queryByRole('button', { name: 'Choose proof photo' })).not.toBeInTheDocument();
   });

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { IconCamera, IconCircleCheck, IconSearch } from '@tabler/icons-react';
+import { IconCamera, IconCircleCheck, IconPhoto, IconSearch } from '@tabler/icons-react';
 import { ApiError } from '../../../../shared/api/errors';
+import { CameraCapture } from '../../../citizen/components/CameraCapture';
 import {
   recordDropoffReceipt,
   uploadTextileProofPhoto,
@@ -37,6 +38,8 @@ export default function TextileReceiptPage(): JSX.Element {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmed, setConfirmed] = useState<{
@@ -170,6 +173,8 @@ export default function TextileReceiptPage(): JSX.Element {
     setPhotoFile(null);
     setPhotoPreview(null);
     setPhotoError(null);
+    setShowCamera(false);
+    setCameraError(null);
     setServerError(null);
     setConfirmed(null);
     setBusy(false);
@@ -185,7 +190,7 @@ export default function TextileReceiptPage(): JSX.Element {
   return (
     <DeskPage
       desk={desk}
-      title="Centre receipt"
+      title="Pickup request"
       description="Find a drop-off booking by reference or phone, verify, weigh and confirm receipt."
     >
       <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
@@ -318,10 +323,10 @@ export default function TextileReceiptPage(): JSX.Element {
                   tabIndex={-1}
                   className="text-base font-semibold text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-2 rounded"
                 >
-                  Receipt confirmed
+                  Pickup request confirmed
                 </h2>
                 <p role="status" className="text-xs text-[var(--color-text-secondary)]">
-                  Receipt confirmed for{' '}
+                  Pickup request confirmed for{' '}
                   <span className="font-mono text-xs font-semibold text-[var(--color-ink)]">
                     {confirmed.reference}
                   </span>{' '}
@@ -399,14 +404,67 @@ export default function TextileReceiptPage(): JSX.Element {
                   tabIndex={-1}
                   aria-hidden="true"
                 />
-                <button
-                  type="button"
-                  onClick={() => photoRef.current?.click()}
-                  className="mt-1 inline-flex h-9 items-center gap-2 rounded-lg border border-[var(--color-border)] bg-white px-3 text-xs font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
-                >
-                  {photoFile ? 'Replace photo' : 'Choose photo'}
-                  <IconCamera className="h-3.5 w-3.5" />
-                </button>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCameraError(null);
+                      setShowCamera(true);
+                    }}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--color-border)] bg-white px-3 text-xs font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+                  >
+                    Take photo
+                    <IconCamera className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => photoRef.current?.click()}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--color-border)] bg-white px-3 text-xs font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+                  >
+                    {photoFile ? 'Replace photo' : 'Choose photo'}
+                    <IconPhoto className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                {showCamera ? (
+                  <div className="mt-2 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-3">
+                    <CameraCapture
+                      mode="photo"
+                      onCapture={(f) => {
+                        setCameraError(null);
+                        setShowCamera(false);
+                        handlePhoto(f);
+                      }}
+                      onError={(e) => setCameraError(e.message)}
+                    />
+                    {cameraError ? (
+                      <p
+                        role="status"
+                        className="mt-2 text-[11px] text-[var(--color-text-secondary)]"
+                      >
+                        {cameraError} You can choose a photo file instead.
+                      </p>
+                    ) : null}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowCamera(false)}
+                        className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--color-border)] bg-white px-3 text-xs font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+                      >
+                        Cancel camera
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCamera(false);
+                          photoRef.current?.click();
+                        }}
+                        className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--color-border)] bg-white px-3 text-xs font-medium text-[var(--color-ink)] transition hover:bg-[var(--color-surface-alt)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
+                      >
+                        Choose a file instead
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
                 {photoPreview ? (
                   <img
                     src={photoPreview}
@@ -464,7 +522,7 @@ export default function TextileReceiptPage(): JSX.Element {
                   onClick={() => void confirm()}
                   className="inline-flex h-9 items-center justify-center rounded-lg bg-[var(--color-ink)] px-4 text-xs font-semibold text-white transition hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1 disabled:opacity-40"
                 >
-                  {busy ? 'Confirming…' : 'Confirm receipt'}
+                  {busy ? 'Confirming…' : 'Confirm pickup request'}
                 </button>
                 <button
                   type="button"

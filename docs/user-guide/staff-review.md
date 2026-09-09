@@ -13,7 +13,7 @@ Log in as the department officer and open **Reviews**. New citizen bookings arri
 2. **Quantity** — home pickups below 2 bags and 4 kg cannot be approved as pickup; ask the citizen to add more or switch to drop-off.
 3. **Address** — complete enough for a driver to find on first try?
 4. **Photo** — citizen evidence photo, if attached.
-5. **Method** — pickup requests go toward trips; drop-off bookings go to the **Receipt** screen, never to a trip.
+5. **Method** — pickup requests go toward trips; drop-off bookings go to the **Pickup request** screen, never to a trip.
 
 ## Actions
 
@@ -24,4 +24,4 @@ Log in as the department officer and open **Reviews**. New citizen bookings arri
 ## After review
 
 - Approved pickups: see [Planning and scheduling trips](staff-scheduling.md).
-- Approved drop-offs: see [Confirming centre receipts](staff-receipt.md).
+- Approved drop-offs: see [Confirming pickup requests](staff-receipt.md).

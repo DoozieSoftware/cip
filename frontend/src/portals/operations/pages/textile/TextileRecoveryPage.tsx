@@ -11,7 +11,7 @@ export default function TextileRecoveryPage(): JSX.Element {
   return (
     <DeskPage
       desk={desk}
-      title="Upload recovery"
+      title="Reupload"
       description="Pending and failed field uploads. Retry safely — the same proof is never recorded twice."
     >
       {allFailed.length === 0 ? (

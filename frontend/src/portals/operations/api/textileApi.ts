@@ -18,6 +18,9 @@ export interface TextileCollectionListItem {
   contact_email: string;
   contact_phone: string;
   pickup_address: string;
+  /** Optional: present when the booking captured a pickup geolocation. */
+  latitude?: number | null;
+  longitude?: number | null;
   collection_method: string;
   estimated_bags: number;
   estimated_weight_kg: number;
@@ -75,6 +78,119 @@ export interface TextileServiceZone {
   code: string;
   name: string;
   methods: Array<'dropoff' | 'premises'>;
+}
+
+export interface TextileDropoffCentre {
+  id: string;
+  service_zone_id: string;
+  name: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  operating_hours: Record<string, unknown> | null;
+  public_phone: string | null;
+  status: 'open' | 'temporarily_closed';
+  closed_note: string | null;
+  active: boolean;
+  sort_order: number;
+}
+
+export interface StaffTextileZone extends TextileServiceZone {
+  active: boolean;
+  centres: TextileDropoffCentre[];
+}
+
+/** Issue #11 — partner-scoped zone list with centres for the Dr Linen desk. */
+export function fetchStaffTextileZones(departmentId?: string) {
+  return request<StaffTextileZone[]>('/department/textile-zones', {
+    query: departmentId ? { department_id: departmentId } : {},
+  });
+}
+
+export function createStaffTextileZone(
+  payload: {
+    code: string;
+    name: string;
+    dropoff_enabled?: boolean;
+    premises_pickup_enabled?: boolean;
+    active?: boolean;
+  },
+  departmentId?: string,
+) {
+  return request<StaffTextileZone>('/department/textile-zones', {
+    method: 'POST',
+    body: payload,
+    query: departmentId ? { department_id: departmentId } : {},
+  });
+}
+
+export function updateStaffTextileZone(
+  zoneId: string,
+  payload: {
+    name?: string;
+    dropoff_name?: string | null;
+    dropoff_address?: string | null;
+    dropoff_enabled?: boolean;
+    premises_pickup_enabled?: boolean;
+    active?: boolean;
+  },
+  departmentId?: string,
+) {
+  return request<StaffTextileZone>(`/department/textile-zones/${zoneId}`, {
+    method: 'PUT',
+    body: payload,
+    query: departmentId ? { department_id: departmentId } : {},
+  });
+}
+
+export function fetchZoneCentres(zoneId: string, departmentId?: string) {
+  return request<TextileDropoffCentre[]>(`/department/textile-zones/${zoneId}/centres`, {
+    query: departmentId ? { department_id: departmentId } : {},
+  });
+}
+
+export function createZoneCentre(
+  zoneId: string,
+  payload: {
+    name: string;
+    address?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    public_phone?: string | null;
+    status?: 'open' | 'temporarily_closed';
+    closed_note?: string | null;
+    active?: boolean;
+    sort_order?: number;
+  },
+  departmentId?: string,
+) {
+  return request<TextileDropoffCentre>(`/department/textile-zones/${zoneId}/centres`, {
+    method: 'POST',
+    body: payload,
+    query: departmentId ? { department_id: departmentId } : {},
+  });
+}
+
+export function updateZoneCentre(
+  centreId: string,
+  payload: {
+    name?: string;
+    address?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    public_phone?: string | null;
+    status?: 'open' | 'temporarily_closed';
+    closed_note?: string | null;
+    active?: boolean;
+    sort_order?: number;
+  },
+  departmentId?: string,
+) {
+  return request<TextileDropoffCentre>(`/department/textile-dropoff-centres/${centreId}`, {
+    method: 'PUT',
+    body: payload,
+    query: departmentId ? { department_id: departmentId } : {},
+  });
 }
 
 export interface TextileBatchResult {
@@ -435,9 +551,25 @@ export function fetchTextileReportingDashboard(params: {
   department_id?: string;
   year?: string;
   month?: string;
+  granularity?: 'day' | 'month';
 }) {
   return request<TextileCapacityDashboard>('/department/textile-collections/report/dashboard', {
     query: params,
+  });
+}
+
+/** Live "what needs attention right now" snapshot for the dashboard strip. */
+export interface TextileLiveSnapshot {
+  date: string;
+  trips: { total: number; by_status: Record<string, number> };
+  stops: { total: number; pending: number; collected: number; missed: number };
+  pending_receipts: number;
+  failed_uploads: number;
+}
+
+export function fetchTextileLiveSnapshot(departmentId?: string) {
+  return request<TextileLiveSnapshot>('/department/textile-collections/report/live', {
+    query: departmentId ? { department_id: departmentId } : {},
   });
 }
 

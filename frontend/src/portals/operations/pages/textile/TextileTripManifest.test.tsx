@@ -121,7 +121,7 @@ describe('Textile trip manifest (Phase 2)', () => {
     expect(document.querySelector('img[src="https://cdn/evidence.jpg"]')).toBeNull();
     expect(
       screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ }).getAttribute('href'),
-    ).toContain('/dispatch/batch-1/stops/c-1');
+    ).toContain('/collections/batch-1/stops/c-1');
   });
 
   it('manifest links each stop to its stop-work page where Call/Navigate live', () => {
@@ -134,7 +134,7 @@ describe('Textile trip manifest (Phase 2)', () => {
     renderPage();
     expect(screen.getByText(/Jayanagar/)).toBeInTheDocument();
     const stopLink = screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ });
-    expect(stopLink.getAttribute('href')).toContain('/dispatch/batch-1/stops/c-1');
+    expect(stopLink.getAttribute('href')).toContain('/collections/batch-1/stops/c-1');
     // Call/Navigate moved off the board onto the stop page.
     expect(screen.queryByRole('link', { name: 'Call' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Navigate' })).not.toBeInTheDocument();
@@ -242,7 +242,7 @@ describe('Textile trip manifest (Phase 2)', () => {
     renderPage();
     expect(
       screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ }).getAttribute('href'),
-    ).toContain('/dispatch/batch-1/stops/c-1');
+    ).toContain('/collections/batch-1/stops/c-1');
     expect(screen.queryByRole('button', { name: /mark missed/i })).not.toBeInTheDocument();
   });
 

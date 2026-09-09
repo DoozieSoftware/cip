@@ -19,7 +19,7 @@ final class CollectTextileRequest extends FormRequest
     {
         return [
             'actual_bags' => ['required', 'integer', 'min:1', 'max:999'],
-            'actual_weight_kg' => ['required', 'numeric', 'min:0.1', 'max:99999.99'],
+            'actual_weight_kg' => ['required', 'integer', 'min:1', 'max:99999'],
             'photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'reason' => ['nullable', 'string', 'max:2000'],
             'client_key' => ['nullable', 'string', 'max:128'],

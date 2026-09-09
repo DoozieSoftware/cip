@@ -25,7 +25,7 @@ test.describe('trip smoke — miss handling shell (unblocked)', () => {
   test('missed stop leaves citizen-visible explanation and re-scheduling path (unblocked)', async ({
     page,
   }) => {
-    // Lightweight smoke: operations shell loads and dispatch board copy is reachable.
+    // Lightweight smoke: operations shell loads and collections copy is reachable.
     await page.goto('/operations');
     await expect(page.locator('body')).toBeVisible();
     // Miss handling is coverered by backend tests; this e2e proves no blank screen.
@@ -65,7 +65,7 @@ test.describe('trip smoke — cross-partner guard (unblocked)', () => {
 });
 
 test.describe('trip manifest mobile viewport (Phase 2 AC)', () => {
-  test('dispatch board works on 375px viewport without horizontal overflow', async ({ page }) => {
+  test('collections works on 375px viewport without horizontal overflow', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/operations');
     await expect(page.locator('body')).toBeVisible();
@@ -95,7 +95,7 @@ test.describe('trip manifest mobile viewport (Phase 2 AC)', () => {
   });
 });
 
-test.describe('textile dispatch board smoke (unblocked)', () => {
+test.describe('textile collections smoke (unblocked)', () => {
   test('operations shell still renders without textile trip features', async ({ page }) => {
     await page.goto('/operations');
     await expect(page.locator('body')).toBeVisible();

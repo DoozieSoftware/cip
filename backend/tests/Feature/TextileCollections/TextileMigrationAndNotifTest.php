@@ -51,7 +51,7 @@ it('NEGATIVE: mime spoof .php renamed to .jpg is rejected on photo upload', func
     $r = $this->postJson('/api/v1/textile-collection/requests', [
         'title' => 'Mime test', 'service_zone_id' => $zone->id, 'requester_type' => 'individual',
         'requester_name' => 'Asha', 'contact_email' => 'a@example.com', 'contact_phone' => '+91 9876543210',
-        'pickup_address' => '12 MG Road', 'collection_method' => 'premises', 'estimated_bags' => 1, 'estimated_weight_kg' => 1.0,
+        'pickup_address' => '12 MG Road', 'collection_method' => 'premises', 'estimated_bags' => 1, 'estimated_weight_kg' => 1,
     ])->assertCreated();
     $id = $r->json('data.id');
     // Create a fake php file with jpg extension — UploadTextilePhotoRequest should reject via mimes

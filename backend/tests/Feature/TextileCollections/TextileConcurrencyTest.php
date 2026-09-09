@@ -50,7 +50,7 @@ function concPayload(TextileServiceZone $z, array $o = []): array
         'pickup_address' => '12 MG Road',
         'collection_method' => 'premises',
         'estimated_bags' => 3,
-        'estimated_weight_kg' => 8.5,
+        'estimated_weight_kg' => 8,
     ], $o);
 }
 function concStaff(): User
@@ -91,7 +91,7 @@ it('CC-1 / BE-C4 collect ∥ miss same scheduled request → exactly one termina
     $this->postJson("/api/v1/department/textile-collections/{$col->id}/proof", ['photo' => $file])->assertCreated();
 
     $r1 = $this->postJson("/api/v1/department/textile-collections/{$col->id}/outcome", [
-        'outcome' => 'collected', 'actual_bags' => 2, 'actual_weight_kg' => 5.0,
+        'outcome' => 'collected', 'actual_bags' => 2, 'actual_weight_kg' => 5,
     ]);
     $r2 = $this->postJson("/api/v1/department/textile-collections/{$col->id}/outcome", [
         'outcome' => 'missed', 'reason' => 'Nobody at home for miss test.',
@@ -116,7 +116,7 @@ it('CC-2 / BE-X4 cancel ∥ collect same request → exactly one terminal state'
     // staff collect
     Sanctum::actingAs($staff);
     $rCollect = $this->postJson("/api/v1/department/textile-collections/{$col->id}/outcome", [
-        'outcome' => 'collected', 'actual_bags' => 1, 'actual_weight_kg' => 1.0,
+        'outcome' => 'collected', 'actual_bags' => 1, 'actual_weight_kg' => 1,
     ]);
     // citizen cancel after
     Sanctum::actingAs($citizen);

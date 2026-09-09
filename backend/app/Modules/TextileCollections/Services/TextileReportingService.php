@@ -7,6 +7,7 @@ namespace App\Modules\TextileCollections\Services;
 use App\Modules\TextileCollections\Models\TextileCapacityException;
 use App\Modules\TextileCollections\Models\TextileCollectionBatch;
 use App\Modules\TextileCollections\Models\TextileCollectionRequest;
+use App\Modules\TextileCollections\Models\TextileOfflineRecoveryItem;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -163,6 +164,81 @@ final class TextileReportingService
                 'dropoff' => 'Requests with collection_method = dropoff.',
                 'premises' => 'Requests with collection_method = premises.',
             ],
+        ];
+    }
+
+    /**
+     * Live "what needs attention right now" snapshot for the operations
+     * dashboard. Partner-scoped; counts only today's trips (batches with at
+     * least one request for the partner and collection_date = today), the
+     * stops inside those trips, drop-off bookings still awaiting a centre
+     * receipt, and pending offline-recovery items. Read-only: no audit row.
+     *
+     * @return array<string, mixed>
+     */
+    public function liveSnapshot(string $departmentId): array
+    {
+        $today = Carbon::now()->toDateString();
+
+        $todayBatchIds = TextileCollectionBatch::query()
+            ->whereHas('requests', fn ($q) => $q->where('department_id', $departmentId))
+            ->whereDate('collection_date', $today)
+            ->pluck('id');
+
+        $tripsByStatus = TextileCollectionBatch::query()
+            ->whereHas('requests', fn ($q) => $q->where('department_id', $departmentId))
+            ->whereDate('collection_date', $today)
+            ->select('status', DB::raw('count(*) as count'))
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->all();
+
+        $stops = TextileCollectionRequest::query()
+            ->where('department_id', $departmentId)
+            ->whereIn('batch_id', $todayBatchIds->all());
+
+        /** @var array<string, mixed> $stopTotals */
+        $stopTotals = (clone $stops)
+            ->select('status', DB::raw('count(*) as count'))
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->all();
+
+        $stopCount = function (string $status) use ($stopTotals): int {
+            $value = $stopTotals[$status] ?? 0;
+
+            return is_numeric($value) ? (int) $value : 0;
+        };
+
+        $pendingReceipts = TextileCollectionRequest::query()
+            ->where('department_id', $departmentId)
+            ->where('collection_method', 'dropoff')
+            ->whereIn('status', [
+                TextileCollectionRequest::STATUS_DROPOFF_AWAITING_DROP,
+                TextileCollectionRequest::STATUS_READY_TO_GROUP,
+            ])
+            ->count();
+
+        $failedUploads = TextileOfflineRecoveryItem::query()
+            ->where('status', TextileOfflineRecoveryItem::STATUS_PENDING)
+            ->whereHas('collection', fn ($q) => $q->where('department_id', $departmentId))
+            ->count();
+
+        return [
+            'date' => $today,
+            'trips' => [
+                'total' => $todayBatchIds->count(),
+                'by_status' => $tripsByStatus,
+            ],
+            'stops' => [
+                'total' => array_sum(array_map(fn ($v): int => is_numeric($v) ? (int) $v : 0, array_values($stopTotals))),
+                'pending' => $stopCount(TextileCollectionRequest::STATUS_SCHEDULED),
+                'collected' => $stopCount(TextileCollectionRequest::STATUS_PICKED_UP)
+                    + $stopCount(TextileCollectionRequest::STATUS_RECEIVED_AT_CENTRE),
+                'missed' => $stopCount(TextileCollectionRequest::STATUS_MISSED),
+            ],
+            'pending_receipts' => $pendingReceipts,
+            'failed_uploads' => $failedUploads,
         ];
     }
 

@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect } from 'react';
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { lazy, Suspense, useEffect, type JSX } from 'react';
+import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { OperationsLayout } from './layout/OperationsLayout';
 import { DepartmentSelectionProvider } from './context/DepartmentSelectionContext';
 import { Spinner } from '../../shared/ui';
@@ -33,6 +33,7 @@ const TextileReceiptPage = lazy(() => import('./pages/textile/TextileReceiptPage
 const TextileRecoveryPage = lazy(() => import('./pages/textile/TextileRecoveryPage'));
 const TextileOfflineRecoveryPage = lazy(() => import('./pages/textile/TextileOfflineRecoveryPage'));
 const TextileCapacityPage = lazy(() => import('./pages/textile/TextileCapacityPage'));
+const TextileCentresPage = lazy(() => import('./pages/textile/TextileCentresPage'));
 
 function Fallback() {
   return (
@@ -50,6 +51,17 @@ function OperationsHome() {
     <Navigate to="/operations/textile-collections/review" replace />
   ) : (
     <DashboardPage />
+  );
+}
+
+/** Bookmark/in-flight redirect: old dispatch stop URLs keep working. */
+function LegacyDispatchStopRedirect(): JSX.Element {
+  const { batchId, stopId } = useParams();
+  return (
+    <Navigate
+      to={`/operations/textile-collections/collections/${batchId ?? ''}/stops/${stopId ?? ''}`}
+      replace
+    />
   );
 }
 
@@ -110,18 +122,36 @@ export function OperationsApp() {
             <Route path="textile-collections/review" element={<TextileReviewPage />} />
             <Route path="textile-collections/schedule" element={<TextileSchedulePage />} />
             <Route path="textile-collections/schedule/new" element={<TextileTripNewPage />} />
-            <Route path="textile-collections/receipt" element={<TextileReceiptPage />} />
-            <Route path="textile-collections/dispatch" element={<TextileDispatchPage />} />
+            <Route path="textile-collections/pickup-requests" element={<TextileReceiptPage />} />
+            <Route path="textile-collections/collections" element={<TextileDispatchPage />} />
             <Route
-              path="textile-collections/dispatch/:batchId/stops/:stopId"
+              path="textile-collections/collections/:batchId/stops/:stopId"
               element={<TextileStopPage />}
             />
-            <Route path="textile-collections/recovery" element={<TextileRecoveryPage />} />
+            {/* Renamed paths: keep old bookmarks and in-flight links working. */}
+            <Route
+              path="textile-collections/receipt"
+              element={<Navigate to="/operations/textile-collections/pickup-requests" replace />}
+            />
+            <Route
+              path="textile-collections/dispatch"
+              element={<Navigate to="/operations/textile-collections/collections" replace />}
+            />
+            <Route
+              path="textile-collections/dispatch/:batchId/stops/:stopId"
+              element={<LegacyDispatchStopRedirect />}
+            />
+            <Route path="textile-collections/reuploads" element={<TextileRecoveryPage />} />
+            <Route
+              path="textile-collections/recovery"
+              element={<Navigate to="/operations/textile-collections/reuploads" replace />}
+            />
             <Route
               path="textile-collections/offline-recovery"
               element={<TextileOfflineRecoveryPage />}
             />
             <Route path="textile-collections/capacity" element={<TextileCapacityPage />} />
+            <Route path="textile-collections/centres" element={<TextileCentresPage />} />
             <Route path="textile-collections/completed" element={<TextileCompletedPage />} />
             <Route path="textile-collections/:id" element={<TextileStaffDetailPage />} />
             <Route path="audit" element={<AuditLogPage />} />

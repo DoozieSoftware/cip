@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Phase 1 drop-off receipt journeys — specs are fixtures that document the
+ * Phase 1 drop-off pickup request journeys — specs are fixtures that document the
  * acceptance flow. Steps that depend on OPEN D-01..D-03 are marked fixme
  * so the suite stays green before the backend ships drop-off lane.
  */
@@ -9,7 +9,7 @@ import { test, expect } from '@playwright/test';
 test.describe('E2E-1 drop-off happy [OPEN D-01/D-02]', () => {
   test.fixme(
     true,
-    'OPEN D-01: citizen books drop-off → approval → counter receipt w/ photo → sees received (no trip steps)',
+    'OPEN D-01: citizen books drop-off → approval → counter pickup request w/ photo → sees received (no trip steps)',
   );
 });
 

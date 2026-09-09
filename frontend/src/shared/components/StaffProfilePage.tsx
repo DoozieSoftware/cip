@@ -17,7 +17,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { pushSupport, subscribeToPush } from '../../portals/citizen/push/subscribe';
 // Shared page, operations-specific overflow: the DR_LINEN destinations dropped
 // from the mobile bottom bar live here, so this page reads the operations
-// offline queue to badge the Device-uploads row (same source as the
+// offline queue to badge the Reupload row (same source as the
 // operations OfflineBanner). Other portals never render that section.
 import { useOpsQueue } from '../../portals/operations/offline/useOpsQueue';
 import {
@@ -113,8 +113,8 @@ function InfoRow({
 const TEXTILE_MORE_LINKS = [
   { to: '/operations/textile-collections/completed', label: 'History', icon: IconHistory },
   {
-    to: '/operations/textile-collections/recovery',
-    label: 'Device uploads',
+    to: '/operations/textile-collections/reuploads',
+    label: 'Reupload',
     icon: IconShield,
     badge: 'pending-uploads' as const,
   },

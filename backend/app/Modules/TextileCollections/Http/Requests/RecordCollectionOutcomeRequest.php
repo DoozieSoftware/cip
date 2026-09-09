@@ -21,7 +21,7 @@ final class RecordCollectionOutcomeRequest extends FormRequest
         return [
             'outcome' => ['required', Rule::in(['collected', 'missed', 'rejected', 'cancelled'])],
             'actual_bags' => ['required_if:outcome,collected', 'nullable', 'integer', 'min:1', 'max:999'],
-            'actual_weight_kg' => ['required_if:outcome,collected', 'nullable', 'numeric', 'min:0.1', 'max:99999.99'],
+            'actual_weight_kg' => ['required_if:outcome,collected', 'nullable', 'integer', 'min:1', 'max:99999'],
             'reason' => ['required_unless:outcome,collected', 'nullable', 'string', 'min:5', 'max:2000'],
         ];
     }

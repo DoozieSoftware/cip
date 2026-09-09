@@ -307,10 +307,12 @@ export default function TextileStaffDetailPage(): JSX.Element {
                   <div className="mt-3">
                     <button
                       type="button"
-                      onClick={() => void navigate('/operations/textile-collections/receipt')}
+                      onClick={() =>
+                        void navigate('/operations/textile-collections/pickup-requests')
+                      }
                       className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-[var(--color-ink)] px-4 text-xs font-semibold text-white transition hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
                     >
-                      Open centre receipt desk →
+                      Open pickup request desk →
                     </button>
                   </div>
                 </section>
@@ -329,10 +331,10 @@ export default function TextileStaffDetailPage(): JSX.Element {
                   <div className="mt-3">
                     <button
                       type="button"
-                      onClick={() => void navigate('/operations/textile-collections/dispatch')}
+                      onClick={() => void navigate('/operations/textile-collections/collections')}
                       className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-[var(--color-ink)] px-4 text-xs font-semibold text-white transition hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)]"
                     >
-                      Open dispatch board →
+                      Open collections board →
                     </button>
                   </div>
                 </section>

@@ -98,7 +98,7 @@ function capacityPayload(TextileServiceZone $zone, array $overrides = []): array
         'pickup_address' => '12, MG Road, Bengaluru 560001',
         'collection_method' => 'premises',
         'estimated_bags' => 3,
-        'estimated_weight_kg' => 8.5,
+        'estimated_weight_kg' => 8,
         'category' => 'clothes_waste',
     ], $overrides);
 }
@@ -135,7 +135,7 @@ function capacityRulePayload(TextileServiceZone $zone, array $overrides = []): a
         'max_weight_kg' => 50.0,
         'max_stops' => 8,
         'min_bags' => 2,
-        'min_weight_kg' => 4.0,
+        'min_weight_kg' => 4,
         'guidance_text' => 'Keep textiles dry and packed.',
         'category_allowlist' => ['clothes_waste'],
     ], $overrides);
@@ -242,7 +242,7 @@ it('evaluate batch under capacity returns ok true with no blockers', function ()
         'min_bags' => 1,
     ]))->assertCreated();
 
-    $req = capacityCreateRequest($citizen, $zone, ['estimated_bags' => 3, 'estimated_weight_kg' => 8.0]);
+    $req = capacityCreateRequest($citizen, $zone, ['estimated_bags' => 3, 'estimated_weight_kg' => 8]);
     $batch = capacityApproveAndSchedule($zone, $req, $staff, Carbon::tomorrow()->toDateString());
 
     Sanctum::actingAs($staff);
@@ -270,8 +270,8 @@ it('evaluate batch over capacity returns blockers and ok false', function (): vo
     ]))->assertCreated();
 
     // Two requests that together exceed max_bags (3+3=6 >5)
-    $c1 = capacityCreateRequest(capacityCitizen(), $zone, ['estimated_bags' => 3, 'estimated_weight_kg' => 4.0]);
-    $c2 = capacityCreateRequest(capacityCitizen(), $zone, ['estimated_bags' => 3, 'estimated_weight_kg' => 4.0]);
+    $c1 = capacityCreateRequest(capacityCitizen(), $zone, ['estimated_bags' => 3, 'estimated_weight_kg' => 4]);
+    $c2 = capacityCreateRequest(capacityCitizen(), $zone, ['estimated_bags' => 3, 'estimated_weight_kg' => 4]);
 
     Sanctum::actingAs($staff);
 
@@ -292,7 +292,7 @@ it('evaluate batch over capacity returns blockers and ok false', function (): vo
         ->and(collect($eval['blockers'])->pluck('code')->contains('exceeds_max_bags'))->toBeTrue();
 });
 
-it('rejects a below-minimum home pickup while allowing drop-off', function (): void {
+it('rejects a below-minimum home pickup with a weight-only message', function (): void {
     $dept = capacityEnsurePartner('DR_LINEN');
     $zone = capacityZone($dept);
     $staff = capacityStaff($dept);
@@ -301,24 +301,116 @@ it('rejects a below-minimum home pickup while allowing drop-off', function (): v
     Sanctum::actingAs($staff);
     $this->postJson('/api/v1/department/textile-capacity/rules', capacityRulePayload($zone, [
         'max_bags' => 20,
-        'min_bags' => 5,
-        'min_weight_kg' => 10,
+        // min_bags stays on the record but is never enforced.
+        'min_bags' => 50,
+        'min_weight_kg' => 4,
         'guidance_text' => 'Please combine with neighbours.',
     ]))->assertCreated();
 
     Sanctum::actingAs($citizen);
+    // 3 kg is blocked with a weight-only message.
     $this->postJson('/api/v1/textile-collection/requests', capacityPayload($zone, [
         'estimated_bags' => 1,
-        'estimated_weight_kg' => 2.0,
+        'estimated_weight_kg' => 3,
     ]))->assertUnprocessable()
         ->assertJsonPath('code', 'PICKUP_MINIMUM_NOT_MET')
-        ->assertJsonPath('errors.min_bags', 5);
+        ->assertJsonPath('errors.min_weight_kg', 4)
+        ->assertJsonPath('message', 'Home pickup requires at least 4 kg. Add more material or choose drop-off.');
 
+    // 4 kg passes even though the bag count is far below the stored min_bags.
     $this->postJson('/api/v1/textile-collection/requests', capacityPayload($zone, [
+        'estimated_bags' => 1,
+        'estimated_weight_kg' => 4,
+    ]))->assertCreated();
+
+    // Fractional kilos are invalid input.
+    $this->postJson('/api/v1/textile-collection/requests', capacityPayload($zone, [
+        'estimated_bags' => 1,
+        'estimated_weight_kg' => 4.5,
+    ]))->assertUnprocessable()
+        ->assertJsonValidationErrors(['estimated_weight_kg']);
+
+    // A bags-only estimate cannot be minimum-checked, so any bag count passes.
+    $bagsOnly = capacityPayload($zone, ['estimated_bags' => 1]);
+    unset($bagsOnly['estimated_weight_kg']);
+    $this->postJson('/api/v1/textile-collection/requests', $bagsOnly)->assertCreated();
+
+    // Drop-off accepts any amount with no address and no minimum.
+    $dropoff = capacityPayload($zone, [
         'collection_method' => 'dropoff',
         'estimated_bags' => 1,
-        'estimated_weight_kg' => 2.0,
+        'estimated_weight_kg' => 1,
+    ]);
+    unset($dropoff['pickup_address']);
+    $this->postJson('/api/v1/textile-collection/requests', $dropoff)->assertCreated();
+});
+
+it('requires pickup_address for premises but not for drop-off', function (): void {
+    $dept = capacityEnsurePartner('DR_LINEN');
+    $zone = capacityZone($dept);
+    $citizen = capacityCitizen();
+    Sanctum::actingAs($citizen);
+
+    // Premises without an address is rejected.
+    $premises = capacityPayload($zone, ['collection_method' => 'premises']);
+    unset($premises['pickup_address']);
+    $this->postJson('/api/v1/textile-collection/requests', $premises)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['pickup_address']);
+
+    // Drop-off without an address is accepted and stored as null.
+    $dropoff = capacityPayload($zone, ['collection_method' => 'dropoff']);
+    unset($dropoff['pickup_address']);
+    $id = $this->postJson('/api/v1/textile-collection/requests', $dropoff)
+        ->assertCreated()
+        ->assertJsonPath('data.collection_method', 'dropoff')
+        ->json('data.id');
+
+    expect(TextileCollectionRequest::query()->findOrFail($id)->pickup_address)->toBeNull();
+
+    // A legacy drop-off row that still carries an address keeps working.
+    $this->postJson('/api/v1/textile-collection/requests', capacityPayload($zone, [
+        'collection_method' => 'dropoff',
     ]))->assertCreated();
+});
+
+it('batch evaluation enforces the weight-only minimum', function (): void {
+    $dept = capacityEnsurePartner('DR_LINEN');
+    $zone = capacityZone($dept);
+    $staff = capacityStaff($dept);
+    $citizen = capacityCitizen();
+
+    // Created before any rule exists, so the create path cannot block them.
+    $req = capacityCreateRequest($citizen, $zone, ['estimated_bags' => 1, 'estimated_weight_kg' => 5]);
+
+    Sanctum::actingAs($staff);
+    $this->postJson('/api/v1/department/textile-capacity/rules', capacityRulePayload($zone, [
+        'max_bags' => 20,
+        'max_weight_kg' => 100,
+        'max_stops' => 8,
+        // Bags far above the request count: ignored by the weight-only check.
+        'min_bags' => 50,
+        'min_weight_kg' => 4,
+    ]))->assertCreated();
+
+    $batch = capacityApproveAndSchedule($zone, $req, $staff, Carbon::tomorrow()->toDateString());
+
+    Sanctum::actingAs($staff);
+    $eval = $this->postJson("/api/v1/department/textile-batches/{$batch->id}/evaluate-capacity")->assertOk()->json('data');
+
+    expect($eval['ok'])->toBeTrue()
+        ->and($eval['blockers'])->toBeEmpty();
+
+    // Raising the weight minimum above the trip total blocks evaluation.
+    $rules = $this->getJson('/api/v1/department/textile-capacity/rules')->assertOk()->json('data');
+    $ruleId = $rules[0]['id'];
+    $this->putJson("/api/v1/department/textile-capacity/rules/{$ruleId}", ['min_weight_kg' => 10])->assertOk();
+
+    $blocked = $this->postJson("/api/v1/department/textile-batches/{$batch->id}/evaluate-capacity")->assertOk()->json('data');
+
+    expect($blocked['ok'])->toBeFalse()
+        ->and(collect($blocked['blockers'])->pluck('code')->contains('below_minimum'))->toBeTrue()
+        ->and(collect($blocked['blockers'])->pluck('message')->first())->toContain('10 kg');
 });
 
 it('blocks approval when an existing pickup is below the current minimum', function (): void {
@@ -327,7 +419,7 @@ it('blocks approval when an existing pickup is below the current minimum', funct
     $staff = capacityStaff($dept);
     $request = capacityCreateRequest(capacityCitizen(), $zone, [
         'estimated_bags' => 1,
-        'estimated_weight_kg' => 2.0,
+        'estimated_weight_kg' => 2,
     ]);
 
     Sanctum::actingAs($staff);
@@ -349,7 +441,7 @@ it('blocks scheduling when the trip date has a higher minimum', function (): voi
     $staff = capacityStaff($dept);
     $request = capacityCreateRequest(capacityCitizen(), $zone, [
         'estimated_bags' => 1,
-        'estimated_weight_kg' => 2.0,
+        'estimated_weight_kg' => 2,
     ]);
 
     Sanctum::actingAs($staff);
@@ -420,7 +512,7 @@ it('citizen can fetch capacity minimum guidance for a zone', function (): void {
     Sanctum::actingAs($staff);
     $this->postJson('/api/v1/department/textile-capacity/rules', capacityRulePayload($zone, [
         'min_bags' => 4,
-        'min_weight_kg' => 7.5,
+        'min_weight_kg' => 8,
         'guidance_text' => 'Minimum for this zone.',
     ]))->assertCreated();
 
@@ -429,7 +521,7 @@ it('citizen can fetch capacity minimum guidance for a zone', function (): void {
 
     expect($res['service_zone_id'])->toBe($zone->id)
         ->and($res['min_bags'])->toBe(4)
-        ->and((float) $res['min_weight_kg'])->toBe(7.5)
+        ->and((float) $res['min_weight_kg'])->toBe(8.0)
         ->and($res['guidance_text'])->toBe('Minimum for this zone.');
 });
 

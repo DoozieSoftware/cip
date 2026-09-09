@@ -1,7 +1,7 @@
 # Phase 1 — Drop-off service
 
 > **Citizens:** sidebar **Collections → New request**, choose “I’ll go to the centre.”
-> **Staff:** sidebar **Receipt** (`/operations/textile-collections/receipt`).
+> **Staff:** sidebar **Pickup request** (`/operations/textile-collections/pickup-requests`).
 
 **What it is:** citizens bring bags to a Dr. Linen collection centre instead of waiting for a truck.
 
@@ -21,7 +21,7 @@ flowchart TD
     B --> C[Citizen takes bags to centre]
     C --> D[Staff find booking by<br/>reference or phone]
     D --> E[Weigh bags + proof photo]
-    E --> F[Confirm receipt]
+    E --> F[Confirm pickup request]
     F --> G[Citizen page: received]
 ```
 
@@ -35,4 +35,4 @@ flowchart TD
 
 | Citizen | Staff |
 |---|---|
-| Books, brings bags to the centre | Approves, weighs, photographs, confirms receipt |
+| Books, brings bags to the centre | Approves, weighs, photographs, confirms pickup request |

@@ -5,6 +5,21 @@ export type TextileCollectionMethod = 'dropoff' | 'premises';
 
 export type TextileCollectionCategory = 'clothes_waste' | 'metal_scrap' | 'e_waste';
 
+export interface TextileDropoffCentreInfo {
+  id: string;
+  service_zone_id: string;
+  name: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  operating_hours: Record<string, unknown> | null;
+  public_phone: string | null;
+  status: 'open' | 'temporarily_closed';
+  closed_note: string | null;
+  active: boolean;
+  sort_order: number;
+}
+
 export interface TextileServiceZone {
   id: string;
   code: string;
@@ -16,6 +31,8 @@ export interface TextileServiceZone {
   dropoff_name: string | null;
   dropoff_address: string | null;
   dropoff_hours: string | null;
+  /** Drop-off centres in this zone for the booking dropdown (issue #11). */
+  centres?: TextileDropoffCentreInfo[] | null;
   readiness_instructions: string | null;
   partner: { id: string; name: string } | null;
 }
@@ -30,6 +47,8 @@ export interface TextileCollectionPayload {
   contact_phone: string;
   pickup_address: string;
   collection_method: TextileCollectionMethod;
+  /** Chosen drop-off centre for the booking dropdown (issue #11). */
+  dropoff_centre_id?: string | null;
   // Either estimate is enough — requesters often cannot weigh textiles.
   estimated_bags: number | null;
   estimated_weight_kg: number | null;
@@ -71,6 +90,8 @@ export interface TextileCollectionRequest extends TextileCollectionPayload {
     dropoff_address: string | null;
     center: { latitude: number; longitude: number } | null;
   } | null;
+  /** Centre the citizen picked at booking (issue #11). */
+  dropoff_centre?: { id: string; name: string; address: string | null } | null;
   partner: { id: string; name: string } | null;
   batch: {
     id: string;

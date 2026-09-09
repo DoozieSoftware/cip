@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 return [
 
-    'geocoder' => ['url' => env('GEOCODER_URL', 'https://nominatim.openstreetmap.org/reverse')],
+    'geocoder' => [
+        'url' => env('GEOCODER_URL', 'https://nominatim.openstreetmap.org/reverse'),
+        'search_url' => env('GEOCODER_SEARCH_URL', 'https://nominatim.openstreetmap.org/search'),
+    ],
 
     /*
     |--------------------------------------------------------------------------

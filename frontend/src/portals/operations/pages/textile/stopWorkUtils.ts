@@ -67,5 +67,5 @@ export function formatTripDate(raw: string): string {
 }
 
 export function stopPageHref(batchId: string, stopId: string): string {
-  return `/operations/textile-collections/dispatch/${batchId}/stops/${stopId}`;
+  return `/operations/textile-collections/collections/${batchId}/stops/${stopId}`;
 }

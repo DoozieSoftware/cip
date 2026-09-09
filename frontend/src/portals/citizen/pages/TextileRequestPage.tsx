@@ -17,7 +17,6 @@ import { CameraCapture } from '../components/CameraCapture';
 import { issueLocationFromReporter, type IssueLocation } from '../components/issueLocation';
 import { ApiError } from '../../../shared/api/errors';
 import { TextileCollectionFields } from '../components/TextileCollectionFields';
-import { CentreCard } from '../components/CentreCard';
 import {
   useCreateTextileCollection,
   useTextileCapacityMinimum,
@@ -292,7 +291,7 @@ export default function TextileRequestPage(): JSX.Element {
               Request a collection
             </h1>
             <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-              Pickup at home or drop-off at a centre.
+              Pick up from location or drop at center.
             </p>
           </div>
         </div>
@@ -456,18 +455,7 @@ export default function TextileRequestPage(): JSX.Element {
           ) : null}
         </section>
       ) : null}
-      {dropoffActive ? (
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
-          <h2 className="text-sm font-medium">Drop-off location</h2>
-          <div className="mt-3">
-            <CentreCard
-              name={dropoffInfo.name}
-              address={dropoffInfo.address}
-              center={dropoffInfo.center}
-            />
-          </div>
-        </section>
-      ) : (
+      {!dropoffActive ? (
         <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
           <h2 className="text-sm font-medium">
             Pickup location{' '}
@@ -524,7 +512,7 @@ export default function TextileRequestPage(): JSX.Element {
             </button>
           )}
         </section>
-      )}
+      ) : null}
       <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
         <div>
           <h2 className="text-sm font-medium">
@@ -649,20 +637,16 @@ export default function TextileRequestPage(): JSX.Element {
           {photoUploadWarning}
         </div>
       ) : null}
-      {belowMinimum && !dropoffActive ? (
+      {belowMinimum && !dropoffActive && minimum?.min_weight_kg != null ? (
         <p
           role="alert"
           className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-5 text-amber-900"
         >
           <span className="font-semibold">
-            Cannot submit — below the pickup minimum
-            {minimum?.min_bags !== null || minimum?.min_weight_kg !== null
-              ? ` (needs ${[minimum?.min_bags != null ? `${minimum?.min_bags} bags` : null, minimum?.min_weight_kg != null ? `${minimum?.min_weight_kg} kg` : null].filter(Boolean).join(' or ')})`
-              : ''}
-            .
+            Cannot submit — below the pickup minimum (needs at least {minimum.min_weight_kg} kg).
           </span>{' '}
-          Your estimate is {liveBags ?? '—'} bags / {liveWeight ?? '—'} kg. Add more bags, or switch
-          to drop-off — any amount is accepted at the centre.
+          Your estimate is {liveWeight ?? '—'} kg. Add more weight, or switch to drop-off — any
+          amount is accepted at the centre.
         </p>
       ) : null}
       <button

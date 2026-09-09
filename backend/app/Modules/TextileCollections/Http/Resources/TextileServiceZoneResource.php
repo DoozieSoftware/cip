@@ -15,6 +15,7 @@ final class TextileServiceZoneResource extends JsonResource
     public function toArray(Request $request): array
     {
         $department = $this->resource->relationLoaded('department') ? $this->resource->department : null;
+        $centres = $this->resource->relationLoaded('dropoffCentres') ? $this->resource->dropoffCentres : null;
 
         return [
             'id' => $this->resource->id,
@@ -33,6 +34,8 @@ final class TextileServiceZoneResource extends JsonResource
                 'name' => $this->resource->dropoff_name,
                 'address' => $this->resource->dropoff_address,
             ],
+            'centres' => $centres === null ? null : TextileDropoffCentreResource::collection($centres)->resolve($request),
+            'active' => $this->resource->active,
             'readiness_instructions' => $this->resource->readiness_instructions,
             'partner' => $department === null ? null : [
                 'id' => $department->id,

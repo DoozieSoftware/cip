@@ -26,6 +26,7 @@ import { TextileFieldOfflineBanner } from '../../components/TextileFieldOfflineB
 import { OfflineBanner } from '../../offline/OfflineBanner';
 import { useOpsQueue } from '../../offline/useOpsQueue';
 import { useOfflineQueue } from './hooks/useOfflineQueue';
+import TripRouteMap from './components/TripRouteMap';
 import {
   DeskPage,
   DeskStates,
@@ -589,7 +590,7 @@ export default function TextileDispatchPage(): JSX.Element {
   return (
     <DeskPage
       desk={desk}
-      title="Dispatch Board"
+      title="Collections"
       description="Fleet dispatch, active route execution, and stop progress."
       toolbar={
         <div className="flex flex-col gap-2.5 rounded-xl border border-[var(--color-border-subtle)] bg-white p-2.5 sm:flex-row sm:items-center sm:gap-3">
@@ -647,7 +648,7 @@ export default function TextileDispatchPage(): JSX.Element {
 
       {/* Clean 4-Stat Metric Summary */}
       {summary ? (
-        <div aria-label="Dispatch summary" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div aria-label="Collections summary" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {/* Active Vans */}
           <div className="rounded-xl border border-[var(--color-border-subtle)] bg-white p-3.5 shadow-2xs">
             <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
@@ -949,7 +950,7 @@ export default function TextileDispatchPage(): JSX.Element {
                             {nextPending ? (
                               <div className="flex min-w-0 flex-col gap-0.5">
                                 <Link
-                                  to={`/operations/textile-collections/dispatch/${trip.id}/stops/${nextPending.id}`}
+                                  to={`/operations/textile-collections/collections/${trip.id}/stops/${nextPending.id}`}
                                   onClick={(e) => e.stopPropagation()}
                                   title={`Stop ${nextPendingIdx + 1}: ${nextPending.requester_name}`}
                                   className="flex min-w-0 items-center gap-1 text-xs font-semibold text-slate-800 hover:text-slate-950 hover:underline"
@@ -1164,6 +1165,7 @@ export default function TextileDispatchPage(): JSX.Element {
                               missed={progress.missed}
                               pending={progress.pending}
                               total={progress.total}
+                              showCounts={false}
                             />
                           </div>
 
@@ -1218,6 +1220,9 @@ export default function TextileDispatchPage(): JSX.Element {
                               </Link>
                             </div>
                           ) : null}
+
+                          {/* Route Map — read-only; itinerary below stays the source of truth */}
+                          <TripRouteMap items={activeTrip.items} tripId={activeTrip.id} />
 
                           {/* Sequential Route Timeline */}
                           <div className="space-y-2">

@@ -1,11 +1,11 @@
-# Running dispatch and recording collections (staff)
+# Running collections and recording pickups (staff)
 
-> **Where to find it:** sidebar **Dispatch**
-> (`/operations/textile-collections/dispatch`); tap a trip for its manifest
+> **Where to find it:** sidebar **Collections**
+> (`/operations/textile-collections/collections`); tap a trip for its manifest
 
 ## The manifest
 
-Open the trip in **Dispatch**. Each stop shows, in order:
+Open the trip in **Collections**. Each stop shows, in order:
 
 - Stop number, `DLN-` reference, and citizen name.
 - Pickup address with an **Open in Maps** action.

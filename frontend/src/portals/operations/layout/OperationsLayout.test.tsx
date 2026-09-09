@@ -78,7 +78,7 @@ describe('OperationsLayout mobile bottom nav (DR_LINEN)', () => {
     mockQueue.pendingCount = 0;
   });
 
-  it('keeps at most five core items: Reviews, Trips, Receipt, Dispatch, Profile', () => {
+  it('keeps at most five core items: Reviews, Trips, Pickup request, Collections, Profile', () => {
     renderLayout();
     const nav = mobileNav();
     const links = within(nav).getAllByRole('link');
@@ -86,23 +86,23 @@ describe('OperationsLayout mobile bottom nav (DR_LINEN)', () => {
     expect(links.map((link) => link.textContent)).toEqual([
       'Reviews',
       'Trips',
-      'Receipt',
-      'Dispatch',
+      'Pickup request',
+      'Collections',
       'Profile',
     ]);
     expect(links[0]).toHaveAttribute('href', '/operations/textile-collections/review');
     expect(links[1]).toHaveAttribute('href', '/operations/textile-collections/schedule');
-    expect(links[2]).toHaveAttribute('href', '/operations/textile-collections/receipt');
-    expect(links[3]).toHaveAttribute('href', '/operations/textile-collections/dispatch');
+    expect(links[2]).toHaveAttribute('href', '/operations/textile-collections/pickup-requests');
+    expect(links[3]).toHaveAttribute('href', '/operations/textile-collections/collections');
     expect(links[4]).toHaveAttribute('href', '/operations/profile');
     expect(nav.querySelector('ul')).toHaveClass('grid-cols-5');
   });
 
-  it('moves History, Device uploads, Server failures, and Capacity off the bottom bar', () => {
+  it('moves History, Reupload, Server failures, and Capacity off the bottom bar', () => {
     renderLayout();
     const nav = mobileNav();
 
-    for (const label of ['History', 'Device uploads', 'Server failures', 'Capacity']) {
+    for (const label of ['History', 'Reupload', 'Server failures', 'Capacity']) {
       expect(within(nav).queryByRole('link', { name: label })).not.toBeInTheDocument();
     }
   });
@@ -117,10 +117,10 @@ describe('OperationsLayout mobile bottom nav (DR_LINEN)', () => {
     expect(names).toEqual([
       '/operations/textile-collections/review',
       '/operations/textile-collections/schedule',
-      '/operations/textile-collections/receipt',
-      '/operations/textile-collections/dispatch',
+      '/operations/textile-collections/pickup-requests',
+      '/operations/textile-collections/collections',
       '/operations/textile-collections/completed',
-      '/operations/textile-collections/recovery',
+      '/operations/textile-collections/reuploads',
       '/operations/textile-collections/offline-recovery',
       '/operations/textile-collections/capacity',
       '/operations/profile',

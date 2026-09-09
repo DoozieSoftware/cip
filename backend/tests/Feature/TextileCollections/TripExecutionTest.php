@@ -56,7 +56,7 @@ function tripCitizenRequest(TextileServiceZone $zone): TextileCollectionRequest
         'pickup_address' => '12, MG Road, Bengaluru 560001',
         'collection_method' => 'premises',
         'estimated_bags' => 3,
-        'estimated_weight_kg' => 8.5,
+        'estimated_weight_kg' => 8,
     ])->assertCreated();
 
     return TextileCollectionRequest::query()->findOrFail($res->json('data.id'));
@@ -318,7 +318,7 @@ it('trip concurrency: recording a stop cannot overwrite a later outcome (exactly
     $file = UploadedFile::fake()->image('proof.jpg', 100, 100)->size(100);
     $this->postJson("/api/v1/department/textile-collections/{$req->id}/proof", ['photo' => $file])->assertCreated();
     $r1 = $this->postJson("/api/v1/department/textile-collections/{$req->id}/outcome", [
-        'outcome' => 'collected', 'actual_bags' => 2, 'actual_weight_kg' => 5.0,
+        'outcome' => 'collected', 'actual_bags' => 2, 'actual_weight_kg' => 5,
     ]);
     $r2 = $this->postJson("/api/v1/department/textile-collections/{$req->id}/outcome", [
         'outcome' => 'missed', 'reason' => 'Late miss attempt',

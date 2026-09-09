@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $notes
  * @property string|null $category
  * @property string $service_zone_id
+ * @property string|null $dropoff_centre_id
  * @property string|null $department_id
  * @property string|null $batch_id
  * @property string $requester_type
@@ -30,7 +31,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $rwa_name
  * @property string $contact_email
  * @property string $contact_phone
- * @property string $pickup_address
+ * @property string|null $pickup_address
  * @property float|null $latitude
  * @property float|null $longitude
  * @property string $collection_method
@@ -94,7 +95,7 @@ final class TextileCollectionRequest extends Model
     protected $fillable = [
         'dropoff_confirmed_at', 'dropoff_valid_from', 'dropoff_valid_until', 'receipt_id', 'capacity_exception_id', 'capacity_checked_at', 'capacity_context', 'stop_order', 'outcome_idempotency_key', 'offline_queued_at',
         'report_id', 'citizen_id', 'reference', 'title', 'notes',
-        'category', 'service_zone_id', 'department_id', 'batch_id', 'requester_type',
+        'category', 'service_zone_id', 'dropoff_centre_id', 'department_id', 'batch_id', 'requester_type',
         'requester_name', 'rwa_name', 'contact_email', 'contact_phone',
         'pickup_address', 'latitude', 'longitude', 'collection_method', 'estimated_bags',
         'estimated_weight_kg', 'status', 'scheduled_date',
@@ -156,6 +157,12 @@ final class TextileCollectionRequest extends Model
     public function serviceZone(): BelongsTo
     {
         return $this->belongsTo(TextileServiceZone::class, 'service_zone_id');
+    }
+
+    /** @return BelongsTo<TextileDropoffCentre, $this> */
+    public function dropoffCentre(): BelongsTo
+    {
+        return $this->belongsTo(TextileDropoffCentre::class, 'dropoff_centre_id');
     }
 
     /** @return BelongsTo<TextileCollectionBatch, $this> */
