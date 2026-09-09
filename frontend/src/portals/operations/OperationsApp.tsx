@@ -151,6 +151,7 @@ export function OperationsApp() {
               element={<TextileOfflineRecoveryPage />}
             />
             <Route path="textile-collections/capacity" element={<TextileCapacityPage />} />
+            <Route path="textile-collections/dashboard" element={<TextileCapacityPage />} />
             <Route path="textile-collections/centres" element={<TextileCentresPage />} />
             <Route path="textile-collections/completed" element={<TextileCompletedPage />} />
             <Route path="textile-collections/:id" element={<TextileStaffDetailPage />} />

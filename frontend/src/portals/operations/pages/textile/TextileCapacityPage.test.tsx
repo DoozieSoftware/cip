@@ -27,8 +27,19 @@ vi.mock('../../api/textileApi', async () => {
     fetchTextileReportingDashboard: vi.fn(),
     fetchTextileLiveSnapshot: vi.fn(),
     downloadTextileReportingExport: vi.fn(),
+    fetchStaffTextileZones: vi.fn(),
   };
 });
+
+vi.mock('echarts-for-react', () => ({
+  default: (props: { 'aria-label'?: string; style?: React.CSSProperties }) => (
+    <div
+      data-testid="echarts-chart"
+      aria-label={props['aria-label'] ?? 'chart'}
+      style={props.style}
+    />
+  ),
+}));
 
 const LIVE = {
   date: '2026-09-09',
@@ -128,6 +139,16 @@ describe('TextileCapacityPage dashboard', () => {
     vi.mocked(textileApi.fetchTextileReportingDashboard).mockResolvedValue(DASHBOARD);
     vi.mocked(textileApi.fetchCapacityRules).mockResolvedValue(RULES);
     vi.mocked(textileApi.downloadTextileReportingExport).mockResolvedValue(undefined);
+    vi.mocked(textileApi.fetchStaffTextileZones).mockResolvedValue([
+      {
+        id: 'zone-1',
+        code: 'JAY',
+        name: 'Jayanagar',
+        methods: ['dropoff', 'premises'],
+        active: true,
+        centres: [],
+      },
+    ]);
   });
 
   it('renders the live strip first with numbers linking to their queues', async () => {
@@ -159,35 +180,42 @@ describe('TextileCapacityPage dashboard', () => {
     ).toBeTruthy();
   });
 
-  it('keeps period analytics, export, and zone rules below the analytics', async () => {
+  it('keeps period analytics, charts, and export below the live strip', async () => {
     renderCapacity();
 
-    // Existing period cards.
+    // Hero metrics.
     expect(await screen.findByText('42')).toBeVisible();
-    expect(screen.getByText('4.8%')).toBeVisible();
+    expect(screen.getByText('220 kg')).toBeVisible();
+    expect(screen.getByText('95.2%')).toBeVisible();
+    expect(screen.getByText('7.1%')).toBeVisible();
+    // Operations charts.
+    expect(screen.getByText('Lifecycle Stage Distribution')).toBeVisible();
+    expect(screen.getByText('Monthly Volume Progression')).toBeVisible();
+    expect(screen.getByText('Collection Method Split')).toBeVisible();
+    expect(screen.getByText('Top Service Zones')).toBeVisible();
+    expect(screen.getByText('Material Categories')).toBeVisible();
+    // Environmental impact is not present.
+    expect(screen.queryByText('Circularity & Environmental Impact')).not.toBeInTheDocument();
+    // Filter controls.
+    expect(screen.getByLabelText('Analytics zone')).toBeVisible();
+    expect(screen.getByLabelText('Analytics category')).toBeVisible();
     // Reconciliation note ties cards to the CSV export.
     expect(screen.getByText(/Totals match the CSV export for this period/)).toBeVisible();
-    // Breakdowns render mapped labels.
-    expect(screen.getByText('Needs review')).toBeVisible();
-    expect(screen.getByText('Jayanagar')).toBeVisible();
+    // Breakdowns render mapped labels and click-through links.
+    expect(screen.getByRole('link', { name: /Needs review/ })).toHaveAttribute(
+      'href',
+      '/operations/textile-collections/review',
+    );
+    expect(screen.getAllByText('Jayanagar')[0]).toBeVisible();
     // Trend periods render.
     expect(screen.getByText('2026-07')).toBeVisible();
-    // Data-quality notice and definitions kept.
+    // Data-quality notice kept.
     expect(screen.getByText(/Data quality:/)).toBeVisible();
-    expect(
-      screen.getByText('All textile_collection_requests for the partner in the period.'),
-    ).toBeVisible();
+    // Metric definitions and zone capacity rules removed per design simplification.
+    expect(screen.queryByText('Metric definitions')).not.toBeInTheDocument();
+    expect(screen.queryByText('Zone capacity rules')).not.toBeInTheDocument();
     // CSV export kept.
     expect(screen.getByRole('button', { name: 'Export CSV' })).toBeVisible();
-    // Zone rules table kept with guidance.
-    expect(screen.getByText('Leave bags at the gate.')).toBeVisible();
-
-    // Zone rules render after the analytics section in DOM order.
-    const analytics = screen.getByLabelText('Period analytics', { selector: 'section' });
-    const rulesHeading = screen.getByText('Zone capacity rules');
-    expect(
-      analytics.compareDocumentPosition(rulesHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
   });
 
   it('shares the selected period between analytics and the CSV export', async () => {

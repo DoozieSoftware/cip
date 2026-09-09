@@ -2,18 +2,25 @@ import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { type JSX } from 'react';
+import ReactECharts from 'echarts-for-react';
 import {
   IconAlertTriangle,
+  IconArrowUpRight,
   IconBuildingCommunity,
+  IconChartBar,
+  IconChartPie,
+  IconGitFork,
   IconMapPin,
+  IconTrendingUp,
   IconTruck,
 } from '@tabler/icons-react';
 import {
   downloadTextileReportingExport,
-  fetchCapacityRules,
+  fetchStaffTextileZones,
   fetchTextileLiveSnapshot,
   fetchTextileReportingDashboard,
   type TextileCapacityDashboard,
+  type TextileServiceZone,
 } from '../../api/textileApi';
 import {
   CATEGORY_LABELS,
@@ -41,10 +48,25 @@ const TRIP_STATUS_LABELS: Record<string, string> = {
   cancelled: 'Cancelled',
 };
 
-const METHOD_LABELS: Record<string, string> = {
-  dropoff: 'Drop-off',
-  premises: 'Pickup',
+const STATUS_DESTINATIONS: Record<string, string> = {
+  pending_review: '/operations/textile-collections/review',
+  ready_to_group: '/operations/textile-collections/schedule',
+  scheduled: '/operations/textile-collections/collections',
+  picked_up: '/operations/textile-collections/completed',
+  received_at_centre: '/operations/textile-collections/completed',
+  dropoff_awaiting_drop: '/operations/textile-collections/pickup-requests',
+  missed: '/operations/textile-collections/completed',
+  rejected: '/operations/textile-collections/completed',
+  cancelled: '/operations/textile-collections/completed',
 };
+
+function destinationForStatus(statusKey: string): string {
+  return STATUS_DESTINATIONS[statusKey] ?? '/operations/textile-collections/completed';
+}
+
+function labelForStatus(statusKey: string): string {
+  return STATUS_LABELS[statusKey] ?? statusKey.replaceAll('_', ' ');
+}
 
 function labelFor(map: Record<string, string>, key: string): string {
   return map[key] ?? key.replaceAll('_', ' ');
@@ -80,24 +102,42 @@ export default function TextileCapacityPage(): JSX.Element {
   const desk = useDesk();
   const [year, setYear] = useState('');
   const [month, setMonth] = useState('');
+  const [selectedZone, setSelectedZone] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+
+  const zonesQuery = useQuery({
+    queryKey: ['operations', 'textile', 'zones', desk.departmentId],
+    queryFn: () => fetchStaffTextileZones(desk.departmentId),
+    enabled: desk.ready && desk.isDrLinen,
+    staleTime: 60_000,
+  });
+  const zones: TextileServiceZone[] = zonesQuery.data ?? [];
+
   const periodParams: {
     department_id: string | undefined;
     year?: string;
     month?: string;
+    service_zone_id?: string;
+    category?: string;
     granularity: 'day' | 'month';
   } = {
     department_id: desk.departmentId,
     ...(year ? { year } : {}),
     ...(month ? { month } : {}),
+    ...(selectedZone ? { service_zone_id: selectedZone } : {}),
+    ...(selectedCategory ? { category: selectedCategory } : {}),
     granularity: month ? 'day' : 'month',
   };
-  const rules = useQuery({
-    queryKey: ['textile', 'capacity-rules', desk.departmentId],
-    queryFn: () => fetchCapacityRules(desk.departmentId),
-    enabled: desk.ready && desk.isDrLinen,
-  });
   const dashboard = useQuery({
-    queryKey: ['textile', 'reporting', desk.departmentId, year, month],
+    queryKey: [
+      'textile',
+      'reporting',
+      desk.departmentId,
+      year,
+      month,
+      selectedZone,
+      selectedCategory,
+    ],
     queryFn: () => fetchTextileReportingDashboard(periodParams),
     enabled: desk.ready && desk.isDrLinen,
     // Keep the previous period visible while the next one loads so the
@@ -116,6 +156,8 @@ export default function TextileCapacityPage(): JSX.Element {
         department_id: desk.departmentId,
         ...(year ? { year } : {}),
         ...(month ? { month } : {}),
+        ...(selectedZone ? { service_zone_id: selectedZone } : {}),
+        ...(selectedCategory ? { category: selectedCategory } : {}),
       });
     } catch {
       setExportError('Export failed. Check your session and try again.');
@@ -128,20 +170,19 @@ export default function TextileCapacityPage(): JSX.Element {
     <DeskPage
       desk={desk}
       title="Operations dashboard"
-      description="Live field position, period analytics, and zone capacity rules — partner-scoped."
+      description="Live field position, fleet overview, and period performance analytics."
     >
       <LiveStrip departmentId={desk.departmentId} enabled={desk.ready && desk.isDrLinen} />
 
       <DeskStates
-        loading={rules.isLoading || dashboard.isLoading}
-        error={rules.isError || dashboard.isError}
+        loading={dashboard.isLoading}
+        error={dashboard.isError}
         onRetry={() => {
-          void rules.refetch();
           void dashboard.refetch();
         }}
         hasRows={true}
-        emptyTitle="No capacity data"
-        emptyBody="Capacity policy and reporting will appear here."
+        emptyTitle="No dashboard data"
+        emptyBody="Collection performance reporting will appear here."
       >
         <section aria-label="Period analytics" className="space-y-3">
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -178,6 +219,52 @@ export default function TextileCapacityPage(): JSX.Element {
                   ))}
                 </select>
               </label>
+              <label className="text-[11px] font-medium text-[var(--color-text-secondary)]">
+                Zone
+                <select
+                  value={selectedZone}
+                  onChange={(event) => setSelectedZone(event.target.value)}
+                  aria-label="Analytics zone"
+                  className="ml-1.5 h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs font-medium text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+                >
+                  <option value="">All zones</option>
+                  {zones.map((z) => (
+                    <option key={z.id} value={z.id}>
+                      {z.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-[11px] font-medium text-[var(--color-text-secondary)]">
+                Category
+                <select
+                  value={selectedCategory}
+                  onChange={(event) => setSelectedCategory(event.target.value)}
+                  aria-label="Analytics category"
+                  className="ml-1.5 h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs font-medium text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
+                >
+                  <option value="">All categories</option>
+                  {Object.entries(CATEGORY_LABELS).map(([val, lbl]) => (
+                    <option key={val} value={val}>
+                      {lbl}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {year || month || selectedZone || selectedCategory ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setYear('');
+                    setMonth('');
+                    setSelectedZone('');
+                    setSelectedCategory('');
+                  }}
+                  className="h-9 px-2 text-xs font-medium text-slate-500 hover:text-slate-800 underline"
+                >
+                  Reset
+                </button>
+              ) : null}
             </div>
             {report ? (
               <div className="flex flex-col items-end gap-1">
@@ -201,7 +288,7 @@ export default function TextileCapacityPage(): JSX.Element {
           {report ? (
             <>
               <div
-                className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+                className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
                 aria-label="Collection performance summary"
               >
                 <Metric
@@ -212,12 +299,25 @@ export default function TextileCapacityPage(): JSX.Element {
                 <Metric
                   label="Collected bags"
                   value={report.totals.actual_bags}
-                  note={`Estimate ${report.totals.estimated_bags}`}
+                  note={`Est. ${report.totals.estimated_bags}${
+                    report.totals.variance_bags !== null
+                      ? ` · ${report.totals.variance_bags >= 0 ? `+${report.totals.variance_bags}%` : `${report.totals.variance_bags}%`}`
+                      : ''
+                  }`}
                 />
                 <Metric
-                  label="Missed rate"
-                  value={`${report.rates.missed_rate_pct}%`}
-                  note={`${report.rates.missed_count} missed`}
+                  label="Weight collected"
+                  value={`${report.totals.actual_weight_kg} kg`}
+                  note={`Est. ${report.totals.estimated_weight_kg} kg${
+                    report.totals.variance_weight_kg !== null
+                      ? ` · ${report.totals.variance_weight_kg >= 0 ? `+${report.totals.variance_weight_kg}%` : `${report.totals.variance_weight_kg}%`}`
+                      : ''
+                  }`}
+                />
+                <Metric
+                  label="Fulfillment rate"
+                  value={`${Math.max(0, Math.round((100 - report.rates.missed_rate_pct) * 10) / 10)}%`}
+                  note={`${report.rates.missed_count} missed (${report.rates.missed_rate_pct}%)`}
                 />
                 <Metric
                   label="Reschedule rate"
@@ -226,17 +326,59 @@ export default function TextileCapacityPage(): JSX.Element {
                 />
               </div>
 
-              <p className="text-[11px] text-[var(--color-text-secondary)]">
-                {report.totals.trips} trips · Drop-off {report.volumes.dropoff} · Pickup{' '}
-                {report.volumes.premises} · Exceptions {report.rates.exception_count} (
-                {report.rates.exception_rate_pct}%)
-                {report.timing.avg_hours_booking_to_update !== null
-                  ? ` · Avg booking to update ${report.timing.avg_hours_booking_to_update} h`
-                  : ''}
-                {' · '}Totals match the CSV export for this period.
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
+                  <span className="font-bold text-slate-900">{report.totals.trips}</span> trips
+                </span>
+                {report.totals.actual_bags > 0 ? (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700"
+                    title="Average weight per collected bag"
+                  >
+                    Avg bag density{' '}
+                    <span className="font-bold text-slate-900">
+                      {(report.totals.actual_weight_kg / report.totals.actual_bags).toFixed(1)}{' '}
+                      kg/bag
+                    </span>
+                  </span>
+                ) : null}
+                {report.totals.trips > 0 ? (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700"
+                    title="Average requests per trip"
+                  >
+                    Stop density{' '}
+                    <span className="font-bold text-slate-900">
+                      {(report.totals.requests / report.totals.trips).toFixed(1)} req/trip
+                    </span>
+                  </span>
+                ) : null}
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
+                  Drop-off{' '}
+                  <span className="font-bold text-slate-900">{report.volumes.dropoff}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
+                  Pickup <span className="font-bold text-slate-900">{report.volumes.premises}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
+                  Exceptions{' '}
+                  <span className="font-bold text-slate-900">{report.rates.exception_count}</span> (
+                  {report.rates.exception_rate_pct}%)
+                </span>
+                {report.timing.avg_hours_booking_to_update !== null ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
+                    Avg turnaround{' '}
+                    <span className="font-bold text-slate-900">
+                      {report.timing.avg_hours_booking_to_update}h
+                    </span>
+                  </span>
+                ) : null}
+                <span className="text-[11px] text-slate-500">
+                  Totals match the CSV export for this period.
+                </span>
+              </div>
 
-              <p className="rounded-lg border border-[var(--color-info)]/20 bg-[var(--color-info)]/[0.06] px-3 py-2 text-xs text-[var(--color-ink)]">
+              <p className="rounded-lg border border-sky-200/60 bg-sky-50/50 px-3 py-2 text-xs text-sky-950">
                 Data quality: {report.data_quality.note}{' '}
                 {report.data_quality.missing_estimates > 0
                   ? `${report.data_quality.missing_estimates} request(s) are missing estimates.`
@@ -244,146 +386,14 @@ export default function TextileCapacityPage(): JSX.Element {
               </p>
 
               <CollapsibleSection
-                title="Breakdowns"
-                hint={`${Object.keys(report.breakdowns.zone).length} zones · ${Object.keys(report.breakdowns.category).length} categories`}
+                title="Operations Analytics & Performance Charts"
+                hint={`${report.timeseries?.length ?? 0} periods · ${Object.keys(report.breakdowns.zone).length} zones · ${Object.keys(report.breakdowns.category).length} categories`}
               >
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Breakdown
-                    title="By status"
-                    entries={report.breakdowns.status}
-                    labels={STATUS_LABELS}
-                  />
-                  <Breakdown
-                    title="By method"
-                    entries={report.breakdowns.collection_method}
-                    labels={METHOD_LABELS}
-                  />
-                  <Breakdown title="By zone" entries={report.breakdowns.zone} labels={{}} />
-                  <Breakdown
-                    title="By category"
-                    entries={report.breakdowns.category}
-                    labels={CATEGORY_LABELS}
-                  />
-                </div>
-              </CollapsibleSection>
-
-              <CollapsibleSection
-                title="Trend"
-                hint={
-                  report.timeseries && report.timeseries.length > 0
-                    ? `${report.timeseries.length} periods · latest ${report.timeseries[report.timeseries.length - 1]?.requests ?? 0} requests`
-                    : 'No activity'
-                }
-              >
-                {report.timeseries && report.timeseries.length > 0 ? (
-                  <ol className="space-y-1.5">
-                    {report.timeseries.map((point) => {
-                      const max = Math.max(1, ...report.timeseries.map((p) => toCount(p.requests)));
-                      const width = Math.round((toCount(point.requests) / max) * 100);
-                      return (
-                        <li
-                          key={point.period}
-                          className="flex items-center gap-2 text-xs tabular-nums"
-                        >
-                          <span className="w-20 shrink-0 font-mono text-[11px] text-[var(--color-text-secondary)]">
-                            {point.period}
-                          </span>
-                          <span
-                            aria-hidden="true"
-                            className="h-2 min-w-1 rounded-full bg-[var(--color-ink)]/70"
-                            style={{ width: `${Math.max(width, 2)}%` }}
-                          />
-                          <span className="shrink-0 text-[11px] text-[var(--color-text-secondary)]">
-                            {toCount(point.requests)} requests · {toCount(point.actual_bags)} bags
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                ) : (
-                  <p className="text-xs text-[var(--color-text-secondary)]">
-                    No activity in this period.
-                  </p>
-                )}
-              </CollapsibleSection>
-
-              <CollapsibleSection
-                title="Metric definitions"
-                hint={`${Object.keys(report.definitions).length} metrics`}
-              >
-                <dl className="grid gap-2.5 text-xs sm:grid-cols-2">
-                  {Object.entries(report.definitions)
-                    .filter(([name]) => name !== 'exception_rate')
-                    .map(([name, definition]) => (
-                      <div key={name} className="rounded-lg bg-[var(--color-surface-alt)] p-2.5">
-                        <dt className="font-semibold capitalize text-[var(--color-ink)]">
-                          {name.replaceAll('_', ' ')}
-                        </dt>
-                        <dd className="mt-0.5 text-[11px] leading-relaxed text-[var(--color-text-secondary)]">
-                          {definition}
-                        </dd>
-                      </div>
-                    ))}
-                </dl>
+                <OperationsChartsGrid report={report} />
               </CollapsibleSection>
             </>
           ) : null}
         </section>
-
-        <CollapsibleSection
-          title="Zone capacity rules"
-          hint={
-            rules.data && rules.data.length > 0
-              ? `${rules.data.length} rule${rules.data.length === 1 ? '' : 's'}`
-              : 'Defaults apply'
-          }
-        >
-          <p className="text-xs text-[var(--color-text-secondary)]">
-            Home pickups below the configured minimum cannot be submitted or scheduled. Drop-off
-            accepts any amount.
-          </p>
-          {rules.data && rules.data.length > 0 ? (
-            <div className="mt-3 overflow-x-auto">
-              <table className="w-full min-w-[640px] text-left text-xs">
-                <thead>
-                  <tr className="border-b border-[var(--color-border-subtle)] text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                    <th className="px-2 py-2">Zone</th>
-                    <th>Max bags</th>
-                    <th>Max kg</th>
-                    <th>Max stops</th>
-                    <th>Minimum</th>
-                    <th>Guidelines</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rules.data.map((rule) => (
-                    <tr
-                      key={rule.id}
-                      className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-surface-alt)]"
-                    >
-                      <td className="px-2 py-2 font-medium text-[var(--color-ink)]">
-                        {rule.service_zone?.name ?? rule.service_zone_id}
-                      </td>
-                      <td>{rule.max_bags ?? 'No limit'}</td>
-                      <td>{rule.max_weight_kg ?? 'No limit'}</td>
-                      <td>{rule.max_stops ?? 'No limit'}</td>
-                      <td>
-                        {rule.min_bags ?? '—'} bags / {rule.min_weight_kg ?? '—'} kg
-                      </td>
-                      <td className="max-w-xs py-2 text-[var(--color-text-secondary)]">
-                        {rule.guidance_text ?? 'No public guidance configured.'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="mt-3 text-xs text-[var(--color-text-secondary)]">
-              No capacity rules configured. Defaults apply until a partner creates a rule.
-            </p>
-          )}
-        </CollapsibleSection>
       </DeskStates>
     </DeskPage>
   );
@@ -461,11 +471,40 @@ function LiveStrip({
       .join(' · ') || 'No trips scheduled';
   const attention = snapshot.failed_uploads > 0;
 
+  const totalStops = toCount(snapshot.stops.total);
+  const collectedStops = toCount(snapshot.stops.collected);
+  const pendingStops = toCount(snapshot.stops.pending);
+  const missedStops = toCount(snapshot.stops.missed);
+  const percentCollected = totalStops > 0 ? Math.round((collectedStops / totalStops) * 100) : 0;
+
   return (
-    <section aria-label="Live position today" className="space-y-2">
-      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
-        Live · <span className="tabular-nums">{snapshot.date}</span>
-      </p>
+    <section aria-label="Live position today" className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+          Live · <span className="tabular-nums">{snapshot.date}</span>
+        </p>
+        {totalStops > 0 ? (
+          <span className="text-[11px] font-medium text-slate-600">
+            Today’s Route Completion:{' '}
+            <span className="font-bold text-slate-900">
+              {collectedStops}/{totalStops}
+            </span>{' '}
+            ({percentCollected}%)
+            {pendingStops > 0 ? ` · ${pendingStops} pending` : ''}
+            {missedStops > 0 ? ` · ${missedStops} missed` : ''}
+          </span>
+        ) : null}
+      </div>
+
+      {totalStops > 0 ? (
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div
+            className="h-full rounded-full bg-emerald-600 transition-all duration-500"
+            style={{ width: `${Math.max(percentCollected, 2)}%` }}
+          />
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <LiveCard
           to="/operations/textile-collections/collections"
@@ -587,37 +626,648 @@ function CollapsibleSection({
   );
 }
 
-function Breakdown({
-  title,
-  entries,
-  labels,
-}: {
-  title: string;
-  entries: Record<string, number>;
-  labels: Record<string, string>;
-}): JSX.Element {
-  const rows = Object.entries(entries);
+function OperationsChartsGrid({ report }: { report: DashboardReport }): JSX.Element {
+  const methodEntries = Object.entries(report.breakdowns.collection_method);
+  const totalMethod = methodEntries.reduce((acc, [, c]) => acc + toCount(c), 0);
+  const pickupCount = toCount(report.breakdowns.collection_method.premises ?? 0);
+  const dropoffCount = toCount(report.breakdowns.collection_method.dropoff ?? 0);
+  const pickupPct = totalMethod > 0 ? Math.round((pickupCount / totalMethod) * 100) : 0;
+  const dropoffPct = totalMethod > 0 ? 100 - pickupPct : 0;
+
+  const categoryEntries = Object.entries(report.breakdowns.category).sort(
+    (a, b) => toCount(b[1]) - toCount(a[1]),
+  );
+  const totalCategory = categoryEntries.reduce((acc, [, c]) => acc + toCount(c), 0);
+
+  const zoneEntries = Object.entries(report.breakdowns.zone).sort(
+    (a, b) => toCount(b[1]) - toCount(a[1]),
+  );
+  const totalZone = zoneEntries.reduce((acc, [, c]) => acc + toCount(c), 0);
+
+  const timeseries = report.timeseries ?? [];
+
   return (
-    <div className="rounded-lg border border-[var(--color-border-subtle)] p-3">
-      <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
-        {title}
-      </h3>
-      {rows.length === 0 ? (
-        <p className="mt-2 text-xs text-[var(--color-text-secondary)]">No activity.</p>
-      ) : (
-        <dl className="mt-2 space-y-1">
-          {rows.map(([key, count]) => (
-            <div key={key} className="flex items-baseline justify-between gap-2 text-xs">
-              <dt className="min-w-0 truncate text-[var(--color-text-secondary)]">
-                {labelFor(labels, key)}
-              </dt>
-              <dd className="shrink-0 font-semibold tabular-nums text-[var(--color-ink)]">
-                {toCount(count)}
-              </dd>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* CHART 1: Monthly Volume Progression Bar & Line Chart */}
+        <MonthlyVolumeCard timeseries={timeseries} />
+
+        {/* CHART 2: Lifecycle Stage Distribution Bar Chart */}
+        <LifecycleStageCard report={report} />
+
+        {/* CHART 3: Collection Method Split Donut Chart */}
+        <CollectionMethodCard
+          pickupCount={pickupCount}
+          dropoffCount={dropoffCount}
+          pickupPct={pickupPct}
+          dropoffPct={dropoffPct}
+          totalMethod={totalMethod}
+        />
+
+        {/* CHART 4: Top Service Zones Bar Chart */}
+        <TopZonesCard zoneEntries={zoneEntries} totalZone={totalZone} />
+      </div>
+
+      {/* CHART 5: Material Categories Bar Chart */}
+      <CategoriesCard categoryEntries={categoryEntries} totalCategory={totalCategory} />
+    </div>
+  );
+}
+
+function LifecycleStageCard({ report }: { report: DashboardReport }): JSX.Element {
+  const status = report.breakdowns.status;
+  const total = report.totals.requests || 1;
+
+  const countOf = (key: string) => toCount(status[key]);
+
+  const pendingReview = countOf('pending_review');
+  const awaitingDrop = countOf('dropoff_awaiting_drop');
+  const readyToSchedule = countOf('ready_to_group');
+  const rejected = countOf('rejected') + countOf('cancelled');
+  const scheduled = countOf('scheduled');
+  const pickedUp = countOf('picked_up');
+  const receivedAtCentre = countOf('received_at_centre');
+  const missed = countOf('missed');
+
+  const pipelineStages = [
+    {
+      key: 'pending_review',
+      name: labelForStatus('pending_review'),
+      value: pendingReview,
+      color: '#f59e0b',
+      queue: destinationForStatus('pending_review'),
+    },
+    {
+      key: 'dropoff_awaiting_drop',
+      name: labelForStatus('dropoff_awaiting_drop'),
+      value: awaitingDrop,
+      color: '#0ea5e9',
+      queue: destinationForStatus('dropoff_awaiting_drop'),
+    },
+    {
+      key: 'ready_to_group',
+      name: labelForStatus('ready_to_group'),
+      value: readyToSchedule,
+      color: '#6366f1',
+      queue: destinationForStatus('ready_to_group'),
+    },
+    {
+      key: 'scheduled',
+      name: labelForStatus('scheduled'),
+      value: scheduled,
+      color: '#2563eb',
+      queue: destinationForStatus('scheduled'),
+    },
+    {
+      key: 'picked_up',
+      name: labelForStatus('picked_up'),
+      value: pickedUp,
+      color: '#059669',
+      queue: destinationForStatus('picked_up'),
+    },
+    {
+      key: 'received_at_centre',
+      name: labelForStatus('received_at_centre'),
+      value: receivedAtCentre,
+      color: '#0d9488',
+      queue: destinationForStatus('received_at_centre'),
+    },
+    {
+      key: 'missed',
+      name: labelForStatus('missed'),
+      value: missed,
+      color: '#f43f5e',
+      queue: destinationForStatus('missed'),
+    },
+    ...(rejected > 0
+      ? [
+          {
+            key: 'rejected',
+            name: labelForStatus('rejected'),
+            value: rejected,
+            color: '#94a3b8',
+            queue: destinationForStatus('rejected'),
+          },
+        ]
+      : []),
+  ];
+
+  const stageOption = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params: unknown) => {
+        const list = Array.isArray(params) ? params : [params];
+        const item = (list[0] ?? {}) as { name?: string; value?: number };
+        const val = typeof item.value === 'number' ? item.value : 0;
+        const pct = Math.round((val / total) * 100);
+        return `${item.name ?? ''}: <strong>${val}</strong> requests (${pct}%)`;
+      },
+    },
+    grid: { left: 130, right: 35, top: 12, bottom: 16 },
+    xAxis: {
+      type: 'value',
+      axisLabel: { color: '#94a3b8', fontSize: 10 },
+      splitLine: { lineStyle: { color: '#f1f5f9' } },
+    },
+    yAxis: {
+      type: 'category',
+      data: pipelineStages.map((s) => s.name).reverse(),
+      axisLabel: { color: '#334155', fontSize: 10, fontWeight: 500 },
+      axisLine: { lineStyle: { color: '#e2e8f0' } },
+    },
+    series: [
+      {
+        type: 'bar',
+        data: pipelineStages
+          .map((s) => ({
+            value: s.value,
+            itemStyle: { color: s.color, borderRadius: [0, 4, 4, 0] },
+          }))
+          .reverse(),
+        label: {
+          show: true,
+          position: 'right',
+          color: '#64748b',
+          fontSize: 10,
+          formatter: (p: { value: number }) => `${p.value}`,
+        },
+        barMaxWidth: 16,
+      },
+    ],
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700">
+            <IconGitFork className="h-4 w-4" stroke={1.75} aria-hidden="true" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Lifecycle Stage Distribution</h3>
+            <p className="text-xs text-slate-500">Volume throughput across operational statuses</p>
+          </div>
+        </div>
+        <span className="font-mono text-xs font-semibold text-slate-700">
+          {report.totals.requests} requests
+        </span>
+      </div>
+
+      <div className="mt-3">
+        <ReactECharts
+          option={stageOption}
+          style={{ height: 260 }}
+          aria-label="Lifecycle Stage Distribution Chart"
+        />
+      </div>
+
+      {/* Quick Queue Navigation & Accessible Breakdown */}
+      <div className="mt-4 border-t border-slate-100 pt-3">
+        <h4 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          Stage Breakdown & Queue Links
+        </h4>
+        <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+          {pipelineStages.map((stage) => {
+            const pct = Math.round((stage.value / total) * 100);
+            return (
+              <Link
+                key={stage.key}
+                to={stage.queue}
+                title={`Open ${stage.name} queue`}
+                className="group flex items-center justify-between rounded-lg bg-slate-50 px-2.5 py-1 text-xs hover:bg-slate-100 transition"
+              >
+                <span className="flex items-center gap-2 font-medium text-slate-700 group-hover:text-indigo-600">
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: stage.color }}
+                    aria-hidden="true"
+                  />
+                  {stage.name}
+                  <IconArrowUpRight className="h-3 w-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </span>
+                <span className="font-mono font-bold text-slate-900">
+                  {stage.value}{' '}
+                  <span className="font-normal text-slate-400 text-[10px]">({pct}%)</span>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MonthlyVolumeCard({
+  timeseries,
+}: {
+  timeseries: Array<{
+    period: string;
+    requests: number;
+    actual_bags: number;
+    estimated_bags: number;
+  }>;
+}): JSX.Element {
+  if (timeseries.length === 0) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+        <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+            <IconTrendingUp className="h-4 w-4" stroke={1.75} aria-hidden="true" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Monthly Volume Progression</h3>
+            <p className="text-xs text-slate-500">Requests vs collected & estimated bags</p>
+          </div>
+        </div>
+        <p className="py-12 text-center text-xs text-slate-400">No activity in this period.</p>
+      </div>
+    );
+  }
+
+  const periods = timeseries.map((t) => t.period);
+  const requestData = timeseries.map((t) => toCount(t.requests));
+  const actualBagsData = timeseries.map((t) => toCount(t.actual_bags));
+  const estimatedBagsData = timeseries.map((t) => toCount(t.estimated_bags));
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+    },
+    legend: {
+      bottom: 0,
+      textStyle: { color: '#64748b', fontSize: 11 },
+    },
+    grid: { left: 45, right: 20, top: 20, bottom: 40 },
+    xAxis: {
+      type: 'category',
+      data: periods,
+      axisLabel: { color: '#64748b', fontSize: 10 },
+      axisLine: { lineStyle: { color: '#e2e8f0' } },
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { color: '#94a3b8', fontSize: 10 },
+      splitLine: { lineStyle: { color: '#f1f5f9' } },
+    },
+    series: [
+      {
+        name: 'Requests',
+        type: 'bar',
+        data: requestData,
+        itemStyle: { borderRadius: [4, 4, 0, 0], color: '#334155' },
+        barMaxWidth: 24,
+      },
+      {
+        name: 'Collected bags',
+        type: 'bar',
+        data: actualBagsData,
+        itemStyle: { borderRadius: [4, 4, 0, 0], color: '#4f46e5' },
+        barMaxWidth: 24,
+      },
+      {
+        name: 'Estimated bags',
+        type: 'line',
+        data: estimatedBagsData,
+        smooth: true,
+        lineStyle: { color: '#0ea5e9', width: 2, type: 'dashed' },
+        itemStyle: { color: '#0ea5e9' },
+      },
+    ],
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+            <IconTrendingUp className="h-4 w-4" stroke={1.75} aria-hidden="true" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Monthly Volume Progression</h3>
+            <p className="text-xs text-slate-500">Requests vs collected & estimated bags</p>
+          </div>
+        </div>
+        <span className="font-mono text-xs font-semibold text-slate-700">
+          {timeseries.length} periods
+        </span>
+      </div>
+
+      <div className="mt-3">
+        <ReactECharts
+          option={option}
+          style={{ height: 260 }}
+          aria-label="Monthly Volume Progression Chart"
+        />
+      </div>
+
+      {/* Accessible Companion Table */}
+      <div className="mt-4 border-t border-slate-100 pt-3">
+        <h4 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          Period Breakdown Summary
+        </h4>
+        <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+          {timeseries.map((pt) => (
+            <div
+              key={pt.period}
+              className="flex items-center justify-between rounded-lg bg-slate-50 px-2.5 py-1 text-xs"
+            >
+              <span className="font-mono font-bold text-slate-900">{pt.period}</span>
+              <div className="flex items-center gap-3 font-mono text-[11px]">
+                <span className="text-slate-700">
+                  <strong className="text-slate-900">{toCount(pt.requests)}</strong> req
+                </span>
+                <span className="text-indigo-700">
+                  <strong className="text-indigo-900">{toCount(pt.actual_bags)}</strong> bags
+                </span>
+                <span className="text-sky-600">est. {toCount(pt.estimated_bags)}</span>
+              </div>
             </div>
           ))}
-        </dl>
-      )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CollectionMethodCard({
+  pickupCount,
+  dropoffCount,
+  pickupPct,
+  dropoffPct,
+  totalMethod,
+}: {
+  pickupCount: number;
+  dropoffCount: number;
+  pickupPct: number;
+  dropoffPct: number;
+  totalMethod: number;
+}): JSX.Element {
+  const methodData = [
+    { name: 'Home Pickup', value: pickupCount, itemStyle: { color: '#0284c7' } },
+    { name: 'Drop-off Centre', value: dropoffCount, itemStyle: { color: '#059669' } },
+  ];
+
+  const option = {
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}: <strong>{c}</strong> ({d}%)',
+    },
+    legend: {
+      bottom: 0,
+      textStyle: { color: '#64748b', fontSize: 11 },
+    },
+    series: [
+      {
+        type: 'pie',
+        radius: ['45%', '72%'],
+        center: ['50%', '46%'],
+        data: methodData,
+        label: {
+          color: '#1e293b',
+          fontSize: 11,
+          formatter: (p: { name: string; percent: number }) => `${p.name}: ${p.percent}%`,
+        },
+        itemStyle: { borderColor: '#fff', borderWidth: 2 },
+      },
+    ],
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-700">
+            <IconChartPie className="h-4 w-4" stroke={1.75} aria-hidden="true" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Collection Method Split</h3>
+            <p className="text-xs text-slate-500">Doorstep pickup vs drop-off centre volume</p>
+          </div>
+        </div>
+        <span className="font-mono text-xs font-semibold text-slate-700">{totalMethod} total</span>
+      </div>
+
+      <div className="mt-3">
+        <ReactECharts
+          option={option}
+          style={{ height: 260 }}
+          aria-label="Collection Method Split Donut Chart"
+        />
+      </div>
+
+      <div className="mt-4 flex items-center justify-around border-t border-slate-100 pt-3 text-xs">
+        <div className="text-center">
+          <span className="inline-flex items-center gap-1.5 font-medium text-sky-800">
+            <span className="h-2 w-2 rounded-full bg-sky-600" aria-hidden="true" />
+            Home Pickup
+          </span>
+          <p className="mt-0.5 font-mono text-base font-bold text-slate-900">
+            {pickupCount} <span className="text-xs font-normal text-slate-500">({pickupPct}%)</span>
+          </p>
+        </div>
+        <div className="h-8 w-px bg-slate-100" />
+        <div className="text-center">
+          <span className="inline-flex items-center gap-1.5 font-medium text-emerald-800">
+            <span className="h-2 w-2 rounded-full bg-emerald-600" aria-hidden="true" />
+            Drop-off Centre
+          </span>
+          <p className="mt-0.5 font-mono text-base font-bold text-slate-900">
+            {dropoffCount}{' '}
+            <span className="text-xs font-normal text-slate-500">({dropoffPct}%)</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TopZonesCard({
+  zoneEntries,
+  totalZone,
+}: {
+  zoneEntries: Array<[string, unknown]>;
+  totalZone: number;
+}): JSX.Element {
+  const zoneNames = zoneEntries
+    .slice(0, 8)
+    .map(([z]) => z)
+    .reverse();
+  const zoneValues = zoneEntries
+    .slice(0, 8)
+    .map(([, c]) => toCount(c))
+    .reverse();
+
+  const option = {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 90, right: 35, top: 10, bottom: 20 },
+    xAxis: {
+      type: 'value',
+      axisLabel: { color: '#94a3b8', fontSize: 10 },
+      splitLine: { lineStyle: { color: '#f1f5f9' } },
+    },
+    yAxis: {
+      type: 'category',
+      data: zoneNames,
+      axisLabel: { color: '#334155', fontSize: 11, fontWeight: 500 },
+      axisLine: { lineStyle: { color: '#e2e8f0' } },
+    },
+    series: [
+      {
+        type: 'bar',
+        data: zoneValues,
+        itemStyle: { borderRadius: [0, 4, 4, 0], color: '#6366f1' },
+        label: { show: true, position: 'right', color: '#64748b', fontSize: 10 },
+        barMaxWidth: 18,
+      },
+    ],
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700">
+            <IconMapPin className="h-4 w-4" stroke={1.75} aria-hidden="true" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Top Service Zones</h3>
+            <p className="text-xs text-slate-500">Volume distribution by area</p>
+          </div>
+        </div>
+        <span className="font-mono text-xs font-semibold text-slate-700">
+          {zoneEntries.length} zones
+        </span>
+      </div>
+
+      <div className="mt-3">
+        <ReactECharts
+          option={option}
+          style={{ height: 260 }}
+          aria-label="Top Service Zones Bar Chart"
+        />
+      </div>
+
+      {/* Accessible Companion List */}
+      <div className="mt-4 border-t border-slate-100 pt-3">
+        <h4 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          Zone Volume Breakdown
+        </h4>
+        <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+          {zoneEntries.map(([zoneName, count]) => {
+            const val = toCount(count);
+            const pct = totalZone > 0 ? Math.round((val / totalZone) * 100) : 0;
+            return (
+              <div
+                key={zoneName}
+                className="flex items-center justify-between rounded-lg bg-slate-50 px-2.5 py-1 text-xs"
+              >
+                <span className="font-semibold text-slate-800">{zoneName}</span>
+                <span className="font-mono font-bold text-slate-900">
+                  {val} <span className="font-normal text-slate-400 text-[10px]">({pct}%)</span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CategoriesCard({
+  categoryEntries,
+  totalCategory,
+}: {
+  categoryEntries: Array<[string, unknown]>;
+  totalCategory: number;
+}): JSX.Element {
+  const catNames = categoryEntries
+    .slice(0, 8)
+    .map(([k]) => labelFor(CATEGORY_LABELS, k))
+    .reverse();
+  const catValues = categoryEntries
+    .slice(0, 8)
+    .map(([, c]) => toCount(c))
+    .reverse();
+
+  const option = {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 110, right: 35, top: 10, bottom: 20 },
+    xAxis: {
+      type: 'value',
+      axisLabel: { color: '#94a3b8', fontSize: 10 },
+      splitLine: { lineStyle: { color: '#f1f5f9' } },
+    },
+    yAxis: {
+      type: 'category',
+      data: catNames,
+      axisLabel: { color: '#334155', fontSize: 10, fontWeight: 500 },
+      axisLine: { lineStyle: { color: '#e2e8f0' } },
+    },
+    series: [
+      {
+        type: 'bar',
+        data: catValues,
+        itemStyle: { borderRadius: [0, 4, 4, 0], color: '#0f766e' },
+        label: { show: true, position: 'right', color: '#64748b', fontSize: 10 },
+        barMaxWidth: 18,
+      },
+    ],
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
+            <IconChartBar className="h-4 w-4" stroke={1.75} aria-hidden="true" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Material Categories</h3>
+            <p className="text-xs text-slate-500">Composition of collected textiles</p>
+          </div>
+        </div>
+        <span className="font-mono text-xs font-semibold text-slate-700">
+          {categoryEntries.length} categories
+        </span>
+      </div>
+
+      <div className="mt-3">
+        <ReactECharts
+          option={option}
+          style={{ height: 260 }}
+          aria-label="Material Categories Bar Chart"
+        />
+      </div>
+
+      {/* Accessible Companion List */}
+      <div className="mt-4 border-t border-slate-100 pt-3">
+        <h4 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          Category Volume Breakdown
+        </h4>
+        <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+          {categoryEntries.map(([key, count]) => {
+            const val = toCount(count);
+            const pct = totalCategory > 0 ? Math.round((val / totalCategory) * 100) : 0;
+            return (
+              <div
+                key={key}
+                className="flex items-center justify-between rounded-lg bg-slate-50 px-2.5 py-1 text-xs"
+              >
+                <span className="truncate font-medium text-slate-700">
+                  {labelFor(CATEGORY_LABELS, key)}
+                </span>
+                <span className="shrink-0 font-mono font-semibold text-slate-900">
+                  {val} <span className="font-normal text-slate-400 text-[10px]">({pct}%)</span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

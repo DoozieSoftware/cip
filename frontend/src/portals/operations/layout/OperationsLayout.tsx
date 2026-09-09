@@ -12,6 +12,7 @@ import {
   IconFileAnalytics,
   IconHistory,
   IconHome,
+  IconLayoutDashboard,
   IconLock,
   IconLogout,
   IconMap,
@@ -106,6 +107,11 @@ const MOBILE_NAV: NavItem[] = [
 
 const DR_LINEN_NAV: NavItem[] = [
   {
+    to: '/operations/textile-collections/capacity',
+    label: 'Dashboard',
+    icon: IconLayoutDashboard,
+  },
+  {
     to: '/operations/textile-collections/review',
     label: 'Reviews',
     icon: IconClipboardCheck,
@@ -141,7 +147,6 @@ const DR_LINEN_NAV: NavItem[] = [
     label: 'Server failures',
     icon: IconAlertTriangle,
   },
-  { to: '/operations/textile-collections/capacity', label: 'Capacity', icon: IconChartBar },
   { to: '/operations/profile', label: 'Profile', icon: IconUser, mobile: true },
 ];
 

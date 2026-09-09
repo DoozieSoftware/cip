@@ -5,10 +5,10 @@ import {
   IconAlertTriangle,
   IconBell,
   IconBuilding,
-  IconChartBar,
   IconChevronRight,
   IconClipboardList,
   IconHistory,
+  IconLayoutDashboard,
   IconShield,
   IconUser,
 } from '@tabler/icons-react';
@@ -123,7 +123,11 @@ const TEXTILE_MORE_LINKS = [
     label: 'Server failures',
     icon: IconAlertTriangle,
   },
-  { to: '/operations/textile-collections/capacity', label: 'Capacity', icon: IconChartBar },
+  {
+    to: '/operations/textile-collections/capacity',
+    label: 'Dashboard',
+    icon: IconLayoutDashboard,
+  },
 ];
 
 /**

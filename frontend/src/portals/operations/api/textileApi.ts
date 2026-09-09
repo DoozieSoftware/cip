@@ -554,6 +554,8 @@ export function fetchTextileReportingDashboard(params: {
   year?: string;
   month?: string;
   granularity?: 'day' | 'month';
+  service_zone_id?: string;
+  category?: string;
 }) {
   return request<TextileCapacityDashboard>('/department/textile-collections/report/dashboard', {
     query: params,
@@ -584,6 +586,8 @@ export function downloadTextileReportingExport(params: {
   department_id?: string;
   year?: string;
   month?: string;
+  service_zone_id?: string;
+  category?: string;
 }): Promise<void> {
   const period = params.year
     ? params.month

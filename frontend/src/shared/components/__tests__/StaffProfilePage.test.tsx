@@ -248,7 +248,7 @@ describe('StaffProfilePage textile overflow links', () => {
     ['History', '/operations/textile-collections/completed'],
     ['Reupload', '/operations/textile-collections/reuploads'],
     ['Server failures', '/operations/textile-collections/offline-recovery'],
-    ['Capacity', '/operations/textile-collections/capacity'],
+    ['Dashboard', '/operations/textile-collections/capacity'],
   ];
 
   it('lists the destinations removed from the mobile bottom bar', async () => {

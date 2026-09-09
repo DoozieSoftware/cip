@@ -98,11 +98,11 @@ describe('OperationsLayout mobile bottom nav (DR_LINEN)', () => {
     expect(nav.querySelector('ul')).toHaveClass('grid-cols-5');
   });
 
-  it('moves History, Reupload, Server failures, and Capacity off the bottom bar', () => {
+  it('moves History, Reupload, Server failures, and Dashboard off the bottom bar', () => {
     renderLayout();
     const nav = mobileNav();
 
-    for (const label of ['History', 'Reupload', 'Server failures', 'Capacity']) {
+    for (const label of ['History', 'Reupload', 'Server failures', 'Dashboard']) {
       expect(within(nav).queryByRole('link', { name: label })).not.toBeInTheDocument();
     }
   });
@@ -115,6 +115,7 @@ describe('OperationsLayout mobile bottom nav (DR_LINEN)', () => {
       .map((link) => link.getAttribute('href'));
 
     expect(names).toEqual([
+      '/operations/textile-collections/capacity',
       '/operations/textile-collections/review',
       '/operations/textile-collections/schedule',
       '/operations/textile-collections/pickup-requests',
@@ -123,7 +124,6 @@ describe('OperationsLayout mobile bottom nav (DR_LINEN)', () => {
       '/operations/textile-collections/completed',
       '/operations/textile-collections/reuploads',
       '/operations/textile-collections/offline-recovery',
-      '/operations/textile-collections/capacity',
       '/operations/profile',
     ]);
   });
