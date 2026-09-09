@@ -37,6 +37,93 @@ export const WINDOW_PRESETS = [
   { label: '15:00–18:00', start: '15:00', end: '18:00' },
 ] as const;
 
+/** Minimal shape needed for proximity ordering (mirrors the backend optimizer). */
+export interface ProximityStop {
+  id: string;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+function isMappable(value: ProximityStop): boolean {
+  return (
+    typeof value.latitude === 'number' &&
+    Number.isFinite(value.latitude) &&
+    typeof value.longitude === 'number' &&
+    Number.isFinite(value.longitude)
+  );
+}
+
+export function haversineKm(latA: number, lngA: number, latB: number, lngB: number): number {
+  const earthKm = 6371;
+  const dLat = ((latB - latA) * Math.PI) / 180;
+  const dLng = ((lngB - lngA) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((latA * Math.PI) / 180) * Math.cos((latB * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+
+  return 2 * earthKm * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+/**
+ * Nearest-first visit order: closest collection to the anchor first, then the
+ * next-nearest from each stop, so the run reads 1 → 2 → 3 → 4 by proximity.
+ * Same greedy rule as the backend TextileRouteOptimizer. Collections without
+ * a saved map location keep their input order at the end.
+ */
+export function suggestProximityOrder(
+  stops: readonly ProximityStop[],
+  startLatitude?: number,
+  startLongitude?: number,
+): string[] {
+  const mapped = stops.filter(isMappable);
+  const unmapped = stops.filter((stop) => !isMappable(stop)).map((stop) => stop.id);
+  const ordered: string[] = [];
+
+  if (mapped.length > 0) {
+    let anchorLat =
+      typeof startLatitude === 'number' && Number.isFinite(startLatitude)
+        ? startLatitude
+        : (mapped[0]?.latitude as number);
+    let anchorLng =
+      typeof startLongitude === 'number' && Number.isFinite(startLongitude)
+        ? startLongitude
+        : (mapped[0]?.longitude as number);
+    const remaining = [...mapped];
+
+    while (remaining.length > 0) {
+      let bestIdx = 0;
+      let bestDist = haversineKm(
+        anchorLat,
+        anchorLng,
+        remaining[0]?.latitude as number,
+        remaining[0]?.longitude as number,
+      );
+
+      for (let idx = 1; idx < remaining.length; idx += 1) {
+        const dist = haversineKm(
+          anchorLat,
+          anchorLng,
+          remaining[idx]?.latitude as number,
+          remaining[idx]?.longitude as number,
+        );
+
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestIdx = idx;
+        }
+      }
+
+      const chosen = remaining.splice(bestIdx, 1)[0];
+      if (!chosen) break;
+      ordered.push(chosen.id);
+      anchorLat = chosen.latitude as number;
+      anchorLng = chosen.longitude as number;
+    }
+  }
+
+  return [...ordered, ...unmapped];
+}
+
 // Shared field input — single source for date/time + driver/team/vehicle/ref/instructions
 // (rounded-lg per spec, token border, focus ring). Keeps ops desk consistent.
 export const FIELD_INPUT =

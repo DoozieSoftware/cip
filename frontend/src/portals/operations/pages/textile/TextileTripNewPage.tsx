@@ -29,6 +29,7 @@ import {
   WINDOW_PRESETS,
   buildProspectiveEvaluation,
   readTripLocationState,
+  suggestProximityOrder,
 } from './scheduleTripUtils';
 
 /**
@@ -115,9 +116,7 @@ export default function TextileTripNewPage(): JSX.Element {
 
   const suggestedOrderForSelection = useMemo(() => {
     if (selectedItems.length < 2) return [];
-    return [...selectedItems]
-      .sort((a, b) => a.pickup_address.localeCompare(b.pickup_address))
-      .map((r) => r.id);
+    return suggestProximityOrder(selectedItems);
   }, [selectedItems]);
 
   const showSuggestedHint = stopIds.length >= 2 && suggestedOrderForSelection.length > 1;
@@ -517,7 +516,7 @@ export default function TextileTripNewPage(): JSX.Element {
                   suggestedOrder={suggestedOrderForSelection}
                   currentOrder={orderedSelected.length ? orderedSelected : stopIds}
                   items={selectedItems}
-                  note="Suggested grouping keeps the same zone together; ordering sorts by address to shorten driving. Apply and then confirm the manifest order."
+                  note="Suggested route visits the nearest collection first, then the next-nearest, using saved map locations. Collections without a location stay at the end. Apply and then confirm the order."
                   onApply={() => setManifestOrder(suggestedOrderForSelection)}
                 />
               ) : null}
