@@ -29,7 +29,7 @@ export function readTripLocationState(state: unknown): ScheduleTripLocationState
   };
 }
 
-// Quick pickup windows (24h values for the API). Tapping a chip fills both time
+// Quick pickup times (24h values for the API). Tapping a chip fills both time
 // fields; the native time inputs below stay as the custom override.
 export const WINDOW_PRESETS = [
   { label: '09:00–12:00', start: '09:00', end: '12:00' },
@@ -60,7 +60,7 @@ export function buildProspectiveEvaluation(
     if (rule.max_bags !== null && totalBags > rule.max_bags) {
       blockers.push({
         code: 'exceeds_max_bags',
-        message: `Trip has ${totalBags} bags but zone limit is ${rule.max_bags} bags for this day. Remove stops or split the trip.`,
+        message: `Trip has ${totalBags} bags but zone limit is ${rule.max_bags} bags for this day. Remove collections or split the trip.`,
       });
     } else if (rule.max_bags !== null && totalBags >= Math.ceil(rule.max_bags * 0.85)) {
       warnings.push({
@@ -86,7 +86,7 @@ export function buildProspectiveEvaluation(
     if (rule.max_stops !== null && stops > rule.max_stops) {
       blockers.push({
         code: 'exceeds_max_stops',
-        message: `Trip has ${stops} stops but limit is ${rule.max_stops}. Split the trip.`,
+        message: `Trip has ${stops} collections but limit is ${rule.max_stops}. Split the trip.`,
       });
     }
 

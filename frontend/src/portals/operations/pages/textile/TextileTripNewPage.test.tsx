@@ -140,7 +140,7 @@ describe('TextileTripNewPage', () => {
     expect(screen.queryByRole('button', { name: 'Schedule trip' })).not.toBeInTheDocument();
   });
 
-  it('confirms the stops carried over from Trips and allows removal', () => {
+  it('confirms the collections carried over from Trips and allows removal', () => {
     renderNewTrip({ selectedIds: ['collection-1', 'collection-2'] });
 
     expect(screen.getByText('DLN-2026-79FFFC75')).toBeVisible();
@@ -152,18 +152,18 @@ describe('TextileTripNewPage', () => {
     expect(screen.getByText('DLN-2026-79FFFC75')).toBeVisible();
   });
 
-  it('fills both window fields from a preset chip and keeps 24h values', () => {
+  it('fills both time fields from a preset chip and keeps 24h values', () => {
     renderNewTrip({ selectedIds: ['collection-1'] });
 
     fireEvent.click(screen.getByRole('button', { name: '09:00–12:00' }));
 
-    expect(screen.getByLabelText('Window start')).toHaveValue('09:00');
-    expect(screen.getByLabelText('Window end')).toHaveValue('12:00');
+    expect(screen.getByLabelText('Start time')).toHaveValue('09:00');
+    expect(screen.getByLabelText('End time')).toHaveValue('12:00');
     // All three presets stay available; manual inputs remain for custom override.
     expect(screen.getByRole('button', { name: '12:00–15:00' })).toBeVisible();
     expect(screen.getByRole('button', { name: '15:00–18:00' })).toBeVisible();
-    fireEvent.change(screen.getByLabelText('Window start'), { target: { value: '10:30' } });
-    expect(screen.getByLabelText('Window start')).toHaveValue('10:30');
+    fireEvent.change(screen.getByLabelText('Start time'), { target: { value: '10:30' } });
+    expect(screen.getByLabelText('Start time')).toHaveValue('10:30');
   });
 
   it('keeps scheduling validation working for a mixed ready + missed selection', () => {

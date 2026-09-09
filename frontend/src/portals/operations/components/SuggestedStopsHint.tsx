@@ -58,7 +58,9 @@ export function SuggestedStopsHint({
           ) : (
             <>
               <span className="font-medium text-[var(--color-ink)]">Recommended route</span>
-              <span className="hidden sm:inline opacity-70">· Stops ordered to reduce travel</span>
+              <span className="hidden sm:inline opacity-70">
+                · Collections ordered to reduce travel
+              </span>
               {movedCount > 0 ? (
                 <span className="rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium leading-none text-amber-800">
                   {movedCount} reordered

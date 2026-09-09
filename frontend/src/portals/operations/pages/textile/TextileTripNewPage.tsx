@@ -229,7 +229,7 @@ export default function TextileTripNewPage(): JSX.Element {
     <DeskPage
       desk={desk}
       title="New trip"
-      description="Confirm stops, set date and window, then schedule."
+      description="Confirm collections, set date and time, then schedule."
       toolbar={
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -273,17 +273,17 @@ export default function TextileTripNewPage(): JSX.Element {
           emptyBody="They moved to another trip or left the queue. Pick requests again on the Trips page."
         >
           <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 pb-24">
-            {/* 1. Confirm stops */}
+            {/* 1. Confirm collections */}
             <section
-              aria-label="Confirm stops"
+              aria-label="Confirm collections"
               className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-sm"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-sm font-semibold tracking-tight text-[var(--color-ink)]">
-                  1. Confirm stops
+                  1. Confirm collections
                 </h2>
                 <span className="rounded-full bg-[var(--color-ink)] px-2 py-0.5 text-[11px] font-semibold text-white">
-                  {stopIds.length} stop{stopIds.length === 1 ? '' : 's'}
+                  {stopIds.length} collection{stopIds.length === 1 ? '' : 's'}
                 </span>
                 <span className="rounded-full bg-[var(--color-surface-alt)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-ink)]">
                   {totalBags} bags · {totalWeight.toFixed(1)} kg
@@ -353,13 +353,13 @@ export default function TextileTripNewPage(): JSX.Element {
               </ol>
             </section>
 
-            {/* 2. Date & window */}
+            {/* 2. Date & time */}
             <section
-              aria-label="Date and window"
+              aria-label="Date and time"
               className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-sm"
             >
               <h2 className="text-sm font-semibold tracking-tight text-[var(--color-ink)]">
-                2. Date &amp; window
+                2. Date &amp; time
               </h2>
               <div className="mt-2 min-w-0">
                 <label
@@ -402,14 +402,14 @@ export default function TextileTripNewPage(): JSX.Element {
               </div>
               <div className="mt-3 min-w-0">
                 <span
-                  id="window-presets-label"
+                  id="time-presets-label"
                   className="text-[11px] font-medium text-[var(--color-text-secondary)]"
                 >
-                  Quick windows
+                  Quick times
                 </span>
                 <div
                   role="group"
-                  aria-labelledby="window-presets-label"
+                  aria-labelledby="time-presets-label"
                   className="mt-2 flex flex-wrap justify-start gap-2"
                 >
                   {WINDOW_PRESETS.map((preset) => {
@@ -442,13 +442,13 @@ export default function TextileTripNewPage(): JSX.Element {
                       className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
                       aria-hidden
                     />
-                    Window start
+                    Start time
                   </span>
                   <input
                     type="time"
                     value={windowStart}
                     onChange={(event) => setWindowStart(event.target.value)}
-                    aria-label="Window start"
+                    aria-label="Start time"
                     className={FIELD_INPUT}
                   />
                 </label>
@@ -458,13 +458,13 @@ export default function TextileTripNewPage(): JSX.Element {
                       className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]"
                       aria-hidden
                     />
-                    Window end
+                    End time
                   </span>
                   <input
                     type="time"
                     value={windowEnd}
                     onChange={(event) => setWindowEnd(event.target.value)}
-                    aria-label="Window end"
+                    aria-label="End time"
                     className={FIELD_INPUT}
                   />
                 </label>
