@@ -58,6 +58,7 @@ import {
   formatVolume,
 } from './shared';
 import { StopRecordForm } from './components/StopRecordForm';
+import StopRouteMap from './components/StopRouteMap';
 import {
   STOP_BTN as BTN,
   formatTripDate,
@@ -83,7 +84,7 @@ const TRIP_STATUS_META: Record<string, { label: string; cls: string }> = {
   cancelled: { label: 'Cancelled', cls: 'border-neutral-200 bg-neutral-100 text-neutral-600' },
 };
 
-/* Secondary stop actions — Mark missed + Override. Rendered inline on
+/* Secondary collection actions — Mark missed + Override. Rendered inline on
  * desktop, inside the "More actions" disclosure on mobile. */
 function SecondaryStopActions({
   item,
@@ -163,10 +164,14 @@ export default function TextileStopPage(): JSX.Element {
 
   const siblings = useMemo(() => {
     const all = siblingsQuery.data?.data ?? [];
-    const inTrip =
+    const inTrip = (
       batchId === 'unassigned'
         ? all.filter((r) => !r.batch)
-        : all.filter((r) => r.batch?.id === batchId);
+        : all.filter((r) => r.batch?.id === batchId)
+    ).sort((a, b) => {
+      if (batchId === 'unassigned') return 0;
+      return (a.stop_order ?? Number.MAX_SAFE_INTEGER) - (b.stop_order ?? Number.MAX_SAFE_INTEGER);
+    });
     if (item && !inTrip.some((r) => r.id === item.id)) {
       const itemBatchId = item.batch?.id ?? 'unassigned';
       if (itemBatchId === batchId || inTrip.length === 0) return [item, ...inTrip];
@@ -342,7 +347,7 @@ export default function TextileStopPage(): JSX.Element {
   return (
     <DeskPage
       desk={desk}
-      title="Collection stop"
+      title="Collections"
       description="Call, navigate, record or mark missed."
       toolbar={
         <div className="flex flex-wrap items-center gap-2">
@@ -392,7 +397,7 @@ export default function TextileStopPage(): JSX.Element {
         error={detail.isError}
         onRetry={() => void detail.refetch()}
         hasRows={!!item}
-        emptyTitle="Stop not found"
+        emptyTitle="Collection not found"
         emptyBody="Moved to another trip or removed."
       >
         {item ? (
@@ -416,7 +421,7 @@ export default function TextileStopPage(): JSX.Element {
                     ) : null}
                     {stopIndex >= 0 && siblings.length > 0 ? (
                       <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-                        Stop {stopIndex + 1} of {siblings.length}
+                        Collection {stopIndex + 1} of {siblings.length}
                       </span>
                     ) : null}
                     <span
@@ -439,12 +444,12 @@ export default function TextileStopPage(): JSX.Element {
                   ) : null}
                 </div>
 
-                {/* Prev / Next Stop Navigation */}
-                <nav aria-label="Stop navigation" className="flex items-center gap-2">
+                {/* Prev / Next Collection Navigation */}
+                <nav aria-label="Collection navigation" className="flex items-center gap-2">
                   {prevStop ? (
                     <Link
                       to={`/operations/textile-collections/collections/${batchId}/stops/${prevStop.id}`}
-                      aria-label="Previous stop"
+                      aria-label="Previous collection"
                       className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
                     >
                       <IconChevronLeft className="h-4 w-4" stroke={2} aria-hidden="true" />
@@ -459,7 +464,7 @@ export default function TextileStopPage(): JSX.Element {
                   {nextStop ? (
                     <Link
                       to={`/operations/textile-collections/collections/${batchId}/stops/${nextStop.id}`}
-                      aria-label="Next stop"
+                      aria-label="Next collection"
                       className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
                     >
                       Next
@@ -490,75 +495,19 @@ export default function TextileStopPage(): JSX.Element {
                 </div>
               ) : null}
 
-              {/* Interactive Route Stop Sequence Stepper */}
-              {siblings.length > 1 ? (
-                <div className="mt-4 border-t border-slate-100 pt-3">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-                    Route Itinerary ({siblings.length} stops)
-                  </p>
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                    {siblings.map((stop, idx) => {
-                      const isCurrent = stop.id === (item?.id ?? stopId);
-                      const isStopCollected = stop.status === 'picked_up';
-                      const isStopMissed = stop.status === 'missed';
-                      return (
-                        <Link
-                          key={stop.id}
-                          to={`/operations/textile-collections/collections/${batchId}/stops/${stop.id}`}
-                          className={`group flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-xs transition ${
-                            isCurrent
-                              ? 'border-slate-900 bg-slate-900 text-white shadow-xs'
-                              : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white'
-                          }`}
-                        >
-                          <span
-                            className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
-                              isCurrent
-                                ? 'bg-white text-slate-900'
-                                : isStopCollected
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : isStopMissed
-                                    ? 'bg-rose-100 text-rose-800'
-                                    : 'bg-slate-200 text-slate-700'
-                            }`}
-                          >
-                            {isStopCollected ? (
-                              <IconCheck className="h-3 w-3" stroke={2.5} />
-                            ) : isStopMissed ? (
-                              <IconX className="h-3 w-3" stroke={2.5} />
-                            ) : (
-                              idx + 1
-                            )}
-                          </span>
-                          <div className="flex flex-col text-left">
-                            <span className="font-semibold truncate max-w-[120px]">
-                              {stop.requester_name}
-                            </span>
-                            <span
-                              className={`text-[10px] ${isCurrent ? 'text-slate-300' : 'text-slate-500'}`}
-                            >
-                              {isStopCollected
-                                ? 'Collected'
-                                : isStopMissed
-                                  ? 'Missed'
-                                  : `Stop #${idx + 1}`}
-                            </span>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
+              {/* Road route map with slim offline-safe status strip */}
+              <div className="mt-4 border-t border-slate-100 pt-3">
+                <StopRouteMap items={siblings} currentId={item?.id ?? stopId} batchId={batchId} />
+              </div>
             </section>
 
-            {/* Two-Column Responsive Stop Workspace */}
+            {/* Two-Column Responsive Collection Workspace */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-              {/* LEFT COLUMN: Stop Information, Customer & Location (7 cols) */}
+              {/* LEFT COLUMN: Collection Information, Customer & Location (7 cols) */}
               <div className="lg:col-span-7 space-y-4">
-                {/* Card 1: Stop Hero & Customer Details */}
+                {/* Card 1: Collection Hero & Customer Details */}
                 <section
-                  aria-label={`Stop work for ${item.requester_name}`}
+                  aria-label={`Collection work for ${item.requester_name}`}
                   className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3.5">
@@ -577,7 +526,7 @@ export default function TextileStopPage(): JSX.Element {
                       </button>
                       {stopIndex >= 0 && siblings.length > 0 ? (
                         <span className="text-xs font-semibold text-slate-500">
-                          Stop #{stopIndex + 1}
+                          #{stopIndex + 1}
                         </span>
                       ) : null}
                     </div>
@@ -655,7 +604,7 @@ export default function TextileStopPage(): JSX.Element {
                       </a>
 
                       <a
-                        href={mapsHref(item.pickup_address)}
+                        href={mapsHref(item.pickup_address, item.latitude, item.longitude)}
                         target="_blank"
                         rel="noreferrer"
                         aria-label="Navigate"
@@ -844,7 +793,7 @@ export default function TextileStopPage(): JSX.Element {
 
                         <button
                           type="button"
-                          aria-label="Record this stop"
+                          aria-label="Record this collection"
                           disabled={outcome.isPending}
                           onClick={() => setRecordOpen((v) => !v)}
                           className={BTN.primary}
@@ -940,7 +889,7 @@ export default function TextileStopPage(): JSX.Element {
                         to={`/operations/textile-collections/collections/${batchId}/stops/${nextStop.id}`}
                         className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white shadow-sm hover:bg-black transition"
                       >
-                        <span>Proceed to Next Stop ({nextStop.requester_name})</span>
+                        <span>Proceed to next collection ({nextStop.requester_name})</span>
                         <IconChevronRight className="h-4 w-4" stroke={2} />
                       </Link>
                     ) : (

@@ -504,4 +504,80 @@ describe('TextileCollectionFields', () => {
     });
     expect(screen.getByLabelText('Your name')).toHaveValue('Typed Name');
   });
+
+  it('dynamically selects the zone when zones finish loading asynchronously', async () => {
+    mockZones([], true);
+    const onDraftChange = vi.fn();
+    const { rerender } = render(
+      <TextileCollectionFields
+        category="clothes_waste"
+        value={null}
+        onChange={vi.fn()}
+        onValidityChange={vi.fn()}
+        onDraftChange={onDraftChange}
+      />,
+      { wrapper },
+    );
+
+    expect(screen.getByText(/Loading service zones/)).toBeDefined();
+
+    mockZones([ZONE_A]);
+    rerender(
+      <TextileCollectionFields
+        category="clothes_waste"
+        value={null}
+        onChange={vi.fn()}
+        onValidityChange={vi.fn()}
+        onDraftChange={onDraftChange}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Service zone')).toHaveValue('zone-a');
+    });
+  });
+
+  it('dynamically switches zone when category changes to one with different zones', async () => {
+    const ZONE_METAL = {
+      id: 'zone-metal-1',
+      code: 'MTL-1',
+      name: 'Metal Scrap Zone',
+      center: null,
+      service_radius_km: 10,
+      methods: ['premises'],
+      dropoff: null,
+      readiness_instructions: null,
+      partner: null,
+    };
+
+    mockZones([ZONE_A]);
+    const onDraftChange = vi.fn();
+    const { rerender } = render(
+      <TextileCollectionFields
+        category="clothes_waste"
+        value={null}
+        onChange={vi.fn()}
+        onValidityChange={vi.fn()}
+        onDraftChange={onDraftChange}
+      />,
+      { wrapper },
+    );
+
+    expect(screen.getByLabelText('Service zone')).toHaveValue('zone-a');
+
+    mockZones([ZONE_METAL]);
+    rerender(
+      <TextileCollectionFields
+        category="metal_scrap"
+        value={null}
+        onChange={vi.fn()}
+        onValidityChange={vi.fn()}
+        onDraftChange={onDraftChange}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Service zone')).toHaveValue('zone-metal-1');
+    });
+  });
 });

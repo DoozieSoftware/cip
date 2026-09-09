@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 
 beforeEach(function (): void {
     Cache::flush();
+    config()->set('services.geocoder.search_url', 'https://geocoder.example.test/search');
 });
 
 it('finds a typed address through the configured geocoder proxy', function (): void {

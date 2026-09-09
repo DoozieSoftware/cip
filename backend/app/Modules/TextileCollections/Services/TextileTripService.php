@@ -9,6 +9,7 @@ use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\TextileCollections\Events\TextileTripAssigned;
 use App\Modules\TextileCollections\Events\TextileTripStarted;
 use App\Modules\TextileCollections\Models\TextileCollectionBatch;
+use App\Modules\TextileCollections\Models\TextileCollectionRequest;
 use App\Modules\Users\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -102,6 +103,45 @@ final class TextileTripService
         $this->audit($actor, $batch->id, 'textile.stop_reorder', null, ['order' => $orderedIds]);
 
         return $batch->refresh();
+    }
+
+    /**
+     * Recompute the nearest-first visit order for a trip that has not
+     * started yet (e.g. after staff add more collections to it).
+     *
+     * @return list<string> Ordered request ids.
+     */
+    public function optimize(TextileCollectionBatch $batch, User $actor): array
+    {
+        if ($batch->status === TextileCollectionBatch::STATUS_IN_PROGRESS || $batch->status === TextileCollectionBatch::STATUS_COMPLETED) {
+            throw ApiException::validation('Cannot optimize collections after the trip has started.');
+        }
+
+        $zone = $batch->serviceZone;
+
+        $orderedIds = DB::transaction(function () use ($batch, $zone): array {
+            $requests = $batch->requests()->lockForUpdate()->orderBy('created_at')->get();
+
+            $ordered = TextileRouteOptimizer::optimize(
+                array_values($requests->map(fn (TextileCollectionRequest $r): array => [
+                    'id' => (string) $r->id,
+                    'latitude' => $r->latitude !== null ? (float) $r->latitude : null,
+                    'longitude' => $r->longitude !== null ? (float) $r->longitude : null,
+                ])->all()),
+                $zone?->center_latitude !== null ? (float) $zone->center_latitude : null,
+                $zone?->center_longitude !== null ? (float) $zone->center_longitude : null,
+            );
+
+            foreach ($ordered as $idx => $id) {
+                DB::table('textile_collection_requests')->where('id', $id)->where('batch_id', $batch->id)->update(['stop_order' => $idx + 1]);
+            }
+
+            return $ordered;
+        });
+
+        $this->audit($actor, $batch->id, 'textile.stop_optimize', null, ['order' => $orderedIds]);
+
+        return $orderedIds;
     }
 
     /**

@@ -232,15 +232,23 @@ function TextileCollectionFieldsInner({
   }, [profile.data, value]);
 
   useEffect(() => {
-    if (value === null && draft.service_zone_id === '' && zones.length > 0) {
+    setDraft((prev) => (prev.category === category ? prev : { ...prev, category }));
+  }, [category]);
+
+  useEffect(() => {
+    if (zones.length === 0) return;
+    const currentZoneExists = zones.some((z) => z.id === draft.service_zone_id);
+    if (!currentZoneExists) {
       const z = zones[0];
       setDraft((prev) => ({
         ...prev,
         service_zone_id: z.id,
-        collection_method: z.methods[0] ?? prev.collection_method,
+        collection_method: z.methods.includes(prev.collection_method)
+          ? prev.collection_method
+          : (z.methods[0] ?? prev.collection_method),
       }));
     }
-  }, [zones, value, draft.service_zone_id]);
+  }, [zones, draft.service_zone_id]);
 
   const selectedZone = useMemo(
     () => zones.find((z) => z.id === draft.service_zone_id),

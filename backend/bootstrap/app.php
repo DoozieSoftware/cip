@@ -8,6 +8,7 @@ use App\Modules\Public\Console\RebuildPublicAnalyticsCommand;
 use App\Modules\Security\Http\Middleware\AuditMiddleware;
 use App\Modules\Settings\Console\PurgeRetentionCommand;
 use App\Modules\Settings\Models\Setting;
+use App\Modules\TextileCollections\Console\BackfillTextileCollectionCoordinatesCommand;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Http\Middleware\IdempotencyKey;
 use App\Modules\Shared\Http\Middleware\RequestId;
@@ -38,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
         PurgeRetentionCommand::class,
         RebuildPublicAnalyticsCommand::class,
         RecoverQuarantinedMediaCommand::class,
+        BackfillTextileCollectionCoordinatesCommand::class,
     ])
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->call(static function (): void {

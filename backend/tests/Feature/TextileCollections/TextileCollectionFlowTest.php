@@ -14,6 +14,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -95,6 +96,30 @@ it('creates a standalone textile pickup without creating a complaint', function 
         'status' => 'pending_review',
     ]);
     $this->assertDatabaseCount('reports', 0);
+});
+
+it('geocodes a premises address when the citizen does not provide a GPS pin', function (): void {
+    config()->set('services.geocoder.search_url', 'https://geocoder.example.test/search');
+    Http::fake([
+        '*' => Http::response([[
+            'lat' => '12.9238628',
+            'lon' => '77.5860466',
+            'display_name' => 'Jayanagar 4th Block, Bengaluru, Karnataka',
+        ]]),
+    ]);
+    $citizen = User::factory()->create();
+    $zone = textileZone();
+    Sanctum::actingAs($citizen);
+
+    $response = $this->postJson('/api/v1/textile-collection/requests', textilePayload($zone, [
+        'latitude' => null,
+        'longitude' => null,
+        'pickup_address' => 'Jayanagar 4th Block Post Office, Bengaluru 560041',
+    ]));
+
+    $response->assertCreated()
+        ->assertJsonPath('data.latitude', 12.9238628)
+        ->assertJsonPath('data.longitude', 77.5860466);
 });
 
 it('keeps clothes collection out of the complaint submission API', function (): void {

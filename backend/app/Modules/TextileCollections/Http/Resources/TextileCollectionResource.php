@@ -37,6 +37,7 @@ final class TextileCollectionResource extends JsonResource
             'pickup_address' => $this->resource->pickup_address,
             'latitude' => $this->resource->latitude,
             'longitude' => $this->resource->longitude,
+            'stop_order' => $this->resource->stop_order,
             'collection_method' => $this->resource->collection_method,
             'estimated_bags' => $this->resource->estimated_bags,
             'estimated_weight_kg' => $this->resource->estimated_weight_kg,

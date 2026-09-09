@@ -429,6 +429,9 @@ Route::prefix('v1')->group(function (): void {
         Route::put('textile-batches/{batch}/stops/order', [TextileCollectionController::class, 'reorderStops'])
             ->middleware('can:textile.assign_trip')
             ->name('textile-batches.stops.order');
+        Route::post('textile-batches/{batch}/stops/optimize', [TextileCollectionController::class, 'optimizeStops'])
+            ->middleware('can:textile.assign_trip')
+            ->name('textile-batches.stops.optimize');
         Route::get('textile-trips/mine', [TextileCollectionController::class, 'myTrips'])
             ->middleware('can:textile.operate_trip')
             ->name('textile-trips.mine');

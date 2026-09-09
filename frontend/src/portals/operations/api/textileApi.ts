@@ -21,6 +21,8 @@ export interface TextileCollectionListItem {
   /** Optional: present when the booking captured a pickup geolocation. */
   latitude?: number | null;
   longitude?: number | null;
+  /** 1-based optimized visit order within the assigned trip. */
+  stop_order?: number | null;
   collection_method: string;
   estimated_bags: number;
   estimated_weight_kg: number;

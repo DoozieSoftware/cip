@@ -13,6 +13,19 @@ import type * as TextileShared from './shared';
 import TextileStopPage from './TextileStopPage';
 import { useDesk, useTextileQueue } from './shared';
 
+vi.mock('react-leaflet', () => ({
+  MapContainer: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="route-map">{children}</div>
+  ),
+  TileLayer: () => null,
+  Marker: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="route-pin">{children}</div>
+  ),
+  Polyline: () => <div data-testid="route-line" />,
+  Popup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  useMap: () => ({ fitBounds: vi.fn(), setView: vi.fn() }),
+}));
+
 vi.mock('./shared', async () => {
   const actual = await vi.importActual<typeof TextileShared>('./shared');
   return {
@@ -178,7 +191,7 @@ describe('TextileStopPage', () => {
     expect(await screen.findByText('Lakshmi Devi')).toBeVisible();
     expect(screen.getByText('21, 11th Main, Jayanagar, Bengaluru 560041')).toBeVisible();
     expect(screen.getByText(/DRL-260826-XX11TO/)).toBeVisible();
-    expect(screen.getByText(/Stop 1 of 1/)).toBeVisible();
+    expect(screen.getByText(/Collection 1 of 1/)).toBeVisible();
     expect(screen.getByRole('link', { name: 'Back to collections' })).toHaveAttribute(
       'href',
       '/operations/textile-collections/collections',
@@ -195,7 +208,7 @@ describe('TextileStopPage', () => {
     expect(screen.getAllByRole('button', { name: 'Mark missed' }).length).toBe(2);
     // desktop inline copy + mobile "More actions" copy
     expect(screen.getByText('More actions')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Record this stop' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Record this collection' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Choose proof photo' })).toBeVisible();
     expect(vi.mocked(fetchTextileDetail)).toHaveBeenCalledWith('collection-1', 'department-1');
   });
@@ -385,5 +398,91 @@ describe('TextileStopPage', () => {
     expect(
       await screen.findByRole('heading', { name: `${ITEM.reference} collected` }),
     ).toBeVisible();
+  });
+
+  it('shows a road route map with pins in visit order and no stop wording', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            code: 'Ok',
+            routes: [
+              {
+                geometry: {
+                  coordinates: [
+                    [77.59, 12.97],
+                    [77.6, 12.98],
+                  ],
+                },
+              },
+            ],
+          }),
+      }),
+    );
+    const first: TextileCollectionListItem = {
+      ...ITEM,
+      status: 'picked_up',
+      stop_order: 1,
+      latitude: 12.97,
+      longitude: 77.59,
+    };
+    const second: TextileCollectionListItem = {
+      ...ITEM,
+      id: 'collection-2',
+      reference: 'DLN-2026-000002',
+      requester_name: 'Neighbour 2',
+      status: 'scheduled',
+      stop_order: 2,
+      latitude: 12.98,
+      longitude: 77.6,
+      actual_bags: null,
+      actual_weight_kg: null,
+      picked_up_at: null,
+    };
+    const third: TextileCollectionListItem = {
+      ...ITEM,
+      id: 'collection-3',
+      reference: 'DLN-2026-000003',
+      requester_name: 'Neighbour 3',
+      status: 'scheduled',
+      stop_order: 3,
+      latitude: null,
+      longitude: null,
+      actual_bags: null,
+      actual_weight_kg: null,
+      picked_up_at: null,
+    };
+    vi.mocked(fetchTextileDetail).mockResolvedValue(second);
+    vi.mocked(useTextileQueue).mockReturnValue({
+      data: {
+        // The queue can arrive in creation order; the page must use the
+        // persisted optimized visit order from the API.
+        data: [second, third, first],
+        meta: { page: 1, per_page: 25, total: 3, last_page: 1 },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useTextileQueue>);
+    renderStopPage();
+
+    expect(await screen.findByTestId('route-map')).toBeInTheDocument();
+    expect(screen.getByText('Today’s collection route')).toBeInTheDocument();
+    expect(screen.getByText('2 / 3')).toBeInTheDocument();
+    expect(screen.getAllByTestId('route-pin')).toHaveLength(2);
+    expect(screen.getByRole('link', { name: /Neighbour 2/ })).toHaveAttribute(
+      'href',
+      '/operations/textile-collections/collections/batch-1/stops/collection-2',
+    );
+    // Missing locations are a compact warning, not a second itinerary list.
+    expect(screen.getByText(/1 collection cannot be placed on the map yet/)).toBeInTheDocument();
+    expect(screen.queryByText(/without map coordinates/)).not.toBeInTheDocument();
+    // No stop wording anywhere on the page.
+    expect(screen.queryByText(/Collection stop/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Route Itinerary/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Stop #/)).not.toBeInTheDocument();
+    vi.unstubAllGlobals();
   });
 });

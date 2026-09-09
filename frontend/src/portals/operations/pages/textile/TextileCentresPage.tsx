@@ -525,6 +525,8 @@ export default function TextileCentresPage(): JSX.Element {
 
   function invalidate(): void {
     void queryClient.invalidateQueries({ queryKey: ZONES_KEY });
+    void queryClient.invalidateQueries({ queryKey: ['operations', 'textile', 'zones'] });
+    void queryClient.invalidateQueries({ queryKey: ['textile-service-zones'] });
   }
 
   const createZone = useMutation({

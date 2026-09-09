@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\TextileCollections\Services;
 
+use App\Modules\Public\Services\ReverseGeocodeService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\TextileCollections\DTO\TextileCollectionInput;
 use App\Modules\TextileCollections\Events\TextileCollectionAcknowledged;
@@ -17,6 +18,7 @@ final class TextileCollectionService
 {
     public function __construct(
         private readonly TextileCapacityService $capacity,
+        private readonly ReverseGeocodeService $geocoder,
     ) {}
 
     public function create(
@@ -97,6 +99,19 @@ final class TextileCollectionService
                 departmentId: (string) $departmentId,
                 estimatedWeightKg: $input->estimatedWeightKg,
             );
+
+            // A citizen may provide an exact GPS pin. When they do not, resolve
+            // the required premises address so dispatch still receives a
+            // mappable collection. Geocoding is best-effort and must never
+            // prevent an otherwise valid booking from being submitted.
+            if ($latitude === null && $longitude === null) {
+                $geocoded = $this->geocoder->search((string) $input->pickupAddress);
+
+                if ($geocoded['geocoded']) {
+                    $latitude = $geocoded['latitude'];
+                    $longitude = $geocoded['longitude'];
+                }
+            }
         }
 
         $row = DB::transaction(fn (): TextileCollectionRequest => TextileCollectionRequest::query()->create([

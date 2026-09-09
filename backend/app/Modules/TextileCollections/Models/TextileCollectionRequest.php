@@ -120,6 +120,7 @@ final class TextileCollectionRequest extends Model
             'dropoff_valid_until' => 'date',
             'latitude' => 'float',
             'longitude' => 'float',
+            'stop_order' => 'integer',
             'scheduled_date' => 'date',
             'previous_scheduled_date' => 'date',
             'picked_up_at' => 'datetime',

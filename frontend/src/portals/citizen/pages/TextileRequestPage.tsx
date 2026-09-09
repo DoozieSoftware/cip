@@ -146,6 +146,7 @@ export default function TextileRequestPage(): JSX.Element {
   function handleCategoryChange(next: TextileCollectionCategory): void {
     setCategory(next);
     setDetails(null);
+    setLiveDraft(null);
   }
   function captureLocation(): void {
     if (!navigator.geolocation) {

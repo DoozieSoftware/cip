@@ -17,8 +17,16 @@ export function telHref(phone: string): string {
   return `tel:${phone.replace(/\s/g, '')}`;
 }
 
-export function mapsHref(address: string): string {
-  const q = encodeURIComponent(address);
+export function mapsHref(
+  address: string,
+  latitude?: number | null,
+  longitude?: number | null,
+): string {
+  const destination =
+    typeof latitude === 'number' && typeof longitude === 'number'
+      ? `${latitude},${longitude}`
+      : address;
+  const q = encodeURIComponent(destination);
   const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
   return isIOS ? `maps://?q=${q}` : `https://www.google.com/maps/search/?api=1&query=${q}`;
 }

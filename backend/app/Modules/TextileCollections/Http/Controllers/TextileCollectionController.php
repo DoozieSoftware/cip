@@ -464,7 +464,16 @@ final class TextileCollectionController extends BaseController
         $orderedIds = array_values(array_filter(is_array($data['ordered_ids'] ?? null) ? $data['ordered_ids'] : [], 'is_string'));
         $updated = $this->trips->reorder($batch, $this->authenticatedUser($request), $orderedIds);
 
-        return $this->respond(['id' => $updated->id], 'Stops reordered.');
+        return $this->respond(['id' => $updated->id], 'Collection order updated.');
+    }
+
+    public function optimizeStops(TextileCollectionBatch $batch, Request $request): JsonResponse
+    {
+        $dept = $this->assertCollectionPartner($request);
+        $this->assertBatchOwnership($batch, $dept->id);
+        $orderedIds = $this->trips->optimize($batch, $this->authenticatedUser($request));
+
+        return $this->respond(['id' => $batch->id, 'stop_order' => $orderedIds], 'Route optimized nearest-first.');
     }
 
     public function myTrips(Request $request): JsonResponse

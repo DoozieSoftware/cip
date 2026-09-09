@@ -169,10 +169,32 @@ final class TextileCollectionOperationsService
                     'updated_at' => now(),
                 ]);
 
+            // Nearest-first visit order so the driver run reads 1 → 2 → 3 → 4
+            // by proximity instead of booking order. Deterministic (haversine,
+            // no external calls); requests without coordinates keep input
+            // order at the end. Staff can still reorder manually afterwards.
+            $zone = $firstRequest instanceof TextileCollectionRequest
+                ? $firstRequest->serviceZone
+                : null;
+            $orderedIds = TextileRouteOptimizer::optimize(
+                array_values($requests->map(fn (TextileCollectionRequest $r): array => [
+                    'id' => (string) $r->id,
+                    'latitude' => $r->latitude !== null ? (float) $r->latitude : null,
+                    'longitude' => $r->longitude !== null ? (float) $r->longitude : null,
+                ])->all()),
+                $zone?->center_latitude !== null ? (float) $zone->center_latitude : null,
+                $zone?->center_longitude !== null ? (float) $zone->center_longitude : null,
+            );
+
+            foreach ($orderedIds as $idx => $id) {
+                TextileCollectionRequest::query()->where('id', $id)->where('batch_id', $batch->id)->update(['stop_order' => $idx + 1]);
+            }
+
             $this->audit($actor, $batch->id, 'textile.schedule', null, [
                 'service_zone_id' => $serviceZoneId,
                 'collection_date' => $collectionDate,
                 'request_count' => count($collectionRequestIds),
+                'stop_order' => $orderedIds,
             ]);
 
             $loaded = $batch->load(['serviceZone', 'requests']);

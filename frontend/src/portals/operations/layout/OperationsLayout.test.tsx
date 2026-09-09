@@ -119,6 +119,7 @@ describe('OperationsLayout mobile bottom nav (DR_LINEN)', () => {
       '/operations/textile-collections/schedule',
       '/operations/textile-collections/pickup-requests',
       '/operations/textile-collections/collections',
+      '/operations/textile-collections/centres',
       '/operations/textile-collections/completed',
       '/operations/textile-collections/reuploads',
       '/operations/textile-collections/offline-recovery',
