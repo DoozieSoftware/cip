@@ -212,4 +212,16 @@ describe('TextileStaffDetailPage', () => {
 
     expect(await screen.findByRole('button', { name: /Open trip scheduling desk/i })).toBeVisible();
   });
+
+  // Regression (#23): with no citizen photo the Photos section used to vanish,
+  // leaving the approver unsure whether nothing was uploaded or loading failed.
+  it('shows an explicit empty photo state while awaiting review', async () => {
+    vi.mocked(textileApi.fetchTextileDetail).mockResolvedValue({ ...ITEM, photos: [] });
+
+    renderDetail();
+
+    expect(await screen.findByText('Photos & Proof')).toBeVisible();
+    expect(screen.getByText(/No citizen photo uploaded/)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Approve request' })).toBeVisible();
+  });
 });

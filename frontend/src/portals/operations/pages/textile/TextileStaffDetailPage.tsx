@@ -187,8 +187,9 @@ export default function TextileStaffDetailPage(): JSX.Element {
                 </div>
               </section>
 
-              {/* Photos card */}
-              {evidencePhoto || proofPhoto ? (
+              {/* Photos card — always shown while awaiting review so the approver
+                  can tell "no photo uploaded" apart from a load failure. */}
+              {evidencePhoto || proofPhoto || item.status === 'pending_review' ? (
                 <section className="rounded-xl border border-[var(--color-border-subtle)] bg-white p-4 shadow-sm sm:p-5">
                   <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
                     Photos &amp; Proof
@@ -223,6 +224,11 @@ export default function TextileStaffDetailPage(): JSX.Element {
                     {evidencePhoto && !proofPhoto ? (
                       <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-4 text-center text-xs text-[var(--color-text-tertiary)]">
                         Collection proof will appear here after pickup.
+                      </div>
+                    ) : null}
+                    {!evidencePhoto && !proofPhoto ? (
+                      <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-alt)] p-4 text-center text-xs text-[var(--color-text-tertiary)]">
+                        No citizen photo uploaded — review the written details to decide.
                       </div>
                     ) : null}
                   </div>
