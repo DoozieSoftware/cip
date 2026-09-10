@@ -97,6 +97,24 @@ describe('TextileDispatchPage', () => {
     expect(screen.queryByRole('button', { name: 'Refresh' })).not.toBeInTheDocument();
   });
 
+  // Regression: new drop-off rows return pickup_address null (#16 nullable
+  // migration). The board must render them and the route filter must not
+  // crash on the null address.
+  it('renders rows with a null pickup address without crashing', () => {
+    vi.mocked(useTextileQueue).mockReturnValue({
+      data: {
+        data: [{ ...ITEM, pickup_address: null as unknown as string }],
+        meta: { page: 1, per_page: 25, total: 1, last_page: 1 },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useTextileQueue>);
+    renderPage();
+
+    expect(screen.getByText('DRL-260826-XX11TO')).toBeInTheDocument();
+  });
+
   it('renders stops as navigation rows into the dedicated stop-work page', () => {
     renderPage();
 

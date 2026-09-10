@@ -549,4 +549,24 @@ describe('TextileCollectionDetailPage — photo trust view', () => {
       screen.queryByRole('button', { name: /cancel this pickup request/i }),
     ).not.toBeInTheDocument();
   });
+
+  // Regression (prod crash): new drop-off rows return pickup_address null
+  // since the #16 nullable migration, and the page crashed with "Cannot read
+  // properties of null (reading 'trim')". The cast reproduces the runtime
+  // shape the API actually returns.
+  it('renders a drop-off with null pickup address without crashing', () => {
+    mockCollectionData.mockReturnValue({
+      ...BASE_COLLECTION,
+      collection_method: 'dropoff',
+      pickup_address: null as unknown as string,
+      status: 'pending_review',
+      photos: [],
+    });
+
+    renderDetail();
+
+    expect(screen.getAllByText('Drop at center').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Pickup address')).not.toBeInTheDocument();
+    expect(screen.queryByText('Your address')).not.toBeInTheDocument();
+  });
 });

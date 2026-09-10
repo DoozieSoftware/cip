@@ -225,7 +225,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
   const nextStep = nextStepCopy(item.status, method, {
     centre: centreName,
     reference: item.reference,
-    address: item.pickup_address,
+    address: item.pickup_address ?? undefined,
     window: windowStr ?? undefined,
     date: item.scheduled_date ?? item.batch?.collection_date ?? undefined,
     actual: actualStr,
@@ -280,7 +280,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
         <>
           <CentreCard
             name={centreName}
-            address={centreAddress || item.pickup_address}
+            address={centreAddress || item.pickup_address || ''}
             hours={
               (item as unknown as { service_zone?: { dropoff_hours?: string } }).service_zone
                 ?.dropoff_hours ?? null
@@ -366,13 +366,14 @@ export default function TextileCollectionDetailPage(): JSX.Element {
       ) : null}
 
       <section className="grid gap-3 sm:grid-cols-2">
-        {/* #16: drop-off collects no address — only show the block when there is
-            an address to display (older rows) or the request is a pickup. */}
-        {!isDropoff || item.pickup_address.trim().length > 0 ? (
+        {/* #16: drop-off collects no address — the API returns null for new
+            drop-off rows, so guard before trim. Only show the block when there
+            is an address to display (older rows) or the request is a pickup. */}
+        {!isDropoff || (item.pickup_address ?? '').trim().length > 0 ? (
           <Detail
             icon={IconMapPin}
             label={isDropoff ? 'Your address' : 'Pickup address'}
-            value={item.pickup_address}
+            value={item.pickup_address ?? ''}
             hint={isDropoff ? 'for contact and receipt only — not a pickup point' : undefined}
           />
         ) : null}

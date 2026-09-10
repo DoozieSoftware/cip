@@ -554,7 +554,7 @@ export default function TextileDispatchPage(): JSX.Element {
           (i) =>
             i.requester_name.toLowerCase().includes(q) ||
             i.reference.toLowerCase().includes(q) ||
-            i.pickup_address.toLowerCase().includes(q),
+            (i.pickup_address ?? '').toLowerCase().includes(q),
         );
         if (!tripRef.includes(q) && !driver.includes(q) && !vehicle.includes(q) && !matchStop) {
           return false;
