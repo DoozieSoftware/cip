@@ -28,7 +28,8 @@ it('finds a typed address through the configured geocoder proxy', function (): v
 
     Http::assertSent(fn ($request): bool => $request->url() === config('services.geocoder.search_url')
         && $request['q'] === 'Jayanagar, Bengaluru'
-        && $request['limit'] === 1);
+        && $request['limit'] === 1
+        && $request['countrycodes'] === 'in');
 });
 
 it('validates typed address searches', function (): void {

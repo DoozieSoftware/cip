@@ -7,6 +7,9 @@ return [
     'geocoder' => [
         'url' => env('GEOCODER_URL', 'https://nominatim.openstreetmap.org/reverse'),
         'search_url' => env('GEOCODER_SEARCH_URL', 'https://nominatim.openstreetmap.org/search'),
+        // Bias forward searches to India so generic street names (e.g.
+        // "Station Road") resolve locally instead of abroad (#26).
+        'search_countrycodes' => env('GEOCODER_SEARCH_COUNTRIES', 'in'),
     ],
 
     /*

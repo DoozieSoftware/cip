@@ -82,10 +82,18 @@ class ReverseGeocodeService
         }
 
         try {
+            $countryCodes = config('services.geocoder.search_countrycodes', 'in');
+            $countryCodes = is_string($countryCodes) ? trim($countryCodes) : '';
+
             foreach ($this->searchQueries($normalized) as $query) {
+                $params = ['q' => $query, 'format' => 'jsonv2', 'limit' => 1];
+
+                if ($countryCodes !== '') {
+                    $params['countrycodes'] = $countryCodes;
+                }
                 $response = Http::retry(2, 200, throw: false)->timeout(5)->connectTimeout(2)->withHeaders([
                     'Accept' => 'application/json', 'User-Agent' => 'CIP-Geocoder/1.0 (privacy-proxy)',
-                ])->get($url, ['q' => $query, 'format' => 'jsonv2', 'limit' => 1]);
+                ])->get($url, $params);
 
                 if (! $response->successful()) {
                     Log::warning('Forward geocoder request failed.', ['status' => $response->status()]);
