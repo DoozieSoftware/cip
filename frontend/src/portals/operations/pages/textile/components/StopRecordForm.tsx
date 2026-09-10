@@ -251,7 +251,7 @@ export function StopRecordForm({
           }
           className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-emerald-700 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:ring-offset-1 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
         >
-          {busy ? 'Uploading…' : 'Confirm collected'}
+          {busy ? 'Uploading…' : 'Confirm'}
         </button>
       </div>
 

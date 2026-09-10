@@ -224,7 +224,7 @@ describe('TextileStopPage', () => {
     const file = new File(['proof'], 'proof.jpg', { type: 'image/jpeg' });
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    const confirm = await screen.findByRole('button', { name: 'Confirm collected' });
+    const confirm = await screen.findByRole('button', { name: 'Confirm' });
     expect(confirm).toBeEnabled();
     fireEvent.click(confirm);
 
@@ -277,7 +277,7 @@ describe('TextileStopPage', () => {
     expect(screen.getByText(/and remarks.*to confirm/)).toBeVisible();
     expect(screen.queryByText(/reason required/i)).not.toBeInTheDocument();
 
-    const confirm = screen.getByRole('button', { name: 'Confirm collected' });
+    const confirm = screen.getByRole('button', { name: 'Confirm' });
     expect(confirm).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText(/Remarks/), { target: { value: 'One extra bag' } });
@@ -286,7 +286,7 @@ describe('TextileStopPage', () => {
       target: { files: [new File(['proof'], 'proof.jpg', { type: 'image/jpeg' })] },
     });
 
-    expect(await screen.findByRole('button', { name: 'Confirm collected' })).toBeEnabled();
+    expect(await screen.findByRole('button', { name: 'Confirm' })).toBeEnabled();
   });
 
   it('captures a proof photo with Take photo and submits it', async () => {
@@ -305,7 +305,7 @@ describe('TextileStopPage', () => {
     });
     expect(screen.getByAltText('preview')).toBeVisible();
 
-    const confirm = await screen.findByRole('button', { name: 'Confirm collected' });
+    const confirm = await screen.findByRole('button', { name: 'Confirm' });
     expect(confirm).toBeEnabled();
     fireEvent.click(confirm);
 
