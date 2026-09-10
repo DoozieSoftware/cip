@@ -53,6 +53,17 @@ function isPhone(value: string): boolean {
   return new RegExp(PHONE_PATTERN).test(value);
 }
 
+/**
+ * The estimate fields are whole numbers only (#14). Rather than accept a
+ * decimal and fail validation afterwards, reject any keystroke/paste that
+ * contains a non-digit so '4.5', '-2', '1e3' can never be entered. Leading
+ * zeros are trimmed and the value is capped to the field's digit limit.
+ */
+function cleanIntegerInput(raw: string, maxLength: number): string | null {
+  if (!/^[0-9]*$/.test(raw)) return null;
+  return raw.replace(/^0+(?=\d)/, '').slice(0, maxLength);
+}
+
 function validate(
   payload: TextileCollectionPayload | null,
   zone: TextileServiceZone | undefined,
@@ -545,14 +556,14 @@ function TextileCollectionFieldsInner({
           <Field
             id="textile-bags"
             label="How many bags?"
-            type="number"
+            type="text"
             inputMode="numeric"
-            min={0}
-            max={999}
-            step={1}
+            pattern="[0-9]*"
             value={draft.estimated_bags === null ? '' : String(draft.estimated_bags)}
             onChange={(v) => {
-              patch('estimated_bags', v === '' ? null : Number(v));
+              const digits = cleanIntegerInput(v, 3);
+              if (digits === null) return;
+              patch('estimated_bags', digits === '' ? null : Number(digits));
               setTouched((prev) => new Set([...prev, 'estimated_bags']));
             }}
             error={errors.estimated_bags}
@@ -576,14 +587,14 @@ function TextileCollectionFieldsInner({
           <Field
             id="textile-weight"
             label="About how many kg?"
-            type="number"
+            type="text"
             inputMode="numeric"
-            min={0}
-            max={99999}
-            step={1}
+            pattern="[0-9]*"
             value={draft.estimated_weight_kg === null ? '' : String(draft.estimated_weight_kg)}
             onChange={(v) => {
-              patch('estimated_weight_kg', v === '' ? null : Number(v));
+              const digits = cleanIntegerInput(v, 5);
+              if (digits === null) return;
+              patch('estimated_weight_kg', digits === '' ? null : Number(digits));
               setTouched((prev) => new Set([...prev, 'estimated_weight_kg']));
             }}
             error={errors.estimated_weight_kg}

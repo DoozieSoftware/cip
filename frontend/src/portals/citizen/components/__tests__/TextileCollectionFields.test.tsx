@@ -327,7 +327,7 @@ describe('TextileCollectionFields', () => {
     expect(screen.queryByText(/Below the pickup minimum/)).toBeNull();
   });
 
-  it('rejects decimal kilogram input as invalid', async () => {
+  it('ignores a decimal typed into the kilogram field instead of storing it', () => {
     mockZones([ZONE_A]);
     render(
       <TextileCollectionFields
@@ -341,17 +341,18 @@ describe('TextileCollectionFields', () => {
     );
 
     const weightInput = screen.getByLabelText('About how many kg?');
-    fireEvent.change(weightInput, { target: { value: '4.5' } });
+    fireEvent.change(weightInput, { target: { value: '4' } });
+    expect(weightInput).toHaveValue('4');
 
-    await waitFor(() => {
-      expect(screen.getByText(/whole kg \(no decimals\)/)).toBeDefined();
-      expect(weightInput).toHaveAttribute('aria-invalid', 'true');
-    });
-    expect(weightInput).toHaveAttribute('min', '0');
-    expect(weightInput).toHaveAttribute('step', '1');
+    // A decimal keystroke/paste must be rejected outright, not accepted then
+    // flagged: the value stays at the last valid integer.
+    fireEvent.change(weightInput, { target: { value: '4.5' } });
+    expect(weightInput).toHaveValue('4');
+    expect(weightInput).toHaveAttribute('aria-invalid', 'false');
+    expect(screen.queryByText(/whole kg \(no decimals\)/)).toBeNull();
   });
 
-  it('uses digits-only integer inputs with min 0 for bags and kg', () => {
+  it('uses digits-only integer inputs for bags and kg', () => {
     mockZones([ZONE_A]);
     render(
       <TextileCollectionFields
@@ -364,11 +365,11 @@ describe('TextileCollectionFields', () => {
     );
 
     const bagsInput = screen.getByLabelText('How many bags?');
-    expect(bagsInput).toHaveAttribute('min', '0');
-    expect(bagsInput).toHaveAttribute('step', '1');
+    expect(bagsInput).toHaveAttribute('inputmode', 'numeric');
+    expect(bagsInput).toHaveAttribute('pattern', '[0-9]*');
     const weightInput = screen.getByLabelText('About how many kg?');
-    expect(weightInput).toHaveAttribute('min', '0');
-    expect(weightInput).toHaveAttribute('step', '1');
+    expect(weightInput).toHaveAttribute('inputmode', 'numeric');
+    expect(weightInput).toHaveAttribute('pattern', '[0-9]*');
   });
 
   it('hides the address field for drop-off and shows it for pickup from location', async () => {
