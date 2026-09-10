@@ -88,8 +88,8 @@ describe('TripRouteMap', () => {
     expect(numbers[2]).toContain('>3<');
 
     // Popups keep manifest sequence labels.
-    expect(screen.getByText(/Stop 1: Customer c1/)).toBeInTheDocument();
-    expect(screen.getByText(/Stop 3: Customer c3/)).toBeInTheDocument();
+    expect(screen.getByText(/Pickup 1: Customer c1/)).toBeInTheDocument();
+    expect(screen.getByText(/Pickup 3: Customer c3/)).toBeInTheDocument();
   });
 
   it('highlights the next pending stop pin distinctly', () => {
@@ -102,7 +102,7 @@ describe('TripRouteMap', () => {
     // Collected pin uses the success tone, next pending pin the warning tone.
     expect(pins[0].getAttribute('data-icon-html')).toContain('#226b46');
     expect(pins[1].getAttribute('data-icon-html')).toContain('#b45309');
-    expect(screen.getByText(/Stop 2: Customer c2 · Next stop/)).toBeInTheDocument();
+    expect(screen.getByText(/Pickup 2: Customer c2 · Next pickup/)).toBeInTheDocument();
   });
 
   it('lists stops without coordinates beneath the map in sequence', () => {
@@ -116,9 +116,9 @@ describe('TripRouteMap', () => {
     // Two mapped stops still connect with a path; the unmapped stop is listed.
     expect(screen.queryByTestId('route-path')).toBeInTheDocument();
 
-    const unmapped = screen.getByText(/Stops without map coordinates \(1\)/);
+    const unmapped = screen.getByText(/Pickups without map coordinates \(1\)/);
     const group = unmapped.closest('div')?.parentElement ?? document.body;
-    expect(within(group).getByText(/Stop 2: Customer c2/)).toBeInTheDocument();
+    expect(within(group).getByText(/Pickup 2: Customer c2/)).toBeInTheDocument();
   });
 
   it('omits the polyline for a single mapped stop and notes offline truth', () => {

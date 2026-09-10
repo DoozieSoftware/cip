@@ -132,7 +132,7 @@ export default function StopRouteMap({
             Today’s collection route
           </span>
           <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
-            Tap a collection to switch stops, or tap Nav to start GPS turn-by-turn navigation.
+            Tap a collection to switch pickups, or tap Nav to start GPS turn-by-turn navigation.
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">

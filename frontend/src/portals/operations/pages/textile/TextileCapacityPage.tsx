@@ -316,7 +316,7 @@ export default function TextileCapacityPage(): JSX.Element {
                     className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700"
                     title="Average requests per trip"
                   >
-                    Stop density{' '}
+                    Pickup density{' '}
                     <span className="font-bold text-slate-900">
                       {(report.totals.requests / report.totals.trips).toFixed(1)} req/trip
                     </span>
@@ -484,7 +484,7 @@ function LiveStrip({
         />
         <LiveCard
           to="/operations/textile-collections/collections"
-          label="Stops today"
+          label="Pickups today"
           value={String(snapshot.stops.total)}
           note={`${snapshot.stops.pending} pending · ${snapshot.stops.collected} collected · ${snapshot.stops.missed} missed`}
           icon={<IconMapPin className="h-4 w-4" stroke={1.75} aria-hidden="true" />}

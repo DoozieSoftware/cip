@@ -4,7 +4,7 @@
 > `/operations/textile-collections/reuploads`) and **Server failures**
 > (permanent failures, `/operations/textile-collections/offline-recovery`)
 
-**What it is:** field staff can finish a legitimate stop with no signal and sync later.
+**What it is:** field staff can finish a legitimate pickup with no signal and sync later.
 
 ## How it works
 
@@ -18,7 +18,7 @@
 
 ```mermaid
 flowchart TD
-    A[Record stop<br/>with no signal] --> B[Saved on device<br/>Reupload]
+    A[Record pickup<br/>with no signal] --> B[Saved on device<br/>Reupload]
     B --> C{Back online?}
     C -->|Yes| D[Auto-send +<br/>server re-checks]
     D --> E{Accepted?}

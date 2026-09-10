@@ -35,9 +35,9 @@ flowchart TD
 ## What staff see
 
 - The **Capacity** page lists each zone’s minimum, vehicle limits, and guidance text.
-- On the **Schedule** desk, selecting stops shows total bags and kg against limits:
-  - Over a vehicle limit → red blocker naming the fix (remove stops, split the trip).
+- On the **Schedule** desk, selecting pickups shows total bags and kg against limits:
+  - Over a vehicle limit → red blocker naming the fix (remove pickups, split the trip).
   - Near a limit → amber advisory.
   - Below the minimum → blocked.
-- With 2 or more stops, a **suggested stop order** (shortest route first) can be applied to the manifest before confirming.
+- With 2 or more pickups, a **suggested pickup order** (shortest route first) can be applied to the manifest before confirming.
 - The system suggests; staff decide. No trip is ever auto-approved.

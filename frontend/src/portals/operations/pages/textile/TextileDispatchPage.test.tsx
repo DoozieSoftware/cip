@@ -118,7 +118,7 @@ describe('TextileDispatchPage', () => {
   it('renders stops as navigation rows into the dedicated stop-work page', () => {
     renderPage();
 
-    const stopLink = screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ });
+    const stopLink = screen.getByRole('link', { name: /Pickup 1: Lakshmi Devi/ });
     expect(stopLink).toBeVisible();
     expect(stopLink.getAttribute('href')).toBe(
       '/operations/textile-collections/collections/batch-1/stops/collection-1',
@@ -145,7 +145,7 @@ describe('TextileDispatchPage', () => {
 
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeInTheDocument();
-    expect(within(dialog).getByText(/Stops Manifest/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Pickup Manifest/)).toBeInTheDocument();
     expect(within(dialog).getByText(/DRL-260826-XX11TO/)).toBeInTheDocument();
 
     // Close via Done button
@@ -198,7 +198,7 @@ describe('TextileDispatchPage', () => {
     expect(progressCell?.className).toMatch(/overflow-hidden/);
     expect(progressCell?.className).toMatch(/min-w-0/);
 
-    const nextStopLink = screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ });
+    const nextStopLink = screen.getByRole('link', { name: /Pickup 1: Lakshmi Devi/ });
     const nextStopCell = nextStopLink.closest('td');
     expect(nextStopCell?.className).toMatch(/overflow-hidden/);
     expect(nextStopCell?.className).toMatch(/min-w-0/);
@@ -229,14 +229,14 @@ describe('TextileDispatchPage', () => {
     // Click route row to open drawer
     fireEvent.click(screen.getByText('DRL-260826-XX11TO'));
 
-    // Route footer hint for 10 stops inside drawer
-    expect(screen.getByText(/Showing itinerary \(10 stops\)/)).toBeInTheDocument();
+    // Route footer hint for 10 pickups inside drawer
+    expect(screen.getByText(/Showing itinerary \(10 pickups\)/)).toBeInTheDocument();
 
-    // Next stop banner inside drawer should highlight stop #2 (since stop #1 is picked_up)
-    expect(screen.getByText(/Next Stop #2/)).toBeInTheDocument();
+    // Next pickup banner inside drawer should highlight pickup #2 (since pickup #1 is picked_up)
+    expect(screen.getByText(/Next Pickup #2/)).toBeInTheDocument();
 
-    // All stops exist in the DOM (table + drawer)
-    const allLinks = screen.getAllByRole('link', { name: /Stop \d+: Customer/ });
+    // All pickups exist in the DOM (table + drawer)
+    const allLinks = screen.getAllByRole('link', { name: /Pickup \d+: Customer/ });
     expect(allLinks.length).toBeGreaterThanOrEqual(10);
   });
 

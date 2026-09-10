@@ -76,14 +76,14 @@ export default function TripRouteMap({
           Route map
         </span>
         <span className="font-mono text-[11px] text-[var(--color-text-secondary)]">
-          {route.mappedCount} of {route.totalCount} stops mapped
+          {route.mappedCount} of {route.totalCount} pickups mapped
         </span>
       </div>
 
       {route.center ? (
         <div
           role="img"
-          aria-label={`Route map with ${route.mappedCount} numbered stops in visit order${route.nextSequence ? `, next stop ${route.nextSequence}` : ''}`}
+          aria-label={`Route map with ${route.mappedCount} numbered pickups in visit order${route.nextSequence ? `, next pickup ${route.nextSequence}` : ''}`}
           className="h-56 w-full overflow-hidden rounded-xl border border-[var(--color-border-subtle)] sm:h-64"
         >
           <MapContainer
@@ -112,15 +112,15 @@ export default function TripRouteMap({
                 <Popup>
                   <div className="space-y-1 text-xs">
                     <p className="font-bold text-[var(--color-ink)]">
-                      Stop {point.sequence}: {point.requesterName}
-                      {point.isNext ? ' · Next stop' : ''}
+                      Pickup {point.sequence}: {point.requesterName}
+                      {point.isNext ? ' · Next pickup' : ''}
                     </p>
                     <p className="text-[var(--color-text-secondary)]">{point.pickupAddress}</p>
                     <Link
                       to={stopPageHref(tripId, point.stopId)}
                       className="font-semibold text-sky-800 hover:underline"
                     >
-                      Open stop
+                      Open pickup
                     </Link>
                   </div>
                 </Popup>
@@ -130,7 +130,7 @@ export default function TripRouteMap({
         </div>
       ) : (
         <p className="rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-alt)]/50 px-4 py-3 text-xs text-[var(--color-text-secondary)]">
-          No stops on this route have map coordinates yet — the itinerary below is the full
+          No pickups on this route have map coordinates yet — the itinerary below is the full
           sequence.
         </p>
       )}
@@ -144,7 +144,7 @@ export default function TripRouteMap({
           >
             N
           </i>
-          Next stop
+          Next pickup
         </span>
         <span className="inline-flex items-center gap-1">
           <i
@@ -154,7 +154,7 @@ export default function TripRouteMap({
           >
             1
           </i>
-          Stop order
+          Pickup order
         </span>
         <span className="inline-flex items-center gap-1">
           <i
@@ -181,7 +181,7 @@ export default function TripRouteMap({
       {route.unmapped.length > 0 ? (
         <div className="rounded-xl border border-[var(--color-border-subtle)] bg-white">
           <p className="border-b border-[var(--color-border-subtle)] px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
-            Stops without map coordinates ({route.unmapped.length})
+            Pickups without map coordinates ({route.unmapped.length})
           </p>
           <ol className="divide-y divide-[var(--color-border-subtle)]">
             {route.unmapped.map((stop) => (
@@ -194,7 +194,7 @@ export default function TripRouteMap({
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-semibold text-[var(--color-ink)]">
-                    Stop {stop.sequence}: {stop.requesterName}
+                    Pickup {stop.sequence}: {stop.requesterName}
                   </span>
                   <span className="block truncate text-[11px] text-[var(--color-text-secondary)]">
                     {stop.pickupAddress}
@@ -208,7 +208,7 @@ export default function TripRouteMap({
 
       <p className="flex items-start gap-1.5 px-1 text-[11px] text-[var(--color-text-tertiary)]">
         <WifiOff className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-        Map tiles need a network connection. The itinerary stop list remains the source of truth
+        Map tiles need a network connection. The itinerary pickup list remains the source of truth
         offline.
       </p>
     </section>

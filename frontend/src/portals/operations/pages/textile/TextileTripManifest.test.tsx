@@ -120,7 +120,7 @@ describe('Textile trip manifest (Phase 2)', () => {
     // Board rows are pure navigation; the evidence photo renders on the stop page.
     expect(document.querySelector('img[src="https://cdn/evidence.jpg"]')).toBeNull();
     expect(
-      screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ }).getAttribute('href'),
+      screen.getByRole('link', { name: /Pickup 1: Lakshmi Devi/ }).getAttribute('href'),
     ).toContain('/collections/batch-1/stops/c-1');
   });
 
@@ -133,7 +133,7 @@ describe('Textile trip manifest (Phase 2)', () => {
     } as unknown as ReturnType<typeof useTextileQueue>);
     renderPage();
     expect(screen.getByText(/Jayanagar/)).toBeInTheDocument();
-    const stopLink = screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ });
+    const stopLink = screen.getByRole('link', { name: /Pickup 1: Lakshmi Devi/ });
     expect(stopLink.getAttribute('href')).toContain('/collections/batch-1/stops/c-1');
     // Call/Navigate moved off the board onto the stop page.
     expect(screen.queryByRole('link', { name: 'Call' })).not.toBeInTheDocument();
@@ -241,7 +241,7 @@ describe('Textile trip manifest (Phase 2)', () => {
     } as unknown as ReturnType<typeof useTextileQueue>);
     renderPage();
     expect(
-      screen.getByRole('link', { name: /Stop 1: Lakshmi Devi/ }).getAttribute('href'),
+      screen.getByRole('link', { name: /Pickup 1: Lakshmi Devi/ }).getAttribute('href'),
     ).toContain('/collections/batch-1/stops/c-1');
     expect(screen.queryByRole('button', { name: /mark missed/i })).not.toBeInTheDocument();
   });

@@ -87,7 +87,7 @@ describe('Textile trip execution frontend (Phase 2, unblocked subset)', () => {
   it('FE-C1 board defers outcome submits to the stop-work page (single navigation target)', () => {
     // Board rows are pure navigation now; the collect/missed POSTs live on the stop page.
     renderPage();
-    const links = screen.getAllByRole('link', { name: /Stop 1: Lakshmi/ });
+    const links = screen.getAllByRole('link', { name: /Pickup 1: Lakshmi/ });
     expect(links).toHaveLength(1);
     expect(links[0].getAttribute('href')).toContain('/collections/batch-1/stops/collection-1');
     expect(screen.queryByRole('button', { name: 'Record collection' })).not.toBeInTheDocument();
@@ -95,7 +95,7 @@ describe('Textile trip execution frontend (Phase 2, unblocked subset)', () => {
 
   it('FE-C1 proof capture lives on the stop page (board keeps no file picker)', () => {
     renderPage();
-    expect(screen.getByRole('link', { name: /Stop 1: Lakshmi/ }).getAttribute('href')).toContain(
+    expect(screen.getByRole('link', { name: /Pickup 1: Lakshmi/ }).getAttribute('href')).toContain(
       '/collections/batch-1/stops/collection-1',
     );
     expect(screen.queryByRole('button', { name: 'Choose proof photo' })).not.toBeInTheDocument();

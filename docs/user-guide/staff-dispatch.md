@@ -5,17 +5,17 @@
 
 ## The manifest
 
-Open the trip in **Collections**. Each stop shows, in order:
+Open the trip in **Collections**. Each pickup shows, in order:
 
-- Stop number, `DLN-` reference, and citizen name.
+- Pickup number, `DLN-` reference, and citizen name.
 - Pickup address with an **Open in Maps** action.
 - Phone action to contact the citizen (no private staff numbers are exposed).
 - Estimated bags and kg, collection instructions, and the citizen’s evidence photo.
 - Trip progress: unstarted, in progress, completed.
 
-## Working a stop
+## Working a pickup
 
-1. Navigate to the stop and collect the bags.
+1. Navigate to the pickup and collect the bags.
 2. Enter the **actual bags and kg** — the real measured values, not the estimate.
 3. Take the **proof photo** (required) and add a short note if needed.
 4. Save as **Collected**. The citizen’s page updates with the confirmed quantity and timestamp.
@@ -23,9 +23,9 @@ Open the trip in **Collections**. Each stop shows, in order:
 
 ## Rules that protect the records
 
-- Recording a stop never overwrites a colleague’s later outcome.
+- Recording a pickup never overwrites a colleague’s later outcome.
 - Every outcome records who did it and when.
-- A missed stop always keeps a clear path: reschedule onto a new trip.
+- A missed pickup always keeps a clear path: reschedule onto a new trip.
 
 ## After the trip
 

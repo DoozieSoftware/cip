@@ -80,9 +80,9 @@ export function CapacityWarningBanner({
           {evaluation.totals ? (
             <p className="mt-0.5 text-[11px] leading-4 text-rose-700">
               This trip: {evaluation.totals.bags} bags · {evaluation.totals.weight_kg} kg ·{' '}
-              {evaluation.totals.stops} stops
+              {evaluation.totals.stops} pickup{evaluation.totals.stops === 1 ? '' : 's'}
               {evaluation.effective_rule
-                ? ` · Limit: ${evaluation.effective_rule.max_bags ?? '—'} / ${evaluation.effective_rule.max_weight_kg ?? '—'} kg / ${evaluation.effective_rule.max_stops ?? '—'} stops`
+                ? ` · Limit: ${evaluation.effective_rule.max_bags ?? '—'} / ${evaluation.effective_rule.max_weight_kg ?? '—'} kg / ${evaluation.effective_rule.max_stops ?? '—'} pickups`
                 : ''}
             </p>
           ) : null}
@@ -110,9 +110,9 @@ export function CapacityWarningBanner({
           {evaluation.totals ? (
             <p className="mt-0.5 text-[11px] leading-4 text-amber-700">
               This trip: {evaluation.totals.bags} bags · {evaluation.totals.weight_kg} kg ·{' '}
-              {evaluation.totals.stops} stops
+              {evaluation.totals.stops} pickup{evaluation.totals.stops === 1 ? '' : 's'}
               {evaluation.effective_rule
-                ? ` · Limit: ${evaluation.effective_rule.max_bags ?? '—'} / ${evaluation.effective_rule.max_weight_kg ?? '—'} kg / ${evaluation.effective_rule.max_stops ?? '—'} stops`
+                ? ` · Limit: ${evaluation.effective_rule.max_bags ?? '—'} / ${evaluation.effective_rule.max_weight_kg ?? '—'} kg / ${evaluation.effective_rule.max_stops ?? '—'} pickups`
                 : ''}
             </p>
           ) : null}

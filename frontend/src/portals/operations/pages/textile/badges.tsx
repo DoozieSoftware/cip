@@ -13,7 +13,7 @@ export function TripProgressBadge({ done, total }: { done: number; total: number
   else if (pct > 0) cls = 'bg-amber-50 text-amber-800';
   return (
     <span className={cx('rounded-full px-2 py-0.5 text-[11px] font-medium', cls)}>
-      {done}/{total} stops
+      {done}/{total} pickup{total === 1 ? '' : 's'}
     </span>
   );
 }

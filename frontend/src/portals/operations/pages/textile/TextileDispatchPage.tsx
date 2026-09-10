@@ -133,7 +133,7 @@ function BatchCapacityNotice({
           suggestedOrder={data.suggested_order}
           currentOrder={items.map((it) => it.id)}
           items={items}
-          note="Suggested stop order groups nearby addresses to shorten the route. Advisory only — confirm before driving."
+          note="Suggested pickup order groups nearby addresses to shorten the route. Advisory only — confirm before driving."
         />
       ) : null}
     </div>
@@ -259,7 +259,7 @@ function TripSheetModal({ trip, onClose }: { trip: TripEntry; onClose: () => voi
                   {trip.ref}
                 </h3>
                 <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">
-                  {trip.items.length} Stops Manifest
+                  Pickup Manifest ({trip.items.length})
                 </span>
               </div>
               <p className="text-xs text-[var(--color-text-secondary)]">
@@ -329,10 +329,10 @@ function TripSheetModal({ trip, onClose }: { trip: TripEntry; onClose: () => voi
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                Complete Route Itinerary ({trip.items.length} stops in sequence)
+                Complete Route Itinerary ({trip.items.length} pickups in sequence)
               </h4>
               <span className="text-[11px] text-[var(--color-text-tertiary)] print:hidden">
-                Click stop to open execution detail
+                Click a pickup to open execution detail
               </span>
             </div>
             <div className="divide-y divide-[var(--color-border-subtle)] overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-white shadow-xs">
@@ -387,10 +387,10 @@ function TripSheetModal({ trip, onClose }: { trip: TripEntry; onClose: () => voi
                       </span>
                       <Link
                         to={stopPageHref(trip.id, item.id)}
-                        aria-label={`Open stop ${idx + 1}`}
+                        aria-label={`Open pickup ${idx + 1}`}
                         className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-white px-2.5 py-1 text-xs font-medium text-[var(--color-ink)] shadow-xs transition hover:bg-[var(--color-surface-alt)]"
                       >
-                        <span>Open Stop</span>
+                        <span>Open Pickup</span>
                         <ChevronRight className="h-3.5 w-3.5" />
                       </Link>
                     </div>
@@ -404,7 +404,7 @@ function TripSheetModal({ trip, onClose }: { trip: TripEntry; onClose: () => voi
         {/* Modal Footer */}
         <div className="flex items-center justify-between border-t border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-6 py-3 print:hidden">
           <span className="text-xs text-[var(--color-text-secondary)]">
-            Total {trip.items.length} stop{trip.items.length === 1 ? '' : 's'} assigned to route
+            Total {trip.items.length} pickup{trip.items.length === 1 ? '' : 's'} assigned to route
           </span>
           <button
             type="button"
@@ -591,7 +591,7 @@ export default function TextileDispatchPage(): JSX.Element {
     <DeskPage
       desk={desk}
       title="Collections"
-      description="Fleet dispatch, active route execution, and stop progress."
+      description="Fleet dispatch, active route execution, and pickup progress."
       toolbar={
         <div className="flex flex-col gap-2.5 rounded-xl border border-[var(--color-border-subtle)] bg-white p-2.5 sm:flex-row sm:items-center sm:gap-3">
           <div className="min-w-0 flex-1">
@@ -705,7 +705,7 @@ export default function TextileDispatchPage(): JSX.Element {
           {/* Remaining Stops */}
           <div className="rounded-xl border border-[var(--color-border-subtle)] bg-white p-3.5 shadow-2xs">
             <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
-              <span className="font-medium">Remaining Stops</span>
+              <span className="font-medium">Remaining Pickups</span>
               <Clock className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
             </div>
             <p className="mt-1 font-mono text-2xl font-bold text-[var(--color-ink)] tabular-nums">
@@ -806,13 +806,13 @@ export default function TextileDispatchPage(): JSX.Element {
                       Driver / Vehicle
                     </th>
                     <th className="sticky top-0 z-20 whitespace-nowrap bg-slate-50 px-3 py-2.5 align-middle">
-                      Stops & Cargo
+                      Pickups & Cargo
                     </th>
                     <th className="sticky top-0 z-20 whitespace-nowrap bg-slate-50 px-3 py-2.5 align-middle">
                       Progress
                     </th>
                     <th className="sticky top-0 z-20 bg-slate-50 px-3 py-2.5 align-middle">
-                      Next Stop
+                      Next Pickup
                     </th>
                     <th className="sticky top-0 z-20 whitespace-nowrap bg-slate-50 px-3 py-2.5 text-right align-middle">
                       Actions
@@ -926,7 +926,7 @@ export default function TextileDispatchPage(): JSX.Element {
                           </td>
                           <td className="whitespace-nowrap px-3 py-3 align-middle">
                             <span className="font-semibold text-slate-900">
-                              {trip.items.length} stop{trip.items.length === 1 ? '' : 's'}
+                              {trip.items.length} pickup{trip.items.length === 1 ? '' : 's'}
                             </span>
                             <span className="block text-[11px] text-slate-400">
                               {Math.round(totalWeight * 10) / 10} kg ({totalBags} bags)
@@ -952,11 +952,11 @@ export default function TextileDispatchPage(): JSX.Element {
                                 <Link
                                   to={`/operations/textile-collections/collections/${trip.id}/stops/${nextPending.id}`}
                                   onClick={(e) => e.stopPropagation()}
-                                  title={`Stop ${nextPendingIdx + 1}: ${nextPending.requester_name}`}
+                                  title={`Pickup ${nextPendingIdx + 1}: ${nextPending.requester_name}`}
                                   className="flex min-w-0 items-center gap-1 text-xs font-semibold text-slate-800 hover:text-slate-950 hover:underline"
                                 >
                                   <span className="min-w-0 flex-1 truncate">
-                                    Stop {nextPendingIdx + 1}: {nextPending.requester_name}
+                                    Pickup {nextPendingIdx + 1}: {nextPending.requester_name}
                                   </span>
                                   <ChevronRight className="h-3 w-3 shrink-0 text-slate-400" />
                                 </Link>
@@ -996,7 +996,7 @@ export default function TextileDispatchPage(): JSX.Element {
               <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-xs text-slate-500 bg-slate-50/50">
                 <div>
                   Showing <strong>{filteredTrips.length}</strong> of <strong>{trips.length}</strong>{' '}
-                  routes ({trips.reduce((acc, t) => acc + t.items.length, 0)} total pickup stops)
+                  routes ({trips.reduce((acc, t) => acc + t.items.length, 0)} total pickups)
                 </div>
                 {filteredTrips.length > 0 && activeTrip && isDrawerOpen ? (
                   <span className="font-mono text-[11px] text-slate-400">
@@ -1097,7 +1097,7 @@ export default function TextileDispatchPage(): JSX.Element {
                                     </span>
                                   ) : null}
                                   <span>·</span>
-                                  <span>{activeTrip.items.length} stops</span>
+                                  <span>{activeTrip.items.length} pickups</span>
                                   <span>·</span>
                                   <span>
                                     Est. {totalBags} bags ({Math.round(totalWeight * 10) / 10} kg)
@@ -1173,10 +1173,10 @@ export default function TextileDispatchPage(): JSX.Element {
                             <p className="mt-1.5 text-[11px] text-amber-800">
                               {frozen ? 'Trip is locked — rescheduling disabled. ' : ''}
                               {hasRescheduledStops
-                                ? 'Rescheduled stops present — prior slot on stop page. '
+                                ? 'Rescheduled pickups present — prior slot on pickup page. '
                                 : ''}
                               {hasUnavailableStops
-                                ? 'Unavailable reasons detailed on stop page.'
+                                ? 'Unavailable reasons detailed on pickup page.'
                                 : ''}
                             </p>
                           )}
@@ -1196,7 +1196,7 @@ export default function TextileDispatchPage(): JSX.Element {
                             <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200/80 bg-amber-50/60 px-4 py-3 text-xs">
                               <div className="flex items-center gap-2.5 min-w-0">
                                 <span className="shrink-0 rounded bg-amber-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wide">
-                                  Next Stop #{activeNextStopIdx + 1}
+                                  Next Pickup #{activeNextStopIdx + 1}
                                 </span>
                                 <span className="font-bold text-[var(--color-ink)] truncate">
                                   {activeNextStop.requester_name}
@@ -1212,10 +1212,10 @@ export default function TextileDispatchPage(): JSX.Element {
                               </div>
                               <Link
                                 to={stopPageHref(activeTrip.id, activeNextStop.id)}
-                                aria-label="Execute next stop"
+                                aria-label="Execute next pickup"
                                 className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-[var(--color-ink)] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-black transition shadow-xs"
                               >
-                                <span>Execute stop</span>
+                                <span>Execute pickup</span>
                                 <span aria-hidden="true">&rarr;</span>
                               </Link>
                             </div>
@@ -1228,7 +1228,7 @@ export default function TextileDispatchPage(): JSX.Element {
                           <div className="space-y-2">
                             <div className="flex items-center justify-between px-1">
                               <span className="text-xs font-semibold text-[var(--color-ink)]">
-                                Itinerary ({activeTrip.items.length} stops)
+                                Itinerary ({activeTrip.items.length} pickups)
                               </span>
                               <span className="text-xs text-[var(--color-text-secondary)]">
                                 Sorted by sequence
@@ -1274,7 +1274,7 @@ export default function TextileDispatchPage(): JSX.Element {
                                     <li key={item.id} className="relative">
                                       <Link
                                         to={stopPageHref(activeTrip.id, item.id)}
-                                        aria-label={`Stop ${idx + 1}: ${item.requester_name}, ${item.pickup_address}`}
+                                        aria-label={`Pickup ${idx + 1}: ${item.requester_name}, ${item.pickup_address}`}
                                         className={`group flex min-h-[52px] w-full items-center gap-3 rounded-xl border p-3 text-left transition-all ${
                                           isNext
                                             ? 'border-[var(--color-ink)] bg-[var(--color-surface-sunken)] shadow-2xs'
@@ -1363,7 +1363,7 @@ export default function TextileDispatchPage(): JSX.Element {
                           {activeTrip.items.length > 3 ? (
                             <div className="flex items-center justify-between border-t border-[var(--color-border-subtle)] pt-3 text-xs text-[var(--color-text-secondary)]">
                               <span className="font-mono">
-                                Showing itinerary ({activeTrip.items.length} stop
+                                Showing itinerary ({activeTrip.items.length} pickup
                                 {activeTrip.items.length === 1 ? '' : 's'})
                               </span>
                               <button

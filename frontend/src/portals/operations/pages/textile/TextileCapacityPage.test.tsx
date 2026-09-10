@@ -158,7 +158,7 @@ describe('TextileCapacityPage dashboard', () => {
       'href',
       '/operations/textile-collections/collections',
     );
-    expect(screen.getByRole('link', { name: /Stops today: 10/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Pickups today: 10/ })).toHaveAttribute(
       'href',
       '/operations/textile-collections/collections',
     );
