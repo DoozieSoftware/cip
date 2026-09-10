@@ -9,10 +9,12 @@ import {
   IconBell,
   IconLock,
   IconMail,
+  IconMapPin,
   IconPhone,
   IconShield,
   IconUser,
 } from '@tabler/icons-react';
+import { reverseGeocode } from '../../../shared/geo/reverseGeocode';
 import { useToast } from '../components/Toast';
 import { pushSupport, subscribeToPush, unsubscribeFromPush } from '../push/subscribe';
 import { useMessages } from '../messages';
@@ -91,6 +93,8 @@ export default function ProfilePage(): JSX.Element {
   const [pushBusy, setPushBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [locatingAddress, setLocatingAddress] = useState(false);
+  const [addressLocationMessage, setAddressLocationMessage] = useState<string | null>(null);
   const me = useQuery({
     queryKey: ['me'],
     queryFn: async () => {
@@ -433,6 +437,56 @@ export default function ProfilePage(): JSX.Element {
                     className="mt-1 block text-xs font-normal text-[var(--color-text-secondary)]"
                   >
                     {t('profile.defaultAddressHint')}
+                  </span>
+                  <span className="mt-2 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={locatingAddress}
+                      onClick={() => {
+                        if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
+                          setAddressLocationMessage(t('gps.notSupported'));
+                          return;
+                        }
+                        setLocatingAddress(true);
+                        setAddressLocationMessage(t('gps.locating'));
+                        navigator.geolocation.getCurrentPosition(
+                          (position) => {
+                            const { latitude, longitude } = position.coords;
+                            void reverseGeocode(latitude, longitude).then((result) => {
+                              setLocatingAddress(false);
+                              if (result.label !== '') {
+                                setDefaultAddress(result.label);
+                                if (contactErrors.defaultAddress) {
+                                  setContactErrors((prev) => ({
+                                    ...prev,
+                                    defaultAddress: undefined,
+                                  }));
+                                }
+                                setAddressLocationMessage(t('profile.addressFilledFromLocation'));
+                              } else {
+                                setAddressLocationMessage(t('profile.addressLookupFailed'));
+                              }
+                            });
+                          },
+                          (error) => {
+                            setLocatingAddress(false);
+                            if (error.code === 1) setAddressLocationMessage(t('gps.blocked'));
+                            else if (error.code === 3) setAddressLocationMessage(t('gps.timeout'));
+                            else setAddressLocationMessage(t('gps.unavailable'));
+                          },
+                          { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 },
+                        );
+                      }}
+                      className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-4 text-xs font-medium text-[var(--color-ink)] disabled:opacity-50"
+                    >
+                      <IconMapPin className="h-4 w-4" stroke={1.6} aria-hidden="true" />
+                      {t('gps.useMyLocation')}
+                    </button>
+                    {addressLocationMessage ? (
+                      <span role="status" className="text-xs text-[var(--color-text-secondary)]">
+                        {addressLocationMessage}
+                      </span>
+                    ) : null}
                   </span>
                   {contactErrors.defaultAddress ? (
                     <span

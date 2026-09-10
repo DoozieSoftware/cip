@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
+import { reverseGeocode } from '../../../../shared/geo/reverseGeocode';
 
 vi.mock('../../../../auth/AuthContext', () => ({
   useAuth: vi.fn(() => ({
@@ -18,6 +19,10 @@ vi.mock('../../../../auth/AuthContext', () => ({
 vi.mock('../../../../auth/api', () => ({
   apiRequest: vi.fn(),
   ApiEnvelope: {},
+}));
+
+vi.mock('../../../../shared/geo/reverseGeocode', () => ({
+  reverseGeocode: vi.fn(),
 }));
 
 const { apiRequest } = await import('../../../../auth/api');
@@ -302,5 +307,72 @@ describe('ProfilePage', () => {
         url === '/auth/profile' && (opts as { method?: string } | undefined)?.method === 'PATCH',
     );
     expect(patchCalls).toHaveLength(0);
+  });
+
+  it('fills the default address from the current location', async () => {
+    (reverseGeocode as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      label: 'MG Road, Bengaluru',
+      geocoded: true,
+    });
+    const getCurrentPosition = vi.fn((success: PositionCallback) => {
+      success({
+        coords: {
+          latitude: 12.975,
+          longitude: 77.6,
+          accuracy: 20,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+          toJSON: () => ({}),
+        },
+        timestamp: Date.now(),
+      } as GeolocationPosition);
+    });
+    Object.defineProperty(window.navigator, 'geolocation', {
+      value: { getCurrentPosition },
+      configurable: true,
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <ProfilePage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Use my location' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Default address/)).toHaveValue('MG Road, Bengaluru');
+    });
+    expect(
+      screen.getByText('Address filled from your location — edit it if needed, then save.'),
+    ).toBeTruthy();
+  });
+
+  it('explains when location access is blocked', async () => {
+    const getCurrentPosition = vi.fn(
+      (_success: PositionCallback, error?: PositionErrorCallback) => {
+        error?.({ code: 1, message: 'denied' } as GeolocationPositionError);
+      },
+    );
+    Object.defineProperty(window.navigator, 'geolocation', {
+      value: { getCurrentPosition },
+      configurable: true,
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <ProfilePage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Use my location' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toBeTruthy();
+    });
   });
 });

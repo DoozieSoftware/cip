@@ -340,6 +340,10 @@ export const en_IN: MessageCatalog = {
   'profile.defaultAddressPlaceholder': 'e.g. Flat 4B, 8th Main Road, Bengaluru 560001',
   'profile.defaultAddressHint':
     'Pre-fills the pickup address on new requests. You can still edit it per request.',
+  'profile.addressFilledFromLocation':
+    'Address filled from your location — edit it if needed, then save.',
+  'profile.addressLookupFailed':
+    'Could not find a readable address for this spot — please type it instead.',
   'profile.language': 'Language',
   'profile.languageEnglish': 'English',
   'profile.languageKannada': 'ಕನ್ನಡ (Kannada)',

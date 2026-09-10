@@ -343,6 +343,9 @@ export const kn_IN: MessageCatalog = {
   'profile.defaultAddressPlaceholder': 'ಉದಾ. ಫ್ಲಾಟ್ 4B, 8ನೇ ಮೇನ್ ರಸ್ತೆ, ಬೆಂಗಳೂರು 560001',
   'profile.defaultAddressHint':
     'ಹೊಸ ವಿನಂತಿಗಳಲ್ಲಿ ಪಿಕಪ್ ವಿಳಾಸವನ್ನು ಮೊದಲೇ ತುಂಬುತ್ತದೆ. ಪ್ರತಿ ವಿನಂತಿಗೂ ಅದನ್ನು ಬದಲಾಯಿಸಬಹುದು.',
+  'profile.addressFilledFromLocation':
+    'ನಿಮ್ಮ ಸ್ಥಳದಿಂದ ವಿಳಾಸ ತುಂಬಲಾಗಿದೆ — ಅಗತ್ಯವಿದ್ದರೆ ತಿದ್ದಿ, ನಂತರ ಉಳಿಸಿ.',
+  'profile.addressLookupFailed': 'ಈ ಸ್ಥಳಕ್ಕೆ ಓದಲು ಸುಲಭವಾದ ವಿಳಾಸ ಸಿಗಲಿಲ್ಲ — ದಯವಿಟ್ಟು ಟೈಪ್ ಮಾಡಿ.',
   'profile.language': 'ಭಾಷೆ',
   'profile.languageEnglish': 'English (ಇಂಗ್ಲಿಷ್)',
   'profile.languageKannada': 'ಕನ್ನಡ',
