@@ -12,6 +12,8 @@ export interface TextileCentreSelectProps {
   onChange: (centreId: string) => void;
   disabled?: boolean;
   error?: string;
+  /** Auto-select note, e.g. nearest-centre preselect (#30). */
+  hint?: string | null;
 }
 
 function pinIcon(selected: boolean): L.DivIcon {
@@ -47,6 +49,7 @@ export function TextileCentreSelect({
   onChange,
   disabled = false,
   error,
+  hint,
 }: TextileCentreSelectProps): JSX.Element | null {
   const open = useMemo(
     () => (centres ?? []).filter((c) => c.active && c.status === 'open'),
@@ -75,6 +78,14 @@ export function TextileCentreSelect({
       <label htmlFor="textile-centre" className="block text-sm font-medium text-[var(--color-ink)]">
         Drop-off centre
       </label>
+      {hint ? (
+        <p
+          role="status"
+          className="mt-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-amber-900"
+        >
+          {hint}
+        </p>
+      ) : null}
       <select
         id="textile-centre"
         value={value}

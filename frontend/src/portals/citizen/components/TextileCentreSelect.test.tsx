@@ -34,6 +34,19 @@ function centre(overrides: Partial<TextileDropoffCentreInfo> = {}): TextileDropo
 }
 
 describe('TextileCentreSelect', () => {
+  it('shows the auto-select hint when provided', () => {
+    render(
+      <TextileCentreSelect
+        centres={[centre(), centre({ id: 'centre-2', name: 'South centre' })]}
+        value="centre-1"
+        onChange={vi.fn()}
+        hint="Auto-selected to nearest — change if needed. Nearest to: JP Nagar."
+      />,
+    );
+
+    expect(screen.getByText(/Auto-selected to nearest/)).toBeInTheDocument();
+  });
+
   it('renders a zone-driven dropdown of open centres with the chosen address', () => {
     const onChange = vi.fn();
     render(

@@ -5,6 +5,7 @@ import React from 'react';
 import { TextileCollectionFields } from '../TextileCollectionFields';
 import { useTextileServiceZones } from '../../api/textileZones';
 import { useCitizenContactProfile } from '../../api/profile';
+import { forwardGeocode } from '../../../../shared/geo/forwardGeocode';
 
 vi.mock('../../api/textileZones', () => ({
   useTextileServiceZones: vi.fn(),
@@ -12,6 +13,10 @@ vi.mock('../../api/textileZones', () => ({
 
 vi.mock('../../api/profile', () => ({
   useCitizenContactProfile: vi.fn(),
+}));
+
+vi.mock('../../../../shared/geo/forwardGeocode', () => ({
+  forwardGeocode: vi.fn(),
 }));
 
 const mockUseTextileServiceZones = useTextileServiceZones as Mock;
@@ -579,6 +584,147 @@ describe('TextileCollectionFields', () => {
 
     await waitFor(() => {
       expect(screen.getByLabelText('Service zone')).toHaveValue('zone-metal-1');
+    });
+  });
+});
+
+describe('TextileCollectionFields — nearest auto-select (#30)', () => {
+  const mockForwardGeocode = forwardGeocode as Mock;
+
+  const ZONE_FAR = {
+    ...ZONE_A,
+    id: 'zone-far',
+    code: 'DRL-FAR',
+    name: 'Far Zone',
+    center: { latitude: 13.5, longitude: 78.5 },
+  };
+  const ZONE_NEAR = {
+    ...ZONE_A,
+    id: 'zone-near',
+    code: 'DRL-NEAR',
+    name: 'Near Zone',
+    center: { latitude: 12.9716, longitude: 77.5946 },
+  };
+
+  function centreFixture(id: string, name: string, latitude: number, longitude: number) {
+    return {
+      id,
+      service_zone_id: 'zone-near',
+      name,
+      address: `${name} address`,
+      latitude,
+      longitude,
+      operating_hours: null,
+      public_phone: null,
+      status: 'open',
+      closed_note: null,
+      active: true,
+      sort_order: 0,
+    };
+  }
+
+  beforeEach(() => {
+    mockForwardGeocode.mockResolvedValue({
+      label: '',
+      latitude: null,
+      longitude: null,
+      geocoded: false,
+    });
+  });
+
+  function renderFields() {
+    return render(
+      <TextileCollectionFields
+        category="clothes_waste"
+        value={null}
+        onChange={vi.fn()}
+        onValidityChange={vi.fn()}
+      />,
+      { wrapper },
+    );
+  }
+
+  it('preselects the nearest zone from the profile address with an editable note', async () => {
+    mockZones([ZONE_FAR, ZONE_NEAR]);
+    mockProfile({
+      name: 'Asha',
+      email: 'asha@example.com',
+      phone: '9999900001',
+      defaultAddress: '14, 9th Cross, JP Nagar, Bengaluru 560078',
+    });
+    mockForwardGeocode.mockResolvedValue({
+      label: 'JP Nagar, Bengaluru',
+      latitude: 12.9077,
+      longitude: 77.5851,
+      geocoded: true,
+    });
+    renderFields();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Service zone')).toHaveValue('zone-near');
+    });
+    expect(screen.getByText(/Auto-selected to nearest/)).toBeInTheDocument();
+  });
+
+  it('stops auto-selecting the zone after a manual pick', async () => {
+    mockZones([ZONE_FAR, ZONE_NEAR]);
+    mockProfile({
+      name: 'Asha',
+      email: 'asha@example.com',
+      phone: '9999900001',
+      defaultAddress: '14, 9th Cross, JP Nagar, Bengaluru 560078',
+    });
+    mockForwardGeocode.mockResolvedValue({
+      label: 'JP Nagar, Bengaluru',
+      latitude: 12.9077,
+      longitude: 77.5851,
+      geocoded: true,
+    });
+    renderFields();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Service zone')).toHaveValue('zone-near');
+    });
+
+    fireEvent.change(screen.getByLabelText('Service zone'), { target: { value: 'zone-far' } });
+    expect(screen.getByLabelText('Service zone')).toHaveValue('zone-far');
+    expect(screen.queryByText(/Auto-selected to nearest/)).not.toBeInTheDocument();
+  });
+
+  it('preselects the nearest centre inside the zone', async () => {
+    mockZones([
+      {
+        ...ZONE_NEAR,
+        centres: [
+          centreFixture('centre-far', 'Far centre', 13.0, 78.0),
+          centreFixture('centre-near', 'Near centre', 12.91, 77.59),
+        ],
+      },
+    ]);
+    mockProfile({
+      name: 'Asha',
+      email: 'asha@example.com',
+      phone: '9999900001',
+      defaultAddress: '14, 9th Cross, JP Nagar, Bengaluru 560078',
+    });
+    mockForwardGeocode.mockResolvedValue({
+      label: 'JP Nagar, Bengaluru',
+      latitude: 12.9077,
+      longitude: 77.5851,
+      geocoded: true,
+    });
+    render(
+      <TextileCollectionFields
+        category="clothes_waste"
+        value={null}
+        onChange={vi.fn()}
+        onValidityChange={vi.fn()}
+      />,
+      { wrapper },
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Drop-off centre')).toHaveValue('centre-near');
     });
   });
 });

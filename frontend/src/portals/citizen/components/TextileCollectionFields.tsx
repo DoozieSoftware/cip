@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Spinner, cx } from '../../../shared/ui';
+import { forwardGeocode } from '../../../shared/geo/forwardGeocode';
+import { nearestBy, type LatLng } from '../../../shared/geo/nearest';
 import {
   useTextileServiceZones,
   type TextileCapacityMinimum,
@@ -223,6 +226,11 @@ function TextileCollectionFieldsInner({
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const profile = useCitizenContactProfile();
   const prefilledFromProfile = useRef(false);
+  // #30: nearest auto-select. zoneTouched/centreTouched record a manual pick;
+  // auto-preselect only fills fields the citizen has not touched. The ranking
+  // source is the profile default address, geocoded once per session.
+  const [zoneTouched, setZoneTouched] = useState(false);
+  const [centreTouched, setCentreTouched] = useState(false);
 
   // #12: pre-fill name/email/phone/address from the citizen profile once it
   // loads. Only fills fields the citizen has not already typed into, and only
@@ -266,23 +274,85 @@ function TextileCollectionFieldsInner({
     [zones, draft.service_zone_id],
   );
 
+  // #30: ranking source is the profile default address, geocoded once per
+  // session (cached, non-blocking). Any failure yields no source and the form
+  // falls back to the manual dropdowns.
+  const profileAddress = (profile.data?.defaultAddress ?? '').trim();
+  const geoQuery = useQuery({
+    queryKey: ['nearest-source', profileAddress],
+    queryFn: () => forwardGeocode(profileAddress),
+    enabled: value === null && profileAddress.length >= 10,
+    staleTime: Number.POSITIVE_INFINITY,
+    retry: false,
+  });
+  const source = useMemo<LatLng | null>(() => {
+    if (value !== null) return null;
+    const geo = geoQuery.data;
+    if (
+      geo?.geocoded === true &&
+      typeof geo.latitude === 'number' &&
+      typeof geo.longitude === 'number'
+    ) {
+      return { latitude: geo.latitude, longitude: geo.longitude };
+    }
+    return null;
+  }, [value, geoQuery.data]);
+
+  const nearestZoneId = useMemo(() => {
+    if (!source) return null;
+    return nearestBy(zones, source, (z) => z.center)?.id ?? null;
+  }, [zones, source]);
+
+  // #30: preselect the nearest zone until the citizen picks one manually.
+  useEffect(() => {
+    if (zoneTouched || !nearestZoneId) return;
+    setDraft((prev) =>
+      prev.service_zone_id === nearestZoneId ? prev : { ...prev, service_zone_id: nearestZoneId },
+    );
+  }, [nearestZoneId, zoneTouched]);
+
+  const zoneAutoNote =
+    !zoneTouched && source && nearestZoneId && draft.service_zone_id === nearestZoneId
+      ? 'Auto-selected to nearest — change if needed.'
+      : null;
+
   const openCentres = useMemo(
     () => (selectedZone?.centres ?? []).filter((c) => c.active && c.status === 'open'),
     [selectedZone],
   );
 
   // Centre choice follows the zone: drop a selection that belongs to another
-  // zone, and preselect when the zone lists exactly one open centre.
+  // zone, and preselect when the zone lists exactly one open centre. #30 adds
+  // nearest-centre preselect (untouched only) ahead of the single-centre rule.
   useEffect(() => {
     const current = draft.dropoff_centre_id ?? null;
     if (current !== null && openCentres.some((c) => c.id === current)) return;
+    if (!centreTouched && source && draft.collection_method === 'dropoff') {
+      const nearest = nearestBy(openCentres, source, (c) =>
+        c.latitude !== null && c.longitude !== null
+          ? { latitude: c.latitude, longitude: c.longitude }
+          : null,
+      );
+      if (nearest) {
+        setDraft((prev) => ({ ...prev, dropoff_centre_id: nearest.id }));
+        return;
+      }
+    }
     if (openCentres.length === 1 && openCentres[0] && draft.collection_method === 'dropoff') {
       const onlyId = openCentres[0].id;
       setDraft((prev) => ({ ...prev, dropoff_centre_id: onlyId }));
     } else if (current !== null) {
       setDraft((prev) => ({ ...prev, dropoff_centre_id: null }));
     }
-  }, [openCentres, draft.dropoff_centre_id, draft.collection_method]);
+  }, [openCentres, draft.dropoff_centre_id, draft.collection_method, centreTouched, source]);
+
+  const centreAutoNote =
+    !centreTouched &&
+    source &&
+    draft.collection_method === 'dropoff' &&
+    draft.dropoff_centre_id !== null
+      ? 'Auto-selected to nearest — change if needed.'
+      : null;
 
   const dropoffView = useMemo<TextileDropoffView | null>(() => {
     if (draft.collection_method !== 'dropoff' || !selectedZone?.dropoff) {
@@ -320,6 +390,9 @@ function TextileCollectionFieldsInner({
     key: K,
     next: TextileCollectionPayload[K],
   ): void {
+    // #30: a manual pick opts out of auto-preselect for that field.
+    if (key === 'service_zone_id') setZoneTouched(true);
+    if (key === 'dropoff_centre_id') setCentreTouched(true);
     setDraft((prev) => ({ ...prev, [key]: next }));
   }
 
@@ -381,6 +454,14 @@ function TextileCollectionFieldsInner({
               </option>
             ))}
           </select>
+          {zoneAutoNote ? (
+            <p
+              role="status"
+              className="mt-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-amber-900"
+            >
+              {zoneAutoNote}
+            </p>
+          ) : null}
           {errors.service_zone_id ? (
             <p className="mt-1 text-xs text-red-600">{errors.service_zone_id}</p>
           ) : null}
@@ -543,6 +624,7 @@ function TextileCollectionFieldsInner({
             value={draft.dropoff_centre_id ?? ''}
             onChange={(id) => patch('dropoff_centre_id', id === '' ? null : id)}
             error={errors.dropoff_centre_id}
+            hint={centreAutoNote}
           />
         </section>
       ) : null}
