@@ -28,7 +28,8 @@ final class TextileRescheduleService
      * - before cutoff (24h) unless partner override
      * - not when batch is in_progress/completed unless override
      * - slot must not be unavailable
-     * - atomic: detach from old batch and update schedule in one transaction
+     * - atomic: detach from old batch, return to ready_to_group so the Trips
+     *   queue picks it up for re-tripping, and update schedule in one transaction
      * - audit old/new schedule (before/after)
      */
     public function reschedule(
@@ -102,6 +103,7 @@ final class TextileRescheduleService
                 'scheduled_window_start' => $locked->scheduled_window_start,
                 'scheduled_window_end' => $locked->scheduled_window_end,
                 'batch_id' => $locked->batch_id,
+                'status' => $locked->status,
             ];
 
             $oldBatchId = $locked->previous_batch_id ?? $locked->batch_id;
@@ -120,6 +122,9 @@ final class TextileRescheduleService
                 'scheduled_window_start' => $newWindowStart,
                 'scheduled_window_end' => $newWindowEnd,
                 'batch_id' => null, // detach atomically; scheduler will re-group
+                // Back to the Trips queue: a detached booking must never sit in
+                // `scheduled` with no trip, where no staff queue surfaces it.
+                'status' => TextileCollectionRequest::STATUS_READY_TO_GROUP,
                 'rescheduled_at' => now(),
                 'reschedule_count' => ($locked->reschedule_count ?? 0) + 1,
                 // Keep readiness_instructions untouched; separate endpoint for that.
@@ -130,6 +135,7 @@ final class TextileRescheduleService
                 'scheduled_window_start' => $newWindowStart,
                 'scheduled_window_end' => $newWindowEnd,
                 'batch_id' => null,
+                'status' => TextileCollectionRequest::STATUS_READY_TO_GROUP,
                 'reason' => $reason,
             ];
 

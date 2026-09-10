@@ -121,10 +121,12 @@ it('citizen reschedules before cutoff and preserves the old schedule in audit hi
 
     expect($req->refresh()->batch_id)->toBeNull()
         ->and($req->previous_batch_id)->toBe($batch->id)
+        ->and($req->status)->toBe(TextileCollectionRequest::STATUS_READY_TO_GROUP)
         ->and($req->reschedule_count)->toBe(1);
     $audit = AuditLog::query()->where('entity_id', $req->id)->where('action', 'textile.reschedule')->sole();
     expect($audit->before['scheduled_date'])->toBe($oldDate)
         ->and($audit->after['scheduled_date'])->toBe($newDate)
+        ->and($audit->after['status'])->toBe(TextileCollectionRequest::STATUS_READY_TO_GROUP)
         ->and($audit->after['scheduled_window_start'])->toBe('14:00')
         ->and($audit->after['scheduled_window_end'])->toBe('17:00');
 });
@@ -163,6 +165,19 @@ it('repeated successful reschedules keep one active booking', function (): void 
     $this->postJson("/api/v1/citizen/textile-collections/{$req->id}/reschedule", [
         'scheduled_date' => Carbon::tomorrow()->addDays(2)->toDateString(),
     ])->assertOk();
+    // A reschedule returns the booking to the Trips queue, so staff re-trip
+    // it before the citizen can pick another date.
+    expect($req->refresh()->status)->toBe(TextileCollectionRequest::STATUS_READY_TO_GROUP);
+    $staff = reschedulePartnerStaff();
+    Sanctum::actingAs($staff);
+    test()->postJson('/api/v1/department/textile-collections/schedule', [
+        'service_zone_id' => $zone->id,
+        'collection_request_ids' => [$req->id],
+        'collection_date' => Carbon::tomorrow()->addDays(2)->toDateString(),
+        'window_start' => '09:00',
+        'window_end' => '12:00',
+    ])->assertCreated();
+    Sanctum::actingAs($citizen);
     $this->postJson("/api/v1/citizen/textile-collections/{$req->id}/reschedule", [
         'scheduled_date' => Carbon::tomorrow()->addDays(3)->toDateString(),
     ])->assertOk();

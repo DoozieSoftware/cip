@@ -158,6 +158,16 @@ describe('TextileCollectionDetailPage — reschedule surface (Phase 3)', () => {
     expect(screen.queryByLabelText('Reschedule')).not.toBeInTheDocument();
   });
 
+  // A reschedule returns the booking to the Trips queue: the section stays
+  // visible but explains the wait instead of offering the picker.
+  it('explains the wait for a ready_to_group booking with no trip', () => {
+    mockCollectionData.mockReturnValue({ ...BASE, status: 'ready_to_group', batch: null });
+    renderDetail();
+    expect(screen.getByText('Need a different date?')).toBeInTheDocument();
+    expect(screen.getByText(/Back in the scheduling queue/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reschedule pickup' })).not.toBeInTheDocument();
+  });
+
   it('opens the picker and submits a new date and window', async () => {
     renderDetail();
     fireEvent.click(screen.getByRole('button', { name: 'Reschedule pickup' }));

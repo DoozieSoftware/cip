@@ -348,6 +348,7 @@ export default function TextileCollectionDetailPage(): JSX.Element {
           serviceZoneId={item.service_zone?.id ?? null}
           canReschedule={canReschedule}
           tripStatus={tripStatus}
+          requestStatus={item.status}
           currentDate={confirmedDate}
           currentWindow={windowStr}
           onRescheduled={() => void query.refetch()}
@@ -502,6 +503,7 @@ function RescheduleSection({
   serviceZoneId,
   canReschedule,
   tripStatus,
+  requestStatus,
   currentDate,
   currentWindow,
   onRescheduled,
@@ -510,6 +512,7 @@ function RescheduleSection({
   serviceZoneId: string | null;
   canReschedule: boolean;
   tripStatus: string | null;
+  requestStatus: string;
   currentDate: string | null;
   currentWindow: string | null;
   onRescheduled: () => void;
@@ -539,7 +542,7 @@ function RescheduleSection({
         window_end: wEnd || null,
       });
       setSuccess(
-        `Rescheduled to ${date}${wStart && wEnd ? ` · ${formatTimeOfDay(wStart)} – ${formatTimeOfDay(wEnd)}` : ''}. Old assignment was removed atomically.`,
+        `Rescheduled to ${date}${wStart && wEnd ? ` · ${formatTimeOfDay(wStart)} – ${formatTimeOfDay(wEnd)}` : ''}. Back in the scheduling queue — staff will assign a new trip.`,
       );
       setOpen(false);
       onRescheduled();
@@ -570,8 +573,10 @@ function RescheduleSection({
       >
         <h2 className="text-sm font-medium">Need a different date?</h2>
         <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
-          {blocked ??
-            'Rescheduling is paused while the crew is on the route. Please contact support if you need help.'}
+          {requestStatus === 'ready_to_group'
+            ? 'Back in the scheduling queue — staff will assign a new trip for your requested date. You can pick another date once it is scheduled.'
+            : (blocked ??
+              'Rescheduling is paused while the crew is on the route. Please contact support if you need help.')}
         </p>
         <p className="mt-2 text-[11px] text-[var(--color-text-tertiary)]">
           No staff contact is shown here. Use Contact support above. Rescheduling removes the old
