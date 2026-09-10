@@ -209,10 +209,15 @@ export default function TextileCollectionDetailPage(): JSX.Element {
     item.status === 'rejected' ? 'bad' : item.status === 'missed' ? 'warn' : 'ok';
   const canCancel = !['picked_up', 'cancelled', 'rejected'].includes(item.status);
   const centreName =
-    item.service_zone?.dropoff_name ?? item.service_zone?.name ?? 'Collection centre';
+    item.dropoff_centre?.name ??
+    item.service_zone?.dropoff_name ??
+    item.service_zone?.name ??
+    'Collection centre';
   const centreAddress =
+    item.dropoff_centre?.address ??
     (item as unknown as { service_zone?: { dropoff_address?: string | null } }).service_zone
-      ?.dropoff_address ?? '';
+      ?.dropoff_address ??
+    '';
   const centreCenter = item.service_zone?.center ?? null;
   const actualStr = formatVolume(item.actual_bags, item.actual_weight_kg, method);
   const heading = statusHeading(item.status, method);

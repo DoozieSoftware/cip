@@ -550,6 +550,38 @@ describe('TextileCollectionDetailPage — photo trust view', () => {
     ).not.toBeInTheDocument();
   });
 
+  // Regression (#28): the detail page ignored the booking's chosen centre and
+  // showed the zone legacy default (a demo placeholder in prod).
+  it('prefers the chosen drop-off centre over the zone default', () => {
+    mockCollectionData.mockReturnValue({
+      ...BASE_COLLECTION,
+      collection_method: 'dropoff',
+      pickup_address: null as unknown as string,
+      status: 'pending_review',
+      photos: [],
+      dropoff_centre: {
+        id: 'c1',
+        name: 'Kengeri Satellite Town centre',
+        address: 'Kengeri Main Road',
+      },
+      service_zone: {
+        id: 'zone-1',
+        code: 'DRL-K',
+        name: 'Kengeri',
+        dropoff_name: 'Dr. Linen Kengeri collection point',
+        dropoff_address: 'Demo collection point',
+        center: null,
+      },
+    });
+
+    renderDetail();
+
+    expect(screen.getByText('Kengeri Satellite Town centre')).toBeVisible();
+    expect(screen.getByText('Kengeri Main Road')).toBeVisible();
+    expect(screen.queryByText('Dr. Linen Kengeri collection point')).not.toBeInTheDocument();
+    expect(screen.queryByText('Demo collection point')).not.toBeInTheDocument();
+  });
+
   // Regression (prod crash): new drop-off rows return pickup_address null
   // since the #16 nullable migration, and the page crashed with "Cannot read
   // properties of null (reading 'trim')". The cast reproduces the runtime
