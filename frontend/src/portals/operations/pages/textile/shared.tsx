@@ -30,6 +30,10 @@ export const CATEGORY_LABELS: Record<string, string> = {
   e_waste: 'E-Waste',
 };
 
+// Only Clothes & Textiles is offered for now — the category filter hides the
+// other options until the next rollout (labels above stay for record display).
+const VISIBLE_FILTER_CATEGORIES = ['clothes_waste'] as const;
+
 export const STATUS_STYLES: Record<string, string> = {
   pending_review: 'bg-amber-50 text-amber-800',
   ready_to_group: 'bg-blue-50 text-blue-800',
@@ -292,9 +296,9 @@ export function CategoryFilter({
       className="h-9 rounded-lg border border-[var(--color-border)] bg-white px-2.5 text-xs font-medium text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink)] focus-visible:ring-offset-1"
     >
       <option value="">All categories</option>
-      {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+      {VISIBLE_FILTER_CATEGORIES.map((key) => (
         <option key={key} value={key}>
-          {label}
+          {CATEGORY_LABELS[key]}
         </option>
       ))}
     </select>

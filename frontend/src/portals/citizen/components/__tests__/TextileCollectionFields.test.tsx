@@ -728,3 +728,64 @@ describe('TextileCollectionFields — nearest auto-select (#30)', () => {
     });
   });
 });
+
+describe('TextileCollectionFields — mandatory marks', () => {
+  it('marks mandatory labels with a red asterisk but not the either-or bags/kg inputs', () => {
+    mockZones([ZONE_A]);
+    mockProfile(null);
+    render(
+      <TextileCollectionFields
+        category="clothes_waste"
+        value={null}
+        onChange={vi.fn()}
+        onValidityChange={vi.fn()}
+      />,
+      { wrapper },
+    );
+
+    // Mandatory controls expose aria-required; the mark itself is decorative.
+    for (const id of ['textile-zone', 'textile-requester-name', 'textile-email', 'textile-phone']) {
+      expect(document.getElementById(id)).toHaveAttribute('aria-required', 'true');
+    }
+    expect(document.getElementById('textile-bags')).not.toHaveAttribute('aria-required');
+    expect(document.getElementById('textile-weight')).not.toHaveAttribute('aria-required');
+
+    const stars = document.querySelectorAll('span.text-red-600[aria-hidden="true"]');
+    // name + email + phone + service zone + pickup address + "How much" group heading.
+    expect(stars.length).toBeGreaterThanOrEqual(5);
+    expect(screen.getByText('How much do you have?')).toBeInTheDocument();
+  });
+});
+
+describe('TextileCollectionFields — quantity group error', () => {
+  it('renders the either-or error once below both inputs, not under one field', async () => {
+    mockZones([ZONE_A]);
+    mockProfile(null);
+    render(
+      <TextileCollectionFields
+        category="clothes_waste"
+        value={null}
+        onChange={vi.fn()}
+        onValidityChange={vi.fn()}
+      />,
+      { wrapper },
+    );
+
+    fireEvent.blur(screen.getByLabelText('How many bags?'));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Tell us roughly how many bags, or the approximate weight in whole kg.'),
+      ).toBeVisible();
+    });
+    // Both inputs are flagged invalid and point at the shared message.
+    expect(screen.getByLabelText('How many bags?')).toHaveAttribute(
+      'aria-describedby',
+      'textile-quantity-err',
+    );
+    expect(screen.getByLabelText('About how many kg?')).toHaveAttribute(
+      'aria-describedby',
+      'textile-quantity-err',
+    );
+  });
+});

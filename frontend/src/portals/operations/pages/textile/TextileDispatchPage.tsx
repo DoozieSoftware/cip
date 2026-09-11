@@ -51,6 +51,16 @@ function toISODate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/**
+ * A route is done when every pickup is collected — nothing left for the crew
+ * to execute. Missed pickups still need re-scheduling, so routes containing
+ * them stay on the board. Done routes leave the Collections board (their
+ * records stay in History); partially done routes stay on the board.
+ */
+export function isTripFullyExecuted(items: readonly TextileCollectionListItem[]): boolean {
+  return items.length > 0 && items.every((i) => i.status === 'picked_up');
+}
+
 const TRIP_STATUS_META: Record<string, { label: string; cls: string; dot: string }> = {
   planned: {
     label: 'Planned',
@@ -431,9 +441,7 @@ export default function TextileDispatchPage(): JSX.Element {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const [routeQuery, setRouteQuery] = useState('');
-  const [routeStatusTab, setRouteStatusTab] = useState<
-    'all' | 'planned' | 'in_progress' | 'completed'
-  >('all');
+  const [routeStatusTab, setRouteStatusTab] = useState<'all' | 'planned' | 'in_progress'>('all');
   const opsQueue = useOpsQueue();
 
   useEffect(() => {
@@ -534,6 +542,10 @@ export default function TextileDispatchPage(): JSX.Element {
   // Filtered trips for route roster
   const filteredTrips = useMemo(() => {
     return trips.filter((trip) => {
+      // Fully collected routes (every pickup collected) leave the board —
+      // their records live in History. Partially done routes, and routes with
+      // missed pickups awaiting re-scheduling, stay.
+      if (isTripFullyExecuted(trip.items)) return false;
       if (routeStatusTab !== 'all') {
         const batchStatus = trip.items[0]?.batch?.status ?? 'planned';
         if (routeStatusTab === 'in_progress' && batchStatus !== 'in_progress') return false;
@@ -543,7 +555,6 @@ export default function TextileDispatchPage(): JSX.Element {
           batchStatus !== 'scheduled'
         )
           return false;
-        if (routeStatusTab === 'completed' && batchStatus !== 'completed') return false;
       }
       if (routeQuery.trim()) {
         const q = routeQuery.toLowerCase();
@@ -564,18 +575,19 @@ export default function TextileDispatchPage(): JSX.Element {
     });
   }, [trips, routeStatusTab, routeQuery]);
 
-  // Route counts for status filter tabs
+  // Route counts for status filter tabs (fully collected routes excluded, as above)
   const statusCounts = useMemo(() => {
     let planned = 0;
     let inProgress = 0;
-    let completed = 0;
+    let all = 0;
     for (const t of trips) {
+      if (isTripFullyExecuted(t.items)) continue;
+      all++;
       const s = t.items[0]?.batch?.status ?? 'planned';
       if (s === 'planned' || s === 'scheduled') planned++;
       else if (s === 'in_progress') inProgress++;
-      else if (s === 'completed') completed++;
     }
-    return { all: trips.length, planned, inProgress, completed };
+    return { all, planned, inProgress };
   }, [trips]);
 
   // Active selected trip for command console
@@ -759,7 +771,6 @@ export default function TextileDispatchPage(): JSX.Element {
                     { id: 'all', label: `All Routes (${statusCounts.all})` },
                     { id: 'in_progress', label: `In Progress (${statusCounts.inProgress})` },
                     { id: 'planned', label: `Planned (${statusCounts.planned})` },
-                    { id: 'completed', label: `Completed (${statusCounts.completed})` },
                   ] as const
                 ).map((tab) => (
                   <button

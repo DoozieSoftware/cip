@@ -274,4 +274,43 @@ describe('TextileDispatchPage', () => {
     // Per-stop status chips stay glanceable inside the drawer.
     expect(within(drawer).getAllByText('Collected').length).toBeGreaterThanOrEqual(1);
   });
+
+  it('hides fully collected routes but keeps partially done ones', () => {
+    const done: TextileCollectionListItem = {
+      ...ITEM,
+      id: 'collection-done',
+      reference: 'DLN-2026-DONE',
+      status: 'picked_up',
+    };
+    const open: TextileCollectionListItem = {
+      ...ITEM,
+      id: 'collection-open',
+      reference: 'DLN-2026-OPEN',
+      status: 'scheduled',
+      batch: { ...ITEM.batch!, id: 'batch-2', reference: 'DRL-OPEN' },
+    };
+    const missed: TextileCollectionListItem = {
+      ...ITEM,
+      id: 'collection-missed',
+      reference: 'DLN-2026-MISSED',
+      status: 'missed',
+      batch: { ...ITEM.batch!, id: 'batch-3', reference: 'DRL-MISSED' },
+    };
+    vi.mocked(useTextileQueue).mockReturnValue({
+      data: {
+        data: [done, open, missed],
+        meta: { page: 1, per_page: 25, total: 3, last_page: 1 },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useTextileQueue>);
+
+    renderPage();
+
+    expect(screen.getByText('DRL-OPEN')).toBeVisible();
+    // Missed pickups still need re-scheduling, so they stay on the board.
+    expect(screen.getByText('DRL-MISSED')).toBeVisible();
+    expect(screen.queryByText('DRL-260826-XX11TO')).not.toBeInTheDocument();
+  });
 });

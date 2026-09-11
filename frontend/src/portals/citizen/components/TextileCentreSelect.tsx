@@ -2,6 +2,7 @@ import { useMemo, type JSX } from 'react';
 import { MapContainer, Marker, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { RequiredMark } from '../../../shared/ui';
 import type { TextileDropoffCentreInfo } from '../api/textileZones';
 import { googleMapsUrl } from './mapUrls';
 
@@ -75,9 +76,15 @@ export function TextileCentreSelect({
 
   return (
     <div>
-      <label htmlFor="textile-centre" className="block text-sm font-medium text-[var(--color-ink)]">
-        Drop-off centre
-      </label>
+      <div className="flex items-baseline gap-0.5">
+        <label
+          htmlFor="textile-centre"
+          className="block text-sm font-medium text-[var(--color-ink)]"
+        >
+          Drop-off centre
+        </label>
+        <RequiredMark />
+      </div>
       {hint ? (
         <p
           role="status"
@@ -92,6 +99,7 @@ export function TextileCentreSelect({
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={Boolean(error)}
+        aria-required="true"
         aria-describedby={error ? 'textile-centre-err' : undefined}
         className="mt-1 block min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
       >

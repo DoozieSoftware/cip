@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Spinner, cx } from '../../../shared/ui';
+import { RequiredMark, Spinner, cx } from '../../../shared/ui';
 import { forwardGeocode } from '../../../shared/geo/forwardGeocode';
 import { nearestBy, type LatLng } from '../../../shared/geo/nearest';
 import {
@@ -44,7 +44,8 @@ type FieldKey =
   | 'collection_method'
   | 'dropoff_centre_id'
   | 'estimated_bags'
-  | 'estimated_weight_kg';
+  | 'estimated_weight_kg'
+  | 'estimated_quantity';
 
 type FieldErrors = Partial<Record<FieldKey, string>>;
 
@@ -99,9 +100,12 @@ function validate(
   if (!isDropoff && payload.pickup_address.trim().length < 10) {
     errors.pickup_address = 'Add a full pickup address.';
   }
-  // Either estimate is enough — requesters often cannot weigh textiles.
+  // Either estimate is enough — requesters often cannot weigh textiles. The
+  // both-empty case is a group error rendered once below both inputs (not
+  // under one field, where it reads as that field's own error).
   if (payload.estimated_bags === null && payload.estimated_weight_kg === null) {
-    errors.estimated_bags = 'Tell us roughly how many bags, or the approximate weight in whole kg.';
+    errors.estimated_quantity =
+      'Tell us roughly how many bags, or the approximate weight in whole kg.';
   }
   // Weight-only whole-kg inputs (#14): digits only, no decimals, no negatives.
   if (
@@ -408,6 +412,12 @@ function TextileCollectionFieldsInner({
   const minText = minWeightKg !== null && minWeightKg !== undefined ? `${minWeightKg} kg` : '';
   const isDropoffMethod = draft.collection_method === 'dropoff';
 
+  // Group-level quantity error: shown once below both inputs (not under one
+  // field) after either field is touched.
+  const quantityErrorVisible =
+    Boolean(errors.estimated_quantity) &&
+    (touched.has('estimated_bags') || touched.has('estimated_weight_kg'));
+
   return (
     <div className="space-y-5 rounded-2xl bg-white p-5 sm:p-6 shadow-sm ring-1 ring-black/5">
       <div>
@@ -435,18 +445,22 @@ function TextileCollectionFieldsInner({
         </p>
       ) : (
         <div>
-          <label
-            htmlFor="textile-zone"
-            className="block text-sm font-medium text-[var(--color-ink)]"
-          >
-            Service zone
-          </label>
+          <div className="flex items-baseline gap-0.5">
+            <label
+              htmlFor="textile-zone"
+              className="block text-sm font-medium text-[var(--color-ink)]"
+            >
+              Service zone
+            </label>
+            <RequiredMark />
+          </div>
           <select
             id="textile-zone"
             value={draft.service_zone_id}
             onChange={(e) => patch('service_zone_id', e.target.value)}
             className="mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-white py-2.5 pl-3 pr-4 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
             aria-invalid={Boolean(errors.service_zone_id)}
+            aria-required="true"
           >
             {zones.map((z) => (
               <option key={z.id} value={z.id}>
@@ -511,6 +525,7 @@ function TextileCollectionFieldsInner({
       <Field
         id="textile-requester-name"
         label="Your name"
+        required
         value={draft.requester_name}
         onChange={(v) => patch('requester_name', v)}
         error={errors.requester_name}
@@ -523,6 +538,7 @@ function TextileCollectionFieldsInner({
         <Field
           id="textile-email"
           label="Email (for receipt)"
+          required
           type="email"
           value={draft.contact_email}
           onChange={(v) => patch('contact_email', v)}
@@ -534,6 +550,7 @@ function TextileCollectionFieldsInner({
         <Field
           id="textile-phone"
           label="Phone (for pickup updates)"
+          required
           type="tel"
           inputMode="tel"
           pattern={PHONE_PATTERN}
@@ -550,6 +567,7 @@ function TextileCollectionFieldsInner({
         <Field
           id="textile-rwa-name"
           label="Apartment / community name"
+          required
           value={draft.rwa_name ?? ''}
           onChange={(v) => patch('rwa_name', v || null)}
           error={errors.rwa_name}
@@ -561,18 +579,22 @@ function TextileCollectionFieldsInner({
 
       {isDropoffMethod ? null : (
         <div>
-          <label
-            htmlFor="textile-address"
-            className="block text-sm font-medium text-[var(--color-ink)]"
-          >
-            Pickup address
-          </label>
+          <div className="flex items-baseline gap-0.5">
+            <label
+              htmlFor="textile-address"
+              className="block text-sm font-medium text-[var(--color-ink)]"
+            >
+              Pickup address
+            </label>
+            <RequiredMark />
+          </div>
           <textarea
             id="textile-address"
             rows={3}
             value={draft.pickup_address}
             onChange={(e) => patch('pickup_address', e.target.value)}
             placeholder="House/flat, street, landmark"
+            aria-required="true"
             className="mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
             aria-invalid={touched.has('pickup_address') && Boolean(errors.pickup_address)}
             onBlur={() => setTouched((prev) => new Set([...prev, 'pickup_address']))}
@@ -630,7 +652,10 @@ function TextileCollectionFieldsInner({
       ) : null}
 
       <div>
-        <p className="text-sm font-medium text-[var(--color-ink)]">How much do you have?</p>
+        <div className="flex items-baseline gap-0.5">
+          <p className="text-sm font-medium text-[var(--color-ink)]">How much do you have?</p>
+          <RequiredMark />
+        </div>
         <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
           Fill bags or weight in whole kg — either is enough.
         </p>
@@ -653,6 +678,8 @@ function TextileCollectionFieldsInner({
             fieldTouched={touched.has('estimated_bags')}
             onBlur={() => setTouched((prev) => new Set([...prev, 'estimated_bags']))}
             placeholder="e.g. 3"
+            invalid={quantityErrorVisible}
+            describedBy={quantityErrorVisible ? 'textile-quantity-err' : undefined}
           />
           <div className="hidden sm:flex flex-col items-center justify-center pb-3">
             <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-text-secondary)]">
@@ -684,8 +711,19 @@ function TextileCollectionFieldsInner({
             fieldTouched={touched.has('estimated_weight_kg')}
             onBlur={() => setTouched((prev) => new Set([...prev, 'estimated_weight_kg']))}
             placeholder="e.g. 8"
+            invalid={quantityErrorVisible}
+            describedBy={quantityErrorVisible ? 'textile-quantity-err' : undefined}
           />
         </div>
+        {quantityErrorVisible ? (
+          <p
+            id="textile-quantity-err"
+            role="alert"
+            className="mt-2 text-xs font-medium text-red-600"
+          >
+            {errors.estimated_quantity}
+          </p>
+        ) : null}
         {isBelowMin ? (
           <div
             id="textile-quantity-warn"
@@ -717,6 +755,7 @@ function TextileCollectionFieldsInner({
 interface FieldProps {
   id: string;
   label: string;
+  required?: boolean;
   helper?: string;
   value: string;
   onChange: (next: string) => void;
@@ -731,11 +770,16 @@ interface FieldProps {
   placeholder?: string;
   fieldTouched?: boolean;
   onBlur?: () => void;
+  /** Mark the input invalid without rendering a message (for group errors). */
+  invalid?: boolean;
+  /** Announced as the input's error when `invalid` is set. */
+  describedBy?: string;
 }
 
 function Field({
   id,
   label,
+  required = false,
   helper,
   value,
   onChange,
@@ -750,15 +794,21 @@ function Field({
   placeholder,
   fieldTouched = true,
   onBlur,
+  invalid = false,
+  describedBy,
 }: FieldProps): JSX.Element {
   const hasError = fieldTouched && Boolean(error);
   const hasWarning = !hasError && Boolean(warning);
+  const inputInvalid = hasError || hasWarning || invalid;
 
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-[var(--color-ink)]">
-        {label}
-      </label>
+      <div className="flex items-baseline gap-0.5">
+        <label htmlFor={id} className="block text-sm font-medium text-[var(--color-ink)]">
+          {label}
+        </label>
+        {required ? <RequiredMark /> : null}
+      </div>
       {helper ? (
         <p className="mt-0.5 text-[11px] leading-3 text-[var(--color-text-secondary)]">{helper}</p>
       ) : null}
@@ -772,6 +822,7 @@ function Field({
         step={step}
         value={value}
         placeholder={placeholder}
+        aria-required={required || undefined}
         onChange={(e) => onChange(e.target.value)}
         className={cx(
           'mt-1 block w-full rounded-lg border bg-white py-2.5 px-3 text-base focus:outline-none focus:ring-1',
@@ -781,9 +832,9 @@ function Field({
               ? 'border-amber-400 text-amber-950 focus:border-amber-500 focus:ring-amber-500'
               : 'border-[var(--color-border)] focus:border-[var(--color-ink)] focus:ring-[var(--color-ink)]',
         )}
-        aria-invalid={hasError || hasWarning}
+        aria-invalid={inputInvalid}
         aria-describedby={
-          hasError ? `${id}-err` : hasWarning ? `${id}-warn` : helper ? `${id}-help` : undefined
+          hasError ? `${id}-err` : hasWarning ? `${id}-warn` : helper ? `${id}-help` : describedBy
         }
         onBlur={onBlur}
       />

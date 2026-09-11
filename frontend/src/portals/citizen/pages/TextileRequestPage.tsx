@@ -2,16 +2,14 @@ import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   IconArrowLeft,
-  IconDeviceDesktop,
   IconHanger,
   IconCamera,
   IconMapPin,
   IconPhoto,
   IconRecycle,
-  IconSettings,
   IconX,
 } from '@tabler/icons-react';
-import { cx } from '../../../shared/ui';
+import { RequiredMark } from '../../../shared/ui';
 import IssueLocationPicker from '../components/IssueLocationPicker';
 import { CameraCapture } from '../components/CameraCapture';
 import { issueLocationFromReporter, type IssueLocation } from '../components/issueLocation';
@@ -37,15 +35,9 @@ import { TextileOfflineBanner } from '../components/TextileOfflineBanner';
 
 const MAX_PHOTO_SIZE_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const CATEGORY_OPTIONS: {
-  value: TextileCollectionCategory;
-  label: string;
-  icon: typeof IconHanger;
-}[] = [
-  { value: 'clothes_waste', label: 'Clothes & Textiles', icon: IconHanger },
-  { value: 'metal_scrap', label: 'Metal Scrap', icon: IconSettings },
-  { value: 'e_waste', label: 'E-Waste', icon: IconDeviceDesktop },
-];
+// Only Clothes & Textiles is offered for now; metal and e-waste options are
+// hidden until the next rollout (backend still accepts those categories).
+const CLOTHES_CATEGORY: TextileCollectionCategory = 'clothes_waste';
 function validatePhotoFile(file: File): string | null {
   if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) return 'Please select a JPEG, PNG, or WebP image.';
   if (file.size > MAX_PHOTO_SIZE_BYTES)
@@ -55,7 +47,7 @@ function validatePhotoFile(file: File): string | null {
 export default function TextileRequestPage(): JSX.Element {
   const navigate = useNavigate();
   const create = useCreateTextileCollection();
-  const [category, setCategory] = useState<TextileCollectionCategory>('clothes_waste');
+  const [category] = useState<TextileCollectionCategory>(CLOTHES_CATEGORY);
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [details, setDetails] = useState<TextileCollectionPayload | null>(null);
@@ -143,11 +135,6 @@ export default function TextileRequestPage(): JSX.Element {
   const pickupMinimumUnavailable = isPremises && (minimumIsLoading || capacityMinimum.isError);
   const unavailableDates = availability.data?.unavailable_dates ?? [];
   const nextAvailableDate = availability.data?.next_available_date ?? null;
-  function handleCategoryChange(next: TextileCollectionCategory): void {
-    setCategory(next);
-    setDetails(null);
-    setLiveDraft(null);
-  }
   function captureLocation(): void {
     if (!navigator.geolocation) {
       setLocationMessage('Location is not available in this browser. You can still continue.');
@@ -313,13 +300,17 @@ export default function TextileRequestPage(): JSX.Element {
           Step 1 — What is it?
         </p>
         <div>
-          <label htmlFor="textile-title" className="text-sm font-medium">
-            Short title for your request
-          </label>
+          <div className="flex items-baseline gap-0.5">
+            <label htmlFor="textile-title" className="text-sm font-medium">
+              Short title for your request
+            </label>
+            <RequiredMark />
+          </div>
           <input
             id="textile-title"
             value={title}
             placeholder="e.g. 2 bags of old clothes"
+            aria-required="true"
             onChange={(e) => setTitle(e.target.value)}
             className="mt-1.5 block min-h-11 w-full rounded-lg border border-[var(--color-border)] px-3 text-base focus:border-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
           />
@@ -341,34 +332,10 @@ export default function TextileRequestPage(): JSX.Element {
       </section>
       <section className="space-y-3 rounded-xl bg-white p-6 shadow-sm ring-1 ring-[var(--color-border-subtle)]">
         <h2 className="text-sm font-medium">What kind of material?</h2>
-        <div
-          className="grid grid-cols-2 gap-2 sm:grid-cols-3 max-[360px]:grid-cols-2"
-          role="radiogroup"
-          aria-label="Material category"
-        >
-          {CATEGORY_OPTIONS.map(({ value, label, icon: Icon }) => (
-            <label
-              key={value}
-              className={cx(
-                'flex cursor-pointer flex-col items-center gap-2 rounded-lg border px-2 py-3 text-center text-sm min-h-11',
-                category === value
-                  ? 'border-[var(--color-ink)] bg-[var(--color-surface-alt)] font-medium'
-                  : 'border-[var(--color-border)] bg-white',
-              )}
-            >
-              <input
-                type="radio"
-                name="textile-category"
-                value={value}
-                checked={category === value}
-                onChange={() => handleCategoryChange(value)}
-                className="sr-only"
-              />
-              <Icon className="h-5 w-5 text-[var(--color-ink)]" stroke={1.8} />
-              <span>{label}</span>
-            </label>
-          ))}
-        </div>
+        <p className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-3 py-2.5 text-sm font-medium">
+          <IconHanger className="h-5 w-5 text-[var(--color-ink)]" stroke={1.8} />
+          Clothes & Textiles
+        </p>
         <TextileMinimumNotice
           minimum={minimum}
           estimatedBags={liveBags}

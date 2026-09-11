@@ -338,7 +338,7 @@ describe('TextileRequestPage — photo picker', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('TextileRequestPage — category picker', () => {
-  it('defaults to clothes_waste category', () => {
+  it('locks to clothes_waste category (other materials hidden)', () => {
     render(
       <MemoryRouter initialEntries={['/citizen/textile-collections/new']}>
         <Routes>
@@ -349,28 +349,9 @@ describe('TextileRequestPage — category picker', () => {
       { wrapper: qcWrapper },
     );
 
-    const clothesRadio = screen.getByRole('radio', { name: /clothes & textiles/i });
-    expect(clothesRadio).toBeChecked();
-  });
-
-  it('allows switching to Metal Scrap', async () => {
-    render(
-      <MemoryRouter initialEntries={['/citizen/textile-collections/new']}>
-        <Routes>
-          <Route path="/citizen/textile-collections/new" element={<TextileRequestPage />} />
-          <Route path="/citizen/textile-collections/:id" element={<div>detail page</div>} />
-        </Routes>
-      </MemoryRouter>,
-      { wrapper: qcWrapper },
-    );
-
-    const metalRadio = screen.getByRole('radio', { name: /metal scrap/i });
-    fireEvent.click(metalRadio);
-
-    await waitFor(() => {
-      expect(metalRadio).toBeChecked();
-    });
-    expect(screen.getByRole('radio', { name: /clothes & textiles/i })).not.toBeChecked();
+    expect(screen.getByText('Clothes & Textiles')).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /metal scrap/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /clothes & textiles/i })).not.toBeInTheDocument();
   });
 
   it('submits payload with category on send', async () => {
